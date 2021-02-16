@@ -185,18 +185,20 @@ merging with unrelated change does not interfere with the renames
 - rename on one side
 - unrelated change on the other side
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("a-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mBAm-0 simple merge - one way'
+  $ hg ci -m "mBAm-0 $case_desc - one way"
   $ hg up 'desc("a-2")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mABm-0 simple merge - the other way'
+  $ hg ci -m "mABm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
   @    12 mABm-0 simple merge - the other way
@@ -225,12 +227,14 @@ case summary:
 - one deleting the change
 and recreate an unrelated file after the merge
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("c-1")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mBCm-0 simple merge - one way'
+  $ hg ci -m "mBCm-0 $case_desc - one way"
   $ echo bar > d
   $ hg add d
   $ hg ci -m 'mBCm-1 re-add d'
@@ -239,7 +243,7 @@ and recreate an unrelated file after the merge
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mCBm-0 simple merge - the other way'
+  $ hg ci -m "mCBm-0 $case_desc - the other way"
   created new head
   $ echo bar > d
   $ hg add d
@@ -271,18 +275,20 @@ Merge:
 - one with change to an unrelated file
 - one deleting and recreating the change
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mBDm-0 simple merge - one way'
+  $ hg ci -m "mBDm-0 $case_desc - one way"
   $ hg up 'desc("d-2")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mDBm-0 simple merge - the other way'
+  $ hg ci -m "mDBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
   @    18 mDBm-0 simple merge - the other way
@@ -309,13 +315,15 @@ Comparing with a merge with colliding rename
 - the "e-" branch renaming b to f (through 'g')
 - the "a-" branch renaming d to f (through e)
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("a-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("e-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mAEm-0 simple merge - one way'
+  $ hg ci -m "mAEm-0 $case_desc - one way"
   $ hg up 'desc("e-2")'
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
@@ -323,7 +331,7 @@ Comparing with a merge with colliding rename
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mEAm-0 simple merge - the other way'
+  $ hg ci -m "mEAm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
   @    20 mEAm-0 simple merge - the other way
@@ -350,6 +358,8 @@ Merge:
 - one with change to an unrelated file (b)
 - one overwriting a file (d) with a rename (from h to i to d)
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("i-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg mv h i
@@ -370,13 +380,13 @@ Merge:
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mBFm-0 simple merge - one way'
+  $ hg ci -m "mBFm-0 $case_desc - one way"
   $ hg up 'desc("f-2")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mFBm-0 simple merge - the other way'
+  $ hg ci -m "mFBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
   @    24 mFBm-0 simple merge - the other way
@@ -404,6 +414,8 @@ Merge:
 Unlike in the 'BD/DB' cases, an actual merge happened here. So we should
 consider history and rename on both branch of the merge.
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("i-2")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
@@ -416,14 +428,14 @@ consider history and rename on both branch of the merge.
   merging d
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mDGm-0 simple merge - one way'
+  $ hg ci -m "mDGm-0 $case_desc - one way"
   $ hg up 'desc("g-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")' --tool :union
   merging d
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mGDm-0 simple merge - the other way'
+  $ hg ci -m "mGDm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
   @    27 mGDm-0 simple merge - the other way
@@ -457,6 +469,8 @@ Note:
 |
 | The current code arbitrarily pick one side
 
+  $ case_desc="simple merge"
+
   $ hg up 'desc("f-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("g-1")' --tool :union
@@ -464,7 +478,7 @@ Note:
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved (no-changeset !)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mFGm-0 simple merge - one way'
+  $ hg ci -m "mFGm-0 $case_desc - one way"
   created new head
   $ hg up 'desc("g-1")'
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
@@ -474,7 +488,7 @@ Note:
   0 files updated, 1 files merged, 1 files removed, 0 files unresolved (no-changeset !)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
-  $ hg ci -m 'mGFm-0 simple merge - the other way'
+  $ hg ci -m "mGFm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
   @    29 mGFm-0 simple merge - the other way
