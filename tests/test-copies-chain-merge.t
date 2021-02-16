@@ -469,7 +469,7 @@ Note:
 |
 | The current code arbitrarily pick one side
 
-  $ case_desc="simple merge"
+  $ case_desc="merge - G side: content change, F side: copy overwrite, no content change"
 
   $ hg up 'desc("f-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -491,9 +491,9 @@ Note:
   $ hg ci -m "mGFm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
-  @    29 mGFm-0 simple merge - the other way
+  @    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
-  +---o  28 mFGm-0 simple merge - one way
+  +---o  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   | |/
   | o  25 g-1: update d
   | |
@@ -699,10 +699,10 @@ Summary of all created cases
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - the other way
-  mFGm-0 simple merge - one way
+  mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   mGCm-0
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
-  mGFm-0 simple merge - the other way
+  mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   mHC-delete-before-conflict-m-0
 
 
@@ -1441,7 +1441,7 @@ revision numbers)
 
 #if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way
+  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
   | o  25 g-1: update d
   | |
@@ -1470,7 +1470,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 
 #if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way
+  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
   | o  25 g-1: update d
   | |
@@ -1506,9 +1506,9 @@ history are relevant.
 
 
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
-  o    29 mGFm-0 simple merge - the other way
+  o    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
-  +---o  28 mFGm-0 simple merge - one way
+  +---o  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   | |/
   | o  25 g-1: update d
   | |
@@ -1584,7 +1584,7 @@ Copy tracing data on the resulting merge:
 
 #if no-changeset
   $ hg log -Gfr 'desc("mFGm-0")' d
-  o    28 mFGm-0 simple merge - one way
+  o    28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   |\
   | o  25 g-1: update d
   | |
@@ -1610,7 +1610,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 
 #if no-changeset
   $ hg log -Gfr 'desc("mGFm-0")' d
-  o    29 mGFm-0 simple merge - the other way
+  o    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
   | o  25 g-1: update d
   | |
