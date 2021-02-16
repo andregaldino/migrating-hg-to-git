@@ -275,7 +275,7 @@ Merge:
 - one with change to an unrelated file
 - one deleting and recreating the change
 
-  $ case_desc="simple merge"
+  $ case_desc="simple merge - B side: unrelated update, D side: delete and recreate a file (with different content)"
 
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -291,9 +291,9 @@ Merge:
   $ hg ci -m "mDBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  @    18 mDBm-0 simple merge - the other way
+  @    18 mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   |\
-  +---o  17 mBDm-0 simple merge - one way
+  +---o  17 mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   | |/
   | o  8 d-2 re-add d
   | |
@@ -688,14 +688,14 @@ Summary of all created cases
   mBC-revert-m-0
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
-  mBDm-0 simple merge - one way
+  mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   mBFm-0 simple merge - one way
   mCB-revert-m-0
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
   mCGm-0
   mCH-delete-before-conflict-m-0
-  mDBm-0 simple merge - the other way
+  mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 simple merge - one way
   mEAm-0 simple merge - the other way
   mFBm-0 simple merge - the other way
@@ -1108,9 +1108,9 @@ Merge:
 - one deleting and recreating the change
 
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  o    18 mDBm-0 simple merge - the other way
+  o    18 mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   |\
-  +---o  17 mBDm-0 simple merge - one way
+  +---o  17 mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   | |/
   | o  8 d-2 re-add d
   | |
