@@ -185,7 +185,7 @@ merging with unrelated change does not interfere with the renames
 - rename on one side
 - unrelated change on the other side
 
-  $ case_desc="simple merge"
+  $ case_desc="simple merge - A side: multiple renames, B side: unrelated update"
 
   $ hg up 'desc("b-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -201,9 +201,9 @@ merging with unrelated change does not interfere with the renames
   $ hg ci -m "mABm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  @    12 mABm-0 simple merge - the other way
+  @    12 mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   |\
-  +---o  11 mBAm-0 simple merge - one way
+  +---o  11 mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   | |/
   | o  5 b-1: b update
   | |
@@ -682,9 +682,9 @@ Summary of all created cases
   i-0 initial commit: a b h
   i-1: a -move-> c
   i-2: c -move-> d
-  mABm-0 simple merge - the other way
+  mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   mAEm-0 simple merge - one way
-  mBAm-0 simple merge - one way
+  mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC-revert-m-0
   mBCm-0 simple merge - one way
   mBCm-1 re-add d
@@ -973,9 +973,9 @@ merging with unrelated change does not interfere with the renames
 - unrelated change on the other side
 
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  o    12 mABm-0 simple merge - the other way
+  o    12 mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   |\
-  +---o  11 mBAm-0 simple merge - one way
+  +---o  11 mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   | |/
   | o  5 b-1: b update
   | |
