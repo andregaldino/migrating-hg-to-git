@@ -414,7 +414,7 @@ Merge:
 Unlike in the 'BD/DB' cases, an actual merge happened here. So we should
 consider history and rename on both branch of the merge.
 
-  $ case_desc="simple merge"
+  $ case_desc="actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content"
 
   $ hg up 'desc("i-2")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
@@ -438,9 +438,9 @@ consider history and rename on both branch of the merge.
   $ hg ci -m "mGDm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
-  @    27 mGDm-0 simple merge - the other way
+  @    27 mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   |\
-  +---o  26 mDGm-0 simple merge - one way
+  +---o  26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   | |/
   | o  25 g-1: update d
   | |
@@ -696,12 +696,12 @@ Summary of all created cases
   mCGm-0
   mCH-delete-before-conflict-m-0
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
-  mDGm-0 simple merge - one way
+  mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - the other way
   mFGm-0 simple merge - one way
   mGCm-0
-  mGDm-0 simple merge - the other way
+  mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   mGFm-0 simple merge - the other way
   mHC-delete-before-conflict-m-0
 
@@ -1400,9 +1400,9 @@ Unlike in the 'BD/DB' cases, an actual merge happened here. So we should
 consider history and rename on both branch of the merge.
 
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
-  o    27 mGDm-0 simple merge - the other way
+  o    27 mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   |\
-  +---o  26 mDGm-0 simple merge - one way
+  +---o  26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   | |/
   | o  25 g-1: update d
   | |
@@ -1456,7 +1456,7 @@ revision numbers)
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way
+  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
   | o  25 g-1: update d
   | |
@@ -1485,7 +1485,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 simple merge - one way
+  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
   | o  25 g-1: update d
   | |
