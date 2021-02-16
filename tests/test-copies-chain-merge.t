@@ -315,7 +315,7 @@ Comparing with a merge with colliding rename
 - the "e-" branch renaming b to f (through 'g')
 - the "a-" branch renaming d to f (through e)
 
-  $ case_desc="simple merge"
+  $ case_desc="merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f)"
 
   $ hg up 'desc("a-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -334,9 +334,9 @@ Comparing with a merge with colliding rename
   $ hg ci -m "mEAm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
-  @    20 mEAm-0 simple merge - the other way
+  @    20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   |\
-  +---o  19 mAEm-0 simple merge - one way
+  +---o  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   | |/
   | o  10 e-2 g -move-> f
   | |
@@ -683,7 +683,7 @@ Summary of all created cases
   i-1: a -move-> c
   i-2: c -move-> d
   mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
-  mAEm-0 simple merge - one way
+  mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC-revert-m-0
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
@@ -697,7 +697,7 @@ Summary of all created cases
   mCH-delete-before-conflict-m-0
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 simple merge - one way
-  mEAm-0 simple merge - the other way
+  mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - the other way
   mFGm-0 simple merge - one way
   mGCm-0
@@ -1188,9 +1188,9 @@ Comparing with a merge with colliding rename
 - the "a-" branch renaming d to f (through e)
 
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
-  o    20 mEAm-0 simple merge - the other way
+  o    20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   |\
-  +---o  19 mAEm-0 simple merge - one way
+  +---o  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   | |/
   | o  10 e-2 g -move-> f
   | |
