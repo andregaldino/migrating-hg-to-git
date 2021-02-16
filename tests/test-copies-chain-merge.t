@@ -626,6 +626,8 @@ rename information actually conflict with the other branch.
 
 (the copy information from the branch that was not deleted should win).
 
+  $ case_desc="simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch)"
+
   $ hg up 'desc("i-0")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg mv b d
@@ -637,19 +639,19 @@ rename information actually conflict with the other branch.
   $ hg merge 'desc("h-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m "mCH-delete-before-conflict-m-0"
+  $ hg ci -m "mCH-delete-before-conflict-m-0 $case_desc - one way"
 
   $ hg up 'desc("h-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("c-1")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
-  $ hg ci -m "mHC-delete-before-conflict-m-0"
+  $ hg ci -m "mHC-delete-before-conflict-m-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
-  @    36 mHC-delete-before-conflict-m-0
+  @    36 mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   |\
-  +---o  35 mCH-delete-before-conflict-m-0
+  +---o  35 mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   | |/
   | o  34 h-1: b -(move)-> d
   | |
@@ -698,7 +700,7 @@ Summary of all created cases
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
   mCGm-0 merge updated/deleted - revive the file (updated content) - one way
-  mCH-delete-before-conflict-m-0
+  mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
@@ -707,7 +709,7 @@ Summary of all created cases
   mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
-  mHC-delete-before-conflict-m-0
+  mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
 
 
 Test that sidedata computations during upgrades are correct
@@ -1742,9 +1744,9 @@ rename information actually conflict with the other branch.
 (the copy information from the branch that was not deleted should win).
 
   $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
-  o    36 mHC-delete-before-conflict-m-0
+  o    36 mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   |\
-  +---o  35 mCH-delete-before-conflict-m-0
+  +---o  35 mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   | |/
   | o  34 h-1: b -(move)-> d
   | |
