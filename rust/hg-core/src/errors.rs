@@ -1,7 +1,8 @@
+use crate::config::ConfigValueParseError;
 use std::fmt;
 
 /// Common error cases that can happen in many different APIs
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
 pub enum HgError {
     IoError {
         error: std::io::Error,
@@ -29,6 +30,14 @@ pub enum HgError {
     /// The given string is a short explanation for users, not intended to be
     /// machine-readable.
     Abort(String),
+
+    /// A configuration value is not in the expected syntax.
+    ///
+    /// These errors can happen in many places in the code because values are
+    /// parsed lazily as the file-level parser does not know the expected type
+    /// and syntax of each value.
+    #[from]
+    ConfigValueParseError(ConfigValueParseError),
 }
 
 /// Details about where an I/O error happened
@@ -63,6 +72,7 @@ impl HgError {
 impl fmt::Display for HgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            HgError::Abort(explanation) => write!(f, "{}", explanation),
             HgError::IoError { error, context } => {
                 write!(f, "{}: {}", error, context)
             }
@@ -72,7 +82,25 @@ impl fmt::Display for HgError {
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)
             }
-            HgError::Abort(explanation) => explanation.fmt(f),
+            HgError::ConfigValueParseError(ConfigValueParseError {
+                origin: _,
+                line: _,
+                section,
+                item,
+                value,
+                expected_type,
+            }) => {
+                // TODO: add origin and line number information, here and in
+                // corresponding python code
+                write!(
+                    f,
+                    "config error: {}.{} is not a {} ('{}')",
+                    String::from_utf8_lossy(section),
+                    String::from_utf8_lossy(item),
+                    expected_type,
+                    String::from_utf8_lossy(value)
+                )
+            }
         }
     }
 }

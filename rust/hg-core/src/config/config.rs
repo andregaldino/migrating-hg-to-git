@@ -9,7 +9,7 @@
 
 use super::layer;
 use crate::config::layer::{
-    ConfigError, ConfigLayer, ConfigParseError, ConfigValue,
+    ConfigError, ConfigLayer, ConfigOrigin, ConfigValue,
 };
 use crate::utils::files::get_bytes_from_os_str;
 use format_bytes::{write_bytes, DisplayBytes};
@@ -52,6 +52,16 @@ pub enum ConfigSource {
     AbsPath(PathBuf),
     /// Already parsed (from the CLI, env, Python resources, etc.)
     Parsed(layer::ConfigLayer),
+}
+
+#[derive(Debug)]
+pub struct ConfigValueParseError {
+    pub origin: ConfigOrigin,
+    pub line: Option<usize>,
+    pub section: Vec<u8>,
+    pub item: Vec<u8>,
+    pub value: Vec<u8>,
+    pub expected_type: &'static str,
 }
 
 pub fn parse_bool(v: &[u8]) -> Option<bool> {
@@ -262,15 +272,19 @@ impl Config {
         &'config self,
         section: &[u8],
         item: &[u8],
+        expected_type: &'static str,
         parse: impl Fn(&'config [u8]) -> Option<T>,
-    ) -> Result<Option<T>, ConfigParseError> {
+    ) -> Result<Option<T>, ConfigValueParseError> {
         match self.get_inner(&section, &item) {
             Some((layer, v)) => match parse(&v.bytes) {
                 Some(b) => Ok(Some(b)),
-                None => Err(ConfigParseError {
+                None => Err(ConfigValueParseError {
                     origin: layer.origin.to_owned(),
                     line: v.line,
-                    bytes: v.bytes.to_owned(),
+                    value: v.bytes.to_owned(),
+                    section: section.to_owned(),
+                    item: item.to_owned(),
+                    expected_type,
                 }),
             },
             None => Ok(None),
@@ -283,8 +297,10 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<&str>, ConfigParseError> {
-        self.get_parse(section, item, |value| str::from_utf8(value).ok())
+    ) -> Result<Option<&str>, ConfigValueParseError> {
+        self.get_parse(section, item, "ASCII or UTF-8 string", |value| {
+            str::from_utf8(value).ok()
+        })
     }
 
     /// Returns an `Err` if the first value found is not a valid unsigned
@@ -293,8 +309,8 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<u32>, ConfigParseError> {
-        self.get_parse(section, item, |value| {
+    ) -> Result<Option<u32>, ConfigValueParseError> {
+        self.get_parse(section, item, "valid integer", |value| {
             str::from_utf8(value).ok()?.parse().ok()
         })
     }
@@ -306,8 +322,8 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<u64>, ConfigParseError> {
-        self.get_parse(section, item, parse_byte_size)
+    ) -> Result<Option<u64>, ConfigValueParseError> {
+        self.get_parse(section, item, "byte quantity", parse_byte_size)
     }
 
     /// Returns an `Err` if the first value found is not a valid boolean.
@@ -317,8 +333,8 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<Option<bool>, ConfigParseError> {
-        self.get_parse(section, item, parse_bool)
+    ) -> Result<Option<bool>, ConfigValueParseError> {
+        self.get_parse(section, item, "boolean", parse_bool)
     }
 
     /// Returns the corresponding boolean in the config. Returns `Ok(false)`
@@ -327,7 +343,7 @@ impl Config {
         &self,
         section: &[u8],
         item: &[u8],
-    ) -> Result<bool, ConfigError> {
+    ) -> Result<bool, ConfigValueParseError> {
         Ok(self.get_option(section, item)?.unwrap_or(false))
     }
 
