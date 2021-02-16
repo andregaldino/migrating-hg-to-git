@@ -520,6 +520,8 @@ Merge:
 In this case, the file keep on living after the merge. So we should not drop its
 copy tracing chain.
 
+  $ case_desc="merge updated/deleted - revive the file (updated content)"
+
   $ hg up 'desc("c-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("g-1")'
@@ -531,7 +533,7 @@ copy tracing chain.
   [1]
   $ hg resolve -t :other d
   (no more unresolved files)
-  $ hg ci -m "mCGm-0"
+  $ hg ci -m "mCGm-0 $case_desc - one way"
   created new head
 
   $ hg up 'desc("g-1")'
@@ -545,13 +547,13 @@ copy tracing chain.
   [1]
   $ hg resolve -t :local d
   (no more unresolved files)
-  $ hg ci -m "mGCm-0"
+  $ hg ci -m "mGCm-0 $case_desc - the other way"
   created new head
 
   $ hg log -G --rev '::(desc("mCGm")+desc("mGCm"))'
-  @    31 mGCm-0
+  @    31 mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   |\
-  +---o  30 mCGm-0
+  +---o  30 mCGm-0 merge updated/deleted - revive the file (updated content) - one way
   | |/
   | o  25 g-1: update d
   | |
@@ -693,14 +695,14 @@ Summary of all created cases
   mCB-revert-m-0
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
-  mCGm-0
+  mCGm-0 merge updated/deleted - revive the file (updated content) - one way
   mCH-delete-before-conflict-m-0
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - the other way
   mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
-  mGCm-0
+  mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   mHC-delete-before-conflict-m-0
@@ -1647,9 +1649,9 @@ In this case, the file keep on living after the merge. So we should not drop its
 copy tracing chain.
 
   $ hg log -G --rev '::(desc("mCGm")+desc("mGCm"))'
-  o    31 mGCm-0
+  o    31 mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   |\
-  +---o  30 mCGm-0
+  +---o  30 mCGm-0 merge updated/deleted - revive the file (updated content) - one way
   | |/
   | o  25 g-1: update d
   | |
