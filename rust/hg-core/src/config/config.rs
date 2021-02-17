@@ -388,6 +388,16 @@ impl Config {
         })
     }
 
+    /// If there is an `item` value in `section`, parse and return a list of
+    /// byte strings.
+    pub fn get_list(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Option<Vec<Vec<u8>>> {
+        self.get(section, item).map(values::parse_list)
+    }
+
     /// Returns the raw value bytes of the first one found, or `None`.
     pub fn get(&self, section: &[u8], item: &[u8]) -> Option<&[u8]> {
         self.get_inner(section, item)
