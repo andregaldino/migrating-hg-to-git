@@ -6,7 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::HgError;
-use crate::revlog::node::NULL_NODE_ID;
+use crate::revlog::node::NULL_NODE;
 use crate::{
     dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
     pack_dirstate, parse_dirstate,
@@ -73,8 +73,8 @@ impl DirstateMap {
         self.non_normal_set = None;
         self.other_parent_set = None;
         self.set_parents(&DirstateParents {
-            p1: NULL_NODE_ID,
-            p2: NULL_NODE_ID,
+            p1: NULL_NODE,
+            p2: NULL_NODE,
         })
     }
 
@@ -367,8 +367,8 @@ impl DirstateMap {
             };
         } else if file_contents.is_empty() {
             parents = DirstateParents {
-                p1: NULL_NODE_ID,
-                p2: NULL_NODE_ID,
+                p1: NULL_NODE,
+                p2: NULL_NODE,
             };
         } else {
             return Err(

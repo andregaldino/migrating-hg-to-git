@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::HgError;
+use crate::revlog::Node;
 use crate::{utils::hg_path::HgPathBuf, FastHashMap};
 use bytes_cast::{unaligned, BytesCast};
 use std::collections::hash_map;
@@ -21,8 +22,8 @@ pub mod status;
 #[derive(Debug, PartialEq, Clone, BytesCast)]
 #[repr(C)]
 pub struct DirstateParents {
-    pub p1: [u8; 20],
-    pub p2: [u8; 20],
+    pub p1: Node,
+    pub p2: Node,
 }
 
 /// The C implementation uses all signed types. This will be an issue

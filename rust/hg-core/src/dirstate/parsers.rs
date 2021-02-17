@@ -89,8 +89,8 @@ pub fn pack_dirstate(
 
     let mut packed = Vec::with_capacity(expected_size);
 
-    packed.extend(&parents.p1);
-    packed.extend(&parents.p2);
+    packed.extend(parents.p1.as_bytes());
+    packed.extend(parents.p2.as_bytes());
 
     for (filename, entry) in state_map.iter_mut() {
         let new_filename = filename.to_owned();
@@ -223,8 +223,8 @@ mod tests {
         let mut state_map = StateMap::default();
         let copymap = FastHashMap::default();
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = b"1234567891011121314100000000000000000000".to_vec();
@@ -254,8 +254,8 @@ mod tests {
 
         let copymap = FastHashMap::default();
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = [
@@ -294,8 +294,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = [
@@ -334,8 +334,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =
@@ -412,8 +412,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname2"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =
@@ -458,8 +458,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =

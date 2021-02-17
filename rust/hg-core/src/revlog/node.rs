@@ -85,6 +85,13 @@ impl TryFrom<&'_ [u8]> for Node {
     }
 }
 
+impl From<&'_ NodeData> for Node {
+    #[inline]
+    fn from(data: &'_ NodeData) -> Self {
+        Self { data: *data }
+    }
+}
+
 impl fmt::LowerHex for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for &byte in &self.data {

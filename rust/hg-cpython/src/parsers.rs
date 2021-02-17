@@ -53,10 +53,7 @@ fn parse_dirstate_wrapper(
                     PyBytes::new(py, copy_path.as_bytes()),
                 )?;
             }
-            Ok(
-                (PyBytes::new(py, &parents.p1), PyBytes::new(py, &parents.p2))
-                    .to_py_object(py),
-            )
+            Ok(dirstate_parents_to_pytuple(py, parents))
         }
         Err(e) => Err(PyErr::new::<exc::ValueError, _>(py, e.to_string())),
     }
@@ -154,4 +151,13 @@ pub fn init_parsers_module(py: Python, package: &str) -> PyResult<PyModule> {
     sys_modules.set_item(py, dotted_name, &m)?;
 
     Ok(m)
+}
+
+pub(crate) fn dirstate_parents_to_pytuple(
+    py: Python,
+    parents: &DirstateParents,
+) -> PyTuple {
+    let p1 = PyBytes::new(py, parents.p1.as_bytes());
+    let p2 = PyBytes::new(py, parents.p2.as_bytes());
+    (p1, p2).to_py_object(py)
 }
