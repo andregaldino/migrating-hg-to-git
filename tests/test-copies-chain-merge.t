@@ -18,7 +18,7 @@ use git diff to see rename
   > [diff]
   > git=yes
   > [command-templates]
-  > log={rev} {desc}\n
+  > log={desc}\n
   > EOF
 
 #if compatibility
@@ -71,11 +71,11 @@ Add some linear rename initialy
   $ hg mv c d
   $ hg ci -Am 'i-2: c -move-> d'
   $ hg log -G
-  @  2 i-2: c -move-> d
+  @  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 And having another branch with renames on the other side
@@ -85,15 +85,15 @@ And having another branch with renames on the other side
   $ hg mv e f
   $ hg ci -Am 'a-2: e -move-> f'
   $ hg log -G --rev '::.'
-  @  4 a-2: e -move-> f
+  @  a-2: e -move-> f
   |
-  o  3 a-1: d -move-> e
+  o  a-1: d -move-> e
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Have a branching with nothing on one side
@@ -104,13 +104,13 @@ Have a branching with nothing on one side
   $ hg ci -m 'b-1: b update'
   created new head
   $ hg log -G --rev '::.'
-  @  5 b-1: b update
+  @  b-1: b update
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Create a branch that delete a file previous renamed
@@ -121,13 +121,13 @@ Create a branch that delete a file previous renamed
   $ hg ci -m 'c-1 delete d'
   created new head
   $ hg log -G --rev '::.'
-  @  6 c-1 delete d
+  @  c-1 delete d
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Create a branch that delete a file previous renamed and recreate it
@@ -141,15 +141,15 @@ Create a branch that delete a file previous renamed and recreate it
   $ hg add d
   $ hg ci -m 'd-2 re-add d'
   $ hg log -G --rev '::.'
-  @  8 d-2 re-add d
+  @  d-2 re-add d
   |
-  o  7 d-1 delete d
+  o  d-1 delete d
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Having another branch renaming a different file to the same filename as another
@@ -162,15 +162,15 @@ Having another branch renaming a different file to the same filename as another
   $ hg mv g f
   $ hg ci -m 'e-2 g -move-> f'
   $ hg log -G --rev '::.'
-  @  10 e-2 g -move-> f
+  @  e-2 g -move-> f
   |
-  o  9 e-1 b -move-> g
+  o  e-1 b -move-> g
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Setup all merge
@@ -201,21 +201,21 @@ merging with unrelated change does not interfere with the renames
   $ hg ci -m "mABm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  @    12 mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
+  @    mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   |\
-  +---o  11 mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
+  +---o  mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   | |/
-  | o  5 b-1: b update
+  | o  b-1: b update
   | |
-  o |  4 a-2: e -move-> f
+  o |  a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e
+  o |  a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -249,23 +249,23 @@ and recreate an unrelated file after the merge
   $ hg add d
   $ hg ci -m 'mCBm-1 re-add d'
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
-  @  16 mCBm-1 re-add d
+  @  mCBm-1 re-add d
   |
-  o    15 mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
+  o    mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   |\
-  | | o  14 mBCm-1 re-add d
+  | | o  mBCm-1 re-add d
   | | |
-  +---o  13 mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
+  +---o  mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   | |/
-  | o  6 c-1 delete d
+  | o  c-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Comparing with a merge re-adding the file afterward
@@ -291,21 +291,21 @@ Merge:
   $ hg ci -m "mDBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  @    18 mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
+  @    mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   |\
-  +---o  17 mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
+  +---o  mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   | |/
-  | o  8 d-2 re-add d
+  | o  d-2 re-add d
   | |
-  | o  7 d-1 delete d
+  | o  d-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -337,23 +337,23 @@ Subcase: new copy information on both side
   $ hg ci -m "mEAm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
-  @    20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  @    mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   |\
-  +---o  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
+  +---o  mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   | |/
-  | o  10 e-2 g -move-> f
+  | o  e-2 g -move-> f
   | |
-  | o  9 e-1 b -move-> g
+  | o  e-1 b -move-> g
   | |
-  o |  4 a-2: e -move-> f
+  o |  a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e
+  o |  a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Subcase: existing copy information overwritten on one branch
@@ -394,21 +394,21 @@ Merge:
   $ hg ci -m "mFBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  @    24 mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  @    mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   |\
-  +---o  23 mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  +---o  mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   | |/
-  | o  22 f-2: rename i -> d
+  | o  f-2: rename i -> d
   | |
-  | o  21 f-1: rename h -> i
+  | o  f-1: rename h -> i
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -446,21 +446,21 @@ consider history and rename on both branch of the merge.
   $ hg ci -m "mGDm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
-  @    27 mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
+  @    mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   |\
-  +---o  26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  +---o  mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   | |
-  o |  7 d-1 delete d
+  o |  d-1 delete d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Subcase: merging a change to a file with a "copy overwrite" to that file from another branch
@@ -501,21 +501,21 @@ Note:
   $ hg ci -m "mGFm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
-  @    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
+  @    mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
-  +---o  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
+  +---o  mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  22 f-2: rename i -> d
+  o |  f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i
+  o |  f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -561,19 +561,19 @@ copy tracing chain.
   created new head
 
   $ hg log -G --rev '::(desc("mCGm")+desc("mGCm"))'
-  @    31 mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
+  @    mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   |\
-  +---o  30 mCGm-0 merge updated/deleted - revive the file (updated content) - one way
+  +---o  mCGm-0 merge updated/deleted - revive the file (updated content) - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  6 c-1 delete d
+  o |  c-1 delete d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -610,19 +610,19 @@ copy tracing chain.
   created new head
 
   $ hg log -G --rev '::(desc("mCB-revert-m")+desc("mBC-revert-m"))'
-  @    33 mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  @    mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   |\
-  +---o  32 mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  +---o  mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   | |/
-  | o  6 c-1 delete d
+  | o  c-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -659,19 +659,19 @@ rename information actually conflict with the other branch.
   $ hg ci -m "mHC-delete-before-conflict-m-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
-  @    36 mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
+  @    mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   |\
-  +---o  35 mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
+  +---o  mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   | |/
-  | o  34 h-1: b -(move)-> d
+  | o  h-1: b -(move)-> d
   | |
-  o |  6 c-1 delete d
+  o |  c-1 delete d
   | |
-  o |  2 i-2: c -move-> d
+  o |  i-2: c -move-> d
   | |
-  o |  1 i-1: a -move-> c
+  o |  i-1: a -move-> c
   |/
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Decision from previous merge are properly chained with later merge
@@ -750,35 +750,35 @@ about that file should stay unchanged.
 
 
   $ hg log -G --rev '::(desc("mAE,Km") + desc("mK,AEm") + desc("mEA,Jm") + desc("mJ,EAm"))'
-  @    42 mJ,EAm: chained merges (conflict -> simple) - same content everywhere
+  @    mJ,EAm: chained merges (conflict -> simple) - same content everywhere
   |\
-  +---o  41 mEA,Jm: chained merges (conflict -> simple) - same content everywhere
+  +---o  mEA,Jm: chained merges (conflict -> simple) - same content everywhere
   | |/
-  | | o    40 mK,AEm: chained merges (conflict -> simple) - same content everywhere
+  | | o    mK,AEm: chained merges (conflict -> simple) - same content everywhere
   | | |\
-  | | +---o  39 mAE,Km: chained merges (conflict -> simple) - same content everywhere
+  | | +---o  mAE,Km: chained merges (conflict -> simple) - same content everywhere
   | | | |/
-  | | | o  38 k-1: unrelated changes (based on "e" changes)
+  | | | o  k-1: unrelated changes (based on "e" changes)
   | | | |
-  | o | |  37 j-1: unrelated changes (based on the "a" series of changes)
+  | o | |  j-1: unrelated changes (based on the "a" series of changes)
   | | | |
-  o-----+  20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  o-----+  mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   |/ / /
-  | o /  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
+  | o /  mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   |/|/
-  | o  10 e-2 g -move-> f
+  | o  e-2 g -move-> f
   | |
-  | o  9 e-1 b -move-> g
+  | o  e-1 b -move-> g
   | |
-  o |  4 a-2: e -move-> f
+  o |  a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e
+  o |  a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Subcase: chaining salvage information during a merge
@@ -839,29 +839,29 @@ should preserve the fact eh file was salvaged.
   created new head
 
   $ hg log -G --rev '::(desc("mBC+revert,Lm") + desc("mCB+revert,Lm") + desc("mL,BC+revertm") + desc("mL,CB+revertm"))'
-  @    47 mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  @    mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
   |\
-  | | o  46 mL,BC+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
+  | | o  mL,BC+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
   | |/|
-  +-+---o  45 mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  +-+---o  mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
   | | |
-  | +---o  44 mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  | +---o  mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
   | | |/
-  | o |  43 l-1: unrelated changes (based on "c" changes)
+  | o |  l-1: unrelated changes (based on "c" changes)
   | | |
-  | | o  33 mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  | | o  mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   | |/|
-  o---+  32 mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  o---+  mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   |/ /
-  o |  6 c-1 delete d
+  o |  c-1 delete d
   | |
-  | o  5 b-1: b update
+  | o  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 
@@ -931,33 +931,33 @@ When a non-rename change are merged with a copy overwrite, the merge pick the co
   created new head
 
   $ hg log -G --rev '::(desc("mFG,Om") + desc("mO,FGm") + desc("mGF,Nm") + desc("mN,GFm"))'
-  @    53 mN,GFm: chained merges (copy-overwrite -> simple) - same content
+  @    mN,GFm: chained merges (copy-overwrite -> simple) - same content
   |\
-  +---o  52 mGF,Nm: chained merges (copy-overwrite -> simple) - same content
+  +---o  mGF,Nm: chained merges (copy-overwrite -> simple) - same content
   | |/
-  | | o    51 mO,FGm: chained merges (copy-overwrite -> simple) - same content
+  | | o    mO,FGm: chained merges (copy-overwrite -> simple) - same content
   | | |\
-  | | +---o  50 mFG,Om: chained merges (copy-overwrite -> simple) - same content
+  | | +---o  mFG,Om: chained merges (copy-overwrite -> simple) - same content
   | | | |/
-  | | | o  49 o-1: unrelated changes (based on "g" changes)
+  | | | o  o-1: unrelated changes (based on "g" changes)
   | | | |
-  | o | |  48 n-1: unrelated changes (based on the "f" series of changes)
+  | o | |  n-1: unrelated changes (based on the "f" series of changes)
   | | | |
-  o-----+  29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
+  o-----+  mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |/ / /
-  | o /  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
+  | o /  mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   |/|/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  22 f-2: rename i -> d
+  o |  f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i
+  o |  f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Summary of all created cases
@@ -1364,21 +1364,21 @@ merging with unrelated change does not interfere with the renames
 - unrelated change on the other side
 
   $ hg log -G --rev '::(desc("mABm")+desc("mBAm"))'
-  o    12 mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
+  o    mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   |\
-  +---o  11 mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
+  +---o  mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   | |/
-  | o  5 b-1: b update
+  | o  b-1: b update
   | |
-  o |  4 a-2: e -move-> f
+  o |  a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e
+  o |  a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mABm")'
@@ -1423,23 +1423,23 @@ case summary:
 and recreate an unrelated file after the merge
 
   $ hg log -G --rev '::(desc("mCBm")+desc("mBCm"))'
-  o  16 mCBm-1 re-add d
+  o  mCBm-1 re-add d
   |
-  o    15 mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
+  o    mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   |\
-  | | o  14 mBCm-1 re-add d
+  | | o  mBCm-1 re-add d
   | | |
-  +---o  13 mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
+  +---o  mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   | |/
-  | o  6 c-1 delete d
+  | o  c-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 - comparing from the merge
 
@@ -1499,21 +1499,21 @@ Merge:
 - one deleting and recreating the change
 
   $ hg log -G --rev '::(desc("mDBm")+desc("mBDm"))'
-  o    18 mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
+  o    mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   |\
-  +---o  17 mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
+  +---o  mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   | |/
-  | o  8 d-2 re-add d
+  | o  d-2 re-add d
   | |
-  | o  7 d-1 delete d
+  | o  d-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBDm-0")'
   M d
@@ -1553,12 +1553,12 @@ The bugs makes recorded copy is different depending of where we started the merg
 Log output should not include a merge commit as it did not happen
 
   $ hg log -Gfr 'desc("mBDm-0")' d
-  o  8 d-2 re-add d
+  o  d-2 re-add d
   |
   ~
 
   $ hg log -Gfr 'desc("mDBm-0")' d
-  o  8 d-2 re-add d
+  o  d-2 re-add d
   |
   ~
 
@@ -1582,23 +1582,23 @@ Subcase: new copy information on both side
 - the "a-" branch renaming d to f (through e)
 
   $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
-  o    20 mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  o    mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   |\
-  +---o  19 mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
+  +---o  mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   | |/
-  | o  10 e-2 g -move-> f
+  | o  e-2 g -move-> f
   | |
-  | o  9 e-1 b -move-> g
+  | o  e-1 b -move-> g
   | |
-  o |  4 a-2: e -move-> f
+  o |  a-2: e -move-> f
   | |
-  o |  3 a-1: d -move-> e
+  o |  a-1: d -move-> e
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #if no-changeset
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
@@ -1705,21 +1705,21 @@ Merge:
 - one overwriting a file (d) with a rename (from h to i to d)
 
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  o    24 mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  o    mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   |\
-  +---o  23 mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  +---o  mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   | |/
-  | o  22 f-2: rename i -> d
+  | o  f-2: rename i -> d
   | |
-  | o  21 f-1: rename h -> i
+  | o  f-1: rename h -> i
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBFm-0")'
   M b
@@ -1758,32 +1758,32 @@ Merge:
 
 #if no-changeset
   $ hg log -Gfr 'desc("mBFm-0")' d
-  o  22 f-2: rename i -> d
+  o  f-2: rename i -> d
   |
-  o  21 f-1: rename h -> i
+  o  f-1: rename h -> i
   :
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mBFm-0")' d
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
 
 #if no-changeset
   $ hg log -Gfr 'desc("mFBm-0")' d
-  o  22 f-2: rename i -> d
+  o  f-2: rename i -> d
   |
-  o  21 f-1: rename h -> i
+  o  f-1: rename h -> i
   :
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFBm-0")' d
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
@@ -1799,21 +1799,21 @@ Unlike in the 'BD/DB' cases, an actual merge happened here. So we should
 consider history and rename on both branch of the merge.
 
   $ hg log -G --rev '::(desc("mDGm")+desc("mGDm"))'
-  o    27 mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
+  o    mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
   |\
-  +---o  26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  +---o  mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   | |
-  o |  7 d-1 delete d
+  o |  d-1 delete d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 One side of the merge have a long history with rename. The other side of the
 merge point to a new file with a smaller history. Each side is "valid".
@@ -1840,28 +1840,28 @@ revision numbers)
 
 #if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  o    mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  o    mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
@@ -1869,28 +1869,28 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 
 #if no-changeset
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  o    mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mDGm-0")' d
-  o    26 mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
+  o    mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  8 d-2 re-add d
+  o |  d-2 re-add d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
@@ -1907,21 +1907,21 @@ history are relevant.
 
 
   $ hg log -G --rev '::(desc("mGFm")+desc("mFGm"))'
-  o    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
+  o    mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
-  +---o  28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
+  +---o  mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  22 f-2: rename i -> d
+  o |  f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i
+  o |  f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 Note:
@@ -1985,52 +1985,52 @@ Copy tracing data on the resulting merge:
 
 #if no-changeset
   $ hg log -Gfr 'desc("mFGm-0")' d
-  o    28 mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
+  o    mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  22 f-2: rename i -> d
+  o |  f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i
+  o |  f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFGm-0")' d
-  o  25 g-1: update d
+  o  g-1: update d
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
 
 #if no-changeset
   $ hg log -Gfr 'desc("mGFm-0")' d
-  o    29 mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
+  o    mGFm-0 merge - G side: content change, F side: copy overwrite, no content change - the other way
   |\
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  22 f-2: rename i -> d
+  o |  f-2: rename i -> d
   | |
-  o |  21 f-1: rename h -> i
+  o |  f-1: rename h -> i
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mGFm-0")' d
-  o  25 g-1: update d
+  o  g-1: update d
   |
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
   ~
 #endif
@@ -2048,19 +2048,19 @@ In this case, the file keep on living after the merge. So we should not drop its
 copy tracing chain.
 
   $ hg log -G --rev '::(desc("mCGm")+desc("mGCm"))'
-  o    31 mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
+  o    mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   |\
-  +---o  30 mCGm-0 merge updated/deleted - revive the file (updated content) - one way
+  +---o  mCGm-0 merge updated/deleted - revive the file (updated content) - one way
   | |/
-  | o  25 g-1: update d
+  | o  g-1: update d
   | |
-  o |  6 c-1 delete d
+  o |  c-1 delete d
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 'a' is the copy source of 'd'
@@ -2093,19 +2093,19 @@ In this case, the file keep on living after the merge. So we should not drop its
 copy tracing chain.
 
   $ hg log -G --rev '::(desc("mCB-revert-m")+desc("mBC-revert-m"))'
-  o    33 mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  o    mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   |\
-  +---o  32 mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  +---o  mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   | |/
-  | o  6 c-1 delete d
+  | o  c-1 delete d
   | |
-  o |  5 b-1: b update
+  o |  b-1: b update
   |/
-  o  2 i-2: c -move-> d
+  o  i-2: c -move-> d
   |
-  o  1 i-1: a -move-> c
+  o  i-1: a -move-> c
   |
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
 'a' is the the copy source of 'd'
@@ -2139,19 +2139,19 @@ rename information actually conflict with the other branch.
 (the copy information from the branch that was not deleted should win).
 
   $ hg log -G --rev '::(desc("mCH-delete-before-conflict-m")+desc("mHC-delete-before-conflict-m"))'
-  o    36 mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
+  o    mHC-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - the other way
   |\
-  +---o  35 mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
+  +---o  mCH-delete-before-conflict-m-0 simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch) - one way
   | |/
-  | o  34 h-1: b -(move)-> d
+  | o  h-1: b -(move)-> d
   | |
-  o |  6 c-1 delete d
+  o |  c-1 delete d
   | |
-  o |  2 i-2: c -move-> d
+  o |  i-2: c -move-> d
   | |
-  o |  1 i-1: a -move-> c
+  o |  i-1: a -move-> c
   |/
-  o  0 i-0 initial commit: a b h
+  o  i-0 initial commit: a b h
   
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCH-delete-before-conflict-m")'
