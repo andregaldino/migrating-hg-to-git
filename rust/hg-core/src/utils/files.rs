@@ -17,6 +17,7 @@ use crate::utils::{
 use lazy_static::lazy_static;
 use same_file::is_same_file;
 use std::borrow::{Cow, ToOwned};
+use std::ffi::OsStr;
 use std::fs::Metadata;
 use std::iter::FusedIterator;
 use std::ops::Deref;
@@ -40,8 +41,13 @@ pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
 // that's why Vec<u8> is returned.
 #[cfg(unix)]
 pub fn get_bytes_from_path(path: impl AsRef<Path>) -> Vec<u8> {
+    get_bytes_from_os_str(path.as_ref())
+}
+
+#[cfg(unix)]
+pub fn get_bytes_from_os_str(str: impl AsRef<OsStr>) -> Vec<u8> {
     use std::os::unix::ffi::OsStrExt;
-    path.as_ref().as_os_str().as_bytes().to_vec()
+    str.as_ref().as_bytes().to_vec()
 }
 
 /// An iterator over repository path yielding itself and its ancestors.

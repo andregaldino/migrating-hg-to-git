@@ -11,7 +11,7 @@ use super::layer;
 use crate::config::layer::{
     ConfigError, ConfigLayer, ConfigParseError, ConfigValue,
 };
-use crate::utils::files::get_bytes_from_path;
+use crate::utils::files::get_bytes_from_os_str;
 use format_bytes::{write_bytes, DisplayBytes};
 use std::env;
 use std::path::{Path, PathBuf};
@@ -134,8 +134,7 @@ impl Config {
             layer.add(
                 section.to_owned(),
                 key.to_owned(),
-                // `value` is not a path but this works for any `OsStr`:
-                get_bytes_from_path(value),
+                get_bytes_from_os_str(value),
                 None,
             );
             self.layers.push(layer)

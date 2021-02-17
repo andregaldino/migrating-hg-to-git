@@ -70,8 +70,7 @@ fn main_with_result(ui: &ui::Ui) -> Result<(), CommandError> {
     };
 
     let config_args = values_of_global_arg("config")
-        // `get_bytes_from_path` works for OsStr the same as for Path
-        .map(hg::utils::files::get_bytes_from_path);
+        .map(hg::utils::files::get_bytes_from_os_str);
     let non_repo_config = &hg::config::Config::load(config_args)?;
 
     let repo_path = value_of_global_arg("repository").map(Path::new);
