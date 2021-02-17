@@ -7,6 +7,7 @@
 
 use crate::errors::HgError;
 use crate::{utils::hg_path::HgPathBuf, FastHashMap};
+use bytes_cast::{unaligned, BytesCast};
 use std::collections::hash_map;
 use std::convert::TryFrom;
 
@@ -17,7 +18,8 @@ pub mod dirstate_tree;
 pub mod parsers;
 pub mod status;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, BytesCast)]
+#[repr(C)]
 pub struct DirstateParents {
     pub p1: [u8; 20],
     pub p2: [u8; 20],
@@ -32,6 +34,16 @@ pub struct DirstateEntry {
     pub mode: i32,
     pub mtime: i32,
     pub size: i32,
+}
+
+#[derive(BytesCast)]
+#[repr(C)]
+struct RawEntry {
+    state: u8,
+    mode: unaligned::I32Be,
+    size: unaligned::I32Be,
+    mtime: unaligned::I32Be,
+    length: unaligned::I32Be,
 }
 
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the

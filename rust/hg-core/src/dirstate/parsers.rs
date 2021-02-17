@@ -6,13 +6,13 @@
 use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
 use crate::{
-    dirstate::{CopyMap, EntryState, StateMap},
+    dirstate::{CopyMap, EntryState, RawEntry, StateMap},
     DirstateEntry, DirstateParents,
 };
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{BigEndian, WriteBytesExt};
+use bytes_cast::BytesCast;
 use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
-use std::io::Cursor;
 use std::time::Duration;
 
 /// Parents are stored in the dirstate as byte hashes.
@@ -21,65 +21,45 @@ pub const PARENT_SIZE: usize = 20;
 const MIN_ENTRY_SIZE: usize = 17;
 
 type ParseResult<'a> = (
-    DirstateParents,
+    &'a DirstateParents,
     Vec<(&'a HgPath, DirstateEntry)>,
     Vec<(&'a HgPath, &'a HgPath)>,
 );
 
 #[timed]
-pub fn parse_dirstate(contents: &[u8]) -> Result<ParseResult, HgError> {
-    if contents.len() < PARENT_SIZE * 2 {
-        return Err(HgError::corrupted("Too little data for dirstate."));
-    }
-    let mut copies = vec![];
-    let mut entries = vec![];
+pub fn parse_dirstate(mut contents: &[u8]) -> Result<ParseResult, HgError> {
+    let mut copies = Vec::new();
+    let mut entries = Vec::new();
 
-    let mut curr_pos = PARENT_SIZE * 2;
-    let parents = DirstateParents {
-        p1: contents[..PARENT_SIZE].try_into().unwrap(),
-        p2: contents[PARENT_SIZE..curr_pos].try_into().unwrap(),
-    };
+    let (parents, rest) = DirstateParents::from_bytes(contents)
+        .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
+    contents = rest;
+    while !contents.is_empty() {
+        let (raw_entry, rest) = RawEntry::from_bytes(contents)
+            .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
 
-    while curr_pos < contents.len() {
-        if curr_pos + MIN_ENTRY_SIZE > contents.len() {
-            return Err(HgError::corrupted("Overflow in dirstate."));
-        }
-        let entry_bytes = &contents[curr_pos..];
-
-        let mut cursor = Cursor::new(entry_bytes);
-        // Unwraping errors from `byteorder` as we’ve already checked
-        // `MIN_ENTRY_SIZE` so the input should never be too short.
-        let state = EntryState::try_from(cursor.read_u8().unwrap())?;
-        let mode = cursor.read_i32::<BigEndian>().unwrap();
-        let size = cursor.read_i32::<BigEndian>().unwrap();
-        let mtime = cursor.read_i32::<BigEndian>().unwrap();
-        let path_len = cursor.read_i32::<BigEndian>().unwrap() as usize;
-
-        if path_len > contents.len() - curr_pos {
-            return Err(HgError::corrupted("Overflow in dirstate."));
-        }
-
-        // Slice instead of allocating a Vec needed for `read_exact`
-        let path = &entry_bytes[MIN_ENTRY_SIZE..MIN_ENTRY_SIZE + (path_len)];
-
-        let (path, copy) = match memchr::memchr(0, path) {
-            None => (path, None),
-            Some(i) => (&path[..i], Some(&path[(i + 1)..])),
+        let entry = DirstateEntry {
+            state: EntryState::try_from(raw_entry.state)?,
+            mode: raw_entry.mode.get(),
+            mtime: raw_entry.mtime.get(),
+            size: raw_entry.size.get(),
         };
+        let (paths, rest) =
+            u8::slice_from_bytes(rest, raw_entry.length.get() as usize)
+                .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
 
-        if let Some(copy_path) = copy {
-            copies.push((HgPath::new(path), HgPath::new(copy_path)));
-        };
-        entries.push((
-            HgPath::new(path),
-            DirstateEntry {
-                state,
-                mode,
-                size,
-                mtime,
-            },
-        ));
-        curr_pos = curr_pos + MIN_ENTRY_SIZE + (path_len);
+        // `paths` is either a single path, or two paths separated by a NULL
+        // byte
+        let mut iter = paths.splitn(2, |&byte| byte == b'\0');
+        let path = HgPath::new(
+            iter.next().expect("splitn always yields at least one item"),
+        );
+        if let Some(copy_source) = iter.next() {
+            copies.push((path, HgPath::new(copy_source)));
+        }
+
+        entries.push((path, entry));
+        contents = rest;
     }
     Ok((parents, entries, copies))
 }
@@ -374,7 +354,7 @@ mod tests {
             .collect();
 
         assert_eq!(
-            (parents, state_map, copymap),
+            (&parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
         )
     }
@@ -452,7 +432,7 @@ mod tests {
             .collect();
 
         assert_eq!(
-            (parents, state_map, copymap),
+            (&parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
         )
     }
@@ -499,7 +479,7 @@ mod tests {
 
         assert_eq!(
             (
-                parents,
+                &parents,
                 [(
                     HgPathBuf::from_bytes(b"f1"),
                     DirstateEntry {

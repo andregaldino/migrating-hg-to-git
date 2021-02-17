@@ -386,10 +386,10 @@ impl DirstateMap {
     }
 
     #[timed]
-    pub fn read(
+    pub fn read<'a>(
         &mut self,
-        file_contents: &[u8],
-    ) -> Result<Option<DirstateParents>, DirstateError> {
+        file_contents: &'a [u8],
+    ) -> Result<Option<&'a DirstateParents>, DirstateError> {
         if file_contents.is_empty() {
             return Ok(None);
         }
