@@ -38,7 +38,7 @@ Examples::
   [blackbox]
   # Include nanoseconds in log entries with %f (see Python function
   # datetime.datetime.strftime)
-  date-format = '%Y-%m-%d @ %H:%M:%S.%f'
+  date-format = %Y-%m-%d @ %H:%M:%S.%f
 
 """
 
