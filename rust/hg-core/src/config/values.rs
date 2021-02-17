@@ -41,3 +41,21 @@ pub(super) fn parse_byte_size(value: &[u8]) -> Option<u64> {
     }
     value.parse().ok()
 }
+
+#[test]
+fn test_parse_byte_size() {
+    assert_eq!(parse_byte_size(b""), None);
+    assert_eq!(parse_byte_size(b"b"), None);
+
+    assert_eq!(parse_byte_size(b"12"), Some(12));
+    assert_eq!(parse_byte_size(b"12b"), Some(12));
+    assert_eq!(parse_byte_size(b"12 b"), Some(12));
+    assert_eq!(parse_byte_size(b"12.1 b"), Some(12));
+    assert_eq!(parse_byte_size(b"1.1 K"), Some(1126));
+    assert_eq!(parse_byte_size(b"1.1 kB"), Some(1126));
+
+    assert_eq!(parse_byte_size(b"-12 b"), None);
+    assert_eq!(parse_byte_size(b"-0.1 b"), None);
+    assert_eq!(parse_byte_size(b"0.1 b"), Some(0));
+    assert_eq!(parse_byte_size(b"12.1 b"), Some(12));
+}
