@@ -312,6 +312,9 @@ Merge:
 Comparing with a merge with colliding rename
 --------------------------------------------
 
+Subcase: new copy information on both side
+``````````````````````````````````````````
+
 - the "e-" branch renaming b to f (through 'g')
 - the "a-" branch renaming d to f (through e)
 
@@ -353,6 +356,8 @@ Comparing with a merge with colliding rename
   o  0 i-0 initial commit: a b h
   
 
+Subcase: existing copy information overwritten on one branch
+````````````````````````````````````````````````````````````
 
 Merge:
 - one with change to an unrelated file (b)
@@ -407,6 +412,9 @@ Merge:
   
 
 
+Subcase: reset of the copy history on one side
+``````````````````````````````````````````````
+
 Merge:
 - one with change to a file
 - one deleting and recreating the file
@@ -455,6 +463,8 @@ consider history and rename on both branch of the merge.
   o  0 i-0 initial commit: a b h
   
 
+Subcase: merging a change to a file with a "copy overwrite" to that file from another branch
+````````````````````````````````````````````````````````````````````````````````````````````
 
 Merge:
 - one with change to a file (d)
@@ -1190,6 +1200,9 @@ Log output should not include a merge commit as it did not happen
 Comparing with a merge with colliding rename
 --------------------------------------------
 
+Subcase: new copy information on both side
+``````````````````````````````````````````
+
 - the "e-" branch renaming b to f (through 'g')
 - the "a-" branch renaming d to f (through e)
 
@@ -1304,6 +1317,9 @@ Comparing with a merge with colliding rename
   R b
 
 
+Subcase: existing copy information overwritten on one branch
+````````````````````````````````````````````````````````````
+
 Note:
 | In this case, one of the merge wrongly record a merge while there is none.
 | This lead to bad copy tracing information to be dug up.
@@ -1397,6 +1413,8 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   ~
 #endif
 
+Subcase: reset of the copy history on one side
+``````````````````````````````````````````````
 
 Merge:
 - one with change to a file
@@ -1502,6 +1520,8 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   ~
 #endif
 
+Subcase: merging a change to a file with a "copy overwrite" to that file from another branch
+````````````````````````````````````````````````````````````````````````````````````````````
 
 Merge:
 - one with change to a file (d)
