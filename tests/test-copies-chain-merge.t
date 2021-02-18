@@ -358,7 +358,7 @@ Merge:
 - one with change to an unrelated file (b)
 - one overwriting a file (d) with a rename (from h to i to d)
 
-  $ case_desc="simple merge"
+  $ case_desc="simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d)"
 
   $ hg up 'desc("i-2")'
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -389,9 +389,9 @@ Merge:
   $ hg ci -m "mFBm-0 $case_desc - the other way"
   created new head
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  @    24 mFBm-0 simple merge - the other way
+  @    24 mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   |\
-  +---o  23 mBFm-0 simple merge - one way
+  +---o  23 mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   | |/
   | o  22 f-2: rename i -> d
   | |
@@ -695,7 +695,7 @@ Summary of all created cases
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
   mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
-  mBFm-0 simple merge - one way
+  mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
@@ -704,7 +704,7 @@ Summary of all created cases
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
-  mFBm-0 simple merge - the other way
+  mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
   mGCm-0 merge updated/deleted - revive the file (updated content) - the other way
   mGDm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - the other way
@@ -1314,9 +1314,9 @@ Merge:
 - one overwriting a file (d) with a rename (from h to i to d)
 
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  o    24 mFBm-0 simple merge - the other way
+  o    24 mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   |\
-  +---o  23 mBFm-0 simple merge - one way
+  +---o  23 mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   | |/
   | o  22 f-2: rename i -> d
   | |
