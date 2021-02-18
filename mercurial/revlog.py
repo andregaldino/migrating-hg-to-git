@@ -204,6 +204,7 @@ class revlogrevisiondelta(object):
     baserevisionsize = attr.ib()
     revision = attr.ib()
     delta = attr.ib()
+    sidedata = attr.ib()
     linknode = attr.ib(default=None)
 
 
@@ -2587,6 +2588,7 @@ class revlog(object):
                     dfh,
                     alwayscache=alwayscache,
                     deltacomputer=deltacomputer,
+                    sidedata=sidedata,
                 )
 
                 if addrevisioncb:

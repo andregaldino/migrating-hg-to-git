@@ -1158,7 +1158,7 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         deltas = [
-            (node0, nullid, nullid, nullid, nullid, delta0, 0),
+            (node0, nullid, nullid, nullid, nullid, delta0, 0, {}),
         ]
 
         with self._maketransactionfn() as tr:
@@ -1214,7 +1214,9 @@ class ifilemutationtests(basetestcase):
         for i, fulltext in enumerate(fulltexts):
             delta = mdiff.trivialdiffheader(len(fulltext)) + fulltext
 
-            deltas.append((nodes[i], nullid, nullid, nullid, nullid, delta, 0))
+            deltas.append(
+                (nodes[i], nullid, nullid, nullid, nullid, delta, 0, {})
+            )
 
         with self._maketransactionfn() as tr:
             newnodes = []
@@ -1262,7 +1264,9 @@ class ifilemutationtests(basetestcase):
             )
 
         delta = mdiff.textdiff(b'bar\n' * 30, (b'bar\n' * 30) + b'baz\n')
-        deltas = [(b'\xcc' * 20, node1, nullid, b'\x01' * 20, node1, delta, 0)]
+        deltas = [
+            (b'\xcc' * 20, node1, nullid, b'\x01' * 20, node1, delta, 0, {})
+        ]
 
         with self._maketransactionfn() as tr:
             with self.assertRaises(error.CensoredBaseError):

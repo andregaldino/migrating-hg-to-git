@@ -478,6 +478,7 @@ def emitrevisions(
             baserevisionsize=baserevisionsize,
             revision=revision,
             delta=delta,
+            sidedata=sidedata,
         )
 
         prevrev = rev

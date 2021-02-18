@@ -618,6 +618,13 @@ def _revisiondeltatochunks(delta, headerfn):
         yield prefix
     yield data
 
+    sidedata = delta.sidedata
+    if sidedata is not None:
+        # Need a separate chunk for sidedata to be able to differentiate
+        # "raw delta" length and sidedata length
+        yield chunkheader(len(sidedata))
+        yield sidedata
+
 
 def _sortnodesellipsis(store, nodes, cl, lookup):
     """Sort nodes for changegroup generation."""

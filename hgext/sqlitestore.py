@@ -288,6 +288,7 @@ class sqliterevisiondelta(object):
     baserevisionsize = attr.ib()
     revision = attr.ib()
     delta = attr.ib()
+    sidedata = attr.ib()
     linknode = attr.ib(default=None)
 
 
@@ -907,6 +908,10 @@ class sqlitefilestore(object):
 
     def files(self):
         return []
+
+    def sidedata(self, nodeorrev, _df=None):
+        # Not supported for now
+        return {}
 
     def storageinfo(
         self,

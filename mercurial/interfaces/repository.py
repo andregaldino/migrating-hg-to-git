@@ -453,6 +453,10 @@ class irevisiondelta(interfaceutil.Interface):
         """
     )
 
+    sidedata = interfaceutil.Attribute(
+        """Raw sidedata bytes for the given revision."""
+    )
+
 
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
