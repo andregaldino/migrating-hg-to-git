@@ -55,6 +55,7 @@ class RevlogError(StorageError):
 
 class SidedataHashError(RevlogError):
     def __init__(self, key, expected, got):
+        self.hint = None
         self.sidedatakey = key
         self.expecteddigest = expected
         self.actualdigest = got
