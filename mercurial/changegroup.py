@@ -32,6 +32,7 @@ from . import (
 )
 
 from .interfaces import repository
+from .revlogutils import sidedata as sidedatamod
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct(b"20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct(b"20s20s20s20s20s")
@@ -202,7 +203,9 @@ class cg1unpacker(object):
         header = self.deltaheader.unpack(headerdata)
         delta = readexactly(self._stream, l - self.deltaheadersize)
         node, p1, p2, deltabase, cs, flags = self._deltaheader(header, prevnode)
-        return (node, p1, p2, cs, deltabase, delta, flags)
+        # cg4 forward-compat
+        sidedata = {}
+        return (node, p1, p2, cs, deltabase, delta, flags, sidedata)
 
     def getchunks(self):
         """returns all the chunks contains in the bundle
@@ -552,6 +555,29 @@ class cg3unpacker(cg2unpacker):
                 raise error.Abort(_(b"received dir revlog group is empty"))
 
 
+class cg4unpacker(cg3unpacker):
+    """Unpacker for cg4 streams.
+
+    cg4 streams add support for exchanging sidedata.
+    """
+
+    version = b'04'
+
+    def deltachunk(self, prevnode):
+        res = super(cg4unpacker, self).deltachunk(prevnode)
+        if not res:
+            return res
+
+        (node, p1, p2, cs, deltabase, delta, flags, _sidedata) = res
+
+        sidedata_raw = getchunk(self._stream)
+        sidedata = {}
+        if len(sidedata_raw) > 0:
+            sidedata = sidedatamod.deserialize_sidedata(sidedata_raw)
+
+        return node, p1, p2, cs, deltabase, delta, flags, sidedata
+
+
 class headerlessfixup(object):
     def __init__(self, fh, h):
         self._h = h
@@ -861,6 +887,7 @@ class cgpacker(object):
         shallow=False,
         ellipsisroots=None,
         fullnodes=None,
+        remote_sidedata=None,
     ):
         """Given a source repo, construct a bundler.
 
@@ -893,6 +920,8 @@ class cgpacker(object):
         nodes. We store this rather than the set of nodes that should be
         ellipsis because for very large histories we expect this to be
         significantly smaller.
+
+        remote_sidedata is the set of sidedata categories wanted by the remote.
         """
         assert oldmatcher
         assert matcher
@@ -988,7 +1017,7 @@ class cgpacker(object):
 
         for tree, deltas in it:
             if tree:
-                assert self.version == b'03'
+                assert self.version in (b'03', b'04')
                 chunk = _fileheader(tree)
                 size += len(chunk)
                 yield chunk
@@ -1394,6 +1423,7 @@ def _makecg1packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode
@@ -1424,6 +1454,7 @@ def _makecg2packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode
@@ -1453,6 +1484,7 @@ def _makecg3packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
@@ -1473,12 +1505,47 @@ def _makecg3packer(
     )
 
 
+def _makecg4packer(
+    repo,
+    oldmatcher,
+    matcher,
+    bundlecaps,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+    remote_sidedata=None,
+):
+    # Same header func as cg3. Sidedata is in a separate chunk from the delta to
+    # differenciate "raw delta" and sidedata.
+    builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
+    )
+
+    return cgpacker(
+        repo,
+        oldmatcher,
+        matcher,
+        b'04',
+        builddeltaheader=builddeltaheader,
+        manifestsend=closechunk(),
+        bundlecaps=bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+        remote_sidedata=remote_sidedata,
+    )
+
+
 _packermap = {
     b'01': (_makecg1packer, cg1unpacker),
     # cg2 adds support for exchanging generaldelta
     b'02': (_makecg2packer, cg2unpacker),
     # cg3 adds support for exchanging revlog flags and treemanifests
     b'03': (_makecg3packer, cg3unpacker),
+    # ch4 adds support for exchanging sidedata
+    b'04': (_makecg4packer, cg4unpacker),
 }
 
 
@@ -1498,11 +1565,9 @@ def allsupportedversions(repo):
         #
         # (or even to push subset of history)
         needv03 = True
-    if b'exp-sidedata-flag' in repo.requirements:
-        needv03 = True
-        # don't attempt to use 01/02 until we do sidedata cleaning
-        versions.discard(b'01')
-        versions.discard(b'02')
+    has_revlogv2 = requirements.REVLOGV2_REQUIREMENT in repo.requirements
+    if not has_revlogv2:
+        versions.discard(b'04')
     if not needv03:
         versions.discard(b'03')
     return versions
@@ -1565,6 +1630,7 @@ def getbundler(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     assert version in supportedoutgoingversions(repo)
 
@@ -1601,6 +1667,7 @@ def getbundler(
         shallow=shallow,
         ellipsisroots=ellipsisroots,
         fullnodes=fullnodes,
+        remote_sidedata=remote_sidedata,
     )
 
 
@@ -1644,8 +1711,15 @@ def makestream(
     fastpath=False,
     bundlecaps=None,
     matcher=None,
+    remote_sidedata=None,
 ):
-    bundler = getbundler(version, repo, bundlecaps=bundlecaps, matcher=matcher)
+    bundler = getbundler(
+        version,
+        repo,
+        bundlecaps=bundlecaps,
+        matcher=matcher,
+        remote_sidedata=remote_sidedata,
+    )
 
     repo = repo.unfiltered()
     commonrevs = outgoing.common

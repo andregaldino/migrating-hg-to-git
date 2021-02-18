@@ -147,6 +147,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 b'flags': rlog.flags(r),
                 b'deltabase': rlog.node(deltaparent),
                 b'delta': rlog.revdiff(deltaparent, r),
+                b'sidedata': rlog.sidedata(r),
             }
 
         def deltaiter(self):
@@ -159,10 +160,11 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 deltabase = chunkdata[b'deltabase']
                 delta = chunkdata[b'delta']
                 flags = chunkdata[b'flags']
+                sidedata = chunkdata[b'sidedata']
 
                 chain = node
 
-                yield (node, p1, p2, cs, deltabase, delta, flags)
+                yield (node, p1, p2, cs, deltabase, delta, flags, sidedata)
 
     def linkmap(lnode):
         return rlog.rev(lnode)

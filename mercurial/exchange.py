@@ -2249,7 +2249,13 @@ def bundle2requested(bundlecaps):
 
 
 def getbundlechunks(
-    repo, source, heads=None, common=None, bundlecaps=None, **kwargs
+    repo,
+    source,
+    heads=None,
+    common=None,
+    bundlecaps=None,
+    remote_sidedata=None,
+    **kwargs
 ):
     """Return chunks constituting a bundle's raw data.
 
@@ -2279,7 +2285,12 @@ def getbundlechunks(
         return (
             info,
             changegroup.makestream(
-                repo, outgoing, b'01', source, bundlecaps=bundlecaps
+                repo,
+                outgoing,
+                b'01',
+                source,
+                bundlecaps=bundlecaps,
+                remote_sidedata=remote_sidedata,
             ),
         )
 
@@ -2303,6 +2314,7 @@ def getbundlechunks(
             source,
             bundlecaps=bundlecaps,
             b2caps=b2caps,
+            remote_sidedata=remote_sidedata,
             **pycompat.strkwargs(kwargs)
         )
 
@@ -2325,6 +2337,7 @@ def _getbundlechangegrouppart(
     b2caps=None,
     heads=None,
     common=None,
+    remote_sidedata=None,
     **kwargs
 ):
     """add a changegroup part to the requested bundle"""
@@ -2355,7 +2368,13 @@ def _getbundlechangegrouppart(
         matcher = None
 
     cgstream = changegroup.makestream(
-        repo, outgoing, version, source, bundlecaps=bundlecaps, matcher=matcher
+        repo,
+        outgoing,
+        version,
+        source,
+        bundlecaps=bundlecaps,
+        matcher=matcher,
+        remote_sidedata=remote_sidedata,
     )
 
     part = bundler.newpart(b'changegroup', data=cgstream)

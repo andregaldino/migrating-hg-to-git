@@ -417,6 +417,8 @@ def _processchangesetdata(repo, tr, objs):
                 mdiff.trivialdiffheader(len(data)) + data,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported
+                {},
             )
 
     cl.addgroup(
@@ -496,6 +498,8 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()
@@ -621,6 +625,8 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()
@@ -719,6 +725,8 @@ def _fetchfilesfromcsets(
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()

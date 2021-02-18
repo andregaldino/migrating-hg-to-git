@@ -67,7 +67,7 @@ class shallowcg1packer(changegroup.cgpacker):
             shallowcg1packer, self, nodelist, rlog, lookup, units=units
         )
 
-    def generatefiles(self, changedfiles, *args):
+    def generatefiles(self, changedfiles, *args, **kwargs):
         try:
             linknodes, commonrevs, source = args
         except ValueError:
@@ -92,7 +92,9 @@ class shallowcg1packer(changegroup.cgpacker):
                     [f for f in changedfiles if not repo.shallowmatch(f)]
                 )
 
-        return super(shallowcg1packer, self).generatefiles(changedfiles, *args)
+        return super(shallowcg1packer, self).generatefiles(
+            changedfiles, *args, **kwargs
+        )
 
     def shouldaddfilegroups(self, source):
         repo = self._repo
@@ -176,9 +178,11 @@ def makechangegroup(orig, repo, outgoing, version, source, *args, **kwargs):
         repo.shallowmatch = original
 
 
-def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
+def addchangegroupfiles(
+    orig, repo, source, revmap, trp, expectedfiles, *args, **kwargs
+):
     if not shallowutil.isenabled(repo):
-        return orig(repo, source, revmap, trp, expectedfiles, *args)
+        return orig(repo, source, revmap, trp, expectedfiles, *args, **kwargs)
 
     newfiles = 0
     visited = set()
@@ -272,7 +276,7 @@ def addchangegroupfiles(orig, repo, source, revmap, trp, expectedfiles, *args):
 
         revisiondata = revisiondatas[(f, node)]
         # revisiondata: (node, p1, p2, cs, deltabase, delta, flags)
-        node, p1, p2, linknode, deltabase, delta, flags = revisiondata
+        node, p1, p2, linknode, deltabase, delta, flags, sidedata = revisiondata
 
         if not available(f, node, f, deltabase):
             continue

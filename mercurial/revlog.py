@@ -2527,7 +2527,7 @@ class revlog(object):
             deltacomputer = deltautil.deltacomputer(self)
             # loop through our set of deltas
             for data in deltas:
-                node, p1, p2, linknode, deltabase, delta, flags = data
+                node, p1, p2, linknode, deltabase, delta, flags, sidedata = data
                 link = linkmapper(linknode)
                 flags = flags or REVIDX_DEFAULT_FLAGS
 

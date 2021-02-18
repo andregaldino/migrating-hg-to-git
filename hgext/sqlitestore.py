@@ -681,7 +681,16 @@ class sqlitefilestore(object):
     ):
         empty = True
 
-        for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:
+        for (
+            node,
+            p1,
+            p2,
+            linknode,
+            deltabase,
+            delta,
+            wireflags,
+            sidedata,
+        ) in deltas:
             storeflags = 0
 
             if wireflags & repository.REVISION_FLAG_CENSORED:

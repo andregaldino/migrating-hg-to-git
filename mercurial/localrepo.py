@@ -316,7 +316,13 @@ class localpeer(repository.peer):
         )
 
     def getbundle(
-        self, source, heads=None, common=None, bundlecaps=None, **kwargs
+        self,
+        source,
+        heads=None,
+        common=None,
+        bundlecaps=None,
+        remote_sidedata=None,
+        **kwargs
     ):
         chunks = exchange.getbundlechunks(
             self._repo,
@@ -324,6 +330,7 @@ class localpeer(repository.peer):
             heads=heads,
             common=common,
             bundlecaps=bundlecaps,
+            remote_sidedata=remote_sidedata,
             **kwargs
         )[1]
         cb = util.chunkbuffer(chunks)

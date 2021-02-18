@@ -61,7 +61,7 @@ class bundlerevlog(revlog.revlog):
         self.repotiprev = n - 1
         self.bundlerevs = set()  # used by 'bundle()' revset expression
         for deltadata in cgunpacker.deltaiter():
-            node, p1, p2, cs, deltabase, delta, flags = deltadata
+            node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
 
             size = len(delta)
             start = cgunpacker.tell() - size

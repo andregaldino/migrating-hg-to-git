@@ -276,6 +276,7 @@ def main():
         flags=b'',
         baserevisionsize=None,
         revision=b'',
+        sidedata=b'',
         delta=None,
     )
     checkzobject(rd)

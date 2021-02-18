@@ -346,7 +346,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
         def showchunks(named):
             ui.write(b"\n%s%s\n" % (indent_string, named))
             for deltadata in gen.deltaiter():
-                node, p1, p2, cs, deltabase, delta, flags = deltadata
+                node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
                 ui.write(
                     b"%s%s %s %s %s %s %d\n"
                     % (
@@ -372,7 +372,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
             raise error.Abort(_(b'use debugbundle2 for this file'))
         gen.changelogheader()
         for deltadata in gen.deltaiter():
-            node, p1, p2, cs, deltabase, delta, flags = deltadata
+            node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
             ui.write(b"%s%s\n" % (indent_string, hex(node)))
 
 

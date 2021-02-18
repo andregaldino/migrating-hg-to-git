@@ -306,6 +306,7 @@ class remotefilelog(object):
         assumehaveparentrevisions=False,
         deltaprevious=False,
         deltamode=None,
+        sidedata_helpers=None,
     ):
         # we don't use any of these parameters here
         del nodesorder, revisiondata, assumehaveparentrevisions, deltaprevious
@@ -333,6 +334,8 @@ class remotefilelog(object):
                 baserevisionsize=None,
                 revision=revision,
                 delta=delta,
+                # Sidedata is not supported yet
+                sidedata=None,
             )
 
     def revdiff(self, node1, node2):
