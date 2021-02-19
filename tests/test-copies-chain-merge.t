@@ -217,6 +217,28 @@ Having a branch similar to the 'a' one, but moving the 'p' file around.
   
   $ hg up -q null
 
+Having another branch renaming a different file to the same filename as another
+
+  $ hg up 'desc("i-2")'
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg mv r w
+  $ hg ci -m 'q-1 r -move-> w'
+  created new head
+  $ hg mv w v
+  $ hg ci -m 'q-2 w -move-> v'
+  $ hg log -G --rev '::.'
+  @  q-2 w -move-> v
+  |
+  o  q-1 r -move-> w
+  |
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+  $ hg up -q null
+
 Setup all merge
 ===============
 
@@ -1211,6 +1233,8 @@ Summary of all created cases
   o-1: unrelated changes (based on "g" changes)
   p-1: t -move-> u
   p-2: u -move-> v
+  q-1 r -move-> w
+  q-2 w -move-> v
 
 
 Test that sidedata computations during upgrades are correct
@@ -1353,6 +1377,18 @@ We upgrade a repository that is not using sidedata (the filelog case) and
     '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00uv'
   removed    : u, ;
   added    p1: v, u;
+  ##### revision "q-1 r -move-> w" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00rw'
+  removed    : r, ;
+  added    p1: w, r;
+  ##### revision "q-2 w -move-> v" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x06\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00vw'
+  added    p1: v, w;
+  removed    : w, ;
   ##### revision "mBAm-0 simple merge - A side" #####
   1 sidedata entries
    entry-0014 size 4
