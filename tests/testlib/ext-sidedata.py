@@ -1,6 +1,6 @@
 # ext-sidedata.py - small extension to test the sidedata logic
 #
-# Copyright 2019 Pierre-Yves David <pierre-yves.david@octobus.net)
+# Copyright 2019 Pierre-Yves David <pierre-yves.david@octobus.net>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -47,11 +47,12 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
     if self.version & 0xFFFF != 2:
         return text, sd
     if nodeorrev != nullrev and nodeorrev != nullid:
-        if len(text) != struct.unpack('>I', sd[sidedata.SD_TEST1])[0]:
+        cat1 = sd.get(sidedata.SD_TEST1)
+        if cat1 is not None and len(text) != struct.unpack('>I', cat1)[0]:
             raise RuntimeError('text size mismatch')
-        expected = sd[sidedata.SD_TEST2]
+        expected = sd.get(sidedata.SD_TEST2)
         got = hashlib.sha256(text).digest()
-        if got != expected:
+        if expected is not None and got != expected:
             raise RuntimeError('sha256 mismatch')
     return text, sd
 
@@ -86,3 +87,10 @@ def extsetup(ui):
     extensions.wrapfunction(
         upgrade_engine, 'getsidedatacompanion', wrapgetsidedatacompanion
     )
+
+
+def reposetup(ui, repo):
+    # We don't register sidedata computers because we don't care within these
+    # tests
+    repo.register_wanted_sidedata(sidedata.SD_TEST1)
+    repo.register_wanted_sidedata(sidedata.SD_TEST2)

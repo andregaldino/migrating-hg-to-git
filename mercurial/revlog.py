@@ -3205,3 +3205,54 @@ class revlog(object):
             )
 
         return d
+
+    def rewrite_sidedata(self, helpers, startrev, endrev):
+        if self.version & 0xFFFF != REVLOGV2:
+            return
+        # inline are not yet supported because they suffer from an issue when
+        # rewriting them (since it's not an append-only operation).
+        # See issue6485.
+        assert not self._inline
+        if not helpers[1] and not helpers[2]:
+            # Nothing to generate or remove
+            return
+
+        new_entries = []
+        # append the new sidedata
+        with self._datafp(b'a+') as fp:
+            # Maybe this bug still exists, see revlog._writeentry
+            fp.seek(0, os.SEEK_END)
+            current_offset = fp.tell()
+            for rev in range(startrev, endrev + 1):
+                entry = self.index[rev]
+                new_sidedata = storageutil.run_sidedata_helpers(
+                    store=self,
+                    sidedata_helpers=helpers,
+                    sidedata={},
+                    rev=rev,
+                )
+
+                serialized_sidedata = sidedatautil.serialize_sidedata(
+                    new_sidedata
+                )
+                if entry[8] != 0 or entry[9] != 0:
+                    # rewriting entries that already have sidedata is not
+                    # supported yet, because it introduces garbage data in the
+                    # revlog.
+                    msg = "Rewriting existing sidedata is not supported yet"
+                    raise error.Abort(msg)
+                entry = entry[:8]
+                entry += (current_offset, len(serialized_sidedata))
+
+                fp.write(serialized_sidedata)
+                new_entries.append(entry)
+                current_offset += len(serialized_sidedata)
+
+        # rewrite the new index entries
+        with self._indexfp(b'w+') as fp:
+            fp.seek(startrev * self._io.size)
+            for i, entry in enumerate(new_entries):
+                rev = startrev + i
+                self.index.replace_sidedata_info(rev, entry[8], entry[9])
+                packed = self._io.packentry(entry, self.node, self.version, rev)
+                fp.write(packed)
