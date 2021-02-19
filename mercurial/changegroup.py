@@ -1009,7 +1009,7 @@ class cgpacker(object):
         mfdicts = None
         if self._ellipses and self._isshallow:
             mfdicts = [
-                (self._repo.manifestlog[n].read(), lr)
+                (repo.manifestlog[n].read(), lr)
                 for (n, lr) in pycompat.iteritems(manifests)
             ]
 
