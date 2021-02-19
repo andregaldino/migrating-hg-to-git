@@ -193,6 +193,29 @@ Having another branch renaming a different file to the same filename as another
   |
   o  i-0 initial commit: a b h
   
+  $ hg up -q null
+
+Having a branch similar to the 'a' one, but moving the 'p' file around.
+
+  $ hg up 'desc("i-2")'
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg mv t u
+  $ hg ci -Am 'p-1: t -move-> u'
+  created new head
+  $ hg mv u v
+  $ hg ci -Am 'p-2: u -move-> v'
+  $ hg log -G --rev '::.'
+  @  p-2: u -move-> v
+  |
+  o  p-1: t -move-> u
+  |
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+  $ hg up -q null
 
 Setup all merge
 ===============
@@ -209,7 +232,7 @@ merging with unrelated change does not interfere with the renames
   $ case_desc="simple merge - A side: multiple renames, B side: unrelated update"
 
   $ hg up 'desc("b-1")'
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("a-2")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -1186,6 +1209,8 @@ Summary of all created cases
   mO,FGm: chained merges (copy-overwrite -> simple) - same content
   n-1: unrelated changes (based on the "f" series of changes)
   o-1: unrelated changes (based on "g" changes)
+  p-1: t -move-> u
+  p-2: u -move-> v
 
 
 Test that sidedata computations during upgrades are correct
@@ -1316,6 +1341,18 @@ We upgrade a repository that is not using sidedata (the filelog case) and
     '\x00\x00\x00\x02\x06\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00fg'
   added    p1: f, g;
   removed    : g, ;
+  ##### revision "p-1" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00tu'
+  removed    : t, ;
+  added    p1: u, t;
+  ##### revision "p-2" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00uv'
+  removed    : u, ;
+  added    p1: v, u;
   ##### revision "mBAm-0 simple merge - A side" #####
   1 sidedata entries
    entry-0014 size 4
