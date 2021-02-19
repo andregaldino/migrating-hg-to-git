@@ -75,10 +75,16 @@ Add some linear rename initialy
   $ cp ../same-content.txt a
   $ cp ../same-content.txt b
   $ cp ../same-content.txt h
+  $ echo "original content for P" > p
+  $ echo "original content for Q" > q
+  $ echo "original content for R" > r
   $ hg ci -Am 'i-0 initial commit: a b h'
   adding a
   adding b
   adding h
+  adding p
+  adding q
+  adding r
   $ hg mv a c
   $ hg ci -Am 'i-1: a -move-> c'
   $ hg mv c d
@@ -652,7 +658,7 @@ rename information actually conflict with the other branch.
   $ case_desc="simple merge - C side: d is the results of renames then deleted, H side: d is result of another rename (same content as the other branch)"
 
   $ hg up 'desc("i-0")'
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg mv b d
   $ hg ci -m "h-1: b -(move)-> d"
   created new head
@@ -1228,6 +1234,9 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   added      : a, ;
   added      : b, ;
   added      : h, ;
+  added      : p, ;
+  added      : q, ;
+  added      : r, ;
 
   $ for rev in `hg log --rev 'all()' -T '{rev}\n'`; do
   >     case_id=`hg log -r $rev -T '{word(0, desc, ":")}\n'`
@@ -1237,11 +1246,14 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > done
   ##### revision "i-0 initial commit" #####
   1 sidedata entries
-   entry-0014 size 34
-    '\x00\x00\x00\x03\x04\x00\x00\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x02\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x00abh'
+   entry-0014 size 64
+    '\x00\x00\x00\x06\x04\x00\x00\x00\x01\x00\x00\x00\x00\x04\x00\x00\x00\x02\x00\x00\x00\x00\x04\x00\x00\x00\x03\x00\x00\x00\x00\x04\x00\x00\x00\x04\x00\x00\x00\x00\x04\x00\x00\x00\x05\x00\x00\x00\x00\x04\x00\x00\x00\x06\x00\x00\x00\x00abhpqr'
   added      : a, ;
   added      : b, ;
   added      : h, ;
+  added      : p, ;
+  added      : q, ;
+  added      : r, ;
   ##### revision "i-1" #####
   1 sidedata entries
    entry-0014 size 24
