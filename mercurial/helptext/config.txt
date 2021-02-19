@@ -1032,7 +1032,7 @@ Example ``.hg/hgrc``::
   incoming.autobuild:run-with-plain = yes
   # HGPLAIN never set
   incoming.autobuild:run-with-plain = no
-  # HGPLAIN inherited from environment (default before Mercurila 5.7)
+  # HGPLAIN inherited from environment (default before Mercurial 5.7)
   incoming.autobuild:run-with-plain = auto
 
 Most hooks are run with environment variables set that give useful
