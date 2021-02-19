@@ -639,7 +639,11 @@ class revlog(object):
                     % (flags >> 16, fmt, self.indexfile)
                 )
 
-            self._inline = versionflags & FLAG_INLINE_DATA
+            # There is a bug in the transaction handling when going from an
+            # inline revlog to a separate index and data file. Turn it off until
+            # it's fixed, since v2 revlogs sometimes get rewritten on exchange.
+            # See issue6485
+            self._inline = False
             # generaldelta implied by version 2 revlogs.
             self._generaldelta = True
 
