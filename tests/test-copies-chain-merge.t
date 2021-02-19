@@ -422,6 +422,49 @@ Subcase: new copy information on both side
   o  i-0 initial commit: a b h
   
 
+Subcase: new copy information on both side with an actual merge happening
+`````````````````````````````````````````````````````````````````````````
+
+- the "p-" branch renaming 't' to 'v' (through 'u')
+- the "q-" branch renaming 'r' to 'v' (through 'w')
+
+  $ case_desc="merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content)"
+
+  $ hg up 'desc("p-2")'
+  3 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg merge 'desc("q-2")' --tool ':union'
+  merging v
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mPQm-0 $case_desc - one way"
+  $ hg up 'desc("q-2")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("p-2")' --tool ':union'
+  merging v
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mQPm-0 $case_desc - the other way"
+  created new head
+  $ hg log -G --rev '::(desc("mAEm")+desc("mEAm"))'
+  o    mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  |\
+  +---o  mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
+  | |/
+  | o  e-2 g -move-> f
+  | |
+  | o  e-1 b -move-> g
+  | |
+  o |  a-2: e -move-> f
+  | |
+  o |  a-1: d -move-> e
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+
 Subcase: existing copy information overwritten on one branch
 ````````````````````````````````````````````````````````````
 
@@ -459,8 +502,9 @@ Merge:
   (branch merge, don't forget to commit)
   $ hg ci -m "mFBm-0 $case_desc - the other way"
   created new head
+  $ hg up null --quiet
   $ hg log -G --rev '::(desc("mBFm")+desc("mFBm"))'
-  @    mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  o    mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   |\
   +---o  mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   | |/
@@ -491,8 +535,7 @@ consider history and rename on both branch of the merge.
   $ case_desc="actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content"
 
   $ hg up 'desc("i-2")'
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo "some update" >> d
   $ hg commit -m "g-1: update d"
   created new head
@@ -1229,6 +1272,8 @@ Summary of all created cases
   mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
   mN,GFm: chained merges (copy-overwrite -> simple) - same content
   mO,FGm: chained merges (copy-overwrite -> simple) - same content
+  mPQm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - one way
+  mQPm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - the other way
   n-1: unrelated changes (based on the "f" series of changes)
   o-1: unrelated changes (based on "g" changes)
   p-1: t -move-> u
@@ -1433,6 +1478,16 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 14
     '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
   merged     : f, ;
+  ##### revision "mPQm-0 merge with copies info on both side - P side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00v'
+  merged     : v, ;
+  ##### revision "mQPm-0 merge with copies info on both side - P side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00v'
+  merged     : v, ;
   ##### revision "f-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -2363,6 +2418,134 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   ~
 #endif
+
+Subcase: new copy information on both side with an actual merge happening
+`````````````````````````````````````````````````````````````````````````
+
+- the "p-" branch renaming 't' to 'v' (through 'u')
+- the "q-" branch renaming 'r' to 'v' (through 'w')
+
+
+  $ hg log -G --rev '::(desc("mPQm")+desc("mQPm"))'
+  o    mQPm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - the other way
+  |\
+  +---o  mPQm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - one way
+  | |/
+  | o  q-2 w -move-> v
+  | |
+  | o  q-1 r -move-> w
+  | |
+  o |  p-2: u -move-> v
+  | |
+  o |  p-1: t -move-> u
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+
+#if no-changeset
+  $ hg manifest --debug --rev 'desc("mPQm-0")' | grep '644   v'
+  0946c662ef16e4e67397fd717389eb6693d41749 644   v
+  $ hg manifest --debug --rev 'desc("mQPm-0")' | grep '644   v'
+  0db3aad7fcc1ec27fab57060e327b9e864ea0cc9 644   v
+  $ hg manifest --debug --rev 'desc("p-2")' | grep '644   v'
+  3f91841cd75cadc9a1f1b4e7c1aa6d411f76032e 644   v
+  $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
+  c43c088b811fd27983c0a9aadf44f3343cd4cd7e 644   v
+  $ hg debugindex v | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * 3f91841cd75c 000000000000 000000000000
+       1       * c43c088b811f 000000000000 000000000000
+       2       * 0946c662ef16 3f91841cd75c c43c088b811f
+       3       * 0db3aad7fcc1 c43c088b811f 3f91841cd75c
+#else
+  $ hg manifest --debug --rev 'desc("mPQm-0")' | grep '644   v'
+  65fde9f6e4d4da23b3f610e07b53673ea9541d75 644   v
+  $ hg manifest --debug --rev 'desc("mQPm-0")' | grep '644   v'
+  a098dda6413aecf154eefc976afc38b295acb7e5 644   v
+  $ hg manifest --debug --rev 'desc("p-2")' | grep '644   v'
+  5aed6a8dbff0301328c08360d24354d3d064cf0d 644   v
+  $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
+  a38b2fa170219750dac9bc7d19df831f213ba708 644   v
+  $ hg debugindex v | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * 5aed6a8dbff0 000000000000 000000000000
+       1       * a38b2fa17021 000000000000 000000000000
+       2       * 65fde9f6e4d4 5aed6a8dbff0 a38b2fa17021
+       3       * a098dda6413a a38b2fa17021 5aed6a8dbff0
+#endif
+
+# Here the filelog based implementation is not looking at the rename
+# information (because the file exist on both side). However the changelog
+# based on works fine. We have different output.
+
+  $ hg status --copies --rev 'desc("p-2")' --rev 'desc("mPQm-0")'
+  M v
+    r (no-filelog !)
+  R r
+  $ hg status --copies --rev 'desc("p-2")' --rev 'desc("mQPm-0")'
+  M v
+    r (no-filelog !)
+  R r
+  $ hg status --copies --rev 'desc("q-2")' --rev 'desc("mPQm-0")'
+  M v
+    t (no-filelog !)
+  R t
+  $ hg status --copies --rev 'desc("q-2")' --rev 'desc("mQPm-0")'
+  M v
+    t (no-filelog !)
+  R t
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("p-2")'
+  A v
+    t
+  R t
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("q-2")'
+  A v
+    r
+  R r
+
+# From here, we run status against revision where both source file exists.
+#
+# The filelog based implementation picks an arbitrary side based on revision
+# numbers. So the same side "wins" whatever the parents order is. This is
+# sub-optimal because depending on revision numbers means the result can be
+# different from one repository to the next.
+#
+# The changeset based algorithm use the parent order to break tie on conflicting
+# information and will have a different order depending on who is p1 and p2.
+# That order is stable accross repositories. (data from p1 prevails)
+
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mPQm-0")'
+  A v
+    t
+  R r
+  R t
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mQPm-0")'
+  A v
+    t (filelog !)
+    r (no-filelog !)
+  R r
+  R t
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQm-0")'
+  A d
+    a
+  A v
+    r (filelog !)
+    p (no-filelog !)
+  R a
+  R p
+  R r
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mQPm-0")'
+  A d
+    a
+  A v
+    r
+  R a
+  R p
+  R r
 
 
 Comparing with merging with a deletion (and keeping the file)
