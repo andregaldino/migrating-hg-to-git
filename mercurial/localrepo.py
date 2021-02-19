@@ -49,6 +49,7 @@ from . import (
     match as matchmod,
     mergestate as mergestatemod,
     mergeutil,
+    metadata as metadatamod,
     namespaces,
     narrowspec,
     obsolete,
@@ -273,6 +274,11 @@ class localpeer(repository.peer):
             caps = moderncaps.copy()
         self._repo = repo.filtered(b'served')
         self.ui = repo.ui
+
+        if repo._wanted_sidedata:
+            formatted = bundle2.format_remote_wanted_sidedata(repo)
+            caps.add(b'exp-wanted-sidedata=' + formatted)
+
         self._caps = repo._restrictcapabilities(caps)
 
     # Begin of _basepeer interface.
@@ -1394,6 +1400,10 @@ class localrepository(object):
         self.filecopiesmode = None
         if requirementsmod.COPIESSDC_REQUIREMENT in self.requirements:
             self.filecopiesmode = b'changeset-sidedata'
+
+        self._wanted_sidedata = set()
+        self._sidedata_computers = {}
+        metadatamod.set_sidedata_spec_for_repo(self)
 
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
@@ -3331,6 +3341,22 @@ class localrepository(object):
         finally:
             fp.close()
         return self.pathto(fp.name[len(self.root) + 1 :])
+
+    def register_wanted_sidedata(self, category):
+        self._wanted_sidedata.add(pycompat.bytestr(category))
+
+    def register_sidedata_computer(self, kind, category, keys, computer):
+        if kind not in (b"changelog", b"manifest", b"filelog"):
+            msg = _(b"unexpected revlog kind '%s'.")
+            raise error.ProgrammingError(msg % kind)
+        category = pycompat.bytestr(category)
+        if category in self._sidedata_computers.get(kind, []):
+            msg = _(
+                b"cannot register a sidedata computer twice for category '%s'."
+            )
+            raise error.ProgrammingError(msg % category)
+        self._sidedata_computers.setdefault(kind, {})
+        self._sidedata_computers[kind][category] = (keys, computer)
 
 
 # used to avoid circular references so destructors work

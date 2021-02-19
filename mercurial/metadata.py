@@ -18,6 +18,7 @@ from .node import (
 from . import (
     error,
     pycompat,
+    requirements as requirementsmod,
     util,
 )
 
@@ -802,6 +803,21 @@ def _getsidedata(srcrepo, rev):
     ctx = srcrepo[rev]
     files = compute_all_files_changes(ctx)
     return encode_files_sidedata(files), files.has_copies_info
+
+
+def copies_sidedata_computer(repo, revlog, rev, existing_sidedata):
+    return _getsidedata(repo, rev)[0]
+
+
+def set_sidedata_spec_for_repo(repo):
+    if requirementsmod.COPIESSDC_REQUIREMENT in repo.requirements:
+        repo.register_wanted_sidedata(sidedatamod.SD_FILES)
+        repo.register_sidedata_computer(
+            b"changelog",
+            sidedatamod.SD_FILES,
+            (sidedatamod.SD_FILES,),
+            copies_sidedata_computer,
+        )
 
 
 def getsidedataadder(srcrepo, destrepo):

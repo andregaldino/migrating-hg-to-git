@@ -85,6 +85,7 @@ def checkzobject(o, allowextra=False):
 class dummyrepo(object):
     def __init__(self):
         self.ui = uimod.ui()
+        self._wanted_sidedata = set()
 
     def filtered(self, name):
         pass

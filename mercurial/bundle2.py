@@ -1812,6 +1812,28 @@ def _formatrequirementsparams(requirements):
     return params
 
 
+def format_remote_wanted_sidedata(repo):
+    """Formats a repo's wanted sidedata categories into a bytestring for
+    capabilities exchange."""
+    wanted = b""
+    if repo._wanted_sidedata:
+        wanted = b','.join(
+            pycompat.bytestr(c) for c in sorted(repo._wanted_sidedata)
+        )
+    return wanted
+
+
+def read_remote_wanted_sidedata(remote):
+    sidedata_categories = remote.capable(b'exp-wanted-sidedata')
+    return read_wanted_sidedata(sidedata_categories)
+
+
+def read_wanted_sidedata(formatted):
+    if formatted:
+        return set(formatted.split(b','))
+    return set()
+
+
 def addpartbundlestream2(bundler, repo, **kwargs):
     if not kwargs.get('stream', False):
         return
@@ -1957,6 +1979,7 @@ def combinechangegroupresults(op):
         b'version',
         b'nbchanges',
         b'exp-sidedata',
+        b'exp-wanted-sidedata',
         b'treemanifest',
         b'targetphase',
     ),
@@ -1999,6 +2022,10 @@ def handlechangegroup(op, inpart):
     targetphase = inpart.params.get(b'targetphase')
     if targetphase is not None:
         extrakwargs['targetphase'] = int(targetphase)
+
+    remote_sidedata = inpart.params.get(b'exp-wanted-sidedata')
+    extrakwargs['sidedata_categories'] = read_wanted_sidedata(remote_sidedata)
+
     ret = _processchangegroup(
         op,
         cg,
@@ -2559,5 +2586,7 @@ def widen_bundle(
             part.addparam(b'treemanifest', b'1')
         if b'exp-sidedata-flag' in repo.requirements:
             part.addparam(b'exp-sidedata', b'1')
+            wanted = format_remote_wanted_sidedata(repo)
+            part.addparam(b'exp-wanted-sidedata', wanted)
 
     return bundler

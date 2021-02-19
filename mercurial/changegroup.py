@@ -945,6 +945,9 @@ class cgpacker(object):
         if bundlecaps is None:
             bundlecaps = set()
         self._bundlecaps = bundlecaps
+        if remote_sidedata is None:
+            remote_sidedata = set()
+        self._remote_sidedata = remote_sidedata
         self._isshallow = shallow
         self._fullclnodes = fullnodes
 

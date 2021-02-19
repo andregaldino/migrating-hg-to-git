@@ -1832,6 +1832,12 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def savecommitmessage(text):
         pass
 
+    def register_sidedata_computer(kind, category, keys, computer):
+        pass
+
+    def register_wanted_sidedata(category):
+        pass
+
 
 class completelocalrepository(
     ilocalrepositorymain, ilocalrepositoryfilestorage

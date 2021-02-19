@@ -420,7 +420,20 @@ def push(
                 b'unbundle wire protocol command'
             )
         )
-
+    for category in sorted(bundle2.read_remote_wanted_sidedata(pushop.remote)):
+        # Check that a computer is registered for that category for at least
+        # one revlog kind.
+        for kind, computers in repo._sidedata_computers.items():
+            if computers.get(category):
+                break
+        else:
+            raise error.Abort(
+                _(
+                    b'cannot push: required sidedata category not supported'
+                    b" by this client: '%s'"
+                )
+                % pycompat.bytestr(category)
+            )
     # get lock as we might write phase data
     wlock = lock = None
     try:
@@ -865,8 +878,15 @@ def _pushb2ctx(pushop, bundler):
         if not cgversions:
             raise error.Abort(_(b'no common changegroup version'))
         version = max(cgversions)
+
+    remote_sidedata = bundle2.read_remote_wanted_sidedata(pushop.remote)
     cgstream = changegroup.makestream(
-        pushop.repo, pushop.outgoing, version, b'push'
+        pushop.repo,
+        pushop.outgoing,
+        version,
+        b'push',
+        bundlecaps=b2caps,
+        remote_sidedata=remote_sidedata,
     )
     cgpart = bundler.newpart(b'changegroup', data=cgstream)
     if cgversions:
@@ -1607,6 +1627,23 @@ def pull(
             ) % (b', '.join(sorted(missing)))
             raise error.Abort(msg)
 
+    for category in repo._wanted_sidedata:
+        # Check that a computer is registered for that category for at least
+        # one revlog kind.
+        for kind, computers in repo._sidedata_computers.items():
+            if computers.get(category):
+                break
+        else:
+            # This should never happen since repos are supposed to be able to
+            # generate the sidedata they require.
+            raise error.ProgrammingError(
+                _(
+                    b'sidedata category requested by local side without local'
+                    b"support: '%s'"
+                )
+                % pycompat.bytestr(category)
+            )
+
     pullop.trmanager = transactionmanager(repo, b'pull', remote.url())
     wlock = util.nullcontextmanager()
     if not bookmod.bookmarksinstore(repo):
@@ -1819,6 +1856,10 @@ def _pullbundle2(pullop):
             kwargs[b'obsmarkers'] = True
             pullop.stepsdone.add(b'obsmarkers')
     _pullbundle2extraprepare(pullop, kwargs)
+
+    remote_sidedata = bundle2.read_remote_wanted_sidedata(pullop.remote)
+    if remote_sidedata:
+        kwargs[b'remote_sidedata'] = remote_sidedata
 
     with pullop.remote.commandexecutor() as e:
         args = dict(kwargs)
@@ -2388,6 +2429,8 @@ def _getbundlechangegrouppart(
 
     if b'exp-sidedata-flag' in repo.requirements:
         part.addparam(b'exp-sidedata', b'1')
+        sidedata = bundle2.format_remote_wanted_sidedata(repo)
+        part.addparam(b'exp-wanted-sidedata', sidedata)
 
     if (
         kwargs.get('narrow', False)
