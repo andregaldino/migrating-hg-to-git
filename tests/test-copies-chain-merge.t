@@ -86,13 +86,15 @@ Add some linear rename initialy
   adding q
   adding r
   $ hg mv a c
-  $ hg ci -Am 'i-1: a -move-> c'
+  $ hg mv p s
+  $ hg ci -Am 'i-1: a -move-> c, p -move-> s'
   $ hg mv c d
-  $ hg ci -Am 'i-2: c -move-> d'
+  $ hg mv s t
+  $ hg ci -Am 'i-2: c -move-> d, s -move-> t'
   $ hg log -G
-  @  i-2: c -move-> d
+  @  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -108,9 +110,9 @@ And having another branch with renames on the other side
   |
   o  a-1: d -move-> e
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -125,9 +127,9 @@ Have a branching with nothing on one side
   $ hg log -G --rev '::.'
   @  b-1: b update
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -142,9 +144,9 @@ Create a branch that delete a file previous renamed
   $ hg log -G --rev '::.'
   @  c-1 delete d
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -164,9 +166,9 @@ Create a branch that delete a file previous renamed and recreate it
   |
   o  d-1 delete d
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -185,9 +187,9 @@ Having another branch renaming a different file to the same filename as another
   |
   o  e-1 b -move-> g
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -230,9 +232,9 @@ merging with unrelated change does not interfere with the renames
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -280,9 +282,9 @@ and recreate an unrelated file after the merge
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -320,9 +322,9 @@ Merge:
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -368,9 +370,9 @@ Subcase: new copy information on both side
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -423,9 +425,9 @@ Merge:
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -475,9 +477,9 @@ consider history and rename on both branch of the merge.
   | |
   o |  d-1 delete d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -530,9 +532,9 @@ Note:
   | |
   o |  f-1: rename h -> i
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -588,9 +590,9 @@ copy tracing chain.
   | |
   o |  c-1 delete d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -637,9 +639,9 @@ copy tracing chain.
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -664,16 +666,16 @@ rename information actually conflict with the other branch.
   created new head
 
   $ hg up 'desc("c-1")'
-  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 3 files removed, 0 files unresolved
   $ hg merge 'desc("h-1")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mCH-delete-before-conflict-m-0 $case_desc - one way"
 
   $ hg up 'desc("h-1")'
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg merge 'desc("c-1")'
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mHC-delete-before-conflict-m-0 $case_desc - the other way"
   created new head
@@ -686,9 +688,9 @@ rename information actually conflict with the other branch.
   | |
   o |  c-1 delete d
   | |
-  o |  i-2: c -move-> d
+  o |  i-2: c -move-> d, s -move-> t
   | |
-  o |  i-1: a -move-> c
+  o |  i-1: a -move-> c, p -move-> s
   |/
   o  i-0 initial commit: a b h
   
@@ -740,9 +742,9 @@ Same as `mAEm` and `mEAm` but with extra change to the file before commiting
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -847,9 +849,9 @@ about that file should stay unchanged.
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -930,9 +932,9 @@ should preserve the fact eh file was salvaged.
   | |
   | o  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1026,9 +1028,9 @@ When a non-rename change are merged with a copy overwrite, the merge pick the co
   | |
   o |  f-1: rename h -> i
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1109,9 +1111,9 @@ about that file should stay unchanged.
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1137,8 +1139,8 @@ Summary of all created cases
   g-1: update d
   h-1: b -(move)-> d
   i-0 initial commit: a b h
-  i-1: a -move-> c
-  i-2: c -move-> d
+  i-1: a -move-> c, p -move-> s
+  i-2: c -move-> d, s -move-> t
   j-1: unrelated changes (based on the "a" series of changes)
   k-1: unrelated changes (based on "e" changes)
   l-1: unrelated changes (based on "c" changes)
@@ -1256,16 +1258,20 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   added      : r, ;
   ##### revision "i-1" #####
   1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00ac'
+   entry-0014 size 44
+    '\x00\x00\x00\x04\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00\x0c\x00\x00\x00\x03\x00\x00\x00\x00\x06\x00\x00\x00\x04\x00\x00\x00\x02acps'
   removed    : a, ;
   added    p1: c, a;
+  removed    : p, ;
+  added    p1: s, p;
   ##### revision "i-2" #####
   1 sidedata entries
-   entry-0014 size 24
-    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00cd'
+   entry-0014 size 44
+    '\x00\x00\x00\x04\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00\x0c\x00\x00\x00\x03\x00\x00\x00\x00\x06\x00\x00\x00\x04\x00\x00\x00\x02cdst'
   removed    : c, ;
   added    p1: d, c;
+  removed    : s, ;
+  added    p1: t, s;
   ##### revision "a-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -1547,7 +1553,10 @@ The two status call should give the same value for f
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("a-2")'
   A f
     a
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("a-2")' f
   A f
     a (no-changeset no-compatibility !)
@@ -1569,9 +1578,9 @@ merging with unrelated change does not interfere with the renames
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1602,12 +1611,18 @@ merging with unrelated change does not interfere with the renames
   M b
   A f
     a
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBAm")'
   M b
   A f
     a
+  A t
+    p
   R a
+  R p
 
 merging with the side having a delete
 -------------------------------------
@@ -1630,9 +1645,9 @@ and recreate an unrelated file after the merge
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1654,10 +1669,16 @@ and recreate an unrelated file after the merge
   R d
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBCm-0")'
   M b
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCBm-0")'
   M b
+  A t
+    p
   R a
+  R p
 
 - comparing with the merge children re-adding the file
 
@@ -1680,11 +1701,17 @@ and recreate an unrelated file after the merge
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBCm-1")'
   M b
   A d
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCBm-1")'
   M b
   A d
+  A t
+    p
   R a
+  R p
 
 Comparing with a merge re-adding the file afterward
 ---------------------------------------------------
@@ -1704,9 +1731,9 @@ Merge:
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1760,11 +1787,17 @@ Log output should not include a merge commit as it did not happen
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBDm-0")'
   M b
   A d
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mDBm-0")'
   M b
   A d
+  A t
+    p
   R a
+  R p
 
 
 Comparing with a merge with colliding rename
@@ -1789,9 +1822,9 @@ Subcase: new copy information on both side
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1881,14 +1914,20 @@ Subcase: new copy information on both side
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAEm-0")'
   A f
     a
+  A t
+    p
   R a
   R b
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEAm-0")'
   A f
     a (filelog !)
     b (no-filelog !)
+  A t
+    p
   R a
   R b
+  R p
 
 
 Subcase: existing copy information overwritten on one branch
@@ -1914,9 +1953,9 @@ Merge:
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -1924,14 +1963,20 @@ Merge:
   M b
   A d
     h
+  A t
+    p
   R a
   R h
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFBm-0")'
   M b
   A d
     h
+  A t
+    p
   R a
   R h
+  R p
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBFm-0")'
   M d (no-changeset !)
     h (no-filelog no-changeset !)
@@ -1966,7 +2011,7 @@ Merge:
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mBFm-0")' d
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -1982,7 +2027,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFBm-0")' d
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -2008,9 +2053,9 @@ consider history and rename on both branch of the merge.
   | |
   o |  d-1 delete d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2023,11 +2068,17 @@ revision numbers)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mDGm-0")'
   A d
     a (filelog !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGDm-0")'
   A d
     a
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mDGm-0")'
   M d
   $ hg status --copies --rev 'desc("d-2")' --rev 'desc("mGDm-0")'
@@ -2045,9 +2096,9 @@ revision numbers)
   | |
   o |  d-2 re-add d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2060,7 +2111,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   | |
   o |  d-2 re-add d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -2074,9 +2125,9 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   | |
   o |  d-2 re-add d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2089,7 +2140,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   | |
   o |  d-2 re-add d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -2116,9 +2167,9 @@ history are relevant.
   | |
   o |  f-1: rename h -> i
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2153,14 +2204,20 @@ Copy tracing data on the resulting merge:
   A d
     h (no-filelog !)
     a (filelog !)
+  A t
+    p
   R a
   R h
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm-0")'
   A d
     a (no-changeset !)
     h (changeset !)
+  A t
+    p
   R a
   R h
+  R p
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFGm-0")'
   M d
   $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mGFm-0")'
@@ -2192,9 +2249,9 @@ Copy tracing data on the resulting merge:
   | |
   o |  f-1: rename h -> i
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2203,7 +2260,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFGm-0")' d
   o  g-1: update d
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -2218,9 +2275,9 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   | |
   o |  f-1: rename h -> i
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2229,7 +2286,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mGFm-0")' d
   o  g-1: update d
   |
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
   ~
 #endif
@@ -2255,9 +2312,9 @@ copy tracing chain.
   | |
   o |  c-1 delete d
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2267,11 +2324,17 @@ copy tracing chain.
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCGm-0")'
   A d
     a (no-compatibility no-changeset !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGCm-0")'
   A d
     a (no-compatibility no-changeset !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCGm-0")'
   A d
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mGCm-0")'
@@ -2300,9 +2363,9 @@ copy tracing chain.
   | |
   o |  b-1: b update
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2313,12 +2376,18 @@ copy tracing chain.
   M b
   A d
     a (no-compatibility no-changeset !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
   M b
   A d
     a (no-compatibility no-changeset !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCB-revert-m-0")'
   M b
   A d
@@ -2346,9 +2415,9 @@ rename information actually conflict with the other branch.
   | |
   o |  c-1 delete d
   | |
-  o |  i-2: c -move-> d
+  o |  i-2: c -move-> d, s -move-> t
   | |
-  o |  i-1: a -move-> c
+  o |  i-1: a -move-> c, p -move-> s
   |/
   o  i-0 initial commit: a b h
   
@@ -2356,13 +2425,19 @@ rename information actually conflict with the other branch.
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCH-delete-before-conflict-m")'
   A d
     b (no-compatibility no-changeset !)
+  A t
+    p
   R a
   R b
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mHC-delete-before-conflict-m")'
   A d
     b
+  A t
+    p
   R a
   R b
+  R p
   $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCH-delete-before-conflict-m")'
   A d
     b
@@ -2372,9 +2447,15 @@ rename information actually conflict with the other branch.
     b
   R b
   $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mCH-delete-before-conflict-m")'
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mHC-delete-before-conflict-m")'
+  A t
+    p
   R a
+  R p
 
 Variant of previous with extra changes introduced by the merge
 --------------------------------------------------------------
@@ -2401,9 +2482,9 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   | |
   o |  a-1: d -move-> e
   |/
-  o  i-2: c -move-> d
+  o  i-2: c -move-> d, s -move-> t
   |
-  o  i-1: a -move-> c
+  o  i-1: a -move-> c, p -move-> s
   |
   o  i-0 initial commit: a b h
   
@@ -2493,14 +2574,20 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE-change-m-0")'
   A f
     a
+  A t
+    p
   R a
   R b
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA-change-m-0")'
   A f
     a (filelog !)
     b (no-filelog !)
+  A t
+    p
   R a
   R b
+  R p
 
 
 Decision from previous merge are properly chained with later merge
@@ -2575,14 +2662,20 @@ reference output:
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+  A t
+    p
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-revert-m-0")'
   M b
   A d
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+  A t
+    p
   R a
+  R p
 
 chained output
 
@@ -2592,32 +2685,44 @@ chained output
     a (filelog !)
     a (missing-correct-output sidedata !)
     a (missing-correct-output upgraded !)
+  A t
+    p
   A unrelated-l
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB+revert,Lm")'
   M b
   A d
     a (filelog !)
     a (missing-correct-output sidedata !)
     a (missing-correct-output upgraded !)
+  A t
+    p
   A unrelated-l
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,BC+revertm")'
   M b
   A d
     a (filelog !)
     a (missing-correct-output sidedata !)
     a (missing-correct-output upgraded !)
+  A t
+    p
   A unrelated-l
   R a
+  R p
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mL,CB+revertm")'
   M b
   A d
     a (filelog !)
     a (missing-correct-output sidedata !)
     a (missing-correct-output upgraded !)
+  A t
+    p
   A unrelated-l
   R a
+  R p
 
 Subcase: chaining "merged" information during a merge
 ``````````````````````````````````````````````````````
