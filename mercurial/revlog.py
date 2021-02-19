@@ -920,7 +920,7 @@ class revlog(object):
     # Derived from index values.
 
     def end(self, rev):
-        return self.start(rev) + self.length(rev) + self.sidedata_length(rev)
+        return self.start(rev) + self.length(rev)
 
     def parents(self, node):
         i = self.index
@@ -2331,7 +2331,8 @@ class revlog(object):
 
         curr = len(self)
         prev = curr - 1
-        offset = self.end(prev)
+
+        offset = self._get_data_offset(prev)
 
         if self._concurrencychecker:
             if self._inline:
@@ -2416,6 +2417,26 @@ class revlog(object):
             self._revisioncache = (node, curr, rawtext)
         self._chainbasecache[curr] = deltainfo.chainbase
         return curr
+
+    def _get_data_offset(self, prev):
+        """Returns the current offset in the (in-transaction) data file.
+        Versions < 2 of the revlog can get this 0(1), revlog v2 needs a docket
+        file to store that information: since sidedata can be rewritten to the
+        end of the data file within a transaction, you can have cases where, for
+        example, rev `n` does not have sidedata while rev `n - 1` does, leading
+        to `n - 1`'s sidedata being written after `n`'s data.
+
+        TODO cache this in a docket file before getting out of experimental."""
+        if self.version & 0xFFFF != REVLOGV2:
+            return self.end(prev)
+
+        offset = 0
+        for rev, entry in enumerate(self.index):
+            sidedata_end = entry[8] + entry[9]
+            # Sidedata for a previous rev has potentially been written after
+            # this rev's end, so take the max.
+            offset = max(self.end(rev), offset, sidedata_end)
+        return offset
 
     def _writeentry(
         self, transaction, ifh, dfh, entry, data, link, offset, sidedata
