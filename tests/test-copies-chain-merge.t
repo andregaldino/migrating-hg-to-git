@@ -14,6 +14,19 @@ Setup
 
 use git diff to see rename
 
+  $ cat << EOF >> ./no-linkrev
+  > #!$PYTHON
+  > # filter out linkrev part of the debugindex command
+  > import sys
+  > for line in sys.stdin:
+  >     if " linkrev " in line:
+  >         print(line.rstrip())
+  >     else:
+  >         l = "%s       *%s" % (line[:6], line[14:].rstrip())
+  >         print(l)
+  > EOF
+  $ chmod +x no-linkrev
+
   $ cat << EOF >> $HGRCPATH
   > [diff]
   > git=yes
@@ -372,12 +385,12 @@ Merge:
   created new head
   $ hg mv --force i d
   $ hg commit -m "f-2: rename i -> d"
-  $ hg debugindex d
+  $ hg debugindex d | ../no-linkrev
      rev linkrev nodeid       p1           p2
-       0       2 d8252ab2e760 000000000000 000000000000 (no-changeset !)
-       0       2 ae258f702dfe 000000000000 000000000000 (changeset !)
-       1       8 b004912a8510 000000000000 000000000000
-       2      22 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
+       0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
+       0       * ae258f702dfe 000000000000 000000000000 (changeset !)
+       1       * b004912a8510 000000000000 000000000000
+       2       * 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
@@ -1543,13 +1556,13 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
   d8252ab2e760b0d4e5288fd44cbd15a0fa567e16 644   d (no-changeset !)
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   d (changeset !)
-  $ hg debugindex d | head -n 4
+  $ hg debugindex d | head -n 4 | ../no-linkrev
      rev linkrev nodeid       p1           p2
-       0       2 d8252ab2e760 000000000000 000000000000 (no-changeset !)
-       0       2 ae258f702dfe 000000000000 000000000000 (changeset !)
-       1       8 b004912a8510 000000000000 000000000000
-       2      22 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
-       2      25 5cce88bf349f ae258f702dfe 000000000000 (changeset !)
+       0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
+       0       * ae258f702dfe 000000000000 000000000000 (changeset !)
+       1       * b004912a8510 000000000000 000000000000
+       2       * 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
+       2       * 5cce88bf349f ae258f702dfe 000000000000 (changeset !)
 
 Log output should not include a merge commit as it did not happen
 
@@ -1610,11 +1623,11 @@ Subcase: new copy information on both side
   b76eb76580df486c3d51d63c5c210d4dd43a8ac7 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   e8825b386367b29fec957283a80bb47b47483fe1 644   f
-  $ hg debugindex f
+  $ hg debugindex f | ../no-linkrev
      rev linkrev nodeid       p1           p2
-       0       4 b76eb76580df 000000000000 000000000000
-       1      10 e8825b386367 000000000000 000000000000
-       2      19 2ff93c643948 b76eb76580df e8825b386367
+       0       * b76eb76580df 000000000000 000000000000
+       1       * e8825b386367 000000000000 000000000000
+       2       * 2ff93c643948 b76eb76580df e8825b386367
 #else
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
@@ -1624,9 +1637,9 @@ Subcase: new copy information on both side
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
-  $ hg debugindex f
+  $ hg debugindex f | ../no-linkrev
      rev linkrev nodeid       p1           p2
-       0       4 ae258f702dfe 000000000000 000000000000
+       0       * ae258f702dfe 000000000000 000000000000
 #endif
 
 # Here the filelog based implementation is not looking at the rename
