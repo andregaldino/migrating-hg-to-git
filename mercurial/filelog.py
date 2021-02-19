@@ -103,6 +103,7 @@ class filelog(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         return self._revlog.emitrevisions(
             nodes,
@@ -110,6 +111,7 @@ class filelog(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         )
 
     def addrevision(

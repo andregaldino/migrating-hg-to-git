@@ -2733,6 +2733,7 @@ class revlog(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         if nodesorder not in (b'nodes', b'storage', b'linear', None):
             raise error.ProgrammingError(
@@ -2761,6 +2762,7 @@ class revlog(object):
             deltamode=deltamode,
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
+            sidedata_helpers=sidedata_helpers,
         )
 
     DELTAREUSEALWAYS = b'always'

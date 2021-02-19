@@ -1826,6 +1826,7 @@ class manifestrevlog(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         return self._revlog.emitrevisions(
             nodes,
@@ -1833,6 +1834,7 @@ class manifestrevlog(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         )
 
     def addgroup(

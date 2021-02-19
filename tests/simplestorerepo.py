@@ -446,6 +446,7 @@ class filestorage(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         # TODO this will probably break on some ordering options.
         nodes = [n for n in nodes if n != nullid]
@@ -459,6 +460,7 @@ class filestorage(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         ):
             yield delta
 

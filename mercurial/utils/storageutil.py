@@ -23,6 +23,7 @@ from .. import (
     pycompat,
 )
 from ..interfaces import repository
+from ..revlogutils import sidedata as sidedatamod
 from ..utils import hashutil
 
 _nullhash = hashutil.sha1(nullid)
@@ -294,6 +295,7 @@ def emitrevisions(
     deltamode=repository.CG_DELTAMODE_STD,
     revisiondata=False,
     assumehaveparentrevisions=False,
+    sidedata_helpers=None,
 ):
     """Generic implementation of ifiledata.emitrevisions().
 
@@ -356,6 +358,21 @@ def emitrevisions(
     ``nodesorder``
     ``revisiondata``
     ``assumehaveparentrevisions``
+    ``sidedata_helpers`` (optional)
+        If not None, means that sidedata should be included.
+        A dictionary of revlog type to tuples of `(repo, computers, removers)`:
+            * `repo` is used as an argument for computers
+            * `computers` is a list of `(category, (keys, computer)` that
+               compute the missing sidedata categories that were asked:
+               * `category` is the sidedata category
+               * `keys` are the sidedata keys to be affected
+               * `computer` is the function `(repo, store, rev, sidedata)` that
+                 returns a new sidedata dict.
+            * `removers` will remove the keys corresponding to the categories
+              that are present, but not needed.
+        If both `computers` and `removers` are empty, sidedata are simply not
+        transformed.
+        Revlog types are `changelog`, `manifest` or `filelog`.
     """
 
     fnode = store.node
@@ -469,6 +486,17 @@ def emitrevisions(
 
                 available.add(rev)
 
+        sidedata = None
+        if sidedata_helpers:
+            sidedata = store.sidedata(rev)
+            sidedata = run_sidedata_helpers(
+                store=store,
+                sidedata_helpers=sidedata_helpers,
+                sidedata=sidedata,
+                rev=rev,
+            )
+            sidedata = sidedatamod.serialize_sidedata(sidedata)
+
         yield resultcls(
             node=node,
             p1node=fnode(p1rev),
@@ -482,6 +510,25 @@ def emitrevisions(
         )
 
         prevrev = rev
+
+
+def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
+    """Returns the sidedata for the given revision after running through
+    the given helpers.
+    - `store`: the revlog this applies to (changelog, manifest, or filelog
+      instance)
+    - `sidedata_helpers`: see `storageutil.emitrevisions`
+    - `sidedata`: previous sidedata at the given rev, if any
+    - `rev`: affected rev of `store`
+    """
+    repo, sd_computers, sd_removers = sidedata_helpers
+    kind = store.revlog_kind
+    for _keys, sd_computer in sd_computers.get(kind, []):
+        sidedata = sd_computer(repo, store, rev, sidedata)
+    for keys, _computer in sd_removers.get(kind, []):
+        for key in keys:
+            sidedata.pop(key, None)
+    return sidedata
 
 
 def deltaiscensored(delta, baserev, baselenfn):

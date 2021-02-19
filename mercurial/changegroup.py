@@ -272,6 +272,7 @@ class cg1unpacker(object):
         url,
         targetphase=phases.draft,
         expectedtotal=None,
+        sidedata_categories=None,
     ):
         """Add the changegroup returned by source.read() to this repo.
         srctype is a string like 'push', 'pull', or 'unbundle'.  url is
@@ -282,8 +283,22 @@ class cg1unpacker(object):
         - more heads than before: 1+added heads (2..n)
         - fewer heads than before: -1-removed heads (-2..-n)
         - number of heads stays the same: 1
+
+        `sidedata_categories` is an optional set of the remote's sidedata wanted
+        categories.
         """
         repo = repo.unfiltered()
+
+        # Only useful if we're adding sidedata categories. If both peers have
+        # the same categories, then we simply don't do anything.
+        if self.version == b'04' and srctype == b'pull':
+            sidedata_helpers = get_sidedata_helpers(
+                repo,
+                sidedata_categories or set(),
+                pull=True,
+            )
+        else:
+            sidedata_helpers = None
 
         def csmap(x):
             repo.ui.debug(b"add changeset %s\n" % short(x))
@@ -749,6 +764,7 @@ def deltagroup(
     clrevtolocalrev=None,
     fullclnodes=None,
     precomputedellipsis=None,
+    sidedata_helpers=None,
 ):
     """Calculate deltas for a set of revisions.
 
@@ -756,6 +772,8 @@ def deltagroup(
 
     If topic is not None, progress detail will be generated using this
     topic name (e.g. changesets, manifests, etc).
+
+    See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
     """
     if not nodes:
         return
@@ -854,6 +872,7 @@ def deltagroup(
         revisiondata=True,
         assumehaveparentrevisions=not ellipses,
         deltamode=deltamode,
+        sidedata_helpers=sidedata_helpers,
     )
 
     for i, revision in enumerate(revisions):
@@ -974,8 +993,21 @@ class cgpacker(object):
         self._verbosenote(_(b'uncompressed size of bundle content:\n'))
         size = 0
 
+        sidedata_helpers = None
+        if self.version == b'04':
+            remote_sidedata = self._remote_sidedata
+            if source == b'strip':
+                # We're our own remote when stripping, get the no-op helpers
+                # TODO a better approach would be for the strip bundle to
+                # correctly advertise its sidedata categories directly.
+                remote_sidedata = repo._wanted_sidedata
+            sidedata_helpers = get_sidedata_helpers(repo, remote_sidedata)
+
         clstate, deltas = self._generatechangelog(
-            cl, clnodes, generate=changelog
+            cl,
+            clnodes,
+            generate=changelog,
+            sidedata_helpers=sidedata_helpers,
         )
         for delta in deltas:
             for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
@@ -1023,6 +1055,7 @@ class cgpacker(object):
             fnodes,
             source,
             clstate[b'clrevtomanifestrev'],
+            sidedata_helpers=sidedata_helpers,
         )
 
         for tree, deltas in it:
@@ -1063,6 +1096,7 @@ class cgpacker(object):
             fastpathlinkrev,
             fnodes,
             clrevs,
+            sidedata_helpers=sidedata_helpers,
         )
 
         for path, deltas in it:
@@ -1087,7 +1121,9 @@ class cgpacker(object):
         if clnodes:
             repo.hook(b'outgoing', node=hex(clnodes[0]), source=source)
 
-    def _generatechangelog(self, cl, nodes, generate=True):
+    def _generatechangelog(
+        self, cl, nodes, generate=True, sidedata_helpers=None
+    ):
         """Generate data for changelog chunks.
 
         Returns a 2-tuple of a dict containing state and an iterable of
@@ -1096,6 +1132,8 @@ class cgpacker(object):
 
         if generate is False, the state will be fully populated and no chunk
         stream will be yielded
+
+        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
         """
         clrevorder = {}
         manifests = {}
@@ -1179,6 +1217,7 @@ class cgpacker(object):
             clrevtolocalrev={},
             fullclnodes=self._fullclnodes,
             precomputedellipsis=self._precomputedellipsis,
+            sidedata_helpers=sidedata_helpers,
         )
 
         return state, gen
@@ -1192,11 +1231,14 @@ class cgpacker(object):
         fnodes,
         source,
         clrevtolocalrev,
+        sidedata_helpers=None,
     ):
         """Returns an iterator of changegroup chunks containing manifests.
 
         `source` is unused here, but is used by extensions like remotefilelog to
         change what is sent based in pulls vs pushes, etc.
+
+        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
         """
         repo = self._repo
         mfl = repo.manifestlog
@@ -1285,6 +1327,7 @@ class cgpacker(object):
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis,
+                sidedata_helpers=sidedata_helpers,
             )
 
             if not self._oldmatcher.visitdir(store.tree[:-1]):
@@ -1323,6 +1366,7 @@ class cgpacker(object):
         fastpathlinkrev,
         fnodes,
         clrevs,
+        sidedata_helpers=None,
     ):
         changedfiles = [
             f
@@ -1417,6 +1461,7 @@ class cgpacker(object):
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis,
+                sidedata_helpers=sidedata_helpers,
             )
 
             yield fname, deltas
@@ -1792,3 +1837,25 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                 )
 
     return revisions, files
+
+
+def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
+    # Computers for computing sidedata on-the-fly
+    sd_computers = collections.defaultdict(list)
+    # Computers for categories to remove from sidedata
+    sd_removers = collections.defaultdict(list)
+
+    to_generate = remote_sd_categories - repo._wanted_sidedata
+    to_remove = repo._wanted_sidedata - remote_sd_categories
+    if pull:
+        to_generate, to_remove = to_remove, to_generate
+
+    for revlog_kind, computers in repo._sidedata_computers.items():
+        for category, computer in computers.items():
+            if category in to_generate:
+                sd_computers[revlog_kind].append(computer)
+            if category in to_remove:
+                sd_removers[revlog_kind].append(computer)
+
+    sidedata_helpers = (repo, sd_computers, sd_removers)
+    return sidedata_helpers

@@ -587,6 +587,7 @@ class sqlitefilestore(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         if nodesorder not in (b'nodes', b'storage', b'linear', None):
             raise error.ProgrammingError(
@@ -625,6 +626,7 @@ class sqlitefilestore(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         ):
 
             yield delta
