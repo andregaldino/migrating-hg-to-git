@@ -521,6 +521,60 @@ Merge:
   o  i-0 initial commit: a b h
   
 
+Subcase: existing copy information overwritten on one branch, with different content)
+`````````````````````````````````````````````````````````````````````````````````````
+
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (t) with a rename (from r to x to t), v content is not the same as on the other branch
+
+  $ case_desc="simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content"
+
+  $ hg up 'desc("i-2")'
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg mv r x
+  $ hg commit -m "r-1: rename r -> x"
+  created new head
+  $ hg mv --force x t
+  $ hg commit -m "r-2: rename t -> x"
+  $ hg debugindex t | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * d74efbf65309 000000000000 000000000000 (no-changeset !)
+       1       * 02a930b9d7ad 000000000000 000000000000 (no-changeset !)
+       0       * 5aed6a8dbff0 000000000000 000000000000 (changeset !)
+       1       * a38b2fa17021 000000000000 000000000000 (changeset !)
+  $ hg up 'desc("b-1")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("r-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mBRm-0 $case_desc - one way"
+  $ hg up 'desc("r-2")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mRBm-0 $case_desc - the other way"
+  created new head
+  $ hg up null --quiet
+  $ hg log -G --rev '::(desc("mBRm")+desc("mRBm"))'
+  o    mRBm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - the other way
+  |\
+  +---o  mBRm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - one way
+  | |/
+  | o  r-2: rename t -> x
+  | |
+  | o  r-1: rename r -> x
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+
 
 Subcase: reset of the copy history on one side
 ``````````````````````````````````````````````
@@ -1244,6 +1298,7 @@ Summary of all created cases
   mBCm-1 re-add d
   mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
   mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  mBRm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - one way
   mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
   mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
@@ -1274,12 +1329,15 @@ Summary of all created cases
   mO,FGm: chained merges (copy-overwrite -> simple) - same content
   mPQm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - one way
   mQPm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - the other way
+  mRBm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - the other way
   n-1: unrelated changes (based on the "f" series of changes)
   o-1: unrelated changes (based on "g" changes)
   p-1: t -move-> u
   p-2: u -move-> v
   q-1 r -move-> w
   q-2 w -move-> v
+  r-1: rename r -> x
+  r-2: rename t -> x
 
 
 Test that sidedata computations during upgrades are correct
@@ -1505,6 +1563,26 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 4
     '\x00\x00\x00\x00'
   ##### revision "mFBm-0 simple merge - B side" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "r-1" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x0c\x00\x00\x00\x01\x00\x00\x00\x00\x06\x00\x00\x00\x02\x00\x00\x00\x00rx'
+  removed    : r, ;
+  added    p1: x, r;
+  ##### revision "r-2" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x02\x16\x00\x00\x00\x01\x00\x00\x00\x01\x0c\x00\x00\x00\x02\x00\x00\x00\x00tx'
+  touched  p1: t, x;
+  removed    : x, ;
+  ##### revision "mBRm-0 simple merge - B side" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "mRBm-0 simple merge - B side" #####
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
@@ -2155,6 +2233,104 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   $ hg log -Gfr 'desc("mFBm-0")' d
+  o  i-2: c -move-> d, s -move-> t
+  |
+  ~
+#endif
+
+
+Subcase: existing copy information overwritten on one branch, with different content)
+`````````````````````````````````````````````````````````````````````````````````````
+
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (t) with a rename (from r to x to t), v content is not the same as on the other branch
+
+  $ hg log -G --rev '::(desc("mBRm")+desc("mRBm"))'
+  o    mRBm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - the other way
+  |\
+  +---o  mBRm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - one way
+  | |/
+  | o  r-2: rename t -> x
+  | |
+  | o  r-1: rename r -> x
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBRm-0")'
+  M b
+  A d
+    a
+  A t
+    r
+  R a
+  R p
+  R r
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mRBm-0")'
+  M b
+  A d
+    a
+  A t
+    r
+  R a
+  R p
+  R r
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBRm-0")'
+  M t
+    r (no-filelog !)
+  R r
+  $ hg status --copies --rev 'desc("r-2")' --rev 'desc("mBRm-0")'
+  M b
+  $ hg status --copies --rev 'desc("r-1")' --rev 'desc("mBRm-0")'
+  M b
+  M t
+    x (no-filelog !)
+  R x
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mRBm-0")'
+  M t
+    r (no-filelog !)
+  R r
+  $ hg status --copies --rev 'desc("r-2")' --rev 'desc("mRBm-0")'
+  M b
+  $ hg status --copies --rev 'desc("r-1")' --rev 'desc("mRBm-0")'
+  M b
+  M t
+    x (no-filelog !)
+  R x
+
+#if no-changeset
+  $ hg log -Gfr 'desc("mBRm-0")' d
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+#else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
+  $ hg log -Gfr 'desc("mBRm-0")' d
+  o  i-2: c -move-> d, s -move-> t
+  |
+  ~
+#endif
+
+#if no-changeset
+  $ hg log -Gfr 'desc("mRBm-0")' d
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+#else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
+  $ hg log -Gfr 'desc("mRBm-0")' d
   o  i-2: c -move-> d, s -move-> t
   |
   ~
