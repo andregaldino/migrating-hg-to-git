@@ -45,12 +45,23 @@ use git diff to see rename
 #endif
 
 
+  $ cat > same-content.txt << EOF
+  > Here is some content that will be the same accros multiple file.
+  > 
+  > This is done on purpose so that we end up in some merge situation, were the
+  > resulting content is the same as in the parent(s), but a new filenodes still
+  > need to be created to record some file history information (especially
+  > about copies).
+  > EOF
+
   $ hg init repo-chain
   $ cd repo-chain
 
 Add some linear rename initialy
 
-  $ touch a b h
+  $ cp ../same-content.txt a
+  $ cp ../same-content.txt b
+  $ cp ../same-content.txt h
   $ hg ci -Am 'i-0 initial commit: a b h'
   adding a
   adding b
@@ -348,10 +359,10 @@ Merge:
   $ hg commit -m "f-2: rename i -> d"
   $ hg debugindex d
      rev linkrev nodeid       p1           p2
-       0       2 01c2f5eabdc4 000000000000 000000000000 (no-changeset !)
-       0       2 b80de5d13875 000000000000 000000000000 (changeset !)
+       0       2 d8252ab2e760 000000000000 000000000000 (no-changeset !)
+       0       2 ae258f702dfe 000000000000 000000000000 (changeset !)
        1       8 b004912a8510 000000000000 000000000000
-       2      22 c72365ee036f 000000000000 000000000000 (no-changeset !)
+       2      22 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
   $ hg up 'desc("b-1")'
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
@@ -1124,15 +1135,15 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("d-2")' | grep '644   d'
   b004912a8510032a0350a74daa2803dadfb00e12 644   d
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
-  01c2f5eabdc4ce2bdee42b5f86311955e6c8f573 644   d (no-changeset !)
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   d (changeset !)
+  d8252ab2e760b0d4e5288fd44cbd15a0fa567e16 644   d (no-changeset !)
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   d (changeset !)
   $ hg debugindex d | head -n 4
      rev linkrev nodeid       p1           p2
-       0       2 01c2f5eabdc4 000000000000 000000000000 (no-changeset !)
-       0       2 b80de5d13875 000000000000 000000000000 (changeset !)
+       0       2 d8252ab2e760 000000000000 000000000000 (no-changeset !)
+       0       2 ae258f702dfe 000000000000 000000000000 (changeset !)
        1       8 b004912a8510 000000000000 000000000000
-       2      22 c72365ee036f 000000000000 000000000000 (no-changeset !)
-       2      25 68d5bca9df05 b80de5d13875 000000000000 (changeset !)
+       2      22 7b79e2fe0c89 000000000000 000000000000 (no-changeset !)
+       2      25 5cce88bf349f ae258f702dfe 000000000000 (changeset !)
 
 Log output should not include a merge commit as it did not happen
 
@@ -1183,30 +1194,30 @@ Comparing with a merge with colliding rename
   
 #if no-changeset
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
-  eb806e34ef6be4c264effd5933d31004ad15a793 644   f
+  2ff93c643948464ee1f871867910ae43a45b0bea 644   f
   $ hg manifest --debug --rev 'desc("mEAm-0")' | grep '644   f'
-  eb806e34ef6be4c264effd5933d31004ad15a793 644   f
+  2ff93c643948464ee1f871867910ae43a45b0bea 644   f
   $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
-  0dd616bc7ab1a111921d95d76f69cda5c2ac539c 644   f
+  b76eb76580df486c3d51d63c5c210d4dd43a8ac7 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
-  6da5a2eecb9c833f830b67a4972366d49a9a142c 644   f
+  e8825b386367b29fec957283a80bb47b47483fe1 644   f
   $ hg debugindex f
      rev linkrev nodeid       p1           p2
-       0       4 0dd616bc7ab1 000000000000 000000000000
-       1      10 6da5a2eecb9c 000000000000 000000000000
-       2      19 eb806e34ef6b 0dd616bc7ab1 6da5a2eecb9c
+       0       4 b76eb76580df 000000000000 000000000000
+       1      10 e8825b386367 000000000000 000000000000
+       2      19 2ff93c643948 b76eb76580df e8825b386367
 #else
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   f
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("mEAm-0")' | grep '644   f'
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   f
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   f
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   f
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg debugindex f
      rev linkrev nodeid       p1           p2
-       0       4 b80de5d13875 000000000000 000000000000
+       0       4 ae258f702dfe 000000000000 000000000000
 #endif
 
 # Here the filelog based implementation is not looking at the rename
@@ -1509,15 +1520,15 @@ In this case, the file hash from "f-2" is lower, so it will be `p1` of the resul
 Details on this hash ordering pick:
 
   $ hg manifest --debug 'desc("g-1")' | egrep 'd$'
-  7bded9d9da1f7bf9bf7cbfb24fe1e6ccf68ec440 644   d (no-changeset !)
-  68d5bca9df0577b6bc2ea30ca724e13ead60da81 644   d (changeset !)
+  17ec97e605773eb44a117d1136b3849bcdc1924f 644   d (no-changeset !)
+  5cce88bf349f7c742bb440f2c53f81db9c294279 644   d (changeset !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("g-1")' d
   A d
     a (no-changeset no-compatibility !)
 
   $ hg manifest --debug 'desc("f-2")' | egrep 'd$'
-  c72365ee036fca4fb27fd745459bfb6ea1ac6993 644   d (no-changeset !)
-  b80de5d138758541c5f05265ad144ab9fa86d1db 644   d (changeset !)
+  7b79e2fe0c8924e0e598a82f048a7b024afa4d96 644   d (no-changeset !)
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   d (changeset !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("f-2")' d
   A d
     h (no-changeset no-compatibility !)
