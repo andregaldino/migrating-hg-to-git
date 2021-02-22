@@ -998,6 +998,105 @@ about that file should stay unchanged.
   o  i-0 initial commit: a b h
   
 
+Subcase: chaining conflicting rename resolution, with actual merging happening
+``````````````````````````````````````````````````````````````````````````````
+
+The "mPQm" and "mQPm" case create a rename tracking conflict on file 't'. We
+add more change on the respective branch and merge again. These second merge
+does not involve the file 't' and the arbitration done within "mPQm" and "mQP"
+about that file should stay unchanged.
+
+  $ case_desc="chained merges (conflict -> simple) - different content"
+
+(extra unrelated changes)
+
+  $ hg up 'desc("p-2")'
+  3 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  $ echo s > unrelated-s
+  $ hg add unrelated-s
+  $ hg ci -m 's-1: unrelated changes (based on the "p" series of changes)'
+  created new head
+
+  $ hg up 'desc("q-2")'
+  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo t > unrelated-t
+  $ hg add unrelated-t
+  $ hg ci -m 't-1: unrelated changes (based on "q" changes)'
+  created new head
+
+(merge variant 1)
+
+  $ hg up 'desc("mPQm")'
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg merge 'desc("t-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mPQ,Tm: $case_desc"
+
+(merge variant 2)
+
+  $ hg up 'desc("t-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg merge 'desc("mPQm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mT,PQm: $case_desc"
+  created new head
+
+(merge variant 3)
+
+  $ hg up 'desc("mQPm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("s-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mQP,Sm: $case_desc"
+
+(merge variant 4)
+
+  $ hg up 'desc("s-1")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("mQPm")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "mS,QPm: $case_desc"
+  created new head
+  $ hg up null --quiet
+
+
+  $ hg log -G --rev '::(desc("mPQ,Tm") + desc("mT,PQm") + desc("mQP,Sm") + desc("mS,QPm"))'
+  o    mS,QPm: chained merges (conflict -> simple) - different content
+  |\
+  +---o  mQP,Sm: chained merges (conflict -> simple) - different content
+  | |/
+  | | o    mT,PQm: chained merges (conflict -> simple) - different content
+  | | |\
+  | | +---o  mPQ,Tm: chained merges (conflict -> simple) - different content
+  | | | |/
+  | | | o  t-1: unrelated changes (based on "q" changes)
+  | | | |
+  | o | |  s-1: unrelated changes (based on the "p" series of changes)
+  | | | |
+  o-----+  mQPm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - the other way
+  |/ / /
+  | o /  mPQm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - one way
+  |/|/
+  | o  q-2 w -move-> v
+  | |
+  | o  q-1 r -move-> w
+  | |
+  o |  p-2: u -move-> v
+  | |
+  o |  p-1: t -move-> u
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h
+  
+
 Subcase: chaining salvage information during a merge
 ````````````````````````````````````````````````````
 
@@ -1009,7 +1108,7 @@ should preserve the fact eh file was salvaged.
 (creating the change)
 
   $ hg up 'desc("c-1")'
-  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  5 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo l > unrelated-l
   $ hg add unrelated-l
   $ hg ci -m 'l-1: unrelated changes (based on "c" changes)'
@@ -1327,9 +1426,13 @@ Summary of all created cases
   mL,CB+revertm: chained merges (salvaged -> simple) - same content (when the file exists)
   mN,GFm: chained merges (copy-overwrite -> simple) - same content
   mO,FGm: chained merges (copy-overwrite -> simple) - same content
+  mPQ,Tm: chained merges (conflict -> simple) - different content
   mPQm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - one way
+  mQP,Sm: chained merges (conflict -> simple) - different content
   mQPm-0 merge with copies info on both side - P side: rename t to v, Q side: r to v, (different content) - the other way
   mRBm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - the other way
+  mS,QPm: chained merges (conflict -> simple) - different content
+  mT,PQm: chained merges (conflict -> simple) - different content
   n-1: unrelated changes (based on the "f" series of changes)
   o-1: unrelated changes (based on "g" changes)
   p-1: t -move-> u
@@ -1338,6 +1441,8 @@ Summary of all created cases
   q-2 w -move-> v
   r-1: rename r -> x
   r-2: rename t -> x
+  s-1: unrelated changes (based on the "p" series of changes)
+  t-1: unrelated changes (based on "q" changes)
 
 
 Test that sidedata computations during upgrades are correct
@@ -1678,6 +1783,32 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 4
     '\x00\x00\x00\x00'
   ##### revision "mJ,EAm" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "s-1" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-s'
+  added      : unrelated-s, ;
+  ##### revision "t-1" #####
+  1 sidedata entries
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x04\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-t'
+  added      : unrelated-t, ;
+  ##### revision "mPQ,Tm" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "mT,PQm" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "mQP,Sm" #####
+  1 sidedata entries
+   entry-0014 size 4
+    '\x00\x00\x00\x00'
+  ##### revision "mS,QPm" #####
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
@@ -3078,6 +3209,55 @@ The result from mEAm is the same for the subsequent merge:
     b (missing-correct-output upgraded !)
     a (known-bad-output sidedata !)
     a (known-bad-output upgraded !)
+
+Subcase: chaining conflicting rename resolution
+```````````````````````````````````````````````
+
+The "mPQm" and "mQPm" case create a rename tracking conflict on file 'v'. We
+add more change on the respective branch and merge again. These second merge
+does not involve the file 'v' and the arbitration done within "mPQm" and "mQP"
+about that file should stay unchanged.
+
+The result from mPQm is the same for the subsequent merge:
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQm")' v
+  A v
+    r (filelog !)
+    p (sidedata !)
+    p (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQ,Tm")' v
+  A v
+    r (filelog !)
+    p (sidedata !)
+    p (upgraded !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mT,PQm")' v
+  A v
+    r (filelog !)
+    p (missing-correct-output sidedata !)
+    p (missing-correct-output upgraded !)
+    r (known-bad-output sidedata !)
+    r (known-bad-output upgraded !)
+
+
+The result from mQPm is the same for the subsequent merge:
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mQPm")' v
+  A v
+    r (no-changeset no-compatibility !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mQP,Sm")' v
+  A v
+    r (no-changeset no-compatibility !)
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mS,QPm")' v
+  A v
+    r (filelog !)
+    r (missing-correct-output sidedata !)
+    r (missing-correct-output upgraded !)
+    p (known-bad-output sidedata !)
+    p (known-bad-output upgraded !)
 
 
 Subcase: chaining salvage information during a merge
