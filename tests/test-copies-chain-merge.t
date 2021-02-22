@@ -687,6 +687,60 @@ rename information actually conflict with the other branch.
   o  i-0 initial commit: a b h
   
 
+Variant of previous with extra changes introduced by the merge
+--------------------------------------------------------------
+
+Multiple cases above explicitely test cases where content are the same on both side during merge. In this section we will introduce variants for theses cases where new change are introduced to these file content during the merges.
+
+
+Subcase: merge has same initial content on both side, but merge introduced a change
+```````````````````````````````````````````````````````````````````````````````````
+
+Same as `mAEm` and `mEAm` but with extra change to the file before commiting
+
+- the "e-" branch renaming b to f (through 'g')
+- the "a-" branch renaming d to f (through e)
+
+  $ case_desc="merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent)"
+
+  $ hg up 'desc("a-2")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("e-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ echo "content change for mAE-change-m" > f
+  $ hg ci -m "mAE-change-m-0 $case_desc - one way"
+  created new head
+  $ hg up 'desc("e-2")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("a-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ echo "content change for mEA-change-m" > f
+  $ hg ci -m "mEA-change-m-0 $case_desc - the other way"
+  created new head
+  $ hg log -G --rev '::(desc("mAE-change-m")+desc("mEA-change-m"))'
+  @    mEA-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - the other way
+  |\
+  +---o  mAE-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - one way
+  | |/
+  | o  e-2 g -move-> f
+  | |
+  | o  e-1 b -move-> g
+  | |
+  o |  a-2: e -move-> f
+  | |
+  o |  a-1: d -move-> e
+  |/
+  o  i-2: c -move-> d
+  |
+  o  i-1: a -move-> c
+  |
+  o  i-0 initial commit: a b h
+  
+
 Decision from previous merge are properly chained with later merge
 ------------------------------------------------------------------
 
@@ -703,7 +757,7 @@ about that file should stay unchanged.
 (extra unrelated changes)
 
   $ hg up 'desc("a-2")'
-  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo j > unrelated-j
   $ hg add unrelated-j
   $ hg ci -m 'j-1: unrelated changes (based on the "a" series of changes)'
@@ -1001,6 +1055,7 @@ Summary of all created cases
   l-1: unrelated changes (based on "c" changes)
   mABm-0 simple merge - A side: multiple renames, B side: unrelated update - the other way
   mAE,Km: chained merges (conflict -> simple) - same content everywhere
+  mAE-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - one way
   mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
@@ -1018,6 +1073,7 @@ Summary of all created cases
   mDBm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - the other way
   mDGm-0 actual content merge, copies on one side - D side: delete and re-add (different content), G side: update content - one way
   mEA,Jm: chained merges (conflict -> simple) - same content everywhere
+  mEA-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - the other way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
   mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   mFG,Om: chained merges (copy-overwrite -> simple) - same content
@@ -1278,6 +1334,16 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   1 sidedata entries
    entry-0014 size 4
     '\x00\x00\x00\x00'
+  ##### revision "mAE-change-m-0 merge with file update and copies info on both side - A side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  merged     : f, ;
+  ##### revision "mEA-change-m-0 merge with file update and copies info on both side - A side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
+  merged     : f, ;
   ##### revision "j-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -1628,6 +1694,8 @@ Subcase: new copy information on both side
        0       * b76eb76580df 000000000000 000000000000
        1       * e8825b386367 000000000000 000000000000
        2       * 2ff93c643948 b76eb76580df e8825b386367
+       3       * 2f649fba7eb2 b76eb76580df e8825b386367
+       4       * 774e7c1637d5 e8825b386367 b76eb76580df
 #else
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
@@ -1640,6 +1708,8 @@ Subcase: new copy information on both side
   $ hg debugindex f | ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * ae258f702dfe 000000000000 000000000000
+       1       * d3613c1ec831 ae258f702dfe 000000000000
+       2       * 05e03c868bbc ae258f702dfe 000000000000
 #endif
 
 # Here the filelog based implementation is not looking at the rename
@@ -2190,6 +2260,133 @@ rename information actually conflict with the other branch.
   R a
   $ hg status --copies --rev 'desc("h-1")' --rev 'desc("mHC-delete-before-conflict-m")'
   R a
+
+Variant of previous with extra changes introduced by the merge
+--------------------------------------------------------------
+
+(see case declaration for details)
+
+Subcase: merge has same initial content on both side, but merge introduced a change
+```````````````````````````````````````````````````````````````````````````````````
+
+- the "e-" branch renaming b to f (through 'g')
+- the "a-" branch renaming d to f (through e)
+- the merge add new change to b
+
+  $ hg log -G --rev '::(desc("mAE-change-m")+desc("mEA-change-m"))'
+  o    mEA-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - the other way
+  |\
+  +---o  mAE-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - one way
+  | |/
+  | o  e-2 g -move-> f
+  | |
+  | o  e-1 b -move-> g
+  | |
+  o |  a-2: e -move-> f
+  | |
+  o |  a-1: d -move-> e
+  |/
+  o  i-2: c -move-> d
+  |
+  o  i-1: a -move-> c
+  |
+  o  i-0 initial commit: a b h
+  
+#if no-changeset
+  $ hg manifest --debug --rev 'desc("mAE-change-m-0")' | grep '644   f'
+  2f649fba7eb284e720d02b61f0546fcef694c045 644   f
+  $ hg manifest --debug --rev 'desc("mEA-change-m-0")' | grep '644   f'
+  774e7c1637d536b99e2d8ef16fd731f87a82bd09 644   f
+  $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
+  b76eb76580df486c3d51d63c5c210d4dd43a8ac7 644   f
+  $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
+  e8825b386367b29fec957283a80bb47b47483fe1 644   f
+  $ hg debugindex f | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * b76eb76580df 000000000000 000000000000
+       1       * e8825b386367 000000000000 000000000000
+       2       * 2ff93c643948 b76eb76580df e8825b386367
+       3       * 2f649fba7eb2 b76eb76580df e8825b386367
+       4       * 774e7c1637d5 e8825b386367 b76eb76580df
+#else
+  $ hg manifest --debug --rev 'desc("mAE-change-m-0")' | grep '644   f'
+  d3613c1ec8310a812ac4268fd853ac576b6caea5 644   f
+  $ hg manifest --debug --rev 'desc("mEA-change-m-0")' | grep '644   f'
+  05e03c868bbcab4a649cb33a238d7aa07398a469 644   f
+  $ hg manifest --debug --rev 'desc("a-2")' | grep '644   f'
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
+  $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
+  ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
+  $ hg debugindex f | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * ae258f702dfe 000000000000 000000000000
+       1       * d3613c1ec831 ae258f702dfe 000000000000
+       2       * 05e03c868bbc ae258f702dfe 000000000000
+#endif
+
+# Here the filelog based implementation is not looking at the rename
+# information (because the file exist on both side). However the changelog
+# based on works fine. We have different output.
+
+  $ hg status --copies --rev 'desc("a-2")' --rev 'desc("mAE-change-m-0")'
+  M f
+    b (no-filelog !)
+  R b
+  $ hg status --copies --rev 'desc("a-2")' --rev 'desc("mEA-change-m-0")'
+  M f
+    b (no-filelog !)
+  R b
+  $ hg status --copies --rev 'desc("e-2")' --rev 'desc("mAE-change-m-0")'
+  M f
+    d (no-filelog !)
+  R d
+  $ hg status --copies --rev 'desc("e-2")' --rev 'desc("mEA-change-m-0")'
+  M f
+    d (no-filelog !)
+  R d
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("a-2")'
+  A f
+    d
+  R d
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("e-2")'
+  A f
+    b
+  R b
+
+# From here, we run status against revision where both source file exists.
+#
+# The filelog based implementation picks an arbitrary side based on revision
+# numbers. So the same side "wins" whatever the parents order is. This is
+# sub-optimal because depending on revision numbers means the result can be
+# different from one repository to the next.
+#
+# The changeset based algorithm use the parent order to break tie on conflicting
+# information and will have a different order depending on who is p1 and p2.
+# That order is stable accross repositories. (data from p1 prevails)
+
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mAE-change-m-0")'
+  A f
+    d
+  R b
+  R d
+  $ hg status --copies --rev 'desc("i-2")' --rev 'desc("mEA-change-m-0")'
+  A f
+    d (filelog !)
+    b (no-filelog !)
+  R b
+  R d
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE-change-m-0")'
+  A f
+    a
+  R a
+  R b
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA-change-m-0")'
+  A f
+    a (filelog !)
+    b (no-filelog !)
+  R a
+  R b
+
 
 Decision from previous merge are properly chained with later merge
 ------------------------------------------------------------------
