@@ -431,12 +431,12 @@ elif os.path.exists('.hg_archival.txt'):
     elif 'latesttag' in kw:
         if 'changessincelatesttag' in kw:
             version = (
-                '%(latesttag)s+.%(changessincelatesttag)s.%(node).12s' % kw
+                '%(latesttag)s+hg%(changessincelatesttag)s.%(node).12s' % kw
             )
         else:
-            version = '%(latesttag)s+.%(latesttagdistance)s.%(node).12s' % kw
+            version = '%(latesttag)s+hg%(latesttagdistance)s.%(node).12s' % kw
     else:
-        version = '0+' + kw.get('node', '')[:12]
+        version = '0+hg' + kw.get('node', '')[:12]
 
 if version:
     versionb = version
