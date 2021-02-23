@@ -232,6 +232,17 @@ Checking the note stored in the obsmarker
   $ hg debugobsolete -r .
   112478962961147124edd43549aedd1a335e44bf be169c7e8dbe21cd10b3d79691cbe7f241e3c21c 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   be169c7e8dbe21cd10b3d79691cbe7f241e3c21c 16084da537dd8f84cfdb3055c633772269d62e1b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'adding bar', 'operation': 'amend', 'user': 'test'}
+
+Cannot cause divergence by default
+
+  $ hg co --hidden 1
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg amend -m divergent
+  abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
+  (add --verbose for details)
+  [10]
+  $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
+  2 new content-divergent changesets
 #endif
 
 Cannot amend public changeset

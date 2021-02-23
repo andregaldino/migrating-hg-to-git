@@ -446,8 +446,15 @@ class rebaseruntime(object):
             rebaseset = set(destmap.keys())
             rebaseset -= set(self.obsolete_with_successor_in_destination)
             rebaseset -= self.obsolete_with_successor_in_rebase_set
+            # We have our own divergence-checking in the rebase extension
+            overrides = {}
+            if obsolete.isenabled(self.repo, obsolete.createmarkersopt):
+                overrides = {
+                    (b'experimental', b'evolution.allowdivergence'): b'true'
+                }
             try:
-                rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
+                with self.ui.configoverride(overrides):
+                    rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
             except error.Abort as e:
                 if e.hint is None:
                     e.hint = _(b'use --keep to keep original changesets')

@@ -6,6 +6,7 @@ Test for command `hg unamend` which lives in uncommit extension
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [experimental]
   > evolution = createmarkers, allowunstable
+  > evolution.allowdivergence = true
   > [extensions]
   > rebase =
   > amend =

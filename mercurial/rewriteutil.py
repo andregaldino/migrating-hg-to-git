@@ -44,7 +44,9 @@ def precheck(repo, revs, action=b'rewrite'):
         revs = (r.rev() for r in revs)
 
     if len(repo[None].parents()) > 1:
-        raise error.StateError(_(b"cannot %s changesets while merging") % action)
+        raise error.StateError(
+            _(b"cannot %s changesets while merging") % action
+        )
 
     publicrevs = repo.revs(b'%ld and public()', revs)
     if publicrevs:
@@ -59,6 +61,38 @@ def precheck(repo, revs, action=b'rewrite'):
             _(b"cannot %s changeset with children") % action, hint=hint
         )
 
+    if not obsolete.isenabled(repo, obsolete.allowdivergenceopt):
+        new_divergence = _find_new_divergence(repo, revs)
+        if new_divergence:
+            local_ctx, other_ctx, base_ctx = new_divergence
+            msg = _(
+                b'cannot %s %s, as that creates content-divergence with %s'
+            ) % (
+                action,
+                local_ctx,
+                other_ctx,
+            )
+            if local_ctx.rev() != base_ctx.rev():
+                msg += _(b', from %s') % base_ctx
+            if repo.ui.verbose:
+                if local_ctx.rev() != base_ctx.rev():
+                    msg += _(
+                        b'\n    changeset %s is a successor of ' b'changeset %s'
+                    ) % (local_ctx, base_ctx)
+                msg += _(
+                    b'\n    changeset %s already has a successor in '
+                    b'changeset %s\n'
+                    b'    rewriting changeset %s would create '
+                    b'"content-divergence"\n'
+                    b'    set experimental.evolution.allowdivergence=True to '
+                    b'skip this check'
+                ) % (base_ctx, other_ctx, local_ctx)
+                raise error.InputError(msg)
+            else:
+                raise error.InputError(
+                    msg, hint=_(b"add --verbose for details")
+                )
+
 
 def disallowednewunstable(repo, revs):
     """Checks whether editing the revs will create new unstable changesets and
@@ -71,6 +105,40 @@ def disallowednewunstable(repo, revs):
     if allowunstable:
         return revset.baseset()
     return repo.revs(b"(%ld::) - %ld", revs, revs)
+
+
+def _find_new_divergence(repo, revs):
+    obsrevs = repo.revs(b'%ld and obsolete()', revs)
+    for r in obsrevs:
+        div = find_new_divergence_from(repo, repo[r])
+        if div:
+            return (repo[r], repo[div[0]], repo[div[1]])
+    return None
+
+
+def find_new_divergence_from(repo, ctx):
+    """return divergent revision if rewriting an obsolete cset (ctx) will
+    create divergence
+
+    Returns (<other node>, <common ancestor node>) or None
+    """
+    if not ctx.obsolete():
+        return None
+    # We need to check two cases that can cause divergence:
+    # case 1: the rev being rewritten has a non-obsolete successor (easily
+    #     detected by successorssets)
+    sset = obsutil.successorssets(repo, ctx.node())
+    if sset:
+        return (sset[0][0], ctx.node())
+    else:
+        # case 2: one of the precursors of the rev being revived has a
+        #     non-obsolete successor (we need divergentsets for this)
+        divsets = obsutil.divergentsets(repo, ctx)
+        if divsets:
+            nsuccset = divsets[0][b'divergentnodes']
+            prec = divsets[0][b'commonpredecessor']
+            return (nsuccset[0], prec)
+        return None
 
 
 def skip_empty_successor(ui, command):

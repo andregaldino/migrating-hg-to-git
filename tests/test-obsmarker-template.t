@@ -11,6 +11,7 @@ Global setup
   > publish=False
   > [experimental]
   > evolution=true
+  > evolution.allowdivergence=true
   > [templates]
   > obsfatesuccessors = "{if(successors, " as ")}{join(successors, ", ")}"
   > obsfateverb = "{obsfateverb(successors, markers)}"

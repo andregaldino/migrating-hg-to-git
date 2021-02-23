@@ -106,6 +106,7 @@ propertycache = util.propertycache
 # Options for obsolescence
 createmarkersopt = b'createmarkers'
 allowunstableopt = b'allowunstable'
+allowdivergenceopt = b'allowdivergence'
 exchangeopt = b'exchange'
 
 
@@ -144,10 +145,13 @@ def getoptions(repo):
 
     createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
     unstablevalue = _getoptionvalue(repo, allowunstableopt)
+    divergencevalue = _getoptionvalue(repo, allowdivergenceopt)
     exchangevalue = _getoptionvalue(repo, exchangeopt)
 
     # createmarkers must be enabled if other options are enabled
-    if (unstablevalue or exchangevalue) and not createmarkersvalue:
+    if (
+        unstablevalue or divergencevalue or exchangevalue
+    ) and not createmarkersvalue:
         raise error.Abort(
             _(
                 b"'createmarkers' obsolete option must be enabled "
@@ -158,6 +162,7 @@ def getoptions(repo):
     return {
         createmarkersopt: createmarkersvalue,
         allowunstableopt: unstablevalue,
+        allowdivergenceopt: divergencevalue,
         exchangeopt: exchangevalue,
     }
 

@@ -150,7 +150,8 @@ Changing branch of an obsoleted changeset
   [255]
 
   $ hg branch -r 4 --hidden foobar
-  abort: cannot change branch of a obsolete changeset
+  abort: cannot change branch of 3938acfb5c0f, as that creates content-divergence with 7c1991464886
+  (add --verbose for details)
   [10]
 
 Make sure bookmark movement is correct
