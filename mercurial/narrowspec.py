@@ -329,7 +329,6 @@ def updateworkingcopy(repo, assumeclean=False):
     trackeddirty = status.modified + status.added
     clean = status.clean
     if assumeclean:
-        assert not trackeddirty
         clean.extend(lookup)
     else:
         trackeddirty.extend(lookup)

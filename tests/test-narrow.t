@@ -515,5 +515,10 @@ Test removing include while concurrently modifying file in that path
   $ hg clone --narrow ssh://user@dummy/master narrow-concurrent-modify -q \
   > --include d0 --include d1
   $ cd narrow-concurrent-modify
-  $ hg --config 'hooks.pretxnopen = echo modified >> d0/f' tracked --removeinclude d0 2>&1 | grep AssertionError
-  AssertionError
+  $ hg --config 'hooks.pretxnopen = echo modified >> d0/f' tracked --removeinclude d0
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for local changes to affected paths
+  deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
+  not deleting possibly dirty file d0/f
