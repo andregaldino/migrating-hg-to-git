@@ -78,7 +78,7 @@ Add some linear rename initialy
   $ echo "original content for P" > p
   $ echo "original content for Q" > q
   $ echo "original content for R" > r
-  $ hg ci -Am 'i-0 initial commit: a b h'
+  $ hg ci -Am 'i-0 initial commit: a b h p q r'
   adding a
   adding b
   adding h
@@ -96,7 +96,7 @@ Add some linear rename initialy
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 And having another branch with renames on the other side
@@ -114,7 +114,7 @@ And having another branch with renames on the other side
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Have a branching with nothing on one side
@@ -131,7 +131,7 @@ Have a branching with nothing on one side
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Create a branch that delete a file previous renamed
@@ -148,7 +148,7 @@ Create a branch that delete a file previous renamed
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Create a branch that delete a file previous renamed and recreate it
@@ -170,7 +170,7 @@ Create a branch that delete a file previous renamed and recreate it
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Having another branch renaming a different file to the same filename as another
@@ -191,7 +191,7 @@ Having another branch renaming a different file to the same filename as another
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg up -q null
 
@@ -213,7 +213,7 @@ Having a branch similar to the 'a' one, but moving the 'p' file around.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg up -q null
 
@@ -235,7 +235,7 @@ Having another branch renaming a different file to the same filename as another
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg up -q null
 
@@ -281,7 +281,7 @@ merging with unrelated change does not interfere with the renames
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -331,7 +331,7 @@ and recreate an unrelated file after the merge
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Comparing with a merge re-adding the file afterward
@@ -371,7 +371,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -419,7 +419,7 @@ Subcase: new copy information on both side
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: new copy information on both side with an actual merge happening
@@ -462,7 +462,7 @@ Subcase: new copy information on both side with an actual merge happening
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: existing copy information overwritten on one branch
@@ -518,7 +518,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: existing copy information overwritten on one branch, with different content)
@@ -572,7 +572,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -623,7 +623,7 @@ consider history and rename on both branch of the merge.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: merging a change to a file with a "copy overwrite" to that file from another branch
@@ -678,7 +678,7 @@ Note:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -736,7 +736,7 @@ copy tracing chain.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -785,7 +785,7 @@ copy tracing chain.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -834,7 +834,7 @@ rename information actually conflict with the other branch.
   | |
   o |  i-1: a -move-> c, p -move-> s
   |/
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Variant of previous with extra changes introduced by the merge
@@ -888,7 +888,7 @@ Same as `mAEm` and `mEAm` but with extra change to the file before commiting
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Decision from previous merge are properly chained with later merge
@@ -995,7 +995,7 @@ about that file should stay unchanged.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: chaining conflicting rename resolution, with actual merging happening
@@ -1094,7 +1094,7 @@ about that file should stay unchanged.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: chaining salvage information during a merge
@@ -1177,7 +1177,7 @@ should preserve the fact eh file was salvaged.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 
@@ -1273,7 +1273,7 @@ When a non-rename change are merged with a copy overwrite, the merge pick the co
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Subcase: chaining conflicting rename resolution, with extra change during the merge
@@ -1356,7 +1356,7 @@ about that file should stay unchanged.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Summary of all created cases
@@ -1379,7 +1379,7 @@ Summary of all created cases
   f-2: rename i -> d
   g-1: update d
   h-1: b -(move)-> d
-  i-0 initial commit: a b h
+  i-0 initial commit: a b h p q r
   i-1: a -move-> c, p -move-> s
   i-2: c -move-> d, s -move-> t
   j-1: unrelated changes (based on the "a" series of changes)
@@ -1919,7 +1919,7 @@ merging with unrelated change does not interfere with the renames
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mABm")'
@@ -1986,7 +1986,7 @@ and recreate an unrelated file after the merge
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 - comparing from the merge
 
@@ -2072,7 +2072,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBDm-0")'
   M d
@@ -2163,7 +2163,7 @@ Subcase: new copy information on both side
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #if no-changeset
   $ hg manifest --debug --rev 'desc("mAEm-0")' | grep '644   f'
@@ -2294,7 +2294,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBFm-0")'
   M b
@@ -2343,7 +2343,7 @@ Merge:
   |
   o  f-1: rename h -> i
   :
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2359,7 +2359,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   o  f-1: rename h -> i
   :
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2392,7 +2392,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBRm-0")'
   M b
@@ -2441,7 +2441,7 @@ Merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2457,7 +2457,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2492,7 +2492,7 @@ consider history and rename on both branch of the merge.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 One side of the merge have a long history with rename. The other side of the
 merge point to a new file with a smaller history. Each side is "valid".
@@ -2535,7 +2535,7 @@ revision numbers)
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2564,7 +2564,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2606,7 +2606,7 @@ history are relevant.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 Note:
@@ -2688,7 +2688,7 @@ Copy tracing data on the resulting merge:
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2714,7 +2714,7 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #else
 BROKEN: `hg log --follow <file>` relies on filelog metadata to work
@@ -2750,7 +2750,7 @@ Subcase: new copy information on both side with an actual merge happening
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 #if no-changeset
@@ -2879,7 +2879,7 @@ copy tracing chain.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 'a' is the copy source of 'd'
@@ -2930,7 +2930,7 @@ copy tracing chain.
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
 'a' is the the copy source of 'd'
@@ -2982,7 +2982,7 @@ rename information actually conflict with the other branch.
   | |
   o |  i-1: a -move-> c, p -move-> s
   |/
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCH-delete-before-conflict-m")'
@@ -3049,7 +3049,7 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   |
   o  i-1: a -move-> c, p -move-> s
   |
-  o  i-0 initial commit: a b h
+  o  i-0 initial commit: a b h p q r
   
 #if no-changeset
   $ hg manifest --debug --rev 'desc("mAE-change-m-0")' | grep '644   f'
