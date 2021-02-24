@@ -509,3 +509,11 @@ Test --no-backup
   deleting meta/d0/00manifest.i (tree !)
   deleting meta/d2/00manifest.i (tree !)
   $ ls .hg/strip-backup/
+
+
+Test removing include while concurrently modifying file in that path
+  $ hg clone --narrow ssh://user@dummy/master narrow-concurrent-modify -q \
+  > --include d0 --include d1
+  $ cd narrow-concurrent-modify
+  $ hg --config 'hooks.pretxnopen = echo modified >> d0/f' tracked --removeinclude d0 2>&1 | grep AssertionError
+  AssertionError
