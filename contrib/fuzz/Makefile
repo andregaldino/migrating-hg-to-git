@@ -1,5 +1,5 @@
-CC = clang
-CXX = clang++
+CC ?= clang
+CXX ?= clang++
 
 # By default, use our own standalone_fuzz_target_runner.
 # This runner does no fuzzing, but simply executes the inputs
