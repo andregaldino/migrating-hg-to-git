@@ -40,7 +40,7 @@ def _forwardoutput(ui, pipe, warn=False):
     """display all data currently available on pipe as remote output.
 
     This is non blocking."""
-    if pipe:
+    if pipe and not pipe.closed:
         s = procutil.readpipe(pipe)
         if s:
             display = ui.warn if warn else ui.status
