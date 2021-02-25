@@ -116,9 +116,6 @@ impl Repo {
         let store_path;
         if !shared {
             store_path = dot_hg.join("store");
-            if share_safe {
-                reqs.extend(requirements::load(Vfs { base: &store_path })?);
-            }
         } else {
             let bytes = hg_vfs.read("sharedpath")?;
             let mut shared_path = get_path_from_bytes(&bytes).to_owned();
@@ -165,6 +162,9 @@ impl Repo {
             if share_safe {
                 repo_config_files.insert(0, shared_path.join("hgrc"))
             }
+        }
+        if share_safe {
+            reqs.extend(requirements::load(Vfs { base: &store_path })?);
         }
 
         let repo_config = config.combine_with_repo(&repo_config_files)?;
