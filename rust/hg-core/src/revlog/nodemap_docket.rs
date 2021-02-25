@@ -1,4 +1,5 @@
 use crate::errors::{HgError, HgResultExt};
+use crate::requirements;
 use bytes_cast::{unaligned, BytesCast};
 use memmap::Mmap;
 use std::path::{Path, PathBuf};
@@ -38,6 +39,14 @@ impl NodeMapDocket {
         repo: &Repo,
         index_path: &Path,
     ) -> Result<Option<(Self, Mmap)>, RevlogError> {
+        if !repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT)
+        {
+            // If .hg/requires does not opt it, don’t try to open a nodemap
+            return Ok(None);
+        }
+
         let docket_path = index_path.with_extension("n");
         let docket_bytes = if let Some(bytes) =
             repo.store_vfs().read(&docket_path).io_not_found_as_none()?
@@ -88,6 +97,8 @@ impl NodeMapDocket {
                 Err(HgError::corrupted("persistent nodemap too short").into())
             }
         } else {
+            // Even if .hg/requires opted in, some revlogs are deemed small
+            // enough to not need a persistent nodemap.
             Ok(None)
         }
     }
