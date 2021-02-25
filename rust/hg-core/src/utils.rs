@@ -11,6 +11,8 @@ use crate::errors::{HgError, IoErrorContext};
 use crate::utils::hg_path::HgPath;
 use im_rc::ordmap::DiffItem;
 use im_rc::ordmap::OrdMap;
+use std::cell::Cell;
+use std::fmt;
 use std::{io::Write, ops::Deref};
 
 pub mod files;
@@ -376,5 +378,45 @@ where
             right.insert(key, value);
         }
         right
+    }
+}
+
+/// Join items of the iterable with the given separator, similar to Python’s
+/// `separator.join(iter)`.
+///
+/// Formatting the return value consumes the iterator.
+/// Formatting it again will produce an empty string.
+pub fn join_display(
+    iter: impl IntoIterator<Item = impl fmt::Display>,
+    separator: impl fmt::Display,
+) -> impl fmt::Display {
+    JoinDisplay {
+        iter: Cell::new(Some(iter.into_iter())),
+        separator,
+    }
+}
+
+struct JoinDisplay<I, S> {
+    iter: Cell<Option<I>>,
+    separator: S,
+}
+
+impl<I, T, S> fmt::Display for JoinDisplay<I, S>
+where
+    I: Iterator<Item = T>,
+    T: fmt::Display,
+    S: fmt::Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(mut iter) = self.iter.take() {
+            if let Some(first) = iter.next() {
+                first.fmt(f)?;
+            }
+            for value in iter {
+                self.separator.fmt(f)?;
+                value.fmt(f)?;
+            }
+        }
+        Ok(())
     }
 }

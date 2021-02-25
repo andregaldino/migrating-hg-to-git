@@ -1,5 +1,6 @@
 use crate::errors::{HgError, HgResultExt};
 use crate::repo::{Repo, Vfs};
+use crate::utils::join_display;
 use std::collections::HashSet;
 
 fn parse(bytes: &[u8]) -> Result<HashSet<String>, HgError> {
@@ -42,34 +43,48 @@ pub(crate) fn load_if_exists(hg_vfs: Vfs) -> Result<HashSet<String>, HgError> {
 }
 
 pub(crate) fn check(repo: &Repo) -> Result<(), HgError> {
-    for feature in repo.requirements() {
-        if !SUPPORTED.contains(&feature.as_str()) {
-            // TODO: collect and all unknown features and include them in the
-            // error message?
-            return Err(HgError::UnsupportedFeature(format!(
-                "repository requires feature unknown to this Mercurial: {}",
-                feature
-            )));
-        }
+    let unknown: Vec<_> = repo
+        .requirements()
+        .iter()
+        .map(String::as_str)
+        // .filter(|feature| !ALL_SUPPORTED.contains(feature.as_str()))
+        .filter(|feature| {
+            !REQUIRED.contains(feature) && !SUPPORTED.contains(feature)
+        })
+        .collect();
+    if !unknown.is_empty() {
+        return Err(HgError::unsupported(format!(
+            "repository requires feature unknown to this Mercurial: {}",
+            join_display(&unknown, ", ")
+        )));
+    }
+    let missing: Vec<_> = REQUIRED
+        .iter()
+        .filter(|&&feature| !repo.requirements().contains(feature))
+        .collect();
+    if !missing.is_empty() {
+        return Err(HgError::unsupported(format!(
+            "repository is missing feature required by this Mercurial: {}",
+            join_display(&missing, ", ")
+        )));
     }
     Ok(())
 }
 
-// TODO: set this to actually-supported features
+/// rhg does not support repositories that are *missing* any of these features
+const REQUIRED: &[&str] = &["revlogv1", "store", "fncache", "dotencode"];
+
+/// rhg supports repository with or without these
 const SUPPORTED: &[&str] = &[
-    "dotencode",
-    "fncache",
     "generaldelta",
-    "revlogv1",
     SHARED_REQUIREMENT,
     SHARESAFE_REQUIREMENT,
     SPARSEREVLOG_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
-    "store",
     // As of this writing everything rhg does is read-only.
     // When it starts writing to the repository, it’ll need to either keep the
     // persistent nodemap up to date or remove this entry:
-    "persistent-nodemap",
+    NODEMAP_REQUIREMENT,
 ];
 
 // Copied from mercurial/requirements.py:
