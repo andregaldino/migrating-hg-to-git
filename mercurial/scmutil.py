@@ -201,7 +201,9 @@ def callcatch(ui, func):
         msg = inst.args[1]
         if isinstance(msg, type(u'')):
             msg = pycompat.sysbytes(msg)
-        if not isinstance(msg, bytes):
+        if msg is None:
+            ui.error(b"\n")
+        elif not isinstance(msg, bytes):
             ui.error(b" %r\n" % (msg,))
         elif not msg:
             ui.error(_(b" empty string\n"))

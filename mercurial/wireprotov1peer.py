@@ -310,7 +310,7 @@ class peerexecutor(object):
                 if not f.done():
                     f.set_exception(
                         error.ResponseError(
-                            _(b'unfulfilled batch command response')
+                            _(b'unfulfilled batch command response'), None
                         )
                     )
 
@@ -322,16 +322,27 @@ class peerexecutor(object):
         for command, f, batchable, fremote in states:
             # Grab raw result off the wire and teach the internal future
             # about it.
-            remoteresult = next(wireresults)
-            fremote.set(remoteresult)
-
-            # And ask the coroutine to decode that value.
             try:
-                result = next(batchable)
-            except Exception:
-                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
+                remoteresult = next(wireresults)
+            except StopIteration:
+                # This can happen in particular because next(batchable)
+                # in the previous iteration can call peer._abort, which
+                # may close the peer.
+                f.set_exception(
+                    error.ResponseError(
+                        _(b'unfulfilled batch command response'), None
+                    )
+                )
             else:
-                f.set_result(result)
+                fremote.set(remoteresult)
+
+                # And ask the coroutine to decode that value.
+                try:
+                    result = next(batchable)
+                except Exception:
+                    pycompat.future_set_exception_info(f, sys.exc_info()[1:])
+                else:
+                    f.set_result(result)
 
 
 @interfaceutil.implementer(
