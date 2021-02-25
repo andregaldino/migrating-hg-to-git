@@ -8,6 +8,7 @@ variables:
     PYTHON: python
     TEST_HGMODULEPOLICY: "allow"
     HG_CI_IMAGE_TAG: "latest"
+    TEST_HGTESTS_ALLOW_NETIO: "0"
 
 .runtests_template: &runtests
     stage: tests
@@ -23,7 +24,7 @@ variables:
     script:
         - echo "python used, $PYTHON"
         - echo "$RUNTEST_ARGS"
-        - HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
+        - HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
 
 
 .rust_template: &rust
@@ -69,6 +70,7 @@ test-py2:
     variables:
         RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "c"
+        TEST_HGTESTS_ALLOW_NETIO: "1"
 
 test-py3:
     <<: *runtests
@@ -76,6 +78,7 @@ test-py3:
         RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "c"
+        TEST_HGTESTS_ALLOW_NETIO: "1"
 
 test-py2-pure:
     <<: *runtests
