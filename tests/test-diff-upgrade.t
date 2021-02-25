@@ -185,7 +185,7 @@ git=auto: regular diff for regular files and non-binary removals
   % git=auto: git diff for newbinary
   diff --git a/newbinary b/newbinary
   new file mode 100644
-  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f76dd238ade08917e6712764a16a22005a50573d
+  index 0000000000000000000000000000000000000000..f76dd238ade08917e6712764a16a22005a50573d
   GIT binary patch
   literal 1
   Ic${MZ000310RR91
@@ -202,7 +202,7 @@ git=auto: regular diff for regular files and non-binary removals
   % git=auto: git diff for rmbinary
   diff --git a/rmbinary b/rmbinary
   deleted file mode 100644
-  index f76dd238ade08917e6712764a16a22005a50573d..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+  index f76dd238ade08917e6712764a16a22005a50573d..0000000000000000000000000000000000000000
   GIT binary patch
   literal 0
   Hc$@<O00001

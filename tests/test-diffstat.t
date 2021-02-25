@@ -111,7 +111,7 @@ Filename without "a/" or "b/" (issue5759):
   
   diff --git c c
   new file mode 100644
-  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..f76dd238ade08917e6712764a16a22005a50573d
+  index 0000000000000000000000000000000000000000..f76dd238ade08917e6712764a16a22005a50573d
   GIT binary patch
   literal 1
   Ic${MZ000310RR91
