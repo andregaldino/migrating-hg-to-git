@@ -3105,9 +3105,7 @@ def diffcontent(data1, data2, header, binary, opts):
     if binary and opts.git and not opts.nobinary:
         text = mdiff.b85diff(content1, content2)
         if text:
-            header.append(
-                b'index %s..%s' % (index1, index2)
-            )
+            header.append(b'index %s..%s' % (index1, index2))
         hunks = ((None, [text]),)
     else:
         if opts.git and opts.index > 0:
