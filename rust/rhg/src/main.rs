@@ -15,39 +15,38 @@ mod exitcode;
 mod ui;
 use error::CommandError;
 
-fn add_global_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
-    app.arg(
-        Arg::with_name("repository")
-            .help("repository root directory")
-            .short("-R")
-            .long("--repository")
-            .value_name("REPO")
-            .takes_value(true),
-    )
-    .arg(
-        Arg::with_name("config")
-            .help("set/override config option (use 'section.name=value')")
-            .long("--config")
-            .value_name("CONFIG")
-            .takes_value(true)
-            // Ok: `--config section.key1=val --config section.key2=val2`
-            .multiple(true)
-            // Not ok: `--config section.key1=val section.key2=val2`
-            .number_of_values(1),
-    )
-}
-
 fn main_with_result(
     ui: &ui::Ui,
     process_start_time: &blackbox::ProcessStartTime,
 ) -> Result<(), CommandError> {
     env_logger::init();
     let app = App::new("rhg")
-        .setting(AppSettings::AllowInvalidUtf8)
+        .global_setting(AppSettings::AllowInvalidUtf8)
         .setting(AppSettings::SubcommandRequired)
         .setting(AppSettings::VersionlessSubcommands)
+        .arg(
+            Arg::with_name("repository")
+                .help("repository root directory")
+                .short("-R")
+                .long("--repository")
+                .value_name("REPO")
+                .takes_value(true)
+                // Both ok: `hg -R ./foo log` or `hg log -R ./foo`
+                .global(true),
+        )
+        .arg(
+            Arg::with_name("config")
+                .help("set/override config option (use 'section.name=value')")
+                .long("--config")
+                .value_name("CONFIG")
+                .takes_value(true)
+                .global(true)
+                // Ok: `--config section.key1=val --config section.key2=val2`
+                .multiple(true)
+                // Not ok: `--config section.key1=val section.key2=val2`
+                .number_of_values(1),
+        )
         .version("0.0.1");
-    let app = add_global_args(app);
     let app = add_subcommand_args(app);
 
     let matches = app.clone().get_matches_safe()?;
@@ -58,26 +57,15 @@ fn main_with_result(
     let subcommand_args = subcommand_matches
         .expect("no subcommand arguments from clap despite AppSettings::SubcommandRequired");
 
-    // Global arguments can be in either based on e.g. `hg -R ./foo log` v.s.
-    // `hg log -R ./foo`
-    let value_of_global_arg = |name| {
-        subcommand_args
-            .value_of_os(name)
-            .or_else(|| matches.value_of_os(name))
-    };
-    // For arguments where multiple occurences are allowed, return a
-    // possibly-iterator of all values.
-    let values_of_global_arg = |name: &str| {
-        let a = matches.values_of_os(name).into_iter().flatten();
-        let b = subcommand_args.values_of_os(name).into_iter().flatten();
-        a.chain(b)
-    };
-
-    let config_args = values_of_global_arg("config")
+    let config_args = matches
+        .values_of_os("config")
+        // Turn `Option::None` into an empty iterator:
+        .into_iter()
+        .flatten()
         .map(hg::utils::files::get_bytes_from_os_str);
     let non_repo_config = &hg::config::Config::load(config_args)?;
 
-    let repo_path = value_of_global_arg("repository").map(Path::new);
+    let repo_path = matches.value_of_os("repository").map(Path::new);
     let repo = match Repo::find(non_repo_config, repo_path) {
         Ok(repo) => Ok(repo),
         Err(RepoError::NotFound { at }) if repo_path.is_none() => {
@@ -141,7 +129,7 @@ macro_rules! subcommands {
         fn add_subcommand_args<'a, 'b>(app: App<'a, 'b>) -> App<'a, 'b> {
             app
             $(
-                .subcommand(add_global_args(commands::$command::args()))
+                .subcommand(commands::$command::args())
             )+
         }
 
