@@ -15,12 +15,11 @@ pub enum CommandError {
     /// Exit with an error message and "standard" failure exit code.
     Abort { message: Vec<u8> },
 
-    /// A mercurial capability as not been implemented.
-    ///
-    /// There is no error message printed in this case.
-    /// Instead, we exit with a specic status code and a wrapper script may
-    /// fallback to Python-based Mercurial.
-    Unimplemented,
+    /// Encountered something (such as a CLI argument, repository layout, …)
+    /// not supported by this version of `rhg`. Depending on configuration
+    /// `rhg` may attempt to silently fall back to Python-based `hg`, which
+    /// may or may not support this feature.
+    UnsupportedFeature { message: Vec<u8> },
 }
 
 impl CommandError {
@@ -32,20 +31,28 @@ impl CommandError {
             message: utf8_to_local(message.as_ref()).into(),
         }
     }
+
+    pub fn unsupported(message: impl AsRef<str>) -> Self {
+        CommandError::UnsupportedFeature {
+            message: utf8_to_local(message.as_ref()).into(),
+        }
+    }
 }
 
 /// For now we don’t differenciate between invalid CLI args and valid for `hg`
 /// but not supported yet by `rhg`.
 impl From<clap::Error> for CommandError {
-    fn from(_: clap::Error) -> Self {
-        CommandError::Unimplemented
+    fn from(error: clap::Error) -> Self {
+        CommandError::unsupported(error.to_string())
     }
 }
 
 impl From<HgError> for CommandError {
     fn from(error: HgError) -> Self {
         match error {
-            HgError::UnsupportedFeature(_) => CommandError::Unimplemented,
+            HgError::UnsupportedFeature(message) => {
+                CommandError::unsupported(message)
+            }
             _ => CommandError::abort(error.to_string()),
         }
     }

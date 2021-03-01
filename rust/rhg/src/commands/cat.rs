@@ -60,6 +60,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             invocation.ui.write_stdout(&data)?;
             Ok(())
         }
-        None => Err(CommandError::Unimplemented.into()),
+        None => Err(CommandError::unsupported(
+            "`rhg cat` without `--rev` / `-r`",
+        )),
     }
 }

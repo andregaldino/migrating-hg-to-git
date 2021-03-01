@@ -84,8 +84,15 @@ fn main() {
     let ui = ui::Ui::new();
 
     let early_args = EarlyArgs::parse(std::env::args_os());
-    let non_repo_config = Config::load(early_args.config)
-        .unwrap_or_else(|error| exit(&ui, Err(error.into())));
+    let non_repo_config =
+        Config::load(early_args.config).unwrap_or_else(|error| {
+            // Normally this is decided based on config, but we don’t have that
+            // available. As of this writing config loading never returns an
+            // "unsupported" error but that is not enforced by the type system.
+            let on_unsupported = OnUnsupported::Abort;
+
+            exit(&ui, on_unsupported, Err(error.into()))
+        });
 
     let repo_path = early_args.repo.as_deref().map(get_path_from_bytes);
     let repo_result = match Repo::find(&non_repo_config, repo_path) {
@@ -94,7 +101,11 @@ fn main() {
             // Not finding a repo is not fatal yet, if `-R` was not given
             Err(NoRepoInCwdError { cwd: at })
         }
-        Err(error) => exit(&ui, Err(error.into())),
+        Err(error) => exit(
+            &ui,
+            OnUnsupported::from_config(&non_repo_config),
+            Err(error.into()),
+        ),
     };
 
     let config = if let Ok(repo) = &repo_result {
@@ -109,7 +120,7 @@ fn main() {
         repo_result.as_ref(),
         config,
     );
-    exit(&ui, result)
+    exit(&ui, OnUnsupported::from_config(config), result)
 }
 
 fn exit_code(result: &Result<(), CommandError>) -> i32 {
@@ -119,16 +130,37 @@ fn exit_code(result: &Result<(), CommandError>) -> i32 {
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
-        Err(CommandError::Unimplemented) => exitcode::UNIMPLEMENTED,
+        Err(CommandError::UnsupportedFeature { .. }) => {
+            exitcode::UNIMPLEMENTED
+        }
     }
 }
 
-fn exit(ui: &Ui, result: Result<(), CommandError>) -> ! {
-    if let Err(CommandError::Abort { message }) = &result {
-        if !message.is_empty() {
-            // Ignore errors when writing to stderr, we’re already exiting
-            // with failure code so there’s not much more we can do.
-            let _ = ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
+fn exit(
+    ui: &Ui,
+    on_unsupported: OnUnsupported,
+    result: Result<(), CommandError>,
+) -> ! {
+    match &result {
+        Ok(_) => {}
+        Err(CommandError::Abort { message }) => {
+            if !message.is_empty() {
+                // Ignore errors when writing to stderr, we’re already exiting
+                // with failure code so there’s not much more we can do.
+                let _ =
+                    ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
+            }
+        }
+        Err(CommandError::UnsupportedFeature { message }) => {
+            match on_unsupported {
+                OnUnsupported::Abort => {
+                    let _ = ui.write_stderr(&format_bytes!(
+                        b"unsupported feature: {}\n",
+                        message
+                    ));
+                }
+                OnUnsupported::AbortSilent => {}
+            }
         }
     }
     std::process::exit(exit_code(&result))
@@ -224,5 +256,31 @@ impl EarlyArgs {
             }
         }
         Self { config, repo }
+    }
+}
+
+/// What to do when encountering some unsupported feature.
+///
+/// See `HgError::UnsupportedFeature` and `CommandError::UnsupportedFeature`.
+enum OnUnsupported {
+    /// Print an error message describing what feature is not supported,
+    /// and exit with code 252.
+    Abort,
+    /// Silently exit with code 252.
+    AbortSilent,
+}
+
+impl OnUnsupported {
+    fn from_config(config: &Config) -> Self {
+        let default = OnUnsupported::Abort;
+        match config.get(b"rhg", b"on-unsupported") {
+            Some(b"abort") => OnUnsupported::Abort,
+            Some(b"abort-silent") => OnUnsupported::AbortSilent,
+            None => default,
+            Some(_) => {
+                // TODO: warn about unknown config value
+                default
+            }
+        }
     }
 }

@@ -12,6 +12,15 @@ Define an rhg function that will only run if rhg exists
 
 Unimplemented command
   $ rhg unimplemented-command
+  unsupported feature: error: Found argument 'unimplemented-command' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg [OPTIONS] <SUBCOMMAND>
+  
+  For more information try --help
+  
+  [252]
+  $ rhg unimplemented-command --config rhg.on-unsupported=abort-silent
   [252]
 
 Finding root
@@ -153,12 +162,15 @@ Requirements
 
   $ echo indoor-pool >> .hg/requires
   $ rhg files
+  unsupported feature: repository requires feature unknown to this Mercurial: indoor-pool
   [252]
 
   $ rhg cat -r 1 copy_of_original
+  unsupported feature: repository requires feature unknown to this Mercurial: indoor-pool
   [252]
 
   $ rhg debugrequirements
+  unsupported feature: repository requires feature unknown to this Mercurial: indoor-pool
   [252]
 
   $ echo -e '\xFF' >> .hg/requires
