@@ -11,6 +11,7 @@ use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
 use std::ffi::OsString;
 use std::path::PathBuf;
+use std::process::Command;
 
 mod blackbox;
 mod error;
@@ -138,9 +139,43 @@ fn exit_code(result: &Result<(), CommandError>) -> i32 {
 
 fn exit(
     ui: &Ui,
-    on_unsupported: OnUnsupported,
+    mut on_unsupported: OnUnsupported,
     result: Result<(), CommandError>,
 ) -> ! {
+    if let (
+        OnUnsupported::Fallback { executable },
+        Err(CommandError::UnsupportedFeature { .. }),
+    ) = (&on_unsupported, &result)
+    {
+        let mut args = std::env::args_os();
+        let executable_path = get_path_from_bytes(&executable);
+        let this_executable = args.next().expect("exepcted argv[0] to exist");
+        if executable_path == &PathBuf::from(this_executable) {
+            // Avoid spawning infinitely many processes until resource
+            // exhaustion.
+            let _ = ui.write_stderr(&format_bytes!(
+                b"Blocking recursive fallback. The 'rhg.fallback-executable = {}' config \
+                points to `rhg` itself.\n",
+                executable
+            ));
+            on_unsupported = OnUnsupported::Abort
+        } else {
+            // `args` is now `argv[1..]` since we’ve already consumed `argv[0]`
+            let result = Command::new(executable_path).args(args).status();
+            match result {
+                Ok(status) => std::process::exit(
+                    status.code().unwrap_or(exitcode::ABORT),
+                ),
+                Err(error) => {
+                    let _ = ui.write_stderr(&format_bytes!(
+                        b"tried to fall back to a '{}' sub-process but got error {}\n",
+                        executable, format_bytes::Utf8(error)
+                    ));
+                    on_unsupported = OnUnsupported::Abort
+                }
+            }
+        }
+    }
     match &result {
         Ok(_) => {}
         Err(CommandError::Abort { message }) => {
@@ -160,6 +195,7 @@ fn exit(
                     ));
                 }
                 OnUnsupported::AbortSilent => {}
+                OnUnsupported::Fallback { .. } => unreachable!(),
             }
         }
     }
@@ -268,18 +304,32 @@ enum OnUnsupported {
     Abort,
     /// Silently exit with code 252.
     AbortSilent,
+    /// Try running a Python implementation
+    Fallback { executable: Vec<u8> },
 }
 
 impl OnUnsupported {
+    const DEFAULT: Self = OnUnsupported::Abort;
+    const DEFAULT_FALLBACK_EXECUTABLE: &'static [u8] = b"hg";
+
     fn from_config(config: &Config) -> Self {
-        let default = OnUnsupported::Abort;
-        match config.get(b"rhg", b"on-unsupported") {
+        match config
+            .get(b"rhg", b"on-unsupported")
+            .map(|value| value.to_ascii_lowercase())
+            .as_deref()
+        {
             Some(b"abort") => OnUnsupported::Abort,
             Some(b"abort-silent") => OnUnsupported::AbortSilent,
-            None => default,
+            Some(b"fallback") => OnUnsupported::Fallback {
+                executable: config
+                    .get(b"rhg", b"fallback-executable")
+                    .unwrap_or(Self::DEFAULT_FALLBACK_EXECUTABLE)
+                    .to_owned(),
+            },
+            None => Self::DEFAULT,
             Some(_) => {
                 // TODO: warn about unknown config value
-                default
+                Self::DEFAULT
             }
         }
     }

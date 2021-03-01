@@ -1,9 +1,10 @@
 #require rust
 
 Define an rhg function that will only run if rhg exists
+  $ RHG="$RUNTESTDIR/../rust/target/release/rhg"
   $ rhg() {
-  > if [ -f "$RUNTESTDIR/../rust/target/release/rhg" ]; then
-  >   "$RUNTESTDIR/../rust/target/release/rhg" "$@"
+  > if [ -f "$RHG" ]; then
+  >   "$RHG" "$@"
   > else
   >   echo "skipped: Cannot find rhg. Try to run cargo build in rust/rhg."
   >   exit 80
@@ -150,6 +151,27 @@ Cat copied file should not display copy metadata
   $ hg commit -m "add copy of original"
   $ rhg cat -r 1 copy_of_original
   original content
+
+Fallback to Python
+  $ rhg cat original
+  unsupported feature: `rhg cat` without `--rev` / `-r`
+  [252]
+  $ FALLBACK="--config rhg.on-unsupported=fallback"
+  $ rhg cat original $FALLBACK
+  original content
+
+  $ rhg cat original $FALLBACK --config rhg.fallback-executable=false
+  [1]
+
+  $ rhg cat original $FALLBACK --config rhg.fallback-executable=hg-non-existent
+  tried to fall back to a 'hg-non-existent' sub-process but got error $ENOENT$
+  unsupported feature: `rhg cat` without `--rev` / `-r`
+  [252]
+
+  $ rhg cat original $FALLBACK --config rhg.fallback-executable="$RHG"
+  Blocking recursive fallback. The 'rhg.fallback-executable = */rust/target/release/rhg' config points to `rhg` itself. (glob)
+  unsupported feature: `rhg cat` without `--rev` / `-r`
+  [252]
 
 Requirements
   $ rhg debugrequirements
