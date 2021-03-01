@@ -357,7 +357,7 @@ impl TwoWayPathMap {
     }
 
     fn untokenize(&self, token: PathToken) -> &HgPathBuf {
-        assert!(token < self.path.len(), format!("Unknown token: {}", token));
+        assert!(token < self.path.len(), "Unknown token: {}", token);
         &self.path[token]
     }
 }
