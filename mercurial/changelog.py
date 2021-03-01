@@ -507,7 +507,7 @@ class changelog(revlog.revlog):
         if not self._delayed:
             revlog.revlog._enforceinlinesize(self, tr, fp)
 
-    def read(self, node):
+    def read(self, nodeorrev):
         """Obtain data from a parsed changelog revision.
 
         Returns a 6-tuple of:
@@ -523,7 +523,7 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        d, s = self._revisiondata(node)
+        d, s = self._revisiondata(nodeorrev)
         c = changelogrevision(
             d, s, self._copiesstorage == b'changeset-sidedata'
         )
@@ -536,11 +536,11 @@ class changelog(revlog.revlog):
             text, sidedata, self._copiesstorage == b'changeset-sidedata'
         )
 
-    def readfiles(self, node):
+    def readfiles(self, nodeorrev):
         """
         short version of read that only returns the files modified by the cset
         """
-        text = self.revision(node)
+        text = self.revision(nodeorrev)
         if not text:
             return []
         last = text.index(b"\n\n")
