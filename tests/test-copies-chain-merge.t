@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset sidedata upgraded
+#testcases filelog compatibility changeset sidedata upgraded upgraded-parallel
 
 =====================================================
 Test Copy tracing for chain of copies involving merge
@@ -1458,6 +1458,44 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > [format]
   > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
+  > EOF
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  share-safe:          no     no      no
+  sparserevlog:       yes    yes     yes
+  sidedata:            no    yes      no
+  persistent-nodemap:  no     no      no
+  copies-sdc:          no    yes      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        * (glob)
+  compression-level:  default default default
+  $ hg debugupgraderepo --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: exp-copies-sidedata-changeset, exp-sidedata-flag
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+#endif
+
+#if upgraded-parallel
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > [experimental]
+  > worker.repository-upgrade=yes
+  > [worker]
+  > enabled=yes
+  > numcpus=8
   > EOF
   $ hg debugformat -v
   format-variant     repo config default
@@ -3172,18 +3210,21 @@ The result from mAEm is the same for the subsequent merge:
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE,Km")' f
   A f
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AEm")' f
   A f
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
 
 The result from mEAm is the same for the subsequent merge:
@@ -3193,18 +3234,21 @@ The result from mEAm is the same for the subsequent merge:
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA,Jm")' f
   A f
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EAm")' f
   A f
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)
 
 Subcase: chaining conflicting rename resolution
 ```````````````````````````````````````````````
@@ -3221,18 +3265,21 @@ The result from mPQm is the same for the subsequent merge:
     r (filelog !)
     p (sidedata !)
     p (upgraded !)
+    p (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQ,Tm")' v
   A v
     r (filelog !)
     p (sidedata !)
     p (upgraded !)
+    p (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mT,PQm")' v
   A v
     r (filelog !)
     p (sidedata !)
     p (upgraded !)
+    p (upgraded-parallel !)
 
 
 The result from mQPm is the same for the subsequent merge:
@@ -3250,6 +3297,7 @@ The result from mQPm is the same for the subsequent merge:
     r (filelog !)
     r (sidedata !)
     r (upgraded !)
+    r (upgraded-parallel !)
 
 
 Subcase: chaining salvage information during a merge
@@ -3330,11 +3378,13 @@ reference output:
     a (filelog !)
     h (sidedata !)
     h (upgraded !)
+    h (upgraded-parallel !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm")' d
   A d
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
 Chained output
 
@@ -3343,11 +3393,13 @@ Chained output
     a (filelog !)
     h (sidedata !)
     h (upgraded !)
+    h (upgraded-parallel !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFG,Om")' d
   A d
     a (filelog !)
     h (sidedata !)
     h (upgraded !)
+    h (upgraded-parallel !)
 
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGF,Nm")' d
@@ -3373,12 +3425,14 @@ The result from mAEm is the same for the subsequent merge:
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE-change,Km")' f
   A f
     a (filelog !)
     a (sidedata !)
     a (upgraded !)
+    a (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AE-change-m")' f
   A f
@@ -3392,15 +3446,18 @@ The result from mEAm is the same for the subsequent merge:
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA-change,Jm")' f
   A f
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EA-change-m")' f
   A f
     a (filelog !)
     b (sidedata !)
     b (upgraded !)
+    b (upgraded-parallel !)

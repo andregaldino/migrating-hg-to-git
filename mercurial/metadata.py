@@ -882,14 +882,14 @@ def _get_worker_sidedata_adder(srcrepo, destrepo):
         data = {}, False
         if util.safehasattr(revlog, b'filteredrevs'):  # this is a changelog
             # Is the data previously shelved ?
-            sidedata = staging.pop(rev, None)
-            if sidedata is None:
+            data = staging.pop(rev, None)
+            if data is None:
                 # look at the queued result until we find the one we are lookig
                 # for (shelve the other ones)
                 r, data = sidedataq.get()
                 while r != rev:
                     staging[r] = data
-                    r, sidedata = sidedataq.get()
+                    r, data = sidedataq.get()
             tokens.release()
         sidedata, has_copies_info = data
         new_flag = 0
