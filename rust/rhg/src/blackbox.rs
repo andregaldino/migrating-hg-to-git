@@ -52,20 +52,22 @@ impl<'a> Blackbox<'a> {
         process_start_time: &'a ProcessStartTime,
     ) -> Result<Self, HgError> {
         let configured = if let Ok(repo) = invocation.repo {
-            let config = invocation.config();
-            if config.get(b"extensions", b"blackbox").is_none() {
+            if invocation.config.get(b"extensions", b"blackbox").is_none() {
                 // The extension is not enabled
                 None
             } else {
                 Some(ConfiguredBlackbox {
                     repo,
-                    max_size: config
+                    max_size: invocation
+                        .config
                         .get_byte_size(b"blackbox", b"maxsize")?
                         .unwrap_or(DEFAULT_MAX_SIZE),
-                    max_files: config
+                    max_files: invocation
+                        .config
                         .get_u32(b"blackbox", b"maxfiles")?
                         .unwrap_or(DEFAULT_MAX_FILES),
-                    date_format: config
+                    date_format: invocation
+                        .config
                         .get_str(b"blackbox", b"date-format")?
                         .unwrap_or(DEFAULT_DATE_FORMAT),
                 })

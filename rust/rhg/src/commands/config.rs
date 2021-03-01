@@ -29,7 +29,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         .split_2(b'.')
         .ok_or_else(|| HgError::abort(""))?;
 
-    let value = invocation.config().get(section, name).unwrap_or(b"");
+    let value = invocation.config.get(section, name).unwrap_or(b"");
 
     invocation.ui.write_stdout(&format_bytes!(b"{}\n", value))?;
     Ok(())
