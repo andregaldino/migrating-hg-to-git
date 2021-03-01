@@ -494,10 +494,24 @@ def _getfnodes(ui, repo, nodes):
     starttime = util.timer()
     fnodescache = hgtagsfnodescache(repo.unfiltered())
     cachefnode = {}
+    validated_fnodes = set()
+    unknown_entries = set()
     for node in nodes:
         fnode = fnodescache.getfnode(node)
+        flog = repo.file(b'.hgtags')
         if fnode != nullid:
+            if fnode not in validated_fnodes:
+                if flog.hasnode(fnode):
+                    validated_fnodes.add(fnode)
+                else:
+                    unknown_entries.add(node)
             cachefnode[node] = fnode
+
+    if unknown_entries:
+        fixed_nodemap = fnodescache.refresh_invalid_nodes(unknown_entries)
+        for node, fnode in pycompat.iteritems(fixed_nodemap):
+            if fnode != nullid:
+                cachefnode[node] = fnode
 
     fnodescache.write()
 
@@ -825,6 +839,21 @@ class hgtagsfnodescache(object):
             return
 
         self._writeentry(ctx.rev() * _fnodesrecsize, node[0:4], fnode)
+
+    def refresh_invalid_nodes(self, nodes):
+        """recomputes file nodes for a given set of nodes which has unknown
+        filenodes for them in the cache
+        Also updates the in-memory cache with the correct filenode.
+        Caller needs to take care about calling `.write()` so that updates are
+        persisted.
+        Returns a map {node: recomputed fnode}
+        """
+        fixed_nodemap = {}
+        for node in nodes:
+            fnode = self._computefnode(node)
+            fixed_nodemap[node] = fnode
+            self.setfnode(node, fnode)
+        return fixed_nodemap
 
     def _writeentry(self, offset, prefix, fnode):
         # Slices on array instances only accept other array.

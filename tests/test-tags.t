@@ -452,8 +452,8 @@ debug command hides the corruption, both with and without tags2-visible.
   5 8dbfe60eff306a54259cfe007db9e330e7ecf866 0c04f2a8deadde17fab7422878ee5a2dadbc943d (unknown node)
 
   $ hg tags
-  abort: data/.hgtags.i@0c04f2a8deadde17fab7422878ee5a2dadbc943d: no match found
-  [50]
+  tip                                5:8dbfe60eff30
+  bar                                1:78391a272241
 
 BUG: Unless this file is restored, the `hg tags` in the next unix-permissions
 conditional will fail: "abort: data/.hgtags.i@0c04f2a8dead: no match found"
