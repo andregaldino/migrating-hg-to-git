@@ -891,6 +891,105 @@ Same as `mAEm` and `mEAm` but with extra change to the file before commiting
   o  i-0 initial commit: a b h p q r
   
 
+Subcase: merge overwrite common copy information, but with extra change during the merge
+````````````````````````````````````````````````````````````````````````````````````````
+
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (d) with a rename (from h to i to d)
+- the merge update f content
+
+  $ case_desc="merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d)"
+
+  $ hg up 'desc("f-2")'
+  2 files updated, 0 files merged, 2 files removed, 0 files unresolved
+#if no-changeset
+  $ hg debugindex d | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * d8252ab2e760 000000000000 000000000000
+       1       * b004912a8510 000000000000 000000000000
+       2       * 7b79e2fe0c89 000000000000 000000000000
+       3       * 17ec97e60577 d8252ab2e760 000000000000
+       4       * 06dabf50734c b004912a8510 17ec97e60577
+       5       * 19c0e3924691 17ec97e60577 b004912a8510
+       6       * 89c873a01d97 7b79e2fe0c89 17ec97e60577
+       7       * d55cb4e9ef57 000000000000 000000000000
+#else
+  $ hg debugindex d | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * ae258f702dfe 000000000000 000000000000
+       1       * b004912a8510 000000000000 000000000000
+       2       * 5cce88bf349f ae258f702dfe 000000000000
+       3       * cc269dd788c8 b004912a8510 5cce88bf349f
+       4       * 51c91a115080 5cce88bf349f b004912a8510
+#endif
+  $ hg up 'desc("b-1")'
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+  $ hg merge 'desc("f-2")'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
+  (branch merge, don't forget to commit)
+  $ echo "extra-change to (formelly h) during the merge" > d
+  $ hg ci -m "mBF-change-m-0 $case_desc - one way"
+  created new head
+  $ hg manifest --rev . --debug | grep "  d"
+  1c334238bd42ec85c6a0d83fd1b2a898a6a3215d 644   d (no-changeset !)
+  cea2d99c0fde64672ef61953786fdff34f16e230 644   d (changeset !)
+
+  $ hg up 'desc("f-2")'
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ echo "extra-change to (formelly h) during the merge" > d
+  $ hg ci -m "mFB-change-m-0 $case_desc - the other way"
+  created new head
+  $ hg manifest --rev . --debug | grep "  d"
+  1c334238bd42ec85c6a0d83fd1b2a898a6a3215d 644   d (no-changeset missing-correct-output !)
+  646ed7992dec41eb29635ab28268e7867d0e59a0 644   d (no-changeset known-bad-output !)
+  cea2d99c0fde64672ef61953786fdff34f16e230 644   d (changeset !)
+#if no-changeset
+  $ hg debugindex d | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * d8252ab2e760 000000000000 000000000000
+       1       * b004912a8510 000000000000 000000000000
+       2       * 7b79e2fe0c89 000000000000 000000000000
+       3       * 17ec97e60577 d8252ab2e760 000000000000
+       4       * 06dabf50734c b004912a8510 17ec97e60577
+       5       * 19c0e3924691 17ec97e60577 b004912a8510
+       6       * 89c873a01d97 7b79e2fe0c89 17ec97e60577
+       7       * d55cb4e9ef57 000000000000 000000000000
+       8       * 1c334238bd42 7b79e2fe0c89 000000000000
+       9       * 646ed7992dec 7b79e2fe0c89 d8252ab2e760 (known-bad-output !)
+#else
+  $ hg debugindex d | ../no-linkrev
+     rev linkrev nodeid       p1           p2
+       0       * ae258f702dfe 000000000000 000000000000
+       1       * b004912a8510 000000000000 000000000000
+       2       * 5cce88bf349f ae258f702dfe 000000000000
+       3       * cc269dd788c8 b004912a8510 5cce88bf349f
+       4       * 51c91a115080 5cce88bf349f b004912a8510
+       5       * cea2d99c0fde ae258f702dfe 000000000000
+#endif
+  $ hg log -G --rev '::(desc("mBF-change-m")+desc("mFB-change-m"))'
+  @    mFB-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  |\
+  +---o  mBF-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  | |/
+  | o  f-2: rename i -> d
+  | |
+  | o  f-1: rename h -> i
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h p q r
+  
+
 Decision from previous merge are properly chained with later merge
 ------------------------------------------------------------------
 
@@ -907,7 +1006,7 @@ about that file should stay unchanged.
 (extra unrelated changes)
 
   $ hg up 'desc("a-2")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  3 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo j > unrelated-j
   $ hg add unrelated-j
   $ hg ci -m 'j-1: unrelated changes (based on the "a" series of changes)'
@@ -1396,6 +1495,7 @@ Summary of all created cases
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
   mBDm-0 simple merge - B side: unrelated update, D side: delete and recreate a file (with different content) - one way
+  mBF-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   mBRm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - one way
   mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
@@ -1410,6 +1510,7 @@ Summary of all created cases
   mEA-change,Jm: chained merges (conflict+change -> simple) - same content on both branch in the initial merge
   mEA-change-m-0 merge with file update and copies info on both side - A side: rename d to f, E side: b to f, (same content for f in parent) - the other way
   mEAm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - the other way
+  mFB-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   mFBm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
   mFG,Om: chained merges (copy-overwrite -> simple) - same content
   mFGm-0 merge - G side: content change, F side: copy overwrite, no content change - one way
@@ -1800,6 +1901,26 @@ We upgrade a repository that is not using sidedata (the filelog case) and
    entry-0014 size 14
     '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00f'
   merged     : f, ;
+  ##### revision "mBF-change-m-0 merge with extra change - B side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
+  touched    : d, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
+  touched    : d, ; (upgraded missing-correct-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
+  merged     : d, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
+  touched    : d, ; (upgraded-parallel missing-correct-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
+  merged     : d, ; (upgraded-parallel known-bad-output !)
+  ##### revision "mFB-change-m-0 merge with extra change - B side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (known-bad-output !)
+  merged     : d, ; (known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (missing-correct-output !)
+  touched    : d, ; (missing-correct-output !)
   ##### revision "j-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -3191,6 +3312,131 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   R a
   R b
   R p
+
+
+Subcase: merge overwrite common copy information, but with extra change during the merge
+```````````````````````````````````````````````````````````````````````````````````
+
+Merge:
+- one with change to an unrelated file (b)
+- one overwriting a file (d) with a rename (from h to i to d)
+
+  $ hg log -G --rev '::(desc("mBF-change-m")+desc("mFB-change-m"))'
+  o    mFB-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  |\
+  +---o  mBF-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  | |/
+  | o  f-2: rename i -> d
+  | |
+  | o  f-1: rename h -> i
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h p q r
+  
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBF-change-m-0")'
+  M b
+  A d
+    h (filelog !)
+    h (sidedata !)
+    a (upgraded known-bad-output !)
+    h (upgraded missing-correct-output !)
+    a (upgraded-parallel known-bad-output !)
+    h (upgraded-parallel missing-correct-output !)
+    h (changeset !)
+    h (compatibility !)
+  A t
+    p
+  R a
+  R h
+  R p
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFB-change-m-0")'
+  M b
+  A d
+    h (filelog missing-correct-output !)
+    a (filelog known-bad-output !)
+    h (sidedata !)
+    h (upgraded !)
+    h (upgraded-parallel !)
+    h (changeset !)
+    h (compatibility !)
+  A t
+    p
+  R a
+  R h
+  R p
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBF-change-m-0")'
+  M d
+    h (no-filelog !)
+  R h
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mBF-change-m-0")'
+  M b
+  M d
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mBF-change-m-0")'
+  M b
+  M d
+    i (no-filelog !)
+  R i
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mFB-change-m-0")'
+  M d
+    h (no-filelog !)
+  R h
+  $ hg status --copies --rev 'desc("f-2")' --rev 'desc("mFB-change-m-0")'
+  M b
+  M d
+  $ hg status --copies --rev 'desc("f-1")' --rev 'desc("mFB-change-m-0")'
+  M b
+  M d
+    i (no-filelog !)
+  R i
+
+#if no-changeset
+  $ hg log -Gfr 'desc("mBF-change-m-0")' d
+  o    mBF-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  |\
+  o :  f-2: rename i -> d
+  | :
+  o :  f-1: rename h -> i
+  :/
+  o  i-0 initial commit: a b h p q r
+  
+#else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
+  $ hg log -Gfr 'desc("mBF-change-m-0")' d
+  o  mBF-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
+  :
+  o  i-2: c -move-> d, s -move-> t
+  |
+  ~
+#endif
+
+#if no-changeset
+  $ hg log -Gfr 'desc("mFB-change-m-0")' d
+  o    mFB-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  |\
+  o :  f-2: rename i -> d
+  | :
+  o :  f-1: rename h -> i
+  :/
+  o  i-2: c -move-> d, s -move-> t (known-bad-output !)
+  | (known-bad-output !)
+  o  i-1: a -move-> c, p -move-> s (known-bad-output !)
+  | (known-bad-output !)
+  o  i-0 initial commit: a b h p q r
+  
+#else
+BROKEN: `hg log --follow <file>` relies on filelog metadata to work
+  $ hg log -Gfr 'desc("mFB-change-m-0")' d
+  o  mFB-change-m-0 merge with extra change - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - the other way
+  :
+  o  i-2: c -move-> d, s -move-> t
+  |
+  ~
+#endif
 
 
 Decision from previous merge are properly chained with later merge
