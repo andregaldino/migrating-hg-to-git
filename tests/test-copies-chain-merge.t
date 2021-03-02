@@ -988,6 +988,63 @@ Merge:
   o  i-0 initial commit: a b h p q r
   
 
+Subcase: restoring and untouched deleted file, while touching it
+````````````````````````````````````````````````````````````````
+
+Merge:
+- one removing a file (d)
+- one leaving the file untouched
+- the merge actively restore the file to the same content.
+
+In this case, the file keep on living after the merge. So we should not drop its
+copy tracing chain.
+
+  $ case_desc="merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge)"
+
+  $ hg up 'desc("c-1")'
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg merge 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg revert --rev 'desc("b-1")' d
+  $ echo "new content for d after the revert" > d
+  $ hg ci -m "mCB-change-m-0 $case_desc - one way"
+  created new head
+  $ hg manifest --rev . --debug | grep "  d"
+  e333780c17752a3b0dd15e3ad48aa4e5c745f621 644   d (no-changeset !)
+  4b540a18ad699234b2b2aa18cb69555ac9c4b1df 644   d (changeset !)
+
+  $ hg up 'desc("b-1")'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 'desc("c-1")'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg revert --rev 'desc("b-1")' d
+  $ echo "new content for d after the revert" > d
+  $ hg ci -m "mBC-change-m-0 $case_desc - the other way"
+  created new head
+  $ hg manifest --rev . --debug | grep "  d"
+  e333780c17752a3b0dd15e3ad48aa4e5c745f621 644   d (no-changeset !)
+  4b540a18ad699234b2b2aa18cb69555ac9c4b1df 644   d (changeset !)
+
+
+  $ hg up null --quiet
+  $ hg log -G --rev '::(desc("mCB-change-m")+desc("mBC-change-m"))'
+  o    mBC-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  |\
+  +---o  mCB-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  | |/
+  | o  c-1 delete d
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h p q r
+  
+
 Decision from previous merge are properly chained with later merge
 ------------------------------------------------------------------
 
@@ -1006,7 +1063,7 @@ We also touch J during some of the merge to check for unrelated change to new fi
 (extra unrelated changes)
 
   $ hg up 'desc("a-2")'
-  3 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo j > unrelated-j
   $ hg add unrelated-j
   $ hg ci -m 'j-1: unrelated changes (based on the "a" series of changes)'
@@ -1493,6 +1550,7 @@ Summary of all created cases
   mAEm-0 merge with copies info on both side - A side: rename d to f, E side: b to f, (same content for f) - one way
   mBAm-0 simple merge - A side: multiple renames, B side: unrelated update - one way
   mBC+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  mBC-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   mBC-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
   mBCm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - one way
   mBCm-1 re-add d
@@ -1501,6 +1559,7 @@ Summary of all created cases
   mBFm-0 simple merge - B side: unrelated change, F side: overwrite d with a copy (from h->i->d) - one way
   mBRm-0 simple merge - B side: unrelated change, R side: overwrite d with a copy (from r->x->t) different content - one way
   mCB+revert,Lm: chained merges (salvaged -> simple) - same content (when the file exists)
+  mCB-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   mCB-revert-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
   mCBm-0 simple merge - C side: delete a file with copies history , B side: unrelated update - the other way
   mCBm-1 re-add d
@@ -1925,6 +1984,32 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   merged     : d, ; (upgraded-parallel known-bad-output !)
     '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
   merged     : d, ; (upgraded known-bad-output !)
+  ##### revision "mCB-change-m-0 merge explicitely revive deleted file - B side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
+  salvaged   : d, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
+  merged     : d, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
+  salvaged   : d, ; (upgraded missing-correct-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
+  merged     : d, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
+  salvaged   : d, ; (upgraded-parallel missing-correct-output !)
+  ##### revision "mBC-change-m-0 merge explicitely revive deleted file - B side" #####
+  1 sidedata entries
+   entry-0014 size 14
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
+  salvaged   : d, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
+  merged     : d, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
+  salvaged   : d, ; (upgraded missing-correct-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
+  merged     : d, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
+  salvaged   : d, ; (upgraded-parallel missing-correct-output !)
   ##### revision "j-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -3441,6 +3526,65 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   |
   ~
 #endif
+
+
+Subcase: restoring and untouched deleted file, while touching it
+````````````````````````````````````````````````````````````````
+
+Merge:
+- one removing a file (d)
+- one leaving the file untouched
+- the merge actively restore the file to the same content.
+
+In this case, the file keep on living after the merge. So we should not drop its
+copy tracing chain.
+
+  $ hg log -G --rev '::(desc("mCB-change-m")+desc("mBC-change-m"))'
+  o    mBC-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - the other way
+  |\
+  +---o  mCB-change-m-0 merge explicitely revive deleted file - B side: unrelated change, C side: delete d (restored by merge) - one way
+  | |/
+  | o  c-1 delete d
+  | |
+  o |  b-1: b update
+  |/
+  o  i-2: c -move-> d, s -move-> t
+  |
+  o  i-1: a -move-> c, p -move-> s
+  |
+  o  i-0 initial commit: a b h p q r
+  
+
+'a' is the the copy source of 'd'
+
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-change-m-0")'
+  M b
+  A d
+    a (no-compatibility no-changeset no-upgraded no-upgraded-parallel !)
+    a (upgraded missing-correct-output !)
+    a (upgraded-parallel missing-correct-output !)
+  A t
+    p
+  R a
+  R p
+  $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBC-change-m-0")'
+  M b
+  A d
+    a (no-compatibility no-changeset !)
+  A t
+    p
+  R a
+  R p
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mCB-change-m-0")'
+  M b
+  A d
+  $ hg status --copies --rev 'desc("c-1")' --rev 'desc("mBC-change-m-0")'
+  M b
+  A d
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mCB-change-m-0")'
+  M d
+  $ hg status --copies --rev 'desc("b-1")' --rev 'desc("mBC-change-m-0")'
+  M d
 
 
 Decision from previous merge are properly chained with later merge
