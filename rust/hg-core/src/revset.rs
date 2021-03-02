@@ -2,6 +2,7 @@
 //!
 //! <https://www.mercurial-scm.org/repo/hg/help/revsets>
 
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::revlog::{Revlog, RevlogError};
@@ -28,7 +29,10 @@ pub fn resolve_single(
 
     // TODO: support for the rest of the language here.
 
-    Err(RevlogError::InvalidRevision)
+    Err(
+        HgError::unsupported(format!("cannot parse revset '{}'", input))
+            .into(),
+    )
 }
 
 /// Resolve the small subset of the language suitable for revlogs other than
