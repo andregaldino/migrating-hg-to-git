@@ -967,7 +967,6 @@ class Test(unittest.TestCase):
         slowtimeout=None,
         usechg=False,
         chgdebug=False,
-        rhg_fallback_exe=None,
         useipv6=False,
     ):
         """Create a test from parameters.
@@ -1025,7 +1024,6 @@ class Test(unittest.TestCase):
         self._hgcommand = hgcommand or b'hg'
         self._usechg = usechg
         self._chgdebug = chgdebug
-        self._rhg_fallback_exe = rhg_fallback_exe
         self._useipv6 = useipv6
 
         self._aborted = False
@@ -1507,12 +1505,6 @@ class Test(unittest.TestCase):
             hgrc.write(b'address = localhost\n')
             hgrc.write(b'ipv6 = %r\n' % self._useipv6)
             hgrc.write(b'server-header = testing stub value\n')
-
-            if self._rhg_fallback_exe:
-                hgrc.write(b'[rhg]\n')
-                hgrc.write(
-                    b'fallback-executable = %s\n' % self._rhg_fallback_exe
-                )
 
             for opt in self._extraconfigopts:
                 section, key = _sys2bytes(opt).split(b'.', 1)
@@ -2999,7 +2991,6 @@ class TestRunner(object):
         self._coveragefile = None
         self._createdfiles = []
         self._hgcommand = None
-        self._rhg_fallback_exe = None
         self._hgpath = None
         self._portoffset = 0
         self._ports = {}
@@ -3140,10 +3131,17 @@ class TestRunner(object):
             chgbindir = os.path.dirname(os.path.realpath(self.options.with_chg))
             self._hgcommand = os.path.basename(self.options.with_chg)
 
-        # set fallback executable path, then replace "hg" command by "rhg"
+        # configure fallback and replace "hg" command by "rhg"
         rhgbindir = self._bindir
         if self.options.rhg or self.options.with_rhg:
-            self._rhg_fallback_exe = os.path.join(self._bindir, self._hgcommand)
+            # Affects configuration. Alternatives would be setting configuration through
+            # `$HGRCPATH` but some tests override that, or changing `_hgcommand` to include
+            # `--config` but that disrupts tests that print command lines and check expected
+            # output.
+            osenvironb[b'RHG_ON_UNSUPPORTED'] = b'fallback'
+            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = os.path.join(
+                self._bindir, self._hgcommand
+            )
         if self.options.rhg:
             self._hgcommand = b'rhg'
         elif self.options.with_rhg:
@@ -3477,7 +3475,6 @@ class TestRunner(object):
             hgcommand=self._hgcommand,
             usechg=bool(self.options.with_chg or self.options.chg),
             chgdebug=self.options.chg_debug,
-            rhg_fallback_exe=self._rhg_fallback_exe,
             useipv6=useipv6,
             **kwds
         )
