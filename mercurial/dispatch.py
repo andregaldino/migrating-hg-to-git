@@ -316,7 +316,10 @@ def _rundispatch(req):
             except IOError as inst:
                 if inst.errno != errno.EPIPE:
                     raise
-            ret = -1
+            if req.ui.configbool(b'ui', b'detailed-exit-code'):
+                ret = 250
+            else:
+                ret = -1
         finally:
             duration = util.timer() - starttime
             try:

@@ -66,7 +66,7 @@ Test ctrl-c
   $ sh -c "../send-signal.sh INT" &
   $ hg wait-signal
   interrupted!
-  [255]
+  [250]
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
@@ -77,7 +77,7 @@ Test ctrl-c
   $ sh -c "../send-signal.sh INT" &
   $ hg wait-signal
   interrupted!
-  [255]
+  [250]
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
@@ -91,4 +91,4 @@ Test ctrl-c
   press ^C again to terminate immediately (dangerous)
   end of unsafe operation
   interrupted!
-  [255]
+  [250]
