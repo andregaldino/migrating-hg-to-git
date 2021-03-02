@@ -540,6 +540,11 @@ def getparser():
         action="store_true",
         help="show chg debug logs",
     )
+    hgconf.add_argument(
+        "--rhg",
+        action="store_true",
+        help="install and use rhg Rust implementation in place of hg",
+    )
     hgconf.add_argument("--compiler", help="compiler to build with")
     hgconf.add_argument(
         '--extra-config-opt',
@@ -552,6 +557,7 @@ def getparser():
         "--local",
         action="store_true",
         help="shortcut for --with-hg=<testdir>/../hg, "
+        "--with-rhg=<testdir>/../rust/target/release/rhg if --rhg is set, "
         "and --with-chg=<testdir>/../contrib/chg/chg if --chg is set",
     )
     hgconf.add_argument(
@@ -578,6 +584,11 @@ def getparser():
         "--with-chg",
         metavar="CHG",
         help="use specified chg wrapper in place of hg",
+    )
+    hgconf.add_argument(
+        "--with-rhg",
+        metavar="RHG",
+        help="use specified rhg Rust implementation in place of hg",
     )
     hgconf.add_argument(
         "--with-hg",
@@ -667,13 +678,17 @@ def parseargs(args, parser):
         parser.error('--rust cannot be used with --no-rust')
 
     if options.local:
-        if options.with_hg or options.with_chg:
-            parser.error('--local cannot be used with --with-hg or --with-chg')
+        if options.with_hg or options.with_rhg or options.with_chg:
+            parser.error(
+                '--local cannot be used with --with-hg or --with-rhg or --with-chg'
+            )
         testdir = os.path.dirname(_sys2bytes(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
         pathandattrs = [(b'hg', 'with_hg')]
         if options.chg:
             pathandattrs.append((b'contrib/chg/chg', 'with_chg'))
+        if options.rhg:
+            pathandattrs.append((b'rust/target/release/rhg', 'with_rhg'))
         for relpath, attr in pathandattrs:
             binpath = os.path.join(reporootdir, relpath)
             if os.name != 'nt' and not os.access(binpath, os.X_OK):
@@ -696,6 +711,8 @@ def parseargs(args, parser):
 
     if (options.chg or options.with_chg) and os.name == 'nt':
         parser.error('chg does not work on %s' % os.name)
+    if (options.rhg or options.with_rhg) and os.name == 'nt':
+        parser.error('rhg does not work on %s' % os.name)
     if options.with_chg:
         options.chg = False  # no installation to temporary location
         options.with_chg = canonpath(_sys2bytes(options.with_chg))
@@ -704,12 +721,28 @@ def parseargs(args, parser):
             and os.access(options.with_chg, os.X_OK)
         ):
             parser.error('--with-chg must specify a chg executable')
+    if options.with_rhg:
+        options.rhg = False  # no installation to temporary location
+        options.with_rhg = canonpath(_sys2bytes(options.with_rhg))
+        if not (
+            os.path.isfile(options.with_rhg)
+            and os.access(options.with_rhg, os.X_OK)
+        ):
+            parser.error('--with-rhg must specify a rhg executable')
     if options.chg and options.with_hg:
         # chg shares installation location with hg
         parser.error(
             '--chg does not work when --with-hg is specified '
             '(use --with-chg instead)'
         )
+    if options.rhg and options.with_hg:
+        # rhg shares installation location with hg
+        parser.error(
+            '--rhg does not work when --with-hg is specified '
+            '(use --with-rhg instead)'
+        )
+    if options.rhg and options.chg:
+        parser.error('--rhg and --chg do not work together')
 
     if options.color == 'always' and not pygmentspresent:
         sys.stderr.write(
@@ -934,6 +967,7 @@ class Test(unittest.TestCase):
         slowtimeout=None,
         usechg=False,
         chgdebug=False,
+        rhg_fallback_exe=None,
         useipv6=False,
     ):
         """Create a test from parameters.
@@ -991,6 +1025,7 @@ class Test(unittest.TestCase):
         self._hgcommand = hgcommand or b'hg'
         self._usechg = usechg
         self._chgdebug = chgdebug
+        self._rhg_fallback_exe = rhg_fallback_exe
         self._useipv6 = useipv6
 
         self._aborted = False
@@ -1472,6 +1507,12 @@ class Test(unittest.TestCase):
             hgrc.write(b'address = localhost\n')
             hgrc.write(b'ipv6 = %r\n' % self._useipv6)
             hgrc.write(b'server-header = testing stub value\n')
+
+            if self._rhg_fallback_exe:
+                hgrc.write(b'[rhg]\n')
+                hgrc.write(
+                    b'fallback-executable = %s\n' % self._rhg_fallback_exe
+                )
 
             for opt in self._extraconfigopts:
                 section, key = _sys2bytes(opt).split(b'.', 1)
@@ -2958,6 +2999,7 @@ class TestRunner(object):
         self._coveragefile = None
         self._createdfiles = []
         self._hgcommand = None
+        self._rhg_fallback_exe = None
         self._hgpath = None
         self._portoffset = 0
         self._ports = {}
@@ -3098,6 +3140,16 @@ class TestRunner(object):
             chgbindir = os.path.dirname(os.path.realpath(self.options.with_chg))
             self._hgcommand = os.path.basename(self.options.with_chg)
 
+        # set fallback executable path, then replace "hg" command by "rhg"
+        rhgbindir = self._bindir
+        if self.options.rhg or self.options.with_rhg:
+            self._rhg_fallback_exe = os.path.join(self._bindir, self._hgcommand)
+        if self.options.rhg:
+            self._hgcommand = b'rhg'
+        elif self.options.with_rhg:
+            rhgbindir = os.path.dirname(os.path.realpath(self.options.with_rhg))
+            self._hgcommand = os.path.basename(self.options.with_rhg)
+
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
 
@@ -3116,6 +3168,8 @@ class TestRunner(object):
             path.insert(2, realdir)
         if chgbindir != self._bindir:
             path.insert(1, chgbindir)
+        if rhgbindir != self._bindir:
+            path.insert(1, rhgbindir)
         if self._testdir != runtestdir:
             path = [self._testdir] + path
         if self._tmpbindir != self._bindir:
@@ -3423,6 +3477,7 @@ class TestRunner(object):
             hgcommand=self._hgcommand,
             usechg=bool(self.options.with_chg or self.options.chg),
             chgdebug=self.options.chg_debug,
+            rhg_fallback_exe=self._rhg_fallback_exe,
             useipv6=useipv6,
             **kwds
         )
