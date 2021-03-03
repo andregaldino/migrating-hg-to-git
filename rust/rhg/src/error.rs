@@ -15,6 +15,9 @@ pub enum CommandError {
     /// Exit with an error message and "standard" failure exit code.
     Abort { message: Vec<u8> },
 
+    /// Exit with a failure exit code but no message.
+    Unsuccessful,
+
     /// Encountered something (such as a CLI argument, repository layout, …)
     /// not supported by this version of `rhg`. Depending on configuration
     /// `rhg` may attempt to silently fall back to Python-based `hg`, which

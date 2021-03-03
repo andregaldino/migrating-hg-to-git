@@ -1,8 +1,8 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
-use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
+use crate::revlog::{Node, NodePrefix};
 
 /// A specialized `Revlog` to work with `changelog` data format.
 pub struct Changelog {
@@ -33,6 +33,10 @@ impl Changelog {
     ) -> Result<ChangelogEntry, RevlogError> {
         let bytes = self.revlog.get_rev_data(rev)?;
         Ok(ChangelogEntry { bytes })
+    }
+
+    pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        Some(self.revlog.index.get_entry(rev)?.hash())
     }
 }
 

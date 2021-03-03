@@ -186,6 +186,7 @@ fn exit_code(result: &Result<(), CommandError>) -> i32 {
     match result {
         Ok(()) => exitcode::OK,
         Err(CommandError::Abort { .. }) => exitcode::ABORT,
+        Err(CommandError::Unsuccessful) => exitcode::UNSUCCESSFUL,
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
@@ -242,6 +243,7 @@ fn exit(
     }
     match &result {
         Ok(_) => {}
+        Err(CommandError::Unsuccessful) => {}
         Err(CommandError::Abort { message }) => {
             if !message.is_empty() {
                 // Ignore errors when writing to stderr, we’re already exiting

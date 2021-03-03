@@ -31,6 +31,9 @@ pub const NULL_NODE_ID: [u8; NODE_BYTES_LENGTH] = [0u8; NODE_BYTES_LENGTH];
 /// see also `NODES_BYTES_LENGTH` about it being private.
 const NODE_NYBBLES_LENGTH: usize = 2 * NODE_BYTES_LENGTH;
 
+/// Default for UI presentation
+const SHORT_PREFIX_DEFAULT_NYBBLES_LENGTH: u8 = 12;
+
 /// Private alias for readability and to ease future change
 type NodeData = [u8; NODE_BYTES_LENGTH];
 
@@ -163,6 +166,13 @@ impl Node {
     /// binary values to Python.
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
+    }
+
+    pub fn short(&self) -> NodePrefix {
+        NodePrefix {
+            nybbles_len: SHORT_PREFIX_DEFAULT_NYBBLES_LENGTH,
+            data: self.data,
+        }
     }
 }
 

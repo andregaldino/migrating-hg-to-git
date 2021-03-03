@@ -1,5 +1,6 @@
 use crate::error::CommandError;
 use clap::Arg;
+use format_bytes::format_bytes;
 use hg::operations::cat;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
@@ -58,9 +59,23 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 
     match rev {
         Some(rev) => {
-            let data = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
-            invocation.ui.write_stdout(&data)?;
-            Ok(())
+            let output = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
+            invocation.ui.write_stdout(&output.concatenated)?;
+            if !output.missing.is_empty() {
+                let short = format!("{:x}", output.node.short()).into_bytes();
+                for path in &output.missing {
+                    invocation.ui.write_stderr(&format_bytes!(
+                        b"{}: no such file in rev {}\n",
+                        path.as_bytes(),
+                        short
+                    ))?;
+                }
+            }
+            if output.found_any {
+                Ok(())
+            } else {
+                Err(CommandError::Unsuccessful)
+            }
         }
         None => Err(CommandError::unsupported(
             "`rhg cat` without `--rev` / `-r`",

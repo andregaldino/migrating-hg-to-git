@@ -17,30 +17,49 @@ use crate::revlog::Node;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 
+pub struct CatOutput {
+    /// Whether any file in the manifest matched the paths given as CLI
+    /// arguments
+    pub found_any: bool,
+    /// The contents of matching files, in manifest order
+    pub concatenated: Vec<u8>,
+    /// Which of the CLI arguments did not match any manifest file
+    pub missing: Vec<HgPathBuf>,
+    /// The node ID that the given revset was resolved to
+    pub node: Node,
+}
+
 const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
 
-/// List files under Mercurial control at a given revision.
+/// Output the given revision of files
 ///
 /// * `root`: Repository root
 /// * `rev`: The revision to cat the files from.
 /// * `files`: The files to output.
-pub fn cat(
+pub fn cat<'a>(
     repo: &Repo,
     revset: &str,
-    files: &[HgPathBuf],
-) -> Result<Vec<u8>, RevlogError> {
+    files: &'a [HgPathBuf],
+) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
     let changelog = Changelog::open(repo)?;
     let manifest = Manifest::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
+    let node = *changelog
+        .node_from_rev(rev)
+        .expect("should succeed when changelog.get_rev did");
     let manifest_node =
         Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
     let manifest_entry = manifest.get_node(manifest_node.into())?;
     let mut bytes = vec![];
+    let mut matched = vec![false; files.len()];
+    let mut found_any = false;
 
     for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
-        for cat_file in files.iter() {
+        for (cat_file, is_matched) in files.iter().zip(&mut matched) {
             if cat_file.as_bytes() == manifest_file.as_bytes() {
+                *is_matched = true;
+                found_any = true;
                 let index_path = store_path(manifest_file, b".i");
                 let data_path = store_path(manifest_file, b".d");
 
@@ -65,7 +84,18 @@ pub fn cat(
         }
     }
 
-    Ok(bytes)
+    let missing: Vec<_> = files
+        .iter()
+        .zip(&matched)
+        .filter(|pair| !*pair.1)
+        .map(|pair| pair.0.clone())
+        .collect();
+    Ok(CatOutput {
+        found_any,
+        concatenated: bytes,
+        missing,
+        node,
+    })
 }
 
 fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {

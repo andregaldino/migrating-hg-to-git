@@ -49,7 +49,7 @@ pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.
     /// When index and data are interleaved: bytes of the revlog index and
     /// data.
-    index: Index,
+    pub(crate) index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
     /// When present on disk: the persistent nodemap for this revlog
