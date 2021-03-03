@@ -45,7 +45,7 @@ Unwritable file descriptor
 Deleted repository
   $ rm -rf `pwd`
   $ $NO_FALLBACK rhg root
-  abort: $ENOENT$: current directory
+  abort: error getting current working directory: $ENOENT$
   [255]
 
 Listing tracked files
@@ -122,7 +122,7 @@ Specifying revisions by changeset ID
   $ $NO_FALLBACK rhg cat -r cf8b83 file-2
   2
   $ $NO_FALLBACK rhg cat -r c file-2
-  abort: ambiguous revision identifier c
+  abort: ambiguous revision identifier: c
   [255]
   $ $NO_FALLBACK rhg cat -r d file-2
   2

@@ -87,7 +87,7 @@ impl<'a> From<&'a NoRepoInCwdError> for CommandError {
         let NoRepoInCwdError { cwd } = error;
         CommandError::Abort {
             message: format_bytes!(
-                b"no repository found in '{}' (.hg not found)!",
+                b"abort: no repository found in '{}' (.hg not found)!",
                 get_bytes_from_path(cwd)
             ),
         }
@@ -108,19 +108,19 @@ impl From<ConfigParseError> for CommandError {
         let ConfigParseError {
             origin,
             line,
-            bytes,
+            message,
         } = error;
         let line_message = if let Some(line_number) = line {
-            format_bytes!(b" at line {}", line_number.to_string().into_bytes())
+            format_bytes!(b":{}", line_number.to_string().into_bytes())
         } else {
             Vec::new()
         };
         CommandError::Abort {
             message: format_bytes!(
-                b"config parse error in {}{}: '{}'",
+                b"config error at {}{}: {}",
                 origin,
                 line_message,
-                bytes
+                message
             ),
         }
     }
@@ -130,11 +130,11 @@ impl From<(RevlogError, &str)> for CommandError {
     fn from((err, rev): (RevlogError, &str)) -> CommandError {
         match err {
             RevlogError::InvalidRevision => CommandError::abort(format!(
-                "invalid revision identifier {}",
+                "abort: invalid revision identifier: {}",
                 rev
             )),
             RevlogError::AmbiguousPrefix => CommandError::abort(format!(
-                "ambiguous revision identifier {}",
+                "abort: ambiguous revision identifier: {}",
                 rev
             )),
             RevlogError::Other(error) => error.into(),

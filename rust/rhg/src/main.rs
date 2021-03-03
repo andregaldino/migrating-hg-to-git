@@ -201,8 +201,7 @@ fn exit(
             if !message.is_empty() {
                 // Ignore errors when writing to stderr, we’re already exiting
                 // with failure code so there’s not much more we can do.
-                let _ =
-                    ui.write_stderr(&format_bytes!(b"abort: {}\n", message));
+                let _ = ui.write_stderr(&format_bytes!(b"{}\n", message));
             }
         }
         Err(CommandError::UnsupportedFeature { message }) => {

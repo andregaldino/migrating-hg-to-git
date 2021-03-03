@@ -9,7 +9,7 @@
 
 use crate::errors::{HgError, IoResultExt};
 use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
-use format_bytes::{write_bytes, DisplayBytes};
+use format_bytes::{format_bytes, write_bytes, DisplayBytes};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use std::collections::HashMap;
@@ -187,10 +187,15 @@ impl ConfigLayer {
                     map.remove(&m[1]);
                 }
             } else {
+                let message = if bytes.starts_with(b" ") {
+                    format_bytes!(b"unexpected leading whitespace: {}", bytes)
+                } else {
+                    bytes.to_owned()
+                };
                 return Err(ConfigParseError {
                     origin: ConfigOrigin::File(src.to_owned()),
                     line: Some(index + 1),
-                    bytes: bytes.to_owned(),
+                    message,
                 }
                 .into());
             }
@@ -278,7 +283,7 @@ impl DisplayBytes for ConfigOrigin {
 pub struct ConfigParseError {
     pub origin: ConfigOrigin,
     pub line: Option<usize>,
-    pub bytes: Vec<u8>,
+    pub message: Vec<u8>,
 }
 
 #[derive(Debug, derive_more::From)]

@@ -78,10 +78,10 @@ impl fmt::Display for HgError {
         match self {
             HgError::Abort(explanation) => write!(f, "{}", explanation),
             HgError::IoError { error, context } => {
-                write!(f, "{}: {}", error, context)
+                write!(f, "abort: {}: {}", context, error)
             }
             HgError::CorruptedRepository(explanation) => {
-                write!(f, "corrupted repository: {}", explanation)
+                write!(f, "abort: corrupted repository: {}", explanation)
             }
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)
@@ -128,8 +128,12 @@ impl fmt::Display for IoErrorContext {
                 from.display(),
                 to.display()
             ),
-            IoErrorContext::CurrentDir => write!(f, "current directory"),
-            IoErrorContext::CurrentExe => write!(f, "current executable"),
+            IoErrorContext::CurrentDir => {
+                write!(f, "error getting current working directory")
+            }
+            IoErrorContext::CurrentExe => {
+                write!(f, "error getting current executable")
+            }
         }
     }
 }
