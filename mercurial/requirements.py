@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 GENERALDELTA_REQUIREMENT = b'generaldelta'
 DOTENCODE_REQUIREMENT = b'dotencode'
+STORE_REQUIREMENT = b'store'
 
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.

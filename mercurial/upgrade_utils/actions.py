@@ -859,7 +859,7 @@ def requiredsourcerequirements(repo):
         # Introduced in Mercurial 0.9.2.
         requirements.REVLOGV1_REQUIREMENT,
         # Introduced in Mercurial 0.9.2.
-        b'store',
+        requirements.STORE_REQUIREMENT,
     }
 
 
@@ -938,7 +938,7 @@ def supporteddestrequirements(repo):
         b'fncache',
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
-        b'store',
+        requirements.STORE_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,

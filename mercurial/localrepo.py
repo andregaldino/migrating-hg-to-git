@@ -942,7 +942,7 @@ def ensurerequirementscompatible(ui, requirements):
 
 def makestore(requirements, path, vfstype):
     """Construct a storage object for a repository."""
-    if b'store' in requirements:
+    if requirementsmod.STORE_REQUIREMENT in requirements:
         if b'fncache' in requirements:
             dotencode = requirementsmod.DOTENCODE_REQUIREMENT in requirements
             return storemod.fncachestore(path, vfstype, dotencode)
@@ -1210,7 +1210,7 @@ class localrepository(object):
         requirementsmod.SHARESAFE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
-        b'store',
+        requirementsmod.STORE_REQUIREMENT,
         b'fncache',
         requirementsmod.SHARED_REQUIREMENT,
         requirementsmod.RELATIVE_SHARED_REQUIREMENT,
@@ -3411,7 +3411,7 @@ def newreporequirements(ui, createopts):
 
     requirements = {requirementsmod.REVLOGV1_REQUIREMENT}
     if ui.configbool(b'format', b'usestore'):
-        requirements.add(b'store')
+        requirements.add(requirementsmod.STORE_REQUIREMENT)
         if ui.configbool(b'format', b'usefncache'):
             requirements.add(b'fncache')
             if ui.configbool(b'format', b'dotencode'):
@@ -3493,7 +3493,7 @@ def checkrequirementscompat(ui, requirements):
 
     dropped = set()
 
-    if b'store' not in requirements:
+    if requirementsmod.STORE_REQUIREMENT not in requirements:
         if bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
             ui.warn(
                 _(
@@ -3632,7 +3632,8 @@ def createrepository(ui, path, createopts=None):
         hgvfs.mkdir(b'cache')
     hgvfs.mkdir(b'wcache')
 
-    if b'store' in requirements and b'sharedrepo' not in createopts:
+    has_store = requirementsmod.STORE_REQUIREMENT in requirements
+    if has_store and b'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')
 
         # We create an invalid changelog outside the store so very old
