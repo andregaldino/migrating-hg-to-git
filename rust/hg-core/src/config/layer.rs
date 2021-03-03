@@ -74,7 +74,7 @@ impl ConfigLayer {
                 layer.add(section, item, value, None);
             } else {
                 Err(HgError::abort(format!(
-                    "malformed --config option: \"{}\" \
+                    "malformed --config option: '{}' \
                     (use --config section.name=value)",
                     String::from_utf8_lossy(arg),
                 )))?
