@@ -109,7 +109,7 @@ def bundle1allowed(repo, action):
     4. server.bundle1
     """
     ui = repo.ui
-    gd = b'generaldelta' in repo.requirements
+    gd = requirementsmod.GENERALDELTA_REQUIREMENT in repo.requirements
 
     if gd:
         v = ui.configbool(b'server', b'bundle1gd.%s' % action)

@@ -20,7 +20,7 @@ from ..utils import compression
 
 # list of requirements that request a clone of all revlog if added/removed
 RECLONES_REQUIREMENTS = {
-    b'generaldelta',
+    requirements.GENERALDELTA_REQUIREMENT,
     requirements.SPARSEREVLOG_REQUIREMENT,
 }
 
@@ -236,7 +236,7 @@ class dotencode(requirementformatvariant):
 class generaldelta(requirementformatvariant):
     name = b'generaldelta'
 
-    _requirement = b'generaldelta'
+    _requirement = requirements.GENERALDELTA_REQUIREMENT
 
     default = True
 
@@ -936,7 +936,7 @@ def supporteddestrequirements(repo):
     supported = {
         b'dotencode',
         b'fncache',
-        b'generaldelta',
+        requirements.GENERALDELTA_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
         b'store',
         requirements.SPARSEREVLOG_REQUIREMENT,
@@ -967,7 +967,7 @@ def allowednewrequirements(repo):
     supported = {
         b'dotencode',
         b'fncache',
-        b'generaldelta',
+        requirements.GENERALDELTA_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,

@@ -1003,7 +1003,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
 
-    if b'generaldelta' in requirements:
+    if requirementsmod.GENERALDELTA_REQUIREMENT in requirements:
         options[b'generaldelta'] = True
 
     # experimental config: format.chunkcachesize
@@ -1200,7 +1200,7 @@ class localrepository(object):
     #    chains), and the code was deleted in 4.6.
     supportedformats = {
         requirementsmod.REVLOGV1_REQUIREMENT,
-        b'generaldelta',
+        requirementsmod.GENERALDELTA_REQUIREMENT,
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.REVLOGV2_REQUIREMENT,
@@ -3442,7 +3442,7 @@ def newreporequirements(ui, createopts):
         requirements.add(b'exp-compression-%s' % compengine)
 
     if scmutil.gdinitconfig(ui):
-        requirements.add(b'generaldelta')
+        requirements.add(requirementsmod.GENERALDELTA_REQUIREMENT)
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
@@ -3460,7 +3460,7 @@ def newreporequirements(ui, createopts):
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
         requirements.remove(requirementsmod.REVLOGV1_REQUIREMENT)
         # generaldelta is implied by revlogv2.
-        requirements.discard(b'generaldelta')
+        requirements.discard(requirementsmod.GENERALDELTA_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):

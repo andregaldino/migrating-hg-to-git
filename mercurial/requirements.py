@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import
 
+GENERALDELTA_REQUIREMENT = b'generaldelta'
+
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = b'narrowhg-experimental'

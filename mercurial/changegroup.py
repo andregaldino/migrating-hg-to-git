@@ -1549,7 +1549,7 @@ def safeversion(repo):
     # will support. For example, all hg versions that support generaldelta also
     # support changegroup 02.
     versions = supportedoutgoingversions(repo)
-    if b'generaldelta' in repo.requirements:
+    if requirements.GENERALDELTA_REQUIREMENT in repo.requirements:
         versions.discard(b'01')
     assert versions
     return min(versions)
