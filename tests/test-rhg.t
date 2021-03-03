@@ -1,15 +1,4 @@
-#require rust
-
-Define an rhg function that will only run if rhg exists
-  $ RHG="$RUNTESTDIR/../rust/target/release/rhg"
-  $ rhg() {
-  > if [ -f "$RHG" ]; then
-  >   "$RHG" "$@"
-  > else
-  >   echo "skipped: Cannot find rhg. Try to run cargo build in rust/rhg."
-  >   exit 80
-  > fi
-  > }
+#require rhg
 
   $ NO_FALLBACK="env RHG_ON_UNSUPPORTED=abort"
 
@@ -169,8 +158,8 @@ Fallback to Python
   unsupported feature: `rhg cat` without `--rev` / `-r`
   [252]
 
-  $ rhg cat original --config rhg.fallback-executable="$RHG"
-  Blocking recursive fallback. The 'rhg.fallback-executable = */rust/target/release/rhg' config points to `rhg` itself. (glob)
+  $ rhg cat original --config rhg.fallback-executable=rhg
+  Blocking recursive fallback. The 'rhg.fallback-executable = rhg' config points to `rhg` itself.
   unsupported feature: `rhg cat` without `--rev` / `-r`
   [252]
 

@@ -188,6 +188,11 @@ def has_chg():
     return 'CHGHG' in os.environ
 
 
+@check("rhg", "running with rhg as 'hg'")
+def has_rhg():
+    return 'RHG_INSTALLED_AS_HG' in os.environ
+
+
 @check("cvs", "cvs client/server")
 def has_cvs():
     re = br'Concurrent Versions System.*?server'

@@ -3134,6 +3134,8 @@ class TestRunner(object):
         # configure fallback and replace "hg" command by "rhg"
         rhgbindir = self._bindir
         if self.options.rhg or self.options.with_rhg:
+            # Affects hghave.py
+            osenvironb[b'RHG_INSTALLED_AS_HG'] = b'1'
             # Affects configuration. Alternatives would be setting configuration through
             # `$HGRCPATH` but some tests override that, or changing `_hgcommand` to include
             # `--config` but that disrupts tests that print command lines and check expected
