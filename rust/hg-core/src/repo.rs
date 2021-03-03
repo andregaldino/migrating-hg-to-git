@@ -58,9 +58,9 @@ impl Repo {
         if let Some(root) = explicit_path {
             // Having an absolute path isn’t necessary here but can help code
             // elsewhere
-            let root = current_dir()?.join(root);
-            if root.join(".hg").is_dir() {
-                Self::new_at_path(root, config)
+            let absolute_root = current_dir()?.join(root);
+            if absolute_root.join(".hg").is_dir() {
+                Self::new_at_path(absolute_root, config)
             } else {
                 Err(RepoError::NotFound {
                     at: root.to_owned(),
