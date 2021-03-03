@@ -61,6 +61,8 @@ impl Repo {
             let absolute_root = current_dir()?.join(root);
             if absolute_root.join(".hg").is_dir() {
                 Self::new_at_path(absolute_root, config)
+            } else if absolute_root.is_file() {
+                Err(HgError::unsupported("bundle repository").into())
             } else {
                 Err(RepoError::NotFound {
                     at: root.to_owned(),
