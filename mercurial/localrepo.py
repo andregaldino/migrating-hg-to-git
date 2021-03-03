@@ -943,7 +943,7 @@ def ensurerequirementscompatible(ui, requirements):
 def makestore(requirements, path, vfstype):
     """Construct a storage object for a repository."""
     if requirementsmod.STORE_REQUIREMENT in requirements:
-        if b'fncache' in requirements:
+        if requirementsmod.FNCACHE_REQUIREMENT in requirements:
             dotencode = requirementsmod.DOTENCODE_REQUIREMENT in requirements
             return storemod.fncachestore(path, vfstype, dotencode)
 
@@ -1211,7 +1211,7 @@ class localrepository(object):
     }
     _basesupported = supportedformats | {
         requirementsmod.STORE_REQUIREMENT,
-        b'fncache',
+        requirementsmod.FNCACHE_REQUIREMENT,
         requirementsmod.SHARED_REQUIREMENT,
         requirementsmod.RELATIVE_SHARED_REQUIREMENT,
         requirementsmod.DOTENCODE_REQUIREMENT,
@@ -3413,7 +3413,7 @@ def newreporequirements(ui, createopts):
     if ui.configbool(b'format', b'usestore'):
         requirements.add(requirementsmod.STORE_REQUIREMENT)
         if ui.configbool(b'format', b'usefncache'):
-            requirements.add(b'fncache')
+            requirements.add(requirementsmod.FNCACHE_REQUIREMENT)
             if ui.configbool(b'format', b'dotencode'):
                 requirements.add(requirementsmod.DOTENCODE_REQUIREMENT)
 

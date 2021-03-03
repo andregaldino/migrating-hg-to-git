@@ -443,7 +443,7 @@ def rebuildfncache(ui, repo):
     """
     repo = repo.unfiltered()
 
-    if b'fncache' not in repo.requirements:
+    if requirements.FNCACHE_REQUIREMENT not in repo.requirements:
         ui.warn(
             _(
                 b'(not rebuilding fncache because repository does not '

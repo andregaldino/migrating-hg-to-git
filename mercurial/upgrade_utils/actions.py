@@ -197,7 +197,7 @@ class requirementformatvariant(formatvariant):
 class fncache(requirementformatvariant):
     name = b'fncache'
 
-    _requirement = b'fncache'
+    _requirement = requirements.FNCACHE_REQUIREMENT
 
     default = True
 
@@ -935,7 +935,7 @@ def supporteddestrequirements(repo):
     """
     supported = {
         requirements.DOTENCODE_REQUIREMENT,
-        b'fncache',
+        requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
         requirements.STORE_REQUIREMENT,
@@ -966,7 +966,7 @@ def allowednewrequirements(repo):
     """
     supported = {
         requirements.DOTENCODE_REQUIREMENT,
-        b'fncache',
+        requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.SIDEDATA_REQUIREMENT,
