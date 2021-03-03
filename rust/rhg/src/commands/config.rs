@@ -27,7 +27,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         .expect("missing required CLI argument")
         .as_bytes()
         .split_2(b'.')
-        .ok_or_else(|| HgError::abort(""))?;
+        .ok_or_else(|| HgError::unsupported("hg config <section>"))?;
 
     let value = invocation.config.get(section, name).unwrap_or(b"");
 
