@@ -21,6 +21,8 @@ INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
 # Stores manifest in Tree structure
 TREEMANIFEST_REQUIREMENT = b'treemanifest'
 
+REVLOGV1_REQUIREMENT = b'revlogv1'
+
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
 REVLOGV2_REQUIREMENT = b'exp-revlogv2.1'

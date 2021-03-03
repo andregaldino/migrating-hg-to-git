@@ -857,7 +857,7 @@ def requiredsourcerequirements(repo):
     """
     return {
         # Introduced in Mercurial 0.9.2.
-        b'revlogv1',
+        requirements.REVLOGV1_REQUIREMENT,
         # Introduced in Mercurial 0.9.2.
         b'store',
     }
@@ -937,7 +937,7 @@ def supporteddestrequirements(repo):
         b'dotencode',
         b'fncache',
         b'generaldelta',
-        b'revlogv1',
+        requirements.REVLOGV1_REQUIREMENT,
         b'store',
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.SIDEDATA_REQUIREMENT,

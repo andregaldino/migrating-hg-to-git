@@ -974,7 +974,7 @@ def resolvestorevfsoptions(ui, requirements, features):
     # opener options for it because those options wouldn't do anything
     # meaningful on such old repos.
     if (
-        b'revlogv1' in requirements
+        requirementsmod.REVLOGV1_REQUIREMENT in requirements
         or requirementsmod.REVLOGV2_REQUIREMENT in requirements
     ):
         options.update(resolverevlogstorevfsoptions(ui, requirements, features))
@@ -998,7 +998,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     options = {}
     options[b'flagprocessors'] = {}
 
-    if b'revlogv1' in requirements:
+    if requirementsmod.REVLOGV1_REQUIREMENT in requirements:
         options[b'revlogv1'] = True
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
@@ -1199,7 +1199,7 @@ class localrepository(object):
     #    being successful (repository sizes went up due to worse delta
     #    chains), and the code was deleted in 4.6.
     supportedformats = {
-        b'revlogv1',
+        requirementsmod.REVLOGV1_REQUIREMENT,
         b'generaldelta',
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
@@ -3410,7 +3410,7 @@ def newreporequirements(ui, createopts):
             % createopts[b'backend']
         )
 
-    requirements = {b'revlogv1'}
+    requirements = {requirementsmod.REVLOGV1_REQUIREMENT}
     if ui.configbool(b'format', b'usestore'):
         requirements.add(b'store')
         if ui.configbool(b'format', b'usefncache'):
@@ -3458,7 +3458,7 @@ def newreporequirements(ui, createopts):
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
-        requirements.remove(b'revlogv1')
+        requirements.remove(requirementsmod.REVLOGV1_REQUIREMENT)
         # generaldelta is implied by revlogv2.
         requirements.discard(b'generaldelta')
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)

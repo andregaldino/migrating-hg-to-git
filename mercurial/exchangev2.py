@@ -22,6 +22,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    requirements as requirementsmod,
     setdiscovery,
 )
 from .interfaces import repository
@@ -183,7 +184,7 @@ def _checkuserawstorefiledata(pullop):
 
     # TODO This is super hacky. There needs to be a storage API for this. We
     # also need to check for compatibility with the remote.
-    if b'revlogv1' not in repo.requirements:
+    if requirementsmod.REVLOGV1_REQUIREMENT not in repo.requirements:
         return False
 
     return True

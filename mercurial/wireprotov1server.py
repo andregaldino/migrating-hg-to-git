@@ -27,6 +27,7 @@ from . import (
     exchange,
     pushkey as pushkeymod,
     pycompat,
+    requirements as requirementsmod,
     streamclone,
     util,
     wireprototypes,
@@ -310,7 +311,7 @@ def _capabilities(repo, proto):
             caps.append(b'stream-preferred')
         requiredformats = repo.requirements & repo.supportedformats
         # if our local revlogs are just revlogv1, add 'stream' cap
-        if not requiredformats - {b'revlogv1'}:
+        if not requiredformats - {requirementsmod.REVLOGV1_REQUIREMENT}:
             caps.append(b'stream')
         # otherwise, add 'streamreqs' detailing our local revlog format
         else:

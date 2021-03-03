@@ -20,6 +20,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    requirements as requirementsmod,
     scmutil,
     store,
     util,
@@ -83,7 +84,7 @@ def canperformstreamclone(pullop, bundle2=False):
     # is advertised and contains a comma-delimited list of requirements.
     requirements = set()
     if remote.capable(b'stream'):
-        requirements.add(b'revlogv1')
+        requirements.add(requirementsmod.REVLOGV1_REQUIREMENT)
     else:
         streamreqs = remote.capable(b'streamreqs')
         # This is weird and shouldn't happen with modern servers.
