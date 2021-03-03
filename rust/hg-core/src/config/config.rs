@@ -125,8 +125,13 @@ impl Config {
             .when_reading_file(path)
             .io_not_found_as_none()?
         {
-            for entry in entries {
-                let file_path = entry.when_reading_file(path)?.path();
+            let mut file_paths = entries
+                .map(|result| {
+                    result.when_reading_file(path).map(|entry| entry.path())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            file_paths.sort();
+            for file_path in &file_paths {
                 if file_path.extension() == Some(std::ffi::OsStr::new("rc")) {
                     self.add_trusted_file(&file_path)?
                 }
