@@ -217,7 +217,7 @@ class fncache(requirementformatvariant):
 class dotencode(requirementformatvariant):
     name = b'dotencode'
 
-    _requirement = b'dotencode'
+    _requirement = requirements.DOTENCODE_REQUIREMENT
 
     default = True
 
@@ -934,7 +934,7 @@ def supporteddestrequirements(repo):
     Extensions should monkeypatch this to add their custom requirements.
     """
     supported = {
-        b'dotencode',
+        requirements.DOTENCODE_REQUIREMENT,
         b'fncache',
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
@@ -965,7 +965,7 @@ def allowednewrequirements(repo):
     future, unknown requirements from accidentally being added.
     """
     supported = {
-        b'dotencode',
+        requirements.DOTENCODE_REQUIREMENT,
         b'fncache',
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,

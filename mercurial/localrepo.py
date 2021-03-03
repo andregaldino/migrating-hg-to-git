@@ -944,9 +944,8 @@ def makestore(requirements, path, vfstype):
     """Construct a storage object for a repository."""
     if b'store' in requirements:
         if b'fncache' in requirements:
-            return storemod.fncachestore(
-                path, vfstype, b'dotencode' in requirements
-            )
+            dotencode = requirementsmod.DOTENCODE_REQUIREMENT in requirements
+            return storemod.fncachestore(path, vfstype, dotencode)
 
         return storemod.encodedstore(path, vfstype)
 
@@ -1215,7 +1214,7 @@ class localrepository(object):
         b'fncache',
         requirementsmod.SHARED_REQUIREMENT,
         requirementsmod.RELATIVE_SHARED_REQUIREMENT,
-        b'dotencode',
+        requirementsmod.DOTENCODE_REQUIREMENT,
         requirementsmod.SPARSE_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
     }
@@ -3416,7 +3415,7 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'usefncache'):
             requirements.add(b'fncache')
             if ui.configbool(b'format', b'dotencode'):
-                requirements.add(b'dotencode')
+                requirements.add(requirementsmod.DOTENCODE_REQUIREMENT)
 
     compengines = ui.configlist(b'format', b'revlog-compression')
     for compengine in compengines:
