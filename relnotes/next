@@ -26,3 +26,8 @@
 
  * `changelog.branchinfo` is deprecated and will be removed after 5.8.
    It is superseded by `changelogrevision.branchinfo`.
+
+ * Callbacks for revlog.addgroup and the changelog._nodeduplicatecallback hook
+   now get a revision number as argument instead of a node.
+
+ * revlog.addrevision returns the revision number instead of the node.
