@@ -95,6 +95,25 @@ fn main() {
             exit(&ui, on_unsupported, Err(error.into()))
         });
 
+    if let Some(repo_path_bytes) = &early_args.repo {
+        lazy_static::lazy_static! {
+            static ref SCHEME_RE: regex::bytes::Regex =
+                // Same as `_matchscheme` in `mercurial/util.py`
+                regex::bytes::Regex::new("^[a-zA-Z0-9+.\\-]+:").unwrap();
+        }
+        if SCHEME_RE.is_match(&repo_path_bytes) {
+            exit(
+                &ui,
+                OnUnsupported::from_config(&non_repo_config),
+                Err(CommandError::UnsupportedFeature {
+                    message: format_bytes!(
+                        b"URL-like --repository {}",
+                        repo_path_bytes
+                    ),
+                }),
+            )
+        }
+    }
     let repo_path = early_args.repo.as_deref().map(get_path_from_bytes);
     let repo_result = match Repo::find(&non_repo_config, repo_path) {
         Ok(repo) => Ok(repo),
