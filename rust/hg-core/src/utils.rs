@@ -67,6 +67,7 @@ where
 }
 
 pub trait SliceExt {
+    fn trim_end_newlines(&self) -> &Self;
     fn trim_end(&self) -> &Self;
     fn trim_start(&self) -> &Self;
     fn trim(&self) -> &Self;
@@ -80,6 +81,13 @@ fn is_not_whitespace(c: &u8) -> bool {
 }
 
 impl SliceExt for [u8] {
+    fn trim_end_newlines(&self) -> &[u8] {
+        if let Some(last) = self.iter().rposition(|&byte| byte != b'\n') {
+            &self[..=last]
+        } else {
+            &[]
+        }
+    }
     fn trim_end(&self) -> &[u8] {
         if let Some(last) = self.iter().rposition(is_not_whitespace) {
             &self[..=last]

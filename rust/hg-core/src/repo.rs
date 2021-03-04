@@ -1,8 +1,8 @@
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::errors::{HgError, IoErrorContext, IoResultExt};
 use crate::requirements;
-use crate::utils::current_dir;
 use crate::utils::files::get_path_from_bytes;
+use crate::utils::{current_dir, SliceExt};
 use memmap::{Mmap, MmapOptions};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -118,7 +118,8 @@ impl Repo {
             store_path = dot_hg.join("store");
         } else {
             let bytes = hg_vfs.read("sharedpath")?;
-            let mut shared_path = get_path_from_bytes(&bytes).to_owned();
+            let mut shared_path =
+                get_path_from_bytes(bytes.trim_end_newlines()).to_owned();
             if relative {
                 shared_path = dot_hg.join(shared_path)
             }
