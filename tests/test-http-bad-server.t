@@ -118,17 +118,17 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   readline(115 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
   readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(* from *) -> (2) \r\n (glob)
-  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
   write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
   write(23) -> Server: badhttpserver\r\n (no-py3 !)
   write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
   write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21) -> Content-Length: 450\r\n (no-py3 !)
+  write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1? from *) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
@@ -163,17 +163,17 @@ Failure to read getbundle HTTP request
   readline(213 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
   readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(* from *) -> (2) \r\n (glob)
-  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
   write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
   write(23) -> Server: badhttpserver\r\n (no-py3 !)
   write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
   write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21) -> Content-Length: 450\r\n (no-py3 !)
+  write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
-  write(450) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(8? from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -228,17 +228,17 @@ Now do a variation using POST to send arguments
   readline(234 from *) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(* from *) -> (2) \r\n (glob)
-  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 463\r\n\r\n (py36 !)
-  sendall(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 463\r\n\r\n (py3 no-py36 !)
-  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 444\r\n\r\n (py36 !)
+  sendall(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 444\r\n\r\n (py3 no-py36 !)
+  write(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
   write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
   write(23) -> Server: badhttpserver\r\n (no-py3 !)
   write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
   write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21) -> Content-Length: 463\r\n (no-py3 !)
+  write(21) -> Content-Length: 444\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
-  write(463) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  write(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(1?? from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
@@ -296,7 +296,7 @@ Server sends a single character from the HTTP response line
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(286) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
+  write(286) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
@@ -307,7 +307,7 @@ Server sends an incomplete capabilities response body
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: HTTP request error (incomplete response; expected 450 bytes got 20)
+  abort: HTTP request error (incomplete response; expected 431 bytes got 20)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -320,17 +320,17 @@ Server sends an incomplete capabilities response body
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(20 from 450) -> (0) batch branchmap bund (py36 !)
-  write(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(20 from 450) -> (0) batch branchmap bund (py3 no-py36 !)
+  sendall(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(20 from 431) -> (0) batch branchmap bund (py36 !)
+  write(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(20 from 431) -> (0) batch branchmap bund (py3 no-py36 !)
   write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
   write(23 from 23) -> (121) Server: badhttpserver\r\n (no-py3 !)
   write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n (no-py3 !)
   write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (22) Content-Length: 450\r\n (no-py3 !)
+  write(21 from 21) -> (22) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (20) \r\n (no-py3 !)
-  write(20 from 450) -> (0) batch branchmap bund (no-py3 !)
+  write(20 from 431) -> (0) batch branchmap bund (no-py3 !)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
   Traceback (most recent call last):
@@ -341,7 +341,7 @@ Server sends an incomplete capabilities response body
 
 Server sends incomplete headers for batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=728 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=709 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is horrible
@@ -363,17 +363,17 @@ TODO this output is horrible
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (692) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (669) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (632) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (591) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (570) Content-Length: 450\r\n (no-py3 !)
-  write(2 from 2) -> (568) \r\n (no-py3 !)
-  write(450 from 450) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160 from 160) -> (549) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (673) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (650) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (613) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (572) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (551) Content-Length: 431\r\n (no-py3 !)
+  write(2 from 2) -> (549) \r\n (no-py3 !)
+  write(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -401,7 +401,7 @@ TODO this output is horrible
 
 Server sends an incomplete HTTP response body to batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=793 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=774 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO client spews a stack due to uncaught ValueError in batch.results()
@@ -422,17 +422,17 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (633) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (633) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (757) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (734) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (697) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (656) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (635) Content-Length: 450\r\n (no-py3 !)
-  write(2 from 2) -> (633) \r\n (no-py3 !)
-  write(450 from 450) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160 from 160) -> (614) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431 from 431) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (633) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431 from 431) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (738) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (715) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (678) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (637) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (616) Content-Length: 431\r\n (no-py3 !)
+  write(2 from 2) -> (614) \r\n (no-py3 !)
+  write(431 from 431) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -463,7 +463,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
 Server sends incomplete headers for getbundle response
 
-  $ hg serve --config badserver.closeaftersendbytes=940 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=921 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is terrible
@@ -486,17 +486,17 @@ TODO this output is terrible
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (780) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (780) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (904) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (881) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (844) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (803) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (782) Content-Length: 450\r\n (no-py3 !)
-  write(2 from 2) -> (780) \r\n (no-py3 !)
-  write(450 from 450) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160 from 160) -> (761) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431 from 431) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (780) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431 from 431) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (885) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (862) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (825) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (784) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (763) Content-Length: 431\r\n (no-py3 !)
+  write(2 from 2) -> (761) \r\n (no-py3 !)
+  write(431 from 431) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -520,7 +520,7 @@ TODO this output is terrible
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
   readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -544,7 +544,7 @@ TODO this output is terrible
 
 Server stops before it sends transfer encoding
 
-  $ hg serve --config badserver.closeaftersendbytes=973 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=954 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -573,7 +573,7 @@ Server stops before it sends transfer encoding
 
 Server sends empty HTTP body for getbundle
 
-  $ hg serve --config badserver.closeaftersendbytes=978 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=959 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -591,17 +591,17 @@ Server sends empty HTTP body for getbundle
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (818) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (818) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (942) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (919) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (882) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (841) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (820) Content-Length: 450\r\n (no-py3 !)
-  write(2 from 2) -> (818) \r\n (no-py3 !)
-  write(450 from 450) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160 from 160) -> (799) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431 from 431) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (818) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431 from 431) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (923) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (900) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (863) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (822) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (801) Content-Length: 431\r\n (no-py3 !)
+  write(2 from 2) -> (799) \r\n (no-py3 !)
+  write(431 from 431) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -625,7 +625,7 @@ Server sends empty HTTP body for getbundle
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
   readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -651,7 +651,7 @@ Server sends empty HTTP body for getbundle
 
 Server sends partial compression string
 
-  $ hg serve --config badserver.closeaftersendbytes=1002 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=983 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -669,17 +669,17 @@ Server sends partial compression string
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (842) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py36 !)
-  sendall(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (842) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 450\r\n\r\n (py3 no-py36 !)
-  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (966) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (943) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (906) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (865) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (844) Content-Length: 450\r\n (no-py3 !)
-  write(2 from 2) -> (842) \r\n (no-py3 !)
-  write(450 from 450) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160 from 160) -> (823) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431 from 431) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160 from 160) -> (842) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431 from 431) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36 from 36) -> (947) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23 from 23) -> (924) Server: badhttpserver\r\n (no-py3 !)
+  write(37 from 37) -> (887) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41 from 41) -> (846) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21 from 21) -> (825) Content-Length: 431\r\n (no-py3 !)
+  write(2 from 2) -> (823) \r\n (no-py3 !)
+  write(431 from 431) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -702,7 +702,7 @@ Server sends partial compression string
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(*) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
+  readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
   readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -733,7 +733,7 @@ Server sends partial compression string
 
 Server sends partial bundle2 header magic
 
-  $ hg serve --config badserver.closeaftersendbytes=999 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=980 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -778,7 +778,7 @@ Server sends partial bundle2 header magic
 
 Server sends incomplete bundle2 stream params length
 
-  $ hg serve --config badserver.closeaftersendbytes=1008 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=989 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -825,7 +825,7 @@ Server sends incomplete bundle2 stream params length
 
 Servers stops after bundle2 stream params header
 
-  $ hg serve --config badserver.closeaftersendbytes=1011 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=992 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -871,7 +871,7 @@ Servers stops after bundle2 stream params header
 
 Server stops sending after bundle2 part header length
 
-  $ hg serve --config badserver.closeaftersendbytes=1020 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1001 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -920,7 +920,7 @@ Server stops sending after bundle2 part header length
 
 Server stops sending after bundle2 part header
 
-  $ hg serve --config badserver.closeaftersendbytes=1067 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1048 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -973,7 +973,7 @@ Server stops sending after bundle2 part header
 
 Server stops after bundle2 part payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1088 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1069 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1029,7 +1029,7 @@ Server stops after bundle2 part payload chunk size
 
 Server stops sending in middle of bundle2 payload chunk
 
-  $ hg serve --config badserver.closeaftersendbytes=1549 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1530 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1086,7 +1086,7 @@ Server stops sending in middle of bundle2 payload chunk
 
 Server stops sending after 0 length payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1580 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1561 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1148,8 +1148,7 @@ Server stops sending after 0 length payload chunk size
 Server stops sending after 0 part bundle part header (indicating end of bundle2 payload)
 This is before the 0 size chunked transfer part that signals end of HTTP response.
 
-#  $ hg serve --config badserver.closeaftersendbytes=1755 -p $HGPORT -d --pid-file=hg.pid -E error.log
-  $ hg serve --config badserver.closeaftersendbytes=1862 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1736 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1165,25 +1164,20 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   $ killdaemons.py $DAEMON_PIDS
 
 #if py36
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -25
-  sendall(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  sendall(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  sendall(9 from 9) -> (786) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  sendall(473 from 473) -> (313) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (304) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (295) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  sendall(38 from 38) -> (257) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  sendall(9 from 9) -> (248) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  sendall(64 from 64) -> (184) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  sendall(9 from 9) -> (175) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (166) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  sendall(41 from 41) -> (125) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
-  sendall(9 from 9) -> (116) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (107) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
-  sendall(35 from 35) -> (72) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (63) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
-  sendall(45 from 45) -> (18) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -20
+  sendall(9 from 9) -> (744) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (735) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (688) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (679) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (206) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (197) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (188) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  sendall(38 from 38) -> (150) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  sendall(9 from 9) -> (141) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  sendall(64 from 64) -> (77) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  sendall(9 from 9) -> (68) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (59) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  sendall(41 from 41) -> (18) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
   sendall(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   sendall(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
@@ -1193,25 +1187,20 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   
 
 #else
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -26
-  write(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  write(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  write(9 from 9) -> (786) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  write(473 from 473) -> (313) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (304) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (295) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  write(38 from 38) -> (257) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  write(9 from 9) -> (248) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  write(64 from 64) -> (184) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  write(9 from 9) -> (175) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (166) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  write(41 from 41) -> (125) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
-  write(9 from 9) -> (116) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (107) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
-  write(35 from 35) -> (72) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (63) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
-  write(45 from 45) -> (18) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -21
+  write(9 from 9) -> (744) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (735) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write(47 from 47) -> (688) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write(9 from 9) -> (679) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  write(473 from 473) -> (206) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (197) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (188) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  write(38 from 38) -> (150) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  write(9 from 9) -> (141) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  write(64 from 64) -> (77) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  write(9 from 9) -> (68) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (59) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  write(41 from 41) -> (18) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
@@ -1227,7 +1216,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
 Server sends a size 0 chunked-transfer size without terminating \r\n
 
-  $ hg serve --config badserver.closeaftersendbytes=1865 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1739 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1243,25 +1232,20 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   $ killdaemons.py $DAEMON_PIDS
 
 #if py36
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -26
-  sendall(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  sendall(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  sendall(9 from 9) -> (789) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  sendall(473 from 473) -> (316) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (307) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (298) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  sendall(38 from 38) -> (260) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  sendall(9 from 9) -> (251) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  sendall(64 from 64) -> (187) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  sendall(9 from 9) -> (178) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (169) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  sendall(41 from 41) -> (128) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
-  sendall(9 from 9) -> (119) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (110) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
-  sendall(35 from 35) -> (75) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (66) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
-  sendall(45 from 45) -> (21) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -21
+  sendall(9 from 9) -> (747) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (738) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47 from 47) -> (691) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9 from 9) -> (682) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(473 from 473) -> (209) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (200) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (191) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  sendall(38 from 38) -> (153) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  sendall(9 from 9) -> (144) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  sendall(64 from 64) -> (80) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  sendall(9 from 9) -> (71) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9 from 9) -> (62) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  sendall(41 from 41) -> (21) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
   sendall(9 from 9) -> (12) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   sendall(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   sendall(3 from 5) -> (0) 0\r\n
@@ -1272,25 +1256,20 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   
 
 #else
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -27
-  write(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  write(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  write(9 from 9) -> (789) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  write(473 from 473) -> (316) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (307) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (298) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  write(38 from 38) -> (260) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  write(9 from 9) -> (251) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  write(64 from 64) -> (187) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  write(9 from 9) -> (178) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (169) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  write(41 from 41) -> (128) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
-  write(9 from 9) -> (119) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (110) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
-  write(35 from 35) -> (75) 1d\\r\\n\x16cache:rev-branch-cache\x00\x00\x00\x03\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (66) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
-  write(45 from 45) -> (21) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -22
+  write(9 from 9) -> (747) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (738) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write(47 from 47) -> (691) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write(9 from 9) -> (682) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  write(473 from 473) -> (209) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (200) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (191) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  write(38 from 38) -> (153) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  write(9 from 9) -> (144) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  write(64 from 64) -> (80) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  write(9 from 9) -> (71) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (62) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  write(41 from 41) -> (21) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
   write(9 from 9) -> (12) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(3 from 5) -> (0) 0\r\n

@@ -73,7 +73,6 @@ Cannot stream clone when server.uncompressed is set
     remote-changegroup
       http
       https
-    rev-branch-cache
 
   $ hg clone --stream -U http://localhost:$HGPORT server-disabled
   warning: stream clone requested but server has them disabled
@@ -141,7 +140,6 @@ Cannot stream clone when server.uncompressed is set
     remote-changegroup
       http
       https
-    rev-branch-cache
 
   $ hg clone --stream -U http://localhost:$HGPORT server-disabled
   warning: stream clone requested but server has them disabled

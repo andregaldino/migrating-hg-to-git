@@ -158,11 +158,10 @@ client only pulls down 1 changeset
   list of changesets:
   bec0734cd68e84477ba7fc1d13e6cff53ab70129
   listing keys for "bookmarks"
-  bundle2-output-bundle: "HG20", 4 parts total
+  bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
   bundle2-output-part: "listkeys" (params: 1 mandatory) empty payload
   bundle2-output-part: "phase-heads" 24 bytes payload
-  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
   adding changesets
@@ -174,9 +173,7 @@ client only pulls down 1 changeset
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
-  bundle2-input-part: total payload size 39
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
   updating the branch cache
   added 1 changesets with 1 changes to 1 files (+1 heads)

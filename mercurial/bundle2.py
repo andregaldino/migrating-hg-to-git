@@ -1598,7 +1598,6 @@ capabilities = {
     b'digests': tuple(sorted(util.DIGESTS.keys())),
     b'remote-changegroup': (b'http', b'https'),
     b'hgtagsfnodes': (),
-    b'rev-branch-cache': (),
     b'phases': (b'heads',),
     b'stream': (b'v2',),
 }
@@ -1642,6 +1641,9 @@ def getrepocaps(repo, allowpushback=False, role=None):
             caps.pop(b'stream')
     # Else always advertise support on client, because payload support
     # should always be advertised.
+
+    # b'rev-branch-cache is no longer advertised, but still supported
+    # for legacy clients.
 
     return caps
 

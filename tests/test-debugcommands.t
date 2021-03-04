@@ -636,7 +636,6 @@ Test debugcapabilities command:
     remote-changegroup
       http
       https
-    rev-branch-cache
     stream
       v2
 
@@ -654,7 +653,7 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 463
+  remote: 444
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps
