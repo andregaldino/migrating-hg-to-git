@@ -286,9 +286,9 @@ dependencies = [
 
 [[package]]
 name = "format-bytes"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc35f5e45d6b31053cea13078ffc6fa52fa8617aa54b7ac2011720d9c009e04f"
+checksum = "8030ff4b04f0ca1c612d6fe49f2fc18caf56fb01497cb370b41cfd36d89b3b06"
 dependencies = [
  "format-bytes-macros",
  "proc-macro-hack",

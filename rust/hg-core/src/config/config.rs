@@ -14,6 +14,7 @@ use crate::config::layer::{
 };
 use crate::utils::files::get_bytes_from_os_str;
 use format_bytes::{write_bytes, DisplayBytes};
+use std::collections::HashSet;
 use std::env;
 use std::path::{Path, PathBuf};
 use std::str;
@@ -359,6 +360,14 @@ impl Config {
             }
         }
         None
+    }
+
+    /// Return all keys defined for the given section
+    pub fn get_section_keys(&self, section: &[u8]) -> HashSet<&[u8]> {
+        self.layers
+            .iter()
+            .flat_map(|layer| layer.iter_keys(section))
+            .collect()
     }
 
     /// Get raw values bytes from all layers (even untrusted ones) in order

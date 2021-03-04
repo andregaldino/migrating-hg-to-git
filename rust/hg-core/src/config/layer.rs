@@ -115,6 +115,14 @@ impl ConfigLayer {
         Some(self.sections.get(section)?.get(item)?)
     }
 
+    /// Returns the keys defined in the given section
+    pub fn iter_keys(&self, section: &[u8]) -> impl Iterator<Item = &[u8]> {
+        self.sections
+            .get(section)
+            .into_iter()
+            .flat_map(|section| section.keys().map(|vec| &**vec))
+    }
+
     pub fn is_empty(&self) -> bool {
         self.sections.is_empty()
     }

@@ -4,7 +4,7 @@ use clap::App;
 use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use format_bytes::format_bytes;
+use format_bytes::{format_bytes, join};
 use hg::config::Config;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
@@ -25,6 +25,8 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
+    check_extensions(config)?;
+
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
         .setting(AppSettings::SubcommandRequired)
@@ -350,5 +352,27 @@ impl OnUnsupported {
                 Self::DEFAULT
             }
         }
+    }
+}
+
+const SUPPORTED_EXTENSIONS: &[&[u8]] = &[b"blackbox", b"share"];
+
+fn check_extensions(config: &Config) -> Result<(), CommandError> {
+    let enabled = config.get_section_keys(b"extensions");
+
+    let mut unsupported = enabled;
+    for supported in SUPPORTED_EXTENSIONS {
+        unsupported.remove(supported);
+    }
+
+    if unsupported.is_empty() {
+        Ok(())
+    } else {
+        Err(CommandError::UnsupportedFeature {
+            message: format_bytes!(
+                b"extensions: {}",
+                join(unsupported, b", ")
+            ),
+        })
     }
 }
