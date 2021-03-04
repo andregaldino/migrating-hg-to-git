@@ -72,7 +72,7 @@ impl From<RepoError> for CommandError {
         match error {
             RepoError::NotFound { at } => CommandError::Abort {
                 message: format_bytes!(
-                    b"repository {} not found",
+                    b"abort: repository {} not found",
                     get_bytes_from_path(at)
                 ),
             },

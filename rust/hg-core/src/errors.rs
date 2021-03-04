@@ -81,7 +81,7 @@ impl fmt::Display for HgError {
                 write!(f, "abort: {}: {}", context, error)
             }
             HgError::CorruptedRepository(explanation) => {
-                write!(f, "abort: corrupted repository: {}", explanation)
+                write!(f, "abort: {}", explanation)
             }
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)

@@ -7,7 +7,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::errors::{HgError, IoResultExt};
+use crate::errors::HgError;
 use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
 use format_bytes::{format_bytes, write_bytes, DisplayBytes};
 use lazy_static::lazy_static;
@@ -74,7 +74,7 @@ impl ConfigLayer {
                 layer.add(section, item, value, None);
             } else {
                 Err(HgError::abort(format!(
-                    "malformed --config option: '{}' \
+                    "abort: malformed --config option: '{}' \
                     (use --config section.name=value)",
                     String::from_utf8_lossy(arg),
                 )))?
@@ -147,6 +147,7 @@ impl ConfigLayer {
         let mut section = b"".to_vec();
 
         while let Some((index, bytes)) = lines_iter.next() {
+            let line = Some(index + 1);
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
                 // `Path::parent` only fails for the root directory,
@@ -158,8 +159,17 @@ impl ConfigLayer {
                 // `Path::join` with an absolute argument correctly ignores the
                 // base path
                 let filename = dir.join(&get_path_from_bytes(&filename_bytes));
-                let data =
-                    std::fs::read(&filename).when_reading_file(&filename)?;
+                let data = std::fs::read(&filename).map_err(|io_error| {
+                    ConfigParseError {
+                        origin: ConfigOrigin::File(src.to_owned()),
+                        line,
+                        message: format_bytes!(
+                            b"cannot include {} ({})",
+                            filename_bytes,
+                            format_bytes::Utf8(io_error)
+                        ),
+                    }
+                })?;
                 layers.push(current_layer);
                 layers.extend(Self::parse(&filename, &data)?);
                 current_layer = Self::new(ConfigOrigin::File(src.to_owned()));
@@ -184,12 +194,7 @@ impl ConfigLayer {
                     };
                     lines_iter.next();
                 }
-                current_layer.add(
-                    section.clone(),
-                    item,
-                    value,
-                    Some(index + 1),
-                );
+                current_layer.add(section.clone(), item, value, line);
             } else if let Some(m) = UNSET_RE.captures(&bytes) {
                 if let Some(map) = current_layer.sections.get_mut(&section) {
                     map.remove(&m[1]);
@@ -202,7 +207,7 @@ impl ConfigLayer {
                 };
                 return Err(ConfigParseError {
                     origin: ConfigOrigin::File(src.to_owned()),
-                    line: Some(index + 1),
+                    line,
                     message,
                 }
                 .into());

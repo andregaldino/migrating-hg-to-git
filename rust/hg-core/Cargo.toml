@@ -28,7 +28,7 @@ log = "0.4.8"
 memmap = "0.7.0"
 zstd = "0.5.3"
 rust-crypto = "0.2.36"
-format-bytes = "0.2.0"
+format-bytes = "0.2.2"
 
 # We don't use the `miniz-oxide` backend to not change rhg benchmarks and until
 # we have a clearer view of which backend is the fastest.

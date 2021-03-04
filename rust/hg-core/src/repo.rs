@@ -141,20 +141,22 @@ impl Repo {
 
             if share_safe && !source_is_share_safe {
                 return Err(match config
-                    .get(b"safe-mismatch", b"source-not-safe")
+                    .get(b"share", b"safe-mismatch.source-not-safe")
                 {
                     Some(b"abort") | None => HgError::abort(
-                        "share source does not support share-safe requirement",
+                        "abort: share source does not support share-safe requirement\n\
+                        (see `hg help config.format.use-share-safe` for more information)",
                     ),
                     _ => HgError::unsupported("share-safe downgrade"),
                 }
                 .into());
             } else if source_is_share_safe && !share_safe {
                 return Err(
-                    match config.get(b"safe-mismatch", b"source-safe") {
+                    match config.get(b"share", b"safe-mismatch.source-safe") {
                         Some(b"abort") | None => HgError::abort(
-                            "version mismatch: source uses share-safe \
-                            functionality while the current share does not",
+                            "abort: version mismatch: source uses share-safe \
+                            functionality while the current share does not\n\
+                            (see `hg help config.format.use-share-safe` for more information)",
                         ),
                         _ => HgError::unsupported("share-safe upgrade"),
                     }
