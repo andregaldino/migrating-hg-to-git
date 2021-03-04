@@ -398,11 +398,8 @@ should not report the copy.
   x -> y
   $ hg debugp1copies -r 2
   x -> y
-BROKEN: These two should not report any copies
   $ hg debugpathcopies 1 2
-  x -> y
   $ hg debugpathcopies 2 1
-  x -> y
 
 Copy x to y on one side of merge, create y and rename to z on the other side.
   $ newrepo

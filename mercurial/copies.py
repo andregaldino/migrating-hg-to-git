@@ -763,6 +763,11 @@ def pathcopies(x, y, match=None):
             base = x
         x_copies = _forwardcopies(a, x)
         y_copies = _forwardcopies(a, y, base, match=match)
+        same_keys = set(x_copies) & set(y_copies)
+        for k in same_keys:
+            if x_copies.get(k) == y_copies.get(k):
+                del x_copies[k]
+                del y_copies[k]
         x_backward_renames = _reverse_renames(x_copies, x, match)
         copies = _chain(
             x_backward_renames,
