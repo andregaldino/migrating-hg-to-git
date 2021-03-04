@@ -56,7 +56,6 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   generaldelta:       yes
   share-safe:          no
   sparserevlog:       yes
-  sidedata:            no
   persistent-nodemap: yes
   copies-sdc:          no
   revlog-v2:           no
@@ -576,7 +575,6 @@ downgrading
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -622,7 +620,6 @@ upgrading
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no

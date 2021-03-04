@@ -58,7 +58,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes
   share-safe:          no
   sparserevlog:       yes
-  sidedata:            no
   persistent-nodemap:  no
   copies-sdc:          no
   revlog-v2:           no
@@ -72,7 +71,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -86,7 +84,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -100,7 +97,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|sparserevlog:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -138,12 +134,6 @@ An upgrade of a repository created with recommended settings only suggests optim
     "default": true,
     "name": "sparserevlog",
     "repo": true
-   },
-   {
-    "config": false,
-    "default": false,
-    "name": "sidedata",
-    "repo": false
    },
    {
     "config": false,
@@ -313,7 +303,6 @@ Various sub-optimal detections work
   generaldelta:        no
   share-safe:          no
   sparserevlog:        no
-  sidedata:            no
   persistent-nodemap:  no
   copies-sdc:          no
   revlog-v2:           no
@@ -327,7 +316,6 @@ Various sub-optimal detections work
   generaldelta:        no    yes     yes
   share-safe:          no     no      no
   sparserevlog:        no    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -341,7 +329,6 @@ Various sub-optimal detections work
   generaldelta:        no     no     yes
   share-safe:          no     no      no
   sparserevlog:        no     no     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -355,7 +342,6 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchdefault|sparserevlog:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|sidedata:          ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|persistent-nodemap:][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -1299,7 +1285,6 @@ upgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -1336,7 +1321,6 @@ downgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -1376,7 +1360,6 @@ upgrade from hgrc
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -1421,7 +1404,6 @@ upgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
@@ -1466,7 +1448,6 @@ downgrade
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -1511,7 +1492,6 @@ upgrade from hgrc
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no

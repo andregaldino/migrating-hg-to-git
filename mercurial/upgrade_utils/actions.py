@@ -325,27 +325,6 @@ class sparserevlog(requirementformatvariant):
 
 
 @registerformatvariant
-class sidedata(requirementformatvariant):
-    name = b'sidedata'
-
-    _requirement = requirements.REVLOGV2_REQUIREMENT
-
-    default = False
-
-    description = _(
-        b'Allows storage of extra data alongside a revision, '
-        b'unlocking various caching options.'
-    )
-
-    upgrademessage = _(b'Allows storage of extra data alongside a revision.')
-
-    @classmethod
-    def fromrepo(cls, repo):
-        assert cls._requirement is not None
-        return cls._requirement in repo.requirements
-
-
-@registerformatvariant
 class persistentnodemap(requirementformatvariant):
     name = b'persistent-nodemap'
 

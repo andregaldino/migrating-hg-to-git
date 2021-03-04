@@ -39,7 +39,6 @@ Check that copies are recorded correctly
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
@@ -54,7 +53,6 @@ Check that copies are recorded correctly
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
@@ -426,7 +424,6 @@ downgrading (keeping some sidedata)
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
@@ -453,7 +450,6 @@ downgrading (keeping some sidedata)
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no
@@ -482,7 +478,6 @@ upgrading
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no

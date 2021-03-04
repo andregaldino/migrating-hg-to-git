@@ -1466,7 +1466,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no    yes      no
   revlog-v2:           no    yes      no
@@ -1506,7 +1505,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no    yes      no
   persistent-nodemap:  no     no      no
   copies-sdc:          no    yes      no
   revlog-v2:           no    yes      no
