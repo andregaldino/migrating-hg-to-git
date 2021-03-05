@@ -378,6 +378,32 @@ of the merge to the merge should include the copy from the other side.
   $ hg debugpathcopies 1 3
   x -> z
 
+Copy x->y on two separate branches. Pathcopies from one branch to the other
+should not report the copy.
+  $ newrepo
+  $ echo x > x
+  $ hg ci -Aqm 'add x'
+  $ hg cp x y
+  $ hg ci -qm 'copy x to y'
+  $ hg co -q 0
+  $ hg graft 1 -q
+  $ hg l
+  @  2 copy x to y
+  |  y
+  | o  1 copy x to y
+  |/   y
+  o  0 add x
+     x
+  $ hg debugp1copies -r 1
+  x -> y
+  $ hg debugp1copies -r 2
+  x -> y
+BROKEN: These two should not report any copies
+  $ hg debugpathcopies 1 2
+  x -> y
+  $ hg debugpathcopies 2 1
+  x -> y
+
 Copy x to y on one side of merge, create y and rename to z on the other side.
   $ newrepo
   $ echo x > x
