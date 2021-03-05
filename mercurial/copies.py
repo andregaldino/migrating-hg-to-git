@@ -704,22 +704,28 @@ def _forwardcopies(a, b, base=None, match=None):
 
 
 def _backwardrenames(a, b, match):
+    """find renames from a to b"""
     if a._repo.ui.config(b'experimental', b'copytrace') == b'off':
         return {}
 
-    # Even though we're not taking copies into account, 1:n rename situations
-    # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
-    # arbitrarily pick one of the renames.
     # We don't want to pass in "match" here, since that would filter
     # the destination by it. Since we're reversing the copies, we want
     # to filter the source instead.
-    f = _forwardcopies(b, a)
+    copies = _forwardcopies(b, a)
+    return _reverse_renames(copies, a, match)
+
+
+def _reverse_renames(copies, dst, match):
+    """given copies to context 'dst', finds renames from that context"""
+    # Even though we're not taking copies into account, 1:n rename situations
+    # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
+    # arbitrarily pick one of the renames.
     r = {}
-    for k, v in sorted(pycompat.iteritems(f)):
+    for k, v in sorted(pycompat.iteritems(copies)):
         if match and not match(v):
             continue
         # remove copies
-        if v in a:
+        if v in dst:
             continue
         r[v] = k
     return r
