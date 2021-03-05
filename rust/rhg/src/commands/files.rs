@@ -27,6 +27,13 @@ pub fn args() -> clap::App<'static, 'static> {
 }
 
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let relative = invocation.config.get(b"ui", b"relative-paths");
+    if relative.is_some() {
+        return Err(CommandError::unsupported(
+            "non-default ui.relative-paths",
+        ));
+    }
+
     let rev = invocation.subcommand_args.value_of("rev");
 
     let repo = invocation.repo?;
