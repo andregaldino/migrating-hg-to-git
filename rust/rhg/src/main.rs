@@ -53,6 +53,14 @@ fn main_with_result(
                 // Not ok: `--config section.key1=val section.key2=val2`
                 .number_of_values(1),
         )
+        .arg(
+            Arg::with_name("cwd")
+                .help("change working directory")
+                .long("--cwd")
+                .value_name("DIR")
+                .takes_value(true)
+                .global(true),
+        )
         .version("0.0.1");
     let app = add_subcommand_args(app);
 
@@ -87,6 +95,28 @@ fn main() {
     let ui = ui::Ui::new();
 
     let early_args = EarlyArgs::parse(std::env::args_os());
+
+    let initial_current_dir = early_args.cwd.map(|cwd| {
+        let cwd = get_path_from_bytes(&cwd);
+        std::env::current_dir()
+            .and_then(|initial| {
+                std::env::set_current_dir(cwd)?;
+                Ok(initial)
+            })
+            .unwrap_or_else(|error| {
+                exit(
+                    &None,
+                    &ui,
+                    OnUnsupported::Abort,
+                    Err(CommandError::abort(format!(
+                        "abort: {}: '{}'",
+                        error,
+                        cwd.display()
+                    ))),
+                )
+            })
+    });
+
     let non_repo_config =
         Config::load(early_args.config).unwrap_or_else(|error| {
             // Normally this is decided based on config, but we don’t have that
@@ -94,7 +124,7 @@ fn main() {
             // "unsupported" error but that is not enforced by the type system.
             let on_unsupported = OnUnsupported::Abort;
 
-            exit(&ui, on_unsupported, Err(error.into()))
+            exit(&initial_current_dir, &ui, on_unsupported, Err(error.into()))
         });
 
     if let Some(repo_path_bytes) = &early_args.repo {
@@ -105,6 +135,7 @@ fn main() {
         }
         if SCHEME_RE.is_match(&repo_path_bytes) {
             exit(
+                &initial_current_dir,
                 &ui,
                 OnUnsupported::from_config(&non_repo_config),
                 Err(CommandError::UnsupportedFeature {
@@ -124,6 +155,7 @@ fn main() {
             Err(NoRepoInCwdError { cwd: at })
         }
         Err(error) => exit(
+            &initial_current_dir,
             &ui,
             OnUnsupported::from_config(&non_repo_config),
             Err(error.into()),
@@ -142,7 +174,12 @@ fn main() {
         repo_result.as_ref(),
         config,
     );
-    exit(&ui, OnUnsupported::from_config(config), result)
+    exit(
+        &initial_current_dir,
+        &ui,
+        OnUnsupported::from_config(config),
+        result,
+    )
 }
 
 fn exit_code(result: &Result<(), CommandError>) -> i32 {
@@ -159,6 +196,7 @@ fn exit_code(result: &Result<(), CommandError>) -> i32 {
 }
 
 fn exit(
+    initial_current_dir: &Option<PathBuf>,
     ui: &Ui,
     mut on_unsupported: OnUnsupported,
     result: Result<(), CommandError>,
@@ -182,7 +220,12 @@ fn exit(
             on_unsupported = OnUnsupported::Abort
         } else {
             // `args` is now `argv[1..]` since we’ve already consumed `argv[0]`
-            let result = Command::new(executable_path).args(args).status();
+            let mut command = Command::new(executable_path);
+            command.args(args);
+            if let Some(initial) = initial_current_dir {
+                command.current_dir(initial);
+            }
+            let result = command.status();
             match result {
                 Ok(status) => std::process::exit(
                     status.code().unwrap_or(exitcode::ABORT),
@@ -283,6 +326,8 @@ struct EarlyArgs {
     config: Vec<Vec<u8>>,
     /// Value of the `-R` or `--repository` argument, if any.
     repo: Option<Vec<u8>>,
+    /// Value of the `--cwd` argument, if any.
+    cwd: Option<Vec<u8>>,
 }
 
 impl EarlyArgs {
@@ -290,6 +335,7 @@ impl EarlyArgs {
         let mut args = args.into_iter().map(get_bytes_from_os_str);
         let mut config = Vec::new();
         let mut repo = None;
+        let mut cwd = None;
         // Use `while let` instead of `for` so that we can also call
         // `args.next()` inside the loop.
         while let Some(arg) = args.next() {
@@ -299,6 +345,14 @@ impl EarlyArgs {
                 }
             } else if let Some(value) = arg.drop_prefix(b"--config=") {
                 config.push(value.to_owned())
+            }
+
+            if arg == b"--cwd" {
+                if let Some(value) = args.next() {
+                    cwd = Some(value)
+                }
+            } else if let Some(value) = arg.drop_prefix(b"--cwd=") {
+                cwd = Some(value.to_owned())
             }
 
             if arg == b"--repository" || arg == b"-R" {
@@ -311,7 +365,7 @@ impl EarlyArgs {
                 repo = Some(value.to_owned())
             }
         }
-        Self { config, repo }
+        Self { config, repo, cwd }
     }
 }
 
