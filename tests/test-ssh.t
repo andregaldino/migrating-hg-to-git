@@ -390,6 +390,7 @@ Test (non-)escaping of remote paths with spaces when cloning (issue3145):
   abort: destination 'a repo' is not empty
   [10]
 
+#if no-rhg
 Make sure hg is really paranoid in serve --stdio mode. It used to be
 possible to get a debugger REPL by specifying a repo named --debugger.
   $ hg -R --debugger serve --stdio
@@ -402,6 +403,27 @@ Abbreviations of 'serve' also don't work, to avoid shenanigans.
   $ hg -R narf serv --stdio
   abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio']
   [255]
+#else
+rhg aborts early on -R without a repository at that path
+  $ hg -R --debugger serve --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', '--debugger', 'serve', '--stdio'] (missing-correct-output !)
+  abort: repository --debugger not found (known-bad-output !)
+  [255]
+  $ hg -R --config=ui.debugger=yes serve --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', '--config=ui.debugger=yes', 'serve', '--stdio'] (missing-correct-output !)
+  abort: repository --config=ui.debugger=yes not found (known-bad-output !)
+  [255]
+  $ hg -R narf serv --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio'] (missing-correct-output !)
+  abort: repository narf not found (known-bad-output !)
+  [255]
+If the repo does exist, rhg finds an unsupported command and falls back to Python
+which still does the right thing
+  $ hg init narf
+  $ hg -R narf serv --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio']
+  [255]
+#endif
 
 Test hg-ssh using a helper script that will restore PYTHONPATH (which might
 have been cleared by a hg.exe wrapper) and invoke hg-ssh with the right

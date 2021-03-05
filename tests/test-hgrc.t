@@ -59,7 +59,7 @@ Check %include
 #if unix-permissions no-root
   $ chmod u-r $TESTTMP/included
   $ hg showconfig section
-  config error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied)
+  config error at $TESTTMP/hgrc:2: cannot include $TESTTMP/included (Permission denied*) (glob)
   [255]
 #endif
 

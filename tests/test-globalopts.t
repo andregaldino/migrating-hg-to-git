@@ -264,7 +264,7 @@ Testing --debug:
 
 Testing --traceback:
 
-#if no-chg
+#if no-chg no-rhg
   $ hg --cwd c --config x --traceback id 2>&1 | grep -i 'traceback'
   Traceback (most recent call last):
   Traceback (most recent call last): (py3 !)
