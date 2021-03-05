@@ -761,9 +761,12 @@ def pathcopies(x, y, match=None):
         base = None
         if a.rev() != nullrev:
             base = x
+        x_copies = _forwardcopies(a, x)
+        y_copies = _forwardcopies(a, y, base, match=match)
+        x_backward_renames = _reverse_renames(x_copies, x, match)
         copies = _chain(
-            _backwardrenames(x, a, match=match),
-            _forwardcopies(a, y, base, match=match),
+            x_backward_renames,
+            y_copies,
         )
     _filter(x, y, copies)
     return copies
