@@ -1096,11 +1096,17 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfilesfn):
             b"   discovered dir src: '%s' -> dst: '%s'\n" % (d, dirmove[d])
         )
 
+    # Sort the directories in reverse order, so we find children first
+    # For example, if dir1/ was renamed to dir2/, and dir1/subdir1/
+    # was renamed to dir2/subdir2/, we want to move dir1/subdir1/file
+    # to dir2/subdir2/file (not dir2/subdir1/file)
+    dirmove_children_first = sorted(dirmove, reverse=True)
+
     movewithdir = {}
     # check unaccounted nonoverlapping files against directory moves
     for f in addedfilesfn():
         if f not in fullcopy:
-            for d in dirmove:
+            for d in dirmove_children_first:
                 if f.startswith(d):
                     # new file added in a directory that was moved, move it
                     df = dirmove[d] + f[len(d) :]

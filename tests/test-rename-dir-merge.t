@@ -294,3 +294,45 @@ status to list copies here.
   M t/t
   R a/s
   R a/t
+
+  $ cd ..
+
+
+Test that files are moved to a new directory based on the path prefix that
+matches the most. dir1/ below gets renamed to dir2/, and dir1/subdir1/ gets
+renamed to dir2/subdir2/. We want dir1/subdir1/newfile to move to
+dir2/subdir2/ (not to dir2/subdir1/ as we would infer based on just the rename
+of dir1/ to dir2/).
+
+  $ hg init nested-renames
+  $ cd nested-renames
+  $ mkdir dir1
+  $ echo a > dir1/file1
+  $ echo b > dir1/file2
+  $ mkdir dir1/subdir1
+  $ echo c > dir1/subdir1/file3
+  $ echo d > dir1/subdir1/file4
+  $ hg ci -Aqm initial
+  $ hg mv dir1 dir2
+  moving dir1/file1 to dir2/file1
+  moving dir1/file2 to dir2/file2
+  moving dir1/subdir1/file3 to dir2/subdir1/file3
+  moving dir1/subdir1/file4 to dir2/subdir1/file4
+  $ hg mv dir2/subdir1 dir2/subdir2
+  moving dir2/subdir1/file3 to dir2/subdir2/file3
+  moving dir2/subdir1/file4 to dir2/subdir2/file4
+  $ hg ci -m 'move dir1/ to dir2/ and dir1/subdir1/ to dir2/subdir2/'
+  $ hg co 0
+  4 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  $ echo e > dir1/subdir1/file5
+  $ hg ci -Aqm 'add file in dir1/subdir1/'
+  $ hg merge 1
+  5 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg files
+  dir2/file1
+  dir2/file2
+  dir2/subdir2/file3
+  dir2/subdir2/file4
+  dir2/subdir2/file5
+  $ cd ..
