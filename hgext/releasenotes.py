@@ -280,7 +280,7 @@ def getcustomadmonitions(repo):
 
     if b'.hgreleasenotes' in ctx:
         read(b'.hgreleasenotes')
-    return p[b'sections']
+    return p.items(b'sections')
 
 
 def checkadmonitions(ui, repo, directives, revs):
