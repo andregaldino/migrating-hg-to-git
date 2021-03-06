@@ -241,7 +241,7 @@ class shelvedstate(object):
                 bin(h) for h in d[b'nodestoremove'].split(b' ')
             ]
         except (ValueError, TypeError, KeyError) as err:
-            raise error.CorruptedState(pycompat.bytestr(err))
+            raise error.CorruptedState(stringutil.forcebytestr(err))
 
     @classmethod
     def _getversion(cls, repo):
@@ -250,7 +250,7 @@ class shelvedstate(object):
         try:
             version = int(fp.readline().strip())
         except ValueError as err:
-            raise error.CorruptedState(pycompat.bytestr(err))
+            raise error.CorruptedState(stringutil.forcebytestr(err))
         finally:
             fp.close()
         return version
