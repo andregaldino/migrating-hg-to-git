@@ -27,8 +27,29 @@ from .utils import stringutil
 
 nullstate = (b'', b'', b'empty')
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Dict,
+        List,
+        Optional,
+        Set,
+        Tuple,
+    )
+    from . import (
+        context,
+        localrepo,
+        match as matchmod,
+        scmutil,
+        subrepo,
+        ui as uimod,
+    )
+
+    Substate = Dict[bytes, Tuple[bytes, bytes, bytes]]
+
 
 def state(ctx, ui):
+    # type: (context.changectx, uimod.ui) -> Substate
     """return a state dict, mapping subrepo paths configured in .hgsub
     to tuple: (source from .hgsub, revision from .hgsubstate, kind
     (key in types dict))
@@ -84,6 +105,7 @@ def state(ctx, ui):
                 raise
 
     def remap(src):
+        # type: (bytes) -> bytes
         for pattern, repl in p.items(b'subpaths'):
             # Turn r'C:\foo\bar' into r'C:\\foo\\bar' since re.sub
             # does a string decode.
@@ -105,7 +127,7 @@ def state(ctx, ui):
         return src
 
     state = {}
-    for path, src in p.items(b''):
+    for path, src in p.items(b''):  # type: bytes
         kind = b'hg'
         if src.startswith(b'['):
             if b']' not in src:
@@ -136,6 +158,7 @@ def state(ctx, ui):
 
 
 def writestate(repo, state):
+    # type: (localrepo.localrepository, Substate) -> None
     """rewrite .hgsubstate in (outer) repo with these subrepo states"""
     lines = [
         b'%s %s\n' % (state[s][1], s)
@@ -146,6 +169,8 @@ def writestate(repo, state):
 
 
 def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
+    # type: (localrepo.localrepository, context.workingctx, context.changectx, context.changectx, bool, Optional[Any]) -> Substate
+    # TODO: type the `labels` arg
     """delegated from merge.applyupdates: merging of .hgsubstate file
     in working context, merging context and ancestor context"""
     if mctx == actx:  # backwards?
@@ -285,6 +310,7 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
 
 
 def precommit(ui, wctx, status, match, force=False):
+    # type: (uimod.ui, context.workingcommitctx, scmutil.status, matchmod.basematcher, bool) -> Tuple[List[bytes], Set[bytes], Substate]
     """Calculate .hgsubstate changes that should be applied before committing
 
     Returns (subs, commitsubs, newstate) where
@@ -355,6 +381,7 @@ def precommit(ui, wctx, status, match, force=False):
 
 
 def reporelpath(repo):
+    # type: (localrepo.localrepository) -> bytes
     """return path to this (sub)repo as seen from outermost repo"""
     parent = repo
     while util.safehasattr(parent, b'_subparent'):
@@ -363,11 +390,13 @@ def reporelpath(repo):
 
 
 def subrelpath(sub):
+    # type: (subrepo.abstractsubrepo) -> bytes
     """return path to this subrepo as seen from outermost repo"""
     return sub._relpath
 
 
 def _abssource(repo, push=False, abort=True):
+    # type: (localrepo.localrepository, bool, bool) -> Optional[bytes]
     """return pull/push path of repo - either based on parent repo .hgsub info
     or on the top repo config. Abort or return None if no source found."""
     if util.safehasattr(repo, b'_subparent'):
@@ -416,6 +445,7 @@ def _abssource(repo, push=False, abort=True):
 
 
 def newcommitphase(ui, ctx):
+    # type: (uimod.ui, context.changectx) -> int
     commitphase = phases.newcommitphase(ui)
     substate = getattr(ctx, "substate", None)
     if not substate:
