@@ -19,6 +19,14 @@ from . import (
     pycompat,
 )
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Callable,
+        List,
+        Optional,
+    )
+
+
 # modelled after templater.templatepath:
 if getattr(sys, 'frozen', None) is not None:
     module = pycompat.sysexecutable
@@ -40,7 +48,10 @@ if (
     try:
         import ctypes
 
+        # pytype: disable=module-attr
         langid = ctypes.windll.kernel32.GetUserDefaultUILanguage()
+        # pytype: enable=module-attr
+
         _languages = [locale.windows_locale[langid]]
     except (ImportError, AttributeError, KeyError):
         # ctypes not found or unknown langid
@@ -51,7 +62,7 @@ datapath = pycompat.fsdecode(resourceutil.datapath)
 localedir = os.path.join(datapath, 'locale')
 t = gettextmod.translation('hg', localedir, _languages, fallback=True)
 try:
-    _ugettext = t.ugettext
+    _ugettext = t.ugettext  # pytype: disable=attribute-error
 except AttributeError:
     _ugettext = t.gettext
 
@@ -60,6 +71,7 @@ _msgcache = {}  # encoding: {message: translation}
 
 
 def gettext(message):
+    # type: (Optional[bytes]) -> Optional[bytes]
     """Translate message.
 
     The message is looked up in the catalog to get a Unicode string,
@@ -77,7 +89,7 @@ def gettext(message):
     if message not in cache:
         if type(message) is pycompat.unicode:
             # goofy unicode docstrings in test
-            paragraphs = message.split(u'\n\n')
+            paragraphs = message.split(u'\n\n')  # type: List[pycompat.unicode]
         else:
             # should be ascii, but we have unicode docstrings in test, which
             # are converted to utf-8 bytes on Python 3.
@@ -110,6 +122,6 @@ def _plain():
 
 
 if _plain():
-    _ = lambda message: message
+    _ = lambda message: message  # type: Callable[[bytes], bytes]
 else:
     _ = gettext
