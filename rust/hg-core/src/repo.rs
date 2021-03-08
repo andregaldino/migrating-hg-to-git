@@ -169,7 +169,11 @@ impl Repo {
             reqs.extend(requirements::load(Vfs { base: &store_path })?);
         }
 
-        let repo_config = config.combine_with_repo(&repo_config_files)?;
+        let repo_config = if std::env::var_os("HGRCSKIPREPO").is_none() {
+            config.combine_with_repo(&repo_config_files)?
+        } else {
+            config.clone()
+        };
 
         let repo = Self {
             requirements: reqs,

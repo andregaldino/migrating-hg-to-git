@@ -24,6 +24,7 @@ use crate::errors::{HgResultExt, IoResultExt};
 
 /// Holds the config values for the current repository
 /// TODO update this docstring once we support more sources
+#[derive(Clone)]
 pub struct Config {
     layers: Vec<layer::ConfigLayer>,
 }
