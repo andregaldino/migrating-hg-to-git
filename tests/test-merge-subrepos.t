@@ -117,10 +117,17 @@ missing file in the top level repo.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 XXX: There's a difference between wdir() and '.', so there should be a status.
-`hg files -S` from the top is also missing 'subrepo/b'.
+`hg files -S` from the top is also missing 'subrepo/b'. The files should be
+seen as deleted (and, maybe even missing? in which case `hg files` should list
+it)
 
   $ hg st -S
+  R subrepo/b (missing-correct-output !)
   $ hg st -R subrepo
+  R subrepo/b (missing-correct-output !)
+
+(note: return [1] because no files "match" since the list is empty)
+
   $ hg files -R subrepo
   [1]
   $ hg files -R subrepo -r '.'
