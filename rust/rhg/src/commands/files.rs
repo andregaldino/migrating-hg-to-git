@@ -61,11 +61,17 @@ fn display_files<'a>(
 
     let mut stdout = ui.stdout_buffer();
 
+    let mut any = false;
     for file in files {
+        any = true;
         let file = working_directory.join(file);
         stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
         stdout.write_all(b"\n")?;
     }
     stdout.flush()?;
-    Ok(())
+    if any {
+        Ok(())
+    } else {
+        Err(CommandError::Unsuccessful)
+    }
 }
