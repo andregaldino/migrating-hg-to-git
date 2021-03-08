@@ -160,20 +160,28 @@ impl ConfigLayer {
                 // `Path::join` with an absolute argument correctly ignores the
                 // base path
                 let filename = dir.join(&get_path_from_bytes(&filename_bytes));
-                let data = std::fs::read(&filename).map_err(|io_error| {
-                    ConfigParseError {
-                        origin: ConfigOrigin::File(src.to_owned()),
-                        line,
-                        message: format_bytes!(
-                            b"cannot include {} ({})",
-                            filename_bytes,
-                            format_bytes::Utf8(io_error)
-                        ),
+                match std::fs::read(&filename) {
+                    Ok(data) => {
+                        layers.push(current_layer);
+                        layers.extend(Self::parse(&filename, &data)?);
+                        current_layer =
+                            Self::new(ConfigOrigin::File(src.to_owned()));
                     }
-                })?;
-                layers.push(current_layer);
-                layers.extend(Self::parse(&filename, &data)?);
-                current_layer = Self::new(ConfigOrigin::File(src.to_owned()));
+                    Err(error) => {
+                        if error.kind() != std::io::ErrorKind::NotFound {
+                            return Err(ConfigParseError {
+                                origin: ConfigOrigin::File(src.to_owned()),
+                                line,
+                                message: format_bytes!(
+                                    b"cannot include {} ({})",
+                                    filename_bytes,
+                                    format_bytes::Utf8(error)
+                                ),
+                            }
+                            .into());
+                        }
+                    }
+                }
             } else if let Some(_) = EMPTY_RE.captures(&bytes) {
             } else if let Some(m) = SECTION_RE.captures(&bytes) {
                 section = m[1].to_vec();
