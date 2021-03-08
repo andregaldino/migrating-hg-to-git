@@ -510,7 +510,7 @@ def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
 # This wrapper file are always open in byte mode.
 def unnamedtempfile(mode=None, *args, **kwargs):
     if mode is None:
-        mode = b'w+b'
+        mode = 'w+b'
     else:
         mode = sysstr(mode)
     assert 'b' in mode
