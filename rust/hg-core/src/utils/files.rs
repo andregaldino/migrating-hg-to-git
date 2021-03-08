@@ -23,7 +23,7 @@ use std::iter::FusedIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
+pub fn get_os_str_from_bytes(bytes: &[u8]) -> &OsStr {
     let os_str;
     #[cfg(unix)]
     {
@@ -33,8 +33,11 @@ pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
     // TODO Handle other platforms
     // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
     // Perhaps, the return type would have to be Result<PathBuf>.
+    os_str
+}
 
-    Path::new(os_str)
+pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
+    Path::new(get_os_str_from_bytes(bytes))
 }
 
 // TODO: need to convert from WTF8 to MBCS bytes on Windows.

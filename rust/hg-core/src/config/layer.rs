@@ -150,6 +150,7 @@ impl ConfigLayer {
             let line = Some(index + 1);
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
+                let filename_bytes = crate::utils::expand_vars(filename_bytes);
                 // `Path::parent` only fails for the root directory,
                 // which `src` can’t be since we’ve managed to open it as a
                 // file.

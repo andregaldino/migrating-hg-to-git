@@ -241,6 +241,59 @@ pub fn current_exe() -> Result<std::path::PathBuf, HgError> {
     })
 }
 
+/// Expand `$FOO` and `${FOO}` environment variables in the given byte string
+pub fn expand_vars(s: &[u8]) -> std::borrow::Cow<[u8]> {
+    lazy_static::lazy_static! {
+        /// https://github.com/python/cpython/blob/3.9/Lib/posixpath.py#L301
+        /// The `x` makes whitespace ignored.
+        /// `-u` disables the Unicode flag, which makes `\w` like Python with the ASCII flag.
+        static ref VAR_RE: regex::bytes::Regex =
+            regex::bytes::Regex::new(r"(?x-u)
+                \$
+                (?:
+                    (\w+)
+                    |
+                    \{
+                        ([^}]*)
+                    \}
+                )
+            ").unwrap();
+    }
+    VAR_RE.replace_all(s, |captures: &regex::bytes::Captures| {
+        let var_name = files::get_os_str_from_bytes(
+            captures
+                .get(1)
+                .or_else(|| captures.get(2))
+                .expect("either side of `|` must participate in match")
+                .as_bytes(),
+        );
+        std::env::var_os(var_name)
+            .map(files::get_bytes_from_os_str)
+            .unwrap_or_else(|| {
+                // Referencing an environment variable that does not exist.
+                // Leave the $FOO reference as-is.
+                captures[0].to_owned()
+            })
+    })
+}
+
+#[test]
+fn test_expand_vars() {
+    // Modifying process-global state in a test isn’t great,
+    // but hopefully this won’t collide with anything.
+    std::env::set_var("TEST_EXPAND_VAR", "1");
+    assert_eq!(
+        expand_vars(b"before/$TEST_EXPAND_VAR/after"),
+        &b"before/1/after"[..]
+    );
+    assert_eq!(
+        expand_vars(b"before${TEST_EXPAND_VAR}${TEST_EXPAND_VAR}${TEST_EXPAND_VAR}after"),
+        &b"before111after"[..]
+    );
+    let s = b"before $SOME_LONG_NAME_THAT_WE_ASSUME_IS_NOT_AN_ACTUAL_ENV_VAR after";
+    assert_eq!(expand_vars(s), &s[..]);
+}
+
 pub(crate) enum MergeResult<V> {
     UseLeftValue,
     UseRightValue,
