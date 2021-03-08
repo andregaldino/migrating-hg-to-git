@@ -50,6 +50,8 @@ pub enum IoErrorContext {
         from: std::path::PathBuf,
         to: std::path::PathBuf,
     },
+    /// `std::fs::canonicalize`
+    CanonicalizingPath(std::path::PathBuf),
     /// `std::env::current_dir`
     CurrentDir,
     /// `std::env::current_exe`
@@ -128,6 +130,9 @@ impl fmt::Display for IoErrorContext {
                 from.display(),
                 to.display()
             ),
+            IoErrorContext::CanonicalizingPath(path) => {
+                write!(f, "when canonicalizing {}", path.display())
+            }
             IoErrorContext::CurrentDir => {
                 write!(f, "error getting current working directory")
             }

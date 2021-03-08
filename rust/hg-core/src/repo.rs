@@ -2,7 +2,7 @@ use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::errors::{HgError, IoErrorContext, IoResultExt};
 use crate::requirements;
 use crate::utils::files::get_path_from_bytes;
-use crate::utils::{current_dir, SliceExt};
+use crate::utils::SliceExt;
 use memmap::{Mmap, MmapOptions};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -56,12 +56,9 @@ impl Repo {
         explicit_path: Option<&Path>,
     ) -> Result<Self, RepoError> {
         if let Some(root) = explicit_path {
-            // Having an absolute path isn’t necessary here but can help code
-            // elsewhere
-            let absolute_root = current_dir()?.join(root);
-            if absolute_root.join(".hg").is_dir() {
-                Self::new_at_path(absolute_root, config)
-            } else if absolute_root.is_file() {
+            if root.join(".hg").is_dir() {
+                Self::new_at_path(root.to_owned(), config)
+            } else if root.is_file() {
                 Err(HgError::unsupported("bundle repository").into())
             } else {
                 Err(RepoError::NotFound {

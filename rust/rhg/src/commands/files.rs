@@ -4,6 +4,7 @@ use clap::Arg;
 use hg::operations::list_rev_tracked_files;
 use hg::operations::Dirstate;
 use hg::repo::Repo;
+use hg::utils::current_dir;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
 
@@ -53,8 +54,10 @@ fn display_files<'a>(
     files: impl IntoIterator<Item = &'a HgPath>,
 ) -> Result<(), CommandError> {
     let cwd = HgPathBuf::from(get_bytes_from_path(hg::utils::current_dir()?));
+    let working_directory = repo.working_directory_path();
+    let working_directory = current_dir()?.join(working_directory); // Make it absolute
     let working_directory =
-        HgPathBuf::from(get_bytes_from_path(repo.working_directory_path()));
+        HgPathBuf::from(get_bytes_from_path(working_directory));
 
     let mut stdout = ui.stdout_buffer();
 

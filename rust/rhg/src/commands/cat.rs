@@ -40,13 +40,15 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 
     let repo = invocation.repo?;
     let cwd = hg::utils::current_dir()?;
+    let working_directory = repo.working_directory_path();
+    let working_directory = cwd.join(working_directory); // Make it absolute
 
     let mut files = vec![];
     for file in file_args.iter() {
         // TODO: actually normalize `..` path segments etc?
         let normalized = cwd.join(&file);
         let stripped = normalized
-            .strip_prefix(&repo.working_directory_path())
+            .strip_prefix(&working_directory)
             // TODO: error message for path arguments outside of the repo
             .map_err(|_| CommandError::abort(""))?;
         let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
