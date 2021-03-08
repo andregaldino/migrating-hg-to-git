@@ -568,7 +568,7 @@ def makelocalrepository(baseui, path, intents=None):
     # repository was shared the old way. We check the share source .hg/requires
     # for SHARESAFE_REQUIREMENT to detect whether the current repository needs
     # to be reshared
-    hint = _("see `hg help config.format.use-share-safe` for more information")
+    hint = _(b"see `hg help config.format.use-share-safe` for more information")
     if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
 
         if (
