@@ -29,6 +29,7 @@ fn main_with_result(
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
+        .global_setting(AppSettings::DisableVersion)
         .setting(AppSettings::SubcommandRequired)
         .setting(AppSettings::VersionlessSubcommands)
         .arg(
