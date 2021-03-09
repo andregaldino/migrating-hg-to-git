@@ -29,8 +29,10 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         .split_2(b'.')
         .ok_or_else(|| HgError::unsupported("hg config <section>"))?;
 
-    let value = invocation.config.get(section, name).unwrap_or(b"");
-
-    invocation.ui.write_stdout(&format_bytes!(b"{}\n", value))?;
-    Ok(())
+    if let Some(value) = invocation.config.get(section, name) {
+        invocation.ui.write_stdout(&format_bytes!(b"{}\n", value))?;
+        Ok(())
+    } else {
+        Err(CommandError::Unsuccessful)
+    }
 }
