@@ -99,6 +99,9 @@ install: install-bin install-doc
 install-bin: build
 	$(PYTHON) setup.py $(PURE) install --root="$(DESTDIR)/" --prefix="$(PREFIX)" --force
 
+install-chg: build-chg
+	make -C contrib/chg install PREFIX="$(PREFIX)"
+
 install-doc: doc
 	cd doc && $(MAKE) $(MFLAGS) install
 
