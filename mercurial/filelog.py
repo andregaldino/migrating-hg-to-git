@@ -32,6 +32,7 @@ class filelog(object):
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
         self._revlog.filename = path
+        self._revlog.revlog_kind = b'filelog'
 
     def __len__(self):
         return len(self._revlog)

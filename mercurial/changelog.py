@@ -428,6 +428,7 @@ class changelog(revlog.revlog):
         self._filteredrevs = frozenset()
         self._filteredrevs_hashcache = {}
         self._copiesstorage = opener.options.get(b'copies-storage')
+        self.revlog_kind = b'changelog'
 
     @property
     def filteredrevs(self):
