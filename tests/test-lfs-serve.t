@@ -462,7 +462,7 @@ lfs content, and the extension enabled.
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
-  (sent 8 HTTP requests and 3526 bytes; received 961 bytes in responses) (?)
+  (sent 8 HTTP requests and * bytes; received * bytes in responses) (glob) (?)
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs

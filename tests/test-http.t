@@ -382,7 +382,7 @@ test http authentication
   devel-peer-request:   16 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 15 bytes
-  (sent 9 HTTP requests and 3898 bytes; received 920 bytes in responses)
+  (sent 9 HTTP requests and * bytes; received * bytes in responses) (glob) (?)
   $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
