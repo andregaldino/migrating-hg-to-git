@@ -1121,6 +1121,7 @@ def clean(repo, node, show_stats=True, quietempty=False):
     assert stats.unresolvedcount == 0
     if show_stats:
         _showstats(repo, stats, quietempty)
+    return False
 
 
 # naming conflict in updatetotally()
