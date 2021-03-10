@@ -246,3 +246,25 @@ match with the name of any existing bookmarks.
      active-before-pull        3:483b76ad4309
 
   $ cd ..
+
+Issue622: hg init && hg pull -u URL doesn't checkout default branch
+
+  $ hg init test
+  $ cd test
+  $ echo foo>foo
+  $ hg addremove
+  adding foo
+  $ hg commit -m 1
+  $ cd ..
+
+  $ hg init empty
+  $ cd empty
+  $ hg pull -u ../test
+  pulling from ../test
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 340e38bdcde4
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved

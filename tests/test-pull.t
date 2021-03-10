@@ -81,21 +81,6 @@ Test pull of working copy revision
   abort: unknown revision 'ffffffffffff'
   [255]
 
-Issue622: hg init && hg pull -u URL doesn't checkout default branch
-
-  $ cd ..
-  $ hg init empty
-  $ cd empty
-  $ hg pull -u ../test
-  pulling from ../test
-  requesting all changes
-  adding changesets
-  adding manifests
-  adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 340e38bdcde4
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-
 Test 'file:' uri handling:
 
   $ hg pull -q file://../test-does-not-exist
