@@ -71,6 +71,9 @@ build:
 build-chg:
 	make -C contrib/chg
 
+build-rhg:
+	(cd rust/rhg; cargo build --release)
+
 wheel:
 	FORCE_SETUPTOOLS=1 $(PYTHON) setup.py $(PURE) bdist_wheel $(COMPILERFLAG)
 
