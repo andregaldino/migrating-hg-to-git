@@ -5623,11 +5623,11 @@ def purge(ui, repo, *dirs, **opts):
         ),
     ]
     + remoteopts,
-    _(b'[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]'),
+    _(b'[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
     helpbasic=True,
 )
-def push(ui, repo, dest=None, **opts):
+def push(ui, repo, *dests, **opts):
     """push changes to the specified destination
 
     Push changesets from the local repository to the specified
@@ -5662,6 +5662,9 @@ def push(ui, repo, dest=None, **opts):
 
     Please see :hg:`help urls` for important details about ``ssh://``
     URLs. If DESTINATION is omitted, a default path will be used.
+
+    When passed multiple destinations, push will process them one after the
+    other, but stop should an error occur.
 
     .. container:: verbose
 
@@ -5706,7 +5709,12 @@ def push(ui, repo, dest=None, **opts):
                 # if we try to push a deleted bookmark, translate it to null
                 # this lets simultaneous -r, -b options continue working
                 opts.setdefault(b'rev', []).append(b"null")
-    if True:
+
+    if not dests:
+        dests = [None]
+    some_pushed = False
+    result = 0
+    for dest in dests:
         path = ui.getpath(dest, default=(b'default-push', b'default'))
         if not path:
             raise error.ConfigError(
@@ -5753,9 +5761,9 @@ def push(ui, repo, dest=None, **opts):
                 c = repo[b'.']
                 subs = c.substate  # only repos that are committed
                 for s in sorted(subs):
-                    result = c.sub(s).push(opts)
-                    if result == 0:
-                        return not result
+                    sub_result = c.sub(s).push(opts)
+                    if sub_result == 0:
+                        return 1
             finally:
                 del repo._subtoppath
 
@@ -5775,15 +5783,24 @@ def push(ui, repo, dest=None, **opts):
                 opargs=opargs,
             )
 
-            result = not pushop.cgresult
+            if pushop.cgresult == 0:
+                result = 1
+            elif pushop.cgresult is not None:
+                some_pushed = True
 
             if pushop.bkresult is not None:
                 if pushop.bkresult == 2:
                     result = 2
                 elif not result and pushop.bkresult:
                     result = 2
+
+            if result:
+                break
+
         finally:
             other.close()
+    if result == 0 and not some_pushed:
+        result = 1
     return result
 
 

@@ -71,6 +71,9 @@ Various other repositories
 Test simple bare operation
 ==========================
 
+pull
+----
+
   $ hg clone main-repo test-repo-bare --rev 0 -U
   adding changesets
   adding manifests
@@ -121,8 +124,89 @@ Test simple bare operation
   o  A 0
   
 
+push
+----
+
+  $ cp -R ./branch-E ./branch-E-push
+  $ cp -R ./branch-G ./branch-G-push
+  $ cp -R ./branch-H ./branch-H-push
+  $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push
+  pushing to ./branch-E-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 3 changes to 3 files (+2 heads)
+  pushing to ./branch-G-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files (+2 heads)
+  pushing to ./branch-H-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files (+2 heads)
+  $ hg log -R ./branch-E-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 7
+  |
+  | o  E 4
+  | |
+  | o  D 3
+  |/
+  o  C 2
+  |
+  | o  G 6
+  | |
+  | o  F 5
+  |/
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-G-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 7
+  |
+  | o  E 6
+  | |
+  | o  D 5
+  |/
+  o  C 4
+  |
+  | o  G 3
+  | |
+  | o  F 2
+  |/
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-H-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  G 7
+  |
+  o  F 6
+  |
+  | o  E 5
+  | |
+  | o  D 4
+  | |
+  | | o  H 3
+  | |/
+  | o  C 2
+  |/
+  o  B 1
+  |
+  o  A 0
+  
+  $ rm -rf ./*-push
+
 Test operation with a target
 ============================
+
+pull
+----
 
   $ hg clone main-repo test-repo-rev --rev 0 -U
   adding changesets
@@ -198,6 +282,125 @@ different repositories.
   |
   o  A 0
   
+
+push
+----
+
+We only push a specific branch with --rev
+
+  $ cp -R ./branch-E ./branch-E-push
+  $ cp -R ./branch-G ./branch-G-push
+  $ cp -R ./branch-H ./branch-H-push
+  $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push --rev default
+  pushing to ./branch-E-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  pushing to ./branch-G-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files (+1 heads)
+  pushing to ./branch-H-push
+  searching for changes
+  no changes found
+  $ hg log -R ./branch-E-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 5
+  |
+  | o  E 4
+  | |
+  | o  D 3
+  |/
+  o  C 2
+  |
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-G-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 5
+  |
+  o  C 4
+  |
+  | o  G 3
+  | |
+  | o  F 2
+  |/
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-H-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 3
+  |
+  o  C 2
+  |
+  o  B 1
+  |
+  o  A 0
+  
+  $ rm -rf ./*-push
+
+Same push, but the first one is a no-op
+
+  $ cp -R ./branch-E ./branch-E-push
+  $ cp -R ./branch-G ./branch-G-push
+  $ cp -R ./branch-H ./branch-H-push
+  $ hg push --force -R test-repo-bare ./branch-G-push ./branch-H-push ./branch-E-push --rev default
+  pushing to ./branch-G-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files (+1 heads)
+  pushing to ./branch-H-push
+  searching for changes
+  no changes found
+  pushing to ./branch-E-push
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  $ hg log -R ./branch-E-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 5
+  |
+  | o  E 4
+  | |
+  | o  D 3
+  |/
+  o  C 2
+  |
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-G-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 5
+  |
+  o  C 4
+  |
+  | o  G 3
+  | |
+  | o  F 2
+  |/
+  o  B 1
+  |
+  o  A 0
+  
+  $ hg log -R ./branch-H-push -T '{desc} {rev}\n' --rev 'sort(all(), "topo")' -G
+  o  H 3
+  |
+  o  C 2
+  |
+  o  B 1
+  |
+  o  A 0
+  
+  $ rm -rf ./*-push
 
 
 Test with --update
