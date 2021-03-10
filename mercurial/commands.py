@@ -5256,9 +5256,11 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
     :optupdate: updating working directory is needed or not
     :checkout: update destination revision (or None to default destination)
     :brev: a name, which might be a bookmark to be activated after updating
+
+    return True if update raise any conflict, False otherwise.
     """
     if modheads == 0:
-        return
+        return False
     if optupdate:
         try:
             return hg.updatetotally(ui, repo, checkout, brev)
@@ -5280,6 +5282,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             ui.status(_(b"(run 'hg heads' to see heads)\n"))
     elif not ui.configbool(b'commands', b'update.requiredest'):
         ui.status(_(b"(run 'hg update' to get a working copy)\n"))
+    return False
 
 
 @command(
@@ -5366,6 +5369,7 @@ def pull(ui, repo, source=b"default", **opts):
     ui.status(_(b'pulling from %s\n') % util.hidepassword(source))
     ui.flush()
     other = hg.peer(repo, opts, source)
+    update_conflict = None
     try:
         revs, checkout = hg.addbranchrevs(
             repo, other, branches, opts.get(b'rev')
@@ -5444,7 +5448,7 @@ def pull(ui, repo, source=b"default", **opts):
                     brev = branches[0]
             repo._subtoppath = source
             try:
-                ret = postincoming(
+                update_conflict = postincoming(
                     ui, repo, modheads, opts.get(b'update'), checkout, brev
                 )
             except error.FilteredRepoLookupError as exc:
@@ -5456,7 +5460,10 @@ def pull(ui, repo, source=b"default", **opts):
 
     finally:
         other.close()
-    return ret
+    if update_conflict:
+        return 1
+    else:
+        return 0
 
 
 @command(
@@ -7546,7 +7553,10 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
                 )
             modheads = bundle2.combinechangegroupresults(op)
 
-    return postincoming(ui, repo, modheads, opts.get('update'), None, None)
+    if postincoming(ui, repo, modheads, opts.get('update'), None, None):
+        return 1
+    else:
+        return 0
 
 
 @command(
