@@ -361,6 +361,8 @@ def _filecommit(
     elif fparent2 != nullid:
         if ms.active() and ms.extras(fname).get(b'filenode-source') == b'other':
             fparent1, fparent2 = fparent2, nullid
+        elif ms.active() and ms.extras(fname).get(b'merged') != b'yes':
+            fparent1, fparent2 = fparent1, nullid
         # is one parent an ancestor of the other?
         else:
             fparentancestors = flog.commonancestorsheads(fparent1, fparent2)

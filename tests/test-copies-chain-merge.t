@@ -946,8 +946,7 @@ Merge:
   $ hg ci -m "mFB-change-m-0 $case_desc - the other way"
   created new head
   $ hg manifest --rev . --debug | grep "  d"
-  1c334238bd42ec85c6a0d83fd1b2a898a6a3215d 644   d (no-changeset missing-correct-output !)
-  646ed7992dec41eb29635ab28268e7867d0e59a0 644   d (no-changeset known-bad-output !)
+  1c334238bd42ec85c6a0d83fd1b2a898a6a3215d 644   d (no-changeset !)
   cea2d99c0fde64672ef61953786fdff34f16e230 644   d (changeset !)
 #if no-changeset
   $ hg debugindex d | ../no-linkrev
@@ -961,7 +960,6 @@ Merge:
        6       * 89c873a01d97 7b79e2fe0c89 17ec97e60577
        7       * d55cb4e9ef57 000000000000 000000000000
        8       * 1c334238bd42 7b79e2fe0c89 000000000000
-       9       * 646ed7992dec 7b79e2fe0c89 d8252ab2e760 (known-bad-output !)
 #else
   $ hg debugindex d | ../no-linkrev
      rev linkrev nodeid       p1           p2
@@ -1917,10 +1915,12 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   ##### revision "mFB-change-m-0 merge with extra change - B side" #####
   1 sidedata entries
    entry-0014 size 14
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (known-bad-output !)
-  merged     : d, ; (known-bad-output !)
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (missing-correct-output !)
-  touched    : d, ; (missing-correct-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
+  touched    : d, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
+  merged     : d, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
+  merged     : d, ; (upgraded known-bad-output !)
   ##### revision "j-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -3357,13 +3357,7 @@ Merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFB-change-m-0")'
   M b
   A d
-    h (filelog missing-correct-output !)
-    a (filelog known-bad-output !)
-    h (sidedata !)
-    h (upgraded !)
-    h (upgraded-parallel !)
-    h (changeset !)
-    h (compatibility !)
+    h
   A t
     p
   R a
@@ -3422,10 +3416,6 @@ BROKEN: `hg log --follow <file>` relies on filelog metadata to work
   | :
   o :  f-1: rename h -> i
   :/
-  o  i-2: c -move-> d, s -move-> t (known-bad-output !)
-  | (known-bad-output !)
-  o  i-1: a -move-> c, p -move-> s (known-bad-output !)
-  | (known-bad-output !)
   o  i-0 initial commit: a b h p q r
   
 #else

@@ -718,6 +718,7 @@ Test usage of `hg resolve` in case of conflict
     ancestor path: foo (node f89532f44c247a0e993d63e3a734dd781ab04708)
     other path: foo (node f50039b486d6fa1a90ae51778388cad161f425ee)
     extra: ancestorlinknode = 91360952243723bd5b1138d5f26bd8c8564cb553
+    extra: merged = yes
   $ mv .hg/merge/state2 .hg/merge/state2-moved
   $ hg debugmergestate -v
   no version 2 merge state

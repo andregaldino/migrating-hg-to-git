@@ -540,6 +540,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
     extra: merge-removal-candidate = yes
+    extra: merged = yes
   extra: other-file (filenode-source = other)
   $ hg ci -m "merge-deleting-the-file-from-deleted"
   $ hg manifest
@@ -563,6 +564,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
     extra: merge-removal-candidate = yes
+    extra: merged = yes
   $ hg ci -m "merge-deleting-the-file-from-updated"
   created new head
   $ hg manifest
@@ -586,6 +588,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     other path: the-file (node 59e363a07dc876278f0e41756236f30213b6b460)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
     extra: merge-removal-candidate = yes
+    extra: merged = yes
   extra: other-file (filenode-source = other)
   $ hg ci -m "merge-keeping-the-file-from-deleted"
   created new head
@@ -614,6 +617,7 @@ Do all the merge combination (from the deleted or the update side × keeping and
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 955800955977bd6c103836ee3e437276e940a589
     extra: merge-removal-candidate = yes
+    extra: merged = yes
   $ hg ci -m "merge-keeping-the-file-from-updated"
   created new head
   $ hg manifest
@@ -695,6 +699,7 @@ the conflict is properly detected.
     other path: the-file (node 885af55420b35d7bf3bbd6f546615295bfe6544a)
     extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
     extra: merge-removal-candidate = yes
+    extra: merged = yes
 #else
   $ hg debugmergestate
   local (working copy): adfd88e5d7d3d3e22bdd26512991ee64d59c1d8f
@@ -763,6 +768,7 @@ BROKEN: this should result in conflict
     other path: the-file (node 885af55420b35d7bf3bbd6f546615295bfe6544a)
     extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
     extra: merge-removal-candidate = yes
+    extra: merged = yes
 #else
   $ hg debugmergestate
   local (working copy): a4e0e44229dc130be2915b92c957c093f8c7ee3e
@@ -886,6 +892,7 @@ BROKEN: this should result in conflict
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
     extra: merge-removal-candidate = yes
+    extra: merged = yes
 #else
   $ hg debugmergestate
   local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a
@@ -923,6 +930,7 @@ BROKEN: this should result in conflict
     other path: the-file (node 0000000000000000000000000000000000000000)
     extra: ancestorlinknode = 9b610631ab29024c5f44af7d2c19658ef8f8f071
     extra: merge-removal-candidate = yes
+    extra: merged = yes
 #else
   $ hg debugmergestate
   local (working copy): e9b7081317232edce73f7ad5ae0b7807ff5c326a

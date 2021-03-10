@@ -1698,6 +1698,7 @@ def applyupdates(
         tocomplete = []
         for f, args, msg in mergeactions:
             repo.ui.debug(b" %s: %s -> m (premerge)\n" % (f, msg))
+            ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f)
             if f == b'.hgsubstate':  # subrepo states need updating
                 subrepoutil.submerge(
@@ -1713,6 +1714,7 @@ def applyupdates(
         # merge
         for f, args, msg in tocomplete:
             repo.ui.debug(b" %s: %s -> m (merge)\n" % (f, msg))
+            ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f, total=numupdates)
             ms.resolve(f, wctx)
 
