@@ -68,6 +68,9 @@ local:
 build:
 	$(PYTHON) setup.py $(PURE) build $(COMPILERFLAG)
 
+build-chg:
+	make -C contrib/chg
+
 wheel:
 	FORCE_SETUPTOOLS=1 $(PYTHON) setup.py $(PURE) bdist_wheel $(COMPILERFLAG)
 
