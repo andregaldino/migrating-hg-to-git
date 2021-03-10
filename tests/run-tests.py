@@ -3389,6 +3389,9 @@ class TestRunner(object):
                 if self.options.chg:
                     assert self._installdir
                     self._installchg()
+                if self.options.rhg:
+                    assert self._installdir
+                    self._installrhg()
 
                 log(
                     'running %d tests using %d parallel processes'
@@ -3733,6 +3736,33 @@ class TestRunner(object):
             b'prefix': self._installdir,
         }
         cwd = os.path.join(self._hgroot, b'contrib', b'chg')
+        vlog("# Running", cmd)
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            cwd=cwd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        out, _err = proc.communicate()
+        if proc.returncode != 0:
+            if PYTHON3:
+                sys.stdout.buffer.write(out)
+            else:
+                sys.stdout.write(out)
+            sys.exit(1)
+
+    def _installrhg(self):
+        """Install rhg into the test environment"""
+        vlog('# Performing temporary installation of rhg')
+        assert os.path.dirname(self._bindir) == self._installdir
+        assert self._hgroot, 'must be called after _installhg()'
+        cmd = b'"%(make)s" install-rhg PREFIX="%(prefix)s"' % {
+            b'make': b'make',  # TODO: switch by option or environment?
+            b'prefix': self._installdir,
+        }
+        cwd = self._hgroot
         vlog("# Running", cmd)
         proc = subprocess.Popen(
             cmd,
