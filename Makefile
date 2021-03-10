@@ -116,6 +116,9 @@ install-home-bin: build
 install-home-doc: doc
 	cd doc && $(MAKE) $(MFLAGS) PREFIX="$(HOME)" install
 
+install-rhg: build-rhg
+	install -m 755 rust/target/release/rhg "$(PREFIX)"/bin/
+
 MANIFEST-doc:
 	$(MAKE) -C doc MANIFEST
 
