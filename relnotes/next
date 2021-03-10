@@ -26,6 +26,13 @@
 
 == Backwards Compatibility Changes ==
 
+ * In normal repositories, the first parent of a changeset is not null,
+   unless both parents are null (like the first changeset). Some legacy
+   repositories violate this condition. The revlog code will now
+   silentely swap the parents if this condition is tested. This can
+   change the output of `hg log` when explicitly asking for first or
+   second parent.
+
 
 == Internal API Changes ==
 

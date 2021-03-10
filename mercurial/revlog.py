@@ -908,8 +908,10 @@ class revlog(object):
             if rev == wdirrev:
                 raise error.WdirUnsupported
             raise
-
-        return entry[5], entry[6]
+        if entry[5] == nullrev:
+            return entry[6], entry[5]
+        else:
+            return entry[5], entry[6]
 
     # fast parentrevs(rev) where rev isn't filtered
     _uncheckedparentrevs = parentrevs
@@ -930,7 +932,11 @@ class revlog(object):
     def parents(self, node):
         i = self.index
         d = i[self.rev(node)]
-        return i[d[5]][7], i[d[6]][7]  # map revisions to nodes inline
+        # inline node() to avoid function call overhead
+        if d[5] == nullid:
+            return i[d[6]][7], i[d[5]][7]
+        else:
+            return i[d[5]][7], i[d[6]][7]
 
     def chainlen(self, rev):
         return self._chaininfo(rev)[0]
