@@ -5323,11 +5323,11 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
         ),
     ]
     + remoteopts,
-    _(b'[-u] [-f] [-r REV]... [-e CMD] [--remotecmd CMD] [SOURCE]'),
+    _(b'[-u] [-f] [-r REV]... [-e CMD] [--remotecmd CMD] [SOURCE]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
     helpbasic=True,
 )
-def pull(ui, repo, source=b"default", **opts):
+def pull(ui, repo, *sources, **opts):
     """pull changes from the specified source
 
     Pull changes from a remote repository to a local one.
@@ -5351,6 +5351,10 @@ def pull(ui, repo, source=b"default", **opts):
     If SOURCE is omitted, the 'default' path will be used.
     See :hg:`help urls` for more information.
 
+    If multiple sources are specified, they will be pulled sequentially as if
+    the command was run multiple time. If --update is specify and the command
+    will stop at the first failed --update.
+
     Specifying bookmark as ``.`` is equivalent to specifying the active
     bookmark's name.
 
@@ -5365,7 +5369,9 @@ def pull(ui, repo, source=b"default", **opts):
         hint = _(b'use hg pull followed by hg update DEST')
         raise error.InputError(msg, hint=hint)
 
-    if True:
+    if not sources:
+        sources = [b'default']
+    for source in sources:
         source, branches = hg.parseurl(
             ui.expandpath(source), opts.get(b'branch')
         )
@@ -5463,6 +5469,9 @@ def pull(ui, repo, source=b"default", **opts):
 
         finally:
             other.close()
+        # skip the remaining pull source if they are some conflict.
+        if update_conflict:
+            break
     if update_conflict:
         return 1
     else:
