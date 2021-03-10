@@ -5365,101 +5365,104 @@ def pull(ui, repo, source=b"default", **opts):
         hint = _(b'use hg pull followed by hg update DEST')
         raise error.InputError(msg, hint=hint)
 
-    source, branches = hg.parseurl(ui.expandpath(source), opts.get(b'branch'))
-    ui.status(_(b'pulling from %s\n') % util.hidepassword(source))
-    ui.flush()
-    other = hg.peer(repo, opts, source)
-    update_conflict = None
-    try:
-        revs, checkout = hg.addbranchrevs(
-            repo, other, branches, opts.get(b'rev')
+    if True:
+        source, branches = hg.parseurl(
+            ui.expandpath(source), opts.get(b'branch')
         )
+        ui.status(_(b'pulling from %s\n') % util.hidepassword(source))
+        ui.flush()
+        other = hg.peer(repo, opts, source)
+        update_conflict = None
+        try:
+            revs, checkout = hg.addbranchrevs(
+                repo, other, branches, opts.get(b'rev')
+            )
 
-        pullopargs = {}
+            pullopargs = {}
 
-        nodes = None
-        if opts.get(b'bookmark') or revs:
-            # The list of bookmark used here is the same used to actually update
-            # the bookmark names, to avoid the race from issue 4689 and we do
-            # all lookup and bookmark queries in one go so they see the same
-            # version of the server state (issue 4700).
-            nodes = []
-            fnodes = []
-            revs = revs or []
-            if revs and not other.capable(b'lookup'):
-                err = _(
-                    b"other repository doesn't support revision lookup, "
-                    b"so a rev cannot be specified."
-                )
-                raise error.Abort(err)
-            with other.commandexecutor() as e:
-                fremotebookmarks = e.callcommand(
-                    b'listkeys', {b'namespace': b'bookmarks'}
-                )
-                for r in revs:
-                    fnodes.append(e.callcommand(b'lookup', {b'key': r}))
-            remotebookmarks = fremotebookmarks.result()
-            remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
-            pullopargs[b'remotebookmarks'] = remotebookmarks
-            for b in opts.get(b'bookmark', []):
-                b = repo._bookmarks.expandname(b)
-                if b not in remotebookmarks:
-                    raise error.InputError(
-                        _(b'remote bookmark %s not found!') % b
+            nodes = None
+            if opts.get(b'bookmark') or revs:
+                # The list of bookmark used here is the same used to actually update
+                # the bookmark names, to avoid the race from issue 4689 and we do
+                # all lookup and bookmark queries in one go so they see the same
+                # version of the server state (issue 4700).
+                nodes = []
+                fnodes = []
+                revs = revs or []
+                if revs and not other.capable(b'lookup'):
+                    err = _(
+                        b"other repository doesn't support revision lookup, "
+                        b"so a rev cannot be specified."
                     )
-                nodes.append(remotebookmarks[b])
-            for i, rev in enumerate(revs):
-                node = fnodes[i].result()
-                nodes.append(node)
-                if rev == checkout:
-                    checkout = node
+                    raise error.Abort(err)
+                with other.commandexecutor() as e:
+                    fremotebookmarks = e.callcommand(
+                        b'listkeys', {b'namespace': b'bookmarks'}
+                    )
+                    for r in revs:
+                        fnodes.append(e.callcommand(b'lookup', {b'key': r}))
+                remotebookmarks = fremotebookmarks.result()
+                remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
+                pullopargs[b'remotebookmarks'] = remotebookmarks
+                for b in opts.get(b'bookmark', []):
+                    b = repo._bookmarks.expandname(b)
+                    if b not in remotebookmarks:
+                        raise error.InputError(
+                            _(b'remote bookmark %s not found!') % b
+                        )
+                    nodes.append(remotebookmarks[b])
+                for i, rev in enumerate(revs):
+                    node = fnodes[i].result()
+                    nodes.append(node)
+                    if rev == checkout:
+                        checkout = node
 
-        wlock = util.nullcontextmanager()
-        if opts.get(b'update'):
-            wlock = repo.wlock()
-        with wlock:
-            pullopargs.update(opts.get(b'opargs', {}))
-            modheads = exchange.pull(
-                repo,
-                other,
-                heads=nodes,
-                force=opts.get(b'force'),
-                bookmarks=opts.get(b'bookmark', ()),
-                opargs=pullopargs,
-                confirm=opts.get(b'confirm'),
-            ).cgresult
+            wlock = util.nullcontextmanager()
+            if opts.get(b'update'):
+                wlock = repo.wlock()
+            with wlock:
+                pullopargs.update(opts.get(b'opargs', {}))
+                modheads = exchange.pull(
+                    repo,
+                    other,
+                    heads=nodes,
+                    force=opts.get(b'force'),
+                    bookmarks=opts.get(b'bookmark', ()),
+                    opargs=pullopargs,
+                    confirm=opts.get(b'confirm'),
+                ).cgresult
 
-            # brev is a name, which might be a bookmark to be activated at
-            # the end of the update. In other words, it is an explicit
-            # destination of the update
-            brev = None
+                # brev is a name, which might be a bookmark to be activated at
+                # the end of the update. In other words, it is an explicit
+                # destination of the update
+                brev = None
 
-            if checkout:
-                checkout = repo.unfiltered().changelog.rev(checkout)
+                if checkout:
+                    checkout = repo.unfiltered().changelog.rev(checkout)
 
-                # order below depends on implementation of
-                # hg.addbranchrevs(). opts['bookmark'] is ignored,
-                # because 'checkout' is determined without it.
-                if opts.get(b'rev'):
-                    brev = opts[b'rev'][0]
-                elif opts.get(b'branch'):
-                    brev = opts[b'branch'][0]
-                else:
-                    brev = branches[0]
-            repo._subtoppath = source
-            try:
-                update_conflict = postincoming(
-                    ui, repo, modheads, opts.get(b'update'), checkout, brev
-                )
-            except error.FilteredRepoLookupError as exc:
-                msg = _(b'cannot update to target: %s') % exc.args[0]
-                exc.args = (msg,) + exc.args[1:]
-                raise
-            finally:
-                del repo._subtoppath
+                    # order below depends on implementation of
+                    # hg.addbranchrevs(). opts['bookmark'] is ignored,
+                    # because 'checkout' is determined without it.
+                    if opts.get(b'rev'):
+                        brev = opts[b'rev'][0]
+                    elif opts.get(b'branch'):
+                        brev = opts[b'branch'][0]
+                    else:
+                        brev = branches[0]
+                repo._subtoppath = source
+                try:
+                    update_conflict = postincoming(
+                        ui, repo, modheads, opts.get(b'update'), checkout, brev
+                    )
+                except error.FilteredRepoLookupError as exc:
+                    msg = _(b'cannot update to target: %s') % exc.args[0]
+                    exc.args = (msg,) + exc.args[1:]
+                    raise
+                finally:
+                    del repo._subtoppath
 
-    finally:
-        other.close()
+        finally:
+            other.close()
     if update_conflict:
         return 1
     else:
