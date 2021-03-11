@@ -797,7 +797,7 @@ def deltagroup(
 
     configtarget = repo.ui.config(b'devel', b'bundle.delta')
     if configtarget not in (b'', b'p1', b'full'):
-        msg = _("""config "devel.bundle.delta" as unknown value: %s""")
+        msg = _(b"""config "devel.bundle.delta" as unknown value: %s""")
         repo.ui.warn(msg % configtarget)
 
     deltamode = repository.CG_DELTAMODE_STD
