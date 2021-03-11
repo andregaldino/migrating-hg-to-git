@@ -2041,7 +2041,9 @@ def debugmanifestfulltextcache(ui, repo, add=(), **opts):
                 try:
                     manifest = m[store.lookup(n)]
                 except error.LookupError as e:
-                    raise error.Abort(e, hint=b"Check your manifest node id")
+                    raise error.Abort(
+                        bytes(e), hint=b"Check your manifest node id"
+                    )
                 manifest.read()  # stores revisision in cache too
             return
 
@@ -2376,7 +2378,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                 tr.close()
             except ValueError as exc:
                 raise error.Abort(
-                    _(b'bad obsmarker input: %s') % pycompat.bytestr(exc)
+                    _(b'bad obsmarker input: %s') % stringutil.forcebytestr(exc)
                 )
             finally:
                 tr.release()
