@@ -299,9 +299,7 @@ class branchcache(object):
                     msg
                     % (
                         _branchcachedesc(repo),
-                        pycompat.bytestr(
-                            inst
-                        ),  # pytype: disable=wrong-arg-types
+                        stringutil.forcebytestr(inst),
                     )
                 )
             bcache = None
