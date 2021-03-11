@@ -869,7 +869,7 @@ class morestatus(object):
             )
             msg = (
                 _(
-                    '''Unresolved merge conflicts:
+                    b'''Unresolved merge conflicts:
 
 %s
 
