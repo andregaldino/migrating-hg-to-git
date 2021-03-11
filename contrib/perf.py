@@ -1407,7 +1407,7 @@ def perfphasesremote(ui, repo, dest=None, **opts):
     opts = _byteskwargs(opts)
     timer, fm = gettimer(ui, opts)
 
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
+    path = ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.Abort(
             b'default repository not configured!',

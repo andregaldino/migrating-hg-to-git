@@ -1317,7 +1317,7 @@ def incoming(ui, repo, source, opts):
 
 
 def _outgoing(ui, repo, dest, opts):
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
+    path = ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.Abort(
             _(b'default repository not configured!'),

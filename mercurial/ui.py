@@ -1031,7 +1031,7 @@ class ui(object):
     def expandpath(self, loc, default=None):
         """Return repository location relative to cwd or from [paths]"""
         try:
-            p = self.paths.getpath(loc)
+            p = self.getpath(loc)
             if p:
                 return p.rawloc
         except error.RepoError:
@@ -1039,7 +1039,7 @@ class ui(object):
 
         if default:
             try:
-                p = self.paths.getpath(default)
+                p = self.getpath(default)
                 if p:
                     return p.rawloc
             except error.RepoError:
@@ -1050,6 +1050,13 @@ class ui(object):
     @util.propertycache
     def paths(self):
         return paths(self)
+
+    def getpath(self, *args, **kwargs):
+        """see paths.getpath for details
+
+        This method exist as `getpath` need a ui for potential warning message.
+        """
+        return self.paths.getpath(self, *args, **kwargs)
 
     @property
     def fout(self):
@@ -2190,7 +2197,7 @@ class paths(dict):
             loc, sub = ui.configsuboptions(b'paths', name)
             self[name] = path(ui, name, rawloc=loc, suboptions=sub)
 
-    def getpath(self, name, default=None):
+    def getpath(self, ui, name, default=None):
         """Return a ``path`` from a string, falling back to default.
 
         ``name`` can be a named path or locations. Locations are filesystem
@@ -2222,8 +2229,8 @@ class paths(dict):
         except KeyError:
             # Try to resolve as a local path or URI.
             try:
-                # We don't pass sub-options in, so no need to pass ui instance.
-                return path(None, None, rawloc=name)
+                # we pass the ui instance are warning might need to be issued
+                return path(ui, None, rawloc=name)
             except ValueError:
                 raise error.RepoError(_(b'repository %s does not exist') % name)
 

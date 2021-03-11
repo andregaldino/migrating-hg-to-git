@@ -1826,9 +1826,9 @@ def outgoing(repo, subset, x):
         l and getstring(l[0], _(b"outgoing requires a repository path")) or b''
     )
     if not dest:
-        # ui.paths.getpath() explicitly tests for None, not just a boolean
+        # ui.getpath() explicitly tests for None, not just a boolean
         dest = None
-    path = repo.ui.paths.getpath(dest, default=(b'default-push', b'default'))
+    path = repo.ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.Abort(
             _(b'default repository not configured!'),

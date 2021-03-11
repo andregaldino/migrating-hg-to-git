@@ -4946,7 +4946,7 @@ def outgoing(ui, repo, dest=None, **opts):
     """
     # hg._outgoing() needs to re-resolve the path in order to handle #branch
     # style URLs, so don't overwrite dest.
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
+    path = ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.ConfigError(
             _(b'default repository not configured!'),
@@ -5680,7 +5680,7 @@ def push(ui, repo, dest=None, **opts):
                 # this lets simultaneous -r, -b options continue working
                 opts.setdefault(b'rev', []).append(b"null")
 
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
+    path = ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.ConfigError(
             _(b'default repository not configured!'),

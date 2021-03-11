@@ -837,7 +837,7 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
                 exchange, b'_localphasemove', _phasemove
             )
         # Copy-paste from `push` command
-        path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
+        path = ui.getpath(dest, default=(b'default-push', b'default'))
         if not path:
             raise error.Abort(
                 _(b'default repository not configured!'),
