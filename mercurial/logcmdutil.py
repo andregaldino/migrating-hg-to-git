@@ -51,6 +51,7 @@ if pycompat.TYPE_CHECKING:
         Dict,
         List,
         Optional,
+        Sequence,
         Tuple,
     )
 
@@ -723,7 +724,7 @@ class walkopts(object):
 
 
 def parseopts(ui, pats, opts):
-    # type: (Any, List[bytes], Dict[bytes, Any]) -> walkopts
+    # type: (Any, Sequence[bytes], Dict[bytes, Any]) -> walkopts
     """Parse log command options into walkopts
 
     The returned walkopts will be passed in to getrevs() or makewalker().
