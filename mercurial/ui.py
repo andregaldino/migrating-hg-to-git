@@ -2190,12 +2190,16 @@ class paths(dict):
     def __init__(self, ui):
         dict.__init__(self)
 
+        _path, base_sub_options = ui.configsuboptions(b'paths', b'*')
         for name, loc in ui.configitems(b'paths', ignoresub=True):
             # No location is the same as not existing.
             if not loc:
                 continue
             loc, sub = ui.configsuboptions(b'paths', name)
-            self[name] = path(ui, name, rawloc=loc, suboptions=sub)
+            sub_opts = base_sub_options.copy()
+            sub_opts.update(sub)
+            self[name] = path(ui, name, rawloc=loc, suboptions=sub_opts)
+        self._default_sub_opts = base_sub_options
 
     def getpath(self, ui, name, default=None):
         """Return a ``path`` from a string, falling back to default.
@@ -2230,7 +2234,9 @@ class paths(dict):
             # Try to resolve as a local path or URI.
             try:
                 # we pass the ui instance are warning might need to be issued
-                return path(ui, None, rawloc=name)
+                return path(
+                    ui, None, rawloc=name, suboptions=self._default_sub_opts
+                )
             except ValueError:
                 raise error.RepoError(_(b'repository %s does not exist') % name)
 

@@ -146,4 +146,40 @@ Invalid :pushrev raises appropriately
     ^ here)
   [10]
 
+default :pushrev is taking in account
+
+  $ echo babar > foo
+  $ hg ci -m 'extra commit'
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo celeste > foo
+  $ hg ci -m 'extra other commit'
+  created new head
+  $ cat >> .hg/hgrc << EOF
+  > [paths]
+  > other = file://$WD/../pushurldest
+  > *:pushrev = .
+  > EOF
+  $ hg push other
+  pushing to file:/*/$TESTTMP/pushurlsource/../pushurldest (glob)
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  $ hg push file://$WD/../pushurldest
+  pushing to file:/*/$TESTTMP/pushurlsource/../pushurldest (glob)
+  searching for changes
+  no changes found
+  [1]
+
+for comparison, pushing everything would give different result
+
+  $ hg push file://$WD/../pushurldest --rev 'all()'
+  pushing to file:/*/$TESTTMP/pushurlsource/../pushurldest (glob)
+  searching for changes
+  abort: push creates new remote head 1616ce7cecc8
+  (merge or see 'hg help push' for details about pushing new heads)
+  [20]
+
   $ cd ..
