@@ -557,7 +557,7 @@ def _to_value(item, block_map):
 def parse_data(data):
     """parse parse nodemap data into a nodemap Trie"""
     if (len(data) % S_BLOCK.size) != 0:
-        msg = "nodemap data size is not a multiple of block size (%d): %d"
+        msg = b"nodemap data size is not a multiple of block size (%d): %d"
         raise error.Abort(msg % (S_BLOCK.size, len(data)))
     if not data:
         return Block(), None
