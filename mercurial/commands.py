@@ -3444,7 +3444,8 @@ def grep(ui, repo, pattern, *pats, **opts):
         regexp = util.re.compile(pattern, reflags)
     except re.error as inst:
         ui.warn(
-            _(b"grep: invalid match pattern: %s\n") % pycompat.bytestr(inst)
+            _(b"grep: invalid match pattern: %s\n")
+            % stringutil.forcebytestr(inst)
         )
         return 1
     sep, eol = b':', b'\n'
