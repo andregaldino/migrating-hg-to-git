@@ -1210,7 +1210,7 @@ def filterpatch(ui, headers, match, operation=None):
                 # Patch comment based on the Git one (based on comment at end of
                 # https://mercurial-scm.org/wiki/RecordExtension)
                 phelp = b'---' + _(
-                    """
+                    b"""
 To remove '-' lines, make them ' ' lines (context).
 To remove '+' lines, delete them.
 Lines starting with # will be removed from the patch.
