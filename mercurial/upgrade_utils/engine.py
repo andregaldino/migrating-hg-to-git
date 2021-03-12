@@ -516,6 +516,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     # reference to its new location. So clean it up manually. Alternatively, we
     # could update srcrepo.svfs and other variables to point to the new
     # location. This is simpler.
+    assert backupvfs is not None  # help pytype
     backupvfs.unlink(b'store/lock')
 
     return backuppath
