@@ -14,6 +14,9 @@ from .node import (
     nullid,
     short,
 )
+from .utils import (
+    stringutil,
+)
 
 from . import (
     error,
@@ -81,7 +84,7 @@ class verifier(object):
 
     def _exc(self, linkrev, msg, inst, filename=None):
         """record exception raised during the verify process"""
-        fmsg = pycompat.bytestr(inst)
+        fmsg = stringutil.forcebytestr(inst)
         if not fmsg:
             fmsg = pycompat.byterepr(inst)
         self._err(linkrev, b"%s: %s" % (msg, fmsg), filename)
