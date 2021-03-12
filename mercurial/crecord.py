@@ -34,14 +34,14 @@ stringio = util.stringio
 
 # patch comments based on the git one
 diffhelptext = _(
-    """# To remove '-' lines, make them ' ' lines (context).
+    b"""# To remove '-' lines, make them ' ' lines (context).
 # To remove '+' lines, delete them.
 # Lines starting with # will be removed from the patch.
 """
 )
 
 hunkhelptext = _(
-    """#
+    b"""#
 # If the patch applies cleanly, the edited hunk will immediately be
 # added to the record list. If it does not apply cleanly, a rejects file
 # will be generated. You can use that when you try again. If all lines
@@ -51,7 +51,7 @@ hunkhelptext = _(
 )
 
 patchhelptext = _(
-    """#
+    b"""#
 # If the patch applies cleanly, the edited patch will immediately
 # be finalised. If it does not apply cleanly, rejects files will be
 # generated. You can use those when you try again.
@@ -611,7 +611,8 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
 
     chunkselector.stdscr = dummystdscr()
     if testfn and os.path.exists(testfn):
-        testf = open(testfn, 'r')
+        testf = open(testfn, b'r')
+        # TODO: open in binary mode?
         testcommands = [x.rstrip('\n') for x in testf.readlines()]
         testf.close()
         while True:
@@ -1621,7 +1622,7 @@ class curseschunkselector(object):
     def helpwindow(self):
         """print a help window to the screen.  exit after any keypress."""
         helptext = _(
-            """            [press any key to return to the patch-display]
+            b"""            [press any key to return to the patch-display]
 
 The curses hunk selector allows you to interactively choose among the
 changes you have made, and confirm only those changes you select for
@@ -1745,7 +1746,7 @@ smaller changesets. the following are valid keystrokes:
         """ask for 'y' to be pressed to confirm selected. return True if
         confirmed."""
         confirmtext = _(
-            """If you answer yes to the following, your currently chosen patch chunks
+            b"""If you answer yes to the following, your currently chosen patch chunks
 will be loaded into an editor. To modify the patch, make the changes in your
 editor and save. To accept the current patch as-is, close the editor without
 saving.
