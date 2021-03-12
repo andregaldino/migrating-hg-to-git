@@ -365,12 +365,20 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
         unsupported.remove(supported);
     }
 
+    if let Some(ignored_list) =
+        config.get_simple_list(b"rhg", b"ignored-extensions")
+    {
+        for ignored in ignored_list {
+            unsupported.remove(ignored);
+        }
+    }
+
     if unsupported.is_empty() {
         Ok(())
     } else {
         Err(CommandError::UnsupportedFeature {
             message: format_bytes!(
-                b"extensions: {}",
+                b"extensions: {} (consider adding them to 'rhg.ignored-extensions' config)",
                 join(unsupported, b", ")
             ),
         })
