@@ -150,6 +150,14 @@ Fallback to Python
   $ rhg cat original
   original content
 
+  $ FALLBACK_EXE="$RHG_FALLBACK_EXECUTABLE"
+  $ unset RHG_FALLBACK_EXECUTABLE
+  $ rhg cat original
+  abort: 'rhg.on-unsupported=fallback' without 'rhg.fallback-executable' set.
+  [255]
+  $ RHG_FALLBACK_EXECUTABLE="$FALLBACK_EXE"
+  $ export RHG_FALLBACK_EXECUTABLE
+
   $ rhg cat original --config rhg.fallback-executable=false
   [1]
 

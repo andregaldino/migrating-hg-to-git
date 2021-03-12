@@ -138,7 +138,7 @@ fn main() {
             exit(
                 &initial_current_dir,
                 &ui,
-                OnUnsupported::from_config(&non_repo_config),
+                OnUnsupported::from_config(&ui, &non_repo_config),
                 Err(CommandError::UnsupportedFeature {
                     message: format_bytes!(
                         b"URL-like --repository {}",
@@ -158,7 +158,7 @@ fn main() {
         Err(error) => exit(
             &initial_current_dir,
             &ui,
-            OnUnsupported::from_config(&non_repo_config),
+            OnUnsupported::from_config(&ui, &non_repo_config),
             Err(error.into()),
         ),
     };
@@ -168,6 +168,7 @@ fn main() {
     } else {
         &non_repo_config
     };
+    let on_unsupported = OnUnsupported::from_config(&ui, config);
 
     let result = main_with_result(
         &process_start_time,
@@ -175,12 +176,7 @@ fn main() {
         repo_result.as_ref(),
         config,
     );
-    exit(
-        &initial_current_dir,
-        &ui,
-        OnUnsupported::from_config(config),
-        result,
-    )
+    exit(&initial_current_dir, &ui, on_unsupported, result)
 }
 
 fn exit_code(result: &Result<(), CommandError>) -> i32 {
@@ -242,6 +238,14 @@ fn exit(
             }
         }
     }
+    exit_no_fallback(ui, on_unsupported, result)
+}
+
+fn exit_no_fallback(
+    ui: &Ui,
+    on_unsupported: OnUnsupported,
+    result: Result<(), CommandError>,
+) -> ! {
     match &result {
         Ok(_) => {}
         Err(CommandError::Unsuccessful) => {}
@@ -387,9 +391,8 @@ enum OnUnsupported {
 
 impl OnUnsupported {
     const DEFAULT: Self = OnUnsupported::Abort;
-    const DEFAULT_FALLBACK_EXECUTABLE: &'static [u8] = b"hg";
 
-    fn from_config(config: &Config) -> Self {
+    fn from_config(ui: &Ui, config: &Config) -> Self {
         match config
             .get(b"rhg", b"on-unsupported")
             .map(|value| value.to_ascii_lowercase())
@@ -400,7 +403,16 @@ impl OnUnsupported {
             Some(b"fallback") => OnUnsupported::Fallback {
                 executable: config
                     .get(b"rhg", b"fallback-executable")
-                    .unwrap_or(Self::DEFAULT_FALLBACK_EXECUTABLE)
+                    .unwrap_or_else(|| {
+                        exit_no_fallback(
+                            ui,
+                            Self::Abort,
+                            Err(CommandError::abort(
+                                "abort: 'rhg.on-unsupported=fallback' without \
+                                'rhg.fallback-executable' set."
+                            )),
+                        )
+                    })
                     .to_owned(),
             },
             None => Self::DEFAULT,
