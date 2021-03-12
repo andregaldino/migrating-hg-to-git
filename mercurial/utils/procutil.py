@@ -152,8 +152,8 @@ if pycompat.ispy3:
 
     if pycompat.iswindows:
         # Work around Windows bugs.
-        stdout = platform.winstdout(stdout)
-        stderr = platform.winstdout(stderr)
+        stdout = platform.winstdout(stdout)  # pytype: disable=module-attr
+        stderr = platform.winstdout(stderr)  # pytype: disable=module-attr
     if isatty(stdout):
         # The standard library doesn't offer line-buffered binary streams.
         stdout = make_line_buffered(stdout)
@@ -164,8 +164,8 @@ else:
     stderr = sys.stderr
     if pycompat.iswindows:
         # Work around Windows bugs.
-        stdout = platform.winstdout(stdout)
-        stderr = platform.winstdout(stderr)
+        stdout = platform.winstdout(stdout)  # pytype: disable=module-attr
+        stderr = platform.winstdout(stderr)  # pytype: disable=module-attr
     if isatty(stdout):
         if pycompat.iswindows:
             # The Windows C runtime library doesn't support line buffering.
