@@ -1152,7 +1152,7 @@ class curseschunkselector(object):
             numtrailingspaces = origlen - strippedlen
 
         if towin:
-            window.addstr(text, colorpair)
+            window.addstr(encoding.strfromlocal(text), colorpair)
         t += text
 
         if showwhtspc:
