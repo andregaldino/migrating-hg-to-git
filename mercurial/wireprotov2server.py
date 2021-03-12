@@ -88,7 +88,9 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     try:
         checkperm(rctx, req, b'pull' if permission == b'ro' else b'push')
     except hgwebcommon.ErrorResponse as e:
-        res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
+        res.status = hgwebcommon.statusmessage(
+            e.code, stringutil.forcebytestr(e)
+        )
         for k, v in e.headers:
             res.headers[k] = v
         res.setbodybytes(b'permission denied')
