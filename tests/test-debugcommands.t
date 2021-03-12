@@ -531,9 +531,17 @@ amount of time, displays error message and returns 1
 
 Test WdirUnsupported exception
 
+#if no-rhg
   $ hg debugdata -c ffffffffffffffffffffffffffffffffffffffff
   abort: working directory revision cannot be specified
   [255]
+#else
+TODO: add rhg support for (at least parsing) the working directory pseudo-changeset
+  $ hg debugdata -c ffffffffffffffffffffffffffffffffffffffff
+  abort: working directory revision cannot be specified (missing-correct-output !)
+  abort: invalid revision identifier: ffffffffffffffffffffffffffffffffffffffff (known-bad-output !)
+  [255]
+#endif
 
 Test cache warming command
 

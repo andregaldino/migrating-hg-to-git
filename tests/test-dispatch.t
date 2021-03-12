@@ -90,9 +90,12 @@ However, we can't prevent it from loading extensions and configs:
 
   $ mkdir -p badrepo/.hg
   $ echo 'invalid-syntax' > badrepo/.hg/hgrc
+TODO: add rhg support for detailed exit codes
+#if no-rhg
   $ hg log -b -Rbadrepo default
   config error at badrepo/.hg/hgrc:1: invalid-syntax
   [30]
+#endif
 
   $ hg log -b --cwd=inexistent default
   abort: $ENOENT$: 'inexistent'

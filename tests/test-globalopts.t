@@ -65,6 +65,8 @@ Testing -R/--repository:
 
 -R with path aliases:
 
+TODO: add rhg support for path aliases
+#if no-rhg
   $ cd c
   $ hg -R default identify
   8580ff50825a tip
@@ -75,6 +77,7 @@ Testing -R/--repository:
   $ HOME=`pwd`/../ hg -R relativetohome identify
   8580ff50825a tip
   $ cd ..
+#endif
 
 #if no-outer-repo
 
@@ -215,6 +218,8 @@ Testing --config:
 
   $ hg --cwd c --config paths.quuxfoo=bar paths | grep quuxfoo > /dev/null && echo quuxfoo
   quuxfoo
+TODO: add rhg support for detailed exit codes
+#if no-rhg
   $ hg --cwd c --config '' tip -q
   abort: malformed --config option: '' (use --config section.name=value)
   [10]
@@ -230,6 +235,7 @@ Testing --config:
   $ hg --cwd c --config .b= tip -q
   abort: malformed --config option: '.b=' (use --config section.name=value)
   [10]
+#endif
 
 Testing --debug:
 
