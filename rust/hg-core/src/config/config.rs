@@ -78,9 +78,27 @@ impl Config {
         if opt_rc_path.is_none() {
             config.add_system_config()?
         }
+
         config.add_for_environment_variable("EDITOR", b"ui", b"editor");
         config.add_for_environment_variable("VISUAL", b"ui", b"editor");
         config.add_for_environment_variable("PAGER", b"pager", b"pager");
+
+        // These are set by `run-tests.py --rhg` to enable fallback for the
+        // entire test suite. Alternatives would be setting configuration
+        // through `$HGRCPATH` but some tests override that, or changing the
+        // `hg` shell alias to include `--config` but that disrupts tests that
+        // print command lines and check expected output.
+        config.add_for_environment_variable(
+            "RHG_ON_UNSUPPORTED",
+            b"rhg",
+            b"on-unsupported",
+        );
+        config.add_for_environment_variable(
+            "RHG_FALLBACK_EXECUTABLE",
+            b"rhg",
+            b"fallback-executable",
+        );
+
         // HGRCPATH replaces user config
         if opt_rc_path.is_none() {
             config.add_user_config()?
