@@ -104,7 +104,9 @@ if pycompat.ispy3:
 else:
 
     def ismainthread():
+        # pytype: disable=module-attr
         return isinstance(threading.current_thread(), threading._MainThread)
+        # pytype: enable=module-attr
 
     def _blockingreader(wrapped):
         return wrapped
