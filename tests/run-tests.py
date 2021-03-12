@@ -262,7 +262,13 @@ def checkportisavailable(port):
     except socket.error as exc:
         if os.name == 'nt' and exc.errno == errno.WSAEACCES:
             return False
-        elif exc.errno not in (
+        elif PYTHON3:
+            # TODO: make a proper exception handler after dropping py2.  This
+            #       works because socket.error is an alias for OSError on py3,
+            #       which is also the baseclass of PermissionError.
+            if isinstance(exc, PermissionError):
+                return False
+        if exc.errno not in (
             errno.EADDRINUSE,
             errno.EADDRNOTAVAIL,
             errno.EPROTONOSUPPORT,
