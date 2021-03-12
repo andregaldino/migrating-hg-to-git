@@ -1114,7 +1114,7 @@ Binary files work but without diff hunks filtering.
   
   diff --git a/dir/binary b/dir/binary
   new file mode 100644
-  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..c2e1fbed209fe919b3f189a6a31950e9adf61e45
+  index 0000000000000000000000000000000000000000..c2e1fbed209fe919b3f189a6a31950e9adf61e45
   GIT binary patch
   literal 17
   Wc$_QA$SmdpqC~Ew%)G>+N(KNlNClYy

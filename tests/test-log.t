@@ -102,6 +102,41 @@ log on directory
   summary:     c
   
 
+log empty path (or repo root) of slow path shouldn't crash (issue6478)
+
+  $ hg log -ql1 '' inexistent
+  4:7e4639b4691b
+  $ hg log -ql1 . inexistent
+  4:7e4639b4691b
+  $ hg log -ql1 "`pwd`" inexistent
+  4:7e4639b4691b
+
+  $ hg log -ql1 '' e
+  4:7e4639b4691b
+  $ hg log -ql1 . e
+  4:7e4639b4691b
+  $ hg log -ql1 "`pwd`" e
+  4:7e4639b4691b
+
+log -f empty path (or repo root) shouldn't crash
+
+  $ hg log -qfl1 '' inexistent
+  abort: cannot follow file not in parent revision: "inexistent"
+  [255]
+  $ hg log -qfl1 . inexistent
+  abort: cannot follow file not in parent revision: "inexistent"
+  [255]
+  $ hg log -qfl1 "`pwd`" inexistent
+  abort: cannot follow file not in parent revision: "inexistent"
+  [255]
+
+  $ hg log -qfl1 '' e
+  4:7e4639b4691b
+  $ hg log -qfl1 . e
+  4:7e4639b4691b
+  $ hg log -qfl1 "`pwd`" e
+  4:7e4639b4691b
+
 -X, with explicit path
 
   $ hg log a -X a

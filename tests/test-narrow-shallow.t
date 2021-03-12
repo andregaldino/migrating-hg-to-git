@@ -92,28 +92,8 @@ directory but the shallow pull should only fetch 3.
   1: Commit rev2 of f8, d1/f8, d2/f8
   0...: Commit rev2 of f7, d1/f7, d2/f7
 
-XXX flaky output (see issue6150)
-XXX
-XXX The filectx implementation is buggy and return wrong data during status.
-XXX Leading to more file being "merged". The right output is the one with just
-XXX 10 files updated.
-
   $ hg update 4
-  merging d2/f1 (?)
-  merging d2/f2 (?)
-  merging d2/f3 (?)
-  merging d2/f4 (?)
-  merging d2/f5 (?)
-  merging d2/f6 (?)
-  merging d2/f7 (?)
-  3 files updated, 7 files merged, 0 files removed, 0 files unresolved (?)
-  4 files updated, 6 files merged, 0 files removed, 0 files unresolved (?)
-  5 files updated, 5 files merged, 0 files removed, 0 files unresolved (?)
-  6 files updated, 4 files merged, 0 files removed, 0 files unresolved (?)
-  7 files updated, 3 files merged, 0 files removed, 0 files unresolved (?)
-  8 files updated, 2 files merged, 0 files removed, 0 files unresolved (?)
-  9 files updated, 1 files merged, 0 files removed, 0 files unresolved (?)
-  10 files updated, 0 files merged, 0 files removed, 0 files unresolved (?)
+  10 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat d2/f7 d2/f8
   d2/f7 rev3
   d2/f8 rev2

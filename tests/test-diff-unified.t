@@ -456,3 +456,26 @@ be broken up
     .
 
   $ cd ..
+
+Make sure `hg diff --git` differentiate "file did not exists" and "file is empty"
+for git blob oids
+
+  $ hg init bloboids
+  $ cd bloboids
+
+  $ touch a
+  $ hg ci -Am "empty a"
+  adding a
+  $ hg diff -c 0 --git --config experimental.extendedheader.index=full | grep index
+  index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 100644
+
+Make sure `hg diff --git` differentiate "file was empty" and "file is removed"
+for git blob oids
+
+  $ rm a
+  $ hg ci -Am "removed a"
+  removing a
+  $ hg diff -c 1 --git --config experimental.extendedheader.index=full | grep index
+  index e69de29bb2d1d6434b8b29ae775ad8c2e48c5391..0000000000000000000000000000000000000000 100644
+
+  $ cd ..

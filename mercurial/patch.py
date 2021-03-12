@@ -20,6 +20,7 @@ import zlib
 from .i18n import _
 from .node import (
     hex,
+    nullhex,
     short,
 )
 from .pycompat import open
@@ -3099,12 +3100,12 @@ def diffcontent(data1, data2, header, binary, opts):
 
     ctx1, fctx1, path1, flag1, content1, date1 = data1
     ctx2, fctx2, path2, flag2, content2, date2 = data2
+    index1 = _gitindex(content1) if path1 in ctx1 else nullhex
+    index2 = _gitindex(content2) if path2 in ctx2 else nullhex
     if binary and opts.git and not opts.nobinary:
         text = mdiff.b85diff(content1, content2)
         if text:
-            header.append(
-                b'index %s..%s' % (_gitindex(content1), _gitindex(content2))
-            )
+            header.append(b'index %s..%s' % (index1, index2))
         hunks = ((None, [text]),)
     else:
         if opts.git and opts.index > 0:
@@ -3114,8 +3115,8 @@ def diffcontent(data1, data2, header, binary, opts):
             header.append(
                 b'index %s..%s %s'
                 % (
-                    _gitindex(content1)[0 : opts.index],
-                    _gitindex(content2)[0 : opts.index],
+                    index1[0 : opts.index],
+                    index2[0 : opts.index],
                     _gitmode[flag],
                 )
             )

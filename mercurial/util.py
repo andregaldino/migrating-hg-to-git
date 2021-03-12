@@ -2185,7 +2185,7 @@ class _re(object):
         global _re2
         try:
             # check if match works, see issue3964
-            _re2 = bool(re2.match(r'\[([^\[]+)\]', b'[ui]'))
+            _re2 = bool(re2.match(br'\[([^\[]+)\]', b'[ui]'))
         except ImportError:
             _re2 = False
 

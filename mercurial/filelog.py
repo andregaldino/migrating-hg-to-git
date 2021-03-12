@@ -280,14 +280,12 @@ class narrowfilelog(filelog):
             return super(narrowfilelog, self).size(rev)
 
     def cmp(self, node, text):
-        different = super(narrowfilelog, self).cmp(node, text)
+        # We don't call `super` because narrow parents can be buggy in case of a
+        # ambiguous dirstate. Always take the slow path until there is a better
+        # fix, see issue6150.
 
-        # Because renamed() may lie, we may get false positives for
-        # different content. Check for this by comparing against the original
-        # renamed() implementation.
-        if different:
-            if super(narrowfilelog, self).renamed(node):
-                t2 = self.read(node)
-                return t2 != text
+        # Censored files compare against the empty file.
+        if self.iscensored(self.rev(node)):
+            return text != b''
 
-        return different
+        return self.read(node) != text

@@ -876,7 +876,7 @@ def _makematcher(repo, revs, wopts):
         # slowpath; otherwise, we can turn off the slowpath
         if slowpath:
             for path in match.files():
-                if path == b'.' or path in repo.store:
+                if not path or path in repo.store:
                     break
             else:
                 slowpath = False
