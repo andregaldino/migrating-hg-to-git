@@ -2891,7 +2891,7 @@ class localrepository(object):
 
         If both 'lock' and 'wlock' must be acquired, ensure you always acquires
         'wlock' first to avoid a dead-lock hazard."""
-        l = self._wlockref and self._wlockref()
+        l = self._wlockref() if self._wlockref else None
         if l is not None and l.held:
             l.lock()
             return l
