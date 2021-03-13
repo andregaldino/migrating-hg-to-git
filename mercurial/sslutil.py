@@ -269,7 +269,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
 
     if b'SSLKEYLOGFILE' in encoding.environ:
         try:
-            import sslkeylog
+            import sslkeylog  # pytype: disable=import-error
 
             sslkeylog.set_keylog(
                 pycompat.fsdecode(encoding.environ[b'SSLKEYLOGFILE'])

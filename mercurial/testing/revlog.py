@@ -24,7 +24,7 @@ data_non_inlined = (
 
 
 try:
-    from ..cext import parsers as cparsers
+    from ..cext import parsers as cparsers  # pytype: disable=import-error
 except ImportError:
     cparsers = None
 

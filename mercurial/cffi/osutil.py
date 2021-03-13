@@ -15,7 +15,7 @@ from ..pure.osutil import *
 from .. import pycompat
 
 if pycompat.isdarwin:
-    from . import _osutil
+    from . import _osutil  # pytype: disable=import-error
 
     ffi = _osutil.ffi
     lib = _osutil.lib

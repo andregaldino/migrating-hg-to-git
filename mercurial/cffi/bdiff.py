@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import struct
 
 from ..pure.bdiff import *
-from . import _bdiff
+from . import _bdiff  # pytype: disable=import-error
 
 ffi = _bdiff.ffi
 lib = _bdiff.lib

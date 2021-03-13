@@ -148,12 +148,15 @@ if pycompat.ispy3:
 
 
 else:
+    # pytype: disable=import-error
     import BaseHTTPServer
     import CGIHTTPServer
     import SimpleHTTPServer
     import urllib2
     import urllib
     import urlparse
+
+    # pytype: enable=import-error
 
     urlreq._registeraliases(
         urllib,

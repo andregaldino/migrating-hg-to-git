@@ -1622,7 +1622,7 @@ def debuginstall(ui, **opts):
     )
 
     try:
-        from . import rustext
+        from . import rustext  # pytype: disable=import-error
 
         rustext.__doc__  # trigger lazy import
     except ImportError:
