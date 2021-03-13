@@ -326,8 +326,8 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
     │ (None, Some) │     OR       │      ø       │🄼   Added     │OR 🅀 Salvaged │
     │              │🄹  Salvaged[2]│              │   (copied?)  │   (copied?)  │
     ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-    │              │              │              │   🄾 Touched  │              │
-    │ (Some, Some) │🄺  No Changes │      ø       │OR 🅁 Salvaged │🄿   Merged    │
+    │              │              │              │   🄾 Touched  │   🄿 Merged   │
+    │ (Some, Some) │🄺  No Changes │      ø       │OR 🅁 Salvaged │OR 🅂 Touched  │
     │              │     [3]      │              │   (copied?)  │   (copied?)  │
     └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 
@@ -415,6 +415,7 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
       nice bonus. However do not any of this yet.
     """
 
+    repo = ctx.repo()
     md = ChangingFiles()
 
     m = ctx.manifest()
@@ -462,8 +463,15 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
                         # case 🄽 🄾 : touched
                         md.mark_touched(filename)
                 else:
-                    # case 🄿 : merged
-                    md.mark_merged(filename)
+                    fctx = repo.filectx(filename, fileid=d1[1][0])
+                    if fctx.p2().rev() == nullrev:
+                        # case 🅂
+                        # lets assume we can trust the file history. If the
+                        # filenode is not a merge, the file was not merged.
+                        md.mark_touched(filename)
+                    else:
+                        # case 🄿
+                        md.mark_merged(filename)
                 copy_candidates.append(filename)
             else:
                 # Impossible case, the post-merge file status cannot be None on

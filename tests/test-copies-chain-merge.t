@@ -1965,25 +1965,13 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   ##### revision "mBF-change-m-0 merge with extra change - B side" #####
   1 sidedata entries
    entry-0014 size 14
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
-  touched    : d, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
-  touched    : d, ; (upgraded missing-correct-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
-  merged     : d, ; (upgraded known-bad-output !)
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
-  touched    : d, ; (upgraded-parallel missing-correct-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
-  merged     : d, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d'
+  touched    : d, ;
   ##### revision "mFB-change-m-0 merge with extra change - B side" #####
   1 sidedata entries
    entry-0014 size 14
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
-  touched    : d, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
-  merged     : d, ; (upgraded-parallel known-bad-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
-  merged     : d, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x01\x00\x00\x00\x00d'
+  touched    : d, ;
   ##### revision "mCB-change-m-0 merge explicitely revive deleted file - B side" #####
   1 sidedata entries
    entry-0014 size 14
@@ -3418,10 +3406,8 @@ Merge:
   A d
     h (filelog !)
     h (sidedata !)
-    a (upgraded known-bad-output !)
-    h (upgraded missing-correct-output !)
-    a (upgraded-parallel known-bad-output !)
-    h (upgraded-parallel missing-correct-output !)
+    h (upgraded !)
+    h (upgraded-parallel !)
     h (changeset !)
     h (compatibility !)
   A t
