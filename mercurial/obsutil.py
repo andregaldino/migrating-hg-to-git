@@ -782,7 +782,7 @@ def successorsandmarkers(repo, ctx):
     # closestsuccessors returns an empty list for pruned revisions, remap it
     # into a list containing an empty list for future processing
     if ssets == []:
-        ssets = [[]]
+        ssets = [_succs()]
 
     # Try to recover pruned markers
     succsmap = repo.obsstore.successors
