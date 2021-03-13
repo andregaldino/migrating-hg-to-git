@@ -290,7 +290,13 @@ pub fn relativize_path(path: &HgPath, cwd: impl AsRef<HgPath>) -> Cow<[u8]> {
     if cwd.as_ref().is_empty() {
         Cow::Borrowed(path.as_bytes())
     } else {
-        let mut res: Vec<u8> = Vec::new();
+        // This is not all accurate as to how large `res` will actually be, but
+        // profiling `rhg files` on a large-ish repo shows it’s better than
+        // starting from a zero-capacity `Vec` and letting `extend` reallocate
+        // repeatedly.
+        let guesstimate = path.as_bytes().len();
+
+        let mut res: Vec<u8> = Vec::with_capacity(guesstimate);
         let mut path_iter = path.as_bytes().split(|b| *b == b'/').peekable();
         let mut cwd_iter =
             cwd.as_ref().as_bytes().split(|b| *b == b'/').peekable();
