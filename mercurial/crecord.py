@@ -64,7 +64,7 @@ try:
 
     curses.error
 except (ImportError, AttributeError):
-    curses = False
+    curses = None
 
 
 class fallbackerror(error.Abort):
