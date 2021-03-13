@@ -2303,6 +2303,7 @@ class localrepository(object):
 
             def tracktags(tr2):
                 repo = reporef()
+                assert repo is not None  # help pytype
                 oldfnodes = tagsmod.fnoderevs(repo.ui, repo, oldheads)
                 newheads = repo.changelog.headrevs()
                 newfnodes = tagsmod.fnoderevs(repo.ui, repo, newheads)
@@ -2339,6 +2340,7 @@ class localrepository(object):
             # gating.
             tracktags(tr2)
             repo = reporef()
+            assert repo is not None  # help pytype
 
             singleheadopt = (b'experimental', b'single-head-per-branch')
             singlehead = repo.ui.configbool(*singleheadopt)
@@ -2442,6 +2444,8 @@ class localrepository(object):
 
             def hookfunc(unused_success):
                 repo = reporef()
+                assert repo is not None  # help pytype
+
                 if hook.hashook(repo.ui, b'txnclose-bookmark'):
                     bmchanges = sorted(tr.changes[b'bookmarks'].items())
                     for name, (old, new) in bmchanges:
@@ -2473,7 +2477,9 @@ class localrepository(object):
                     b'txnclose', throw=False, **pycompat.strkwargs(hookargs)
                 )
 
-            reporef()._afterlock(hookfunc)
+            repo = reporef()
+            assert repo is not None  # help pytype
+            repo._afterlock(hookfunc)
 
         tr.addfinalize(b'txnclose-hook', txnclosehook)
         # Include a leading "-" to make it happen before the transaction summary
@@ -2484,7 +2490,9 @@ class localrepository(object):
 
         def txnaborthook(tr2):
             """To be run if transaction is aborted"""
-            reporef().hook(
+            repo = reporef()
+            assert repo is not None  # help pytype
+            repo.hook(
                 b'txnabort', throw=False, **pycompat.strkwargs(tr2.hookargs)
             )
 
@@ -2667,6 +2675,7 @@ class localrepository(object):
 
         def updater(tr):
             repo = reporef()
+            assert repo is not None  # help pytype
             repo.updatecaches(tr)
 
         return updater
