@@ -999,6 +999,8 @@ add more change on the respective branch and merge again. These second merge
 does not involve the file 'f' and the arbitration done within "mAEm" and "mEA"
 about that file should stay unchanged.
 
+We also touch J during some of the merge to check for unrelated change to new file during merge.
+
   $ case_desc="chained merges (conflict -> simple) - same content everywhere"
 
 (extra unrelated changes)
@@ -1048,17 +1050,19 @@ about that file should stay unchanged.
   $ hg merge 'desc("j-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ echo jj > unrelated-j
   $ hg ci -m "mEA,Jm: $case_desc"
 
 (merge variant 4)
 
   $ hg up 'desc("j-1")'
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-changeset !)
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (changeset !)
   $ hg merge 'desc("mEAm")'
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved (no-changeset !)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved (changeset !)
   (branch merge, don't forget to commit)
+  $ echo jj > unrelated-j
   $ hg ci -m "mJ,EAm: $case_desc"
   created new head
 
@@ -1941,12 +1945,22 @@ We upgrade a repository that is not using sidedata (the filelog case) and
     '\x00\x00\x00\x00'
   ##### revision "mEA,Jm" #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (no-upgraded no-upgraded-parallel !)
+  touched    : unrelated-j, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded known-bad-output !)
+  merged     : unrelated-j, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded-parallel known-bad-output !)
+  merged     : unrelated-j, ; (upgraded-parallel known-bad-output !)
   ##### revision "mJ,EAm" #####
   1 sidedata entries
-   entry-0014 size 4
-    '\x00\x00\x00\x00'
+   entry-0014 size 24
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (no-upgraded no-upgraded-parallel !)
+  touched    : unrelated-j, ; (no-upgraded no-upgraded-parallel !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded known-bad-output !)
+  merged     : unrelated-j, ; (upgraded known-bad-output !)
+    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded-parallel known-bad-output !)
+  merged     : unrelated-j, ; (upgraded-parallel known-bad-output !)
   ##### revision "s-1" #####
   1 sidedata entries
    entry-0014 size 24
