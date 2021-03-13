@@ -1156,6 +1156,7 @@ def filelog(web):
 
     linerange = None
     if lrange is not None:
+        assert lrange is not None  # help pytype (!?)
         linerange = webutil.formatlinerange(*lrange)
         # deactivate numeric nav links when linerange is specified as this
         # would required a dedicated "revnav" class
