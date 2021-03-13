@@ -173,7 +173,9 @@ if pycompat.ispy3:
                 "line_buffering": sys.stdout.line_buffering,
             }
             if util.safehasattr(sys.stdout, "write_through"):
+                # pytype: disable=attribute-error
                 kwargs["write_through"] = sys.stdout.write_through
+                # pytype: enable=attribute-error
             sys.stdout = io.TextIOWrapper(
                 sys.stdout.buffer,
                 sys.stdout.encoding,
@@ -187,7 +189,9 @@ if pycompat.ispy3:
                 "line_buffering": sys.stderr.line_buffering,
             }
             if util.safehasattr(sys.stderr, "write_through"):
+                # pytype: disable=attribute-error
                 kwargs["write_through"] = sys.stderr.write_through
+                # pytype: enable=attribute-error
             sys.stderr = io.TextIOWrapper(
                 sys.stderr.buffer,
                 sys.stderr.encoding,
