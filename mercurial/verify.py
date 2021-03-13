@@ -434,6 +434,7 @@ class verifier(object):
                 filenodes.setdefault(f, {}).update(onefilenodes)
 
         if not dir and subdirnodes:
+            assert subdirprogress is not None  # help pytype
             subdirprogress.complete()
             if self.warnorphanstorefiles:
                 for f in sorted(storefiles):
