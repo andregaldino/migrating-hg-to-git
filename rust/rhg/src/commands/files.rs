@@ -53,21 +53,35 @@ fn display_files<'a>(
     repo: &Repo,
     files: impl IntoIterator<Item = &'a HgPath>,
 ) -> Result<(), CommandError> {
-    let cwd = HgPathBuf::from(get_bytes_from_path(hg::utils::current_dir()?));
-    let working_directory = repo.working_directory_path();
-    let working_directory = current_dir()?.join(working_directory); // Make it absolute
-    let working_directory =
-        HgPathBuf::from(get_bytes_from_path(working_directory));
-
     let mut stdout = ui.stdout_buffer();
 
+    let cwd = current_dir()?;
+    let working_directory = repo.working_directory_path();
+    let working_directory = cwd.join(working_directory); // Make it absolute
+
     let mut any = false;
-    for file in files {
-        any = true;
-        let file = working_directory.join(file);
-        stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
-        stdout.write_all(b"\n")?;
+    if let Ok(cwd_relative_to_repo) = cwd.strip_prefix(&working_directory) {
+        // The current directory is inside the repo, so we can work with
+        // relative paths
+        let cwd = HgPathBuf::from(get_bytes_from_path(cwd_relative_to_repo));
+        for file in files {
+            any = true;
+            stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
+            stdout.write_all(b"\n")?;
+        }
+    } else {
+        let working_directory =
+            HgPathBuf::from(get_bytes_from_path(working_directory));
+        let cwd = HgPathBuf::from(get_bytes_from_path(cwd));
+        for file in files {
+            any = true;
+            // Absolute path in the filesystem
+            let file = working_directory.join(file);
+            stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
+            stdout.write_all(b"\n")?;
+        }
     }
+
     stdout.flush()?;
     if any {
         Ok(())
