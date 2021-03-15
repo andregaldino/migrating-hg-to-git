@@ -178,6 +178,11 @@ class _nullconverter(object):
 
 
 class baseformatter(object):
+
+    # set to True if the formater output a strict format that does not support
+    # arbitrary output in the stream.
+    strict_format = False
+
     def __init__(self, ui, topic, opts, converter):
         self._ui = ui
         self._topic = topic
@@ -418,6 +423,9 @@ class cborformatter(baseformatter):
 
 
 class jsonformatter(baseformatter):
+
+    strict_format = True
+
     def __init__(self, ui, out, topic, opts):
         baseformatter.__init__(self, ui, topic, opts, _nullconverter)
         self._out = out

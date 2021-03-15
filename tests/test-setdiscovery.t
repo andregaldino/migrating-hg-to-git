@@ -1734,13 +1734,6 @@ Test -T json output
   > --local-as-revs 'first(heads(all()), 25)' \
   > --remote-as-revs 'last(heads(all()), 25)' \
   > --config devel.discovery.randomize=false
-  query 1; heads
-  searching for changes
-  taking quick initial sample
-  query 2; still undecided: 375, sample size is: 81
-  sampling from both directions
-  query 3; still undecided: 3, sample size is: 3
-  3 total queries in *s (glob)
   [
    {
     "elapsed": *, (glob)
@@ -1763,6 +1756,7 @@ Test -T json output
     "nb-revs": 400,
     "nb-revs-common": 300,
     "nb-revs-missing": 100,
+    "output": "query 1; heads\nsearching for changes\ntaking quick initial sample\nquery 2; still undecided: 375, sample size is: 81\nsampling from both directions\nquery 3; still undecided: 3, sample size is: 3\n3 total queries in *s\n", (glob)
     "total-roundtrips": 3
    }
   ]

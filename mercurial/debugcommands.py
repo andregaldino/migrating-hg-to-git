@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import codecs
 import collections
+import contextlib
 import difflib
 import errno
 import glob
@@ -1089,8 +1090,21 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts[b'rev']
-    with util.timedcm('debug-discovery') as t:
-        common, hds = doit(localrevs, remoterevs)
+
+    fm = ui.formatter(b'debugdiscovery', opts)
+    if fm.strict_format:
+
+        @contextlib.contextmanager
+        def may_capture_output():
+            ui.pushbuffer()
+            yield
+            data[b'output'] = ui.popbuffer()
+
+    else:
+        may_capture_output = util.nullcontextmanager
+    with may_capture_output():
+        with util.timedcm('debug-discovery') as t:
+            common, hds = doit(localrevs, remoterevs)
 
     # compute all statistics
     heads_common = set(common)
@@ -1141,7 +1155,6 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-ini_und-common'] = len(common_initial_undecided)
     data[b'nb-ini_und-missing'] = len(missing_initial_undecided)
 
-    fm = ui.formatter(b'debugdiscovery', opts)
     fm.startitem()
     fm.data(**pycompat.strkwargs(data))
     # display discovery summary
