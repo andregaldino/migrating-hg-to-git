@@ -1297,6 +1297,14 @@ coreconfigitem(
     b'use-persistent-nodemap',
     default=False,
 )
+# TODO needs to grow a docket file to at least store the last offset of the data
+# file when rewriting sidedata.
+# Will also need a way of dealing with garbage data if we allow rewriting
+# *existing* sidedata.
+# Exchange-wise, we will also need to do something more efficient than keeping
+# references to the affected revlogs, especially memory-wise when rewriting
+# sidedata.
+# Also... compress the sidedata? (this should be coming very soon)
 coreconfigitem(
     b'format',
     b'exp-revlogv2.2',
