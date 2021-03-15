@@ -283,7 +283,7 @@ Show all commands + options
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
   debugdirstate: nodates, dates, datesort
-  debugdiscovery: old, nonheads, rev, seed, local-as-revs, remote-as-revs, ssh, remotecmd, insecure
+  debugdiscovery: old, nonheads, rev, seed, local-as-revs, remote-as-revs, ssh, remotecmd, insecure, template
   debugdownload: output
   debugextensions: template
   debugfileset: rev, all-files, show-matcher, show-stage

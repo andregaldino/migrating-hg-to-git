@@ -1724,3 +1724,45 @@ remote will be last 25 heads of the local graph
       common:                  300
       missing:                 100
   common heads: 3ee37d65064a
+
+Test -T json output
+-------------------
+
+  $ hg -R a debugdiscovery \
+  > -T json \
+  > --debug \
+  > --local-as-revs 'first(heads(all()), 25)' \
+  > --remote-as-revs 'last(heads(all()), 25)' \
+  > --config devel.discovery.randomize=false
+  query 1; heads
+  searching for changes
+  taking quick initial sample
+  query 2; still undecided: 375, sample size is: 81
+  sampling from both directions
+  query 3; still undecided: 3, sample size is: 3
+  3 total queries in *s (glob)
+  [
+   {
+    "elapsed": *, (glob)
+    "nb-common-heads": 1,
+    "nb-common-heads-both": 0,
+    "nb-common-heads-local": 0,
+    "nb-common-heads-remote": 0,
+    "nb-common-roots": 1,
+    "nb-head-local": 25,
+    "nb-head-local-missing": 25,
+    "nb-head-remote": 25,
+    "nb-head-remote-unknown": 25,
+    "nb-ini_und": 400,
+    "nb-ini_und-common": 300,
+    "nb-ini_und-heads": 25,
+    "nb-ini_und-missing": 100,
+    "nb-ini_und-roots": 1,
+    "nb-missing-heads": 25,
+    "nb-missing-roots": 25,
+    "nb-revs": 400,
+    "nb-revs-common": 300,
+    "nb-revs-missing": 100,
+    "total-roundtrips": 3
+   }
+  ]

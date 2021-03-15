@@ -998,7 +998,8 @@ def debugstate(ui, repo, **opts):
             'use local as remote, with only these these revisions',
         ),
     ]
-    + cmdutil.remoteopts,
+    + cmdutil.remoteopts
+    + cmdutil.formatteropts,
     _(b'[--rev REV] [OTHER]'),
 )
 def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
@@ -1140,50 +1141,42 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-ini_und-common'] = len(common_initial_undecided)
     data[b'nb-ini_und-missing'] = len(missing_initial_undecided)
 
+    fm = ui.formatter(b'debugdiscovery', opts)
+    fm.startitem()
+    fm.data(**pycompat.strkwargs(data))
     # display discovery summary
-    ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
-    ui.writenoi18n(b"round-trips:           %(total-roundtrips)9d\n" % data)
-    ui.writenoi18n(b"heads summary:\n")
-    ui.writenoi18n(b"  total common heads:  %(nb-common-heads)9d\n" % data)
-    ui.writenoi18n(
-        b"    also local heads:  %(nb-common-heads-local)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    also remote heads: %(nb-common-heads-remote)9d\n" % data
-    )
-    ui.writenoi18n(b"    both:              %(nb-common-heads-both)9d\n" % data)
-    ui.writenoi18n(b"  local heads:         %(nb-head-local)9d\n" % data)
-    ui.writenoi18n(
-        b"    common:            %(nb-common-heads-local)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    missing:           %(nb-head-local-missing)9d\n" % data
-    )
-    ui.writenoi18n(b"  remote heads:        %(nb-head-remote)9d\n" % data)
-    ui.writenoi18n(
-        b"    common:            %(nb-common-heads-remote)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    unknown:           %(nb-head-remote-unknown)9d\n" % data
-    )
-    ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
-    ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-common-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-common-roots)9d\n" % data)
-    ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-missing-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-missing-roots)9d\n" % data)
-    ui.writenoi18n(b"  first undecided set: %(nb-ini_und)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-ini_und-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-ini_und-roots)9d\n" % data)
-    ui.writenoi18n(b"    common:            %(nb-ini_und-common)9d\n" % data)
-    ui.writenoi18n(b"    missing:           %(nb-ini_und-missing)9d\n" % data)
+    fm.plain(b"elapsed time:  %(elapsed)f seconds\n" % data)
+    fm.plain(b"round-trips:           %(total-roundtrips)9d\n" % data)
+    fm.plain(b"heads summary:\n")
+    fm.plain(b"  total common heads:  %(nb-common-heads)9d\n" % data)
+    fm.plain(b"    also local heads:  %(nb-common-heads-local)9d\n" % data)
+    fm.plain(b"    also remote heads: %(nb-common-heads-remote)9d\n" % data)
+    fm.plain(b"    both:              %(nb-common-heads-both)9d\n" % data)
+    fm.plain(b"  local heads:         %(nb-head-local)9d\n" % data)
+    fm.plain(b"    common:            %(nb-common-heads-local)9d\n" % data)
+    fm.plain(b"    missing:           %(nb-head-local-missing)9d\n" % data)
+    fm.plain(b"  remote heads:        %(nb-head-remote)9d\n" % data)
+    fm.plain(b"    common:            %(nb-common-heads-remote)9d\n" % data)
+    fm.plain(b"    unknown:           %(nb-head-remote-unknown)9d\n" % data)
+    fm.plain(b"local changesets:      %(nb-revs)9d\n" % data)
+    fm.plain(b"  common:              %(nb-revs-common)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-common-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-common-roots)9d\n" % data)
+    fm.plain(b"  missing:             %(nb-revs-missing)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-missing-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-missing-roots)9d\n" % data)
+    fm.plain(b"  first undecided set: %(nb-ini_und)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-ini_und-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-ini_und-roots)9d\n" % data)
+    fm.plain(b"    common:            %(nb-ini_und-common)9d\n" % data)
+    fm.plain(b"    missing:           %(nb-ini_und-missing)9d\n" % data)
 
     if ui.verbose:
-        ui.writenoi18n(
+        fm.plain(
             b"common heads: %s\n"
             % b" ".join(sorted(short(n) for n in heads_common))
         )
+    fm.end()
 
 
 _chunksize = 4 << 10
