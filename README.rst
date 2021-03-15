@@ -18,3 +18,13 @@ Running without installing::
 
 See https://mercurial-scm.org/ for detailed installation
 instructions, platform-specific notes, and Mercurial user information.
+
+Notes for packagers
+===================
+
+Mercurial ships a copy of the python-zstandard sources. This is used to
+provide support for zstd compression and decompression functionality. The
+module is not intended to be replaced by the plain python-zstandard nor
+is it intended to use a system zstd library. Patches can result in hard
+to diagnose errors and are explicitly discouraged as unsupported
+configuration.
