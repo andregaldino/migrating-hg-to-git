@@ -92,3 +92,48 @@ def scratch(repo, subset, x):
                 heads.add(p2)
 
     return smartset.baseset(selected) & subset
+
+
+@revsetpredicate(b'randomantichain(REVS, [seed])')
+def antichain(repo, subset, x):
+    """Pick a random anti-chain in the repository
+
+    A antichain is a set of changeset where there isn't any element that is
+    either a descendant or ancestors of any other element in the set. In other
+    word, all the elements are independant. It can be summarized with the
+    following algorithm::
+
+    selected = set()
+    unselected = repo.revs('all()')
+    while unselected:
+        pick = random.choice(unselected)
+        selected.add(pick)
+        unselected -= repo.revs('::<pick> + <pick>::')
+    """
+
+    args = revsetlang.getargs(
+        x, 1, 2, _(b"randomantichain expects revisions and an optional seed")
+    )
+    if len(args) == 1:
+        (x,) = args
+        rand = random
+    elif len(args) == 2:
+        x, seed = args
+        seed = revsetlang.getinteger(seed, _(b"seed should be a number"))
+        rand = random.Random(seed)
+    else:
+        assert False
+
+    selected = set()
+
+    baseset = revset.getset(repo, smartset.fullreposet(repo), x)
+    undecided = baseset
+
+    while undecided:
+        pick = rand.choice(list(undecided))
+        selected.add(pick)
+        undecided = repo.revs(
+            '%ld and not (::%ld or %ld::head())', baseset, selected, selected
+        )
+
+    return smartset.baseset(selected) & subset
