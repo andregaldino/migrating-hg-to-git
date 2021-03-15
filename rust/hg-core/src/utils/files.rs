@@ -199,6 +199,12 @@ impl HgMetadata {
             st_ctime: metadata.ctime(),
         }
     }
+
+    pub fn is_symlink(&self) -> bool {
+        // This is way too manual, but `HgMetadata` will go away in the
+        // near-future dirstate rewrite anyway.
+        self.st_mode & 0170000 == 0120000
+    }
 }
 
 /// Returns the canonical path of `name`, given `cwd` and `root`

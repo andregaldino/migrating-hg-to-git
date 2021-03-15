@@ -184,7 +184,13 @@ fn dispatch_found(
                 || other_parent
                 || copy_map.contains_key(filename.as_ref())
             {
-                Dispatch::Modified
+                if metadata.is_symlink() && size_changed {
+                    // issue6456: Size returned may be longer due to encryption
+                    // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
+                    Dispatch::Unsure
+                } else {
+                    Dispatch::Modified
+                }
             } else if mod_compare(mtime, st_mtime as i32)
                 || st_mtime == options.last_normal_time
             {
