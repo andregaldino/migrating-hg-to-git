@@ -1987,29 +1987,13 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   ##### revision "mCB-change-m-0 merge explicitely revive deleted file - B side" #####
   1 sidedata entries
    entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
-  salvaged   : d, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
-  merged     : d, ; (upgraded known-bad-output !)
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
-  salvaged   : d, ; (upgraded missing-correct-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
-  merged     : d, ; (upgraded-parallel known-bad-output !)
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
-  salvaged   : d, ; (upgraded-parallel missing-correct-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
   ##### revision "mBC-change-m-0 merge explicitely revive deleted file - B side" #####
   1 sidedata entries
    entry-0014 size 14
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (no-upgraded no-upgraded-parallel !)
-  salvaged   : d, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded known-bad-output !)
-  merged     : d, ; (upgraded known-bad-output !)
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded missing-correct-output !)
-  salvaged   : d, ; (upgraded missing-correct-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel known-bad-output !)
-  merged     : d, ; (upgraded-parallel known-bad-output !)
-    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d' (upgraded-parallel missing-correct-output !)
-  salvaged   : d, ; (upgraded-parallel missing-correct-output !)
+    '\x00\x00\x00\x01\x10\x00\x00\x00\x01\x00\x00\x00\x00d'
+  salvaged   : d, ;
   ##### revision "j-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -2031,21 +2015,13 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   ##### revision "mEA,Jm" #####
   1 sidedata entries
    entry-0014 size 24
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (no-upgraded no-upgraded-parallel !)
-  touched    : unrelated-j, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded known-bad-output !)
-  merged     : unrelated-j, ; (upgraded known-bad-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded-parallel known-bad-output !)
-  merged     : unrelated-j, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j'
+  touched    : unrelated-j, ;
   ##### revision "mJ,EAm" #####
   1 sidedata entries
    entry-0014 size 24
-    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (no-upgraded no-upgraded-parallel !)
-  touched    : unrelated-j, ; (no-upgraded no-upgraded-parallel !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded known-bad-output !)
-  merged     : unrelated-j, ; (upgraded known-bad-output !)
-    '\x00\x00\x00\x01\x08\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j' (upgraded-parallel known-bad-output !)
-  merged     : unrelated-j, ; (upgraded-parallel known-bad-output !)
+    '\x00\x00\x00\x01\x14\x00\x00\x00\x0b\x00\x00\x00\x00unrelated-j'
+  touched    : unrelated-j, ;
   ##### revision "s-1" #####
   1 sidedata entries
    entry-0014 size 24
@@ -3560,9 +3536,7 @@ copy tracing chain.
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mCB-change-m-0")'
   M b
   A d
-    a (no-compatibility no-changeset no-upgraded no-upgraded-parallel !)
-    a (upgraded missing-correct-output !)
-    a (upgraded-parallel missing-correct-output !)
+    a (no-compatibility no-changeset !)
   A t
     p
   R a

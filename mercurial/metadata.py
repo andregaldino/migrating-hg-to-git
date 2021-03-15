@@ -322,12 +322,12 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
     │ (Some, None) │      OR      │🄻  Deleted    │       ø      │      ø       │
     │              │🄷  Deleted[1] │              │              │              │
     ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-    │              │🄸  No Changes │              │              │              │
-    │ (None, Some) │     OR       │      ø       │🄼   Added     │🄽   Merged    │
+    │              │🄸  No Changes │              │              │   🄽 Touched  │
+    │ (None, Some) │     OR       │      ø       │🄼   Added     │OR 🅀 Salvaged │
     │              │🄹  Salvaged[2]│              │   (copied?)  │   (copied?)  │
     ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-    │              │              │              │              │              │
-    │ (Some, Some) │🄺  No Changes │      ø       │🄾   Merged    │🄿   Merged    │
+    │              │              │              │   🄾 Touched  │              │
+    │ (Some, Some) │🄺  No Changes │      ø       │OR 🅁 Salvaged │🄿   Merged    │
     │              │     [3]      │              │   (copied?)  │   (copied?)  │
     └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 
@@ -454,8 +454,16 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
                 # case 🄻 — both deleted the file.
                 md.mark_removed(filename)
             elif d1[1][0] is not None and d2[1][0] is not None:
-                # case 🄽 🄾 🄿
-                md.mark_merged(filename)
+                if d1[0][0] is None or d2[0][0] is None:
+                    if any(_find(ma, filename) is not None for ma in mas):
+                        # case 🅀 or 🅁
+                        md.mark_salvaged(filename)
+                    else:
+                        # case 🄽 🄾 : touched
+                        md.mark_touched(filename)
+                else:
+                    # case 🄿 : merged
+                    md.mark_merged(filename)
                 copy_candidates.append(filename)
             else:
                 # Impossible case, the post-merge file status cannot be None on
