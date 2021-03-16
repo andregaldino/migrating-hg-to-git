@@ -212,10 +212,7 @@ impl Repo {
     }
 
     /// For accessing the working copy
-
-    // The undescore prefix silences the "never used" warning. Remove before
-    // using.
-    pub fn _working_directory_vfs(&self) -> Vfs<'_> {
+    pub fn working_directory_vfs(&self) -> Vfs<'_> {
         Vfs {
             base: &self.working_directory,
         }

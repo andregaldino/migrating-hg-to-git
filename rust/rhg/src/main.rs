@@ -358,7 +358,9 @@ subcommands! {
     files
     root
     config
+    status
 }
+
 pub struct CliInvocation<'a> {
     ui: &'a Ui,
     subcommand_args: &'a ArgMatches<'a>,
