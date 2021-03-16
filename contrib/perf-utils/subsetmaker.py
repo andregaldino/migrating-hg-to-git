@@ -18,6 +18,37 @@ from mercurial import (
 revsetpredicate = registrar.revsetpredicate()
 
 
+@revsetpredicate(b'subsetspec("<spec>")')
+def subsetmarkerspec(repo, subset, x):
+    """use a shorthand spec as used by search-discovery-case
+
+    Supported format are:
+
+    - "scratch-count-seed": not scratch(all(), count, "seed")
+    - "randomantichain-seed": ::randomantichain(all(), "seed")
+    - "rev-REV": "::REV"
+    """
+    args = revsetlang.getargs(
+        x, 0, 1, _(b'subsetspec("spec") required an argument')
+    )
+
+    spec = revsetlang.getstring(args[0], _(b"spec should be a string"))
+    case = spec.split(b'-')
+    t = case[0]
+    if t == b'scratch':
+        spec_revset = b'not scratch(all(), %s, "%s")' % (case[1], case[2])
+    elif t == b'randomantichain':
+        spec_revset = b'::randomantichain(all(), "%s")' % case[1]
+    elif t == b'rev':
+        spec_revset = b'::%d' % case[1]
+    else:
+        assert False, spec
+
+    selected = repo.revs(spec_revset)
+
+    return selected & subset
+
+
 @revsetpredicate(b'scratch(REVS, <count>, [seed])')
 def scratch(repo, subset, x):
     """randomly remove <count> revision from the repository top
