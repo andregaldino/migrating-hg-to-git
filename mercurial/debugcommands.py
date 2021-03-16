@@ -989,14 +989,14 @@ def debugstate(ui, repo, **opts):
         (
             b'',
             b'local-as-revs',
-            "",
-            'treat local has having these revisions only',
+            b"",
+            b'treat local has having these revisions only',
         ),
         (
             b'',
             b'remote-as-revs',
-            "",
-            'use local as remote, with only these these revisions',
+            b"",
+            b'use local as remote, with only these these revisions',
         ),
     ]
     + cmdutil.remoteopts
