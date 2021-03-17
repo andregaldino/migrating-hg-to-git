@@ -137,6 +137,7 @@ Invalid :pushrev raises appropriately
   $ hg --config 'paths.default:pushrev=notdefined()' push
   pushing to file:/*/$TESTTMP/pushurlsource/../pushurldest (glob)
   hg: parse error: unknown identifier: notdefined
+  (did you mean nodefromfile?)
   [10]
 
   $ hg --config 'paths.default:pushrev=(' push

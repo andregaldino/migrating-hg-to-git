@@ -1335,6 +1335,29 @@ def followlines(repo, subset, x):
     return subset & rs
 
 
+@predicate(b'nodefromfile(path)')
+def nodefromfile(repo, subset, x):
+    """
+    An alias for ``::.`` (ancestors of the working directory's first parent).
+    If file pattern is specified, the histories of files matching given
+    pattern in the revision given by startrev are followed, including copies.
+    """
+    path = getstring(x, _(b"nodefromfile require a file path"))
+    listed_rev = set()
+    try:
+        with pycompat.open(path, 'rb') as f:
+            for line in f:
+                n = line.strip()
+                rn = _node(repo, n)
+                if rn is not None:
+                    listed_rev.add(rn)
+    except IOError as exc:
+        m = _(b'cannot open nodes file "%s": %s')
+        m %= (path, encoding.strtolocal(exc.strerror))
+        raise error.Abort(m)
+    return subset & baseset(listed_rev)
+
+
 @predicate(b'all()', safe=True)
 def getall(repo, subset, x):
     """All changesets, the same as ``0:tip``."""
@@ -1697,13 +1720,9 @@ def named(repo, subset, x):
     return subset & names
 
 
-@predicate(b'id(string)', safe=True)
-def node_(repo, subset, x):
-    """Revision non-ambiguously specified by the given hex string prefix."""
-    # i18n: "id" is a keyword
-    l = getargs(x, 1, 1, _(b"id requires one argument"))
-    # i18n: "id" is a keyword
-    n = getstring(l[0], _(b"id requires a string"))
+def _node(repo, n):
+    """process a node input"""
+    rn = None
     if len(n) == 40:
         try:
             rn = repo.changelog.rev(bin(n))
@@ -1712,7 +1731,6 @@ def node_(repo, subset, x):
         except (LookupError, TypeError):
             rn = None
     else:
-        rn = None
         try:
             pm = scmutil.resolvehexnodeidprefix(repo, n)
             if pm is not None:
@@ -1721,6 +1739,17 @@ def node_(repo, subset, x):
             pass
         except error.WdirUnsupported:
             rn = wdirrev
+    return rn
+
+
+@predicate(b'id(string)', safe=True)
+def node_(repo, subset, x):
+    """Revision non-ambiguously specified by the given hex string prefix."""
+    # i18n: "id" is a keyword
+    l = getargs(x, 1, 1, _(b"id requires one argument"))
+    # i18n: "id" is a keyword
+    n = getstring(l[0], _(b"id requires a string"))
+    rn = _node(repo, n)
 
     if rn is None:
         return baseset()

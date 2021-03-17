@@ -3108,3 +3108,18 @@ abort if the revset doesn't expect given size
   $ log 'expectsize(0:2, :2)'
   abort: revset size mismatch. expected between 0 and 2, got 3
   [255]
+
+Test getting list of node from file
+
+  $ hg log -r '0:2' -T '{node}\n' > some.nodes
+  $ hg log -r 'nodefromfile("some.nodes")' -T '{rev}\n'
+  0
+  1
+  2
+  $ hg log -r 'nodefromfile("missing-file")' -T '{rev}\n'
+  abort: cannot open nodes file "missing-file": $ENOENT$
+  [255]
+  $ echo bad-node > bad.nodes
+  $ hg log -r 'nodefromfile("bad.nodes")' -T '{rev}\n'
+  $ echo abcdefabcdefabcdeabcdeabcdeabcdeabcdeabc > missing.nodes
+
