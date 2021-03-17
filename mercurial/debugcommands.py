@@ -1011,6 +1011,35 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     be "replaced" by a subset of the local repository using the
     `--local-as-revs` flag. This is useful to efficiently debug pathological
     discovery situation.
+
+    The following developer oriented config are relevant for people playing with this command:
+
+    * devel.discovery.exchange-heads=True
+
+      If False, the discovery will not start with
+      remote head fetching and local head querying.
+
+    * devel.discovery.grow-sample=True
+
+      If False, the sample size used in set discovery will not be increased
+      through the process
+
+    * devel.discovery.grow-sample.rate=1.05
+
+      the rate at which the sample grow
+
+    * devel.discovery.randomize=True
+
+      If andom sampling during discovery are deterministic. It is meant for
+      integration tests.
+
+    * devel.discovery.sample-size=200
+
+      Control the initial size of the discovery sample
+
+    * devel.discovery.sample-size.initial=100
+
+      Control the initial size of the discovery for initial change
     """
     opts = pycompat.byteskwargs(opts)
     unfi = repo.unfiltered()
