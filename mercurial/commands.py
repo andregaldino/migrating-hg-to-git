@@ -5706,80 +5706,84 @@ def push(ui, repo, dest=None, **opts):
                 # if we try to push a deleted bookmark, translate it to null
                 # this lets simultaneous -r, -b options continue working
                 opts.setdefault(b'rev', []).append(b"null")
-
-    path = ui.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.ConfigError(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
+    if True:
+        path = ui.getpath(dest, default=(b'default-push', b'default'))
+        if not path:
+            raise error.ConfigError(
+                _(b'default repository not configured!'),
+                hint=_(b"see 'hg help config.paths'"),
+            )
+        dest = path.pushloc or path.loc
+        branches = (path.branch, opts.get(b'branch') or [])
+        ui.status(_(b'pushing to %s\n') % util.hidepassword(dest))
+        revs, checkout = hg.addbranchrevs(
+            repo, repo, branches, opts.get(b'rev')
         )
-    dest = path.pushloc or path.loc
-    branches = (path.branch, opts.get(b'branch') or [])
-    ui.status(_(b'pushing to %s\n') % util.hidepassword(dest))
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get(b'rev'))
-    other = hg.peer(repo, opts, dest)
+        other = hg.peer(repo, opts, dest)
 
-    try:
-        if revs:
-            revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
-            if not revs:
+        try:
+            if revs:
+                revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
+                if not revs:
+                    raise error.InputError(
+                        _(b"specified revisions evaluate to an empty set"),
+                        hint=_(b"use different revision arguments"),
+                    )
+            elif path.pushrev:
+                # It doesn't make any sense to specify ancestor revisions. So limit
+                # to DAG heads to make discovery simpler.
+                expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
+                revs = scmutil.revrange(repo, [expr])
+                revs = [repo[rev].node() for rev in revs]
+                if not revs:
+                    raise error.InputError(
+                        _(
+                            b'default push revset for path evaluates to an empty set'
+                        )
+                    )
+            elif ui.configbool(b'commands', b'push.require-revs'):
                 raise error.InputError(
-                    _(b"specified revisions evaluate to an empty set"),
-                    hint=_(b"use different revision arguments"),
+                    _(b'no revisions specified to push'),
+                    hint=_(b'did you mean "hg push -r ."?'),
                 )
-        elif path.pushrev:
-            # It doesn't make any sense to specify ancestor revisions. So limit
-            # to DAG heads to make discovery simpler.
-            expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
-            revs = scmutil.revrange(repo, [expr])
-            revs = [repo[rev].node() for rev in revs]
-            if not revs:
-                raise error.InputError(
-                    _(b'default push revset for path evaluates to an empty set')
-                )
-        elif ui.configbool(b'commands', b'push.require-revs'):
-            raise error.InputError(
-                _(b'no revisions specified to push'),
-                hint=_(b'did you mean "hg push -r ."?'),
+
+            repo._subtoppath = dest
+            try:
+                # push subrepos depth-first for coherent ordering
+                c = repo[b'.']
+                subs = c.substate  # only repos that are committed
+                for s in sorted(subs):
+                    result = c.sub(s).push(opts)
+                    if result == 0:
+                        return not result
+            finally:
+                del repo._subtoppath
+
+            opargs = dict(
+                opts.get(b'opargs', {})
+            )  # copy opargs since we may mutate it
+            opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
+
+            pushop = exchange.push(
+                repo,
+                other,
+                opts.get(b'force'),
+                revs=revs,
+                newbranch=opts.get(b'new_branch'),
+                bookmarks=opts.get(b'bookmark', ()),
+                publish=opts.get(b'publish'),
+                opargs=opargs,
             )
 
-        repo._subtoppath = dest
-        try:
-            # push subrepos depth-first for coherent ordering
-            c = repo[b'.']
-            subs = c.substate  # only repos that are committed
-            for s in sorted(subs):
-                result = c.sub(s).push(opts)
-                if result == 0:
-                    return not result
+            result = not pushop.cgresult
+
+            if pushop.bkresult is not None:
+                if pushop.bkresult == 2:
+                    result = 2
+                elif not result and pushop.bkresult:
+                    result = 2
         finally:
-            del repo._subtoppath
-
-        opargs = dict(
-            opts.get(b'opargs', {})
-        )  # copy opargs since we may mutate it
-        opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
-
-        pushop = exchange.push(
-            repo,
-            other,
-            opts.get(b'force'),
-            revs=revs,
-            newbranch=opts.get(b'new_branch'),
-            bookmarks=opts.get(b'bookmark', ()),
-            publish=opts.get(b'publish'),
-            opargs=opargs,
-        )
-
-        result = not pushop.cgresult
-
-        if pushop.bkresult is not None:
-            if pushop.bkresult == 2:
-                result = 2
-            elif not result and pushop.bkresult:
-                result = 2
-    finally:
-        other.close()
+            other.close()
     return result
 
 
