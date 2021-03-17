@@ -737,6 +737,14 @@ coreconfigitem(
     b'discovery.grow-sample',
     default=True,
 )
+# When discovery.grow-sample.dynamic is True, the default, the sample size is
+# adapted to the shape of the undecided set (it is set to the max of:
+# <target-size>, len(roots(undecided)), len(heads(undecided)
+coreconfigitem(
+    b'devel',
+    b'discovery.grow-sample.dynamic',
+    default=True,
+)
 # discovery.grow-sample.rate control the rate at which the sample grow
 coreconfigitem(
     b'devel',

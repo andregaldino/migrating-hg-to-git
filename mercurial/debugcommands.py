@@ -1024,6 +1024,12 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
       If False, the sample size used in set discovery will not be increased
       through the process
 
+    * devel.discovery.grow-sample.dynamic=True
+
+      When discovery.grow-sample.dynamic is True, the default, the sample size is
+      adapted to the shape of the undecided set (it is set to the max of:
+      <target-size>, len(roots(undecided)), len(heads(undecided)
+
     * devel.discovery.grow-sample.rate=1.05
 
       the rate at which the sample grow
