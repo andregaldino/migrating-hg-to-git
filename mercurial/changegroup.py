@@ -910,7 +910,7 @@ def deltagroup(
 
     configtarget = repo.ui.config(b'devel', b'bundle.delta')
     if configtarget not in (b'', b'p1', b'full'):
-        msg = _("""config "devel.bundle.delta" as unknown value: %s""")
+        msg = _(b"""config "devel.bundle.delta" as unknown value: %s""")
         repo.ui.warn(msg % configtarget)
 
     deltamode = repository.CG_DELTAMODE_STD
@@ -1311,9 +1311,10 @@ class cgpacker(object):
         def makelookupmflinknode(tree, nodes):
             if fastpathlinkrev:
                 assert not tree
-                return (
-                    manifests.__getitem__
-                )  # pytype: disable=unsupported-operands
+
+                # pytype: disable=unsupported-operands
+                return manifests.__getitem__
+                # pytype: enable=unsupported-operands
 
             def lookupmflinknode(x):
                 """Callback for looking up the linknode for manifests.

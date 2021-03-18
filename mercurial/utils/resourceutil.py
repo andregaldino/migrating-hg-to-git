@@ -70,12 +70,14 @@ try:
         )
 
     def is_resource(package, name):
-        return resources.is_resource(
+        return resources.is_resource(  # pytype: disable=module-attr
             pycompat.sysstr(package), encoding.strfromlocal(name)
         )
 
     def contents(package):
+        # pytype: disable=module-attr
         for r in resources.contents(pycompat.sysstr(package)):
+            # pytype: enable=module-attr
             yield encoding.strtolocal(r)
 
 

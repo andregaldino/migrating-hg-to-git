@@ -20,10 +20,12 @@ from . import (
     pycompat,
 )
 
+# pytype: disable=module-attr
 _kernel32 = ctypes.windll.kernel32
 _advapi32 = ctypes.windll.advapi32
 _user32 = ctypes.windll.user32
 _crypt32 = ctypes.windll.crypt32
+# pytype: enable=module-attr
 
 _BOOL = ctypes.c_long
 _WORD = ctypes.c_ushort
@@ -311,7 +313,9 @@ _kernel32.ExitProcess.restype = None
 _kernel32.GetCurrentProcessId.argtypes = []
 _kernel32.GetCurrentProcessId.restype = _DWORD
 
+# pytype: disable=module-attr
 _SIGNAL_HANDLER = ctypes.WINFUNCTYPE(_BOOL, _DWORD)
+# pytype: enable=module-attr
 _kernel32.SetConsoleCtrlHandler.argtypes = [_SIGNAL_HANDLER, _BOOL]
 _kernel32.SetConsoleCtrlHandler.restype = _BOOL
 
@@ -336,7 +340,9 @@ _user32.GetWindowThreadProcessId.restype = _DWORD
 _user32.ShowWindow.argtypes = [_HANDLE, ctypes.c_int]
 _user32.ShowWindow.restype = _BOOL
 
+# pytype: disable=module-attr
 _WNDENUMPROC = ctypes.WINFUNCTYPE(_BOOL, _HWND, _LPARAM)
+# pytype: enable=module-attr
 _user32.EnumWindows.argtypes = [_WNDENUMPROC, _LPARAM]
 _user32.EnumWindows.restype = _BOOL
 
@@ -357,7 +363,7 @@ def _raiseoserror(name):
     code = _kernel32.GetLastError()
     if code > 0x7FFFFFFF:
         code -= 2 ** 32
-    err = ctypes.WinError(code=code)
+    err = ctypes.WinError(code=code)  # pytype: disable=module-attr
     raise OSError(
         err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
     )
@@ -466,7 +472,7 @@ def samedevice(path1, path2):
 
 
 def peekpipe(pipe):
-    handle = msvcrt.get_osfhandle(pipe.fileno())
+    handle = msvcrt.get_osfhandle(pipe.fileno())  # pytype: disable=module-attr
     avail = _DWORD()
 
     if not _kernel32.PeekNamedPipe(
@@ -475,7 +481,7 @@ def peekpipe(pipe):
         err = _kernel32.GetLastError()
         if err == _ERROR_BROKEN_PIPE:
             return 0
-        raise ctypes.WinError(err)
+        raise ctypes.WinError(err)  # pytype: disable=module-attr
 
     return avail.value
 
@@ -506,10 +512,12 @@ def executablepath():
     size = 600
     buf = ctypes.create_string_buffer(size + 1)
     len = _kernel32.GetModuleFileNameA(None, ctypes.byref(buf), size)
+    # pytype: disable=module-attr
     if len == 0:
         raise ctypes.WinError()  # Note: WinError is a function
     elif len == size:
         raise ctypes.WinError(_ERROR_INSUFFICIENT_BUFFER)
+    # pytype: enable=module-attr
     return buf.value
 
 
@@ -528,7 +536,8 @@ def getvolumename(path):
     buf = ctypes.create_string_buffer(size)
 
     if not _kernel32.GetVolumePathNameA(realpath, ctypes.byref(buf), size):
-        raise ctypes.WinError()  # Note: WinError is a function
+        # Note: WinError is a function
+        raise ctypes.WinError()  # pytype: disable=module-attr
 
     return buf.value
 
@@ -558,7 +567,8 @@ def getfstype(path):
     if not _kernel32.GetVolumeInformationA(
         volume, None, 0, None, None, None, ctypes.byref(name), size
     ):
-        raise ctypes.WinError()  # Note: WinError is a function
+        # Note: WinError is a function
+        raise ctypes.WinError()  # pytype: disable=module-attr
 
     return name.value
 
@@ -568,7 +578,7 @@ def getuser():
     size = _DWORD(300)
     buf = ctypes.create_string_buffer(size.value + 1)
     if not _advapi32.GetUserNameA(ctypes.byref(buf), ctypes.byref(size)):
-        raise ctypes.WinError()
+        raise ctypes.WinError()  # pytype: disable=module-attr
     return buf.value
 
 
@@ -589,7 +599,7 @@ def setsignalhandler():
     h = _SIGNAL_HANDLER(handler)
     _signalhandler.append(h)  # needed to prevent garbage collection
     if not _kernel32.SetConsoleCtrlHandler(h, True):
-        raise ctypes.WinError()
+        raise ctypes.WinError()  # pytype: disable=module-attr
 
 
 def hidewindow():
@@ -686,7 +696,7 @@ def spawndetached(args):
         ctypes.byref(pi),
     )
     if not res:
-        raise ctypes.WinError()
+        raise ctypes.WinError()  # pytype: disable=module-attr
 
     _kernel32.CloseHandle(pi.hProcess)
     _kernel32.CloseHandle(pi.hThread)

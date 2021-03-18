@@ -18,6 +18,11 @@ import difflib
 # Do not import anything but pycompat here, please
 from . import pycompat
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Optional,
+    )
+
 
 def _tobytes(exc):
     """Byte-stringify exception in the same way as BaseException_str()"""
@@ -170,6 +175,7 @@ class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 
     def __init__(self, message, hint=None):
+        # type: (bytes, Optional[bytes]) -> None
         self.message = message
         self.hint = hint
         # Pass the message into the Exception constructor to help extensions

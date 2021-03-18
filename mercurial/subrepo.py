@@ -1891,7 +1891,12 @@ class gitsubrepo(abstractsubrepo):
             if info.issym():
                 data = info.linkname
             else:
-                data = tar.extractfile(info).read()
+                f = tar.extractfile(info)
+                if f:
+                    data = f.read()
+                else:
+                    self.ui.warn(_(b'skipping "%s" (unknown type)') % bname)
+                    continue
             archiver.addfile(prefix + bname, info.mode, info.issym(), data)
             total += 1
             progress.increment()

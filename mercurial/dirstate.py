@@ -1284,7 +1284,12 @@ class dirstate(object):
                     or size == -2  # other parent
                     or fn in copymap
                 ):
-                    madd(fn)
+                    if stat.S_ISLNK(st.st_mode) and size != st.st_size:
+                        # issue6456: Size returned may be longer due to
+                        # encryption on EXT-4 fscrypt, undecided.
+                        ladd(fn)
+                    else:
+                        madd(fn)
                 elif (
                     time != st[stat.ST_MTIME]
                     and time != st[stat.ST_MTIME] & _rangemask

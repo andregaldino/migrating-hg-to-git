@@ -1083,7 +1083,7 @@ def bisect(
         if rev:
             if not nodes:
                 raise error.Abort(_(b'empty revision set'))
-            node = repo[nodes.last()].node()
+            node = repo[nodes[-1]].node()
         with hbisect.restore_state(repo, state, node):
             while changesets:
                 # update state
@@ -3452,7 +3452,8 @@ def grep(ui, repo, pattern, *pats, **opts):
         regexp = util.re.compile(pattern, reflags)
     except re.error as inst:
         ui.warn(
-            _(b"grep: invalid match pattern: %s\n") % pycompat.bytestr(inst)
+            _(b"grep: invalid match pattern: %s\n")
+            % stringutil.forcebytestr(inst)
         )
         return 1
     sep, eol = b':', b'\n'

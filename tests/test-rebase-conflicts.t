@@ -276,13 +276,13 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   committing manifest
   committing changelog
   updating the branch cache
-  rebased as 2a7f09cac94c
+  rebased as c1ffa3b5274e
   rebase status stored
   rebase merging completed
   update back to initial working directory parent
   resolving manifests
    branchmerge: False, force: False, partial: False
-   ancestor: 2a7f09cac94c, local: 2a7f09cac94c+, remote: d79e2059b5c0
+   ancestor: c1ffa3b5274e, local: c1ffa3b5274e+, remote: d79e2059b5c0
    f1.txt: other deleted -> r
   removing f1.txt
    f2.txt: remote created -> g
@@ -300,7 +300,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   list of changesets:
   4c9fbe56a16f30c0d5dcc40ec1a97bbe3325209c
   19c888675e133ab5dff84516926a65672eaf04d9
-  2a7f09cac94c7f4b73ebd5cd1a62d3b2e8e336bf
+  c1ffa3b5274e92a9388fe782854e295d2e8d0443
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
   bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
@@ -311,7 +311,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   adding changesets
   add changeset 4c9fbe56a16f
   add changeset 19c888675e13
-  add changeset 2a7f09cac94c
+  add changeset c1ffa3b5274e
   adding manifests
   adding file changes
   adding f1.txt revisions

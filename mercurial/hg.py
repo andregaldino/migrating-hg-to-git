@@ -41,7 +41,6 @@ from . import (
     mergestate as mergestatemod,
     narrowspec,
     phases,
-    pycompat,
     requirements,
     scmutil,
     sshpeer,
@@ -53,7 +52,11 @@ from . import (
     verify as verifymod,
     vfs as vfsmod,
 )
-from .utils import hashutil
+from .utils import (
+    hashutil,
+    stringutil,
+)
+
 
 release = lock.release
 
@@ -74,7 +77,7 @@ def _local(path):
     # Python 2 raises TypeError, Python 3 ValueError.
     except (TypeError, ValueError) as e:
         raise error.Abort(
-            _(b'invalid path %s: %s') % (path, pycompat.bytestr(e))
+            _(b'invalid path %s: %s') % (path, stringutil.forcebytestr(e))
         )
     except OSError:
         isfile = False

@@ -20,6 +20,7 @@ from .node import (
     nullrev,
 )
 from .thirdparty import attr
+from .utils import stringutil
 from . import (
     copies,
     encoding,
@@ -1343,7 +1344,7 @@ def batchremove(repo, wctx, actions):
         except OSError as inst:
             repo.ui.warn(
                 _(b"update failed to remove %s: %s!\n")
-                % (f, pycompat.bytestr(inst.strerror))
+                % (f, stringutil.forcebytestr(inst.strerror))
             )
         if i == 100:
             yield i, f

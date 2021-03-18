@@ -165,7 +165,7 @@ def _smtp(ui):
         try:
             s.login(username, password)
         except smtplib.SMTPException as inst:
-            raise error.Abort(inst)
+            raise error.Abort(stringutil.forcebytestr(inst))
 
     def send(sender, recipients, msg):
         try:

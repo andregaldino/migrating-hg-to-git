@@ -39,6 +39,7 @@ if pycompat.TYPE_CHECKING:
         Tuple,
         Union,
     )
+    from . import localrepo
 
     assert any(
         (
@@ -51,6 +52,7 @@ if pycompat.TYPE_CHECKING:
             Set,
             Tuple,
             Union,
+            localrepo,
         )
     )
 
@@ -193,7 +195,7 @@ class branchcache(object):
         closednodes=None,
         hasnode=None,
     ):
-        # type: (Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
+        # type: (localrepo.localrepository, Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
         """hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog"""
@@ -303,9 +305,7 @@ class branchcache(object):
                     msg
                     % (
                         _branchcachedesc(repo),
-                        pycompat.bytestr(
-                            inst
-                        ),  # pytype: disable=wrong-arg-types
+                        stringutil.forcebytestr(inst),
                     )
                 )
             bcache = None

@@ -24,6 +24,7 @@ from .interfaces import util as interfaceutil
 from .utils import (
     cborutil,
     compression,
+    stringutil,
 )
 
 stringio = util.stringio
@@ -233,10 +234,12 @@ def handlewsgirequest(rctx, req, res, checkperm):
     except hgwebcommon.ErrorResponse as e:
         for k, v in e.headers:
             res.headers[k] = v
-        res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
+        res.status = hgwebcommon.statusmessage(
+            e.code, stringutil.forcebytestr(e)
+        )
         # TODO This response body assumes the failed command was
         # "unbundle." That assumption is not always valid.
-        res.setbodybytes(b'0\n%s\n' % pycompat.bytestr(e))
+        res.setbodybytes(b'0\n%s\n' % stringutil.forcebytestr(e))
 
     return True
 

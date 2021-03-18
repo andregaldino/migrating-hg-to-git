@@ -359,19 +359,15 @@ def _filecommit(
     elif fparent1 == nullid:
         fparent1, fparent2 = fparent2, nullid
     elif fparent2 != nullid:
-        # is one parent an ancestor of the other?
-        fparentancestors = flog.commonancestorsheads(fparent1, fparent2)
-        if fparent1 in fparentancestors:
+        if ms.active() and ms.extras(fname).get(b'filenode-source') == b'other':
             fparent1, fparent2 = fparent2, nullid
-        elif fparent2 in fparentancestors:
-            fparent2 = nullid
-        elif not fparentancestors:
-            # TODO: this whole if-else might be simplified much more
-            if (
-                ms.active()
-                and ms.extras(fname).get(b'filenode-source') == b'other'
-            ):
+        # is one parent an ancestor of the other?
+        else:
+            fparentancestors = flog.commonancestorsheads(fparent1, fparent2)
+            if fparent1 in fparentancestors:
                 fparent1, fparent2 = fparent2, nullid
+            elif fparent2 in fparentancestors:
+                fparent2 = nullid
 
     force_new_node = False
     # The file might have been deleted by merge code and user explicitly choose

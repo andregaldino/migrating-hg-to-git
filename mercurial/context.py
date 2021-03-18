@@ -993,8 +993,10 @@ class basefilectx(object):
                 # if file data starts with '\1\n', empty metadata block is
                 # prepended, which adds 4 bytes to filelog.size().
                 return self._filelog.cmp(self._filenode, fctx.data())
-        if self.size() == fctx.size():
+        if self.size() == fctx.size() or self.flags() == b'l':
             # size() matches: need to compare content
+            # issue6456: Always compare symlinks because size can represent
+            # encrypted string for EXT-4 encryption(fscrypt).
             return self._filelog.cmp(self._filenode, fctx.data())
 
         # size() differs

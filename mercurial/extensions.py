@@ -912,6 +912,7 @@ def enabled(shortname=True):
     exts = {}
     for ename, ext in extensions():
         doc = gettext(ext.__doc__) or _(b'(no help text available)')
+        assert doc is not None  # help pytype
         if shortname:
             ename = ename.split(b'.')[-1]
         exts[ename] = doc.splitlines()[0].strip()
