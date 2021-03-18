@@ -2197,6 +2197,9 @@ class paths(dict):
             loc, sub_opts = ui.configsuboptions(b'paths', name)
             self[name] = path(ui, name, rawloc=loc, suboptions=sub_opts)
 
+        for name, p in sorted(self.items()):
+            p.chain_path(ui, self)
+
     def getpath(self, ui, name, default=None):
         """Return a ``path`` from a string, falling back to default.
 
@@ -2330,6 +2333,22 @@ class path(object):
         self._all_sub_opts = sub_opts.copy()
 
         self._apply_suboptions(ui, sub_opts)
+
+    def chain_path(self, ui, paths):
+        if self.url.scheme == b'path':
+            assert self.url.path is None
+            subpath = paths[self.url.host]
+            self.url = subpath.url
+            self.rawloc = subpath.rawloc
+            self.loc = subpath.loc
+            if self.branch is None:
+                self.branch = subpath.branch
+            else:
+                base = self.rawloc.rsplit(b'#', 1)[0]
+                self.rawloc = b'%s#%s' % (base, self.branch)
+            suboptions = subpath._all_sub_opts.copy()
+            suboptions.update(self._own_sub_opts)
+            self._apply_suboptions(ui, suboptions)
 
     def _validate_path(self):
         # When given a raw location but not a symbolic name, validate the
