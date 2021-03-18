@@ -2190,16 +2190,12 @@ class paths(dict):
     def __init__(self, ui):
         dict.__init__(self)
 
-        _path, base_sub_options = ui.configsuboptions(b'paths', b'*')
         for name, loc in ui.configitems(b'paths', ignoresub=True):
             # No location is the same as not existing.
             if not loc:
                 continue
-            loc, sub = ui.configsuboptions(b'paths', name)
-            sub_opts = base_sub_options.copy()
-            sub_opts.update(sub)
+            loc, sub_opts = ui.configsuboptions(b'paths', name)
             self[name] = path(ui, name, rawloc=loc, suboptions=sub_opts)
-        self._default_sub_opts = base_sub_options
 
     def getpath(self, ui, name, default=None):
         """Return a ``path`` from a string, falling back to default.
@@ -2234,9 +2230,7 @@ class paths(dict):
             # Try to resolve as a local path or URI.
             try:
                 # we pass the ui instance are warning might need to be issued
-                return path(
-                    ui, None, rawloc=name, suboptions=self._default_sub_opts
-                )
+                return path(ui, None, rawloc=name)
             except ValueError:
                 raise error.RepoError(_(b'repository %s does not exist') % name)
 
@@ -2334,17 +2328,19 @@ class path(object):
                 b'repo: %s' % rawloc
             )
 
-        suboptions = suboptions or {}
+        _path, sub_opts = ui.configsuboptions(b'paths', b'*')
+        if suboptions is not None:
+            sub_opts.update(suboptions)
 
         # Now process the sub-options. If a sub-option is registered, its
         # attribute will always be present. The value will be None if there
         # was no valid sub-option.
         for suboption, (attr, func) in pycompat.iteritems(_pathsuboptions):
-            if suboption not in suboptions:
+            if suboption not in sub_opts:
                 setattr(self, attr, None)
                 continue
 
-            value = func(ui, self, suboptions[suboption])
+            value = func(ui, self, sub_opts[suboption])
             setattr(self, attr, value)
 
     def _isvalidlocalpath(self, path):
