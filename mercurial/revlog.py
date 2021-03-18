@@ -3250,7 +3250,7 @@ class revlog(object):
                     # rewriting entries that already have sidedata is not
                     # supported yet, because it introduces garbage data in the
                     # revlog.
-                    msg = "Rewriting existing sidedata is not supported yet"
+                    msg = b"Rewriting existing sidedata is not supported yet"
                     raise error.Abort(msg)
                 entry = entry[:8]
                 entry += (current_offset, len(serialized_sidedata))
