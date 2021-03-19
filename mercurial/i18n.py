@@ -23,7 +23,6 @@ if pycompat.TYPE_CHECKING:
     from typing import (
         Callable,
         List,
-        Optional,
     )
 
 
@@ -71,7 +70,7 @@ _msgcache = {}  # encoding: {message: translation}
 
 
 def gettext(message):
-    # type: (Optional[bytes]) -> Optional[bytes]
+    # type: (bytes) -> bytes
     """Translate message.
 
     The message is looked up in the catalog to get a Unicode string,
