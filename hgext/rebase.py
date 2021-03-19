@@ -205,8 +205,8 @@ class rebaseruntime(object):
         self.skipemptysuccessorf = rewriteutil.skip_empty_successor(
             repo.ui, b'rebase'
         )
-        self.obsoletenotrebased = {}
-        self.obsoletewithoutsuccessorindestination = set()
+        self.obsolete_with_successor_in_destination = {}
+        self.obsolete_with_successor_in_rebase_set = set()
         self.inmemory = inmemory
         self.dryrun = dryrun
         self.stateobj = statemod.cmdstate(repo, b'rebasestate')
@@ -350,16 +350,16 @@ class rebaseruntime(object):
 
     def _handleskippingobsolete(self):
         """Compute structures necessary for skipping obsolete revisions"""
-        self.obsoletenotrebased = {}
+        self.obsolete_with_successor_in_destination = {}
         if not self.ui.configbool(b'experimental', b'rebaseskipobsolete'):
             return
         obsoleteset = {r for r in self.state if self.repo[r].obsolete()}
         (
-            self.obsoletenotrebased,
-            self.obsoletewithoutsuccessorindestination,
-        ) = _computeobsoletenotrebased(self.repo, obsoleteset, self.destmap)
-        skippedset = set(self.obsoletenotrebased)
-        skippedset.update(self.obsoletewithoutsuccessorindestination)
+            self.obsolete_with_successor_in_destination,
+            self.obsolete_with_successor_in_rebase_set,
+        ) = _compute_obsolete_sets(self.repo, obsoleteset, self.destmap)
+        skippedset = set(self.obsolete_with_successor_in_destination)
+        skippedset.update(self.obsolete_with_successor_in_rebase_set)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
     def _prepareabortorcontinue(
@@ -368,7 +368,7 @@ class rebaseruntime(object):
         self.resume = True
         try:
             self.restorestatus()
-            # Calculate self.obsoletenotrebased
+            # Calculate self.obsolete_* sets
             self._handleskippingobsolete()
             self.collapsemsg = restorecollapsemsg(self.repo, isabort)
         except error.RepoLookupError:
@@ -436,7 +436,7 @@ class rebaseruntime(object):
 
         self.prepared = True
 
-        # Calculate self.obsoletenotrebased
+        # Calculate self.obsolete_* sets
         self._handleskippingobsolete()
 
     def _assignworkingcopy(self):
@@ -501,8 +501,8 @@ class rebaseruntime(object):
             if not allowdivergence:
                 sortedrevs -= self.repo.revs(
                     b'descendants(%ld) and not %ld',
-                    self.obsoletewithoutsuccessorindestination,
-                    self.obsoletewithoutsuccessorindestination,
+                    self.obsolete_with_successor_in_rebase_set,
+                    self.obsolete_with_successor_in_rebase_set,
                 )
             for rev in sortedrevs:
                 self._rebasenode(tr, rev, allowdivergence, progress)
@@ -575,7 +575,7 @@ class rebaseruntime(object):
             ui.status(_(b'already rebased %s\n') % desc)
         elif (
             not allowdivergence
-            and rev in self.obsoletewithoutsuccessorindestination
+            and rev in self.obsolete_with_successor_in_rebase_set
         ):
             msg = (
                 _(
@@ -586,8 +586,8 @@ class rebaseruntime(object):
             )
             repo.ui.status(msg)
             self.skipped.add(rev)
-        elif rev in self.obsoletenotrebased:
-            succ = self.obsoletenotrebased[rev]
+        elif rev in self.obsolete_with_successor_in_destination:
+            succ = self.obsolete_with_successor_in_destination[rev]
             if succ is None:
                 msg = _(b'note: not rebasing %s, it has no successor\n') % desc
             else:
@@ -613,7 +613,7 @@ class rebaseruntime(object):
                 self.destmap,
                 self.state,
                 self.skipped,
-                self.obsoletenotrebased,
+                self.obsolete_with_successor_in_destination,
             )
             if self.resume and self.wctx.p1().rev() == p1:
                 repo.ui.debug(b'resuming interrupted rebase\n')
@@ -725,7 +725,7 @@ class rebaseruntime(object):
                 self.destmap,
                 self.state,
                 self.skipped,
-                self.obsoletenotrebased,
+                self.obsolete_with_successor_in_destination,
             )
             editopt = opts.get(b'edit')
             editform = b'rebase.collapse'
@@ -2179,17 +2179,17 @@ def pullrebase(orig, ui, repo, *args, **opts):
     return ret
 
 
-def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
-    """Return (obsoletenotrebased, obsoletewithoutsuccessorindestination).
+def _compute_obsolete_sets(repo, rebaseobsrevs, destmap):
+    """Figure out what to do about about obsolete revisions
 
-    `obsoletenotrebased` is a mapping mapping obsolete => successor for all
+    `obsolete_with_successor_in_destination` is a mapping mapping obsolete => successor for all
     obsolete nodes to be rebased given in `rebaseobsrevs`.
 
-    `obsoletewithoutsuccessorindestination` is a set with obsolete revisions
-    without a successor in destination.
+    `obsolete_with_successor_in_rebase_set` is a set with obsolete revisions,
+    without a successor in destination, that would cause divergence.
     """
-    obsoletenotrebased = {}
-    obsoletewithoutsuccessorindestination = set()
+    obsolete_with_successor_in_destination = {}
+    obsolete_with_successor_in_rebase_set = set()
 
     assert repo.filtername is None
     cl = repo.changelog
@@ -2205,21 +2205,24 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         succrevs.discard(None)
         if not successors or succrevs.issubset(extinctrevs):
             # no successor, or all successors are extinct
-            obsoletenotrebased[srcrev] = None
+            obsolete_with_successor_in_destination[srcrev] = None
         else:
             dstrev = destmap[srcrev]
             for succrev in succrevs:
                 if cl.isancestorrev(succrev, dstrev):
-                    obsoletenotrebased[srcrev] = succrev
+                    obsolete_with_successor_in_destination[srcrev] = succrev
                     break
             else:
                 # If 'srcrev' has a successor in rebase set but none in
                 # destination (which would be catched above), we shall skip it
                 # and its descendants to avoid divergence.
                 if srcrev in extinctrevs or any(s in destmap for s in succrevs):
-                    obsoletewithoutsuccessorindestination.add(srcrev)
+                    obsolete_with_successor_in_rebase_set.add(srcrev)
 
-    return obsoletenotrebased, obsoletewithoutsuccessorindestination
+    return (
+        obsolete_with_successor_in_destination,
+        obsolete_with_successor_in_rebase_set,
+    )
 
 
 def abortrebase(ui, repo):
