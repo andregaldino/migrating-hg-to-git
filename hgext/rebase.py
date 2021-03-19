@@ -361,11 +361,9 @@ class rebaseruntime(object):
         (
             self.obsoletenotrebased,
             self.obsoletewithoutsuccessorindestination,
-            obsoleteextinctsuccessors,
         ) = _computeobsoletenotrebased(self.repo, obsoleteset, destmap)
         skippedset = set(self.obsoletenotrebased)
         skippedset.update(self.obsoletewithoutsuccessorindestination)
-        skippedset.update(obsoleteextinctsuccessors)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
     def _prepareabortorcontinue(
@@ -2192,13 +2190,9 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
 
     `obsoletewithoutsuccessorindestination` is a set with obsolete revisions
     without a successor in destination.
-
-    `obsoleteextinctsuccessors` is a set of obsolete revisions with only
-    obsolete successors.
     """
     obsoletenotrebased = {}
     obsoletewithoutsuccessorindestination = set()
-    obsoleteextinctsuccessors = set()
 
     assert repo.filtername is None
     cl = repo.changelog
@@ -2212,11 +2206,8 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         successors.remove(srcnode)
         succrevs = {get_rev(s) for s in successors}
         succrevs.discard(None)
-        if succrevs.issubset(extinctrevs):
-            # all successors are extinct
-            obsoleteextinctsuccessors.add(srcrev)
-        if not successors:
-            # no successor
+        if not successors or succrevs.issubset(extinctrevs):
+            # no successor, or all successors are extinct
             obsoletenotrebased[srcrev] = None
         else:
             dstrev = destmap[srcrev]
@@ -2231,11 +2222,7 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
                 if srcrev in extinctrevs or any(s in destmap for s in succrevs):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
-    return (
-        obsoletenotrebased,
-        obsoletewithoutsuccessorindestination,
-        obsoleteextinctsuccessors,
-    )
+    return obsoletenotrebased, obsoletewithoutsuccessorindestination
 
 
 def abortrebase(ui, repo):

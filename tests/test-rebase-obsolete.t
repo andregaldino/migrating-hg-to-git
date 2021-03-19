@@ -1294,18 +1294,16 @@ issue5782
   o  0:b173517d0057 a
   
   $ hg rebase -d 0 -r 2
-  rebasing 2:a82ac2b38757 c "c"
+  note: not rebasing 2:a82ac2b38757 c "c", it has no successor
   $ hg log -G -r 'a': --hidden
-  o  5:69ad416a4a26 c
+  *  4:76be324c128b d
   |
-  | *  4:76be324c128b d
+  | x  3:ef8a456de8fa c1 (pruned)
   | |
-  | | x  3:ef8a456de8fa c1 (pruned)
-  | | |
-  | x |  2:a82ac2b38757 c (rewritten using replace as 3:ef8a456de8fa rewritten using rebase as 5:69ad416a4a26)
-  | |/
-  | o  1:488e1b7e7341 b
+  x |  2:a82ac2b38757 c (rewritten using replace as 3:ef8a456de8fa)
   |/
+  o  1:488e1b7e7341 b
+  |
   o  0:b173517d0057 a
   
   $ cd ..
