@@ -17,7 +17,8 @@ pub use dirstate::{
     dirstate_map::DirstateMap,
     parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
     status::{
-        status, BadMatch, BadType, DirstateStatus, StatusError, StatusOptions,
+        status, BadMatch, BadType, DirstateStatus, HgPathCow, StatusError,
+        StatusOptions,
     },
     CopyMap, CopyMapIter, DirstateEntry, DirstateParents, EntryState,
     StateMap, StateMapIter,

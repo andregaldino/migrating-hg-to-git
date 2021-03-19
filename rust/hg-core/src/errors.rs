@@ -88,25 +88,7 @@ impl fmt::Display for HgError {
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)
             }
-            HgError::ConfigValueParseError(ConfigValueParseError {
-                origin: _,
-                line: _,
-                section,
-                item,
-                value,
-                expected_type,
-            }) => {
-                // TODO: add origin and line number information, here and in
-                // corresponding python code
-                write!(
-                    f,
-                    "config error: {}.{} is not a {} ('{}')",
-                    String::from_utf8_lossy(section),
-                    String::from_utf8_lossy(item),
-                    expected_type,
-                    String::from_utf8_lossy(value)
-                )
-            }
+            HgError::ConfigValueParseError(error) => error.fmt(f),
         }
     }
 }

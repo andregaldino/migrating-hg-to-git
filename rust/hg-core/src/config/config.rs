@@ -17,6 +17,7 @@ use crate::utils::SliceExt;
 use format_bytes::{write_bytes, DisplayBytes};
 use std::collections::HashSet;
 use std::env;
+use std::fmt;
 use std::path::{Path, PathBuf};
 use std::str;
 
@@ -66,6 +67,21 @@ pub struct ConfigValueParseError {
     pub item: Vec<u8>,
     pub value: Vec<u8>,
     pub expected_type: &'static str,
+}
+
+impl fmt::Display for ConfigValueParseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: add origin and line number information, here and in
+        // corresponding python code
+        write!(
+            f,
+            "config error: {}.{} is not a {} ('{}')",
+            String::from_utf8_lossy(&self.section),
+            String::from_utf8_lossy(&self.item),
+            self.expected_type,
+            String::from_utf8_lossy(&self.value)
+        )
+    }
 }
 
 impl Config {

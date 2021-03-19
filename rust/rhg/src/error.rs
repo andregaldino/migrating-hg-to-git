@@ -2,11 +2,12 @@ use crate::ui::utf8_to_local;
 use crate::ui::UiError;
 use crate::NoRepoInCwdError;
 use format_bytes::format_bytes;
-use hg::config::{ConfigError, ConfigParseError};
+use hg::config::{ConfigError, ConfigParseError, ConfigValueParseError};
 use hg::errors::HgError;
 use hg::repo::RepoError;
 use hg::revlog::revlog::RevlogError;
 use hg::utils::files::get_bytes_from_path;
+use hg::{DirstateError, DirstateMapError, StatusError};
 use std::convert::From;
 
 /// The kind of command error
@@ -58,6 +59,12 @@ impl From<HgError> for CommandError {
             }
             _ => CommandError::abort(error.to_string()),
         }
+    }
+}
+
+impl From<ConfigValueParseError> for CommandError {
+    fn from(error: ConfigValueParseError) -> Self {
+        CommandError::abort(error.to_string())
     }
 }
 
@@ -141,6 +148,27 @@ impl From<(RevlogError, &str)> for CommandError {
                 rev
             )),
             RevlogError::Other(error) => error.into(),
+        }
+    }
+}
+
+impl From<StatusError> for CommandError {
+    fn from(error: StatusError) -> Self {
+        CommandError::abort(format!("{}", error))
+    }
+}
+
+impl From<DirstateMapError> for CommandError {
+    fn from(error: DirstateMapError) -> Self {
+        CommandError::abort(format!("{}", error))
+    }
+}
+
+impl From<DirstateError> for CommandError {
+    fn from(error: DirstateError) -> Self {
+        match error {
+            DirstateError::Common(error) => error.into(),
+            DirstateError::Map(error) => error.into(),
         }
     }
 }
