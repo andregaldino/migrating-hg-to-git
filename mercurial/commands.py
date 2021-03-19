@@ -76,6 +76,12 @@ from .utils import (
     stringutil,
 )
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        List,
+    )
+
+
 table = {}
 table.update(debugcommandsmod.command._table)
 
@@ -3295,7 +3301,8 @@ def _dograft(ui, repo, *revs, **opts):
                 )
             # checking that newnodes exist because old state files won't have it
             elif statedata.get(b'newnodes') is not None:
-                statedata[b'newnodes'].append(node)
+                nn = statedata[b'newnodes']  # type: List[bytes]
+                nn.append(node)
 
     # remove state when we complete successfully
     if not opts.get(b'dry_run'):
@@ -7268,6 +7275,12 @@ def summary(ui, repo, **opts):
         dest = dbranch = dother = outgoing = None
 
     if opts.get(b'remote'):
+        # Help pytype.  --remote sets both `needsincoming` and `needsoutgoing`.
+        # The former always sets `sother` (or raises an exception if it can't);
+        # the latter always sets `outgoing`.
+        assert sother is not None
+        assert outgoing is not None
+
         t = []
         if incoming:
             t.append(_(b'1 or more incoming'))
