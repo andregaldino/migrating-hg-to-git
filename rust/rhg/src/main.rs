@@ -82,7 +82,14 @@ fn main_with_result(
     let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
     blackbox.log_command_start();
     let result = run(&invocation);
-    blackbox.log_command_end(exit_code(&result));
+    blackbox.log_command_end(exit_code(
+        &result,
+        // TODO: show a warning or combine with original error if `get_bool`
+        // returns an error
+        config
+            .get_bool(b"ui", b"detailed-exit-code")
+            .unwrap_or(false),
+    ));
     result
 }
 
@@ -114,6 +121,7 @@ fn main() {
                         error,
                         cwd.display()
                     ))),
+                    false,
                 )
             })
     });
@@ -125,7 +133,13 @@ fn main() {
             // "unsupported" error but that is not enforced by the type system.
             let on_unsupported = OnUnsupported::Abort;
 
-            exit(&initial_current_dir, &ui, on_unsupported, Err(error.into()))
+            exit(
+                &initial_current_dir,
+                &ui,
+                on_unsupported,
+                Err(error.into()),
+                false,
+            )
         });
 
     if let Some(repo_path_bytes) = &early_args.repo {
@@ -145,6 +159,11 @@ fn main() {
                         repo_path_bytes
                     ),
                 }),
+                // TODO: show a warning or combine with original error if
+                // `get_bool` returns an error
+                non_repo_config
+                    .get_bool(b"ui", b"detailed-exit-code")
+                    .unwrap_or(false),
             )
         }
     }
@@ -160,6 +179,11 @@ fn main() {
             &ui,
             OnUnsupported::from_config(&ui, &non_repo_config),
             Err(error.into()),
+            // TODO: show a warning or combine with original error if
+            // `get_bool` returns an error
+            non_repo_config
+                .get_bool(b"ui", b"detailed-exit-code")
+                .unwrap_or(false),
         ),
     };
 
@@ -176,13 +200,35 @@ fn main() {
         repo_result.as_ref(),
         config,
     );
-    exit(&initial_current_dir, &ui, on_unsupported, result)
+    exit(
+        &initial_current_dir,
+        &ui,
+        on_unsupported,
+        result,
+        // TODO: show a warning or combine with original error if `get_bool`
+        // returns an error
+        config
+            .get_bool(b"ui", b"detailed-exit-code")
+            .unwrap_or(false),
+    )
 }
 
-fn exit_code(result: &Result<(), CommandError>) -> i32 {
+fn exit_code(
+    result: &Result<(), CommandError>,
+    use_detailed_exit_code: bool,
+) -> i32 {
     match result {
         Ok(()) => exitcode::OK,
-        Err(CommandError::Abort { .. }) => exitcode::ABORT,
+        Err(CommandError::Abort {
+            message: _,
+            detailed_exit_code,
+        }) => {
+            if use_detailed_exit_code {
+                *detailed_exit_code
+            } else {
+                exitcode::ABORT
+            }
+        }
         Err(CommandError::Unsuccessful) => exitcode::UNSUCCESSFUL,
 
         // Exit with a specific code and no error message to let a potential
@@ -198,6 +244,7 @@ fn exit(
     ui: &Ui,
     mut on_unsupported: OnUnsupported,
     result: Result<(), CommandError>,
+    use_detailed_exit_code: bool,
 ) -> ! {
     if let (
         OnUnsupported::Fallback { executable },
@@ -238,18 +285,22 @@ fn exit(
             }
         }
     }
-    exit_no_fallback(ui, on_unsupported, result)
+    exit_no_fallback(ui, on_unsupported, result, use_detailed_exit_code)
 }
 
 fn exit_no_fallback(
     ui: &Ui,
     on_unsupported: OnUnsupported,
     result: Result<(), CommandError>,
+    use_detailed_exit_code: bool,
 ) -> ! {
     match &result {
         Ok(_) => {}
         Err(CommandError::Unsuccessful) => {}
-        Err(CommandError::Abort { message }) => {
+        Err(CommandError::Abort {
+            message,
+            detailed_exit_code: _,
+        }) => {
             if !message.is_empty() {
                 // Ignore errors when writing to stderr, we’re already exiting
                 // with failure code so there’s not much more we can do.
@@ -269,7 +320,7 @@ fn exit_no_fallback(
             }
         }
     }
-    std::process::exit(exit_code(&result))
+    std::process::exit(exit_code(&result, use_detailed_exit_code))
 }
 
 macro_rules! subcommands {
@@ -411,6 +462,7 @@ impl OnUnsupported {
                                 "abort: 'rhg.on-unsupported=fallback' without \
                                 'rhg.fallback-executable' set."
                             )),
+                            false,
                         )
                     })
                     .to_owned(),

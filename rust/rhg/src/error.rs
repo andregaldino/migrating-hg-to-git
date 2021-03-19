@@ -1,3 +1,4 @@
+use crate::exitcode;
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
 use crate::NoRepoInCwdError;
@@ -14,7 +15,10 @@ use std::convert::From;
 #[derive(Debug)]
 pub enum CommandError {
     /// Exit with an error message and "standard" failure exit code.
-    Abort { message: Vec<u8> },
+    Abort {
+        message: Vec<u8>,
+        detailed_exit_code: exitcode::ExitCode,
+    },
 
     /// Exit with a failure exit code but no message.
     Unsuccessful,
@@ -28,11 +32,19 @@ pub enum CommandError {
 
 impl CommandError {
     pub fn abort(message: impl AsRef<str>) -> Self {
+        CommandError::abort_with_exit_code(message, exitcode::ABORT)
+    }
+
+    pub fn abort_with_exit_code(
+        message: impl AsRef<str>,
+        detailed_exit_code: exitcode::ExitCode,
+    ) -> Self {
         CommandError::Abort {
             // TODO: bytes-based (instead of Unicode-based) formatting
             // of error messages to handle non-UTF-8 filenames etc:
             // https://www.mercurial-scm.org/wiki/EncodingStrategy#Mixing_output
             message: utf8_to_local(message.as_ref()).into(),
+            detailed_exit_code: detailed_exit_code,
         }
     }
 
@@ -64,7 +76,10 @@ impl From<HgError> for CommandError {
 
 impl From<ConfigValueParseError> for CommandError {
     fn from(error: ConfigValueParseError) -> Self {
-        CommandError::abort(error.to_string())
+        CommandError::abort_with_exit_code(
+            error.to_string(),
+            exitcode::CONFIG_ERROR_ABORT,
+        )
     }
 }
 
@@ -85,6 +100,7 @@ impl From<RepoError> for CommandError {
                     b"abort: repository {} not found",
                     get_bytes_from_path(at)
                 ),
+                detailed_exit_code: exitcode::ABORT,
             },
             RepoError::ConfigParseError(error) => error.into(),
             RepoError::Other(error) => error.into(),
@@ -100,6 +116,7 @@ impl<'a> From<&'a NoRepoInCwdError> for CommandError {
                 b"abort: no repository found in '{}' (.hg not found)!",
                 get_bytes_from_path(cwd)
             ),
+            detailed_exit_code: exitcode::ABORT,
         }
     }
 }
@@ -132,6 +149,7 @@ impl From<ConfigParseError> for CommandError {
                 line_message,
                 message
             ),
+            detailed_exit_code: exitcode::CONFIG_ERROR_ABORT,
         }
     }
 }

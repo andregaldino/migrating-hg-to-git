@@ -3,8 +3,6 @@ hide outer repo
 
 Invalid syntax: no value
 
-TODO: add rhg support for detailed exit codes
-#if no-rhg
   $ cat > .hg/hgrc << EOF
   > novaluekey
   > EOF
@@ -37,7 +35,6 @@ Test hint about invalid syntax from leading white space
   $ hg showconfig
   config error at $TESTTMP/.hg/hgrc:1: unexpected leading whitespace:  [section]
   [30]
-#endif
 
 Reset hgrc
 
