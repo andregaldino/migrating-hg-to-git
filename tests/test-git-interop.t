@@ -28,9 +28,9 @@ Test auto-loading extension works:
   $ hg status
   abort: repository specified git format in .hg/requires but has no .git directory
   [255]
+  $ git config --global init.defaultBranch master
   $ git init
   Initialized empty Git repository in $TESTTMP/nogit/.git/
-  $ git config --global init.defaultBranch master
 This status invocation shows some hg gunk because we didn't use
 `hg init --git`, which fixes up .git/info/exclude for us.
   $ hg status
