@@ -176,6 +176,10 @@ Shallow clone pulls down latest revision of every file
   updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
+#if chg
+  $ hg --kill-chg-daemon
+  $ sleep 2
+#endif
   $ sqlite3 -line client-shallow-1/.hg/store/db.sqlite << EOF
   > SELECT id, path, revnum, node, p1rev, p2rev, linkrev, flags FROM filedata ORDER BY id ASC;
   > EOF
@@ -347,6 +351,10 @@ Test a shallow clone with only some files
   updating the branch cache
   (sent 5 HTTP requests and * bytes; received * bytes in responses) (glob)
 
+#if chg
+  $ hg --kill-chg-daemon
+  $ sleep 2
+#endif
   $ sqlite3 -line client-shallow-narrow-1/.hg/store/db.sqlite << EOF
   > SELECT id, path, revnum, node, p1rev, p2rev, linkrev, flags FROM filedata ORDER BY id ASC;
   > EOF
