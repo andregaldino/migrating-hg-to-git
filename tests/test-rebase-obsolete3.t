@@ -72,9 +72,9 @@ consequence f (descendant of d) is left behind.
   $ hg rebase -b 'e' -d 'x'
   rebasing 1:488e1b7e7341 b "b"
   rebasing 3:a82ac2b38757 c "c"
+  note: not rebasing 4:76be324c128b d "d" and its descendants as this would cause divergence
   rebasing 5:027ad6c5830d d' "d'"
   rebasing 6:d60ebfa0f1cb e "e"
-  note: not rebasing 4:76be324c128b d "d" and its descendants as this would cause divergence
   $ hg log -G -r 'a'::
   o  11:eb6d63fc4ed5 e
   |
@@ -207,16 +207,16 @@ Similar test on a more complex graph
   $ hg rebase -b 'f' -d 'x'
   rebasing 1:488e1b7e7341 b "b"
   rebasing 3:a82ac2b38757 c "c"
-  rebasing 5:63324dc512ea e' "e'"
-  rebasing 7:3ffec603ab53 f "f"
   rebasing 4:76be324c128b d "d"
   note: not rebasing 6:e36fae928aec e "e" and its descendants as this would cause divergence
+  rebasing 5:63324dc512ea e' "e'"
+  rebasing 7:3ffec603ab53 f "f"
   $ hg log -G -r 'a':
-  o  13:a1707a5b7c2c d
+  o  13:ef6251596616 f
   |
-  | o  12:ef6251596616 f
-  | |
-  | o  11:b6f172e64af9 e'
+  o  12:b6f172e64af9 e'
+  |
+  | o  11:a1707a5b7c2c d
   |/
   o  10:d008e6b4d3fd c
   |
@@ -224,13 +224,13 @@ Similar test on a more complex graph
   |
   | *  8:2876ce66c6eb g
   | |
-  | | x  7:3ffec603ab53 f (rewritten using rebase as 12:ef6251596616)
+  | | x  7:3ffec603ab53 f (rewritten using rebase as 13:ef6251596616)
   | | |
   | x |  6:e36fae928aec e (rewritten using replace as 5:63324dc512ea)
   | | |
-  | | x  5:63324dc512ea e' (rewritten using rebase as 11:b6f172e64af9)
+  | | x  5:63324dc512ea e' (rewritten using rebase as 12:b6f172e64af9)
   | | |
-  | x |  4:76be324c128b d (rewritten using rebase as 13:a1707a5b7c2c)
+  | x |  4:76be324c128b d (rewritten using rebase as 11:a1707a5b7c2c)
   | |/
   | x  3:a82ac2b38757 c (rewritten using rebase as 10:d008e6b4d3fd)
   | |

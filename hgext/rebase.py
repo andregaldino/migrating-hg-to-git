@@ -361,6 +361,19 @@ class rebaseruntime(object):
         skippedset = set(self.obsolete_with_successor_in_destination)
         skippedset.update(self.obsolete_with_successor_in_rebase_set)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
+        allowdivergence = self.ui.configbool(
+            b'experimental', b'evolution.allowdivergence'
+        )
+        if allowdivergence:
+            self.obsolete_with_successor_in_rebase_set = set()
+        else:
+            for rev in self.repo.revs(
+                b'descendants(%ld) and not %ld',
+                self.obsolete_with_successor_in_rebase_set,
+                self.obsolete_with_successor_in_rebase_set,
+            ):
+                self.state.pop(rev, None)
+                self.destmap.pop(rev, None)
 
     def _prepareabortorcontinue(
         self, isabort, backup=True, suppwarns=False, dryrun=False, confirm=False
@@ -493,19 +506,10 @@ class rebaseruntime(object):
         def progress(ctx):
             p.increment(item=(b"%d:%s" % (ctx.rev(), ctx)))
 
-        allowdivergence = self.ui.configbool(
-            b'experimental', b'evolution.allowdivergence'
-        )
         for subset in sortsource(self.destmap):
             sortedrevs = self.repo.revs(b'sort(%ld, -topo)', subset)
-            if not allowdivergence:
-                sortedrevs -= self.repo.revs(
-                    b'descendants(%ld) and not %ld',
-                    self.obsolete_with_successor_in_rebase_set,
-                    self.obsolete_with_successor_in_rebase_set,
-                )
             for rev in sortedrevs:
-                self._rebasenode(tr, rev, allowdivergence, progress)
+                self._rebasenode(tr, rev, progress)
         p.complete()
         ui.note(_(b'rebase merging completed\n'))
 
@@ -567,16 +571,13 @@ class rebaseruntime(object):
 
             return newnode
 
-    def _rebasenode(self, tr, rev, allowdivergence, progressfn):
+    def _rebasenode(self, tr, rev, progressfn):
         repo, ui, opts = self.repo, self.ui, self.opts
         ctx = repo[rev]
         desc = _ctxdesc(ctx)
         if self.state[rev] == rev:
             ui.status(_(b'already rebased %s\n') % desc)
-        elif (
-            not allowdivergence
-            and rev in self.obsolete_with_successor_in_rebase_set
-        ):
+        elif rev in self.obsolete_with_successor_in_rebase_set:
             msg = (
                 _(
                     b'note: not rebasing %s and its descendants as '
