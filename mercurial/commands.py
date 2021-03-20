@@ -1107,9 +1107,8 @@ def bisect(
                     transition = b"bad"
                 state[transition].append(node)
                 ctx = repo[node]
-                ui.status(
-                    _(b'changeset %d:%s: %s\n') % (ctx.rev(), ctx, transition)
-                )
+                summary = cmdutil.format_changeset_summary(ui, ctx, b'bisect')
+                ui.status(_(b'changeset %s: %s\n') % (summary, transition))
                 hbisect.checkstate(state)
                 # bisect
                 nodes, changesets, bgood = hbisect.bisect(repo, state)
@@ -1125,15 +1124,15 @@ def bisect(
     nodes, changesets, good = hbisect.bisect(repo, state)
     if extend:
         if not changesets:
-            extendnode = hbisect.extendrange(repo, state, nodes, good)
-            if extendnode is not None:
+            extendctx = hbisect.extendrange(repo, state, nodes, good)
+            if extendctx is not None:
                 ui.write(
-                    _(b"Extending search to changeset %d:%s\n")
-                    % (extendnode.rev(), extendnode)
+                    _(b"Extending search to changeset %s\n")
+                    % cmdutil.format_changeset_summary(ui, extendctx, b'bisect')
                 )
-                state[b'current'] = [extendnode.node()]
+                state[b'current'] = [extendctx.node()]
                 hbisect.save_state(repo, state)
-                return mayupdate(repo, extendnode.node())
+                return mayupdate(repo, extendctx.node())
         raise error.StateError(_(b"nothing to extend"))
 
     if changesets == 0:
@@ -1146,12 +1145,13 @@ def bisect(
         while size <= changesets:
             tests, size = tests + 1, size * 2
         rev = repo.changelog.rev(node)
+        summary = cmdutil.format_changeset_summary(ui, repo[rev], b'bisect')
         ui.write(
             _(
-                b"Testing changeset %d:%s "
+                b"Testing changeset %s "
                 b"(%d changesets remaining, ~%d tests)\n"
             )
-            % (rev, short(node), changesets, tests)
+            % (summary, changesets, tests)
         )
         state[b'current'] = [node]
         hbisect.save_state(repo, state)
