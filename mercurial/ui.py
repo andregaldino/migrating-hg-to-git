@@ -2320,13 +2320,7 @@ class path(object):
         self.rawloc = rawloc
         self.loc = b'%s' % u
 
-        # When given a raw location but not a symbolic name, validate the
-        # location is valid.
-        if not name and not u.scheme and not self._isvalidlocalpath(self.loc):
-            raise ValueError(
-                b'location is not a URL or path to a local '
-                b'repo: %s' % rawloc
-            )
+        self._validate_path()
 
         _path, sub_opts = ui.configsuboptions(b'paths', b'*')
         if suboptions is not None:
@@ -2342,6 +2336,19 @@ class path(object):
 
             value = func(ui, self, sub_opts[suboption])
             setattr(self, attr, value)
+
+    def _validate_path(self):
+        # When given a raw location but not a symbolic name, validate the
+        # location is valid.
+        if (
+            not self.name
+            and not self.url.scheme
+            and not self._isvalidlocalpath(self.loc)
+        ):
+            raise ValueError(
+                b'location is not a URL or path to a local '
+                b'repo: %s' % self.rawloc
+            )
 
     def _isvalidlocalpath(self, path):
         """Returns True if the given path is a potentially valid repository.
