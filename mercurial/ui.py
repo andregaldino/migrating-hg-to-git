@@ -2323,19 +2323,13 @@ class path(object):
         self._validate_path()
 
         _path, sub_opts = ui.configsuboptions(b'paths', b'*')
+        self._own_sub_opts = {}
         if suboptions is not None:
+            self._own_sub_opts = suboptions.copy()
             sub_opts.update(suboptions)
+        self._all_sub_opts = sub_opts.copy()
 
-        # Now process the sub-options. If a sub-option is registered, its
-        # attribute will always be present. The value will be None if there
-        # was no valid sub-option.
-        for suboption, (attr, func) in pycompat.iteritems(_pathsuboptions):
-            if suboption not in sub_opts:
-                setattr(self, attr, None)
-                continue
-
-            value = func(ui, self, sub_opts[suboption])
-            setattr(self, attr, value)
+        self._apply_suboptions(ui, sub_opts)
 
     def _validate_path(self):
         # When given a raw location but not a symbolic name, validate the
@@ -2349,6 +2343,18 @@ class path(object):
                 b'location is not a URL or path to a local '
                 b'repo: %s' % self.rawloc
             )
+
+    def _apply_suboptions(self, ui, sub_options):
+        # Now process the sub-options. If a sub-option is registered, its
+        # attribute will always be present. The value will be None if there
+        # was no valid sub-option.
+        for suboption, (attr, func) in pycompat.iteritems(_pathsuboptions):
+            if suboption not in sub_options:
+                setattr(self, attr, None)
+                continue
+
+            value = func(ui, self, sub_options[suboption])
+            setattr(self, attr, value)
 
     def _isvalidlocalpath(self, path):
         """Returns True if the given path is a potentially valid repository.
