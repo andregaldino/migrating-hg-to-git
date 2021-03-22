@@ -6,6 +6,7 @@ use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgError;
 use crate::errors::HgResultExt;
 use crate::exit_codes;
+use crate::lock::{try_with_lock_no_wait, LockError};
 use crate::manifest::{Manifest, Manifestlog};
 use crate::revlog::filelog::Filelog;
 use crate::revlog::revlog::RevlogError;
@@ -241,6 +242,13 @@ impl Repo {
         Vfs {
             base: &self.working_directory,
         }
+    }
+
+    pub fn try_with_wlock_no_wait<R>(
+        &self,
+        f: impl FnOnce() -> R,
+    ) -> Result<R, LockError> {
+        try_with_lock_no_wait(self.hg_vfs(), "wlock", f)
     }
 
     pub fn has_dirstate_v2(&self) -> bool {

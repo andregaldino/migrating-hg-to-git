@@ -29,6 +29,7 @@ pub mod repo;
 pub mod revlog;
 pub use revlog::*;
 pub mod config;
+pub mod lock;
 pub mod logging;
 pub mod operations;
 pub mod revset;

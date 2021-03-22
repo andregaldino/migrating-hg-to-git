@@ -87,6 +87,26 @@ impl Vfs<'_> {
         std::fs::rename(&from, &to)
             .with_context(|| IoErrorContext::RenamingFile { from, to })
     }
+
+    pub fn remove_file(
+        &self,
+        relative_path: impl AsRef<Path>,
+    ) -> Result<(), HgError> {
+        let path = self.join(relative_path);
+        std::fs::remove_file(&path)
+            .with_context(|| IoErrorContext::RemovingFile(path))
+    }
+
+    #[cfg(unix)]
+    pub fn create_symlink(
+        &self,
+        relative_link_path: impl AsRef<Path>,
+        target_path: impl AsRef<Path>,
+    ) -> Result<(), HgError> {
+        let link_path = self.join(relative_link_path);
+        std::os::unix::fs::symlink(target_path, &link_path)
+            .with_context(|| IoErrorContext::WritingFile(link_path))
+    }
 }
 
 fn fs_metadata(

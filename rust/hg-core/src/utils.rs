@@ -145,6 +145,21 @@ impl SliceExt for [u8] {
     }
 }
 
+pub trait StrExt {
+    // TODO: Use https://doc.rust-lang.org/nightly/std/primitive.str.html#method.split_once
+    // once we require Rust 1.52+
+    fn split_2(&self, separator: char) -> Option<(&str, &str)>;
+}
+
+impl StrExt for str {
+    fn split_2(&self, separator: char) -> Option<(&str, &str)> {
+        let mut iter = self.splitn(2, separator);
+        let a = iter.next()?;
+        let b = iter.next()?;
+        Some((a, b))
+    }
+}
+
 pub trait Escaped {
     /// Return bytes escaped for display to the user
     fn escaped_bytes(&self) -> Vec<u8>;
