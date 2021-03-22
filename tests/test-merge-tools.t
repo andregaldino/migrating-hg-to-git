@@ -1921,7 +1921,7 @@ Verify naming of temporary files and that extension is preserved
 Binary files capability checking
 
   $ hg update -q -C 0
-  $ python <<EOF
+  $ "$PYTHON" <<EOF
   > with open('b', 'wb') as fp:
   >     fp.write(b'\x00\x01\x02\x03')
   > EOF
@@ -1929,7 +1929,7 @@ Binary files capability checking
   $ hg commit -qm "add binary file (#1)"
 
   $ hg update -q -C 0
-  $ python <<EOF
+  $ "$PYTHON" <<EOF
   > with open('b', 'wb') as fp:
   >     fp.write(b'\x03\x02\x01\x00')
   > EOF
