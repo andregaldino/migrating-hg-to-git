@@ -334,3 +334,39 @@ test inheritance of the suboptions
   adding manifests
   adding file changes
   added 5 changesets with 0 changes to 0 files (+1 heads)
+
+Test chaining path:// definition
+--------------------------------
+
+This is currently unsupported, but feel free to implement the necessary
+dependency detection.
+
+  $ cat << EOF >> .hg/hgrc
+  > chain_path=path://other_default
+  > EOF
+
+  $ hg id
+  000000000000
+  $ hg path
+  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  [255]
+  $ hg pull chain_path
+  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  [255]
+
+Doing an actual circle should always be an issue
+
+  $ cat << EOF >> .hg/hgrc
+  > rock=path://cissors
+  > cissors=path://paper
+  > paper=://rock
+  > EOF
+
+  $ hg id
+  000000000000
+  $ hg path
+  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  [255]
+  $ hg pull chain_path
+  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  [255]

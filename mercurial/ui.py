@@ -2317,6 +2317,8 @@ class path(object):
             u.fragment = None
 
         self.url = u
+        # the url from the config/command line before dealing with `path://`
+        self.raw_url = u.copy()
         self.branch = branch
 
         self.name = name
@@ -2338,6 +2340,10 @@ class path(object):
         if self.url.scheme == b'path':
             assert self.url.path is None
             subpath = paths[self.url.host]
+            if subpath.raw_url.scheme == b'path':
+                m = _('cannot use `%s`, "%s" is also define as a `path://`')
+                m %= (self.rawloc, self.url.host)
+                raise error.Abort(m)
             self.url = subpath.url
             self.rawloc = subpath.rawloc
             self.loc = subpath.loc

@@ -3144,6 +3144,21 @@ class url(object):
             if v is not None:
                 setattr(self, a, urlreq.unquote(v))
 
+    def copy(self):
+        u = url(b'temporary useless value')
+        u.path = self.path
+        u.scheme = self.scheme
+        u.user = self.user
+        u.passwd = self.passwd
+        u.host = self.host
+        u.path = self.path
+        u.query = self.query
+        u.fragment = self.fragment
+        u._localpath = self._localpath
+        u._hostport = self._hostport
+        u._origpath = self._origpath
+        return u
+
     @encoding.strmethod
     def __repr__(self):
         attrs = []
