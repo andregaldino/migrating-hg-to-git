@@ -7,7 +7,8 @@ use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
-use crate::revlog::{Revision, NULL_REVISION};
+use crate::revlog::{Revision, NULL_REVISION, WORKING_DIRECTORY_HEX};
+use crate::Node;
 
 /// Resolve a query string into a single revision.
 ///
@@ -51,6 +52,10 @@ pub fn resolve_rev_number_or_hex_prefix(
         }
     }
     if let Ok(prefix) = NodePrefix::from_hex(input) {
+        if prefix.is_prefix_of(&Node::from_hex(WORKING_DIRECTORY_HEX).unwrap())
+        {
+            return Err(RevlogError::WDirUnsupported);
+        }
         return revlog.get_node_rev(prefix);
     }
     Err(RevlogError::InvalidRevision)

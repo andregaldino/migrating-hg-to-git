@@ -157,6 +157,9 @@ impl From<ConfigParseError> for CommandError {
 impl From<(RevlogError, &str)> for CommandError {
     fn from((err, rev): (RevlogError, &str)) -> CommandError {
         match err {
+            RevlogError::WDirUnsupported => CommandError::abort(
+                "abort: working directory revision cannot be specified",
+            ),
             RevlogError::InvalidRevision => CommandError::abort(format!(
                 "abort: invalid revision identifier: {}",
                 rev

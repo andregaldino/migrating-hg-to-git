@@ -23,6 +23,8 @@ use crate::revlog::Revision;
 #[derive(derive_more::From)]
 pub enum RevlogError {
     InvalidRevision,
+    /// Working directory is not supported
+    WDirUnsupported,
     /// Found more than one entry whose ID match the requested prefix
     AmbiguousPrefix,
     #[from]
