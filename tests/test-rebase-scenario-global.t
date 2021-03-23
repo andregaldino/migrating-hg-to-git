@@ -325,9 +325,8 @@ Check rebasing public changeset
 
   $ hg pull --config phases.publish=True -q -r 6 . # update phase of 6
   $ hg rebase -d 0 -b 6
-  abort: cannot rebase public changesets
-  (see 'hg help phases' for details)
-  [10]
+  nothing to rebase
+  [1]
   $ hg rebase -d 5 -b 6
   abort: cannot rebase public changesets
   (see 'hg help phases' for details)

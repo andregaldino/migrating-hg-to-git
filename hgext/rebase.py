@@ -413,15 +413,6 @@ class rebaseruntime(object):
         if not destmap:
             return _nothingtorebase()
 
-        rebaseset = destmap.keys()
-        if not self.keepf:
-            try:
-                rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
-            except error.Abort as e:
-                if e.hint is None:
-                    e.hint = _(b'use --keep to keep original changesets')
-                raise e
-
         result = buildstate(self.repo, destmap, self.collapsef)
 
         if not result:
@@ -449,6 +440,15 @@ class rebaseruntime(object):
 
         # Calculate self.obsolete_* sets
         self._handleskippingobsolete()
+
+        rebaseset = destmap.keys()
+        if not self.keepf:
+            try:
+                rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
+            except error.Abort as e:
+                if e.hint is None:
+                    e.hint = _(b'use --keep to keep original changesets')
+                raise e
 
         self.prepared = True
 
