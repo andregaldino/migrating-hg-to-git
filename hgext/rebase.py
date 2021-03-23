@@ -447,10 +447,10 @@ class rebaseruntime(object):
             if dest.closesbranch() and not self.keepbranchesf:
                 self.ui.status(_(b'reopening closed branch head %s\n') % dest)
 
-        self.prepared = True
-
         # Calculate self.obsolete_* sets
         self._handleskippingobsolete()
+
+        self.prepared = True
 
     def _assignworkingcopy(self):
         if self.inmemory:
@@ -2192,7 +2192,6 @@ def _compute_obsolete_sets(repo, rebaseobsrevs, destmap):
     obsolete_with_successor_in_destination = {}
     obsolete_with_successor_in_rebase_set = set()
 
-    assert repo.filtername is None
     cl = repo.changelog
     get_rev = cl.index.get_rev
     extinctrevs = set(repo.revs(b'extinct()'))
