@@ -282,6 +282,49 @@ issue5782
   
   $ cd ..
 
+Start a normal rebase. When it runs into conflicts, rewrite one of the
+commits in the rebase set, causing divergence when the rebase continues.
+
+  $ hg init $TESTTMP/new-divergence-after-conflict
+  $ cd $TESTTMP/new-divergence-after-conflict
+  $ hg debugdrawdag <<'EOS'
+  >  C2
+  >  | C1
+  >  |/
+  >  B # B/D=B
+  >  | D
+  >  |/
+  >  A
+  > EOS
+  $ hg rebase -r B::C1 -d D
+  rebasing 1:2ec65233581b B "B"
+  merging D
+  warning: conflicts while merging D! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
+  [240]
+  $ hg debugobsolete $(hg log -r C1 -T '{node}') $(hg log -r C2 -T '{node}')
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg log -G
+  o  4:fdb9df6b130c C2
+  |
+  | x  3:7e5bfd3c08f0 C1 (rewritten as 4:fdb9df6b130c)
+  |/
+  | @  2:b18e25de2cf5 D
+  | |
+  % |  1:2ec65233581b B
+  |/
+  o  0:426bada5c675 A
+  
+  $ echo resolved > D
+  $ hg resolve -m D
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase -c
+  rebasing 1:2ec65233581b B "B"
+  note: not rebasing 3:7e5bfd3c08f0 C1 "C1" and its descendants as this would cause divergence
+  1 new orphan changesets
+
 Rebase merge where successor of one parent is equal to destination (issue5198)
 
   $ hg init p1-succ-is-dest
