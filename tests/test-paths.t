@@ -370,3 +370,18 @@ Doing an actual circle should always be an issue
   $ hg pull chain_path
   abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
   [255]
+
+Test basic error cases
+----------------------
+
+  $ cat << EOF > .hg/hgrc
+  > [paths]
+  > error-missing=path://unknown
+  > EOF
+  $ hg path
+  abort: cannot use `path://unknown`, "unknown" is not a known path
+  [255]
+  $ hg pull error-missing
+  abort: cannot use `path://unknown`, "unknown" is not a known path
+  [255]
+

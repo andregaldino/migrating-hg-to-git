@@ -2339,7 +2339,12 @@ class path(object):
     def chain_path(self, ui, paths):
         if self.url.scheme == b'path':
             assert self.url.path is None
-            subpath = paths[self.url.host]
+            try:
+                subpath = paths[self.url.host]
+            except KeyError:
+                m = _('cannot use `%s`, "%s" is not a known path')
+                m %= (self.rawloc, self.url.host)
+                raise error.Abort(m)
             if subpath.raw_url.scheme == b'path':
                 m = _('cannot use `%s`, "%s" is also define as a `path://`')
                 m %= (self.rawloc, self.url.host)
