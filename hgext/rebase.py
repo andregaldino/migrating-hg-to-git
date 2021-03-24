@@ -441,8 +441,10 @@ class rebaseruntime(object):
         # Calculate self.obsolete_* sets
         self._handleskippingobsolete()
 
-        rebaseset = destmap.keys()
         if not self.keepf:
+            rebaseset = set(destmap.keys())
+            rebaseset -= set(self.obsolete_with_successor_in_destination)
+            rebaseset -= self.obsolete_with_successor_in_rebase_set
             try:
                 rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
             except error.Abort as e:
