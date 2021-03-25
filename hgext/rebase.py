@@ -350,7 +350,6 @@ class rebaseruntime(object):
 
     def _handleskippingobsolete(self):
         """Compute structures necessary for skipping obsolete revisions"""
-        self.obsolete_with_successor_in_destination = {}
         if not self.ui.configbool(b'experimental', b'rebaseskipobsolete'):
             return
         obsoleteset = {r for r in self.state if self.repo[r].obsolete()}
