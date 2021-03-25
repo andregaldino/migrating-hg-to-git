@@ -23,7 +23,6 @@ equivalents in destination
   $ hg init rbsrepo && cd rbsrepo
   $ echo "[experimental]" > .hg/hgrc
   $ echo "evolution=true" >> .hg/hgrc
-  $ echo "rebaseskipobsolete=on" >> .hg/hgrc
   $ echo root > root && hg ci -Am root
   adding root
   $ echo a > a && hg ci -Am a
@@ -124,30 +123,24 @@ Rebasing a merge with one of its parent having a hidden successor
    /
   o  0:426bada5c675 A
   
-For some reasons (--hidden, rebaseskipobsolete=0, directaccess, etc.),
+For some reasons (--hidden, directaccess, etc.),
 rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
 
   $ hg init $TESTTMP/hidden-state1
   $ cd $TESTTMP/hidden-state1
-  $ cat >> .hg/hgrc <<EOF
-  > [experimental]
-  > rebaseskipobsolete=0
-  > EOF
 
   $ hg debugdrawdag <<'EOS'
   >    C
   >    |
-  >  D B # prune: B, C
-  >  |/  # B/D=B
+  >  D B # B/D=B
+  >  |/  
   >  A
   > EOS
 
   $ eval `hg tags -T '{tag}={node}\n'`
   $ rm .hg/localtags
 
-  $ hg update -q $C --hidden
-  updated to hidden changeset 7829726be4dc
-  (hidden revision '7829726be4dc' is pruned)
+  $ hg update -q $C
   $ hg rebase -s $B -d $D
   rebasing 1:2ec65233581b "B"
   merging D
@@ -155,12 +148,19 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
+  $ hg debugobsolete $B
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  1 new orphan changesets
+  $ hg debugobsolete $C
+  1 new obsolescence markers
+  obsoleted 1 changesets
   $ cp -R . $TESTTMP/hidden-state2
 
   $ hg log -G
   @  2:b18e25de2cf5 D
   |
-  | %  1:2ec65233581b B (pruned using prune)
+  | %  1:2ec65233581b B (pruned)
   |/
   o  0:426bada5c675 A
   
@@ -183,14 +183,10 @@ Also test --continue for the above case
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 1:2ec65233581b "B"
-  rebasing 3:7829726be4dc tip "C"
+  note: not rebasing 1:2ec65233581b "B", it has no successor
+  note: not rebasing 3:7829726be4dc tip "C", it has no successor
   $ hg log -G
-  @  5:1964d5d5b547 C
-  |
-  o  4:68deb90c12a2 B
-  |
-  o  2:b18e25de2cf5 D
+  @  2:b18e25de2cf5 D
   |
   o  0:426bada5c675 A
   
