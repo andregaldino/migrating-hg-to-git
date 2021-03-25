@@ -5,6 +5,9 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+# See https://github.com/google/pytype/issues/860
+# pytype: skip-file
+
 from __future__ import absolute_import
 
 from ..i18n import _
