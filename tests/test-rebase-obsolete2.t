@@ -317,3 +317,25 @@ Create the changes that we will rebase
   note: not rebasing 20:8b31da3c4919 "dummy change", already in destination as 18:601db7a18f51 "dummy change successor"
   rebasing 21:7bdc8a87673d tip "dummy change"
   $ cd ..
+
+Can rebase pruned and rewritten commits with --keep
+
+  $ hg init keep
+  $ cd keep
+  $ hg debugdrawdag <<'EOS'
+  >   D
+  >   |
+  >   C
+  >   |
+  > F B E  # prune: B
+  >  \|/   # rebase: C -> E
+  >   A
+  > EOS
+  1 new orphan changesets
+
+  $ hg rebase -b D -d F --keep
+  rebasing 1:112478962961 B "B"
+  rebasing 4:26805aba1e60 C "C"
+  rebasing 5:f585351a92f8 D tip "D"
+
+  $ cd ..
