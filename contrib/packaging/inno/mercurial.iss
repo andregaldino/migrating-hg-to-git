@@ -6,7 +6,7 @@
 #endif
 
 [Setup]
-AppCopyright=Copyright 2005-2021 Matt Mackall and others
+AppCopyright=Copyright 2005-2021 Olivia Mackall and others
 AppName=Mercurial
 AppVersion={#VERSION}
 OutputBaseFilename=Mercurial-{#VERSION}{#SUFFIX}
@@ -20,7 +20,7 @@ AppVerName=Mercurial {#VERSION}
 InfoAfterFile=../postinstall.txt
 LicenseFile=Copying.txt
 ShowLanguageDialog=yes
-AppPublisher=Matt Mackall and others
+AppPublisher=Olivia Mackall and others
 AppPublisherURL=https://mercurial-scm.org/
 AppSupportURL=https://mercurial-scm.org/
 AppUpdatesURL=https://mercurial-scm.org/
@@ -29,8 +29,8 @@ AppContact=mercurial@mercurial-scm.org
 DefaultDirName={pf}\Mercurial
 SourceDir=stage
 VersionInfoDescription=Mercurial distributed SCM (version {#VERSION})
-VersionInfoCopyright=Copyright 2005-2021 Matt Mackall and others
-VersionInfoCompany=Matt Mackall and others
+VersionInfoCopyright=Copyright 2005-2021 Olivia Mackall and others
+VersionInfoCompany=Olivia Mackall and others
 VersionInfoVersion={#QUAD_VERSION}
 InternalCompressLevel=max
 SolidCompression=true

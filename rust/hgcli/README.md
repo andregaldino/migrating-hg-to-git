@@ -32,7 +32,7 @@ under `build/<arch>/debug/app/` with an `hg` executable:
     Mercurial Distributed SCM (version 5.3.1+433-f99cd77d53dc+20200331)
     (see https://mercurial-scm.org for more information)
 
-    Copyright (C) 2005-2020 Matt Mackall and others
+    Copyright (C) 2005-2020 Olivia Mackall and others
     This is free software; see the source for copying conditions. There is NO
     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

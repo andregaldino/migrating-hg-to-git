@@ -1,6 +1,6 @@
 # patchbomb.py - sending Mercurial changesets as patch emails
 #
-#  Copyright 2005-2009 Matt Mackall <mpm@selenic.com> and others
+#  Copyright 2005-2009 Olivia Mackall <olivia@selenic.com> and others
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.

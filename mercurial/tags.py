@@ -1,6 +1,6 @@
 # tags.py - read tag info from local repository
 #
-# Copyright 2009 Matt Mackall <mpm@selenic.com>
+# Copyright 2009 Olivia Mackall <olivia@selenic.com>
 # Copyright 2009 Greg Ward <greg@gerg.ca>
 #
 # This software may be used and distributed according to the terms of the

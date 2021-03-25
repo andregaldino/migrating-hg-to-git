@@ -1,6 +1,6 @@
 # revlogdeltas.py - constant used for revlog logic
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 # Copyright 2018 Octobus <contact@octobus.net>
 #
 # This software may be used and distributed according to the terms of the
