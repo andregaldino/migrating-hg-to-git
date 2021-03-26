@@ -1296,11 +1296,13 @@ class sortdict(collections.OrderedDict):
 
     if pycompat.ispypy:
         # __setitem__() isn't called as of PyPy 5.8.0
-        def update(self, src):
+        def update(self, src, **f):
             if isinstance(src, dict):
                 src = pycompat.iteritems(src)
             for k, v in src:
                 self[k] = v
+            for k in f:
+                self[k] = f[k]
 
     def insert(self, position, key, value):
         for (i, (k, v)) in enumerate(list(self.items())):
