@@ -1265,7 +1265,8 @@ class cow(object):
         """call this before writes, return self or a copied new object"""
         if getattr(self, '_copied', 0):
             self._copied -= 1
-            return self.__class__(self)
+            # Function cow.__init__ expects 1 arg(s), got 2 [wrong-arg-count]
+            return self.__class__(self)  # pytype: disable=wrong-arg-count
         return self
 
     def copy(self):
@@ -1408,8 +1409,8 @@ class _lrucachenode(object):
     __slots__ = ('next', 'prev', 'key', 'value', 'cost')
 
     def __init__(self):
-        self.next = None
-        self.prev = None
+        self.next = self
+        self.prev = self
 
         self.key = _notset
         self.value = None
@@ -1448,9 +1449,7 @@ class lrucachedict(object):
     def __init__(self, max, maxcost=0):
         self._cache = {}
 
-        self._head = head = _lrucachenode()
-        head.prev = head
-        head.next = head
+        self._head = _lrucachenode()
         self._size = 1
         self.capacity = max
         self.totalcost = 0
@@ -1555,6 +1554,7 @@ class lrucachedict(object):
         """
         try:
             node = self._cache[k]
+            assert node is not None  # help pytype
             return node.value
         except KeyError:
             if default is _notset:
@@ -1612,6 +1612,9 @@ class lrucachedict(object):
         # Walk the linked list backwards starting at tail node until we hit
         # a non-empty node.
         n = self._head.prev
+
+        assert n is not None  # help pytype
+
         while n.key is _notset:
             n = n.prev
 

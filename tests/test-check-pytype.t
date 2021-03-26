@@ -89,7 +89,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/ui.py \
   >    -x mercurial/unionrepo.py \
   >    -x mercurial/upgrade.py \
-  >    -x mercurial/util.py \
   >    -x mercurial/utils/procutil.py \
   >    -x mercurial/utils/stringutil.py \
   >    -x mercurial/utils/memorytop.py \
