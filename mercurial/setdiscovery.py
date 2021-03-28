@@ -390,7 +390,7 @@ def findcommonheads(
         if audit is not None:
             audit[b'total-roundtrips'] = 1
 
-        if cl.tip() == nullid:
+        if cl.tiprev() == nullrev:
             if srvheadhashes != [nullid]:
                 return [nullid], True, srvheadhashes
             return [nullid], False, []
