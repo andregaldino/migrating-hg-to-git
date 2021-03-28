@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import hashlib
 import struct
 
-from mercurial.node import (
-    nullid,
-    nullrev,
-)
+from mercurial.node import nullrev
 from mercurial import (
     extensions,
     requirements,
@@ -46,7 +43,7 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
         return text, sd
     if self.version & 0xFFFF != 2:
         return text, sd
-    if nodeorrev != nullrev and nodeorrev != nullid:
+    if nodeorrev != nullrev and nodeorrev != self.nullid:
         cat1 = sd.get(sidedata.SD_TEST1)
         if cat1 is not None and len(text) != struct.unpack('>I', cat1)[0]:
             raise RuntimeError('text size mismatch')

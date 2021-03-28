@@ -2,8 +2,6 @@ from __future__ import absolute_import, print_function
 
 import contextlib
 
-from .. import node as nodemod
-
 from . import util as interfaceutil
 
 
@@ -97,7 +95,7 @@ class idirstate(interfaceutil.Interface):
     def branch():
         pass
 
-    def setparents(p1, p2=nodemod.nullid):
+    def setparents(p1, p2=None):
         """Set dirstate parents to p1 and p2.
 
         When moving from two parents to one, 'm' merged entries a

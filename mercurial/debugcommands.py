@@ -30,7 +30,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -1667,7 +1666,7 @@ def debugindexdot(ui, repo, file_=None, **opts):
         node = r.node(i)
         pp = r.parents(node)
         ui.write(b"\t%d -> %d\n" % (r.rev(pp[0]), i))
-        if pp[1] != nullid:
+        if pp[1] != repo.nullid:
             ui.write(b"\t%d -> %d\n" % (r.rev(pp[1]), i))
     ui.write(b"}\n")
 
@@ -1675,7 +1674,7 @@ def debugindexdot(ui, repo, file_=None, **opts):
 @command(b'debugindexstats', [])
 def debugindexstats(ui, repo):
     """show stats related to the changelog index"""
-    repo.changelog.shortest(nullid, 1)
+    repo.changelog.shortest(repo.nullid, 1)
     index = repo.changelog.index
     if not util.safehasattr(index, b'stats'):
         raise error.Abort(_(b'debugindexstats only works with native code'))
@@ -2425,7 +2424,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             # arbitrary node identifiers, possibly not present in the
             # local repository.
             n = bin(s)
-            if len(n) != len(nullid):
+            if len(n) != repo.nodeconstants.nodelen:
                 raise TypeError()
             return n
         except TypeError:
@@ -3328,7 +3327,7 @@ def debugrevlogindex(ui, repo, file_=None, **opts):
             try:
                 pp = r.parents(node)
             except Exception:
-                pp = [nullid, nullid]
+                pp = [repo.nullid, repo.nullid]
             if ui.verbose:
                 ui.write(
                     b"% 6d % 9d % 7d % 7d %s %s %s\n"
@@ -3742,7 +3741,9 @@ def debugbackupbundle(ui, repo, *pats, **opts):
         for n in chlist:
             if limit is not None and count >= limit:
                 break
-            parents = [True for p in other.changelog.parents(n) if p != nullid]
+            parents = [
+                True for p in other.changelog.parents(n) if p != repo.nullid
+            ]
             if opts.get(b"no_merges") and len(parents) == 2:
                 continue
             count += 1

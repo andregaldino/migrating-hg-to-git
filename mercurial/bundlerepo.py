@@ -19,7 +19,6 @@ import shutil
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
 )
 
@@ -447,7 +446,9 @@ class bundlerepository(object):
         return encoding.getcwd()  # always outside the repo
 
     # Check if parents exist in localrepo before setting
-    def setparents(self, p1, p2=nullid):
+    def setparents(self, p1, p2=None):
+        if p2 is None:
+            p2 = self.nullid
         p1rev = self.changelog.rev(p1)
         p2rev = self.changelog.rev(p2)
         msg = _(b"setting parent to node %s that only exists in the bundle\n")

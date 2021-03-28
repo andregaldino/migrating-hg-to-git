@@ -13,8 +13,8 @@ import struct
 from ..i18n import _
 from ..node import (
     bin,
-    nullid,
     nullrev,
+    sha1nodeconstants,
 )
 from .. import (
     dagop,
@@ -26,7 +26,7 @@ from ..interfaces import repository
 from ..revlogutils import sidedata as sidedatamod
 from ..utils import hashutil
 
-_nullhash = hashutil.sha1(nullid)
+_nullhash = hashutil.sha1(sha1nodeconstants.nullid)
 
 
 def hashrevisionsha1(text, p1, p2):
@@ -37,7 +37,7 @@ def hashrevisionsha1(text, p1, p2):
     content in the revision graph.
     """
     # As of now, if one of the parent node is null, p2 is null
-    if p2 == nullid:
+    if p2 == sha1nodeconstants.nullid:
         # deep copy of a hash is faster than creating one
         s = _nullhash.copy()
         s.update(p1)
@@ -107,7 +107,7 @@ def filerevisioncopied(store, node):
     Returns ``False`` if the file has no copy metadata. Otherwise a
     2-tuple of the source filename and node.
     """
-    if store.parents(node)[0] != nullid:
+    if store.parents(node)[0] != sha1nodeconstants.nullid:
         return False
 
     meta = parsemeta(store.revision(node))[0]

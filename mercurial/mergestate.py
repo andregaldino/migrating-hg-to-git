@@ -9,7 +9,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullhex,
     nullrev,
 )
 from . import (
@@ -32,7 +31,7 @@ def _droponode(data):
 
 
 def _filectxorabsent(hexnode, ctx, f):
-    if hexnode == nullhex:
+    if hexnode == ctx.repo().nodeconstants.nullhex:
         return filemerge.absentfilectx(ctx, f)
     else:
         return ctx[f]
@@ -248,7 +247,7 @@ class _mergestate_base(object):
         note: also write the local version to the `.hg/merge` directory.
         """
         if fcl.isabsent():
-            localkey = nullhex
+            localkey = self._repo.nodeconstants.nullhex
         else:
             localkey = mergestate.getlocalkey(fcl.path())
             self._make_backup(fcl, localkey)
@@ -354,7 +353,7 @@ class _mergestate_base(object):
                 flags = flo
         if preresolve:
             # restore local
-            if localkey != nullhex:
+            if localkey != self._repo.nodeconstants.nullhex:
                 self._restore_backup(wctx[dfile], localkey, flags)
             else:
                 wctx[dfile].remove(ignoremissing=True)
@@ -658,7 +657,10 @@ class mergestate(_mergestate_base):
                 records.append(
                     (RECORD_PATH_CONFLICT, b'\0'.join([filename] + v))
                 )
-            elif v[1] == nullhex or v[6] == nullhex:
+            elif (
+                v[1] == self._repo.nodeconstants.nullhex
+                or v[6] == self._repo.nodeconstants.nullhex
+            ):
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
                 # file is deleted locally ('dc'). v[6] is the remote file, and

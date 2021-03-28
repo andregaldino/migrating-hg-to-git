@@ -17,7 +17,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
 )
 
 from mercurial import (
@@ -115,7 +114,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
             rsrc[ctx]
             for ctx in rsrc.changelog.nodesbetween(None, rsrc.heads())[0]
         )
-        revmap = {nullid: nullid}
+        revmap = {rsrc.nullid: rdst.nullid}
         if tolfile:
             # Lock destination to prevent modification while it is converted to.
             # Don't need to lock src because we are just reading from its
@@ -340,7 +339,7 @@ def _commitcontext(rdst, parents, ctx, dstfiles, getfilectx, revmap):
 # Generate list of changed files
 def _getchangedfiles(ctx, parents):
     files = set(ctx.files())
-    if nullid not in parents:
+    if ctx.repo().nullid not in parents:
         mc = ctx.manifest()
         for pctx in ctx.parents():
             for fn in pctx.manifest().diff(mc):
@@ -354,7 +353,7 @@ def _convertparents(ctx, revmap):
     for p in ctx.parents():
         parents.append(revmap[p.node()])
     while len(parents) < 2:
-        parents.append(nullid)
+        parents.append(ctx.repo().nullid)
     return parents
 
 

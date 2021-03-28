@@ -15,7 +15,6 @@ import weakref
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -673,7 +672,7 @@ def _revisiondeltatochunks(repo, delta, headerfn):
 
     if delta.delta is not None:
         prefix, data = b'', delta.delta
-    elif delta.basenode == nullid:
+    elif delta.basenode == repo.nullid:
         data = delta.revision
         prefix = mdiff.trivialdiffheader(len(data))
     else:

@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import os
 
 from .i18n import _
-from .node import (
-    hex,
-    nullid,
-)
+from .node import hex
 from . import (
     error,
     match as matchmod,
@@ -177,7 +174,7 @@ def activeconfig(repo):
     revs = [
         repo.changelog.rev(node)
         for node in repo.dirstate.parents()
-        if node != nullid
+        if node != repo.nullid
     ]
 
     allincludes = set()
@@ -321,7 +318,7 @@ def matcher(repo, revs=None, includetemp=True):
         revs = [
             repo.changelog.rev(node)
             for node in repo.dirstate.parents()
-            if node != nullid
+            if node != repo.nullid
         ]
 
     signature = configsignature(repo, includetemp=includetemp)

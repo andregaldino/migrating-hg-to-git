@@ -73,7 +73,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -908,13 +907,13 @@ class queue(object):
         """
         if rev is None:
             (p1, p2) = repo.dirstate.parents()
-            if p2 == nullid:
+            if p2 == repo.nullid:
                 return p1
             if not self.applied:
                 return None
             return self.applied[-1].node
         p1, p2 = repo.changelog.parents(rev)
-        if p2 != nullid and p2 in [x.node for x in self.applied]:
+        if p2 != repo.nullid and p2 in [x.node for x in self.applied]:
             return p2
         return p1
 
@@ -1591,7 +1590,7 @@ class queue(object):
             for hs in repo.branchmap().iterheads():
                 heads.extend(hs)
             if not heads:
-                heads = [nullid]
+                heads = [repo.nullid]
             if repo.dirstate.p1() not in heads and not exact:
                 self.ui.status(_(b"(working directory not at a head)\n"))
 
@@ -1857,7 +1856,7 @@ class queue(object):
                         fctx = ctx[f]
                         repo.wwrite(f, fctx.data(), fctx.flags())
                         repo.dirstate.normal(f)
-                    repo.setparents(qp, nullid)
+                    repo.setparents(qp, repo.nullid)
             for patch in reversed(self.applied[start:end]):
                 self.ui.status(_(b"popping %s\n") % patch.name)
             del self.applied[start:end]

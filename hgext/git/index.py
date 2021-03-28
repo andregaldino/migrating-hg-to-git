@@ -5,10 +5,7 @@ import os
 import sqlite3
 
 from mercurial.i18n import _
-from mercurial.node import (
-    nullhex,
-    nullid,
-)
+from mercurial.node import sha1nodeconstants
 
 from mercurial import (
     encoding,
@@ -281,7 +278,7 @@ def _index_repo(
     for pos, commit in enumerate(walker):
         if prog is not None:
             prog.update(pos)
-        p1 = p2 = nullhex
+        p1 = p2 = sha1nodeconstants.nullhex
         if len(commit.parents) > 2:
             raise error.ProgrammingError(
                 (
@@ -318,7 +315,9 @@ def _index_repo(
                 )
             new_files = (p.delta.new_file for p in patchgen)
             files = {
-                nf.path: nf.id.hex for nf in new_files if nf.id.raw != nullid
+                nf.path: nf.id.hex
+                for nf in new_files
+                if nf.id.raw != sha1nodeconstants.nullid
             }
             for p, n in files.items():
                 # We intentionally set NULLs for any file parentage

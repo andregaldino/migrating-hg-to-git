@@ -12,10 +12,7 @@ import collections
 import os
 
 from .i18n import _
-from .node import (
-    nullid,
-    nullrev,
-)
+from .node import nullrev
 
 from . import (
     match as matchmod,
@@ -579,7 +576,7 @@ def _revinfo_getter_extra(repo):
             parents = fctx._filelog.parents(fctx._filenode)
             nb_parents = 0
             for n in parents:
-                if n != nullid:
+                if n != repo.nullid:
                     nb_parents += 1
             return nb_parents >= 2
 

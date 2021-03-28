@@ -8,10 +8,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import (
-    nullid,
-    nullrev,
-)
+from .node import nullrev
 from . import (
     error,
     revlog,
@@ -42,7 +39,7 @@ class filelog(object):
         return self._revlog.__iter__()
 
     def hasnode(self, node):
-        if node in (nullid, nullrev):
+        if node in (self.nullid, nullrev):
             return False
 
         try:

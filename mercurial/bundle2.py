@@ -158,7 +158,6 @@ import sys
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     short,
 )
 from . import (
@@ -2576,7 +2575,7 @@ def widen_bundle(
             fullnodes=commonnodes,
         )
         cgdata = packer.generate(
-            {nullid},
+            {repo.nullid},
             list(commonnodes),
             False,
             b'narrow_widen',

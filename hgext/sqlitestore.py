@@ -52,7 +52,6 @@ import zlib
 
 from mercurial.i18n import _
 from mercurial.node import (
-    nullid,
     nullrev,
     sha1nodeconstants,
     short,
@@ -366,12 +365,12 @@ class sqlitefilestore(object):
                 )
 
             if p1rev == nullrev:
-                p1node = nullid
+                p1node = sha1nodeconstants.nullid
             else:
                 p1node = self._revtonode[p1rev]
 
             if p2rev == nullrev:
-                p2node = nullid
+                p2node = sha1nodeconstants.nullid
             else:
                 p2node = self._revtonode[p2rev]
 
@@ -400,7 +399,7 @@ class sqlitefilestore(object):
         return iter(pycompat.xrange(len(self._revisions)))
 
     def hasnode(self, node):
-        if node == nullid:
+        if node == sha1nodeconstants.nullid:
             return False
 
         return node in self._nodetorev
@@ -411,8 +410,8 @@ class sqlitefilestore(object):
         )
 
     def parents(self, node):
-        if node == nullid:
-            return nullid, nullid
+        if node == sha1nodeconstants.nullid:
+            return sha1nodeconstants.nullid, sha1nodeconstants.nullid
 
         if node not in self._revisions:
             raise error.LookupError(node, self._path, _(b'no node'))
@@ -431,7 +430,7 @@ class sqlitefilestore(object):
         return entry.p1rev, entry.p2rev
 
     def rev(self, node):
-        if node == nullid:
+        if node == sha1nodeconstants.nullid:
             return nullrev
 
         if node not in self._nodetorev:
@@ -441,7 +440,7 @@ class sqlitefilestore(object):
 
     def node(self, rev):
         if rev == nullrev:
-            return nullid
+            return sha1nodeconstants.nullid
 
         if rev not in self._revtonode:
             raise IndexError(rev)
@@ -485,7 +484,7 @@ class sqlitefilestore(object):
     def heads(self, start=None, stop=None):
         if start is None and stop is None:
             if not len(self):
-                return [nullid]
+                return [sha1nodeconstants.nullid]
 
         startrev = self.rev(start) if start is not None else nullrev
         stoprevs = {self.rev(n) for n in stop or []}
@@ -529,7 +528,7 @@ class sqlitefilestore(object):
         return len(self.revision(node))
 
     def revision(self, node, raw=False, _verifyhash=True):
-        if node in (nullid, nullrev):
+        if node in (sha1nodeconstants.nullid, nullrev):
             return b''
 
         if isinstance(node, int):
@@ -596,7 +595,7 @@ class sqlitefilestore(object):
                 b'unhandled value for nodesorder: %s' % nodesorder
             )
 
-        nodes = [n for n in nodes if n != nullid]
+        nodes = [n for n in nodes if n != sha1nodeconstants.nullid]
 
         if not nodes:
             return
@@ -705,12 +704,12 @@ class sqlitefilestore(object):
                 raise SQLiteStoreError(b'unhandled revision flag')
 
             if maybemissingparents:
-                if p1 != nullid and not self.hasnode(p1):
-                    p1 = nullid
+                if p1 != sha1nodeconstants.nullid and not self.hasnode(p1):
+                    p1 = sha1nodeconstants.nullid
                     storeflags |= FLAG_MISSING_P1
 
-                if p2 != nullid and not self.hasnode(p2):
-                    p2 = nullid
+                if p2 != sha1nodeconstants.nullid and not self.hasnode(p2):
+                    p2 = sha1nodeconstants.nullid
                     storeflags |= FLAG_MISSING_P2
 
             baserev = self.rev(deltabase)
@@ -736,7 +735,10 @@ class sqlitefilestore(object):
                 # Possibly reset parents to make them proper.
                 entry = self._revisions[node]
 
-                if entry.flags & FLAG_MISSING_P1 and p1 != nullid:
+                if (
+                    entry.flags & FLAG_MISSING_P1
+                    and p1 != sha1nodeconstants.nullid
+                ):
                     entry.p1node = p1
                     entry.p1rev = self._nodetorev[p1]
                     entry.flags &= ~FLAG_MISSING_P1
@@ -746,7 +748,10 @@ class sqlitefilestore(object):
                         (self._nodetorev[p1], entry.flags, entry.rid),
                     )
 
-                if entry.flags & FLAG_MISSING_P2 and p2 != nullid:
+                if (
+                    entry.flags & FLAG_MISSING_P2
+                    and p2 != sha1nodeconstants.nullid
+                ):
                     entry.p2node = p2
                     entry.p2rev = self._nodetorev[p2]
                     entry.flags &= ~FLAG_MISSING_P2
@@ -761,7 +766,7 @@ class sqlitefilestore(object):
                 empty = False
                 continue
 
-            if deltabase == nullid:
+            if deltabase == sha1nodeconstants.nullid:
                 text = mdiff.patch(b'', delta)
                 storedelta = None
             else:
@@ -1012,7 +1017,7 @@ class sqlitefilestore(object):
             assert revisiondata is not None
             deltabase = p1
 
-            if deltabase == nullid:
+            if deltabase == sha1nodeconstants.nullid:
                 delta = revisiondata
             else:
                 delta = mdiff.textdiff(
@@ -1021,7 +1026,7 @@ class sqlitefilestore(object):
 
         # File index stores a pointer to its delta and the parent delta.
         # The parent delta is stored via a pointer to the fileindex PK.
-        if deltabase == nullid:
+        if deltabase == sha1nodeconstants.nullid:
             baseid = None
         else:
             baseid = self._revisions[deltabase].rid
@@ -1055,12 +1060,12 @@ class sqlitefilestore(object):
 
         rev = len(self)
 
-        if p1 == nullid:
+        if p1 == sha1nodeconstants.nullid:
             p1rev = nullrev
         else:
             p1rev = self._nodetorev[p1]
 
-        if p2 == nullid:
+        if p2 == sha1nodeconstants.nullid:
             p2rev = nullrev
         else:
             p2rev = self._nodetorev[p2]

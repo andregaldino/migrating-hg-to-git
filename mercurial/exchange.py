@@ -13,7 +13,6 @@ import weakref
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
 )
 from . import (
@@ -164,7 +163,7 @@ def _computeoutgoing(repo, heads, common):
         hasnode = cl.hasnode
         common = [n for n in common if hasnode(n)]
     else:
-        common = [nullid]
+        common = [repo.nullid]
     if not heads:
         heads = cl.heads()
     return discovery.outgoing(repo, common, heads)
@@ -1839,7 +1838,7 @@ def _pullbundle2(pullop):
     if (
         pullop.remote.capable(b'clonebundles')
         and pullop.heads is None
-        and list(pullop.common) == [nullid]
+        and list(pullop.common) == [pullop.repo.nullid]
     ):
         kwargs[b'cbattempted'] = pullop.clonebundleattempted
 
@@ -1849,7 +1848,7 @@ def _pullbundle2(pullop):
         pullop.repo.ui.status(_(b"no changes found\n"))
         pullop.cgresult = 0
     else:
-        if pullop.heads is None and list(pullop.common) == [nullid]:
+        if pullop.heads is None and list(pullop.common) == [pullop.repo.nullid]:
             pullop.repo.ui.status(_(b"requesting all changes\n"))
     if obsolete.isenabled(pullop.repo, obsolete.exchangeopt):
         remoteversions = bundle2.obsmarkersversion(pullop.remotebundle2caps)
@@ -1920,7 +1919,7 @@ def _pullchangeset(pullop):
         pullop.cgresult = 0
         return
     tr = pullop.gettransaction()
-    if pullop.heads is None and list(pullop.common) == [nullid]:
+    if pullop.heads is None and list(pullop.common) == [pullop.repo.nullid]:
         pullop.repo.ui.status(_(b"requesting all changes\n"))
     elif pullop.heads is None and pullop.remote.capable(b'changegroupsubset'):
         # issue1320, avoid a race if remote changed after discovery

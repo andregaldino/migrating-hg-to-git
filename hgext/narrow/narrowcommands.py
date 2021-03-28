@@ -12,7 +12,6 @@ import os
 from mercurial.i18n import _
 from mercurial.node import (
     hex,
-    nullid,
     short,
 )
 from mercurial import (
@@ -193,7 +192,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
         kwargs[b'known'] = [
             hex(ctx.node())
             for ctx in repo.set(b'::%ln', pullop.common)
-            if ctx.node() != nullid
+            if ctx.node() != repo.nullid
         ]
         if not kwargs[b'known']:
             # Mercurial serializes an empty list as '' and deserializes it as
@@ -370,7 +369,7 @@ def _widen(
             ds = repo.dirstate
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
-                ds.setparents(nullid, nullid)
+                ds.setparents(repo.nullid, repo.nullid)
         if isoldellipses:
             with wrappedextraprepare:
                 exchange.pull(repo, remote, heads=common)
@@ -380,7 +379,7 @@ def _widen(
                 known = [
                     ctx.node()
                     for ctx in repo.set(b'::%ln', common)
-                    if ctx.node() != nullid
+                    if ctx.node() != repo.nullid
                 ]
             with remote.commandexecutor() as e:
                 bundle = e.callcommand(

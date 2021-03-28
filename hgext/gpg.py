@@ -14,7 +14,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     short,
 )
 from mercurial import (
@@ -314,7 +313,9 @@ def _dosign(ui, repo, *revs, **opts):
     if revs:
         nodes = [repo.lookup(n) for n in revs]
     else:
-        nodes = [node for node in repo.dirstate.parents() if node != nullid]
+        nodes = [
+            node for node in repo.dirstate.parents() if node != repo.nullid
+        ]
         if len(nodes) > 1:
             raise error.Abort(
                 _(b'uncommitted merge - please provide a specific revision')

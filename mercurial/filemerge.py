@@ -15,7 +15,6 @@ import shutil
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     short,
 )
 from .pycompat import (
@@ -111,7 +110,7 @@ class absentfilectx(object):
         return None
 
     def filenode(self):
-        return nullid
+        return self._ctx.repo().nullid
 
     _customcmp = True
 

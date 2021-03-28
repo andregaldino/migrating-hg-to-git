@@ -15,7 +15,6 @@ from .node import (
     bin,
     hex,
     short,
-    wdirid,
 )
 from .pycompat import getattr
 from . import (
@@ -642,7 +641,7 @@ def binaryencode(repo, bookmarks):
     binarydata = []
     for book, node in bookmarks:
         if not node:  # None or ''
-            node = wdirid
+            node = repo.nodeconstants.wdirid
         binarydata.append(_binaryentry.pack(node, len(book)))
         binarydata.append(book)
     return b''.join(binarydata)
@@ -674,7 +673,7 @@ def binarydecode(repo, stream):
         if len(bookmark) < length:
             if entry:
                 raise error.Abort(_(b'bad bookmark stream'))
-        if node == wdirid:
+        if node == repo.nodeconstants.wdirid:
             node = None
         books.append((bookmark, node))
     return books

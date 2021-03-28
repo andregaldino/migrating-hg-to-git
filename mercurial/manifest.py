@@ -16,7 +16,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
 )
 from .pycompat import getattr
@@ -795,7 +794,7 @@ class treemanifest(object):
     def __init__(self, nodeconstants, dir=b'', text=b''):
         self._dir = dir
         self.nodeconstants = nodeconstants
-        self._node = nullid
+        self._node = self.nodeconstants.nullid
         self._loadfunc = _noop
         self._copyfunc = _noop
         self._dirty = False
@@ -1391,7 +1390,7 @@ class treemanifest(object):
                 continue
             subp1 = getnode(m1, d)
             subp2 = getnode(m2, d)
-            if subp1 == nullid:
+            if subp1 == self.nodeconstants.nullid:
                 subp1, subp2 = subp2, subp1
             writesubtree(subm, subp1, subp2, match)
 
@@ -1994,7 +1993,7 @@ class manifestlog(object):
             else:
                 m = manifestctx(self, node)
 
-        if node != nullid:
+        if node != self.nodeconstants.nullid:
             mancache = self._dirmancache.get(tree)
             if not mancache:
                 mancache = util.lrucachedict(self._cachesize)
@@ -2082,7 +2081,7 @@ class manifestctx(object):
 
     def read(self):
         if self._data is None:
-            if self._node == nullid:
+            if self._node == self._manifestlog.nodeconstants.nullid:
                 self._data = manifestdict()
             else:
                 store = self._storage()
@@ -2188,7 +2187,7 @@ class treemanifestctx(object):
     def read(self):
         if self._data is None:
             store = self._storage()
-            if self._node == nullid:
+            if self._node == self._manifestlog.nodeconstants.nullid:
                 self._data = treemanifest(self._manifestlog.nodeconstants)
             # TODO accessing non-public API
             elif store._treeondisk:

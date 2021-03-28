@@ -19,7 +19,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     sha1nodeconstants,
     short,
@@ -1702,7 +1701,7 @@ class localrepository(object):
                     _(b"warning: ignoring unknown working parent %s!\n")
                     % short(node)
                 )
-            return nullid
+            return self.nullid
 
     @storecache(narrowspec.FILENAME)
     def narrowpats(self):
@@ -1753,9 +1752,9 @@ class localrepository(object):
     @unfilteredpropertycache
     def _quick_access_changeid_null(self):
         return {
-            b'null': (nullrev, nullid),
-            nullrev: (nullrev, nullid),
-            nullid: (nullrev, nullid),
+            b'null': (nullrev, self.nodeconstants.nullid),
+            nullrev: (nullrev, self.nodeconstants.nullid),
+            self.nullid: (nullrev, self.nullid),
         }
 
     @unfilteredpropertycache
@@ -1765,7 +1764,7 @@ class localrepository(object):
         quick = self._quick_access_changeid_null.copy()
         cl = self.unfiltered().changelog
         for node in self.dirstate.parents():
-            if node == nullid:
+            if node == self.nullid:
                 continue
             rev = cl.index.get_rev(node)
             if rev is None:
@@ -1785,7 +1784,7 @@ class localrepository(object):
                 quick[r] = pair
                 quick[n] = pair
         p1node = self.dirstate.p1()
-        if p1node != nullid:
+        if p1node != self.nullid:
             quick[b'.'] = quick[p1node]
         return quick
 
@@ -2037,7 +2036,7 @@ class localrepository(object):
         # local encoding.
         tags = {}
         for (name, (node, hist)) in pycompat.iteritems(alltags):
-            if node != nullid:
+            if node != self.nullid:
                 tags[encoding.tolocal(name)] = node
         tags[b'tip'] = self.changelog.tip()
         tagtypes = {
@@ -2161,7 +2160,9 @@ class localrepository(object):
     def wjoin(self, f, *insidef):
         return self.vfs.reljoin(self.root, f, *insidef)
 
-    def setparents(self, p1, p2=nullid):
+    def setparents(self, p1, p2=None):
+        if p2 is None:
+            p2 = self.nullid
         self[None].setparents(p1, p2)
         self._quick_access_changeid_invalidate()
 
@@ -3094,7 +3095,7 @@ class localrepository(object):
                 subrepoutil.writestate(self, newstate)
 
             p1, p2 = self.dirstate.parents()
-            hookp1, hookp2 = hex(p1), (p2 != nullid and hex(p2) or b'')
+            hookp1, hookp2 = hex(p1), (p2 != self.nullid and hex(p2) or b'')
             try:
                 self.hook(
                     b"precommit", throw=True, parent1=hookp1, parent2=hookp2
@@ -3267,7 +3268,7 @@ class localrepository(object):
             t = n
             while True:
                 p = self.changelog.parents(n)
-                if p[1] != nullid or p[0] == nullid:
+                if p[1] != self.nullid or p[0] == self.nullid:
                     b.append((t, n, p[0], p[1]))
                     break
                 n = p[0]
@@ -3280,7 +3281,7 @@ class localrepository(object):
             n, l, i = top, [], 0
             f = 1
 
-            while n != bottom and n != nullid:
+            while n != bottom and n != self.nullid:
                 p = self.changelog.parents(n)[0]
                 if i == f:
                     l.append(n)

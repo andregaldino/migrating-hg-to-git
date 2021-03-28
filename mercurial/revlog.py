@@ -26,14 +26,9 @@ import zlib
 from .node import (
     bin,
     hex,
-    nullhex,
-    nullid,
     nullrev,
     sha1nodeconstants,
     short,
-    wdirfilenodeids,
-    wdirhex,
-    wdirid,
     wdirrev,
 )
 from .i18n import _
@@ -232,7 +227,7 @@ class revlogoldindex(list):
 
     @util.propertycache
     def _nodemap(self):
-        nodemap = nodemaputil.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
             nodemap[n] = r
@@ -270,7 +265,7 @@ class revlogoldindex(list):
 
     def __getitem__(self, i):
         if i == -1:
-            return (0, 0, 0, -1, -1, -1, -1, nullid)
+            return (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
         return list.__getitem__(self, i)
 
 
@@ -278,7 +273,7 @@ class revlogoldio(object):
     def parseindex(self, data, inline):
         s = INDEX_ENTRY_V0.size
         index = []
-        nodemap = nodemaputil.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
         n = off = 0
         l = len(data)
         while off + s <= l:
@@ -818,7 +813,10 @@ class revlog(object):
             raise
         except error.RevlogError:
             # parsers.c radix tree lookup failed
-            if node == wdirid or node in wdirfilenodeids:
+            if (
+                node == self.nodeconstants.wdirid
+                or node in self.nodeconstants.wdirfilenodeids
+            ):
                 raise error.WdirUnsupported
             raise error.LookupError(node, self.indexfile, _(b'no node'))
 
@@ -909,7 +907,7 @@ class revlog(object):
         i = self.index
         d = i[self.rev(node)]
         # inline node() to avoid function call overhead
-        if d[5] == nullid:
+        if d[5] == self.nullid:
             return i[d[6]][7], i[d[5]][7]
         else:
             return i[d[5]][7], i[d[6]][7]
@@ -1027,7 +1025,7 @@ class revlog(object):
         not supplied, uses all of the revlog's heads.  If common is not
         supplied, uses nullid."""
         if common is None:
-            common = [nullid]
+            common = [self.nullid]
         if heads is None:
             heads = self.heads()
 
@@ -1133,7 +1131,7 @@ class revlog(object):
         not supplied, uses all of the revlog's heads.  If common is not
         supplied, uses nullid."""
         if common is None:
-            common = [nullid]
+            common = [self.nullid]
         if heads is None:
             heads = self.heads()
 
@@ -1171,11 +1169,15 @@ class revlog(object):
                 return nonodes
             lowestrev = min([self.rev(n) for n in roots])
         else:
-            roots = [nullid]  # Everybody's a descendant of nullid
+            roots = [self.nullid]  # Everybody's a descendant of nullid
             lowestrev = nullrev
         if (lowestrev == nullrev) and (heads is None):
             # We want _all_ the nodes!
-            return ([self.node(r) for r in self], [nullid], list(self.heads()))
+            return (
+                [self.node(r) for r in self],
+                [self.nullid],
+                list(self.heads()),
+            )
         if heads is None:
             # All nodes are ancestors, so the latest ancestor is the last
             # node.
@@ -1201,7 +1203,7 @@ class revlog(object):
                 # grab a node to tag
                 n = nodestotag.pop()
                 # Never tag nullid
-                if n == nullid:
+                if n == self.nullid:
                     continue
                 # A node's revision number represents its place in a
                 # topologically sorted list of nodes.
@@ -1213,7 +1215,7 @@ class revlog(object):
                         ancestors.add(n)  # Mark as ancestor
                         # Add non-nullid parents to list of nodes to tag.
                         nodestotag.update(
-                            [p for p in self.parents(n) if p != nullid]
+                            [p for p in self.parents(n) if p != self.nullid]
                         )
                     elif n in heads:  # We've seen it before, is it a fake head?
                         # So it is, real heads should not be the ancestors of
@@ -1241,7 +1243,7 @@ class revlog(object):
                 # We are descending from nullid, and don't need to care about
                 # any other roots.
                 lowestrev = nullrev
-                roots = [nullid]
+                roots = [self.nullid]
         # Transform our roots list into a set.
         descendants = set(roots)
         # Also, keep the original roots so we can filter out roots that aren't
@@ -1335,7 +1337,7 @@ class revlog(object):
         """
         if start is None and stop is None:
             if not len(self):
-                return [nullid]
+                return [self.nullid]
             return [self.node(r) for r in self.headrevs()]
 
         if start is None:
@@ -1425,7 +1427,7 @@ class revlog(object):
         if ancs:
             # choose a consistent winner when there's a tie
             return min(map(self.node, ancs))
-        return nullid
+        return self.nullid
 
     def _match(self, id):
         if isinstance(id, int):
@@ -1463,7 +1465,7 @@ class revlog(object):
 
     def _partialmatch(self, id):
         # we don't care wdirfilenodeids as they should be always full hash
-        maybewdir = wdirhex.startswith(id)
+        maybewdir = self.nodeconstants.wdirhex.startswith(id)
         try:
             partial = self.index.partialmatch(id)
             if partial and self.hasnode(partial):
@@ -1499,8 +1501,8 @@ class revlog(object):
                 nl = [
                     n for n in nl if hex(n).startswith(id) and self.hasnode(n)
                 ]
-                if nullhex.startswith(id):
-                    nl.append(nullid)
+                if self.nodeconstants.nullhex.startswith(id):
+                    nl.append(self.nullid)
                 if len(nl) > 0:
                     if len(nl) == 1 and not maybewdir:
                         self._pcache[id] = nl[0]
@@ -1560,13 +1562,13 @@ class revlog(object):
                 length = max(self.index.shortest(node), minlength)
                 return disambiguate(hexnode, length)
             except error.RevlogError:
-                if node != wdirid:
+                if node != self.nodeconstants.wdirid:
                     raise error.LookupError(node, self.indexfile, _(b'no node'))
             except AttributeError:
                 # Fall through to pure code
                 pass
 
-        if node == wdirid:
+        if node == self.nodeconstants.wdirid:
             for length in range(minlength, len(hexnode) + 1):
                 prefix = hexnode[:length]
                 if isvalid(prefix):
@@ -1881,7 +1883,7 @@ class revlog(object):
             rev = None
 
         # fast path the special `nullid` rev
-        if node == nullid:
+        if node == self.nullid:
             return b"", {}
 
         # ``rawtext`` is the text as stored inside the revlog. Might be the
@@ -2302,11 +2304,14 @@ class revlog(object):
         - rawtext is optional (can be None); if not set, cachedelta must be set.
           if both are set, they must correspond to each other.
         """
-        if node == nullid:
+        if node == self.nullid:
             raise error.RevlogError(
                 _(b"%s: attempt to add null revision") % self.indexfile
             )
-        if node == wdirid or node in wdirfilenodeids:
+        if (
+            node == self.nodeconstants.wdirid
+            or node in self.nodeconstants.wdirfilenodeids
+        ):
             raise error.RevlogError(
                 _(b"%s: attempt to add wdir revision") % self.indexfile
             )

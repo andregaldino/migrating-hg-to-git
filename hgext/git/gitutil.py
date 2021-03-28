@@ -1,7 +1,7 @@
 """utilities to assist in working with pygit2"""
 from __future__ import absolute_import
 
-from mercurial.node import bin, hex, nullid
+from mercurial.node import bin, hex, sha1nodeconstants
 
 from mercurial import pycompat
 
@@ -50,4 +50,4 @@ def fromgitnode(n):
     return bin(n)
 
 
-nullgit = togitnode(nullid)
+nullgit = togitnode(sha1nodeconstants.nullid)

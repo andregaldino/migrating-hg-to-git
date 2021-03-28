@@ -11,7 +11,6 @@ import unittest
 
 from ..node import (
     hex,
-    nullid,
     nullrev,
 )
 from ..pycompat import getattr
@@ -51,7 +50,7 @@ class ifileindextests(basetestcase):
         self.assertFalse(f.hasnode(None))
         self.assertFalse(f.hasnode(0))
         self.assertFalse(f.hasnode(nullrev))
-        self.assertFalse(f.hasnode(nullid))
+        self.assertFalse(f.hasnode(f.nullid))
         self.assertFalse(f.hasnode(b'0'))
         self.assertFalse(f.hasnode(b'a' * 20))
 
@@ -64,8 +63,8 @@ class ifileindextests(basetestcase):
 
         self.assertEqual(list(f.revs(start=20)), [])
 
-        # parents() and parentrevs() work with nullid/nullrev.
-        self.assertEqual(f.parents(nullid), (nullid, nullid))
+        # parents() and parentrevs() work with f.nullid/nullrev.
+        self.assertEqual(f.parents(f.nullid), (f.nullid, f.nullid))
         self.assertEqual(f.parentrevs(nullrev), (nullrev, nullrev))
 
         with self.assertRaises(error.LookupError):
@@ -78,9 +77,9 @@ class ifileindextests(basetestcase):
             with self.assertRaises(IndexError):
                 f.parentrevs(i)
 
-        # nullid/nullrev lookup always works.
-        self.assertEqual(f.rev(nullid), nullrev)
-        self.assertEqual(f.node(nullrev), nullid)
+        # f.nullid/nullrev lookup always works.
+        self.assertEqual(f.rev(f.nullid), nullrev)
+        self.assertEqual(f.node(nullrev), f.nullid)
 
         with self.assertRaises(error.LookupError):
             f.rev(b'\x01' * 20)
@@ -92,16 +91,16 @@ class ifileindextests(basetestcase):
             with self.assertRaises(IndexError):
                 f.node(i)
 
-        self.assertEqual(f.lookup(nullid), nullid)
-        self.assertEqual(f.lookup(nullrev), nullid)
-        self.assertEqual(f.lookup(hex(nullid)), nullid)
-        self.assertEqual(f.lookup(b'%d' % nullrev), nullid)
+        self.assertEqual(f.lookup(f.nullid), f.nullid)
+        self.assertEqual(f.lookup(nullrev), f.nullid)
+        self.assertEqual(f.lookup(hex(f.nullid)), f.nullid)
+        self.assertEqual(f.lookup(b'%d' % nullrev), f.nullid)
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'badvalue')
 
         with self.assertRaises(error.LookupError):
-            f.lookup(hex(nullid)[0:12])
+            f.lookup(hex(f.nullid)[0:12])
 
         with self.assertRaises(error.LookupError):
             f.lookup(b'-2')
@@ -140,19 +139,19 @@ class ifileindextests(basetestcase):
             with self.assertRaises(IndexError):
                 f.iscensored(i)
 
-        self.assertEqual(list(f.commonancestorsheads(nullid, nullid)), [])
+        self.assertEqual(list(f.commonancestorsheads(f.nullid, f.nullid)), [])
 
         with self.assertRaises(ValueError):
             self.assertEqual(list(f.descendants([])), [])
 
         self.assertEqual(list(f.descendants([nullrev])), [])
 
-        self.assertEqual(f.heads(), [nullid])
-        self.assertEqual(f.heads(nullid), [nullid])
-        self.assertEqual(f.heads(None, [nullid]), [nullid])
-        self.assertEqual(f.heads(nullid, [nullid]), [nullid])
+        self.assertEqual(f.heads(), [f.nullid])
+        self.assertEqual(f.heads(f.nullid), [f.nullid])
+        self.assertEqual(f.heads(None, [f.nullid]), [f.nullid])
+        self.assertEqual(f.heads(f.nullid, [f.nullid]), [f.nullid])
 
-        self.assertEqual(f.children(nullid), [])
+        self.assertEqual(f.children(f.nullid), [])
 
         with self.assertRaises(error.LookupError):
             f.children(b'\x01' * 20)
@@ -160,7 +159,7 @@ class ifileindextests(basetestcase):
     def testsinglerevision(self):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node = f.add(b'initial', None, tr, 0, nullid, nullid)
+            node = f.add(b'initial', None, tr, 0, f.nullid, f.nullid)
 
         self.assertEqual(len(f), 1)
         self.assertEqual(list(f), [0])
@@ -174,7 +173,7 @@ class ifileindextests(basetestcase):
         self.assertTrue(f.hasnode(node))
         self.assertFalse(f.hasnode(hex(node)))
         self.assertFalse(f.hasnode(nullrev))
-        self.assertFalse(f.hasnode(nullid))
+        self.assertFalse(f.hasnode(f.nullid))
         self.assertFalse(f.hasnode(node[0:12]))
         self.assertFalse(f.hasnode(hex(node)[0:20]))
 
@@ -188,7 +187,7 @@ class ifileindextests(basetestcase):
         self.assertEqual(list(f.revs(1, 0)), [1, 0])
         self.assertEqual(list(f.revs(2, 0)), [2, 1, 0])
 
-        self.assertEqual(f.parents(node), (nullid, nullid))
+        self.assertEqual(f.parents(node), (f.nullid, f.nullid))
         self.assertEqual(f.parentrevs(0), (nullrev, nullrev))
 
         with self.assertRaises(error.LookupError):
@@ -209,7 +208,7 @@ class ifileindextests(basetestcase):
 
         self.assertEqual(f.lookup(node), node)
         self.assertEqual(f.lookup(0), node)
-        self.assertEqual(f.lookup(-1), nullid)
+        self.assertEqual(f.lookup(-1), f.nullid)
         self.assertEqual(f.lookup(b'0'), node)
         self.assertEqual(f.lookup(hex(node)), node)
 
@@ -256,9 +255,9 @@ class ifileindextests(basetestcase):
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
-            node1 = f.add(fulltext1, None, tr, 1, node0, nullid)
-            node2 = f.add(fulltext2, None, tr, 3, node1, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(fulltext1, None, tr, 1, node0, f.nullid)
+            node2 = f.add(fulltext2, None, tr, 3, node1, f.nullid)
 
         self.assertEqual(len(f), 3)
         self.assertEqual(list(f), [0, 1, 2])
@@ -284,9 +283,9 @@ class ifileindextests(basetestcase):
         # TODO this is wrong
         self.assertEqual(list(f.revs(3, 2)), [3, 2])
 
-        self.assertEqual(f.parents(node0), (nullid, nullid))
-        self.assertEqual(f.parents(node1), (node0, nullid))
-        self.assertEqual(f.parents(node2), (node1, nullid))
+        self.assertEqual(f.parents(node0), (f.nullid, f.nullid))
+        self.assertEqual(f.parents(node1), (node0, f.nullid))
+        self.assertEqual(f.parents(node2), (node1, f.nullid))
 
         self.assertEqual(f.parentrevs(0), (nullrev, nullrev))
         self.assertEqual(f.parentrevs(1), (0, nullrev))
@@ -330,7 +329,7 @@ class ifileindextests(basetestcase):
         with self.assertRaises(IndexError):
             f.iscensored(3)
 
-        self.assertEqual(f.commonancestorsheads(node1, nullid), [])
+        self.assertEqual(f.commonancestorsheads(node1, f.nullid), [])
         self.assertEqual(f.commonancestorsheads(node1, node0), [node0])
         self.assertEqual(f.commonancestorsheads(node1, node1), [node1])
         self.assertEqual(f.commonancestorsheads(node0, node1), [node0])
@@ -364,12 +363,12 @@ class ifileindextests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'0', None, tr, 0, nullid, nullid)
-            node1 = f.add(b'1', None, tr, 1, node0, nullid)
-            node2 = f.add(b'2', None, tr, 2, node1, nullid)
-            node3 = f.add(b'3', None, tr, 3, node0, nullid)
-            node4 = f.add(b'4', None, tr, 4, node3, nullid)
-            node5 = f.add(b'5', None, tr, 5, node0, nullid)
+            node0 = f.add(b'0', None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(b'1', None, tr, 1, node0, f.nullid)
+            node2 = f.add(b'2', None, tr, 2, node1, f.nullid)
+            node3 = f.add(b'3', None, tr, 3, node0, f.nullid)
+            node4 = f.add(b'4', None, tr, 4, node3, f.nullid)
+            node5 = f.add(b'5', None, tr, 5, node0, f.nullid)
 
         self.assertEqual(len(f), 6)
 
@@ -427,24 +426,24 @@ class ifiledatatests(basetestcase):
             with self.assertRaises(IndexError):
                 f.size(i)
 
-        self.assertEqual(f.revision(nullid), b'')
-        self.assertEqual(f.rawdata(nullid), b'')
+        self.assertEqual(f.revision(f.nullid), b'')
+        self.assertEqual(f.rawdata(f.nullid), b'')
 
         with self.assertRaises(error.LookupError):
             f.revision(b'\x01' * 20)
 
-        self.assertEqual(f.read(nullid), b'')
+        self.assertEqual(f.read(f.nullid), b'')
 
         with self.assertRaises(error.LookupError):
             f.read(b'\x01' * 20)
 
-        self.assertFalse(f.renamed(nullid))
+        self.assertFalse(f.renamed(f.nullid))
 
         with self.assertRaises(error.LookupError):
             f.read(b'\x01' * 20)
 
-        self.assertTrue(f.cmp(nullid, b''))
-        self.assertTrue(f.cmp(nullid, b'foo'))
+        self.assertTrue(f.cmp(f.nullid, b''))
+        self.assertTrue(f.cmp(f.nullid, b'foo'))
 
         with self.assertRaises(error.LookupError):
             f.cmp(b'\x01' * 20, b'irrelevant')
@@ -455,7 +454,7 @@ class ifiledatatests(basetestcase):
             next(gen)
 
         # Emitting null node yields nothing.
-        gen = f.emitrevisions([nullid])
+        gen = f.emitrevisions([f.nullid])
         with self.assertRaises(StopIteration):
             next(gen)
 
@@ -468,7 +467,7 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node = f.add(fulltext, None, tr, 0, nullid, nullid)
+            node = f.add(fulltext, None, tr, 0, f.nullid, f.nullid)
 
         self.assertEqual(f.storageinfo(), {})
         self.assertEqual(
@@ -496,10 +495,10 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
 
         self.assertEqual(rev.node, node)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
         self.assertIsNone(rev.delta)
@@ -512,10 +511,10 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
 
         self.assertEqual(rev.node, node)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertEqual(rev.revision, fulltext)
         self.assertIsNone(rev.delta)
@@ -534,9 +533,9 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
-            node1 = f.add(fulltext1, None, tr, 1, node0, nullid)
-            node2 = f.add(fulltext2, None, tr, 3, node1, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(fulltext1, None, tr, 1, node0, f.nullid)
+            node2 = f.add(fulltext2, None, tr, 3, node1, f.nullid)
 
         self.assertEqual(f.storageinfo(), {})
         self.assertEqual(
@@ -596,10 +595,10 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
 
         self.assertEqual(rev.node, node0)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertEqual(rev.revision, fulltext0)
         self.assertIsNone(rev.delta)
@@ -608,7 +607,7 @@ class ifiledatatests(basetestcase):
 
         self.assertEqual(rev.node, node1)
         self.assertEqual(rev.p1node, node0)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
@@ -622,7 +621,7 @@ class ifiledatatests(basetestcase):
 
         self.assertEqual(rev.node, node2)
         self.assertEqual(rev.p1node, node1)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
@@ -641,10 +640,10 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
 
         self.assertEqual(rev.node, node0)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertEqual(rev.revision, fulltext0)
         self.assertIsNone(rev.delta)
@@ -653,7 +652,7 @@ class ifiledatatests(basetestcase):
 
         self.assertEqual(rev.node, node1)
         self.assertEqual(rev.p1node, node0)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
@@ -667,7 +666,7 @@ class ifiledatatests(basetestcase):
 
         self.assertEqual(rev.node, node2)
         self.assertEqual(rev.p1node, node1)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertIsNone(rev.linknode)
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
@@ -700,16 +699,16 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
         self.assertEqual(rev.node, node2)
         self.assertEqual(rev.p1node, node1)
-        self.assertEqual(rev.p2node, nullid)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertEqual(rev.revision, fulltext2)
         self.assertIsNone(rev.delta)
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         # Delta behavior is storage dependent, so we can't easily test it.
 
         with self.assertRaises(StopIteration):
@@ -722,8 +721,8 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
         self.assertEqual(rev.node, node1)
         self.assertEqual(rev.p1node, node0)
-        self.assertEqual(rev.p2node, nullid)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertEqual(rev.revision, fulltext1)
         self.assertIsNone(rev.delta)
@@ -731,7 +730,7 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
         self.assertEqual(rev.node, node2)
         self.assertEqual(rev.p1node, node1)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertEqual(rev.basenode, node1)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
@@ -751,7 +750,7 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
         self.assertEqual(rev.node, node1)
         self.assertEqual(rev.p1node, node0)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertEqual(rev.basenode, node0)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
@@ -768,9 +767,9 @@ class ifiledatatests(basetestcase):
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
         self.assertEqual(
@@ -789,9 +788,9 @@ class ifiledatatests(basetestcase):
 
         rev = next(gen)
         self.assertEqual(rev.node, node0)
-        self.assertEqual(rev.p1node, nullid)
-        self.assertEqual(rev.p2node, nullid)
-        self.assertEqual(rev.basenode, nullid)
+        self.assertEqual(rev.p1node, f.nullid)
+        self.assertEqual(rev.p2node, f.nullid)
+        self.assertEqual(rev.basenode, f.nullid)
         self.assertIsNone(rev.baserevisionsize)
         self.assertIsNone(rev.revision)
         self.assertEqual(
@@ -802,7 +801,7 @@ class ifiledatatests(basetestcase):
         rev = next(gen)
         self.assertEqual(rev.node, node2)
         self.assertEqual(rev.p1node, node1)
-        self.assertEqual(rev.p2node, nullid)
+        self.assertEqual(rev.p2node, f.nullid)
         self.assertEqual(rev.basenode, node0)
 
         with self.assertRaises(StopIteration):
@@ -841,11 +840,11 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
-            node1 = f.add(fulltext1, meta1, tr, 1, node0, nullid)
-            node2 = f.add(fulltext2, meta2, tr, 2, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(fulltext1, meta1, tr, 1, node0, f.nullid)
+            node2 = f.add(fulltext2, meta2, tr, 2, f.nullid, f.nullid)
 
-        # Metadata header isn't recognized when parent isn't nullid.
+        # Metadata header isn't recognized when parent isn't f.nullid.
         self.assertEqual(f.size(1), len(stored1))
         self.assertEqual(f.size(2), len(fulltext2))
 
@@ -886,8 +885,8 @@ class ifiledatatests(basetestcase):
 
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, {}, tr, 0, nullid, nullid)
-            node1 = f.add(fulltext1, meta1, tr, 1, nullid, nullid)
+            node0 = f.add(fulltext0, {}, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(fulltext1, meta1, tr, 1, f.nullid, f.nullid)
 
         # TODO this is buggy.
         self.assertEqual(f.size(0), len(fulltext0) + 4)
@@ -916,15 +915,15 @@ class ifiledatatests(basetestcase):
         fulltext1 = fulltext0 + b'bar\n'
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
             node1 = b'\xaa' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+                f, tr, node1, node0, f.nullid, 1, rawtext=fulltext1
             )
 
         self.assertEqual(len(f), 2)
-        self.assertEqual(f.parents(node1), (node0, nullid))
+        self.assertEqual(f.parents(node1), (node0, f.nullid))
 
         # revision() raises since it performs hash verification.
         with self.assertRaises(error.StorageError):
@@ -951,11 +950,11 @@ class ifiledatatests(basetestcase):
         fulltext1 = fulltext0 + b'bar\n'
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
             node1 = b'\xaa' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+                f, tr, node1, node0, f.nullid, 1, rawtext=fulltext1
             )
 
         with self.assertRaises(error.StorageError):
@@ -973,11 +972,11 @@ class ifiledatatests(basetestcase):
         fulltext1 = fulltext0 + b'bar\n'
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
             node1 = b'\xaa' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+                f, tr, node1, node0, f.nullid, 1, rawtext=fulltext1
             )
 
         with self.assertRaises(error.StorageError):
@@ -994,22 +993,22 @@ class ifiledatatests(basetestcase):
         fulltext2 = fulltext1 + b'baz\n'
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
             node1 = b'\xaa' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, rawtext=fulltext1
+                f, tr, node1, node0, f.nullid, 1, rawtext=fulltext1
             )
 
         with self.assertRaises(error.StorageError):
             f.read(node1)
 
-        node2 = storageutil.hashrevisionsha1(fulltext2, node1, nullid)
+        node2 = storageutil.hashrevisionsha1(fulltext2, node1, f.nullid)
 
         with self._maketransactionfn() as tr:
             delta = mdiff.textdiff(fulltext1, fulltext2)
             self._addrawrevisionfn(
-                f, tr, node2, node1, nullid, 2, delta=(1, delta)
+                f, tr, node2, node1, f.nullid, 2, delta=(1, delta)
             )
 
         self.assertEqual(len(f), 3)
@@ -1029,13 +1028,13 @@ class ifiledatatests(basetestcase):
         )
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
+            node0 = f.add(b'foo', None, tr, 0, f.nullid, f.nullid)
 
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, stored1, censored=True
+                f, tr, node1, node0, f.nullid, 1, stored1, censored=True
             )
 
         self.assertTrue(f.iscensored(1))
@@ -1063,13 +1062,13 @@ class ifiledatatests(basetestcase):
         )
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
+            node0 = f.add(b'foo', None, tr, 0, f.nullid, f.nullid)
 
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, stored1, censored=True
+                f, tr, node1, node0, f.nullid, 1, stored1, censored=True
             )
 
         with self.assertRaises(error.CensoredNodeError):
@@ -1088,10 +1087,10 @@ class ifilemutationtests(basetestcase):
     def testaddnoop(self):
         f = self._makefilefn()
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'foo', None, tr, 0, nullid, nullid)
-            node1 = f.add(b'foo', None, tr, 0, nullid, nullid)
+            node0 = f.add(b'foo', None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(b'foo', None, tr, 0, f.nullid, f.nullid)
             # Varying by linkrev shouldn't impact hash.
-            node2 = f.add(b'foo', None, tr, 1, nullid, nullid)
+            node2 = f.add(b'foo', None, tr, 1, f.nullid, f.nullid)
 
         self.assertEqual(node1, node0)
         self.assertEqual(node2, node0)
@@ -1102,7 +1101,9 @@ class ifilemutationtests(basetestcase):
         with self._maketransactionfn() as tr:
             # Adding a revision with bad node value fails.
             with self.assertRaises(error.StorageError):
-                f.addrevision(b'foo', tr, 0, nullid, nullid, node=b'\x01' * 20)
+                f.addrevision(
+                    b'foo', tr, 0, f.nullid, f.nullid, node=b'\x01' * 20
+                )
 
     def testaddrevisionunknownflag(self):
         f = self._makefilefn()
@@ -1113,7 +1114,7 @@ class ifilemutationtests(basetestcase):
                     break
 
             with self.assertRaises(error.StorageError):
-                f.addrevision(b'foo', tr, 0, nullid, nullid, flags=flags)
+                f.addrevision(b'foo', tr, 0, f.nullid, f.nullid, flags=flags)
 
     def testaddgroupsimple(self):
         f = self._makefilefn()
@@ -1153,12 +1154,12 @@ class ifilemutationtests(basetestcase):
         delta0 = mdiff.trivialdiffheader(len(fulltext0)) + fulltext0
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(fulltext0, None, tr, 0, nullid, nullid)
+            node0 = f.add(fulltext0, None, tr, 0, f.nullid, f.nullid)
 
         f = self._makefilefn()
 
         deltas = [
-            (node0, nullid, nullid, nullid, nullid, delta0, 0, {}),
+            (node0, f.nullid, f.nullid, f.nullid, f.nullid, delta0, 0, {}),
         ]
 
         with self._maketransactionfn() as tr:
@@ -1207,7 +1208,7 @@ class ifilemutationtests(basetestcase):
         nodes = []
         with self._maketransactionfn() as tr:
             for fulltext in fulltexts:
-                nodes.append(f.add(fulltext, None, tr, 0, nullid, nullid))
+                nodes.append(f.add(fulltext, None, tr, 0, f.nullid, f.nullid))
 
         f = self._makefilefn()
         deltas = []
@@ -1215,7 +1216,7 @@ class ifilemutationtests(basetestcase):
             delta = mdiff.trivialdiffheader(len(fulltext)) + fulltext
 
             deltas.append(
-                (nodes[i], nullid, nullid, nullid, nullid, delta, 0, {})
+                (nodes[i], f.nullid, f.nullid, f.nullid, f.nullid, delta, 0, {})
             )
 
         with self._maketransactionfn() as tr:
@@ -1254,18 +1255,18 @@ class ifilemutationtests(basetestcase):
         )
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)
+            node0 = f.add(b'foo\n' * 30, None, tr, 0, f.nullid, f.nullid)
 
             # The node value doesn't matter since we can't verify it.
             node1 = b'\xbb' * 20
 
             self._addrawrevisionfn(
-                f, tr, node1, node0, nullid, 1, stored1, censored=True
+                f, tr, node1, node0, f.nullid, 1, stored1, censored=True
             )
 
         delta = mdiff.textdiff(b'bar\n' * 30, (b'bar\n' * 30) + b'baz\n')
         deltas = [
-            (b'\xcc' * 20, node1, nullid, b'\x01' * 20, node1, delta, 0, {})
+            (b'\xcc' * 20, node1, f.nullid, b'\x01' * 20, node1, delta, 0, {})
         ]
 
         with self._maketransactionfn() as tr:
@@ -1276,9 +1277,9 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'foo\n' * 30, None, tr, 0, nullid, nullid)
-            node1 = f.add(b'foo\n' * 31, None, tr, 1, node0, nullid)
-            node2 = f.add(b'foo\n' * 32, None, tr, 2, node1, nullid)
+            node0 = f.add(b'foo\n' * 30, None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(b'foo\n' * 31, None, tr, 1, node0, f.nullid)
+            node2 = f.add(b'foo\n' * 32, None, tr, 2, node1, f.nullid)
 
         with self._maketransactionfn() as tr:
             f.censorrevision(tr, node1)
@@ -1298,7 +1299,7 @@ class ifilemutationtests(basetestcase):
 
         with self._maketransactionfn() as tr:
             for rev in range(10):
-                f.add(b'%d' % rev, None, tr, rev, nullid, nullid)
+                f.add(b'%d' % rev, None, tr, rev, f.nullid, f.nullid)
 
         for rev in range(10):
             self.assertEqual(f.getstrippoint(rev), (rev, set()))
@@ -1308,10 +1309,10 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            p1 = nullid
+            p1 = f.nullid
 
             for rev in range(10):
-                f.add(b'%d' % rev, None, tr, rev, p1, nullid)
+                f.add(b'%d' % rev, None, tr, rev, p1, f.nullid)
 
         for rev in range(10):
             self.assertEqual(f.getstrippoint(rev), (rev, set()))
@@ -1320,11 +1321,11 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'0', None, tr, 0, nullid, nullid)
-            node1 = f.add(b'1', None, tr, 1, node0, nullid)
-            f.add(b'2', None, tr, 2, node1, nullid)
-            f.add(b'3', None, tr, 3, node0, nullid)
-            f.add(b'4', None, tr, 4, node0, nullid)
+            node0 = f.add(b'0', None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(b'1', None, tr, 1, node0, f.nullid)
+            f.add(b'2', None, tr, 2, node1, f.nullid)
+            f.add(b'3', None, tr, 3, node0, f.nullid)
+            f.add(b'4', None, tr, 4, node0, f.nullid)
 
         for rev in range(5):
             self.assertEqual(f.getstrippoint(rev), (rev, set()))
@@ -1333,9 +1334,9 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            node0 = f.add(b'0', None, tr, 0, nullid, nullid)
-            f.add(b'1', None, tr, 10, node0, nullid)
-            f.add(b'2', None, tr, 5, node0, nullid)
+            node0 = f.add(b'0', None, tr, 0, f.nullid, f.nullid)
+            f.add(b'1', None, tr, 10, node0, f.nullid)
+            f.add(b'2', None, tr, 5, node0, f.nullid)
 
         self.assertEqual(f.getstrippoint(0), (0, set()))
         self.assertEqual(f.getstrippoint(1), (1, set()))
@@ -1362,9 +1363,9 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            p1 = nullid
+            p1 = f.nullid
             for rev in range(10):
-                p1 = f.add(b'%d' % rev, None, tr, rev, p1, nullid)
+                p1 = f.add(b'%d' % rev, None, tr, rev, p1, f.nullid)
 
         self.assertEqual(len(f), 10)
 
@@ -1377,9 +1378,9 @@ class ifilemutationtests(basetestcase):
         f = self._makefilefn()
 
         with self._maketransactionfn() as tr:
-            f.add(b'0', None, tr, 0, nullid, nullid)
-            node1 = f.add(b'1', None, tr, 5, nullid, nullid)
-            node2 = f.add(b'2', None, tr, 10, nullid, nullid)
+            f.add(b'0', None, tr, 0, f.nullid, f.nullid)
+            node1 = f.add(b'1', None, tr, 5, f.nullid, f.nullid)
+            node2 = f.add(b'2', None, tr, 10, f.nullid, f.nullid)
 
         self.assertEqual(len(f), 3)
 

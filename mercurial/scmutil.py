@@ -19,10 +19,8 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
-    wdirid,
     wdirrev,
 )
 from .pycompat import getattr
@@ -450,7 +448,7 @@ def binnode(ctx):
     """Return binary node id for a given basectx"""
     node = ctx.node()
     if node is None:
-        return wdirid
+        return ctx.repo().nodeconstants.wdirid
     return node
 
 
@@ -1108,7 +1106,7 @@ def cleanupnodes(
                     if roots:
                         newnode = roots[0].node()
                     else:
-                        newnode = nullid
+                        newnode = repo.nullid
                 else:
                     newnode = newnodes[0]
                 moves[oldnode] = newnode
@@ -1506,7 +1504,7 @@ def movedirstate(repo, newctx, match=None):
     oldctx = repo[b'.']
     ds = repo.dirstate
     copies = dict(ds.copies())
-    ds.setparents(newctx.node(), nullid)
+    ds.setparents(newctx.node(), repo.nullid)
     s = newctx.status(oldctx, match=match)
     for f in s.modified:
         if ds[f] == b'r':

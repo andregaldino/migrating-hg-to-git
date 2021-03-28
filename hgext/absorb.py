@@ -38,7 +38,6 @@ import collections
 from mercurial.i18n import _
 from mercurial.node import (
     hex,
-    nullid,
     short,
 )
 from mercurial import (
@@ -109,7 +108,7 @@ class emptyfilecontext(object):
         return b''
 
     def node(self):
-        return nullid
+        return self._repo.nullid
 
 
 def uniq(lst):
@@ -927,7 +926,7 @@ class fixupstate(object):
         the commit is a clone from ctx, with a (optionally) different p1, and
         different file contents replaced by memworkingcopy.
         """
-        parents = p1 and (p1, nullid)
+        parents = p1 and (p1, self.repo.nullid)
         extra = ctx.extra()
         if self._useobsolete and self.ui.configbool(b'absorb', b'add-noise'):
             extra[b'absorb_source'] = ctx.hex()

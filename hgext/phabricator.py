@@ -69,7 +69,7 @@ import operator
 import re
 import time
 
-from mercurial.node import bin, nullid, short
+from mercurial.node import bin, short
 from mercurial.i18n import _
 from mercurial.pycompat import getattr
 from mercurial.thirdparty import attr
@@ -586,7 +586,7 @@ def getoldnodedrevmap(repo, nodelist):
                 tags.tag(
                     repo,
                     tagname,
-                    nullid,
+                    repo.nullid,
                     message=None,
                     user=None,
                     date=None,
@@ -1606,7 +1606,7 @@ def phabsend(ui, repo, *revs, **opts):
                         tags.tag(
                             repo,
                             tagname,
-                            nullid,
+                            repo.nullid,
                             message=None,
                             user=None,
                             date=None,

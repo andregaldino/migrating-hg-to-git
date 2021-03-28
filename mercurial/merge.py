@@ -13,12 +13,7 @@ import stat
 import struct
 
 from .i18n import _
-from .node import (
-    addednodeid,
-    modifiednodeid,
-    nullid,
-    nullrev,
-)
+from .node import nullrev
 from .thirdparty import attr
 from .utils import stringutil
 from . import (
@@ -779,7 +774,7 @@ def manifestmerge(
         # to flag the change. If wctx is a committed revision, we shouldn't
         # care for the dirty state of the working directory.
         if any(wctx.sub(s).dirty() for s in wctx.substate):
-            m1[b'.hgsubstate'] = modifiednodeid
+            m1[b'.hgsubstate'] = repo.nodeconstants.modifiednodeid
 
     # Don't use m2-vs-ma optimization if:
     # - ma is the same as m1 or m2, which we're just going to diff again later
@@ -944,7 +939,7 @@ def manifestmerge(
                             mresult.addcommitinfo(
                                 f, b'merge-removal-candidate', b'yes'
                             )
-                elif n1 == addednodeid:
+                elif n1 == repo.nodeconstants.addednodeid:
                     # This file was locally added. We should forget it instead of
                     # deleting it.
                     mresult.addfile(
@@ -1785,7 +1780,7 @@ def _advertisefsmonitor(repo, num_gets, p1node):
     if (
         fsmonitorwarning
         and not fsmonitorenabled
-        and p1node == nullid
+        and p1node == repo.nullid
         and num_gets >= fsmonitorthreshold
         and pycompat.sysplatform.startswith((b'linux', b'darwin'))
     ):
@@ -1913,7 +1908,7 @@ def _update(
         else:
             if repo.ui.configlist(b'merge', b'preferancestor') == [b'*']:
                 cahs = repo.changelog.commonancestorsheads(p1.node(), p2.node())
-                pas = [repo[anc] for anc in (sorted(cahs) or [nullid])]
+                pas = [repo[anc] for anc in (sorted(cahs) or [repo.nullid])]
             else:
                 pas = [p1.ancestor(p2, warn=branchmerge)]
 
@@ -2112,7 +2107,7 @@ def _update(
 
         ### apply phase
         if not branchmerge:  # just jump to the new rev
-            fp1, fp2, xp1, xp2 = fp2, nullid, xp2, b''
+            fp1, fp2, xp1, xp2 = fp2, repo.nullid, xp2, b''
         # If we're doing a partial update, we need to skip updating
         # the dirstate.
         always = matcher is None or matcher.always()
@@ -2281,14 +2276,14 @@ def graft(
     if keepconflictparent and stats.unresolvedcount:
         pother = ctx.node()
     else:
-        pother = nullid
+        pother = repo.nullid
         parents = ctx.parents()
         if keepparent and len(parents) == 2 and base in parents:
             parents.remove(base)
             pother = parents[0].node()
     # Never set both parents equal to each other
     if pother == pctx.node():
-        pother = nullid
+        pother = repo.nullid
 
     if wctx.isinmemory():
         wctx.setparents(pctx.node(), pother)

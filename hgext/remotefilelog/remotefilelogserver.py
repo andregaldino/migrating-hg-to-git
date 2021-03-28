@@ -13,7 +13,7 @@ import time
 import zlib
 
 from mercurial.i18n import _
-from mercurial.node import bin, hex, nullid
+from mercurial.node import bin, hex
 from mercurial.pycompat import open
 from mercurial import (
     changegroup,
@@ -242,7 +242,7 @@ def _loadfileblob(repo, cachepath, path, node):
     filecachepath = os.path.join(cachepath, path, hex(node))
     if not os.path.exists(filecachepath) or os.path.getsize(filecachepath) == 0:
         filectx = repo.filectx(path, fileid=node)
-        if filectx.node() == nullid:
+        if filectx.node() == repo.nullid:
             repo.changelog = changelog.changelog(repo.svfs)
             filectx = repo.filectx(path, fileid=node)
 
@@ -284,7 +284,7 @@ def getflogheads(repo, proto, path):
     """A server api for requesting a filelog's heads"""
     flog = repo.file(path)
     heads = flog.heads()
-    return b'\n'.join((hex(head) for head in heads if head != nullid))
+    return b'\n'.join((hex(head) for head in heads if head != repo.nullid))
 
 
 def getfile(repo, proto, file, node):
@@ -302,7 +302,7 @@ def getfile(repo, proto, file, node):
     if not cachepath:
         cachepath = os.path.join(repo.path, b"remotefilelogcache")
     node = bin(node.strip())
-    if node == nullid:
+    if node == repo.nullid:
         return b'0\0'
     return b'0\0' + _loadfileblob(repo, cachepath, file, node)
 
@@ -327,7 +327,7 @@ def getfiles(repo, proto):
                 break
 
             node = bin(request[:40])
-            if node == nullid:
+            if node == repo.nullid:
                 yield b'0\n'
                 continue
 
@@ -380,8 +380,8 @@ def createfileblob(filectx):
         ancestortext = b""
         for ancestorctx in ancestors:
             parents = ancestorctx.parents()
-            p1 = nullid
-            p2 = nullid
+            p1 = repo.nullid
+            p2 = repo.nullid
             if len(parents) > 0:
                 p1 = parents[0].filenode()
             if len(parents) > 1:

@@ -20,7 +20,6 @@ added and removed in the working directory.
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial.node import nullid
 
 from mercurial import (
     cmdutil,
@@ -113,7 +112,7 @@ def _commitfiltered(
 
     new = context.memctx(
         repo,
-        parents=[base.node(), nullid],
+        parents=[base.node(), repo.nullid],
         text=message,
         files=files,
         filectxfn=filectxfn,

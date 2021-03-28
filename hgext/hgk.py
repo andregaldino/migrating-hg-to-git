@@ -40,7 +40,6 @@ import os
 
 from mercurial.i18n import _
 from mercurial.node import (
-    nullid,
     nullrev,
     short,
 )
@@ -95,7 +94,7 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
         mmap2 = repo[node2].manifest()
         m = scmutil.match(repo[node1], files)
         st = repo.status(node1, node2, m)
-        empty = short(nullid)
+        empty = short(repo.nullid)
 
         for f in st.modified:
             # TODO get file permissions
@@ -317,9 +316,9 @@ def revtree(ui, args, repo, full=b"tree", maxnr=0, parents=False):
             parentstr = b""
             if parents:
                 pp = repo.changelog.parents(n)
-                if pp[0] != nullid:
+                if pp[0] != repo.nullid:
                     parentstr += b" " + short(pp[0])
-                if pp[1] != nullid:
+                if pp[1] != repo.nullid:
                     parentstr += b" " + short(pp[1])
             if not full:
                 ui.write(b"%s%s\n" % (short(n), parentstr))

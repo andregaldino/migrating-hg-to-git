@@ -74,9 +74,6 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import (
-    nullhex,
-)
 from . import (
     tags as tagsmod,
     util,
@@ -243,8 +240,8 @@ def merge(repo, fcd, fco, fca):
         pnlosttagset = basetagset - pntagset
         for t in pnlosttagset:
             pntags[t] = basetags[t]
-            if pntags[t][-1][0] != nullhex:
-                pntags[t].append([nullhex, None])
+            if pntags[t][-1][0] != repo.nodeconstants.nullhex:
+                pntags[t].append([repo.nodeconstants.nullhex, None])
 
     conflictedtags = []  # for reporting purposes
     mergedtags = util.sortdict(p1tags)

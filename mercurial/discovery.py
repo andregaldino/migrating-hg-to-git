@@ -12,7 +12,6 @@ import functools
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     short,
 )
 
@@ -107,7 +106,7 @@ class outgoing(object):
         if missingroots:
             discbases = []
             for n in missingroots:
-                discbases.extend([p for p in cl.parents(n) if p != nullid])
+                discbases.extend([p for p in cl.parents(n) if p != repo.nullid])
             # TODO remove call to nodesbetween.
             # TODO populate attributes on outgoing instance instead of setting
             # discbases.
@@ -116,7 +115,7 @@ class outgoing(object):
             ancestorsof = heads
             commonheads = [n for n in discbases if n not in included]
         elif not commonheads:
-            commonheads = [nullid]
+            commonheads = [repo.nullid]
         self.commonheads = commonheads
         self.ancestorsof = ancestorsof
         self._revlog = cl
@@ -381,7 +380,7 @@ def checkheads(pushop):
     # - a local outgoing head descended from update
     # - a remote head that's known locally and not
     #   ancestral to an outgoing head
-    if remoteheads == [nullid]:
+    if remoteheads == [repo.nullid]:
         # remote is empty, nothing to check.
         return
 

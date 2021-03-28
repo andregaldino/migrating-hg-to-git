@@ -10,13 +10,8 @@ from __future__ import absolute_import
 import os
 
 from .i18n import _
-from .node import (
-    nullid,
-    short,
-)
-from .utils import (
-    stringutil,
-)
+from .node import short
+from .utils import stringutil
 
 from . import (
     error,
@@ -159,13 +154,13 @@ class verifier(object):
 
         try:
             p1, p2 = obj.parents(node)
-            if p1 not in seen and p1 != nullid:
+            if p1 not in seen and p1 != self.repo.nullid:
                 self._err(
                     lr,
                     _(b"unknown parent 1 %s of %s") % (short(p1), short(node)),
                     f,
                 )
-            if p2 not in seen and p2 != nullid:
+            if p2 not in seen and p2 != self.repo.nullid:
                 self._err(
                     lr,
                     _(b"unknown parent 2 %s of %s") % (short(p2), short(node)),
@@ -267,7 +262,7 @@ class verifier(object):
 
             try:
                 changes = cl.read(n)
-                if changes[0] != nullid:
+                if changes[0] != self.repo.nullid:
                     mflinkrevs.setdefault(changes[0], []).append(i)
                     self.refersmf = True
                 for f in changes[3]:
@@ -598,7 +593,7 @@ class verifier(object):
                                 % (rp[0], short(rp[1])),
                                 f,
                             )
-                        elif rp[1] == nullid:
+                        elif rp[1] == self.repo.nullid:
                             ui.note(
                                 _(
                                     b"warning: %s@%s: copy source"

@@ -14,7 +14,7 @@ import os
 import re
 
 from ..i18n import _
-from ..node import hex, nullid, short
+from ..node import hex, short
 from ..pycompat import setattr
 
 from .common import (
@@ -220,7 +220,7 @@ def _ctxsgen(context, ctxs):
 def _siblings(siblings=None, hiderev=None):
     if siblings is None:
         siblings = []
-    siblings = [s for s in siblings if s.node() != nullid]
+    siblings = [s for s in siblings if s.node() != s.repo().nullid]
     if len(siblings) == 1 and siblings[0].rev() == hiderev:
         siblings = []
     return templateutil.mappinggenerator(_ctxsgen, args=(siblings,))
@@ -316,12 +316,16 @@ def _nodenamesgen(context, f, node, name):
         yield {name: t}
 
 
-def showtag(repo, t1, node=nullid):
+def showtag(repo, t1, node=None):
+    if node is None:
+        node = repo.nullid
     args = (repo.nodetags, node, b'tag')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
 
-def showbookmark(repo, t1, node=nullid):
+def showbookmark(repo, t1, node=None):
+    if node is None:
+        node = repo.nullid
     args = (repo.nodebookmarks, node, b'bookmark')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 

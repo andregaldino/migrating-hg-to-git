@@ -11,10 +11,7 @@ import collections
 import weakref
 
 from .i18n import _
-from .node import (
-    nullid,
-    short,
-)
+from .node import short
 from . import (
     bookmarks,
     error,
@@ -304,7 +301,7 @@ def _pullchangesetdiscovery(repo, remote, heads, abortwhenunrelated=True):
         if set(remoteheads).issubset(common):
             fetch = []
 
-    common.discard(nullid)
+    common.discard(repo.nullid)
 
     return common, fetch, remoteheads
 
@@ -413,7 +410,7 @@ def _processchangesetdata(repo, tr, objs):
                 # Linknode is always itself for changesets.
                 cset[b'node'],
                 # We always send full revisions. So delta base is not set.
-                nullid,
+                repo.nullid,
                 mdiff.trivialdiffheader(len(data)) + data,
                 # Flags not yet supported.
                 0,
@@ -478,7 +475,7 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
                 basenode = manifest[b'deltabasenode']
                 delta = extrafields[b'delta']
             elif b'revision' in extrafields:
-                basenode = nullid
+                basenode = repo.nullid
                 revision = extrafields[b'revision']
                 delta = mdiff.trivialdiffheader(len(revision)) + revision
             else:
@@ -610,7 +607,7 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                 basenode = filerevision[b'deltabasenode']
                 delta = extrafields[b'delta']
             elif b'revision' in extrafields:
-                basenode = nullid
+                basenode = repo.nullid
                 revision = extrafields[b'revision']
                 delta = mdiff.trivialdiffheader(len(revision)) + revision
             else:
@@ -705,7 +702,7 @@ def _fetchfilesfromcsets(
                 basenode = filerevision[b'deltabasenode']
                 delta = extrafields[b'delta']
             elif b'revision' in extrafields:
-                basenode = nullid
+                basenode = repo.nullid
                 revision = extrafields[b'revision']
                 delta = mdiff.trivialdiffheader(len(revision)) + revision
             else:

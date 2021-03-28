@@ -10,7 +10,6 @@ import errno
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
 )
 
@@ -277,10 +276,10 @@ def _filecommit(
     """
 
     fname = fctx.path()
-    fparent1 = manifest1.get(fname, nullid)
-    fparent2 = manifest2.get(fname, nullid)
+    fparent1 = manifest1.get(fname, repo.nullid)
+    fparent2 = manifest2.get(fname, repo.nullid)
     touched = None
-    if fparent1 == fparent2 == nullid:
+    if fparent1 == fparent2 == repo.nullid:
         touched = 'added'
 
     if isinstance(fctx, context.filectx):
@@ -291,9 +290,11 @@ def _filecommit(
         if node in [fparent1, fparent2]:
             repo.ui.debug(b'reusing %s filelog entry\n' % fname)
             if (
-                fparent1 != nullid and manifest1.flags(fname) != fctx.flags()
+                fparent1 != repo.nullid
+                and manifest1.flags(fname) != fctx.flags()
             ) or (
-                fparent2 != nullid and manifest2.flags(fname) != fctx.flags()
+                fparent2 != repo.nullid
+                and manifest2.flags(fname) != fctx.flags()
             ):
                 touched = 'modified'
             return node, touched
@@ -327,7 +328,9 @@ def _filecommit(
         newfparent = fparent2
 
         if manifest2:  # branch merge
-            if fparent2 == nullid or cnode is None:  # copied on remote side
+            if (
+                fparent2 == repo.nullid or cnode is None
+            ):  # copied on remote side
                 if cfname in manifest2:
                     cnode = manifest2[cfname]
                     newfparent = fparent1
@@ -346,7 +349,7 @@ def _filecommit(
             if includecopymeta:
                 meta[b"copy"] = cfname
                 meta[b"copyrev"] = hex(cnode)
-            fparent1, fparent2 = nullid, newfparent
+            fparent1, fparent2 = repo.nullid, newfparent
         else:
             repo.ui.warn(
                 _(
@@ -356,20 +359,20 @@ def _filecommit(
                 % (fname, cfname)
             )
 
-    elif fparent1 == nullid:
-        fparent1, fparent2 = fparent2, nullid
-    elif fparent2 != nullid:
+    elif fparent1 == repo.nullid:
+        fparent1, fparent2 = fparent2, repo.nullid
+    elif fparent2 != repo.nullid:
         if ms.active() and ms.extras(fname).get(b'filenode-source') == b'other':
-            fparent1, fparent2 = fparent2, nullid
+            fparent1, fparent2 = fparent2, repo.nullid
         elif ms.active() and ms.extras(fname).get(b'merged') != b'yes':
-            fparent1, fparent2 = fparent1, nullid
+            fparent1, fparent2 = fparent1, repo.nullid
         # is one parent an ancestor of the other?
         else:
             fparentancestors = flog.commonancestorsheads(fparent1, fparent2)
             if fparent1 in fparentancestors:
-                fparent1, fparent2 = fparent2, nullid
+                fparent1, fparent2 = fparent2, repo.nullid
             elif fparent2 in fparentancestors:
-                fparent2 = nullid
+                fparent2 = repo.nullid
 
     force_new_node = False
     # The file might have been deleted by merge code and user explicitly choose
@@ -384,9 +387,14 @@ def _filecommit(
         force_new_node = True
     # is the file changed?
     text = fctx.data()
-    if fparent2 != nullid or meta or flog.cmp(fparent1, text) or force_new_node:
+    if (
+        fparent2 != repo.nullid
+        or meta
+        or flog.cmp(fparent1, text)
+        or force_new_node
+    ):
         if touched is None:  # do not overwrite added
-            if fparent2 == nullid:
+            if fparent2 == repo.nullid:
                 touched = 'modified'
             else:
                 touched = 'merged'

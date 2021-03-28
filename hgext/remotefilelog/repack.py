@@ -4,10 +4,7 @@ import os
 import time
 
 from mercurial.i18n import _
-from mercurial.node import (
-    nullid,
-    short,
-)
+from mercurial.node import short
 from mercurial import (
     encoding,
     error,
@@ -586,7 +583,7 @@ class repacker(object):
         # Create one contiguous chain and reassign deltabases.
         for i, node in enumerate(orphans):
             if i == 0:
-                deltabases[node] = (nullid, 0)
+                deltabases[node] = (self.repo.nullid, 0)
             else:
                 parent = orphans[i - 1]
                 deltabases[node] = (parent, deltabases[parent][1] + 1)
@@ -676,8 +673,8 @@ class repacker(object):
                 # of immediate child
                 deltatuple = deltabases.get(node, None)
                 if deltatuple is None:
-                    deltabase, chainlen = nullid, 0
-                    deltabases[node] = (nullid, 0)
+                    deltabase, chainlen = self.repo.nullid, 0
+                    deltabases[node] = (self.repo.nullid, 0)
                     nobase.add(node)
                 else:
                     deltabase, chainlen = deltatuple
@@ -692,7 +689,7 @@ class repacker(object):
                     # file was copied from elsewhere. So don't attempt to do any
                     # deltas with the other file.
                     if copyfrom:
-                        p1 = nullid
+                        p1 = self.repo.nullid
 
                     if chainlen < maxchainlen:
                         # Record this child as the delta base for its parents.
@@ -700,9 +697,9 @@ class repacker(object):
                         # many children, and this will only choose the last one.
                         # TODO: record all children and try all deltas to find
                         # best
-                        if p1 != nullid:
+                        if p1 != self.repo.nullid:
                             deltabases[p1] = (node, chainlen + 1)
-                        if p2 != nullid:
+                        if p2 != self.repo.nullid:
                             deltabases[p2] = (node, chainlen + 1)
 
             # experimental config: repack.chainorphansbysize
@@ -719,7 +716,7 @@ class repacker(object):
                 # TODO: Optimize the deltachain fetching. Since we're
                 # iterating over the different version of the file, we may
                 # be fetching the same deltachain over and over again.
-                if deltabase != nullid:
+                if deltabase != self.repo.nullid:
                     deltaentry = self.data.getdelta(filename, node)
                     delta, deltabasename, origdeltabase, meta = deltaentry
                     size = meta.get(constants.METAKEYSIZE)
@@ -791,9 +788,9 @@ class repacker(object):
                     # If copyfrom == filename, it means the copy history
                     # went to come other file, then came back to this one, so we
                     # should continue processing it.
-                    if p1 != nullid and copyfrom != filename:
+                    if p1 != self.repo.nullid and copyfrom != filename:
                         dontprocess.add(p1)
-                    if p2 != nullid:
+                    if p2 != self.repo.nullid:
                         dontprocess.add(p2)
                     continue
 
@@ -814,9 +811,9 @@ class repacker(object):
         def parentfunc(node):
             p1, p2, linknode, copyfrom = ancestors[node]
             parents = []
-            if p1 != nullid:
+            if p1 != self.repo.nullid:
                 parents.append(p1)
-            if p2 != nullid:
+            if p2 != self.repo.nullid:
                 parents.append(p2)
             return parents
 

@@ -14,8 +14,8 @@ import unittest
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     nullrev,
+    sha1nodeconstants,
 )
 from mercurial import (
     policy,
@@ -40,7 +40,7 @@ def py_parseindex(data, inline):
     s = 64
     cache = None
     index = []
-    nodemap = {nullid: nullrev}
+    nodemap = {sha1nodeconstants.nullid: nullrev}
     n = off = 0
 
     l = len(data) - s
@@ -227,7 +227,7 @@ class parseindex2tests(unittest.TestCase):
 
         ix = parsers.parse_index2(data_inlined, True)[0]
         for i, r in enumerate(ix):
-            if r[7] == nullid:
+            if r[7] == sha1nodeconstants.nullid:
                 i = -1
             try:
                 self.assertEqual(
@@ -240,7 +240,7 @@ class parseindex2tests(unittest.TestCase):
                 break
 
     def testminusone(self):
-        want = (0, 0, 0, -1, -1, -1, -1, nullid)
+        want = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
         self.assertEqual(want, got)  # inline data

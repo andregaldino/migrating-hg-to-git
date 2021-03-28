@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
-from mercurial.node import hex, nullid
+from mercurial.node import (
+    hex,
+    sha1nodeconstants,
+)
 from . import (
     basestore,
     shallowutil,
@@ -51,9 +54,9 @@ class unionmetadatastore(basestore.baseunionstore):
                     missing.append((name, node))
                     continue
                 p1, p2, linknode, copyfrom = value
-                if p1 != nullid and p1 not in known:
+                if p1 != sha1nodeconstants.nullid and p1 not in known:
                     queue.append((copyfrom or curname, p1))
-                if p2 != nullid and p2 not in known:
+                if p2 != sha1nodeconstants.nullid and p2 not in known:
                     queue.append((curname, p2))
             return missing
 

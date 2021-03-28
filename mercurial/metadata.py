@@ -11,10 +11,7 @@ from __future__ import absolute_import, print_function
 import multiprocessing
 import struct
 
-from .node import (
-    nullid,
-    nullrev,
-)
+from .node import nullrev
 from . import (
     error,
     pycompat,
@@ -617,7 +614,7 @@ def computechangesetfilesmerged(ctx):
         if f in ctx:
             fctx = ctx[f]
             parents = fctx._filelog.parents(fctx._filenode)
-            if parents[1] != nullid:
+            if parents[1] != ctx.repo().nullid:
                 merged.append(f)
     return merged
 

@@ -34,6 +34,7 @@ import time
 import traceback
 import warnings
 
+from .node import hex
 from .thirdparty import attr
 from .pycompat import (
     delattr,

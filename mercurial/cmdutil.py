@@ -15,7 +15,6 @@ import re
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -1097,7 +1096,7 @@ def bailifchanged(repo, merge=True, hint=None):
     'hint' is the usual hint given to Abort exception.
     """
 
-    if merge and repo.dirstate.p2() != nullid:
+    if merge and repo.dirstate.p2() != repo.nullid:
         raise error.StateError(_(b'outstanding uncommitted merge'), hint=hint)
     st = repo.status()
     if st.modified or st.added or st.removed or st.deleted:
@@ -2104,7 +2103,7 @@ def _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts):
     if parents:
         prev = parents[0]
     else:
-        prev = nullid
+        prev = repo.nullid
 
     fm.context(ctx=ctx)
     fm.plain(b'# HG changeset patch\n')
@@ -2967,7 +2966,7 @@ def amend(ui, repo, old, extra, pats, opts):
         ms.reset()
 
         # Reroute the working copy parent to the new changeset
-        repo.setparents(newid, nullid)
+        repo.setparents(newid, repo.nullid)
 
         # Fixing the dirstate because localrepo.commitctx does not update
         # it. This is rather convenient because we did not need to update
@@ -3322,7 +3321,7 @@ def revert(ui, repo, ctx, *pats, **opts):
 
         # in case of merge, files that are actually added can be reported as
         # modified, we need to post process the result
-        if p2 != nullid:
+        if p2 != repo.nullid:
             mergeadd = set(dsmodified)
             for path in dsmodified:
                 if path in mf:
@@ -3593,7 +3592,7 @@ def _performrevert(
         # We're reverting to our parent. If possible, we'd like status
         # to report the file as clean. We have to use normallookup for
         # merges to avoid losing information about merged/dirty files.
-        if p2 != nullid:
+        if p2 != repo.nullid:
             normal = repo.dirstate.normallookup
         else:
             normal = repo.dirstate.normal
@@ -3690,7 +3689,7 @@ def _performrevert(
             repo.dirstate.add(f)
 
     normal = repo.dirstate.normallookup
-    if node == parent and p2 == nullid:
+    if node == parent and p2 == repo.nullid:
         normal = repo.dirstate.normal
     for f in actions[b'undelete'][0]:
         if interactive:

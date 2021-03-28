@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import collections
 
 from .i18n import _
-from .node import (
-    nullid,
-    short,
-)
+from .node import short
 from . import (
     error,
     pycompat,
@@ -44,11 +41,11 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
     if audit is not None:
         audit[b'total-roundtrips'] = 1
 
-    if repo.changelog.tip() == nullid:
-        base.add(nullid)
-        if heads != [nullid]:
-            return [nullid], [nullid], list(heads)
-        return [nullid], [], heads
+    if repo.changelog.tip() == repo.nullid:
+        base.add(repo.nullid)
+        if heads != [repo.nullid]:
+            return [repo.nullid], [repo.nullid], list(heads)
+        return [repo.nullid], [], heads
 
     # assume we're closer to the tip than the root
     # and start by examining the heads
@@ -84,7 +81,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
                 continue
 
             repo.ui.debug(b"examining %s:%s\n" % (short(n[0]), short(n[1])))
-            if n[0] == nullid:  # found the end of the branch
+            if n[0] == repo.nullid:  # found the end of the branch
                 pass
             elif n in seenbranch:
                 repo.ui.debug(b"branch already found\n")
@@ -170,7 +167,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
             raise error.RepoError(_(b"already have changeset ") + short(f[:4]))
 
     base = list(base)
-    if base == [nullid]:
+    if base == [repo.nullid]:
         if force:
             repo.ui.warn(_(b"warning: repository is unrelated\n"))
         else:

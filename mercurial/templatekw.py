@@ -10,8 +10,6 @@ from __future__ import absolute_import
 from .i18n import _
 from .node import (
     hex,
-    nullid,
-    wdirid,
     wdirrev,
 )
 
@@ -412,7 +410,7 @@ def getgraphnode(repo, ctx, cache):
 
 def getgraphnodecurrent(repo, ctx, cache):
     wpnodes = repo.dirstate.parents()
-    if wpnodes[1] == nullid:
+    if wpnodes[1] == repo.nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return b'@'
@@ -525,11 +523,12 @@ def showmanifest(context, mapping):
     ctx = context.resource(mapping, b'ctx')
     mnode = ctx.manifestnode()
     if mnode is None:
-        mnode = wdirid
+        mnode = repo.nodeconstants.wdirid
         mrev = wdirrev
+        mhex = repo.nodeconstants.wdirhex
     else:
         mrev = repo.manifestlog.rev(mnode)
-    mhex = hex(mnode)
+        mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {b'rev': mrev, b'node': mhex})
     f = context.process(b'manifest', mapping)
     return templateutil.hybriditem(

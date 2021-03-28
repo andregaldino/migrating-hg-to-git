@@ -14,14 +14,9 @@ import stat
 
 from .i18n import _
 from .node import (
-    addednodeid,
     hex,
-    modifiednodeid,
-    nullid,
     nullrev,
     short,
-    wdirfilenodeids,
-    wdirhex,
 )
 from .pycompat import (
     getattr,
@@ -140,7 +135,7 @@ class basectx(object):
                 removed.append(fn)
             elif flag1 != flag2:
                 modified.append(fn)
-            elif node2 not in wdirfilenodeids:
+            elif node2 not in self._repo.nodeconstants.wdirfilenodeids:
                 # When comparing files between two commits, we save time by
                 # not comparing the file contents when the nodeids differ.
                 # Note that this means we incorrectly report a reverted change
@@ -737,7 +732,7 @@ class changectx(basectx):
             n2 = c2._parents[0]._node
         cahs = self._repo.changelog.commonancestorsheads(self._node, n2)
         if not cahs:
-            anc = nullid
+            anc = self._repo.nodeconstants.nullid
         elif len(cahs) == 1:
             anc = cahs[0]
         else:
@@ -1132,7 +1127,11 @@ class basefilectx(object):
         _path = self._path
         fl = self._filelog
         parents = self._filelog.parents(self._filenode)
-        pl = [(_path, node, fl) for node in parents if node != nullid]
+        pl = [
+            (_path, node, fl)
+            for node in parents
+            if node != self._repo.nodeconstants.nullid
+        ]
 
         r = fl.renamed(self._filenode)
         if r:
@@ -1556,12 +1555,12 @@ class workingctx(committablectx):
         return self._repo.dirstate[key] not in b"?r"
 
     def hex(self):
-        return wdirhex
+        return self._repo.nodeconstants.wdirhex
 
     @propertycache
     def _parents(self):
         p = self._repo.dirstate.parents()
-        if p[1] == nullid:
+        if p[1] == self._repo.nodeconstants.nullid:
             p = p[:-1]
         # use unfiltered repo to delay/avoid loading obsmarkers
         unfi = self._repo.unfiltered()
@@ -1572,7 +1571,9 @@ class workingctx(committablectx):
             for n in p
         ]
 
-    def setparents(self, p1node, p2node=nullid):
+    def setparents(self, p1node, p2node=None):
+        if p2node is None:
+            p2node = self._repo.nodeconstants.nullid
         dirstate = self._repo.dirstate
         with dirstate.parentchange():
             copies = dirstate.setparents(p1node, p2node)
@@ -1584,7 +1585,7 @@ class workingctx(committablectx):
                 for f in copies:
                     if f not in pctx and copies[f] in pctx:
                         dirstate.copy(copies[f], f)
-            if p2node == nullid:
+            if p2node == self._repo.nodeconstants.nullid:
                 for f, s in sorted(dirstate.copies().items()):
                     if f not in pctx and s not in pctx:
                         dirstate.copy(None, f)
@@ -1944,8 +1945,8 @@ class workingctx(committablectx):
 
         ff = self._flagfunc
         for i, l in (
-            (addednodeid, status.added),
-            (modifiednodeid, status.modified),
+            (self._repo.nodeconstants.addednodeid, status.added),
+            (self._repo.nodeconstants.modifiednodeid, status.modified),
         ):
             for f in l:
                 man[f] = i
@@ -2070,13 +2071,18 @@ class committablefilectx(basefilectx):
         path = self.copysource()
         if not path:
             return None
-        return path, self._changectx._parents[0]._manifest.get(path, nullid)
+        return (
+            path,
+            self._changectx._parents[0]._manifest.get(
+                path, self._repo.nodeconstants.nullid
+            ),
+        )
 
     def parents(self):
         '''return parent filectxs, following copies if necessary'''
 
         def filenode(ctx, path):
-            return ctx._manifest.get(path, nullid)
+            return ctx._manifest.get(path, self._repo.nodeconstants.nullid)
 
         path = self._path
         fl = self._filelog
@@ -2094,7 +2100,7 @@ class committablefilectx(basefilectx):
         return [
             self._parentfilectx(p, fileid=n, filelog=l)
             for p, n, l in pl
-            if n != nullid
+            if n != self._repo.nodeconstants.nullid
         ]
 
     def children(self):
@@ -2222,7 +2228,9 @@ class overlayworkingctx(committablectx):
         # ``overlayworkingctx`` (e.g. with --collapse).
         util.clearcachedproperty(self, b'_manifest')
 
-    def setparents(self, p1node, p2node=nullid):
+    def setparents(self, p1node, p2node=None):
+        if p2node is None:
+            p2node = self._repo.nodeconstants.nullid
         assert p1node == self._wrappedctx.node()
         self._parents = [self._wrappedctx, self._repo.unfiltered()[p2node]]
 
@@ -2248,10 +2256,10 @@ class overlayworkingctx(committablectx):
 
         flag = self._flagfunc
         for path in self.added():
-            man[path] = addednodeid
+            man[path] = self._repo.nodeconstants.addednodeid
             man.setflag(path, flag(path))
         for path in self.modified():
-            man[path] = modifiednodeid
+            man[path] = self._repo.nodeconstants.modifiednodeid
             man.setflag(path, flag(path))
         for path in self.removed():
             del man[path]
@@ -2827,7 +2835,7 @@ class memctx(committablectx):
         )
         self._rev = None
         self._node = None
-        parents = [(p or nullid) for p in parents]
+        parents = [(p or self._repo.nodeconstants.nullid) for p in parents]
         p1, p2 = parents
         self._parents = [self._repo[p] for p in (p1, p2)]
         files = sorted(set(files))
@@ -2866,10 +2874,10 @@ class memctx(committablectx):
         man = pctx.manifest().copy()
 
         for f in self._status.modified:
-            man[f] = modifiednodeid
+            man[f] = self._repo.nodeconstants.modifiednodeid
 
         for f in self._status.added:
-            man[f] = addednodeid
+            man[f] = self._repo.nodeconstants.addednodeid
 
         for f in self._status.removed:
             if f in man:
@@ -3006,12 +3014,12 @@ class metadataonlyctx(committablectx):
         # sanity check to ensure that the reused manifest parents are
         # manifests of our commit parents
         mp1, mp2 = self.manifestctx().parents
-        if p1 != nullid and p1.manifestnode() != mp1:
+        if p1 != self._repo.nodeconstants.nullid and p1.manifestnode() != mp1:
             raise RuntimeError(
                 r"can't reuse the manifest: its p1 "
                 r"doesn't match the new ctx p1"
             )
-        if p2 != nullid and p2.manifestnode() != mp2:
+        if p2 != self._repo.nodeconstants.nullid and p2.manifestnode() != mp2:
             raise RuntimeError(
                 r"can't reuse the manifest: "
                 r"its p2 doesn't match the new ctx p2"

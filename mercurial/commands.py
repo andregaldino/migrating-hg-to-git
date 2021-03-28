@@ -15,10 +15,8 @@ import sys
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
-    wdirhex,
     wdirrev,
 )
 from .pycompat import open
@@ -486,7 +484,7 @@ def annotate(ui, repo, *pats, **opts):
                     return b'%d ' % rev
 
         def formathex(h):
-            if h == wdirhex:
+            if h == repo.nodeconstants.wdirhex:
                 return b'%s+' % shorthex(hex(ctx.p1().node()))
             else:
                 return b'%s ' % shorthex(h)
@@ -809,9 +807,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         )
 
     p1, p2 = repo.changelog.parents(node)
-    if p1 == nullid:
+    if p1 == repo.nullid:
         raise error.InputError(_(b'cannot backout a change with no parents'))
-    if p2 != nullid:
+    if p2 != repo.nullid:
         if not opts.get(b'parent'):
             raise error.InputError(_(b'cannot backout a merge changeset'))
         p = repo.lookup(opts[b'parent'])
@@ -1085,7 +1083,7 @@ def bisect(
                 )
         else:
             node, p2 = repo.dirstate.parents()
-            if p2 != nullid:
+            if p2 != repo.nullid:
                 raise error.StateError(_(b'current bisect revision is a merge'))
         if rev:
             if not nodes:
@@ -4847,7 +4845,7 @@ def merge(ui, repo, node=None, **opts):
 
     opts = pycompat.byteskwargs(opts)
     abort = opts.get(b'abort')
-    if abort and repo.dirstate.p2() == nullid:
+    if abort and repo.dirstate.p2() == repo.nullid:
         cmdutil.wrongtooltocontinue(repo, _(b'merge'))
     cmdutil.check_incompatible_arguments(opts, b'abort', [b'rev', b'preview'])
     if abort:
@@ -5072,7 +5070,7 @@ def parents(ui, repo, file_=None, **opts):
 
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for n in p:
-        if n != nullid:
+        if n != repo.nullid:
             displayer.show(repo[n])
     displayer.close()
 
@@ -6105,7 +6103,7 @@ def resolve(ui, repo, *pats, **opts):
     with repo.wlock():
         ms = mergestatemod.mergestate.read(repo)
 
-        if not (ms.active() or repo.dirstate.p2() != nullid):
+        if not (ms.active() or repo.dirstate.p2() != repo.nullid):
             raise error.StateError(
                 _(b'resolve command not applicable when not merging')
             )
@@ -6223,7 +6221,7 @@ def resolve(ui, repo, *pats, **opts):
                     raise
 
         ms.commit()
-        branchmerge = repo.dirstate.p2() != nullid
+        branchmerge = repo.dirstate.p2() != repo.nullid
         mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
 
         if not didwork and pats:
@@ -6315,7 +6313,7 @@ def revert(ui, repo, *pats, **opts):
         opts[b"rev"] = cmdutil.finddate(ui, repo, opts[b"date"])
 
     parent, p2 = repo.dirstate.parents()
-    if not opts.get(b'rev') and p2 != nullid:
+    if not opts.get(b'rev') and p2 != repo.nullid:
         # revert after merge is a trap for new users (issue2915)
         raise error.InputError(
             _(b'uncommitted merge with no revision specified'),
@@ -6335,7 +6333,7 @@ def revert(ui, repo, *pats, **opts):
         or opts.get(b'interactive')
     ):
         msg = _(b"no files or directories specified")
-        if p2 != nullid:
+        if p2 != repo.nullid:
             hint = _(
                 b"uncommitted merge, use --all to discard all changes,"
                 b" or 'hg update -C .' to abort the merge"
@@ -7396,7 +7394,7 @@ def tag(ui, repo, name1, *names, **opts):
             for n in names:
                 if repo.tagtype(n) == b'global':
                     alltags = tagsmod.findglobaltags(ui, repo)
-                    if alltags[n][0] == nullid:
+                    if alltags[n][0] == repo.nullid:
                         raise error.InputError(
                             _(b"tag '%s' is already removed") % n
                         )
@@ -7423,7 +7421,7 @@ def tag(ui, repo, name1, *names, **opts):
                     )
         if not opts.get(b'local'):
             p1, p2 = repo.dirstate.parents()
-            if p2 != nullid:
+            if p2 != repo.nullid:
                 raise error.StateError(_(b'uncommitted merge'))
             bheads = repo.branchheads()
             if not opts.get(b'force') and bheads and p1 not in bheads:

@@ -10,7 +10,10 @@ from __future__ import absolute_import
 import struct
 import zlib
 
-from ..node import nullid, nullrev
+from ..node import (
+    nullrev,
+    sha1nodeconstants,
+)
 from .. import (
     pycompat,
     util,
@@ -50,7 +53,7 @@ class BaseIndexObject(object):
     # Size of a C long int, platform independent
     int_size = struct.calcsize(b'>i')
     # An empty index entry, used as a default value to be overridden, or nullrev
-    null_item = (0, 0, 0, -1, -1, -1, -1, nullid)
+    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
 
     @util.propertycache
     def entry_size(self):
@@ -64,7 +67,7 @@ class BaseIndexObject(object):
 
     @util.propertycache
     def _nodemap(self):
-        nodemap = nodemaputil.NodeMap({nullid: nullrev})
+        nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
         for r in range(0, len(self)):
             n = self[r][7]
             nodemap[n] = r
@@ -246,7 +249,7 @@ def parse_index2(data, inline, revlogv2=False):
 
 class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
-    null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
+    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
 
     def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):
         """

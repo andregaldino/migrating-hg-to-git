@@ -22,7 +22,6 @@ from mercurial.pycompat import open
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     short,
 )
 from mercurial import (
@@ -134,6 +133,7 @@ class transplants(object):
 class transplanter(object):
     def __init__(self, ui, repo, opts):
         self.ui = ui
+        self.repo = repo
         self.path = repo.vfs.join(b'transplant')
         self.opener = vfsmod.vfs(self.path)
         self.transplants = transplants(
@@ -221,7 +221,7 @@ class transplanter(object):
                         exchange.pull(repo, source.peer(), heads=[node])
 
                 skipmerge = False
-                if parents[1] != nullid:
+                if parents[1] != repo.nullid:
                     if not opts.get(b'parent'):
                         self.ui.note(
                             _(b'skipping merge changeset %d:%s\n')
@@ -516,7 +516,7 @@ class transplanter(object):
     def parselog(self, fp):
         parents = []
         message = []
-        node = nullid
+        node = self.repo.nullid
         inmsg = False
         user = None
         date = None
@@ -568,7 +568,7 @@ class transplanter(object):
         def matchfn(node):
             if self.applied(repo, node, root):
                 return False
-            if source.changelog.parents(node)[1] != nullid:
+            if source.changelog.parents(node)[1] != repo.nullid:
                 return False
             extra = source.changelog.read(node)[5]
             cnode = extra.get(b'transplant_source')
@@ -804,7 +804,7 @@ def _dotransplant(ui, repo, *revs, **opts):
     tp = transplanter(ui, repo, opts)
 
     p1 = repo.dirstate.p1()
-    if len(repo) > 0 and p1 == nullid:
+    if len(repo) > 0 and p1 == repo.nullid:
         raise error.Abort(_(b'no revision checked out'))
     if opts.get(b'continue'):
         if not tp.canresume():

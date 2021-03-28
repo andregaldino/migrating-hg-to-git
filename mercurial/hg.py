@@ -16,8 +16,7 @@ import stat
 from .i18n import _
 from .node import (
     hex,
-    nullhex,
-    nullid,
+    sha1nodeconstants,
     short,
 )
 from .pycompat import getattr
@@ -772,7 +771,7 @@ def clone(
                             },
                         ).result()
 
-                    if rootnode != nullid:
+                    if rootnode != sha1nodeconstants.nullid:
                         sharepath = os.path.join(sharepool, hex(rootnode))
                     else:
                         ui.status(
@@ -883,7 +882,9 @@ def clone(
             # we need to re-init the repo after manually copying the data
             # into it
             destpeer = peer(srcrepo, peeropts, dest)
-            srcrepo.hook(b'outgoing', source=b'clone', node=nullhex)
+            srcrepo.hook(
+                b'outgoing', source=b'clone', node=srcrepo.nodeconstants.nullhex
+            )
         else:
             try:
                 # only pass ui when no srcrepo
@@ -1329,7 +1330,9 @@ def incoming(ui, repo, source, opts, subpath=None):
         for n in chlist:
             if limit is not None and count >= limit:
                 break
-            parents = [p for p in other.changelog.parents(n) if p != nullid]
+            parents = [
+                p for p in other.changelog.parents(n) if p != repo.nullid
+            ]
             if opts.get(b'no_merges') and len(parents) == 2:
                 continue
             count += 1
@@ -1406,7 +1409,7 @@ def _outgoing_filter(repo, revs, opts):
     for n in revs:
         if limit is not None and count >= limit:
             break
-        parents = [p for p in cl.parents(n) if p != nullid]
+        parents = [p for p in cl.parents(n) if p != repo.nullid]
         if no_merges and len(parents) == 2:
             continue
         count += 1

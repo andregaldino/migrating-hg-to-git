@@ -11,7 +11,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
 )
 from .thirdparty import attr
 
@@ -221,7 +220,7 @@ class changelogrevision(object):
 
     def __new__(cls, cl, text, sidedata, cpsd):
         if not text:
-            return _changelogrevision(extra=_defaultextra, manifest=nullid)
+            return _changelogrevision(extra=_defaultextra, manifest=cl.nullid)
 
         self = super(changelogrevision, cls).__new__(cls)
         # We could return here and implement the following as an __init__.

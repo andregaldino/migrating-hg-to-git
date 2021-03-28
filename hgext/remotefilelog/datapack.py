@@ -3,7 +3,10 @@ from __future__ import absolute_import
 import struct
 import zlib
 
-from mercurial.node import hex, nullid
+from mercurial.node import (
+    hex,
+    sha1nodeconstants,
+)
 from mercurial.i18n import _
 from mercurial import (
     pycompat,
@@ -458,7 +461,7 @@ class mutabledatapack(basepack.mutablebasepack):
         rawindex = b''
         fmt = self.INDEXFORMAT
         for node, deltabase, offset, size in entries:
-            if deltabase == nullid:
+            if deltabase == sha1nodeconstants.nullid:
                 deltabaselocation = FULLTEXTINDEXMARK
             else:
                 # Instead of storing the deltabase node in the index, let's

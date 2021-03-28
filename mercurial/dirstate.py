@@ -14,7 +14,6 @@ import os
 import stat
 
 from .i18n import _
-from .node import nullid
 from .pycompat import delattr
 
 from hgdemandimport import tracing
@@ -314,7 +313,7 @@ class dirstate(object):
     def branch(self):
         return encoding.tolocal(self._branch)
 
-    def setparents(self, p1, p2=nullid):
+    def setparents(self, p1, p2=None):
         """Set dirstate parents to p1 and p2.
 
         When moving from two parents to one, 'm' merged entries a
@@ -323,6 +322,8 @@ class dirstate(object):
 
         See localrepo.setparents()
         """
+        if p2 is None:
+            p2 = self._nodeconstants.nullid
         if self._parentwriters == 0:
             raise ValueError(
                 b"cannot set dirstate parent outside of "
@@ -335,7 +336,10 @@ class dirstate(object):
             self._origpl = self._pl
         self._map.setparents(p1, p2)
         copies = {}
-        if oldp2 != nullid and p2 == nullid:
+        if (
+            oldp2 != self._nodeconstants.nullid
+            and p2 == self._nodeconstants.nullid
+        ):
             candidatefiles = self._map.nonnormalset.union(
                 self._map.otherparentset
             )
@@ -459,7 +463,7 @@ class dirstate(object):
 
     def normallookup(self, f):
         '''Mark a file normal, but possibly dirty.'''
-        if self._pl[1] != nullid:
+        if self._pl[1] != self._nodeconstants.nullid:
             # if there is a merge going on and the file was either
             # in state 'm' (-1) or coming from other parent (-2) before
             # being removed, restore that state.
@@ -481,7 +485,7 @@ class dirstate(object):
 
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
-        if self._pl[1] == nullid:
+        if self._pl[1] == self._nodeconstants.nullid:
             raise error.Abort(
                 _(b"setting %r to other parent only allowed in merges") % f
             )
@@ -503,7 +507,7 @@ class dirstate(object):
         self._dirty = True
         oldstate = self[f]
         size = 0
-        if self._pl[1] != nullid:
+        if self._pl[1] != self._nodeconstants.nullid:
             entry = self._map.get(f)
             if entry is not None:
                 # backup the previous state
@@ -519,7 +523,7 @@ class dirstate(object):
 
     def merge(self, f):
         '''Mark a file merged.'''
-        if self._pl[1] == nullid:
+        if self._pl[1] == self._nodeconstants.nullid:
             return self.normallookup(f)
         return self.otherparent(f)
 
@@ -638,7 +642,7 @@ class dirstate(object):
 
         if self._origpl is None:
             self._origpl = self._pl
-        self._map.setparents(parent, nullid)
+        self._map.setparents(parent, self._nodeconstants.nullid)
 
         for f in to_lookup:
             self.normallookup(f)
@@ -1459,7 +1463,7 @@ class dirstatemap(object):
     def clear(self):
         self._map.clear()
         self.copymap.clear()
-        self.setparents(nullid, nullid)
+        self.setparents(self._nodeconstants.nullid, self._nodeconstants.nullid)
         util.clearcachedproperty(self, b"_dirs")
         util.clearcachedproperty(self, b"_alldirs")
         util.clearcachedproperty(self, b"filefoldmap")
@@ -1636,7 +1640,10 @@ class dirstatemap(object):
                     st[self._nodelen : 2 * self._nodelen],
                 )
             elif l == 0:
-                self._parents = (nullid, nullid)
+                self._parents = (
+                    self._nodeconstants.nullid,
+                    self._nodeconstants.nullid,
+                )
             else:
                 raise error.Abort(
                     _(b'working directory state appears damaged!')
@@ -1794,7 +1801,9 @@ if rustmod is not None:
         def clear(self):
             self._rustmap.clear()
             self._inner_rustmap.clear()
-            self.setparents(nullid, nullid)
+            self.setparents(
+                self._nodeconstants.nullid, self._nodeconstants.nullid
+            )
             util.clearcachedproperty(self, b"_dirs")
             util.clearcachedproperty(self, b"_alldirs")
             util.clearcachedproperty(self, b"dirfoldmap")

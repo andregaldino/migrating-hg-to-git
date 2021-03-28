@@ -2,7 +2,10 @@ from __future__ import absolute_import
 
 import struct
 
-from mercurial.node import hex, nullid
+from mercurial.node import (
+    hex,
+    sha1nodeconstants,
+)
 from mercurial import (
     pycompat,
     util,
@@ -147,9 +150,9 @@ class historypack(basepack.basepack):
                 pending.remove(ancnode)
                 p1node = entry[ANC_P1NODE]
                 p2node = entry[ANC_P2NODE]
-                if p1node != nullid and p1node not in known:
+                if p1node != sha1nodeconstants.nullid and p1node not in known:
                     pending.add(p1node)
-                if p2node != nullid and p2node not in known:
+                if p2node != sha1nodeconstants.nullid and p2node not in known:
                     pending.add(p2node)
 
                 yield (ancnode, p1node, p2node, entry[ANC_LINKNODE], copyfrom)
@@ -457,9 +460,9 @@ class mutablehistorypack(basepack.mutablebasepack):
             def parentfunc(node):
                 x, p1, p2, x, x, x = entrymap[node]
                 parents = []
-                if p1 != nullid:
+                if p1 != sha1nodeconstants.nullid:
                     parents.append(p1)
-                if p2 != nullid:
+                if p2 != sha1nodeconstants.nullid:
                     parents.append(p2)
                 return parents
 
