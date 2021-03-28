@@ -14,6 +14,7 @@ Setup:
   >    git commit "$@" >/dev/null 2>/dev/null || echo "git commit error"
   >    count=`expr $count + 1`
   >  }
+  $ git config --global init.defaultBranch master
 
 
   $ hg version -v --config extensions.git= | grep '^[E ]'
