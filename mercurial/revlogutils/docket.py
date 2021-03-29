@@ -145,7 +145,8 @@ class RevlogDocket(object):
 
 def default_docket(revlog, version_header):
     """given a revlog version a new docket object for the given revlog"""
-    if (version_header & 0xFFFF) != constants.REVLOGV2:
+    rl_version = version_header & 0xFFFF
+    if rl_version not in (constants.REVLOGV2, constants.CHANGELOGV2):
         return None
     comp = util.compengines[revlog._compengine].revlogheader()
     docket = RevlogDocket(

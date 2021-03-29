@@ -35,6 +35,7 @@ from .i18n import _
 from .pycompat import getattr
 from .revlogutils.constants import (
     ALL_KINDS,
+    CHANGELOGV2,
     COMP_MODE_DEFAULT,
     COMP_MODE_INLINE,
     COMP_MODE_PLAIN,
@@ -460,7 +461,7 @@ class revlog(object):
         opts = self.opener.options
 
         if b'changelogv2' in opts and self.revlog_kind == KIND_CHANGELOG:
-            new_header = REVLOGV2
+            new_header = CHANGELOGV2
         elif b'revlogv2' in opts:
             new_header = REVLOGV2
         elif b'revlogv1' in opts:
@@ -649,6 +650,8 @@ class revlog(object):
         if self._format_version == REVLOGV0:
             self._parse_index = revlogv0.parse_index_v0
         elif self._format_version == REVLOGV2:
+            self._parse_index = parse_index_v2
+        elif self._format_version == CHANGELOGV2:
             self._parse_index = parse_index_v2
         elif devel_nodemap:
             self._parse_index = parse_index_v1_nodemap

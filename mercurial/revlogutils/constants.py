@@ -36,6 +36,8 @@ REVLOGV0 = 0
 REVLOGV1 = 1
 # Dummy value until file format is finalized.
 REVLOGV2 = 0xDEAD
+# Dummy value until file format is finalized.
+CHANGELOGV2 = 0xD34D
 
 ##  global revlog header flags
 # Shared across v1 and v2.
@@ -48,6 +50,7 @@ REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
 REVLOGV0_FLAGS = 0
 REVLOGV1_FLAGS = FLAG_INLINE_DATA | FLAG_GENERALDELTA
 REVLOGV2_FLAGS = FLAG_INLINE_DATA
+CHANGELOGV2_FLAGS = 0
 
 ### individual entry
 
@@ -141,6 +144,7 @@ SUPPORTED_FLAGS = {
     REVLOGV0: REVLOGV0_FLAGS,
     REVLOGV1: REVLOGV1_FLAGS,
     REVLOGV2: REVLOGV2_FLAGS,
+    CHANGELOGV2: CHANGELOGV2_FLAGS,
 }
 
 _no = lambda flags: False
@@ -170,6 +174,13 @@ FEATURES_BY_VERSION = {
         # means to reduce the number of files for revlogv2.
         b'inline': _no,
         b'generaldelta': _yes,
+        b'sidedata': True,
+        b'docket': True,
+    },
+    CHANGELOGV2: {
+        b'inline': _no,
+        # General delta is useless for changelog since we don't do any delta
+        b'generaldelta': _no,
         b'sidedata': True,
         b'docket': True,
     },
