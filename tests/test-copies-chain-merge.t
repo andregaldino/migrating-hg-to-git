@@ -1660,6 +1660,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no    yes      no
   revlog-v2:           no    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        * (glob)
   compression-level:  default default default
@@ -1699,6 +1700,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no    yes      no
   revlog-v2:           no    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        * (glob)
   compression-level:  default default default

@@ -1341,6 +1341,21 @@ coreconfigitem(
     default=lambda: [b'zstd', b'zlib'],
     alias=[(b'experimental', b'format.compression')],
 )
+# Experimental TODOs:
+#
+# * Same as for evlogv2 (but for the reduction of the number of files)
+# * drop the storage of the base
+# * Improvement to investigate
+#   - storing .hgtags fnode
+#   - storing `rank` of changesets
+#   - storing branch related identifier
+
+coreconfigitem(
+    b'format',
+    b'exp-use-changelog-v2',
+    default=None,
+    experimental=True,
+)
 coreconfigitem(
     b'format',
     b'usefncache',

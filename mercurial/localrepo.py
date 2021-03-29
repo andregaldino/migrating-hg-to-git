@@ -737,7 +737,10 @@ def makelocalrepository(baseui, path, intents=None):
     storevfs = store.vfs
     storevfs.options = resolvestorevfsoptions(ui, requirements, features)
 
-    if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
+    if (
+        requirementsmod.REVLOGV2_REQUIREMENT in requirements
+        or requirementsmod.CHANGELOGV2_REQUIREMENT in requirements
+    ):
         features.add(repository.REPO_FEATURE_SIDE_DATA)
         # the revlogv2 docket introduced race condition that we need to fix
         features.discard(repository.REPO_FEATURE_STREAM_CLONE)
@@ -1021,6 +1024,8 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         options[b'revlogv1'] = True
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
+    if requirementsmod.CHANGELOGV2_REQUIREMENT in requirements:
+        options[b'changelogv2'] = True
 
     if requirementsmod.GENERALDELTA_REQUIREMENT in requirements:
         options[b'generaldelta'] = True
@@ -1220,6 +1225,7 @@ class localrepository(object):
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.REVLOGV2_REQUIREMENT,
+        requirementsmod.CHANGELOGV2_REQUIREMENT,
         requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
@@ -3528,6 +3534,10 @@ def newreporequirements(ui, createopts):
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)
+
+    changelogv2 = ui.config(b'format', b'exp-use-changelog-v2')
+    if changelogv2 == b'enable-unstable-format-and-corrupt-my-data':
+        requirements.add(requirementsmod.CHANGELOGV2_REQUIREMENT)
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':

@@ -373,6 +373,15 @@ class revlogv2(requirementformatvariant):
 
 
 @registerformatvariant
+class changelogv2(requirementformatvariant):
+    name = b'changelog-v2'
+    _requirement = requirements.CHANGELOGV2_REQUIREMENT
+    default = False
+    description = _(b'An iteration of the revlog focussed on changelog needs.')
+    upgrademessage = _(b'quite experimental')
+
+
+@registerformatvariant
 class removecldeltachain(formatvariant):
     name = b'plain-cl-delta'
 

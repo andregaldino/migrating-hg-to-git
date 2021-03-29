@@ -295,7 +295,10 @@ class cg1unpacker(object):
         # Only useful if we're adding sidedata categories. If both peers have
         # the same categories, then we simply don't do anything.
         adding_sidedata = (
-            requirements.REVLOGV2_REQUIREMENT in repo.requirements
+            (
+                requirements.REVLOGV2_REQUIREMENT in repo.requirements
+                or requirements.CHANGELOGV2_REQUIREMENT in repo.requirements
+            )
             and self.version == b'04'
             and srctype == b'pull'
         )
@@ -1723,6 +1726,7 @@ def allsupportedversions(repo):
     want_v4 = (
         repo.ui.configbool(b'experimental', b'changegroup4')
         or requirements.REVLOGV2_REQUIREMENT in repo.requirements
+        or requirements.CHANGELOGV2_REQUIREMENT in repo.requirements
     )
     if not want_v4:
         versions.discard(b'04')

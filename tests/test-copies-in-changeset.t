@@ -43,6 +43,7 @@ Check that copies are recorded correctly
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -59,6 +60,7 @@ Check that copies are recorded correctly
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -432,6 +434,7 @@ downgrading
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -461,6 +464,7 @@ downgrading
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -487,6 +491,7 @@ upgrading
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)

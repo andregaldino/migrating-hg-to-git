@@ -42,6 +42,7 @@ from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_HEADER,
+    KIND_CHANGELOG,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -458,7 +459,9 @@ class revlog(object):
         mmapindexthreshold = None
         opts = self.opener.options
 
-        if b'revlogv2' in opts:
+        if b'changelogv2' in opts and self.revlog_kind == KIND_CHANGELOG:
+            new_header = REVLOGV2
+        elif b'revlogv2' in opts:
             new_header = REVLOGV2
         elif b'revlogv1' in opts:
             new_header = REVLOGV1 | FLAG_INLINE_DATA

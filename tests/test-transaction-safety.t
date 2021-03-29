@@ -1,7 +1,7 @@
 Test transaction safety
 =======================
 
-#testcases revlogv1 revlogv2
+#testcases revlogv1 revlogv2 changelogv2
 
 #if revlogv1
 
@@ -17,6 +17,15 @@ Test transaction safety
   $ cat << EOF >> $HGRCPATH
   > [experimental]
   > revlogv2=enable-unstable-format-and-corrupt-my-data
+  > EOF
+
+#endif
+
+#if changelogv2
+
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > exp-use-changelog-v2=enable-unstable-format-and-corrupt-my-data
   > EOF
 
 #endif
