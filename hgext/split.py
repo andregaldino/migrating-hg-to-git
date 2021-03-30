@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 
 from mercurial.node import (
-    nullid,
+    nullrev,
     short,
 )
 
@@ -80,12 +80,12 @@ def split(ui, repo, *revs, **opts):
                 raise error.InputError(_(b'cannot split multiple revisions'))
 
             rev = revs.first()
-            ctx = repo[rev]
-            # Handle nullid specially here (instead of leaving for precheck()
+            # Handle nullrev specially here (instead of leaving for precheck()
             # below) so we get a nicer message and error code.
-            if rev is None or ctx.node() == nullid:
+            if rev is None or rev == nullrev:
                 ui.status(_(b'nothing to split\n'))
                 return 1
+            ctx = repo[rev]
             if ctx.node() is None:
                 raise error.InputError(_(b'cannot split working directory'))
 

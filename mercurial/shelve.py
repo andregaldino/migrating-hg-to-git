@@ -534,7 +534,7 @@ def _docreatecmd(ui, repo, pats, opts):
     parent = parents[0]
     origbranch = wctx.branch()
 
-    if parent.node() != nullid:
+    if parent.rev() != nullrev:
         desc = b"changes to: %s" % parent.description().split(b'\n', 1)[0]
     else:
         desc = b'(changes in empty repository)'

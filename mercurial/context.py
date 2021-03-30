@@ -2885,7 +2885,7 @@ class memctx(committablectx):
         # "1 < len(self._parents)" can't be used for checking
         # existence of the 2nd parent, because "memctx._parents" is
         # explicitly initialized by the list, of which length is 2.
-        if p2.node() != nullid:
+        if p2.rev() != nullrev:
             man2 = p2.manifest()
             managing = lambda f: f in man1 or f in man2
         else:
@@ -2903,7 +2903,7 @@ class memctx(committablectx):
         return scmutil.status(modified, added, removed, [], [], [], [])
 
     def parents(self):
-        if self._parents[1].node() == nullid:
+        if self._parents[1].rev() == nullrev:
             return [self._parents[0]]
         return self._parents
 
@@ -3052,7 +3052,7 @@ class metadataonlyctx(committablectx):
         # "1 < len(self._parents)" can't be used for checking
         # existence of the 2nd parent, because "metadataonlyctx._parents" is
         # explicitly initialized by the list, of which length is 2.
-        if p2.node() != nullid:
+        if p2.rev() != nullrev:
             man2 = p2.manifest()
             managing = lambda f: f in man1 or f in man2
         else:

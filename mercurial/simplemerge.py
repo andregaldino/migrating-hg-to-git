@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import nullid
+from .node import nullrev
 from . import (
     error,
     mdiff,
@@ -427,7 +427,7 @@ def _picklabels(defaults, overrides):
 def is_not_null(ctx):
     if not util.safehasattr(ctx, "node"):
         return False
-    return ctx.node() != nullid
+    return ctx.rev() != nullrev
 
 
 def _mergediff(m3, name_a, name_b, name_base):

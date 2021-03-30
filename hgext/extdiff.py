@@ -91,7 +91,7 @@ import subprocess
 
 from mercurial.i18n import _
 from mercurial.node import (
-    nullid,
+    nullrev,
     short,
 )
 from mercurial import (
@@ -565,18 +565,18 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
             repo, [from_rev] + [to_rev], b'nowarn'
         )
         ctx1a = scmutil.revsingle(repo, from_rev, None)
-        ctx1b = repo[nullid]
+        ctx1b = repo[nullrev]
         ctx2 = scmutil.revsingle(repo, to_rev, None)
     else:
         ctx1a, ctx2 = scmutil.revpair(repo, revs)
         if not revs:
             ctx1b = repo[None].p2()
         else:
-            ctx1b = repo[nullid]
+            ctx1b = repo[nullrev]
 
     # Disable 3-way merge if there is only one parent
     if do3way:
-        if ctx1b.node() == nullid:
+        if ctx1b.rev() == nullrev:
             do3way = False
 
     matcher = scmutil.match(ctx2, pats, opts)

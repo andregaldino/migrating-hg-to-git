@@ -11,6 +11,7 @@ from .node import (
     hex,
     nullhex,
     nullid,
+    nullrev,
 )
 from . import (
     error,
@@ -341,7 +342,7 @@ class _mergestate_base(object):
         flo = fco.flags()
         fla = fca.flags()
         if b'x' in flags + flo + fla and b'l' not in flags + flo + fla:
-            if fca.node() == nullid and flags != flo:
+            if fca.rev() == nullrev and flags != flo:
                 if preresolve:
                     self._repo.ui.warn(
                         _(

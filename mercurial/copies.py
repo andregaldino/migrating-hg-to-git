@@ -149,7 +149,7 @@ def _committedforwardcopies(a, b, base, match):
     # optimization, since the ctx.files() for a merge commit is not correct for
     # this comparison.
     forwardmissingmatch = match
-    if b.p1() == a and b.p2().node() == nullid:
+    if b.p1() == a and b.p2().rev() == nullrev:
         filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
     if repo.ui.configbool(b'devel', b'copy-tracing.trace-all-files'):

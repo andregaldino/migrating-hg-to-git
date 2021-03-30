@@ -14,6 +14,7 @@ import posixpath
 from .i18n import _
 from .node import (
     nullid,
+    nullrev,
     wdirid,
     wdirrev,
 )
@@ -82,7 +83,7 @@ def diff_parent(ctx):
     If diff.merge is enabled, an overlayworkingctx of the auto-merged parents will be returned.
     """
     repo = ctx.repo()
-    if repo.ui.configbool(b"diff", b"merge") and ctx.p2().node() != nullid:
+    if repo.ui.configbool(b"diff", b"merge") and ctx.p2().rev() != nullrev:
         # avoid cycle context -> subrepo -> cmdutil -> logcmdutil
         from . import context
 
