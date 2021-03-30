@@ -14,7 +14,7 @@ use crate::{
         files,
         hg_path::{HgPath, HgPathBuf, HgPathError},
     },
-    DirstateEntry, DirstateMapError, FastHashMap, StateMap,
+    DirstateEntry, DirstateMapError, FastHashMap,
 };
 use std::collections::{hash_map, hash_map::Entry, HashMap, HashSet};
 
@@ -30,14 +30,14 @@ impl DirsMultiset {
     /// Initializes the multiset from a dirstate.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
-    pub fn from_dirstate(
-        dirstate: &StateMap,
+    pub fn from_dirstate<'a>(
+        dirstate: impl IntoIterator<Item = (&'a HgPathBuf, &'a DirstateEntry)>,
         skip_state: Option<EntryState>,
     ) -> Result<Self, DirstateMapError> {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
-        for (filename, DirstateEntry { state, .. }) in dirstate.iter() {
+        for (filename, DirstateEntry { state, .. }) in dirstate {
             // This `if` is optimized out of the loop
             if let Some(skip) = skip_state {
                 if skip != *state {
@@ -207,6 +207,7 @@ impl<'a> DirsChildrenMultiset<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::StateMap;
 
     #[test]
     fn test_delete_path_path_not_found() {
@@ -356,7 +357,7 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let input_map = ["b/x", "a/c", "a/d/x"]
+        let input_map: HashMap<_, _> = ["b/x", "a/c", "a/d/x"]
             .iter()
             .map(|f| {
                 (
@@ -384,7 +385,7 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_skip() {
-        let input_map = [
+        let input_map: HashMap<_, _> = [
             ("a/", EntryState::Normal),
             ("a/b", EntryState::Normal),
             ("a/c", EntryState::Removed),

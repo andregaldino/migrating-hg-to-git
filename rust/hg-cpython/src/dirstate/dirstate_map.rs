@@ -27,6 +27,7 @@ use crate::{
     parsers::dirstate_parents_to_pytuple,
 };
 use hg::{
+    dirstate_tree::dispatch::DirstateMapMethods,
     errors::HgError,
     revlog::Node,
     utils::hg_path::{HgPath, HgPathBuf},
@@ -47,10 +48,10 @@ use hg::{
 //     All attributes also have to have a separate refcount data attribute for
 //     leaks, with all methods that go along for reference sharing.
 py_class!(pub class DirstateMap |py| {
-    @shared data inner: RustDirstateMap;
+    @shared data inner: Box<dyn DirstateMapMethods + Send>;
 
     def __new__(_cls, _root: PyObject) -> PyResult<Self> {
-        let inner = RustDirstateMap::default();
+        let inner = Box::new(RustDirstateMap::default());
         Self::create_instance(py, inner)
     }
 
@@ -404,7 +405,7 @@ py_class!(pub class DirstateMap |py| {
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
-                &self.inner(py).borrow(),
+                self.inner(py).borrow().iter(),
                 Some(EntryState::Removed),
             )
             .map_err(|e| {
@@ -421,7 +422,7 @@ py_class!(pub class DirstateMap |py| {
         Dirs::from_inner(
             py,
             DirsMultiset::from_dirstate(
-                &self.inner(py).borrow(),
+                self.inner(py).borrow().iter(),
                 None,
             ).map_err(|e| {
                 PyErr::new::<exc::ValueError, _>(py, e.to_string())
@@ -432,7 +433,7 @@ py_class!(pub class DirstateMap |py| {
     // TODO all copymap* methods, see docstring above
     def copymapcopy(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
-        for (key, value) in self.inner(py).borrow().copy_map.iter() {
+        for (key, value) in self.inner(py).borrow().copy_map_iter() {
             dict.set_item(
                 py,
                 PyBytes::new(py, key.as_bytes()),
@@ -444,7 +445,7 @@ py_class!(pub class DirstateMap |py| {
 
     def copymapgetitem(&self, key: PyObject) -> PyResult<PyBytes> {
         let key = key.extract::<PyBytes>(py)?;
-        match self.inner(py).borrow().copy_map.get(HgPath::new(key.data(py))) {
+        match self.inner(py).borrow().copy_map_get(HgPath::new(key.data(py))) {
             Some(copy) => Ok(PyBytes::new(py, copy.as_bytes())),
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
@@ -457,15 +458,14 @@ py_class!(pub class DirstateMap |py| {
     }
 
     def copymaplen(&self) -> PyResult<usize> {
-        Ok(self.inner(py).borrow().copy_map.len())
+        Ok(self.inner(py).borrow().copy_map_len())
     }
     def copymapcontains(&self, key: PyObject) -> PyResult<bool> {
         let key = key.extract::<PyBytes>(py)?;
         Ok(self
             .inner(py)
             .borrow()
-            .copy_map
-            .contains_key(HgPath::new(key.data(py))))
+            .copy_map_contains_key(HgPath::new(key.data(py))))
     }
     def copymapget(
         &self,
@@ -476,8 +476,7 @@ py_class!(pub class DirstateMap |py| {
         match self
             .inner(py)
             .borrow()
-            .copy_map
-            .get(HgPath::new(key.data(py)))
+            .copy_map_get(HgPath::new(key.data(py)))
         {
             Some(copy) => Ok(Some(
                 PyBytes::new(py, copy.as_bytes()).into_object(),
@@ -492,7 +491,7 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
         let value = value.extract::<PyBytes>(py)?;
-        self.inner(py).borrow_mut().copy_map.insert(
+        self.inner(py).borrow_mut().copy_map_insert(
             HgPathBuf::from_bytes(key.data(py)),
             HgPathBuf::from_bytes(value.data(py)),
         );
@@ -507,8 +506,7 @@ py_class!(pub class DirstateMap |py| {
         match self
             .inner(py)
             .borrow_mut()
-            .copy_map
-            .remove(HgPath::new(key.data(py)))
+            .copy_map_remove(HgPath::new(key.data(py)))
         {
             Some(_) => Ok(None),
             None => Ok(default),
@@ -519,7 +517,7 @@ py_class!(pub class DirstateMap |py| {
         let leaked_ref = self.inner(py).leak_immutable();
         CopyMapKeysIterator::from_inner(
             py,
-            unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
+            unsafe { leaked_ref.map(py, |o| o.copy_map_iter()) },
         )
     }
 
@@ -527,7 +525,7 @@ py_class!(pub class DirstateMap |py| {
         let leaked_ref = self.inner(py).leak_immutable();
         CopyMapItemsIterator::from_inner(
             py,
-            unsafe { leaked_ref.map(py, |o| o.copy_map.iter()) },
+            unsafe { leaked_ref.map(py, |o| o.copy_map_iter()) },
         )
     }
 
@@ -537,7 +535,7 @@ impl DirstateMap {
     pub fn get_inner<'a>(
         &'a self,
         py: Python<'a>,
-    ) -> Ref<'a, RustDirstateMap> {
+    ) -> Ref<'a, Box<dyn DirstateMapMethods + Send>> {
         self.inner(py).borrow()
     }
     fn translate_key(

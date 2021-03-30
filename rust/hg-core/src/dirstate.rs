@@ -9,7 +9,6 @@ use crate::errors::HgError;
 use crate::revlog::Node;
 use crate::{utils::hg_path::HgPathBuf, FastHashMap};
 use bytes_cast::{unaligned, BytesCast};
-use std::collections::hash_map;
 use std::convert::TryFrom;
 
 pub mod dirs_multiset;
@@ -51,10 +50,12 @@ struct RawEntry {
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
-pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
+pub type StateMapIter<'a> =
+    Box<dyn Iterator<Item = (&'a HgPathBuf, &'a DirstateEntry)> + Send + 'a>;
 
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
-pub type CopyMapIter<'a> = hash_map::Iter<'a, HgPathBuf, HgPathBuf>;
+pub type CopyMapIter<'a> =
+    Box<dyn Iterator<Item = (&'a HgPathBuf, &'a HgPathBuf)> + Send + 'a>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {

@@ -292,7 +292,7 @@ impl fmt::Display for StatusError {
 
 /// Gives information about which files are changed in the working directory
 /// and how, compared to the revision we're based on
-pub struct Status<'a, M: Matcher + Sync> {
+pub struct Status<'a, M: ?Sized + Matcher + Sync> {
     dmap: &'a DirstateMap,
     pub(crate) matcher: &'a M,
     root_dir: PathBuf,
@@ -302,7 +302,7 @@ pub struct Status<'a, M: Matcher + Sync> {
 
 impl<'a, M> Status<'a, M>
 where
-    M: Matcher + Sync,
+    M: ?Sized + Matcher + Sync,
 {
     pub fn new(
         dmap: &'a DirstateMap,
@@ -898,7 +898,7 @@ pub fn build_response<'a>(
 #[timed]
 pub fn status<'a>(
     dmap: &'a DirstateMap,
-    matcher: &'a (impl Matcher + Sync),
+    matcher: &'a (dyn Matcher + Sync),
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,

@@ -14,7 +14,7 @@ use crate::{DirstateStatus, StatusError};
 /// files.
 pub type LookupAndStatus<'a> = (Vec<HgPathCow<'a>>, DirstateStatus<'a>);
 
-impl<'a, M: Matcher + Sync> Status<'a, M> {
+impl<'a, M: ?Sized + Matcher + Sync> Status<'a, M> {
     pub(crate) fn run(&self) -> Result<LookupAndStatus<'a>, StatusError> {
         let (traversed_sender, traversed_receiver) =
             crossbeam_channel::unbounded();

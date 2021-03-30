@@ -289,8 +289,10 @@ impl DirstateMap {
     /// good idea.
     pub fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
         if self.all_dirs.is_none() {
-            self.all_dirs =
-                Some(DirsMultiset::from_dirstate(&self.state_map, None)?);
+            self.all_dirs = Some(DirsMultiset::from_dirstate(
+                self.state_map.iter(),
+                None,
+            )?);
         }
         Ok(())
     }

@@ -17,7 +17,7 @@ use cpython::{
 };
 use hg::{
     matchers::{AlwaysMatcher, FileMatcher, IncludeMatcher},
-    parse_pattern_syntax, status,
+    parse_pattern_syntax,
     utils::{
         files::{get_bytes_from_path, get_path_from_bytes},
         hg_path::{HgPath, HgPathBuf},
@@ -126,21 +126,21 @@ pub fn status_wrapper(
     match matcher.get_type(py).name(py).borrow() {
         "alwaysmatcher" => {
             let matcher = AlwaysMatcher;
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
+            let ((lookup, status_res), warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
             build_response(py, lookup, status_res, warnings)
         }
         "exactmatcher" => {
@@ -163,21 +163,21 @@ pub fn status_wrapper(
             let files = files?;
             let matcher = FileMatcher::new(files.as_ref())
                 .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
+            let ((lookup, status_res), warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
             build_response(py, lookup, status_res, warnings)
         }
         "includematcher" => {
@@ -218,21 +218,21 @@ pub fn status_wrapper(
                     .map_err(|e| handle_fallback(py, e.into()))?;
             all_warnings.extend(warnings);
 
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
+            let ((lookup, status_res), warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
 
             all_warnings.extend(warnings);
 
