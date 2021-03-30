@@ -96,7 +96,7 @@ override_dh_auto_install: $(DEB_HG_PYTHON_VERSIONS:%=install-python%)
 	cp contrib/bash_completion "$(CURDIR)"/debian/mercurial/usr/share/bash-completion/completions/hg
 	mkdir -p "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions
 	cp contrib/zsh_completion "$(CURDIR)"/debian/mercurial/usr/share/zsh/vendor-completions/_hg
-	if [[ "$(DEB_HG_CHG_BY_DEFAULT)" -eq 1 ]]; then \
+	if [ "$(DEB_HG_CHG_BY_DEFAULT)" -eq 1 ]; then \
 		mkdir -p "$(CURDIR)"/debian/mercurial/usr/lib/mercurial; \
 		mv "$(CURDIR)"/debian/mercurial/usr/bin/hg "$(CURDIR)"/debian/mercurial/usr/lib/mercurial/hg; \
 		ln -s chg "$(CURDIR)"/debian/mercurial/usr/bin/hg; \
