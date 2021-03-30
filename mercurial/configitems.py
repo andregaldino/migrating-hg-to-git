@@ -959,6 +959,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'dirstate-tree.in-memory',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'editortmpinhg',
     default=False,
 )

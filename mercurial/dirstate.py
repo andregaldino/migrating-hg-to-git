@@ -1790,7 +1790,12 @@ if rustmod is not None:
             Does not fill the Dirstatemap when called. This allows for
             optimizations where only setting/getting the parents is needed.
             """
-            self._inner_rustmap = rustmod.DirstateMap(self._root)
+            use_dirstate_tree = self._ui.configbool(
+                b"experimental",
+                b"dirstate-tree.in-memory",
+                False,
+            )
+            self._inner_rustmap = rustmod.DirstateMap(use_dirstate_tree)
             return self._inner_rustmap
 
         @property

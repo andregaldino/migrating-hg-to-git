@@ -50,8 +50,12 @@ use hg::{
 py_class!(pub class DirstateMap |py| {
     @shared data inner: Box<dyn DirstateMapMethods + Send>;
 
-    def __new__(_cls, _root: PyObject) -> PyResult<Self> {
-        let inner = Box::new(RustDirstateMap::default());
+    def __new__(_cls, use_dirstate_tree: bool) -> PyResult<Self> {
+        let inner = if use_dirstate_tree {
+            Box::new(hg::dirstate_tree::dirstate_map::DirstateMap::new()) as _
+        } else {
+            Box::new(RustDirstateMap::default()) as _
+        };
         Self::create_instance(py, inner)
     }
 
