@@ -10,7 +10,6 @@ from .node import (
     bin,
     hex,
     nullhex,
-    nullid,
     nullrev,
 )
 from . import (
