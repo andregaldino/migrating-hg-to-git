@@ -16,6 +16,7 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
+    nullrev,
     short,
 )
 from .pycompat import (
@@ -1936,12 +1937,12 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
     ui.debug(b'message:\n%s\n' % (message or b''))
 
     if len(parents) == 1:
-        parents.append(repo[nullid])
+        parents.append(repo[nullrev])
     if opts.get(b'exact'):
         if not nodeid or not p1:
             raise error.InputError(_(b'not a Mercurial patch'))
         p1 = repo[p1]
-        p2 = repo[p2 or nullid]
+        p2 = repo[p2 or nullrev]
     elif p2:
         try:
             p1 = repo[p1]
@@ -1951,10 +1952,10 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
             # first parent.
             if p1 != parents[0]:
                 p1 = parents[0]
-                p2 = repo[nullid]
+                p2 = repo[nullrev]
         except error.RepoError:
             p1, p2 = parents
-        if p2.node() == nullid:
+        if p2.rev() == nullrev:
             ui.warn(
                 _(
                     b"warning: import the patch as a normal revision\n"

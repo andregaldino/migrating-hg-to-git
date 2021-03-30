@@ -3000,7 +3000,7 @@ class metadataonlyctx(committablectx):
             parents = [repo[p] for p in parents if p is not None]
         parents = parents[:]
         while len(parents) < 2:
-            parents.append(repo[nullid])
+            parents.append(repo[nullrev])
         p1, p2 = self._parents = parents
 
         # sanity check to ensure that the reused manifest parents are
