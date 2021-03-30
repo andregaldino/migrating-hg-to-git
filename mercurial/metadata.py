@@ -826,12 +826,12 @@ def copies_sidedata_computer(repo, revlog, rev, existing_sidedata):
 def set_sidedata_spec_for_repo(repo):
     if requirementsmod.COPIESSDC_REQUIREMENT in repo.requirements:
         repo.register_wanted_sidedata(sidedatamod.SD_FILES)
-        repo.register_sidedata_computer(
-            revlogconst.KIND_CHANGELOG,
-            sidedatamod.SD_FILES,
-            (sidedatamod.SD_FILES,),
-            copies_sidedata_computer,
-        )
+    repo.register_sidedata_computer(
+        revlogconst.KIND_CHANGELOG,
+        sidedatamod.SD_FILES,
+        (sidedatamod.SD_FILES,),
+        copies_sidedata_computer,
+    )
 
 
 def getsidedataadder(srcrepo, destrepo):
