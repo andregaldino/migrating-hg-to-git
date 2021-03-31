@@ -1,7 +1,12 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Duration;
 
+use super::path_with_basename::WithBasename;
+
+use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::matchers::Matcher;
+use crate::revlog::node::NULL_NODE;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::CopyMapIter;
 use crate::DirstateEntry;
@@ -18,18 +23,70 @@ use crate::StatusError;
 use crate::StatusOptions;
 
 pub struct DirstateMap {
-    // TODO
+    parents: Option<DirstateParents>,
+    dirty_parents: bool,
+    root: ChildNodes,
+}
+
+/// Using a plain `HgPathBuf` of the full path from the repository root as a
+/// map key would also work: all paths in a given map have the same parent
+/// path, so comparing full paths gives the same result as comparing base
+/// names. However `BTreeMap` would waste time always re-comparing the same
+/// string prefix.
+type ChildNodes = BTreeMap<WithBasename<HgPathBuf>, Node>;
+
+#[derive(Default)]
+struct Node {
+    entry: Option<DirstateEntry>,
+    copy_source: Option<HgPathBuf>,
+    children: ChildNodes,
 }
 
 impl DirstateMap {
     pub fn new() -> Self {
-        todo!()
+        Self {
+            parents: None,
+            dirty_parents: false,
+            root: ChildNodes::new(),
+        }
+    }
+
+    fn get_or_insert_node(&mut self, path: &HgPath) -> &mut Node {
+        let mut child_nodes = &mut self.root;
+        let mut inclusive_ancestor_paths =
+            WithBasename::inclusive_ancestors_of(path);
+        let mut ancestor_path = inclusive_ancestor_paths
+            .next()
+            .expect("expected at least one inclusive ancestor");
+        loop {
+            // TODO: can we avoid double lookup in all cases without allocating
+            // an owned key in cases where the map already contains that key?
+            let child_node =
+                if child_nodes.contains_key(ancestor_path.base_name()) {
+                    child_nodes.get_mut(ancestor_path.base_name()).unwrap()
+                } else {
+                    // This is always a vacant entry, using `.entry()` lets us
+                    // return a `&mut Node` of the newly-inserted node without
+                    // yet another lookup. `BTreeMap::insert` doesn’t do this.
+                    child_nodes.entry(ancestor_path.to_owned()).or_default()
+                };
+            if let Some(next) = inclusive_ancestor_paths.next() {
+                ancestor_path = next;
+                child_nodes = &mut child_node.children;
+            } else {
+                return child_node;
+            }
+        }
     }
 }
 
 impl super::dispatch::DirstateMapMethods for DirstateMap {
     fn clear(&mut self) {
-        todo!()
+        self.set_parents(&DirstateParents {
+            p1: NULL_NODE,
+            p2: NULL_NODE,
+        });
+        self.root.clear()
     }
 
     fn add_file(
@@ -123,15 +180,33 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         todo!()
     }
 
-    fn set_parents(&mut self, _parents: &DirstateParents) {
-        todo!()
+    fn set_parents(&mut self, parents: &DirstateParents) {
+        self.parents = Some(parents.clone());
+        self.dirty_parents = true;
     }
 
     fn read<'a>(
         &mut self,
-        _file_contents: &'a [u8],
+        file_contents: &'a [u8],
     ) -> Result<Option<&'a DirstateParents>, DirstateError> {
-        todo!()
+        if file_contents.is_empty() {
+            return Ok(None);
+        }
+
+        let parents = parse_dirstate_entries(
+            file_contents,
+            |path, entry, copy_source| {
+                let node = self.get_or_insert_node(path);
+                node.entry = Some(*entry);
+                node.copy_source = copy_source.map(HgPath::to_owned);
+            },
+        )?;
+
+        if !self.dirty_parents {
+            self.set_parents(parents);
+        }
+
+        Ok(Some(parents))
     }
 
     fn pack(
