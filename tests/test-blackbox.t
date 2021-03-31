@@ -317,6 +317,17 @@ log rotation
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip exited 0 after *.?? seconds (glob)
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> blackbox
 
+Skip rotation if the .hg is read-only
+
+#if unix-permissions
+  $ chmod -w .hg
+  $ hg log -r. -T '{rev}\n' --config blackbox.maxsize=1 --debug
+  warning: cannot rename '$TESTTMP/blackboxtest3/.hg/blackbox.log.1' to '$TESTTMP/blackboxtest3/.hg/blackbox.log': Permission denied
+  warning: cannot write to blackbox.log: Permission denied
+  1
+  $ chmod +w .hg
+#endif
+
 Test log recursion from dirty status check
 
   $ cat > ../r.py <<EOF
