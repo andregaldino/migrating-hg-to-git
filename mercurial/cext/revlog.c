@@ -343,18 +343,28 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	}
 }
 /*
+ * Pack header information in binary
+ */
+static PyObject *index_pack_header(indexObject *self, PyObject *args)
+{
+	int header;
+	char out[4];
+	if (!PyArg_ParseTuple(args, "I", &header)) {
+		return NULL;
+	}
+	putbe32(header, out);
+	return PyBytes_FromStringAndSize(out, 4);
+}
+/*
  * Return the raw binary string representing a revision
  */
-static PyObject *index_entry_binary(indexObject *self, PyObject *args)
+static PyObject *index_entry_binary(indexObject *self, PyObject *value)
 {
 	long rev;
-	int header;
 	const char *data;
-	char entry[v2_hdrsize];
-
 	Py_ssize_t length = index_length(self);
 
-	if (!PyArg_ParseTuple(args, "lI", &rev, &header)) {
+	if (!pylong_to_long(value, &rev)) {
 		return NULL;
 	}
 	if (rev < 0 || rev >= length) {
@@ -367,10 +377,8 @@ static PyObject *index_entry_binary(indexObject *self, PyObject *args)
 	if (data == NULL)
 		return NULL;
 	if (rev == 0) {
-		/* put the header at the start of the first entry */
-		memcpy(entry, data, self->hdrsize);
-		putbe32(header, entry);
-		return PyBytes_FromStringAndSize(entry, self->hdrsize);
+		/* the header is eating the start of the first entry */
+		return PyBytes_FromStringAndSize(data + 4, self->hdrsize - 4);
 	}
 	return PyBytes_FromStringAndSize(data, self->hdrsize);
 }
@@ -2891,8 +2899,10 @@ static PyMethodDef index_methods[] = {
     {"shortest", (PyCFunction)index_shortest, METH_VARARGS,
      "find length of shortest hex nodeid of a binary ID"},
     {"stats", (PyCFunction)index_stats, METH_NOARGS, "stats for the index"},
-    {"entry_binary", (PyCFunction)index_entry_binary, METH_VARARGS,
+    {"entry_binary", (PyCFunction)index_entry_binary, METH_O,
      "return an entry in binary form"},
+    {"pack_header", (PyCFunction)index_pack_header, METH_VARARGS,
+     "pack the revlog header information into binary"},
     {NULL} /* Sentinel */
 };
 

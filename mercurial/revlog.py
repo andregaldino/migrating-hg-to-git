@@ -266,7 +266,7 @@ class revlogoldindex(list):
             return (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
         return list.__getitem__(self, i)
 
-    def entry_binary(self, rev, header):
+    def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
         entry = self[rev]
         if gettype(entry[0]):
@@ -283,6 +283,10 @@ class revlogoldindex(list):
             entry[7],
         )
         return INDEX_ENTRY_V0.pack(*e2)
+
+    def pack_header(self, header):
+        """Pack header information in binary"""
+        return b''
 
 
 def parse_index_v0(data, inline):
@@ -2041,7 +2045,10 @@ class revlog(object):
             self.version &= ~FLAG_INLINE_DATA
             self._inline = False
             for i in self:
-                e = self.index.entry_binary(i, self.version)
+                e = self.index.entry_binary(i)
+                if i == 0:
+                    header = self.index.pack_header(self.version)
+                    e = header + e
                 fp.write(e)
 
             # the temp file replace the real index when we exit the context
@@ -2363,7 +2370,10 @@ class revlog(object):
             e = e[:8]
 
         self.index.append(e)
-        entry = self.index.entry_binary(curr, self.version)
+        entry = self.index.entry_binary(curr)
+        if curr == 0:
+            header = self.index.pack_header(self.version)
+            entry = header + entry
         self._writeentry(
             transaction,
             ifh,
@@ -3216,5 +3226,8 @@ class revlog(object):
             for i, entry in enumerate(new_entries):
                 rev = startrev + i
                 self.index.replace_sidedata_info(rev, entry[8], entry[9])
-                packed = self.index.entry_binary(rev, self.version)
+                packed = self.index.entry_binary(rev)
+                if rev == 0:
+                    header = self.index.pack_header(self.version)
+                    packed = header + packed
                 fp.write(packed)

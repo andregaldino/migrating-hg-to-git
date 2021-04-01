@@ -177,6 +177,11 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "entry_binary", args, kw)
     }
 
+    /// return a binary packed version of the header
+    def pack_header(&self, *args, **kw) -> PyResult<PyObject> {
+        self.call_cindex(py, "pack_header", args, kw)
+    }
+
     /// get an index entry
     def get(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "get", args, kw)
