@@ -48,7 +48,7 @@ Missing arguments don't crash, and may print the command help
   options:
   
   (use 'hg debugcallconduit -h' to show more help)
-  [255]
+  [10]
   $ hg phabread
   abort: empty DREVSPEC set
   [255]
