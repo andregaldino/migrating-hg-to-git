@@ -145,7 +145,7 @@ target file is not 'a'/'A' but 'b'/'B' in this case.
 
   $ hg merge
   abort: case-folding collision between [aA] and [Aa] (re)
-  [255]
+  [20]
   $ hg parents --template '{rev}\n'
   4
   $ hg status -A
@@ -158,7 +158,7 @@ target file is not 'a'/'A' but 'b'/'B' in this case.
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg merge
   abort: case-folding collision between [aA] and [Aa] (re)
-  [255]
+  [20]
   $ hg parents --template '{rev}\n'
   2
   $ hg status -A
@@ -213,7 +213,7 @@ Directory/file case-folding collision:
 
   $ hg merge 0
   abort: case-folding collision between Aa and directory of aA/a
-  [255]
+  [20]
 (note: no collision between 0 and 00 or 000/f)
 
 Directory case-folding collision:
@@ -328,7 +328,7 @@ test for rename awareness of case-folding collision check:
   A B
   $ hg update
   abort: case-folding collision between [bB] and [Bb] (re)
-  [255]
+  [20]
 
   $ hg update --check
   abort: uncommitted changes

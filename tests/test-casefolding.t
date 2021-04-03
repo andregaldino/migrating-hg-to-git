@@ -115,7 +115,7 @@ no clobbering of untracked files with wrong casing
   $ hg up
   A: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ cat a
   gold
   $ rm a
