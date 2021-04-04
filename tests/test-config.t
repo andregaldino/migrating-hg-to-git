@@ -1,3 +1,17 @@
+Windows needs ';' as a file separator in an environment variable, and MSYS
+doesn't automatically convert it in every case.
+
+#if windows
+  $ path_list_var() {
+  >     echo $1 | sed 's/:/;/'
+  > }
+#else
+  $ path_list_var() {
+  >     echo $1
+  > }
+#endif
+
+
 hide outer repo
   $ hg init
 
@@ -446,7 +460,7 @@ Simple order checking
 
 If file B is read after file A, value from B overwrite value from A.
 
-  $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg config config-test.basic
   value-B
 
 Ordering from include
@@ -462,7 +476,7 @@ value from an include overwrite value defined before the include, but not the on
 command line override
 ---------------------
 
-  $ HGRCPATH="file-A.rc:file-B.rc" hg config config-test.basic --config config-test.basic=value-CLI
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg config config-test.basic --config config-test.basic=value-CLI
   value-CLI
 
 Alias ordering
@@ -480,7 +494,7 @@ considered "higher level". And higher level values wins.
   value-A
   $ HGRCPATH="file-B.rc" hg log -r .
   value-B
-  $ HGRCPATH="file-A.rc:file-B.rc" hg log -r .
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg log -r .
   value-B
 
 Alias and include
@@ -497,5 +511,5 @@ See the case above for details about the two config options used.
 command line override
 ---------------------
 
-  $ HGRCPATH="file-A.rc:file-B.rc" hg log -r . --config ui.logtemplate="value-CLI\n"
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg log -r . --config ui.logtemplate="value-CLI\n"
   value-CLI
