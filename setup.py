@@ -817,6 +817,22 @@ class buildhgexe(build_ext):
                 if not os.path.exists(dest):
                     shutil.copy(buf.value, dest)
 
+                # Also overwrite python3.dll so that hgext.git is usable.
+                # TODO: also handle the MSYS flavor
+                if sys.version_info[0] >= 3:
+                    python_x = os.path.join(
+                        os.path.dirname(fsdecode(buf.value)),
+                        "python3.dll",
+                    )
+
+                    if os.path.exists(python_x):
+                        dest = os.path.join(
+                            os.path.dirname(self.hgtarget),
+                            os.path.basename(python_x),
+                        )
+
+                        shutil.copy(python_x, dest)
+
         if not pythonlib:
             log.warn(
                 'could not determine Python DLL filename; assuming pythonXY'
