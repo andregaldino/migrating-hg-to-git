@@ -15,6 +15,8 @@ from ..interfaces import repository
 
 ### main revlog header
 
+INDEX_HEADER = struct.Struct(b">I")
+
 ## revlog version
 REVLOGV0 = 0
 REVLOGV1 = 1

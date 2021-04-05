@@ -44,6 +44,7 @@ from .revlogutils.constants import (
     INDEX_ENTRY_V0,
     INDEX_ENTRY_V1,
     INDEX_ENTRY_V2,
+    INDEX_HEADER,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -327,10 +328,6 @@ class revlogoldio(object):
         return INDEX_ENTRY_V0.pack(*e2)
 
 
-versionformat = struct.Struct(b">I")
-versionformat_pack = versionformat.pack
-versionformat_unpack = versionformat.unpack
-
 # corresponds to uncompressed length of indexformatng (2 gigs, 4-byte
 # signed integer)
 _maxentrysize = 0x7FFFFFFF
@@ -348,7 +345,7 @@ class revlogio(object):
     def packentry(self, entry, node, version, rev):
         p = INDEX_ENTRY_V1.pack(*entry)
         if rev == 0:
-            p = versionformat_pack(version) + p[4:]
+            p = INDEX_HEADER.pack(version) + p[4:]
         return p
 
 
@@ -363,7 +360,7 @@ class revlogv2io(object):
     def packentry(self, entry, node, version, rev):
         p = INDEX_ENTRY_V2.pack(*entry)
         if rev == 0:
-            p = versionformat_pack(version) + p[4:]
+            p = INDEX_HEADER.pack(version) + p[4:]
         return p
 
 
@@ -579,7 +576,7 @@ class revlog(object):
                 else:
                     indexdata = f.read()
             if len(indexdata) > 0:
-                versionflags = versionformat_unpack(indexdata[:4])[0]
+                versionflags = INDEX_HEADER.unpack(indexdata[:4])[0]
                 self._initempty = False
             else:
                 versionflags = newversionflags
