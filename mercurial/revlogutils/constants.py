@@ -9,6 +9,8 @@
 
 from __future__ import absolute_import
 
+import struct
+
 from ..interfaces import repository
 
 ### main revlog header
@@ -31,6 +33,16 @@ REVLOGV1_FLAGS = FLAG_INLINE_DATA | FLAG_GENERALDELTA
 REVLOGV2_FLAGS = FLAG_INLINE_DATA
 
 ### individual entry
+
+## index v0:
+#  4 bytes: offset
+#  4 bytes: compressed length
+#  4 bytes: base rev
+#  4 bytes: link rev
+# 20 bytes: parent 1 nodeid
+# 20 bytes: parent 2 nodeid
+# 20 bytes: nodeid
+INDEX_ENTRY_V0 = struct.Struct(b">4l20s20s20s")
 
 # revlog index flags
 

@@ -41,6 +41,7 @@ from .pycompat import getattr
 from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
+    INDEX_ENTRY_V0,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -218,19 +219,6 @@ class revlogproblem(object):
     node = attr.ib(default=None)
 
 
-# index v0:
-#  4 bytes: offset
-#  4 bytes: compressed length
-#  4 bytes: base rev
-#  4 bytes: link rev
-# 20 bytes: parent 1 nodeid
-# 20 bytes: parent 2 nodeid
-# 20 bytes: nodeid
-indexformatv0 = struct.Struct(b">4l20s20s20s")
-indexformatv0_pack = indexformatv0.pack
-indexformatv0_unpack = indexformatv0.unpack
-
-
 class revlogoldindex(list):
     @property
     def nodemap(self):
@@ -284,7 +272,7 @@ class revlogoldindex(list):
 
 class revlogoldio(object):
     def __init__(self):
-        self.size = indexformatv0.size
+        self.size = INDEX_ENTRY_V0.size
 
     def parseindex(self, data, inline):
         s = self.size
@@ -295,7 +283,7 @@ class revlogoldio(object):
         while off + s <= l:
             cur = data[off : off + s]
             off += s
-            e = indexformatv0_unpack(cur)
+            e = INDEX_ENTRY_V0.unpack(cur)
             # transform to revlogv1 format
             e2 = (
                 offset_type(e[0], 0),
@@ -315,6 +303,13 @@ class revlogoldio(object):
         return index, None
 
     def packentry(self, entry, node, version, rev):
+        """return the binary representation of an entry
+
+        entry:   a tuple containing all the values (see index.__getitem__)
+        node:    a callback to convert a revision to nodeid
+        version: the changelog version
+        rev:     the revision number
+        """
         if gettype(entry[0]):
             raise error.RevlogError(
                 _(b'index entry flags need revlog version 1')
@@ -328,7 +323,7 @@ class revlogoldio(object):
             node(entry[6]),
             entry[7],
         )
-        return indexformatv0_pack(*e2)
+        return INDEX_ENTRY_V0.pack(*e2)
 
 
 # index ng:
