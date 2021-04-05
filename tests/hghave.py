@@ -140,9 +140,22 @@ def matchoutput(cmd, regexp, ignorestatus=False):
     """Return the match object if cmd executes successfully and its output
     is matched by the supplied regular expression.
     """
+
+    # Tests on Windows have to fake USERPROFILE to point to the test area so
+    # that `~` is properly expanded on py3.8+.  However, some tools like black
+    # make calls that need the real USERPROFILE in order to run `foo --version`.
+    env = os.environ
+    if os.name == 'nt':
+        env = os.environ.copy()
+        env['USERPROFILE'] = env['REALUSERPROFILE']
+
     r = re.compile(regexp)
     p = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=env,
     )
     s = p.communicate()[0]
     ret = p.returncode
