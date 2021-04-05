@@ -42,6 +42,7 @@ from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_ENTRY_V0,
+    INDEX_ENTRY_V1,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -326,18 +327,6 @@ class revlogoldio(object):
         return INDEX_ENTRY_V0.pack(*e2)
 
 
-# index ng:
-#  6 bytes: offset
-#  2 bytes: flags
-#  4 bytes: compressed length
-#  4 bytes: uncompressed length
-#  4 bytes: base rev
-#  4 bytes: link rev
-#  4 bytes: parent 1 rev
-#  4 bytes: parent 2 rev
-# 32 bytes: nodeid
-indexformatng = struct.Struct(b">Qiiiiii20s12x")
-indexformatng_pack = indexformatng.pack
 versionformat = struct.Struct(b">I")
 versionformat_pack = versionformat.pack
 versionformat_unpack = versionformat.unpack
@@ -349,7 +338,7 @@ _maxentrysize = 0x7FFFFFFF
 
 class revlogio(object):
     def __init__(self):
-        self.size = indexformatng.size
+        self.size = INDEX_ENTRY_V1.size
 
     def parseindex(self, data, inline):
         # call the C implementation to parse the index data
@@ -357,7 +346,7 @@ class revlogio(object):
         return index, cache
 
     def packentry(self, entry, node, version, rev):
-        p = indexformatng_pack(*entry)
+        p = INDEX_ENTRY_V1.pack(*entry)
         if rev == 0:
             p = versionformat_pack(version) + p[4:]
         return p

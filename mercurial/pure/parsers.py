@@ -17,6 +17,7 @@ from .. import (
 )
 
 from ..revlogutils import nodemap as nodemaputil
+from ..revlogutils import constants as revlog_constants
 
 stringio = pycompat.bytesio
 
@@ -43,13 +44,13 @@ def offset_type(offset, type):
 
 class BaseIndexObject(object):
     # Format of an index entry according to Python's `struct` language
-    index_format = b">Qiiiiii20s12x"
+    index_format = revlog_constants.INDEX_ENTRY_V1.format
     # Size of a C unsigned long long int, platform independent
     big_int_size = struct.calcsize(b'>Q')
     # Size of a C long int, platform independent
     int_size = struct.calcsize(b'>i')
     # Size of the entire index format
-    index_size = struct.calcsize(index_format)
+    index_size = revlog_constants.INDEX_ENTRY_V1.size
     # An empty index entry, used as a default value to be overridden, or nullrev
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid)
 
