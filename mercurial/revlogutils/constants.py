@@ -11,11 +11,15 @@ from __future__ import absolute_import
 
 from ..interfaces import repository
 
-# revlog header flags
+### main revlog header
+
+## revlog version
 REVLOGV0 = 0
 REVLOGV1 = 1
 # Dummy value until file format is finalized.
 REVLOGV2 = 0xDEAD
+
+##  global revlog header flags
 # Shared across v1 and v2.
 FLAG_INLINE_DATA = 1 << 16
 # Only used by v1, implied by v2.
@@ -25,6 +29,8 @@ REVLOG_DEFAULT_FORMAT = REVLOGV1
 REVLOG_DEFAULT_VERSION = REVLOG_DEFAULT_FORMAT | REVLOG_DEFAULT_FLAGS
 REVLOGV1_FLAGS = FLAG_INLINE_DATA | FLAG_GENERALDELTA
 REVLOGV2_FLAGS = FLAG_INLINE_DATA
+
+### individual entry
 
 # revlog index flags
 
