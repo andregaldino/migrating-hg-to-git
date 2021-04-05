@@ -44,7 +44,7 @@ def offset_type(offset, type):
 
 class BaseIndexObject(object):
     # Format of an index entry according to Python's `struct` language
-    index_format = revlog_constants.INDEX_ENTRY_V1.format
+    index_format = revlog_constants.INDEX_ENTRY_V1
     # Size of a C unsigned long long int, platform independent
     big_int_size = struct.calcsize(b'>Q')
     # Size of a C long int, platform independent
@@ -99,7 +99,7 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        data = _pack(self.index_format, *tup)
+        data = self.index_format.pack(*tup)
         self._extra.append(data)
 
     def _check_index(self, i):
@@ -117,7 +117,7 @@ class BaseIndexObject(object):
         else:
             index = self._calculate_index(i)
             data = self._data[index : index + self.index_size]
-        r = _unpack(self.index_format, data)
+        r = self.index_format.unpack(data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
@@ -243,7 +243,7 @@ def parse_index2(data, inline, revlogv2=False):
 
 
 class Index2Mixin(object):
-    index_format = revlog_constants.INDEX_ENTRY_V2.format
+    index_format = revlog_constants.INDEX_ENTRY_V2
     index_size = revlog_constants.INDEX_ENTRY_V2.size
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
 
