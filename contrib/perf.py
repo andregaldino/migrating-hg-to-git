@@ -3228,7 +3228,10 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         start = r.start
         length = r.length
         inline = r._inline
-        iosize = r._io.size
+        try:
+            iosize = r.index.entry_size
+        except AttributeError:
+            iosize = r._io.size
         buffer = util.buffer
 
         chunks = []

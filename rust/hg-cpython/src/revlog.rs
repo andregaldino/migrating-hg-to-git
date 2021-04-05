@@ -12,8 +12,8 @@ use crate::{
 use cpython::{
     buffer::{Element, PyBuffer},
     exc::{IndexError, ValueError},
-    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyModule, PyObject,
-    PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
+    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyInt, PyModule,
+    PyObject, PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
 };
 use hg::{
     nodemap::{Block, NodeMapError, NodeTree},
@@ -285,6 +285,10 @@ py_class!(pub class MixedIndex |py| {
         self.inner_update_nodemap_data(py, docket, nm_data)
     }
 
+    @property
+    def entry_size(&self) -> PyResult<PyInt> {
+        self.cindex(py).borrow().inner().getattr(py, "entry_size")?.extract::<PyInt>(py)
+    }
 
 });
 

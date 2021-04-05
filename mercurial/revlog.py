@@ -222,6 +222,8 @@ class revlogproblem(object):
 
 
 class revlogoldindex(list):
+    entry_size = INDEX_ENTRY_V0.size
+
     @property
     def nodemap(self):
         msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
@@ -273,11 +275,8 @@ class revlogoldindex(list):
 
 
 class revlogoldio(object):
-    def __init__(self):
-        self.size = INDEX_ENTRY_V0.size
-
     def parseindex(self, data, inline):
-        s = self.size
+        s = INDEX_ENTRY_V0.size
         index = []
         nodemap = nodemaputil.NodeMap({nullid: nullrev})
         n = off = 0
@@ -334,9 +333,6 @@ _maxentrysize = 0x7FFFFFFF
 
 
 class revlogio(object):
-    def __init__(self):
-        self.size = INDEX_ENTRY_V1.size
-
     def parseindex(self, data, inline):
         # call the C implementation to parse the index data
         index, cache = parsers.parse_index2(data, inline)
@@ -350,9 +346,6 @@ class revlogio(object):
 
 
 class revlogv2io(object):
-    def __init__(self):
-        self.size = INDEX_ENTRY_V2.size
-
     def parseindex(self, data, inline):
         index, cache = parsers.parse_index2(data, inline, revlogv2=True)
         return index, cache
@@ -1716,8 +1709,8 @@ class revlog(object):
             end = int(iend[0] >> 16) + iend[1]
 
         if self._inline:
-            start += (startrev + 1) * self._io.size
-            end += (endrev + 1) * self._io.size
+            start += (startrev + 1) * self.index.entry_size
+            end += (endrev + 1) * self.index.entry_size
         length = end - start
 
         return start, self._getsegment(start, length, df=df)
@@ -1751,7 +1744,7 @@ class revlog(object):
         start = self.start
         length = self.length
         inline = self._inline
-        iosize = self._io.size
+        iosize = self.index.entry_size
         buffer = util.buffer
 
         l = []
@@ -1979,7 +1972,7 @@ class revlog(object):
         sidedata_size = index_entry[9]
 
         if self._inline:
-            sidedata_offset += self._io.size * (1 + rev)
+            sidedata_offset += self.index.entry_size * (1 + rev)
         if sidedata_size == 0:
             return {}
 
@@ -2079,7 +2072,7 @@ class revlog(object):
             # the temp file replace the real index when we exit the context
             # manager
 
-        tr.replace(self.indexfile, trindex * self._io.size)
+        tr.replace(self.indexfile, trindex * self.index.entry_size)
         nodemaputil.setup_persistent_nodemap(tr, self)
         self._chunkclear()
 
@@ -2335,12 +2328,12 @@ class revlog(object):
                 # offset is "as if" it were in the .d file, so we need to add on
                 # the size of the entry metadata.
                 self._concurrencychecker(
-                    ifh, self.indexfile, offset + curr * self._io.size
+                    ifh, self.indexfile, offset + curr * self.index.entry_size
                 )
             else:
                 # Entries in the .i are a consistent size.
                 self._concurrencychecker(
-                    ifh, self.indexfile, curr * self._io.size
+                    ifh, self.indexfile, curr * self.index.entry_size
                 )
                 self._concurrencychecker(dfh, self.datafile, offset)
 
@@ -2464,7 +2457,7 @@ class revlog(object):
                 dfh.write(sidedata)
             ifh.write(entry)
         else:
-            offset += curr * self._io.size
+            offset += curr * self.index.entry_size
             transaction.add(self.indexfile, offset)
             ifh.write(entry)
             ifh.write(data[0])
@@ -2502,7 +2495,7 @@ class revlog(object):
         if r:
             end = self.end(r - 1)
         ifh = self._indexfp(b"a+")
-        isize = r * self._io.size
+        isize = r * self.index.entry_size
         if self._inline:
             transaction.add(self.indexfile, end + isize)
             dfh = None
@@ -2658,9 +2651,9 @@ class revlog(object):
         end = self.start(rev)
         if not self._inline:
             transaction.add(self.datafile, end)
-            end = rev * self._io.size
+            end = rev * self.index.entry_size
         else:
-            end += rev * self._io.size
+            end += rev * self.index.entry_size
 
         transaction.add(self.indexfile, end)
 
@@ -2699,7 +2692,7 @@ class revlog(object):
             f.seek(0, io.SEEK_END)
             actual = f.tell()
             f.close()
-            s = self._io.size
+            s = self.index.entry_size
             i = max(0, actual // s)
             di = actual - (i * s)
             if self._inline:
@@ -3241,7 +3234,7 @@ class revlog(object):
 
         # rewrite the new index entries
         with self._indexfp(b'w+') as fp:
-            fp.seek(startrev * self._io.size)
+            fp.seek(startrev * self.index.entry_size)
             for i, entry in enumerate(new_entries):
                 rev = startrev + i
                 self.index.replace_sidedata_info(rev, entry[8], entry[9])

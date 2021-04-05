@@ -49,10 +49,12 @@ class BaseIndexObject(object):
     big_int_size = struct.calcsize(b'>Q')
     # Size of a C long int, platform independent
     int_size = struct.calcsize(b'>i')
-    # Size of the entire index format
-    index_size = revlog_constants.INDEX_ENTRY_V1.size
     # An empty index entry, used as a default value to be overridden, or nullrev
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid)
+
+    @util.propertycache
+    def entry_size(self):
+        return self.index_format.size
 
     @property
     def nodemap(self):
@@ -116,7 +118,7 @@ class BaseIndexObject(object):
             data = self._extra[i - self._lgt]
         else:
             index = self._calculate_index(i)
-            data = self._data[index : index + self.index_size]
+            data = self._data[index : index + self.entry_size]
         r = self.index_format.unpack(data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
@@ -125,13 +127,13 @@ class BaseIndexObject(object):
 
 class IndexObject(BaseIndexObject):
     def __init__(self, data):
-        assert len(data) % self.index_size == 0
+        assert len(data) % self.entry_size == 0
         self._data = data
-        self._lgt = len(data) // self.index_size
+        self._lgt = len(data) // self.entry_size
         self._extra = []
 
     def _calculate_index(self, i):
-        return i * self.index_size
+        return i * self.entry_size
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
@@ -140,7 +142,7 @@ class IndexObject(BaseIndexObject):
         self._check_index(i)
         self._stripnodes(i)
         if i < self._lgt:
-            self._data = self._data[: i * self.index_size]
+            self._data = self._data[: i * self.entry_size]
             self._lgt = i
             self._extra = []
         else:
@@ -203,7 +205,7 @@ class InlinedIndexObject(BaseIndexObject):
         if lgt is not None:
             self._offsets = [0] * lgt
         count = 0
-        while off <= len(self._data) - self.index_size:
+        while off <= len(self._data) - self.entry_size:
             start = off + self.big_int_size
             (s,) = struct.unpack(
                 b'>i',
@@ -212,7 +214,7 @@ class InlinedIndexObject(BaseIndexObject):
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
-            off += self.index_size + s
+            off += self.entry_size + s
         if off != len(self._data):
             raise ValueError(b"corrupted data")
         return count
@@ -244,7 +246,6 @@ def parse_index2(data, inline, revlogv2=False):
 
 class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
-    index_size = revlog_constants.INDEX_ENTRY_V2.size
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
 
     def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):
@@ -280,7 +281,7 @@ class InlinedIndexObject2(Index2Mixin, InlinedIndexObject):
         if lgt is not None:
             self._offsets = [0] * lgt
         count = 0
-        while off <= len(self._data) - self.index_size:
+        while off <= len(self._data) - self.entry_size:
             start = off + self.big_int_size
             (data_size,) = struct.unpack(
                 b'>i',
@@ -293,7 +294,7 @@ class InlinedIndexObject2(Index2Mixin, InlinedIndexObject):
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
-            off += self.index_size + data_size + side_data_size
+            off += self.entry_size + data_size + side_data_size
         if off != len(self._data):
             raise ValueError(b"corrupted data")
         return count

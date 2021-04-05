@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <structmember.h>
 
 #include "bitmanipulation.h"
 #include "charencode.h"
@@ -2866,6 +2867,12 @@ static PyGetSetDef index_getset[] = {
     {NULL} /* Sentinel */
 };
 
+static PyMemberDef index_members[] = {
+    {"entry_size", T_LONG, offsetof(indexObject, hdrsize), 0,
+     "size of an index entry"},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject HgRevlogIndex_Type = {
     PyVarObject_HEAD_INIT(NULL, 0) /* header */
     "parsers.index",               /* tp_name */
@@ -2895,7 +2902,7 @@ PyTypeObject HgRevlogIndex_Type = {
     0,                             /* tp_iter */
     0,                             /* tp_iternext */
     index_methods,                 /* tp_methods */
-    0,                             /* tp_members */
+    index_members,                 /* tp_members */
     index_getset,                  /* tp_getset */
     0,                             /* tp_base */
     0,                             /* tp_dict */
