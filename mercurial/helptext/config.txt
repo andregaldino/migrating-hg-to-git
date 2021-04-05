@@ -1165,7 +1165,8 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
   (the ID of the first added changeset), ``$HG_NODE_LAST`` (the ID of the last
   added changeset), ``$HG_URL`` and ``$HG_SOURCE`` variables.  Bookmark and
   phase changes will set ``$HG_BOOKMARK_MOVED`` and ``$HG_PHASES_MOVED`` to
-  ``1`` respectively, etc.
+  ``1`` respectively.  The number of new obsmarkers, if any, will be in
+  ``$HG_NEW_OBSMARKERS``, etc.
 
 ``pretxnclose-bookmark``
   Run right before a bookmark change is actually finalized. Any repository
