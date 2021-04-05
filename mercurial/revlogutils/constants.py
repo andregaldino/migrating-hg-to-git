@@ -57,6 +57,21 @@ INDEX_ENTRY_V0 = struct.Struct(b">4l20s20s20s")
 INDEX_ENTRY_V1 = struct.Struct(b">Qiiiiii20s12x")
 assert INDEX_ENTRY_V1.size == 32 * 2
 
+#  6 bytes: offset
+#  2 bytes: flags
+#  4 bytes: compressed length
+#  4 bytes: uncompressed length
+#  4 bytes: base rev
+#  4 bytes: link rev
+#  4 bytes: parent 1 rev
+#  4 bytes: parent 2 rev
+# 32 bytes: nodeid
+#  8 bytes: sidedata offset
+#  4 bytes: sidedata compressed length
+#  20 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
+INDEX_ENTRY_V2 = struct.Struct(b">Qiiiiii20s12xQi20x")
+assert INDEX_ENTRY_V2.size == 32 * 3
+
 # revlog index flags
 
 # For historical reasons, revlog's internal flags were exposed via the

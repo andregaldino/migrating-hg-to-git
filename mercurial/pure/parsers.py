@@ -243,21 +243,8 @@ def parse_index2(data, inline, revlogv2=False):
 
 
 class Index2Mixin(object):
-    #  6 bytes: offset
-    #  2 bytes: flags
-    #  4 bytes: compressed length
-    #  4 bytes: uncompressed length
-    #  4 bytes: base rev
-    #  4 bytes: link rev
-    #  4 bytes: parent 1 rev
-    #  4 bytes: parent 2 rev
-    # 32 bytes: nodeid
-    #  8 bytes: sidedata offset
-    #  4 bytes: sidedata compressed length
-    #  20 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
-    index_format = b">Qiiiiii20s12xQi20x"
-    index_size = struct.calcsize(index_format)
-    assert index_size == 96, index_size
+    index_format = revlog_constants.INDEX_ENTRY_V2.format
+    index_size = revlog_constants.INDEX_ENTRY_V2.size
     null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
 
     def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):

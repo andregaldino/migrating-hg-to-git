@@ -43,6 +43,7 @@ from .revlogutils.constants import (
     FLAG_INLINE_DATA,
     INDEX_ENTRY_V0,
     INDEX_ENTRY_V1,
+    INDEX_ENTRY_V2,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -87,7 +88,6 @@ from .utils import (
     storageutil,
     stringutil,
 )
-from .pure import parsers as pureparsers
 
 # blanked usage of all the name to prevent pyflakes constraints
 # We need these name available in the module for extensions.
@@ -352,20 +352,16 @@ class revlogio(object):
         return p
 
 
-indexformatv2 = struct.Struct(pureparsers.Index2Mixin.index_format)
-indexformatv2_pack = indexformatv2.pack
-
-
 class revlogv2io(object):
     def __init__(self):
-        self.size = indexformatv2.size
+        self.size = INDEX_ENTRY_V2.size
 
     def parseindex(self, data, inline):
         index, cache = parsers.parse_index2(data, inline, revlogv2=True)
         return index, cache
 
     def packentry(self, entry, node, version, rev):
-        p = indexformatv2_pack(*entry)
+        p = INDEX_ENTRY_V2.pack(*entry)
         if rev == 0:
             p = versionformat_pack(version) + p[4:]
         return p
