@@ -13,6 +13,7 @@ and O(changes) merge between branches.
 
 from __future__ import absolute_import
 
+import binascii
 import collections
 import contextlib
 import errno
@@ -2296,7 +2297,9 @@ class revlog(object):
                 compressor = engine.revlogcompressor(self._compengineopts)
                 self._decompressors[t] = compressor
             except KeyError:
-                raise error.RevlogError(_(b'unknown compression type %r') % t)
+                raise error.RevlogError(
+                    _(b'unknown compression type %s') % binascii.hexlify(t)
+                )
 
         return compressor.decompress(data)
 
