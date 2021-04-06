@@ -240,7 +240,9 @@ class filelog:
     # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):
-            raise error.ProgrammingError(b'expected filelog to clone()')
+            msg = b'expected filelog to clone(), not %r'
+            msg %= destrevlog
+            raise error.ProgrammingError(msg)
 
         return self._revlog.clone(tr, destrevlog._revlog, **kwargs)
 
