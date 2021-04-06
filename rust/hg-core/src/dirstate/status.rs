@@ -264,6 +264,10 @@ pub struct DirstateStatus<'a> {
     pub ignored: Vec<HgPathCow<'a>>,
     pub unknown: Vec<HgPathCow<'a>>,
     pub bad: Vec<(HgPathCow<'a>, BadMatch)>,
+    /// Either clean or modified, but we can’t tell from filesystem metadata
+    /// alone. The file contents need to be read and compared with that in
+    /// the parent.
+    pub unsure: Vec<HgPathCow<'a>>,
     /// Only filled if `collect_traversed_dirs` is `true`
     pub traversed: Vec<HgPathBuf>,
 }
@@ -847,8 +851,8 @@ where
 pub fn build_response<'a>(
     results: impl IntoIterator<Item = DispatchedPath<'a>>,
     traversed: Vec<HgPathBuf>,
-) -> (Vec<HgPathCow<'a>>, DirstateStatus<'a>) {
-    let mut lookup = vec![];
+) -> DirstateStatus<'a> {
+    let mut unsure = vec![];
     let mut modified = vec![];
     let mut added = vec![];
     let mut removed = vec![];
@@ -861,7 +865,7 @@ pub fn build_response<'a>(
     for (filename, dispatch) in results.into_iter() {
         match dispatch {
             Dispatch::Unknown => unknown.push(filename),
-            Dispatch::Unsure => lookup.push(filename),
+            Dispatch::Unsure => unsure.push(filename),
             Dispatch::Modified => modified.push(filename),
             Dispatch::Added => added.push(filename),
             Dispatch::Removed => removed.push(filename),
@@ -874,20 +878,18 @@ pub fn build_response<'a>(
         }
     }
 
-    (
-        lookup,
-        DirstateStatus {
-            modified,
-            added,
-            removed,
-            deleted,
-            clean,
-            ignored,
-            unknown,
-            bad,
-            traversed,
-        },
-    )
+    DirstateStatus {
+        modified,
+        added,
+        removed,
+        deleted,
+        clean,
+        ignored,
+        unknown,
+        bad,
+        unsure,
+        traversed,
+    }
 }
 
 /// Get the status of files in the working directory.
@@ -902,10 +904,7 @@ pub fn status<'a>(
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
-) -> StatusResult<(
-    (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
-    Vec<PatternFileWarning>,
-)> {
+) -> StatusResult<(DirstateStatus<'a>, Vec<PatternFileWarning>)> {
     let (status, warnings) =
         Status::new(dmap, matcher, root_dir, ignore_files, options)?;
 

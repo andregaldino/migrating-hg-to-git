@@ -25,7 +25,7 @@ use hg::{
     BadMatch, DirstateStatus, IgnorePattern, PatternFileWarning, StatusError,
     StatusOptions,
 };
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 
 /// This will be useless once trait impls for collection are added to `PyBytes`
 /// upstream.
@@ -126,7 +126,7 @@ pub fn status_wrapper(
     match matcher.get_type(py).name(py).borrow() {
         "alwaysmatcher" => {
             let matcher = AlwaysMatcher;
-            let ((lookup, status_res), warnings) = dmap
+            let (status_res, warnings) = dmap
                 .status(
                     &matcher,
                     root_dir.to_path_buf(),
@@ -141,7 +141,7 @@ pub fn status_wrapper(
                     },
                 )
                 .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, lookup, status_res, warnings)
+            build_response(py, status_res, warnings)
         }
         "exactmatcher" => {
             let files = matcher.call_method(
@@ -163,7 +163,7 @@ pub fn status_wrapper(
             let files = files?;
             let matcher = FileMatcher::new(files.as_ref())
                 .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
-            let ((lookup, status_res), warnings) = dmap
+            let (status_res, warnings) = dmap
                 .status(
                     &matcher,
                     root_dir.to_path_buf(),
@@ -178,7 +178,7 @@ pub fn status_wrapper(
                     },
                 )
                 .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, lookup, status_res, warnings)
+            build_response(py, status_res, warnings)
         }
         "includematcher" => {
             // Get the patterns from Python even though most of them are
@@ -218,7 +218,7 @@ pub fn status_wrapper(
                     .map_err(|e| handle_fallback(py, e.into()))?;
             all_warnings.extend(warnings);
 
-            let ((lookup, status_res), warnings) = dmap
+            let (status_res, warnings) = dmap
                 .status(
                     &matcher,
                     root_dir.to_path_buf(),
@@ -236,7 +236,7 @@ pub fn status_wrapper(
 
             all_warnings.extend(warnings);
 
-            build_response(py, lookup, status_res, all_warnings)
+            build_response(py, status_res, all_warnings)
         }
         e => Err(PyErr::new::<ValueError, _>(
             py,
@@ -247,7 +247,6 @@ pub fn status_wrapper(
 
 fn build_response(
     py: Python,
-    lookup: Vec<Cow<HgPath>>,
     status_res: DirstateStatus,
     warnings: Vec<PatternFileWarning>,
 ) -> PyResult<PyTuple> {
@@ -258,7 +257,7 @@ fn build_response(
     let clean = collect_pybytes_list(py, status_res.clean.as_ref());
     let ignored = collect_pybytes_list(py, status_res.ignored.as_ref());
     let unknown = collect_pybytes_list(py, status_res.unknown.as_ref());
-    let lookup = collect_pybytes_list(py, lookup.as_ref());
+    let unsure = collect_pybytes_list(py, status_res.unsure.as_ref());
     let bad = collect_bad_matches(py, status_res.bad.as_ref())?;
     let traversed = collect_pybytes_list(py, status_res.traversed.as_ref());
     let py_warnings = PyList::new(py, &[]);
@@ -287,7 +286,7 @@ fn build_response(
     Ok(PyTuple::new(
         py,
         &[
-            lookup.into_object(),
+            unsure.into_object(),
             modified.into_object(),
             added.into_object(),
             removed.into_object(),

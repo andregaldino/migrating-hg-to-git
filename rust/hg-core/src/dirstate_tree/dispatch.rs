@@ -11,7 +11,6 @@ use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
-use crate::HgPathCow;
 use crate::PatternFileWarning;
 use crate::StateMapIter;
 use crate::StatusError;
@@ -102,13 +101,7 @@ pub trait DirstateMapMethods {
         root_dir: PathBuf,
         ignore_files: Vec<PathBuf>,
         options: StatusOptions,
-    ) -> Result<
-        (
-            (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
-            Vec<PatternFileWarning>,
-        ),
-        StatusError,
-    >;
+    ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>;
 
     fn copy_map_len(&self) -> usize;
 
@@ -270,13 +263,8 @@ impl DirstateMapMethods for DirstateMap {
         root_dir: PathBuf,
         ignore_files: Vec<PathBuf>,
         options: StatusOptions,
-    ) -> Result<
-        (
-            (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
-            Vec<PatternFileWarning>,
-        ),
-        StatusError,
-    > {
+    ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>
+    {
         crate::status(self, matcher, root_dir, ignore_files, options)
     }
 

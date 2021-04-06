@@ -181,7 +181,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         collect_traversed_dirs: false,
     };
     let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
-    let ((lookup, ds_status), pattern_warnings) = hg::status(
+    let (ds_status, pattern_warnings) = hg::status(
         &dmap,
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
@@ -195,10 +195,10 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     if !ds_status.bad.is_empty() {
         warn!("Bad matches {:?}", &(ds_status.bad))
     }
-    if !lookup.is_empty() {
+    if !ds_status.unsure.is_empty() {
         info!(
             "Files to be rechecked by retrieval from filelog: {:?}",
-            &lookup
+            &ds_status.unsure
         );
     }
     // TODO check ordering to match `hg status` output.
@@ -206,7 +206,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     if display_states.modified {
         display_status_paths(ui, &(ds_status.modified), b"M")?;
     }
-    if !lookup.is_empty() {
+    if !ds_status.unsure.is_empty() {
         let p1: Node = parents
             .expect(
                 "Dirstate with no parents should not list any file to
@@ -217,7 +217,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         let p1_hex = format!("{:x}", p1);
         let mut rechecked_modified: Vec<HgPathCow> = Vec::new();
         let mut rechecked_clean: Vec<HgPathCow> = Vec::new();
-        for to_check in lookup {
+        for to_check in ds_status.unsure {
             if cat_file_is_modified(repo, &to_check, &p1_hex)? {
                 rechecked_modified.push(to_check);
             } else {

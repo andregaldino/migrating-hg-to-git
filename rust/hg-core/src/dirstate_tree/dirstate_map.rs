@@ -19,7 +19,6 @@ use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
-use crate::HgPathCow;
 use crate::PatternFileWarning;
 use crate::StateMapIter;
 use crate::StatusError;
@@ -582,13 +581,8 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         _root_dir: PathBuf,
         _ignore_files: Vec<PathBuf>,
         _options: StatusOptions,
-    ) -> Result<
-        (
-            (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
-            Vec<PatternFileWarning>,
-        ),
-        StatusError,
-    > {
+    ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>
+    {
         todo!()
     }
 
