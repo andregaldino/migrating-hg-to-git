@@ -21,30 +21,34 @@ from .. import (
     requirements,
     revlog,
     scmutil,
+    store,
     util,
     vfs as vfsmod,
 )
 from ..revlogutils import nodemap
 
 
-def _revlogfrompath(repo, path):
+def _revlogfrompath(repo, rl_type, path):
     """Obtain a revlog from a repo path.
 
     An instance of the appropriate class is returned.
     """
-    if path == b'00changelog.i':
+    if rl_type & store.FILEFLAGS_CHANGELOG:
         return changelog.changelog(repo.svfs)
-    elif path.endswith(b'00manifest.i'):
-        mandir = path[: -len(b'00manifest.i')]
+    elif rl_type & store.FILEFLAGS_MANIFESTLOG:
+        mandir = b''
+        if b'/' in path:
+            mandir = path.rsplit(b'/', 1)[0]
         return manifest.manifestrevlog(
             repo.nodeconstants, repo.svfs, tree=mandir
         )
     else:
-        # reverse of "/".join(("data", path + ".i"))
-        return filelog.filelog(repo.svfs, path[5:-2])
+        # drop the extension and the `data/` prefix
+        path = path.rsplit(b'.', 1)[0].split(b'/', 1)[1]
+        return filelog.filelog(repo.svfs, path)
 
 
-def _copyrevlog(tr, destrepo, oldrl, unencodedname):
+def _copyrevlog(tr, destrepo, oldrl, rl_type, unencodedname):
     """copy all relevant files for `oldrl` into `destrepo` store
 
     Files are copied "as is" without any transformation. The copy is performed
@@ -52,7 +56,7 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
     content is compatible with format of the destination repository.
     """
     oldrl = getattr(oldrl, '_revlog', oldrl)
-    newrl = _revlogfrompath(destrepo, unencodedname)
+    newrl = _revlogfrompath(destrepo, rl_type, unencodedname)
     newrl = getattr(newrl, '_revlog', newrl)
 
     oldvfs = oldrl.opener
@@ -70,10 +74,7 @@ def _copyrevlog(tr, destrepo, oldrl, unencodedname):
     if copydata:
         util.copyfile(olddata, newdata)
 
-    if not (
-        unencodedname.endswith(b'00changelog.i')
-        or unencodedname.endswith(b'00manifest.i')
-    ):
+    if rl_type & store.FILEFLAGS_FILELOG:
         destrepo.svfs.fncache.add(unencodedname)
         if copydata:
             destrepo.svfs.fncache.add(unencodedname[:-2] + b'.d')
@@ -107,17 +108,18 @@ def getsidedatacompanion(srcrepo, dstrepo):
     return sidedatacompanion
 
 
-def matchrevlog(revlogfilter, entry):
+def matchrevlog(revlogfilter, rl_type):
     """check if a revlog is selected for cloning.
 
     In other words, are there any updates which need to be done on revlog
     or it can be blindly copied.
 
     The store entry is checked against the passed filter"""
-    if entry.endswith(b'00changelog.i'):
+    if rl_type & store.FILEFLAGS_CHANGELOG:
         return UPGRADE_CHANGELOG in revlogfilter
-    elif entry.endswith(b'00manifest.i'):
+    elif rl_type & store.FILEFLAGS_MANIFESTLOG:
         return UPGRADE_MANIFEST in revlogfilter
+    assert rl_type & store.FILEFLAGS_FILELOG
     return UPGRADE_FILELOGS in revlogfilter
 
 
@@ -126,6 +128,7 @@ def _perform_clone(
     dstrepo,
     tr,
     old_revlog,
+    rl_type,
     unencoded,
     upgrade_op,
     sidedatacompanion,
@@ -133,11 +136,11 @@ def _perform_clone(
 ):
     """ returns the new revlog object created"""
     newrl = None
-    if matchrevlog(upgrade_op.revlogs_to_process, unencoded):
+    if matchrevlog(upgrade_op.revlogs_to_process, rl_type):
         ui.note(
             _(b'cloning %d revisions from %s\n') % (len(old_revlog), unencoded)
         )
-        newrl = _revlogfrompath(dstrepo, unencoded)
+        newrl = _revlogfrompath(dstrepo, rl_type, unencoded)
         old_revlog.clone(
             tr,
             newrl,
@@ -149,9 +152,9 @@ def _perform_clone(
     else:
         msg = _(b'blindly copying %s containing %i revisions\n')
         ui.note(msg % (unencoded, len(old_revlog)))
-        _copyrevlog(tr, dstrepo, old_revlog, unencoded)
+        _copyrevlog(tr, dstrepo, old_revlog, rl_type, unencoded)
 
-        newrl = _revlogfrompath(dstrepo, unencoded)
+        newrl = _revlogfrompath(dstrepo, rl_type, unencoded)
     return newrl
 
 
@@ -192,11 +195,11 @@ def _clonerevlogs(
 
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
-    for revlog_type, unencoded, encoded, size in alldatafiles:
-        if not unencoded.endswith(b'.i'):
+    for rl_type, unencoded, encoded, size in alldatafiles:
+        if not rl_type & store.FILEFLAGS_REVLOG_MAIN:
             continue
 
-        rl = _revlogfrompath(srcrepo, unencoded)
+        rl = _revlogfrompath(srcrepo, rl_type, unencoded)
 
         info = rl.storageinfo(
             exclusivefiles=True,
@@ -213,19 +216,19 @@ def _clonerevlogs(
         srcrawsize += rawsize
 
         # This is for the separate progress bars.
-        if isinstance(rl, changelog.changelog):
-            changelogs[unencoded] = rl
+        if rl_type & store.FILEFLAGS_CHANGELOG:
+            changelogs[unencoded] = (rl_type, rl)
             crevcount += len(rl)
             csrcsize += datasize
             crawsize += rawsize
-        elif isinstance(rl, manifest.manifestrevlog):
-            manifests[unencoded] = rl
+        elif rl_type & store.FILEFLAGS_MANIFESTLOG:
+            manifests[unencoded] = (rl_type, rl)
             mcount += 1
             mrevcount += len(rl)
             msrcsize += datasize
             mrawsize += rawsize
-        elif isinstance(rl, filelog.filelog):
-            filelogs[unencoded] = rl
+        elif rl_type & store.FILEFLAGS_FILELOG:
+            filelogs[unencoded] = (rl_type, rl)
             fcount += 1
             frevcount += len(rl)
             fsrcsize += datasize
@@ -270,12 +273,13 @@ def _clonerevlogs(
         )
     )
     progress = srcrepo.ui.makeprogress(_(b'file revisions'), total=frevcount)
-    for unencoded, oldrl in sorted(filelogs.items()):
+    for unencoded, (rl_type, oldrl) in sorted(filelogs.items()):
         newrl = _perform_clone(
             ui,
             dstrepo,
             tr,
             oldrl,
+            rl_type,
             unencoded,
             upgrade_op,
             sidedatacompanion,
@@ -309,12 +313,13 @@ def _clonerevlogs(
     progress = srcrepo.ui.makeprogress(
         _(b'manifest revisions'), total=mrevcount
     )
-    for unencoded, oldrl in sorted(manifests.items()):
+    for unencoded, (rl_type, oldrl) in sorted(manifests.items()):
         newrl = _perform_clone(
             ui,
             dstrepo,
             tr,
             oldrl,
+            rl_type,
             unencoded,
             upgrade_op,
             sidedatacompanion,
@@ -347,12 +352,13 @@ def _clonerevlogs(
     progress = srcrepo.ui.makeprogress(
         _(b'changelog revisions'), total=crevcount
     )
-    for unencoded, oldrl in sorted(changelogs.items()):
+    for unencoded, (rl_type, oldrl) in sorted(changelogs.items()):
         newrl = _perform_clone(
             ui,
             dstrepo,
             tr,
             oldrl,
+            rl_type,
             unencoded,
             upgrade_op,
             sidedatacompanion,
