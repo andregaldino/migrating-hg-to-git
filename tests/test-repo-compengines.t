@@ -1,5 +1,12 @@
 A new repository uses zlib storage, which doesn't need a requirement
 
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > # stabilize test accross variant
+  > revlog-compression=zlib
+  > EOF
+
+
   $ hg init default
   $ cd default
   $ cat .hg/requires
