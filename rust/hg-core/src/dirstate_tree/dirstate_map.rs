@@ -52,6 +52,22 @@ impl DirstateMap {
         }
     }
 
+    fn get_node(&self, path: &HgPath) -> Option<&Node> {
+        let mut children = &self.root;
+        let mut components = path.components();
+        let mut component =
+            components.next().expect("expected at least one components");
+        loop {
+            let child = children.get(component)?;
+            if let Some(next_component) = components.next() {
+                component = next_component;
+                children = &child.children;
+            } else {
+                return Some(child);
+            }
+        }
+    }
+
     fn get_or_insert_node(&mut self, path: &HgPath) -> &mut Node {
         let mut child_nodes = &mut self.root;
         let mut inclusive_ancestor_paths =
@@ -265,12 +281,16 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         todo!()
     }
 
-    fn copy_map_contains_key(&self, _key: &HgPath) -> bool {
-        todo!()
+    fn copy_map_contains_key(&self, key: &HgPath) -> bool {
+        if let Some(node) = self.get_node(key) {
+            node.copy_source.is_some()
+        } else {
+            false
+        }
     }
 
-    fn copy_map_get(&self, _key: &HgPath) -> Option<&HgPathBuf> {
-        todo!()
+    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPathBuf> {
+        self.get_node(key)?.copy_source.as_ref()
     }
 
     fn copy_map_remove(&mut self, _key: &HgPath) -> Option<HgPathBuf> {
@@ -289,12 +309,12 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         todo!()
     }
 
-    fn contains_key(&self, _key: &HgPath) -> bool {
-        todo!()
+    fn contains_key(&self, key: &HgPath) -> bool {
+        self.get(key).is_some()
     }
 
-    fn get(&self, _key: &HgPath) -> Option<&DirstateEntry> {
-        todo!()
+    fn get(&self, key: &HgPath) -> Option<&DirstateEntry> {
+        self.get_node(key)?.entry.as_ref()
     }
 
     fn iter(&self) -> StateMapIter<'_> {

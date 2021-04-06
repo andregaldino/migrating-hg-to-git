@@ -226,6 +226,11 @@ impl HgPath {
         inner.extend(other.as_ref().bytes());
         HgPathBuf::from_bytes(&inner)
     }
+
+    pub fn components(&self) -> impl Iterator<Item = &HgPath> {
+        self.inner.split(|&byte| byte == b'/').map(HgPath::new)
+    }
+
     pub fn parent(&self) -> &Self {
         let inner = self.as_bytes();
         HgPath::new(match inner.iter().rposition(|b| *b == b'/') {
