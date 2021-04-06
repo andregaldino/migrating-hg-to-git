@@ -41,7 +41,11 @@ class unionrevlog(revlog.revlog):
         # To differentiate a rev in the second revlog from a rev in the revlog,
         # we check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
-        revlog.revlog.__init__(self, opener, indexfile)
+        target = getattr(revlog2, 'target', None)
+        if target is None:
+            # a revlog wrapper, eg: the manifestlog that is not an actual revlog
+            target = revlog2._revlog.target
+        revlog.revlog.__init__(self, opener, target=target, indexfile=indexfile)
         self.revlog2 = revlog2
 
         n = len(self)

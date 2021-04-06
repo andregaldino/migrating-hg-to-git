@@ -34,6 +34,9 @@ from .interfaces import (
     repository,
     util as interfaceutil,
 )
+from .revlogutils import (
+    constants as revlog_constants,
+)
 
 parsers = policy.importmod('parsers')
 propertycache = util.propertycache
@@ -1610,7 +1613,8 @@ class manifestrevlog(object):
 
         self._revlog = revlog.revlog(
             opener,
-            indexfile,
+            target=(revlog_constants.KIND_MANIFESTLOG, self.tree),
+            indexfile=indexfile,
             # only root indexfile is cached
             checkambig=not bool(tree),
             mmaplargeindex=True,

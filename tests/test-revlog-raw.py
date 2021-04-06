@@ -14,6 +14,7 @@ from mercurial import (
 )
 
 from mercurial.revlogutils import (
+    constants,
     deltas,
     flagutil,
 )
@@ -81,7 +82,9 @@ def newtransaction():
 def newrevlog(name=b'_testrevlog.i', recreate=False):
     if recreate:
         tvfs.tryunlink(name)
-    rlog = revlog.revlog(tvfs, name)
+    rlog = revlog.revlog(
+        tvfs, target=(constants.KIND_OTHER, b'test'), indexfile=name
+    )
     return rlog
 
 

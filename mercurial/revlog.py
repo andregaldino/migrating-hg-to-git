@@ -34,6 +34,7 @@ from .node import (
 from .i18n import _
 from .pycompat import getattr
 from .revlogutils.constants import (
+    ALL_KINDS,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_HEADER,
@@ -287,7 +288,8 @@ class revlog(object):
     def __init__(
         self,
         opener,
-        indexfile,
+        target,
+        indexfile=None,
         datafile=None,
         checkambig=False,
         mmaplargeindex=False,
@@ -302,6 +304,12 @@ class revlog(object):
         opener is a function that abstracts the file opening operation
         and can be used to implement COW semantics or the like.
 
+        `target`: a (KIND, ID) tuple that identify the content stored in
+        this revlog. It help the rest of the code to understand what the revlog
+        is about without having to resort to heuristic and index filename
+        analysis. Note: that this must be reliably be set by normal code, but
+        that test, debug, or performance measurement code might not set this to
+        accurate value.
         """
         self.upperboundcomp = upperboundcomp
         self.indexfile = indexfile
@@ -313,6 +321,9 @@ class revlog(object):
             )
 
         self.opener = opener
+        assert target[0] in ALL_KINDS
+        assert len(target) == 2
+        self.target = target
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
         self._checkambig = checkambig
@@ -2869,7 +2880,13 @@ class revlog(object):
         newdatafile = self.datafile + b'.tmpcensored'
 
         # This is a bit dangerous. We could easily have a mismatch of state.
-        newrl = revlog(self.opener, newindexfile, newdatafile, censorable=True)
+        newrl = revlog(
+            self.opener,
+            target=self.target,
+            indexfile=newindexfile,
+            datafile=newdatafile,
+            censorable=True,
+        )
         newrl.version = self.version
         newrl._generaldelta = self._generaldelta
         newrl._parse_index = self._parse_index

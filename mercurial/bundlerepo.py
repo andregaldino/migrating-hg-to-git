@@ -46,9 +46,13 @@ from .utils import (
     urlutil,
 )
 
+from .revlogutils import (
+    constants as revlog_constants,
+)
+
 
 class bundlerevlog(revlog.revlog):
-    def __init__(self, opener, indexfile, cgunpacker, linkmapper):
+    def __init__(self, opener, target, indexfile, cgunpacker, linkmapper):
         # How it works:
         # To retrieve a revision, we need to know the offset of the revision in
         # the bundle (an unbundle object). We store this offset in the index
@@ -57,7 +61,7 @@ class bundlerevlog(revlog.revlog):
         # To differentiate a rev in the bundle from a rev in the revlog, we
         # check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
-        revlog.revlog.__init__(self, opener, indexfile)
+        revlog.revlog.__init__(self, opener, target=target, indexfile=indexfile)
         self.bundle = cgunpacker
         n = len(self)
         self.repotiprev = n - 1
@@ -171,7 +175,12 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
         changelog.changelog.__init__(self, opener)
         linkmapper = lambda x: x
         bundlerevlog.__init__(
-            self, opener, self.indexfile, cgunpacker, linkmapper
+            self,
+            opener,
+            (revlog_constants.KIND_CHANGELOG, None),
+            self.indexfile,
+            cgunpacker,
+            linkmapper,
         )
 
 
@@ -187,7 +196,12 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     ):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener, tree=dir)
         bundlerevlog.__init__(
-            self, opener, self.indexfile, cgunpacker, linkmapper
+            self,
+            opener,
+            (revlog_constants.KIND_MANIFESTLOG, dir),
+            self.indexfile,
+            cgunpacker,
+            linkmapper,
         )
         if dirlogstarts is None:
             dirlogstarts = {}
@@ -214,7 +228,12 @@ class bundlefilelog(filelog.filelog):
     def __init__(self, opener, path, cgunpacker, linkmapper):
         filelog.filelog.__init__(self, opener, path)
         self._revlog = bundlerevlog(
-            opener, self.indexfile, cgunpacker, linkmapper
+            opener,
+            # XXX should use the unencoded path
+            target=(revlog_constants.KIND_FILELOG, path),
+            indexfile=self.indexfile,
+            cgunpacker=cgunpacker,
+            linkmapper=linkmapper,
         )
 
 

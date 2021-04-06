@@ -13,6 +13,20 @@ import struct
 
 from ..interfaces import repository
 
+### Internal utily constants
+
+KIND_CHANGELOG = 1001  # over 256 to not be comparable with a bytes
+KIND_MANIFESTLOG = 1002
+KIND_FILELOG = 1003
+KIND_OTHER = 1004
+
+ALL_KINDS = {
+    KIND_CHANGELOG,
+    KIND_MANIFESTLOG,
+    KIND_FILELOG,
+    KIND_OTHER,
+}
+
 ### main revlog header
 
 INDEX_HEADER = struct.Struct(b">I")

@@ -61,6 +61,10 @@ from .utils import (
     stringutil,
 )
 
+from .revlogutils import (
+    constants as revlog_constants,
+)
+
 if pycompat.TYPE_CHECKING:
     from typing import (
         Any,
@@ -1428,8 +1432,12 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
             raise error.CommandError(cmd, _(b'invalid arguments'))
         if not os.path.isfile(file_):
             raise error.InputError(_(b"revlog '%s' not found") % file_)
+
+        target = (revlog_constants.KIND_OTHER, b'free-form:%s' % file_)
         r = revlog.revlog(
-            vfsmod.vfs(encoding.getcwd(), audit=False), file_[:-2] + b".i"
+            vfsmod.vfs(encoding.getcwd(), audit=False),
+            target=target,
+            indexfile=file_[:-2] + b".i",
         )
     return r
 

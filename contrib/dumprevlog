@@ -13,6 +13,10 @@ from mercurial import (
 )
 from mercurial.utils import procutil
 
+from mercurial.revlogutils import (
+    constants as revlog_constants,
+)
+
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
 
@@ -32,7 +36,11 @@ def printb(data, end=b'\n'):
 
 
 for f in sys.argv[1:]:
-    r = revlog.revlog(binopen, encoding.strtolocal(f))
+    r = revlog.revlog(
+        binopen,
+        target=(revlog_constants.KIND_OTHER, b'dump-revlog'),
+        indexfile=encoding.strtolocal(f),
+    )
     print("file:", f)
     for i in r:
         n = r.node(i)

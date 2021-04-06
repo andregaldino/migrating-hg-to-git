@@ -66,6 +66,8 @@ import sys
 import tempfile
 import threading
 import time
+
+import mercurial.revlog
 from mercurial import (
     changegroup,
     cmdutil,
@@ -76,7 +78,6 @@ from mercurial import (
     hg,
     mdiff,
     merge,
-    revlog,
     util,
 )
 
@@ -118,6 +119,21 @@ try:
     from mercurial import profiling
 except ImportError:
     profiling = None
+
+try:
+    from mercurial.revlogutils import constants as revlog_constants
+
+    perf_rl_kind = (revlog_constants.KIND_OTHER, b'created-by-perf')
+
+    def revlog(opener, *args, **kwargs):
+        return mercurial.revlog.revlog(opener, perf_rl_kind, *args, **kwargs)
+
+
+except (ImportError, AttributeError):
+    perf_rl_kind = None
+
+    def revlog(opener, *args, **kwargs):
+        return mercurial.revlog.revlog(opener, *args, **kwargs)
 
 
 def identity(a):
@@ -1809,7 +1825,8 @@ def perfnodelookup(ui, repo, rev, **opts):
 
     mercurial.revlog._prereadsize = 2 ** 24  # disable lazy parser in old hg
     n = scmutil.revsingle(repo, rev).node()
-    cl = mercurial.revlog.revlog(getsvfs(repo), b"00changelog.i")
+
+    cl = revlog(getsvfs(repo), indexfile=b"00changelog.i")
 
     def d():
         cl.rev(n)
@@ -2602,9 +2619,9 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     else:
         raise error.Abort(b'unsupported revlog version: %d' % version)
 
-    parse_index_v1 = getattr(revlog, 'parse_index_v1', None)
+    parse_index_v1 = getattr(mercurial.revlog, 'parse_index_v1', None)
     if parse_index_v1 is None:
-        parse_index_v1 = revlog.revlogio().parseindex
+        parse_index_v1 = mercurial.revlog.revlogio().parseindex
 
     rllen = len(rl)
 
@@ -2620,7 +2637,7 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     allnodesrev = list(reversed(allnodes))
 
     def constructor():
-        revlog.revlog(opener, indexfile)
+        revlog(opener, indexfile=indexfile)
 
     def read():
         with opener(indexfile) as fh:
@@ -3042,7 +3059,7 @@ def _temprevlog(ui, orig, truncaterev):
         vfs = vfsmod.vfs(tmpdir)
         vfs.options = getattr(orig.opener, 'options', None)
 
-        dest = revlog.revlog(
+        dest = revlog(
             vfs, indexfile=indexname, datafile=dataname, **revlogkwargs
         )
         if dest._inline:

@@ -25,7 +25,10 @@ from .utils import (
     dateutil,
     stringutil,
 )
-from .revlogutils import flagutil
+from .revlogutils import (
+    constants as revlog_constants,
+    flagutil,
+)
 
 _defaultextra = {b'branch': b'default'}
 
@@ -401,7 +404,8 @@ class changelog(revlog.revlog):
         revlog.revlog.__init__(
             self,
             opener,
-            indexfile,
+            target=(revlog_constants.KIND_CHANGELOG, None),
+            indexfile=indexfile,
             datafile=datafile,
             checkambig=True,
             mmaplargeindex=True,

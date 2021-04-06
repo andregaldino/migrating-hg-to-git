@@ -18,13 +18,20 @@ from .interfaces import (
     util as interfaceutil,
 )
 from .utils import storageutil
+from .revlogutils import (
+    constants as revlog_constants,
+)
 
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filelog(object):
     def __init__(self, opener, path):
         self._revlog = revlog.revlog(
-            opener, b'/'.join((b'data', path + b'.i')), censorable=True
+            opener,
+            # XXX should use the unencoded path
+            target=(revlog_constants.KIND_FILELOG, path),
+            indexfile=b'/'.join((b'data', path + b'.i')),
+            censorable=True,
         )
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.

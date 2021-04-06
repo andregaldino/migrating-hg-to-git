@@ -45,9 +45,10 @@ Test for CVE-2016-3630
        0       2 99e0332bd498 000000000000 000000000000
        1       3 6674f57a23d8 99e0332bd498 000000000000
 
+  >>> from mercurial.revlogutils.constants import KIND_OTHER
   >>> from mercurial import revlog, vfs
   >>> tvfs = vfs.vfs(b'.')
   >>> tvfs.options = {b'revlogv1': True}
-  >>> rl = revlog.revlog(tvfs, b'a.i')
+  >>> rl = revlog.revlog(tvfs, target=(KIND_OTHER, b'test'), indexfile=b'a.i')
   >>> rl.revision(1)
   mpatchError(*'patch cannot be decoded'*) (glob)
