@@ -1,4 +1,4 @@
-#require pygit2
+#require pygit2 no-windows
 
 Setup:
   $ GIT_AUTHOR_NAME='test'; export GIT_AUTHOR_NAME
