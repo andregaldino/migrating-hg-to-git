@@ -452,7 +452,9 @@ class basicstore(object):
         return reversed(self._walk(b'', False))
 
     def walk(self, matcher=None):
-        """yields (unencoded, encoded, size)
+        """return file related to data storage (ie: revlogs)
+
+        yields (unencoded, encoded, size)
 
         if a matcher is passed, storage files of only those tracked paths
         are passed with matches the matcher
