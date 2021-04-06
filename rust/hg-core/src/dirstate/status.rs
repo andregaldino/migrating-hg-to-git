@@ -256,18 +256,39 @@ pub struct StatusOptions {
 
 #[derive(Debug)]
 pub struct DirstateStatus<'a> {
+    /// Tracked files whose contents have changed since the parent revision
     pub modified: Vec<HgPathCow<'a>>,
+
+    /// Newly-tracked files that were not present in the parent
     pub added: Vec<HgPathCow<'a>>,
+
+    /// Previously-tracked files that have been (re)moved with an hg command
     pub removed: Vec<HgPathCow<'a>>,
+
+    /// (Still) tracked files that are missing, (re)moved with an non-hg
+    /// command
     pub deleted: Vec<HgPathCow<'a>>,
+
+    /// Tracked files that are up to date with the parent.
+    /// Only pupulated if `StatusOptions::list_clean` is true.
     pub clean: Vec<HgPathCow<'a>>,
+
+    /// Files in the working directory that are ignored with `.hgignore`.
+    /// Only pupulated if `StatusOptions::list_ignored` is true.
     pub ignored: Vec<HgPathCow<'a>>,
+
+    /// Files in the working directory that are neither tracked nor ignored.
+    /// Only pupulated if `StatusOptions::list_unknown` is true.
     pub unknown: Vec<HgPathCow<'a>>,
+
+    /// Was explicitly matched but cannot be found/accessed
     pub bad: Vec<(HgPathCow<'a>, BadMatch)>,
+
     /// Either clean or modified, but we can’t tell from filesystem metadata
     /// alone. The file contents need to be read and compared with that in
     /// the parent.
     pub unsure: Vec<HgPathCow<'a>>,
+
     /// Only filled if `collect_traversed_dirs` is `true`
     pub traversed: Vec<HgPathBuf>,
 }
