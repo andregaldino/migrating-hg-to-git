@@ -7,6 +7,9 @@ setup
   > use-share-safe = True
   > [storage]
   > revlog.persistent-nodemap.slow-path=allow
+  > # enforce zlib to ensure we can upgrade to zstd later
+  > [format]
+  > revlog-compression=zlib
   > EOF
 
 prepare source repo
