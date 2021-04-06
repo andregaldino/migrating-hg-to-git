@@ -1589,7 +1589,7 @@ class manifestrevlog:
         self._fulltextcache = manifestfulltextcache(cachesize)
 
         if tree:
-            assert self._treeondisk, b'opts is %r' % opts
+            assert self._treeondisk, (tree, b'opts is %r' % opts)
 
         radix = b'00manifest'
         if tree:
