@@ -3,6 +3,9 @@
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > share =
+  > [format]
+  > # stabilize test accross variant
+  > revlog-compression=zlib
   > EOF
 
 store and revlogv1 are required in source
@@ -1144,6 +1147,7 @@ repository config is taken in account
   > maxchainlen = 9001
   > EOF
   $ hg config format
+  format.revlog-compression=$BUNDLE2_COMPRESSIONS$
   format.maxchainlen=9001
   $ hg debugdeltachain file
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
