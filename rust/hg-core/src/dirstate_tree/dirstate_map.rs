@@ -3,8 +3,9 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use super::path_with_basename::WithBasename;
-
 use crate::dirstate::parsers::parse_dirstate_entries;
+use crate::dirstate::parsers::parse_dirstate_parents;
+
 use crate::matchers::Matcher;
 use crate::revlog::node::NULL_NODE;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
@@ -175,9 +176,20 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
 
     fn parents(
         &mut self,
-        _file_contents: &[u8],
+        file_contents: &[u8],
     ) -> Result<&DirstateParents, DirstateError> {
-        todo!()
+        if self.parents.is_none() {
+            let parents = if !file_contents.is_empty() {
+                parse_dirstate_parents(file_contents)?.clone()
+            } else {
+                DirstateParents {
+                    p1: NULL_NODE,
+                    p2: NULL_NODE,
+                }
+            };
+            self.parents = Some(parents);
+        }
+        Ok(self.parents.as_ref().unwrap())
     }
 
     fn set_parents(&mut self, parents: &DirstateParents) {
