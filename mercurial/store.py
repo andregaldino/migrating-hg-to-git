@@ -411,7 +411,7 @@ class basicstore(object):
     def join(self, f):
         return self.path + b'/' + encodedir(f)
 
-    def _walk(self, relpath, recurse, filefilter=isrevlog):
+    def _walk(self, relpath, recurse):
         '''yields (unencoded, encoded, size)'''
         path = self.path
         if relpath:
@@ -425,7 +425,7 @@ class basicstore(object):
                 p = visit.pop()
                 for f, kind, st in readdir(p, stat=True):
                     fp = p + b'/' + f
-                    if filefilter(f, kind, st):
+                    if isrevlog(f, kind, st):
                         n = util.pconvert(fp[striplen:])
                         l.append((decodedir(n), n, st.st_size))
                     elif kind == stat.S_IFDIR and recurse:
