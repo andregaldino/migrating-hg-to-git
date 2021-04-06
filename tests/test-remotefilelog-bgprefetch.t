@@ -63,6 +63,7 @@
   > EOF
   $ hg strip tip
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/6b4b6f66ef8c-b4b8bdaf-backup.hg (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
 
   $ clearcache
   $ hg pull

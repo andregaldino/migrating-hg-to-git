@@ -26,12 +26,12 @@ Unbundling a shallow bundle
   $ hg strip -r 66ee28d0328c
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/66ee28d0328c-3d7aafd1-backup.hg (glob)
-  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
+  2 files fetched over 2 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
   $ hg unbundle .hg/strip-backup/66ee28d0328c-3d7aafd1-backup.hg
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 0 changes to 0 files
+  added 2 changesets with 2 changes to 1 files
   new changesets 66ee28d0328c:16db62c5946f
   (run 'hg update' to get a working copy)
 
@@ -51,7 +51,7 @@ Unbundling a full bundle
 
 Pulling from a shallow bundle
 
-  $ hg strip -r 66ee28d0328c
+  $ hg strip -r 66ee28d0328c --config remotefilelog.strip.includefiles=none
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/66ee28d0328c-3d7aafd1-backup.hg (glob)
   $ hg pull -r 66ee28d0328c .hg/strip-backup/66ee28d0328c-3d7aafd1-backup.hg
   pulling from .hg/strip-backup/66ee28d0328c-3d7aafd1-backup.hg
@@ -63,12 +63,13 @@ Pulling from a shallow bundle
   new changesets 66ee28d0328c (1 drafts)
   (run 'hg update' to get a working copy)
 
-Pulling from a full bundle
+Pulling from a full bundle, also testing that strip produces a full bundle by
+default.
 
   $ hg strip -r 66ee28d0328c
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/66ee28d0328c-b6ee89e7-backup.hg (glob)
-  $ hg pull -r 66ee28d0328c ../fullbundle.hg
-  pulling from ../fullbundle.hg
+  $ hg pull -r 66ee28d0328c .hg/strip-backup/66ee28d0328c-b6ee89e7-backup.hg
+  pulling from .hg/strip-backup/66ee28d0328c-b6ee89e7-backup.hg
   searching for changes
   abort: cannot pull from full bundles
   (use `hg unbundle` instead)

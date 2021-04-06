@@ -215,6 +215,8 @@ configitem(b'remotefilelog', b'pullprefetch', default=None)
 configitem(b'remotefilelog', b'backgroundprefetch', default=False)
 configitem(b'remotefilelog', b'prefetchdelay', default=120)
 configitem(b'remotefilelog', b'prefetchdays', default=14)
+# Other values include 'local' or 'none'. Any unrecognized value is 'all'.
+configitem(b'remotefilelog', b'strip.includefiles', default='all')
 
 configitem(b'remotefilelog', b'getfilesstep', default=10000)
 configitem(b'remotefilelog', b'getfilestype', default=b'optimistic')

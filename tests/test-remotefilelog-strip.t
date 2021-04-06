@@ -60,8 +60,9 @@
   |
   @  0 b292c1e3311f
   
-FIXME: This should point to a commit that actually exists in the repo. Otherwise
-remotefilelog has to search every commit in the repository looking for a valid
-linkrev every time it's queried, such as during push.
+Demonstrate that the linknode points to a commit that is actually in the repo
+after the strip operation. Otherwise remotefilelog has to search every commit in
+the repository looking for a valid linkrev every time it's queried, such as
+during push.
   $ hg debug-file-linknode -r 70494d a
-  df91f74b871e064c89afa1fe9e2f66afa2c125df
+  70494d7ec5ef6cd3cd6939a9fd2812f9956bf553
