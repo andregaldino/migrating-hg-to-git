@@ -43,6 +43,13 @@ struct Node {
     children: ChildNodes,
 }
 
+/// `(full_path, entry, copy_source)`
+type NodeDataMut<'a> = (
+    &'a WithBasename<HgPathBuf>,
+    &'a mut Option<DirstateEntry>,
+    &'a mut Option<HgPathBuf>,
+);
+
 impl DirstateMap {
     pub fn new() -> Self {
         Self {
@@ -94,6 +101,87 @@ impl DirstateMap {
                 return child_node;
             }
         }
+    }
+
+    fn iter_nodes<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = (&'a WithBasename<HgPathBuf>, &'a Node)> + 'a
+    {
+        // Depth first tree traversal.
+        //
+        // If we could afford internal iteration and recursion,
+        // this would look like:
+        //
+        // ```
+        // fn traverse_children(
+        //     children: &ChildNodes,
+        //     each: &mut impl FnMut(&Node),
+        // ) {
+        //     for child in children.values() {
+        //         traverse_children(&child.children, each);
+        //         each(child);
+        //     }
+        // }
+        // ```
+        //
+        // However we want an external iterator and therefore can’t use the
+        // call stack. Use an explicit stack instead:
+        let mut stack = Vec::new();
+        let mut iter = self.root.iter();
+        std::iter::from_fn(move || {
+            while let Some((key, child_node)) = iter.next() {
+                // Pseudo-recursion
+                let new_iter = child_node.children.iter();
+                let old_iter = std::mem::replace(&mut iter, new_iter);
+                stack.push((key, child_node, old_iter));
+            }
+            // Found the end of a `children.iter()` iterator.
+            if let Some((key, child_node, next_iter)) = stack.pop() {
+                // "Return" from pseudo-recursion by restoring state from the
+                // explicit stack
+                iter = next_iter;
+
+                Some((key, child_node))
+            } else {
+                // Reached the bottom of the stack, we’re done
+                None
+            }
+        })
+    }
+
+    /// Mutable iterator for the `(entry, copy source)` of each node.
+    ///
+    /// It would not be safe to yield mutable references to nodes themeselves
+    /// with `-> impl Iterator<Item = &mut Node>` since child nodes are
+    /// reachable from their ancestor nodes, potentially creating multiple
+    /// `&mut` references to a given node.
+    fn iter_node_data_mut<'a>(
+        &'a mut self,
+    ) -> impl Iterator<Item = NodeDataMut<'a>> + 'a {
+        // Explict stack for pseudo-recursion, see `iter_nodes` above.
+        let mut stack = Vec::new();
+        let mut iter = self.root.iter_mut();
+        std::iter::from_fn(move || {
+            while let Some((key, child_node)) = iter.next() {
+                // Pseudo-recursion
+                let data =
+                    (key, &mut child_node.entry, &mut child_node.copy_source);
+                let new_iter = child_node.children.iter_mut();
+                let old_iter = std::mem::replace(&mut iter, new_iter);
+                stack.push((data, old_iter));
+            }
+            // Found the end of a `children.values_mut()` iterator.
+            if let Some((data, next_iter)) = stack.pop() {
+                // "Return" from pseudo-recursion by restoring state from the
+                // explicit stack
+                iter = next_iter;
+
+                Some(data)
+            } else {
+                // Reached the bottom of the stack, we’re done
+                None
+            }
+        })
     }
 }
 
@@ -242,6 +330,7 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         _parents: DirstateParents,
         _now: Duration,
     ) -> Result<Vec<u8>, DirstateError> {
+        let _ = self.iter_node_data_mut();
         todo!()
     }
 
@@ -278,7 +367,11 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
-        todo!()
+        Box::new(self.iter_nodes().filter_map(|(path, node)| {
+            node.copy_source
+                .as_ref()
+                .map(|copy_source| (path.full_path(), copy_source))
+        }))
     }
 
     fn copy_map_contains_key(&self, key: &HgPath) -> bool {
@@ -318,6 +411,8 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn iter(&self) -> StateMapIter<'_> {
-        todo!()
+        Box::new(self.iter_nodes().filter_map(|(path, node)| {
+            node.entry.as_ref().map(|entry| (path.full_path(), entry))
+        }))
     }
 }
