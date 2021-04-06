@@ -243,7 +243,7 @@ def generatev1(repo):
     # Get consistent snapshot of repo, lock during scan.
     with repo.lock():
         repo.ui.debug(b'scanning\n')
-        for name, ename, size in _walkstreamfiles(repo):
+        for file_type, name, ename, size in _walkstreamfiles(repo):
             if size:
                 entries.append((name, size))
                 total_bytes += size
@@ -616,7 +616,7 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
             matcher = narrowspec.match(repo.root, includes, excludes)
 
         repo.ui.debug(b'scanning\n')
-        for name, ename, size in _walkstreamfiles(repo, matcher):
+        for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
                 entries.append((_srcstore, name, _fileappend, size))
                 totalfilesize += size

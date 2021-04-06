@@ -1582,7 +1582,8 @@ def rawstorefiledata(repo, proto, files, pathfilter):
 
     # TODO this is a bunch of storage layer interface abstractions because
     # it assumes revlogs.
-    for name, encodedname, size in topfiles:
+    for rl_type, name, encodedname, size in topfiles:
+        # XXX use the `rl_type` for that
         if b'changelog' in files and name.startswith(b'00changelog'):
             pass
         elif b'manifestlog' in files and name.startswith(b'00manifest'):

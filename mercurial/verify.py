@@ -416,7 +416,7 @@ class verifier(object):
             storefiles = set()
             subdirs = set()
             revlogv1 = self.revlogv1
-            for f, f2, size in repo.store.datafiles():
+            for t, f, f2, size in repo.store.datafiles():
                 if not f:
                     self._err(None, _(b"cannot decode filename '%s'") % f2)
                 elif (size > 0 or not revlogv1) and f.startswith(b'meta/'):
@@ -480,7 +480,7 @@ class verifier(object):
         ui.status(_(b"checking files\n"))
 
         storefiles = set()
-        for f, f2, size in repo.store.datafiles():
+        for rl_type, f, f2, size in repo.store.datafiles():
             if not f:
                 self._err(None, _(b"cannot decode filename '%s'") % f2)
             elif (size > 0 or not revlogv1) and f.startswith(b'data/'):

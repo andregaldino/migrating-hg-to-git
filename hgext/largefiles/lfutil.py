@@ -514,7 +514,7 @@ def unixpath(path):
 def islfilesrepo(repo):
     '''Return true if the repo is a largefile repo.'''
     if b'largefiles' in repo.requirements and any(
-        shortnameslash in f[0] for f in repo.store.datafiles()
+        shortnameslash in f[1] for f in repo.store.datafiles()
     ):
         return True
 

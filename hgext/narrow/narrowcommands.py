@@ -276,7 +276,7 @@ def _narrow(
                 repair.strip(ui, unfi, tostrip, topic=b'narrow', backup=backup)
 
         todelete = []
-        for f, f2, size in repo.store.datafiles():
+        for t, f, f2, size in repo.store.datafiles():
             if f.startswith(b'data/'):
                 file = f[5:-2]
                 if not newmatch(file):

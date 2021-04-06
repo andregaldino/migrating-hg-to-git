@@ -192,7 +192,7 @@ def _clonerevlogs(
 
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
-    for unencoded, encoded, size in alldatafiles:
+    for revlog_type, unencoded, encoded, size in alldatafiles:
         if not unencoded.endswith(b'.i'):
             continue
 

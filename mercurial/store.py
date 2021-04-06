@@ -387,13 +387,44 @@ _data = [
     b'requires',
 ]
 
-REVLOG_FILES_EXT = (b'.i', b'.d', b'.n', b'.nd')
+REVLOG_FILES_MAIN_EXT = (b'.i', b'i.tmpcensored')
+REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
 
 
-def isrevlog(f, kind, st):
+def is_revlog(f, kind, st):
     if kind != stat.S_IFREG:
-        return False
-    return f.endswith(REVLOG_FILES_EXT)
+        return None
+    return revlog_type(f)
+
+
+def revlog_type(f):
+    if f.endswith(REVLOG_FILES_MAIN_EXT):
+        return FILEFLAGS_REVLOG_MAIN
+    elif f.endswith(REVLOG_FILES_OTHER_EXT):
+        return FILETYPE_FILELOG_OTHER
+
+
+# the file is part of changelog data
+FILEFLAGS_CHANGELOG = 1 << 13
+# the file is part of manifest data
+FILEFLAGS_MANIFESTLOG = 1 << 12
+# the file is part of filelog data
+FILEFLAGS_FILELOG = 1 << 11
+# file that are not directly part of a revlog
+FILEFLAGS_OTHER = 1 << 10
+
+# the main entry point for a revlog
+FILEFLAGS_REVLOG_MAIN = 1 << 1
+# a secondary file for a revlog
+FILEFLAGS_REVLOG_OTHER = 1 << 0
+
+FILETYPE_CHANGELOG_MAIN = FILEFLAGS_CHANGELOG | FILEFLAGS_REVLOG_MAIN
+FILETYPE_CHANGELOG_OTHER = FILEFLAGS_CHANGELOG | FILEFLAGS_REVLOG_OTHER
+FILETYPE_MANIFESTLOG_MAIN = FILEFLAGS_MANIFESTLOG | FILEFLAGS_REVLOG_MAIN
+FILETYPE_MANIFESTLOG_OTHER = FILEFLAGS_MANIFESTLOG | FILEFLAGS_REVLOG_OTHER
+FILETYPE_FILELOG_MAIN = FILEFLAGS_FILELOG | FILEFLAGS_REVLOG_MAIN
+FILETYPE_FILELOG_OTHER = FILEFLAGS_FILELOG | FILEFLAGS_REVLOG_OTHER
+FILETYPE_OTHER = FILEFLAGS_OTHER
 
 
 class basicstore(object):
@@ -425,9 +456,10 @@ class basicstore(object):
                 p = visit.pop()
                 for f, kind, st in readdir(p, stat=True):
                     fp = p + b'/' + f
-                    if isrevlog(f, kind, st):
+                    rl_type = is_revlog(f, kind, st)
+                    if rl_type is not None:
                         n = util.pconvert(fp[striplen:])
-                        l.append((decodedir(n), n, st.st_size))
+                        l.append((rl_type, decodedir(n), n, st.st_size))
                     elif kind == stat.S_IFDIR and recurse:
                         visit.append(fp)
         l.sort()
@@ -445,16 +477,25 @@ class basicstore(object):
         return manifest.manifestlog(self.vfs, repo, rootstore, storenarrowmatch)
 
     def datafiles(self, matcher=None):
-        return self._walk(b'data', True) + self._walk(b'meta', True)
+        files = self._walk(b'data', True) + self._walk(b'meta', True)
+        for (t, u, e, s) in files:
+            yield (FILEFLAGS_FILELOG | t, u, e, s)
 
     def topfiles(self):
         # yield manifest before changelog
-        return reversed(self._walk(b'', False))
+        files = reversed(self._walk(b'', False))
+        for (t, u, e, s) in files:
+            if u.startswith(b'00changelog'):
+                yield (FILEFLAGS_CHANGELOG | t, u, e, s)
+            elif u.startswith(b'00manifest'):
+                yield (FILEFLAGS_MANIFESTLOG | t, u, e, s)
+            else:
+                yield (FILETYPE_OTHER | t, u, e, s)
 
     def walk(self, matcher=None):
         """return file related to data storage (ie: revlogs)
 
-        yields (unencoded, encoded, size)
+        yields (file_type, unencoded, encoded, size)
 
         if a matcher is passed, storage files of only those tracked paths
         are passed with matches the matcher
@@ -500,14 +541,14 @@ class encodedstore(basicstore):
         self.opener = self.vfs
 
     def datafiles(self, matcher=None):
-        for a, b, size in super(encodedstore, self).datafiles():
+        for t, a, b, size in super(encodedstore, self).datafiles():
             try:
                 a = decodefilename(a)
             except KeyError:
                 a = None
             if a is not None and not _matchtrackedpath(a, matcher):
                 continue
-            yield a, b, size
+            yield t, a, b, size
 
     def join(self, f):
         return self.path + b'/' + encodefilename(f)
@@ -696,7 +737,9 @@ class fncachestore(basicstore):
                 continue
             ef = self.encode(f)
             try:
-                yield f, ef, self.getsize(ef)
+                t = revlog_type(f)
+                t |= FILEFLAGS_FILELOG
+                yield t, f, ef, self.getsize(ef)
             except OSError as err:
                 if err.errno != errno.ENOENT:
                     raise

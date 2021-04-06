@@ -428,7 +428,7 @@ def manifestrevlogs(repo):
     if scmutil.istreemanifest(repo):
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
-        for unencoded, encoded, size in repo.store.datafiles():
+        for t, unencoded, encoded, size in repo.store.datafiles():
             if unencoded.startswith(b'meta/') and unencoded.endswith(
                 b'00manifest.i'
             ):
