@@ -99,6 +99,7 @@ Test link+rename largefile codepath
   fncache
   generaldelta
   largefiles
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

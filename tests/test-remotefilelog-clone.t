@@ -27,6 +27,7 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -61,6 +62,7 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -110,6 +112,7 @@ check its contents separately.
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

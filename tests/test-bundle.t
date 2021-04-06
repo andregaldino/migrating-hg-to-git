@@ -295,13 +295,16 @@ packed1 is produced properly
 #if reporevlogstore
 
   $ hg -R test debugcreatestreamclonebundle packed.hg
-  writing 2664 bytes for 6 files
+  writing 2664 bytes for 6 files (no-zstd !)
+  writing 2665 bytes for 6 files (zstd !)
   bundle requirements: generaldelta, revlogv1, sparserevlog
 
   $ f -B 64 --size --sha1 --hexdump packed.hg
-  packed.hg: size=2840, sha1=12bf3eee3eb8a04c503ce2d29b48f0135c7edff5
+  packed.hg: size=2840, sha1=12bf3eee3eb8a04c503ce2d29b48f0135c7edff5 (no-zstd !)
+  packed.hg: size=2841, sha1=8b645a65f49b0ae43042a9f3da56d4bfdf1c7f99 (zstd !)
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 06 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 0a 68 00 23 67 65 6e 65 72 61 6c 64 |.....h.#generald|
+  0010: 00 00 00 00 0a 68 00 23 67 65 6e 65 72 61 6c 64 |.....h.#generald| (no-zstd !)
+  0010: 00 00 00 00 0a 69 00 23 67 65 6e 65 72 61 6c 64 |.....i.#generald| (zstd !)
   0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 2c 73 70 |elta,revlogv1,sp|
   0030: 61 72 73 65 72 65 76 6c 6f 67 00 64 61 74 61 2f |arserevlog.data/|
 

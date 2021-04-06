@@ -20,6 +20,7 @@ Enable sparse profile
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -38,6 +39,7 @@ Requirement for sparse added when sparse is enabled
   exp-sparse
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -57,6 +59,7 @@ Requirement for sparse is removed when sparse is disabled
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

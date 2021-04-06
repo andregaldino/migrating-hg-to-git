@@ -60,7 +60,8 @@ Check that we can upgrade to sidedata
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat -v -R up-no-side-data --config format.exp-use-side-data=yes
   format-variant     repo config default
@@ -73,7 +74,8 @@ Check that we can upgrade to sidedata
   copies-sdc:          no     no      no
   revlog-v2:           no    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo -R up-no-side-data --config format.exp-use-side-data=yes > /dev/null
 
@@ -92,7 +94,8 @@ Check that we can downgrade from sidedata
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat -v -R up-side-data --config format.exp-use-side-data=no
   format-variant     repo config default
@@ -105,6 +108,7 @@ Check that we can downgrade from sidedata
   copies-sdc:          no     no      no
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo -R up-side-data --config format.exp-use-side-data=no > /dev/null

@@ -60,7 +60,8 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   copies-sdc:          no
   revlog-v2:           no
   plain-cl-delta:     yes
-  compression:        zlib
+  compression:        zlib (no-zstd !)
+  compression:        zstd (zstd !)
   compression-level:  default
   $ hg debugbuilddag .+5000 --new-file
 
@@ -579,13 +580,15 @@ downgrading
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo --run --no-backup
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      removed: persistent-nodemap
   
   processed revlogs:
@@ -624,13 +627,15 @@ upgrading
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo --run --no-backup
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      added: persistent-nodemap
   
   persistent-nodemap
@@ -669,7 +674,8 @@ Running unrelated upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
   
   optimisations: re-delta-all
   
@@ -744,11 +750,13 @@ The persistent nodemap should exist after a streaming clone
   $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
   adding [s] 00manifest.n (70 bytes)
   adding [s] 00manifest.i (313 KB)
-  adding [s] 00manifest.d (452 KB)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd !)
   adding [s] 00manifest-*.nd (118 KB) (glob)
   adding [s] 00changelog.n (70 bytes)
   adding [s] 00changelog.i (313 KB)
-  adding [s] 00changelog.d (360 KB)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)

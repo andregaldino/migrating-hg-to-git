@@ -64,8 +64,10 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  8 files to transfer, 827 bytes of data
-  transferred 827 bytes in * seconds (*) (glob)
+  8 files to transfer, 827 bytes of data (no-zstd !)
+  transferred 827 bytes in * seconds (*) (glob) (no-zstd !)
+  8 files to transfer, 846 bytes of data (zstd !)
+  transferred * bytes in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd local-stream

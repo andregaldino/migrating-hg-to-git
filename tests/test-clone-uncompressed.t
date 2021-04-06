@@ -178,16 +178,20 @@ Basic clone
 #if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*/sec) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1030 files to transfer, 96.5 KB of data
-  transferred 96.5 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data (no-zstd !)
+  transferred 96.5 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1030 files to transfer, 93.6 KB of data (zstd !)
+  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
 
   $ ls -1 clone1/.hg/cache
   branch2-base
@@ -211,39 +215,56 @@ getbundle requests with stream=1 are uncompressed
   
 
   $ f --size --hex --bytes 256 body
-  body: size=112262
+  body: size=112262 (no-zstd !)
+  body: size=109410 (zstd !)
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 7f 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
-  0020: 05 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 39 38 |....Dbytecount98|
-  0030: 37 37 35 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |775filecount1030|
+  0010: 7f 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (no-zstd !)
+  0020: 05 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 39 38 |....Dbytecount98| (no-zstd !)
+  0030: 37 37 35 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |775filecount1030| (no-zstd !)
+  0010: 99 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (zstd !)
+  0020: 05 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 39 35 |....^bytecount95| (zstd !)
+  0030: 38 39 37 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |897filecount1030| (zstd !)
   0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
   0050: 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 25 |ncode%2Cfncache%|
   0060: 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 32 |2Cgeneraldelta%2|
-  0070: 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 |Crevlogv1%2Cspar|
-  0080: 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 |serevlog%2Cstore|
-  0090: 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 |....s.Bdata/0.i.|
-  00a0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................|
-  00b0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 |................|
-  00c0: 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 |)c.I.#....Vg.g,i|
-  00d0: d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 75 |..9............u|
-  00e0: 30 73 08 42 64 61 74 61 2f 31 2e 69 00 03 00 01 |0s.Bdata/1.i....|
-  00f0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................|
+  0070: 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 |Crevlogv1%2Cspar| (no-zstd !)
+  0080: 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 |serevlog%2Cstore| (no-zstd !)
+  0090: 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 |....s.Bdata/0.i.| (no-zstd !)
+  00a0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................| (no-zstd !)
+  00b0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 |................| (no-zstd !)
+  00c0: 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 |)c.I.#....Vg.g,i| (no-zstd !)
+  00d0: d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 75 |..9............u| (no-zstd !)
+  00e0: 30 73 08 42 64 61 74 61 2f 31 2e 69 00 03 00 01 |0s.Bdata/1.i....| (no-zstd !)
+  00f0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................| (no-zstd !)
+  0070: 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 73 |Crevlog-compress| (zstd !)
+  0080: 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c 6f |ion-zstd%2Crevlo| (zstd !)
+  0090: 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 6c |gv1%2Csparserevl| (zstd !)
+  00a0: 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 08 |og%2Cstore....s.| (zstd !)
+  00b0: 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 00 |Bdata/0.i.......| (zstd !)
+  00c0: 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 |................| (zstd !)
+  00d0: 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 23 |..........)c.I.#| (zstd !)
+  00e0: 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 |....Vg.g,i..9...| (zstd !)
+  00f0: 00 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 |.........u0s.Bda| (zstd !)
 
 --uncompressed is an alias to --stream
 
 #if stream-legacy
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*/sec) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
 #if stream-bundle2
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1030 files to transfer, 96.5 KB of data
-  transferred 96.5 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data (no-zstd !)
+  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1030 files to transfer, 93.6 KB of data (zstd !)
+  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
 #endif
 
 Clone with background file closing enabled
@@ -255,10 +276,12 @@ Clone with background file closing enabled
   sending branchmap command
   streaming all changes
   sending stream_out command
-  1027 files to transfer, 96.3 KB of data
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 96.3 KB in * seconds (*/sec) (glob)
+  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   query 1; heads
   sending batch command
   searching for changes
@@ -285,12 +308,15 @@ Clone with background file closing enabled
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
-  1030 files to transfer, 96.5 KB of data
+  1030 files to transfer, 96.5 KB of data (no-zstd !)
+  1030 files to transfer, 93.6 KB of data (zstd !)
   starting 4 threads for background file closing
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 96.5 KB in * seconds (* */sec) (glob)
-  bundle2-input-part: total payload size 112094
+  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
+  bundle2-input-part: total payload size 112094 (no-zstd !)
+  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
+  bundle2-input-part: total payload size 109216 (zstd !)
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
@@ -322,16 +348,20 @@ Streaming of secrets can be overridden by server config
 #if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*/sec) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1030 files to transfer, 96.5 KB of data
-  transferred 96.5 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.5 KB of data (no-zstd !)
+  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1030 files to transfer, 93.6 KB of data (zstd !)
+  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
 #endif
 
   $ killdaemons.py
@@ -437,8 +467,10 @@ clone it
 #if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (*) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -447,8 +479,10 @@ clone it
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
-  1033 files to transfer, 96.6 KB of data
-  transferred 96.6 KB in * seconds (* */sec) (glob)
+  1033 files to transfer, 96.6 KB of data (no-zstd !)
+  transferred 96.6 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1033 files to transfer, 93.8 KB of data (zstd !)
+  transferred 93.8 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -467,8 +501,10 @@ Clone as publishing
 #if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (*) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -477,8 +513,10 @@ Clone as publishing
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
-  1033 files to transfer, 96.6 KB of data
-  transferred 96.6 KB in * seconds (* */sec) (glob)
+  1033 files to transfer, 96.6 KB of data (no-zstd !)
+  transferred 96.6 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1033 files to transfer, 93.8 KB of data (zstd !)
+  transferred 93.8 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -503,8 +541,10 @@ stream v1 unsuitable for non-publishing repository.
 
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (*) (glob)
+  1027 files to transfer, 96.3 KB of data (no-zstd !)
+  transferred 96.3 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1027 files to transfer, 93.5 KB of data (zstd !)
+  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -516,8 +556,10 @@ stream v1 unsuitable for non-publishing repository.
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1034 files to transfer, 96.7 KB of data
-  transferred 96.7 KB in * seconds (* */sec) (glob)
+  1034 files to transfer, 96.7 KB of data (no-zstd !)
+  transferred 96.7 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1034 files to transfer, 93.9 KB of data (zstd !)
+  transferred 93.9 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R phase-no-publish phase -r 'all()'
@@ -561,8 +603,10 @@ Clone non-publishing with obsolescence
 
   $ hg clone -U --stream http://localhost:$HGPORT with-obsolescence
   streaming all changes
-  1035 files to transfer, 97.1 KB of data
-  transferred 97.1 KB in * seconds (* */sec) (glob)
+  1035 files to transfer, 97.1 KB of data (no-zstd !)
+  transferred 97.1 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1035 files to transfer, 94.3 KB of data (zstd !)
+  transferred 94.3 KB in * seconds (* */sec) (glob) (zstd !)
   $ hg -R with-obsolescence log -T '{rev}: {phase}\n'
   1: draft
   0: draft

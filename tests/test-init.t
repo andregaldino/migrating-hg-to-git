@@ -21,6 +21,7 @@ creating 'local'
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -59,6 +60,7 @@ creating repo with format.usestore=false
   $ hg --config format.usestore=false init old
   $ checknewrepo old
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   testonly-simplestore (reposimplestore !)
   sparserevlog
@@ -70,6 +72,7 @@ creating repo with format.usefncache=false
   store created
   00changelog.i created
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -83,6 +86,7 @@ creating repo with format.dotencode=false
   00changelog.i created
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -96,6 +100,7 @@ creating repo with format.dotencode=false
   00changelog.i created
   dotencode
   fncache
+  revlog-compression-zstd (zstd !)
   revlogv1
   store
   testonly-simplestore (reposimplestore !)
@@ -213,6 +218,7 @@ creating 'local/sub/repo'
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -233,6 +239,7 @@ init should (for consistency with clone) expand the url
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -249,6 +256,7 @@ verify that clone also expand urls
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

@@ -43,7 +43,8 @@ Check that copies are recorded correctly
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
 #else
   $ hg debugformat -v
@@ -57,7 +58,8 @@ Check that copies are recorded correctly
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
 #endif
   $ echo a > a
@@ -428,7 +430,8 @@ downgrading (keeping some sidedata)
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
@@ -454,7 +457,8 @@ downgrading (keeping some sidedata)
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries
@@ -482,7 +486,8 @@ upgrading
   copies-sdc:         yes    yes      no
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
   1 sidedata entries

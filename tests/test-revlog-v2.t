@@ -24,6 +24,7 @@ Can create and open repo with revlog v2 requirement
   dotencode
   exp-revlogv2.2
   fncache
+  revlog-compression-zstd (zstd !)
   sparserevlog
   store
 

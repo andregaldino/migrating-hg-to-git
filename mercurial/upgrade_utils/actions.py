@@ -395,10 +395,21 @@ class removecldeltachain(formatvariant):
         return True
 
 
+_has_zstd = (
+    b'zstd' in util.compengines
+    and util.compengines[b'zstd'].available()
+    and util.compengines[b'zstd'].revlogheader()
+)
+
+
 @registerformatvariant
 class compressionengine(formatvariant):
     name = b'compression'
-    default = b'zlib'
+
+    if _has_zstd:
+        default = b'zstd'
+    else:
+        default = b'zlib'
 
     description = _(
         b'Compresion algorithm used to compress data. '

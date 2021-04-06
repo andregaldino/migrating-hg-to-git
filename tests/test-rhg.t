@@ -176,6 +176,7 @@ Requirements
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

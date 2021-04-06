@@ -1307,7 +1307,7 @@ coreconfigitem(
 coreconfigitem(
     b'format',
     b'revlog-compression',
-    default=lambda: [b'zlib'],
+    default=lambda: [b'zstd', b'zlib'],
     alias=[(b'experimental', b'format.compression')],
 )
 coreconfigitem(

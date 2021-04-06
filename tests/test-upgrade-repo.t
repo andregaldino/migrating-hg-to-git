@@ -78,7 +78,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat --verbose --config format.usefncache=no
   format-variant     repo config default
@@ -91,7 +92,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat --verbose --config format.usefncache=no --color=debug
   format-variant     repo config default
@@ -104,7 +106,8 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib] (no-zstd !)
+  [formatvariant.name.mismatchdefault|compression:       ][formatvariant.repo.mismatchdefault| zlib][formatvariant.config.special|   zlib][formatvariant.default|    zstd] (zstd !)
   [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugformat -Tjson
   [
@@ -164,7 +167,8 @@ An upgrade of a repository created with recommended settings only suggests optim
    },
    {
     "config": "zlib",
-    "default": "zlib",
+    "default": "zlib", (no-zstd !)
+    "default": "zstd", (zstd !)
     "name": "compression",
     "repo": "zlib"
    },
@@ -323,7 +327,8 @@ Various sub-optimal detections work
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no
   format-variant     repo config default
@@ -336,7 +341,8 @@ Various sub-optimal detections work
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
   format-variant     repo config default
@@ -349,7 +355,8 @@ Various sub-optimal detections work
   [formatvariant.name.uptodate|copies-sdc:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|revlog-v2:         ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:    ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
-  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
+  [formatvariant.name.uptodate|compression:       ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib] (no-zstd !)
+  [formatvariant.name.mismatchdefault|compression:       ][formatvariant.repo.mismatchdefault| zlib][formatvariant.config.special|   zlib][formatvariant.default|    zstd] (zstd !)
   [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugupgraderepo
   repository lacks features recommended by current config options:
@@ -1293,7 +1300,8 @@ upgrade
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zstd   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zlib    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
@@ -1329,7 +1337,8 @@ downgrade
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
@@ -1368,7 +1377,8 @@ upgrade from hgrc
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zstd   zstd    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
@@ -1413,7 +1423,7 @@ upgrade
   revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zlib (zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
@@ -1457,7 +1467,7 @@ downgrade
   revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zlib (zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode
@@ -1501,7 +1511,7 @@ upgrade from hgrc
   revlog-v2:          yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zlib (zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ cat .hg/requires
   dotencode

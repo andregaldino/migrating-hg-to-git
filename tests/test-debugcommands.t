@@ -368,7 +368,8 @@ debugdelta chain with sparse read enabled
   7 1
   8 1
   9 1
-  10 2
+  10 2 (no-zstd !)
+  10 1 (zstd !)
   11 1
   $ hg --config extensions.strip= strip --no-backup -r 1
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

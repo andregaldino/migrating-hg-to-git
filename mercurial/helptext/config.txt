@@ -966,7 +966,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     On some systems, the Mercurial installation may lack `zstd` support.
 
-    Default is `zlib`.
+    Default is `zstd` if available, `zlib` otherwise.
 
 ``bookmarks-in-store``
     Store bookmarks in .hg/store/. This means that bookmarks are shared when

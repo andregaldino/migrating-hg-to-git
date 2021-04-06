@@ -72,8 +72,10 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
+  4 files to transfer, 602 bytes of data (no-zstd !)
+  transferred 602 bytes in * seconds (*) (glob) (no-zstd !)
+  4 files to transfer, 621 bytes of data (zstd !)
+  transferred 621 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -94,8 +96,10 @@ clone bookmarks via stream
   $ hg -R local-stream book mybook
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/local-stream stream2
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
+  4 files to transfer, 602 bytes of data (no-zstd !)
+  transferred 602 bytes in * seconds (*) (glob) (no-zstd !)
+  4 files to transfer, 621 bytes of data (zstd !)
+  transferred 621 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default

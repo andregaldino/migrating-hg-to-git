@@ -42,6 +42,7 @@ narrow clone a file, f10
   dotencode
   fncache
   narrowhg-experimental
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

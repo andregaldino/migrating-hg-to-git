@@ -886,6 +886,7 @@ Check we deny its usage on older repository
   dotencode
   fncache
   generaldelta
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -913,6 +914,7 @@ Check it works fine with repository that supports it.
   fncache
   generaldelta
   internal-phase
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

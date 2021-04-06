@@ -293,6 +293,7 @@ The requirement is added to the destination repo.
   fncache
   generaldelta
   lfs
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
