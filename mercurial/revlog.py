@@ -36,7 +36,6 @@ from .pycompat import getattr
 from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
-    INDEX_ENTRY_V0,
     INDEX_HEADER,
     REVLOGV0,
     REVLOGV1,
@@ -76,6 +75,7 @@ from .revlogutils import (
     deltas as deltautil,
     flagutil,
     nodemap as nodemaputil,
+    revlogv0,
     sidedata as sidedatautil,
 )
 from .utils import (
@@ -134,14 +134,6 @@ ellipsisprocessor = (
     ellipsiswriteprocessor,
     ellipsisrawprocessor,
 )
-
-
-def getoffset(q):
-    return int(q >> 16)
-
-
-def gettype(q):
-    return int(q & 0xFFFF)
 
 
 def offset_type(offset, type):
@@ -212,110 +204,6 @@ class revlogproblem(object):
     warning = attr.ib(default=None)
     error = attr.ib(default=None)
     node = attr.ib(default=None)
-
-
-class revlogoldindex(list):
-    entry_size = INDEX_ENTRY_V0.size
-
-    @property
-    def nodemap(self):
-        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self._nodemap
-
-    @util.propertycache
-    def _nodemap(self):
-        nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
-        for r in range(0, len(self)):
-            n = self[r][7]
-            nodemap[n] = r
-        return nodemap
-
-    def has_node(self, node):
-        """return True if the node exist in the index"""
-        return node in self._nodemap
-
-    def rev(self, node):
-        """return a revision for a node
-
-        If the node is unknown, raise a RevlogError"""
-        return self._nodemap[node]
-
-    def get_rev(self, node):
-        """return a revision for a node
-
-        If the node is unknown, return None"""
-        return self._nodemap.get(node)
-
-    def append(self, tup):
-        self._nodemap[tup[7]] = len(self)
-        super(revlogoldindex, self).append(tup)
-
-    def __delitem__(self, i):
-        if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
-            raise ValueError(b"deleting slices only supports a:-1 with step 1")
-        for r in pycompat.xrange(i.start, len(self)):
-            del self._nodemap[self[r][7]]
-        super(revlogoldindex, self).__delitem__(i)
-
-    def clearcaches(self):
-        self.__dict__.pop('_nodemap', None)
-
-    def __getitem__(self, i):
-        if i == -1:
-            return (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
-        return list.__getitem__(self, i)
-
-    def entry_binary(self, rev):
-        """return the raw binary string representing a revision"""
-        entry = self[rev]
-        if gettype(entry[0]):
-            raise error.RevlogError(
-                _(b'index entry flags need revlog version 1')
-            )
-        e2 = (
-            getoffset(entry[0]),
-            entry[1],
-            entry[3],
-            entry[4],
-            self[entry[5]][7],
-            self[entry[6]][7],
-            entry[7],
-        )
-        return INDEX_ENTRY_V0.pack(*e2)
-
-    def pack_header(self, header):
-        """Pack header information in binary"""
-        return b''
-
-
-def parse_index_v0(data, inline):
-    s = INDEX_ENTRY_V0.size
-    index = []
-    nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
-    n = off = 0
-    l = len(data)
-    while off + s <= l:
-        cur = data[off : off + s]
-        off += s
-        e = INDEX_ENTRY_V0.unpack(cur)
-        # transform to revlogv1 format
-        e2 = (
-            offset_type(e[0], 0),
-            e[1],
-            -1,
-            e[2],
-            e[3],
-            nodemap.get(e[4], nullrev),
-            nodemap.get(e[5], nullrev),
-            e[6],
-        )
-        index.append(e2)
-        nodemap[e[6]] = n
-        n += 1
-
-    index = revlogoldindex(index)
-    return index, None
 
 
 def parse_index_v1(data, inline):
@@ -621,7 +509,7 @@ class revlog(object):
 
         self._parse_index = parse_index_v1
         if self.version == REVLOGV0:
-            self._parse_index = parse_index_v0
+            self._parse_index = revlogv0.parse_index_v0
         elif fmt == REVLOGV2:
             self._parse_index = parse_index_v2
         elif devel_nodemap:
