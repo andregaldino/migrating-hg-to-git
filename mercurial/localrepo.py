@@ -3470,7 +3470,9 @@ def newreporequirements(ui, createopts):
     compengines = ui.configlist(b'format', b'revlog-compression')
     for compengine in compengines:
         if compengine in util.compengines:
-            break
+            engine = util.compengines[compengine]
+            if engine.available() and engine.revlogheader():
+                break
     else:
         raise error.Abort(
             _(

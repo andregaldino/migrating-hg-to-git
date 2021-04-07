@@ -428,7 +428,9 @@ class compressionengine(formatvariant):
         # return the first valid value as the selection code would do
         for comp in compengines:
             if comp in util.compengines:
-                return comp
+                e = util.compengines[comp]
+                if e.available() and e.revlogheader():
+                    return comp
 
         # no valide compression found lets display it all for clarity
         return b','.join(compengines)
