@@ -172,6 +172,11 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "clearcaches", args, kw)
     }
 
+    /// return the raw binary string representing a revision
+    def entry_binary(&self, *args, **kw) -> PyResult<PyObject> {
+        self.call_cindex(py, "entry_binary", args, kw)
+    }
+
     /// get an index entry
     def get(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "get", args, kw)

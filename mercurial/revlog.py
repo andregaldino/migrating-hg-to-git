@@ -268,6 +268,24 @@ class revlogoldindex(list):
             return (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
         return list.__getitem__(self, i)
 
+    def entry_binary(self, rev, header):
+        """return the raw binary string representing a revision"""
+        entry = self[rev]
+        if gettype(entry[0]):
+            raise error.RevlogError(
+                _(b'index entry flags need revlog version 1')
+            )
+        e2 = (
+            getoffset(entry[0]),
+            entry[1],
+            entry[3],
+            entry[4],
+            self[entry[5]][7],
+            self[entry[6]][7],
+            entry[7],
+        )
+        return INDEX_ENTRY_V0.pack(*e2)
+
 
 class revlogoldio(object):
     def parseindex(self, data, inline):
@@ -298,29 +316,6 @@ class revlogoldio(object):
         index = revlogoldindex(index)
         return index, None
 
-    def packentry(self, entry, node, version, rev):
-        """return the binary representation of an entry
-
-        entry:   a tuple containing all the values (see index.__getitem__)
-        node:    a callback to convert a revision to nodeid
-        version: the changelog version
-        rev:     the revision number
-        """
-        if gettype(entry[0]):
-            raise error.RevlogError(
-                _(b'index entry flags need revlog version 1')
-            )
-        e2 = (
-            getoffset(entry[0]),
-            entry[1],
-            entry[3],
-            entry[4],
-            node(entry[5]),
-            node(entry[6]),
-            entry[7],
-        )
-        return INDEX_ENTRY_V0.pack(*e2)
-
 
 # corresponds to uncompressed length of indexformatng (2 gigs, 4-byte
 # signed integer)
@@ -333,23 +328,11 @@ class revlogio(object):
         index, cache = parsers.parse_index2(data, inline)
         return index, cache
 
-    def packentry(self, entry, node, version, rev):
-        p = INDEX_ENTRY_V1.pack(*entry)
-        if rev == 0:
-            p = INDEX_HEADER.pack(version) + p[4:]
-        return p
-
 
 class revlogv2io(object):
     def parseindex(self, data, inline):
         index, cache = parsers.parse_index2(data, inline, revlogv2=True)
         return index, cache
-
-    def packentry(self, entry, node, version, rev):
-        p = INDEX_ENTRY_V2.pack(*entry)
-        if rev == 0:
-            p = INDEX_HEADER.pack(version) + p[4:]
-        return p
 
 
 NodemapRevlogIO = None
@@ -2068,7 +2051,7 @@ class revlog(object):
             self._inline = False
             io = self._io
             for i in self:
-                e = io.packentry(self.index[i], self.node, self.version, i)
+                e = self.index.entry_binary(i, self.version)
                 fp.write(e)
 
             # the temp file replace the real index when we exit the context
@@ -2390,7 +2373,7 @@ class revlog(object):
             e = e[:8]
 
         self.index.append(e)
-        entry = self._io.packentry(e, self.node, self.version, curr)
+        entry = self.index.entry_binary(curr, self.version)
         self._writeentry(
             transaction,
             ifh,
@@ -3243,5 +3226,5 @@ class revlog(object):
             for i, entry in enumerate(new_entries):
                 rev = startrev + i
                 self.index.replace_sidedata_info(rev, entry[8], entry[9])
-                packed = self._io.packentry(entry, self.node, self.version, rev)
+                packed = self.index.entry_binary(rev, self.version)
                 fp.write(packed)

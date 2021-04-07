@@ -127,10 +127,24 @@ class BaseIndexObject(object):
             r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
 
+    def entry_binary(self, rev, header):
+        """return the raw binary string representing a revision"""
+        entry = self[rev]
+        p = revlog_constants.INDEX_ENTRY_V1.pack(*entry)
+        if rev == 0:
+            v_fmt = revlog_constants.INDEX_HEADER
+            v_bin = v_fmt.pack(header)
+            p = v_bin + p[v_fmt.size :]
+        return p
+
 
 class IndexObject(BaseIndexObject):
     def __init__(self, data):
-        assert len(data) % self.entry_size == 0
+        assert len(data) % self.entry_size == 0, (
+            len(data),
+            self.entry_size,
+            len(data) % self.entry_size,
+        )
         self._data = data
         self._lgt = len(data) // self.entry_size
         self._extra = []
@@ -271,6 +285,16 @@ class Index2Mixin(object):
         else:
             msg = b"cannot rewrite entries outside of this transaction"
             raise KeyError(msg)
+
+    def entry_binary(self, rev, header):
+        """return the raw binary string representing a revision"""
+        entry = self[rev]
+        p = revlog_constants.INDEX_ENTRY_V2.pack(*entry)
+        if rev == 0:
+            v_fmt = revlog_constants.INDEX_HEADER
+            v_bin = v_fmt.pack(header)
+            p = v_bin + p[v_fmt.size :]
+        return p
 
 
 class IndexObject2(Index2Mixin, IndexObject):

@@ -342,6 +342,38 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		                     sidedata_offset, sidedata_comp_len);
 	}
 }
+/*
+ * Return the raw binary string representing a revision
+ */
+static PyObject *index_entry_binary(indexObject *self, PyObject *args)
+{
+	long rev;
+	int header;
+	const char *data;
+	char entry[v2_hdrsize];
+
+	Py_ssize_t length = index_length(self);
+
+	if (!PyArg_ParseTuple(args, "lI", &rev, &header)) {
+		return NULL;
+	}
+	if (rev < 0 || rev >= length) {
+		PyErr_Format(PyExc_ValueError, "revlog index out of range: %ld",
+		             rev);
+		return NULL;
+	};
+
+	data = index_deref(self, rev);
+	if (data == NULL)
+		return NULL;
+	if (rev == 0) {
+		// put the header at the start of the first entry
+		memcpy(entry, data, self->hdrsize);
+		putbe32(header, entry);
+		return PyBytes_FromStringAndSize(entry, self->hdrsize);
+	}
+	return PyBytes_FromStringAndSize(data, self->hdrsize);
+}
 
 /*
  * Return the hash of node corresponding to the given rev.
@@ -2859,6 +2891,8 @@ static PyMethodDef index_methods[] = {
     {"shortest", (PyCFunction)index_shortest, METH_VARARGS,
      "find length of shortest hex nodeid of a binary ID"},
     {"stats", (PyCFunction)index_stats, METH_NOARGS, "stats for the index"},
+    {"entry_binary", (PyCFunction)index_entry_binary, METH_VARARGS,
+     "return an entry in binary form"},
     {NULL} /* Sentinel */
 };
 
