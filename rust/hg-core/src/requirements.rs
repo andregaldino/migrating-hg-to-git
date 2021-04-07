@@ -81,6 +81,7 @@ const SUPPORTED: &[&str] = &[
     SHARESAFE_REQUIREMENT,
     SPARSEREVLOG_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
+    REVLOG_COMPRESSION_ZSTD,
     // As of this writing everything rhg does is read-only.
     // When it starts writing to the repository, it’ll need to either keep the
     // persistent nodemap up to date or remove this entry:
@@ -151,3 +152,7 @@ pub(crate) const RELATIVE_SHARED_REQUIREMENT: &str = "relshared";
 /// `.hg/store/requires` are present.
 #[allow(unused)]
 pub(crate) const SHARESAFE_REQUIREMENT: &str = "share-safe";
+
+/// A repository that use zstd compression inside its revlog
+#[allow(unused)]
+pub(crate) const REVLOG_COMPRESSION_ZSTD: &str = "revlog-compression-zstd";
