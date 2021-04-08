@@ -2246,7 +2246,7 @@ class revlog(object):
 
         deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
-        if sidedata:
+        if sidedata and self.version & 0xFFFF == REVLOGV2:
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
             sidedata_offset = offset + deltainfo.deltalen
         else:

@@ -293,7 +293,12 @@ class cg1unpacker(object):
 
         # Only useful if we're adding sidedata categories. If both peers have
         # the same categories, then we simply don't do anything.
-        if self.version == b'04' and srctype == b'pull':
+        adding_sidedata = (
+            requirements.REVLOGV2_REQUIREMENT in repo.requirements
+            and self.version == b'04'
+            and srctype == b'pull'
+        )
+        if adding_sidedata:
             sidedata_helpers = get_sidedata_helpers(
                 repo,
                 sidedata_categories or set(),

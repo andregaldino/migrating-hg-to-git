@@ -3365,6 +3365,9 @@ class localrepository(object):
         return self.pathto(fp.name[len(self.root) + 1 :])
 
     def register_wanted_sidedata(self, category):
+        if requirementsmod.REVLOGV2_REQUIREMENT not in self.requirements:
+            # Only revlogv2 repos can want sidedata.
+            return
         self._wanted_sidedata.add(pycompat.bytestr(category))
 
     def register_sidedata_computer(self, kind, category, keys, computer):
