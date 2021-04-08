@@ -547,35 +547,15 @@ impl DirstateMap {
     ) -> Ref<'a, RustDirstateMap> {
         self.inner(py).borrow()
     }
-    #[cfg(not(feature = "dirstate-tree"))]
     fn translate_key(
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
-    #[cfg(not(feature = "dirstate-tree"))]
     fn translate_key_value(
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
-    ) -> PyResult<Option<(PyBytes, PyObject)>> {
-        let (f, entry) = res;
-        Ok(Some((
-            PyBytes::new(py, f.as_bytes()),
-            make_dirstate_tuple(py, &entry)?,
-        )))
-    }
-    #[cfg(feature = "dirstate-tree")]
-    fn translate_key(
-        py: Python,
-        res: (HgPathBuf, DirstateEntry),
-    ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0.as_bytes())))
-    }
-    #[cfg(feature = "dirstate-tree")]
-    fn translate_key_value(
-        py: Python,
-        res: (HgPathBuf, DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
         Ok(Some((

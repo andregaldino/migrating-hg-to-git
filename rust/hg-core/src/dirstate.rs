@@ -14,8 +14,6 @@ use std::convert::TryFrom;
 
 pub mod dirs_multiset;
 pub mod dirstate_map;
-#[cfg(feature = "dirstate-tree")]
-pub mod dirstate_tree;
 pub mod parsers;
 pub mod status;
 
@@ -52,15 +50,9 @@ struct RawEntry {
 /// merge.
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
-#[cfg(not(feature = "dirstate-tree"))]
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
-#[cfg(not(feature = "dirstate-tree"))]
 pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
 
-#[cfg(feature = "dirstate-tree")]
-pub type StateMap = dirstate_tree::tree::Tree;
-#[cfg(feature = "dirstate-tree")]
-pub type StateMapIter<'a> = dirstate_tree::iter::Iter<'a>;
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> = hash_map::Iter<'a, HgPathBuf, HgPathBuf>;
 
