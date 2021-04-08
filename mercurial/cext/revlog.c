@@ -115,12 +115,10 @@ static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
 static const char *const v1_tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
-static const char *const v2_tuple_format =
-    PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
+static const char *const v2_tuple_format = PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
 #else
 static const char *const v1_tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
-static const char *const v2_tuple_format =
-    PY23("kiiiiiis#ki", "kiiiiiiy#ki");
+static const char *const v2_tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -407,10 +405,11 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 			return NULL;
 		}
 	} else {
-		if (!PyArg_ParseTuple(
-		        obj, v2_tuple_format, &offset_flags, &comp_len,
-		        &uncomp_len, &base_rev, &link_rev, &parent_1, &parent_2,
-		        &c_node_id, &c_node_id_len, &sidedata_offset, &sidedata_comp_len)) {
+		if (!PyArg_ParseTuple(obj, v2_tuple_format, &offset_flags,
+		                      &comp_len, &uncomp_len, &base_rev,
+		                      &link_rev, &parent_1, &parent_2,
+		                      &c_node_id, &c_node_id_len,
+		                      &sidedata_offset, &sidedata_comp_len)) {
 			PyErr_SetString(PyExc_TypeError, "10-tuple required");
 			return NULL;
 		}
@@ -467,11 +466,11 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	int rev;
 	Py_ssize_t sidedata_comp_len;
 	char *data;
-  #if LONG_MAX == 0x7fffffffL
-	  const char *const sidedata_format = PY23("nKi", "nKi");
-	#else
-	  const char *const sidedata_format = PY23("nki", "nki");
-	#endif
+#if LONG_MAX == 0x7fffffffL
+	const char *const sidedata_format = PY23("nKi", "nKi");
+#else
+	const char *const sidedata_format = PY23("nki", "nki");
+#endif
 
 	if (self->hdrsize == v1_hdrsize || self->inlined) {
 		/*
@@ -499,11 +498,11 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 		return NULL;
 	}
 
-	/* Find the newly added node, offset from the "already on-disk" length */
+	/* Find the newly added node, offset from the "already on-disk" length
+	 */
 	data = self->added + self->hdrsize * (rev - self->length);
 	putbe64(sidedata_offset, data + 64);
 	putbe32(sidedata_comp_len, data + 72);
-
 
 	Py_RETURN_NONE;
 }
@@ -2724,9 +2723,9 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
 		                  -1, -1, -1, nullid, self->nodelen);
 	} else {
-		self->nullentry = Py_BuildValue(
-		    PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0, -1, -1, -1,
-		    -1, nullid, self->nodelen, 0, 0);
+		self->nullentry =
+		    Py_BuildValue(PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0,
+		                  -1, -1, -1, -1, nullid, self->nodelen, 0, 0);
 	}
 
 	if (!self->nullentry)
