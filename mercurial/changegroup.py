@@ -1689,11 +1689,14 @@ def allsupportedversions(repo):
         #
         # (or even to push subset of history)
         needv03 = True
-    has_revlogv2 = requirements.REVLOGV2_REQUIREMENT in repo.requirements
-    if not has_revlogv2:
-        versions.discard(b'04')
     if not needv03:
         versions.discard(b'03')
+    want_v4 = (
+        repo.ui.configbool(b'experimental', b'changegroup4')
+        or requirements.REVLOGV2_REQUIREMENT in repo.requirements
+    )
+    if not want_v4:
+        versions.discard(b'04')
     return versions
 
 

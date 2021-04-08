@@ -904,6 +904,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'changegroup4',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'cleanup-as-archived',
     default=False,
 )
