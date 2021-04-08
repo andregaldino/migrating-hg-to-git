@@ -570,7 +570,7 @@ class cg1unpacker(object):
         """
         chain = None
         for chunkdata in iter(lambda: self.deltachunk(chain), {}):
-            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags)
+            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata)
             yield chunkdata
             chain = chunkdata[0]
 
