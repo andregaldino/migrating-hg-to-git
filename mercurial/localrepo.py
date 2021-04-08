@@ -3368,8 +3368,8 @@ class localrepository(object):
         self._wanted_sidedata.add(pycompat.bytestr(category))
 
     def register_sidedata_computer(self, kind, category, keys, computer):
-        if kind not in (b"changelog", b"manifest", b"filelog"):
-            msg = _(b"unexpected revlog kind '%s'.")
+        if kind not in revlogconst.ALL_KINDS:
+            msg = _(b"unexpected revlog kind %r.")
             raise error.ProgrammingError(msg % kind)
         category = pycompat.bytestr(category)
         if category in self._sidedata_computers.get(kind, []):

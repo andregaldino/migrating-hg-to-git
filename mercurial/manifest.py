@@ -1625,7 +1625,6 @@ class manifestrevlog(object):
         self.index = self._revlog.index
         self.version = self._revlog.version
         self._generaldelta = self._revlog._generaldelta
-        self._revlog.revlog_kind = b'manifest'
 
     def _setupmanifestcachehooks(self, repo):
         """Persist the manifestfulltextcache on lock release"""

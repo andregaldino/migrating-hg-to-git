@@ -33,6 +33,7 @@ from . import (
 
 from .interfaces import repository
 from .revlogutils import sidedata as sidedatamod
+from .revlogutils import constants as revlog_constants
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct(b"20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct(b"20s20s20s20s20s")
@@ -385,15 +386,16 @@ class cg1unpacker(object):
                 _(b'manifests'), unit=_(b'chunks'), total=changesets
             )
             on_manifest_rev = None
-            if sidedata_helpers and b'manifest' in sidedata_helpers[1]:
+            if sidedata_helpers:
+                if revlog_constants.KIND_MANIFESTLOG in sidedata_helpers[1]:
 
-                def on_manifest_rev(manifest, rev):
-                    range = touched_manifests.get(manifest)
-                    if not range:
-                        touched_manifests[manifest] = (rev, rev)
-                    else:
-                        assert rev == range[1] + 1
-                        touched_manifests[manifest] = (range[0], rev)
+                    def on_manifest_rev(manifest, rev):
+                        range = touched_manifests.get(manifest)
+                        if not range:
+                            touched_manifests[manifest] = (rev, rev)
+                        else:
+                            assert rev == range[1] + 1
+                            touched_manifests[manifest] = (range[0], rev)
 
             self._unpackmanifests(
                 repo,
@@ -416,15 +418,16 @@ class cg1unpacker(object):
                         needfiles.setdefault(f, set()).add(n)
 
             on_filelog_rev = None
-            if sidedata_helpers and b'filelog' in sidedata_helpers[1]:
+            if sidedata_helpers:
+                if revlog_constants.KIND_FILELOG in sidedata_helpers[1]:
 
-                def on_filelog_rev(filelog, rev):
-                    range = touched_filelogs.get(filelog)
-                    if not range:
-                        touched_filelogs[filelog] = (rev, rev)
-                    else:
-                        assert rev == range[1] + 1
-                        touched_filelogs[filelog] = (range[0], rev)
+                    def on_filelog_rev(filelog, rev):
+                        range = touched_filelogs.get(filelog)
+                        if not range:
+                            touched_filelogs[filelog] = (rev, rev)
+                        else:
+                            assert rev == range[1] + 1
+                            touched_filelogs[filelog] = (range[0], rev)
 
             # process the files
             repo.ui.status(_(b"adding file changes\n"))
@@ -439,7 +442,7 @@ class cg1unpacker(object):
             )
 
             if sidedata_helpers:
-                if b'changelog' in sidedata_helpers[1]:
+                if revlog_constants.KIND_CHANGELOG in sidedata_helpers[1]:
                     cl.rewrite_sidedata(sidedata_helpers, clstart, clend - 1)
                 for mf, (startrev, endrev) in touched_manifests.items():
                     mf.rewrite_sidedata(sidedata_helpers, startrev, endrev)

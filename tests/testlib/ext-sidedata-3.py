@@ -20,6 +20,7 @@ from mercurial import (
 )
 
 from mercurial.revlogutils import sidedata as sidedatamod
+from mercurial.revlogutils import constants
 
 
 def compute_sidedata_1(repo, revlog, rev, sidedata, text=None):
@@ -65,7 +66,7 @@ def extsetup(ui):
 
 def reposetup(ui, repo):
     # Sidedata keys happen to be the same as the categories, easier for testing.
-    for kind in (b'changelog', b'manifest', b'filelog'):
+    for kind in constants.ALL_KINDS:
         repo.register_sidedata_computer(
             kind,
             sidedatamod.SD_TEST1,

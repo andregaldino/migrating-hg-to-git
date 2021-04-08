@@ -559,6 +559,10 @@ class revlog(object):
         self._decompressors = {}
 
     @util.propertycache
+    def revlog_kind(self):
+        return self.target[0]
+
+    @util.propertycache
     def _compressor(self):
         engine = util.compengines[self._compengine]
         return engine.revlogcompressor(self._compengineopts)
