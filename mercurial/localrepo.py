@@ -469,7 +469,7 @@ def _getsharedvfs(hgvfs, requirements):
     # ``.hg/`` for ``relshared``.
     sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
     if requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements:
-        sharedpath = hgvfs.join(sharedpath)
+        sharedpath = util.normpath(hgvfs.join(sharedpath))
 
     sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
 
@@ -3672,6 +3672,7 @@ def createrepository(ui, path, createopts=None):
         if createopts.get(b'sharedrelative'):
             try:
                 sharedpath = os.path.relpath(sharedpath, hgvfs.base)
+                sharedpath = util.pconvert(sharedpath)
             except (IOError, ValueError) as e:
                 # ValueError is raised on Windows if the drive letters differ
                 # on each path.
