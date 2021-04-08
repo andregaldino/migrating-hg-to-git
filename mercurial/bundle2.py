@@ -2013,13 +2013,6 @@ def handlechangegroup(op, inpart):
         )
         scmutil.writereporequirements(op.repo)
 
-    bundlesidedata = bool(b'exp-sidedata' in inpart.params)
-    reposidedata = bool(b'exp-sidedata-flag' in op.repo.requirements)
-    if reposidedata and not bundlesidedata:
-        msg = b"repository is using sidedata but the bundle source do not"
-        hint = b'this is currently unsupported'
-        raise error.Abort(msg, hint=hint)
-
     extrakwargs = {}
     targetphase = inpart.params.get(b'targetphase')
     if targetphase is not None:
