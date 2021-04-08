@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -44,22 +43,27 @@ pub trait DirstateMapMethods {
 
     fn clear_ambiguous_times(&mut self, filenames: Vec<HgPathBuf>, now: i32);
 
+    fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool;
+
     fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool;
 
-    fn non_normal_entries_union(
+    fn non_normal_or_other_parent_paths(
         &mut self,
-        other: HashSet<HgPathBuf>,
-    ) -> Vec<HgPathBuf>;
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_>;
 
     fn set_non_normal_other_parent_entries(&mut self, force: bool);
 
-    fn get_non_normal_other_parent_entries_panic(
-        &self,
-    ) -> (&HashSet<HgPathBuf>, &HashSet<HgPathBuf>);
-
-    fn get_non_normal_other_parent_entries(
+    fn iter_non_normal_paths(
         &mut self,
-    ) -> (&mut HashSet<HgPathBuf>, &mut HashSet<HgPathBuf>);
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
+
+    fn iter_non_normal_paths_panic(
+        &self,
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
+
+    fn iter_other_parent_paths(
+        &mut self,
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
 
     fn has_tracked_dir(
         &mut self,
@@ -169,31 +173,50 @@ impl DirstateMapMethods for DirstateMap {
         self.clear_ambiguous_times(filenames, now)
     }
 
+    fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool {
+        let (non_normal, _other_parent) =
+            self.get_non_normal_other_parent_entries();
+        non_normal.contains(key)
+    }
+
     fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
         self.non_normal_entries_remove(key)
     }
 
-    fn non_normal_entries_union(
+    fn non_normal_or_other_parent_paths(
         &mut self,
-        other: HashSet<HgPathBuf>,
-    ) -> Vec<HgPathBuf> {
-        self.non_normal_entries_union(other)
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_> {
+        let (non_normal, other_parent) =
+            self.get_non_normal_other_parent_entries();
+        Box::new(non_normal.union(other_parent))
     }
 
     fn set_non_normal_other_parent_entries(&mut self, force: bool) {
         self.set_non_normal_other_parent_entries(force)
     }
 
-    fn get_non_normal_other_parent_entries_panic(
-        &self,
-    ) -> (&HashSet<HgPathBuf>, &HashSet<HgPathBuf>) {
-        self.get_non_normal_other_parent_entries_panic()
+    fn iter_non_normal_paths(
+        &mut self,
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+        let (non_normal, _other_parent) =
+            self.get_non_normal_other_parent_entries();
+        Box::new(non_normal.iter())
     }
 
-    fn get_non_normal_other_parent_entries(
+    fn iter_non_normal_paths_panic(
+        &self,
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+        let (non_normal, _other_parent) =
+            self.get_non_normal_other_parent_entries_panic();
+        Box::new(non_normal.iter())
+    }
+
+    fn iter_other_parent_paths(
         &mut self,
-    ) -> (&mut HashSet<HgPathBuf>, &mut HashSet<HgPathBuf>) {
-        self.get_non_normal_other_parent_entries()
+    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+        let (_non_normal, other_parent) =
+            self.get_non_normal_other_parent_entries();
+        Box::new(other_parent.iter())
     }
 
     fn has_tracked_dir(

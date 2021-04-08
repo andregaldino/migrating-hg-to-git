@@ -173,11 +173,8 @@ py_class!(pub class DirstateMap |py| {
 
     def other_parent_entries(&self) -> PyResult<PyObject> {
         let mut inner_shared = self.inner(py).borrow_mut();
-        let (_, other_parent) =
-            inner_shared.get_non_normal_other_parent_entries();
-
         let set = PySet::empty(py)?;
-        for path in other_parent.iter() {
+        for path in inner_shared.iter_other_parent_paths() {
             set.add(py, PyBytes::new(py, path.as_bytes()))?;
         }
         Ok(set.into_object())
@@ -192,8 +189,7 @@ py_class!(pub class DirstateMap |py| {
         Ok(self
             .inner(py)
             .borrow_mut()
-            .get_non_normal_other_parent_entries().0
-            .contains(HgPath::new(key.data(py))))
+            .non_normal_entries_contains(HgPath::new(key.data(py))))
     }
 
     def non_normal_entries_display(&self) -> PyResult<PyString> {
@@ -201,14 +197,17 @@ py_class!(pub class DirstateMap |py| {
             PyString::new(
                 py,
                 &format!(
-                    "NonNormalEntries: {:?}",
-                    self
-                        .inner(py)
-                        .borrow_mut()
-                        .get_non_normal_other_parent_entries().0
-                        .iter().map(|o| o))
+                    "NonNormalEntries: {}",
+                    hg::utils::join_display(
+                        self
+                            .inner(py)
+                            .borrow_mut()
+                            .iter_non_normal_paths(),
+                        ", "
+                    )
                 )
             )
+        )
     }
 
     def non_normal_entries_remove(&self, key: PyObject) -> PyResult<PyObject> {
@@ -220,22 +219,11 @@ py_class!(pub class DirstateMap |py| {
         Ok(py.None())
     }
 
-    def non_normal_entries_union(&self, other: PyObject) -> PyResult<PyList> {
-        let other: PyResult<_> = other.iter(py)?
-                    .map(|f| {
-                        Ok(HgPathBuf::from_bytes(
-                            f?.extract::<PyBytes>(py)?.data(py),
-                        ))
-                    })
-                    .collect();
-
-        let res = self
-            .inner(py)
-            .borrow_mut()
-            .non_normal_entries_union(other?);
+    def non_normal_or_other_parent_paths(&self) -> PyResult<PyList> {
+        let mut inner = self.inner(py).borrow_mut();
 
         let ret = PyList::new(py, &[]);
-        for filename in res.iter() {
+        for filename in inner.non_normal_or_other_parent_paths() {
             let as_pystring = PyBytes::new(py, filename.as_bytes());
             ret.append(py, as_pystring.into_object());
         }
@@ -253,7 +241,7 @@ py_class!(pub class DirstateMap |py| {
 
         NonNormalEntriesIterator::from_inner(py, unsafe {
             leaked_ref.map(py, |o| {
-                o.get_non_normal_other_parent_entries_panic().0.iter()
+                o.iter_non_normal_paths_panic()
             })
         })
     }

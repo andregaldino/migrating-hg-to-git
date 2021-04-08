@@ -340,9 +340,8 @@ class dirstate(object):
             oldp2 != self._nodeconstants.nullid
             and p2 == self._nodeconstants.nullid
         ):
-            candidatefiles = self._map.nonnormalset.union(
-                self._map.otherparentset
-            )
+            candidatefiles = self._map.non_normal_or_other_parent_paths()
+
             for f in candidatefiles:
                 s = self._map.get(f)
                 if s is None:
@@ -1725,6 +1724,9 @@ class dirstatemap(object):
         self.nonnormalset = nonnorm
         return otherparents
 
+    def non_normal_or_other_parent_paths(self):
+        return self.nonnormalset.union(self.otherparentset)
+
     @propertycache
     def identity(self):
         self._map
@@ -1938,6 +1940,9 @@ if rustmod is not None:
         def otherparentset(self):
             otherparents = self._rustmap.other_parent_entries()
             return otherparents
+
+        def non_normal_or_other_parent_paths(self):
+            return self._rustmap.non_normal_or_other_parent_paths()
 
         @propertycache
         def dirfoldmap(self):
