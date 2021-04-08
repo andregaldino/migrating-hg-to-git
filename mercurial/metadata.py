@@ -820,7 +820,9 @@ def _getsidedata(srcrepo, rev):
 
 
 def copies_sidedata_computer(repo, revlog, rev, existing_sidedata):
-    return _getsidedata(repo, rev)[0]
+    sidedata, has_copies_info = _getsidedata(repo, rev)
+    flags_to_add = sidedataflag.REVIDX_HASCOPIESINFO if has_copies_info else 0
+    return sidedata, (flags_to_add, 0)
 
 
 def set_sidedata_spec_for_repo(repo):
@@ -831,6 +833,7 @@ def set_sidedata_spec_for_repo(repo):
         sidedatamod.SD_FILES,
         (sidedatamod.SD_FILES,),
         copies_sidedata_computer,
+        sidedataflag.REVIDX_HASCOPIESINFO,
     )
 
 

@@ -268,7 +268,9 @@ class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
     null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
 
-    def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):
+    def replace_sidedata_info(
+        self, i, sidedata_offset, sidedata_length, offset_flags
+    ):
         """
         Replace an existing index entry's sidedata offset and length with new
         ones.
@@ -283,7 +285,8 @@ class Index2Mixin(object):
         if i >= self._lgt:
             packed = _pack(sidedata_format, sidedata_offset, sidedata_length)
             old = self._extra[i - self._lgt]
-            new = old[:64] + packed + old[64 + packed_size :]
+            offset_flags = struct.pack(b">Q", offset_flags)
+            new = offset_flags + old[8:64] + packed + old[64 + packed_size :]
             self._extra[i - self._lgt] = new
         else:
             msg = b"cannot rewrite entries outside of this transaction"

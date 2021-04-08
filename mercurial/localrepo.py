@@ -3370,9 +3370,9 @@ class localrepository(object):
             return
         self._wanted_sidedata.add(pycompat.bytestr(category))
 
-    def register_sidedata_computer(self, kind, category, keys, computer):
+    def register_sidedata_computer(self, kind, category, keys, computer, flags):
         if kind not in revlogconst.ALL_KINDS:
-            msg = _(b"unexpected revlog kind %r.")
+            msg = _(b"unexpected revlog kind '%s'.")
             raise error.ProgrammingError(msg % kind)
         category = pycompat.bytestr(category)
         if category in self._sidedata_computers.get(kind, []):
@@ -3381,7 +3381,7 @@ class localrepository(object):
             )
             raise error.ProgrammingError(msg % category)
         self._sidedata_computers.setdefault(kind, {})
-        self._sidedata_computers[kind][category] = (keys, computer)
+        self._sidedata_computers[kind][category] = (keys, computer, flags)
 
 
 # used to avoid circular references so destructors work

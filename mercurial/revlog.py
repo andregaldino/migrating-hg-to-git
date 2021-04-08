@@ -3105,7 +3105,7 @@ class revlog(object):
             current_offset = fp.tell()
             for rev in range(startrev, endrev + 1):
                 entry = self.index[rev]
-                new_sidedata = storageutil.run_sidedata_helpers(
+                new_sidedata, flags = storageutil.run_sidedata_helpers(
                     store=self,
                     sidedata_helpers=helpers,
                     sidedata={},
@@ -3121,7 +3121,11 @@ class revlog(object):
                     # revlog.
                     msg = b"Rewriting existing sidedata is not supported yet"
                     raise error.Abort(msg)
-                entry = entry[:8]
+
+                # Apply (potential) flags to add and to remove after running
+                # the sidedata helpers
+                new_offset_flags = entry[0] | flags[0] & ~flags[1]
+                entry = (new_offset_flags,) + entry[1:8]
                 entry += (current_offset, len(serialized_sidedata))
 
                 fp.write(serialized_sidedata)
@@ -3131,9 +3135,9 @@ class revlog(object):
         # rewrite the new index entries
         with self._indexfp(b'w+') as fp:
             fp.seek(startrev * self.index.entry_size)
-            for i, entry in enumerate(new_entries):
+            for i, e in enumerate(new_entries):
                 rev = startrev + i
-                self.index.replace_sidedata_info(rev, entry[8], entry[9])
+                self.index.replace_sidedata_info(rev, e[8], e[9], e[0])
                 packed = self.index.entry_binary(rev)
                 if rev == 0:
                     header = self.index.pack_header(self.version)

@@ -366,12 +366,17 @@ def emitrevisions(
         If not None, means that sidedata should be included.
         A dictionary of revlog type to tuples of `(repo, computers, removers)`:
             * `repo` is used as an argument for computers
-            * `computers` is a list of `(category, (keys, computer)` that
+            * `computers` is a list of `(category, (keys, computer, flags)` that
                compute the missing sidedata categories that were asked:
                * `category` is the sidedata category
                * `keys` are the sidedata keys to be affected
+               * `flags` is a bitmask (an integer) of flags to remove when
+                  removing the category.
                * `computer` is the function `(repo, store, rev, sidedata)` that
-                 returns a new sidedata dict.
+                 returns a tuple of
+                 `(new sidedata dict, (flags to add, flags to remove))`.
+                 For example, it will return `({}, (0, 1 << 15))` to return no
+                 sidedata, with no flags to add and one flag to remove.
             * `removers` will remove the keys corresponding to the categories
               that are present, but not needed.
         If both `computers` and `removers` are empty, sidedata are simply not
@@ -491,12 +496,13 @@ def emitrevisions(
                 available.add(rev)
 
         serialized_sidedata = None
+        sidedata_flags = (0, 0)
         if sidedata_helpers:
-            sidedata = store.sidedata(rev)
-            sidedata = run_sidedata_helpers(
+            old_sidedata = store.sidedata(rev)
+            sidedata, sidedata_flags = run_sidedata_helpers(
                 store=store,
                 sidedata_helpers=sidedata_helpers,
-                sidedata=sidedata,
+                sidedata=old_sidedata,
                 rev=rev,
             )
             if sidedata:
@@ -507,6 +513,8 @@ def emitrevisions(
         if serialized_sidedata:
             # Advertise that sidedata exists to the other side
             protocol_flags |= CG_FLAG_SIDEDATA
+            # Computers and removers can return flags to add and/or remove
+            flags = flags | sidedata_flags[0] & ~sidedata_flags[1]
 
         yield resultcls(
             node=node,
@@ -535,12 +543,17 @@ def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
     """
     repo, sd_computers, sd_removers = sidedata_helpers
     kind = store.revlog_kind
-    for _keys, sd_computer in sd_computers.get(kind, []):
-        sidedata = sd_computer(repo, store, rev, sidedata)
-    for keys, _computer in sd_removers.get(kind, []):
+    flags_to_add = 0
+    flags_to_remove = 0
+    for _keys, sd_computer, _flags in sd_computers.get(kind, []):
+        sidedata, flags = sd_computer(repo, store, rev, sidedata)
+        flags_to_add |= flags[0]
+        flags_to_remove |= flags[1]
+    for keys, _computer, flags in sd_removers.get(kind, []):
         for key in keys:
             sidedata.pop(key, None)
-    return sidedata
+        flags_to_remove |= flags
+    return sidedata, (flags_to_add, flags_to_remove)
 
 
 def deltaiscensored(delta, baserev, baselenfn):
