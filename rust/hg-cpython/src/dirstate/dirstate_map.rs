@@ -14,8 +14,8 @@ use std::time::Duration;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
-    PyObject, PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
-    UnsafePyLeaked,
+    PyObject, PyResult, PySet, PyString, PyTuple, Python, PythonObject,
+    ToPyObject, UnsafePyLeaked,
 };
 
 use crate::{
@@ -175,18 +175,11 @@ py_class!(pub class DirstateMap |py| {
         let (_, other_parent) =
             inner_shared.get_non_normal_other_parent_entries();
 
-        let locals = PyDict::new(py);
-        locals.set_item(
-            py,
-            "other_parent",
-            other_parent
-                .iter()
-                .map(|v| PyBytes::new(py, v.as_bytes()))
-                .collect::<Vec<PyBytes>>()
-                .to_py_object(py),
-        )?;
-
-        py.eval("set(other_parent)", None, Some(&locals))
+        let set = PySet::empty(py)?;
+        for path in other_parent.iter() {
+            set.add(py, PyBytes::new(py, path.as_bytes()))?;
+        }
+        Ok(set.into_object())
     }
 
     def non_normal_entries(&self) -> PyResult<NonNormalEntries> {
