@@ -1,8 +1,13 @@
 #require no-chg
 
+persistent-nodemap is not enabled by default. It is not relevant for this test
+so disable it.
+
   $ . $TESTDIR/wireprotohelpers.sh
 
   $ cat >> $HGRCPATH << EOF
+  > [format]
+  > use-persistent-nodemap = no
   > [web]
   > push_ssl = false
   > allow_push = *
