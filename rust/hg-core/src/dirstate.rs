@@ -34,6 +34,16 @@ pub struct DirstateEntry {
     pub size: i32,
 }
 
+impl DirstateEntry {
+    pub fn is_non_normal(&self) -> bool {
+        self.state != EntryState::Normal || self.mtime == MTIME_UNSET
+    }
+
+    pub fn is_from_other_parent(&self) -> bool {
+        self.state == EntryState::Normal && self.size == SIZE_FROM_OTHER_PARENT
+    }
+}
+
 #[derive(BytesCast)]
 #[repr(C)]
 struct RawEntry {
@@ -43,6 +53,8 @@ struct RawEntry {
     mtime: unaligned::I32Be,
     length: unaligned::I32Be,
 }
+
+const MTIME_UNSET: i32 = -1;
 
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the
 /// other parent. This allows revert to pick the right status back during a

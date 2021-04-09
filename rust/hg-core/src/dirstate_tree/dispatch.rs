@@ -45,7 +45,7 @@ pub trait DirstateMapMethods {
 
     fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool;
 
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool;
+    fn non_normal_entries_remove(&mut self, key: &HgPath);
 
     fn non_normal_or_other_parent_paths(
         &mut self,
@@ -179,7 +179,7 @@ impl DirstateMapMethods for DirstateMap {
         non_normal.contains(key)
     }
 
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
+    fn non_normal_entries_remove(&mut self, key: &HgPath) {
         self.non_normal_entries_remove(key)
     }
 

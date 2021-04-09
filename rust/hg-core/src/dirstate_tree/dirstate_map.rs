@@ -397,40 +397,61 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         }
     }
 
-    fn non_normal_entries_contains(&mut self, _key: &HgPath) -> bool {
-        todo!()
+    fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool {
+        self.get_node(key)
+            .and_then(|node| node.entry.as_ref())
+            .map_or(false, DirstateEntry::is_non_normal)
     }
 
-    fn non_normal_entries_remove(&mut self, _key: &HgPath) -> bool {
-        todo!()
+    fn non_normal_entries_remove(&mut self, _key: &HgPath) {
+        // Do nothing, this `DirstateMap` does not have a separate "non normal
+        // entries" set that need to be kept up to date
     }
 
     fn non_normal_or_other_parent_paths(
         &mut self,
     ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_> {
-        todo!()
+        Box::new(self.iter_nodes().filter_map(|(path, node)| {
+            node.entry
+                .as_ref()
+                .filter(|entry| {
+                    entry.is_non_normal() || entry.is_from_other_parent()
+                })
+                .map(|_| path.full_path())
+        }))
     }
 
     fn set_non_normal_other_parent_entries(&mut self, _force: bool) {
-        todo!()
+        // Do nothing, this `DirstateMap` does not have a separate "non normal
+        // entries" and "from other parent" sets that need to be recomputed
     }
 
     fn iter_non_normal_paths(
         &mut self,
     ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
-        todo!()
+        self.iter_non_normal_paths_panic()
     }
 
     fn iter_non_normal_paths_panic(
         &self,
     ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
-        todo!()
+        Box::new(self.iter_nodes().filter_map(|(path, node)| {
+            node.entry
+                .as_ref()
+                .filter(|entry| entry.is_non_normal())
+                .map(|_| path.full_path())
+        }))
     }
 
     fn iter_other_parent_paths(
         &mut self,
     ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
-        todo!()
+        Box::new(self.iter_nodes().filter_map(|(path, node)| {
+            node.entry
+                .as_ref()
+                .filter(|entry| entry.is_from_other_parent())
+                .map(|_| path.full_path())
+        }))
     }
 
     fn has_tracked_dir(

@@ -10,7 +10,7 @@ use crate::dirstate::parsers::Timestamp;
 use crate::errors::HgError;
 use crate::revlog::node::NULL_NODE;
 use crate::{
-    dirstate::{parsers::PARENT_SIZE, EntryState, SIZE_FROM_OTHER_PARENT},
+    dirstate::{parsers::PARENT_SIZE, EntryState},
     pack_dirstate, parse_dirstate,
     utils::{
         files::normalize_case,
@@ -26,8 +26,6 @@ use std::iter::FromIterator;
 use std::ops::Deref;
 
 pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
-
-const MTIME_UNSET: i32 = -1;
 
 #[derive(Default)]
 pub struct DirstateMap {
@@ -99,13 +97,13 @@ impl DirstateMap {
         }
         self.state_map.insert(filename.to_owned(), entry.to_owned());
 
-        if entry.state != EntryState::Normal || entry.mtime == MTIME_UNSET {
+        if entry.is_non_normal() {
             self.get_non_normal_other_parent_entries()
                 .0
                 .insert(filename.to_owned());
         }
 
-        if entry.size == SIZE_FROM_OTHER_PARENT {
+        if entry.is_from_other_parent() {
             self.get_non_normal_other_parent_entries()
                 .1
                 .insert(filename.to_owned());
@@ -199,14 +197,12 @@ impl DirstateMap {
         }
     }
 
-    pub fn non_normal_entries_remove(
-        &mut self,
-        key: impl AsRef<HgPath>,
-    ) -> bool {
+    pub fn non_normal_entries_remove(&mut self, key: impl AsRef<HgPath>) {
         self.get_non_normal_other_parent_entries()
             .0
-            .remove(key.as_ref())
+            .remove(key.as_ref());
     }
+
     pub fn non_normal_entries_union(
         &mut self,
         other: HashSet<HgPathBuf>,
@@ -257,18 +253,11 @@ impl DirstateMap {
         let mut non_normal = HashSet::new();
         let mut other_parent = HashSet::new();
 
-        for (
-            filename,
-            DirstateEntry {
-                state, size, mtime, ..
-            },
-        ) in self.state_map.iter()
-        {
-            if *state != EntryState::Normal || *mtime == MTIME_UNSET {
+        for (filename, entry) in self.state_map.iter() {
+            if entry.is_non_normal() {
                 non_normal.insert(filename.to_owned());
             }
-            if *state == EntryState::Normal && *size == SIZE_FROM_OTHER_PARENT
-            {
+            if entry.is_from_other_parent() {
                 other_parent.insert(filename.to_owned());
             }
         }
