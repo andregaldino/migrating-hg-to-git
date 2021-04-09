@@ -1,5 +1,12 @@
 #require no-chg
 
+persistent-nodemap is not enabled by default. It is not relevant for this test so disable it.
+
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > use-persistent-nodemap = no
+  > EOF
+
   $ cat > hgrc-sshv2 << EOF
   > %include $HGRCPATH
   > [experimental]
