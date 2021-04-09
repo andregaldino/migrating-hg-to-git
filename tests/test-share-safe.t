@@ -10,6 +10,8 @@ setup
   > # enforce zlib to ensure we can upgrade to zstd later
   > [format]
   > revlog-compression=zlib
+  > # we want to be able to enable it later
+  > use-persistent-nodemap=no
   > EOF
 
 prepare source repo
