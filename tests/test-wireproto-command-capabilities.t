@@ -2,6 +2,13 @@
 
   $ . $TESTDIR/wireprotohelpers.sh
 
+persistent-nodemap is not enabled by default. It is not relevant for this test so disable it.
+
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > use-persistent-nodemap = no
+  > EOF
+
   $ hg init server
 
 zstd isn't present in plain builds. Make tests easier by removing
