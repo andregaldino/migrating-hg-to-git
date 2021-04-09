@@ -13,6 +13,7 @@ version so behavior is deterministic.
   > fakeversion = `pwd`/fakeversion.py
   > [format]
   > sparse-revlog = no
+  > use-persistent-nodemap = no
   > [devel]
   > legacy.exchange = phases
   > [server]
