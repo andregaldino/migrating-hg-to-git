@@ -330,28 +330,61 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
 
     fn add_file(
         &mut self,
-        _filename: &HgPath,
+        filename: &HgPath,
         _old_state: EntryState,
-        _entry: DirstateEntry,
+        entry: DirstateEntry,
     ) -> Result<(), DirstateMapError> {
-        todo!()
+        self.add_file_node(filename, entry, None);
+        Ok(())
     }
 
     fn remove_file(
         &mut self,
-        _filename: &HgPath,
+        filename: &HgPath,
         _old_state: EntryState,
-        _size: i32,
+        size: i32,
     ) -> Result<(), DirstateMapError> {
-        todo!()
+        let entry = DirstateEntry {
+            state: EntryState::Removed,
+            mode: 0,
+            size,
+            mtime: 0,
+        };
+        self.add_file_node(filename, entry, None);
+        Ok(())
     }
 
     fn drop_file(
         &mut self,
-        _filename: &HgPath,
+        filename: &HgPath,
         _old_state: EntryState,
     ) -> Result<bool, DirstateMapError> {
-        todo!()
+        if let Some(node) = Self::get_node_mut(&mut self.root, filename) {
+            let was_tracked = node.is_tracked_file();
+            let had_entry = node.entry.is_some();
+            let had_copy_source = node.copy_source.is_some();
+
+            // TODO: this leaves in the tree a "non-file" node. Should we
+            // remove the node instead, together with ancestor nodes for
+            // directories that become empty?
+            node.entry = None;
+            node.copy_source = None;
+
+            if had_entry {
+                self.nodes_with_entry_count -= 1
+            }
+            if had_copy_source {
+                self.nodes_with_copy_source_count -= 1
+            }
+            if was_tracked {
+                self.for_each_ancestor_node(filename, |node| {
+                    node.tracked_descendants_count -= 1
+                })
+            }
+            Ok(had_entry)
+        } else {
+            Ok(false)
+        }
     }
 
     fn clear_ambiguous_times(&mut self, filenames: Vec<HgPathBuf>, now: i32) {
