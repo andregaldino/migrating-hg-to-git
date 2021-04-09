@@ -300,12 +300,12 @@ mod tests {
                 // Remaining offset bytes.
                 bytes.extend(&[0u8; 2]);
             } else {
-                // Offset is only 6 bytes will usize is 8.
-                bytes.extend(&self.offset.to_be_bytes()[2..]);
+                // Offset stored on 48 bits (6 bytes)
+                bytes.extend(&(self.offset as u64).to_be_bytes()[2..]);
             }
             bytes.extend(&[0u8; 2]); // Revision flags.
-            bytes.extend(&self.compressed_len.to_be_bytes()[4..]);
-            bytes.extend(&self.uncompressed_len.to_be_bytes()[4..]);
+            bytes.extend(&(self.compressed_len as u32).to_be_bytes());
+            bytes.extend(&(self.uncompressed_len as u32).to_be_bytes());
             bytes.extend(&self.base_revision.to_be_bytes());
             bytes
         }
