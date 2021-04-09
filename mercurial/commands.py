@@ -2413,7 +2413,8 @@ def copy(ui, repo, *pats, **opts):
 
     To undo marking a destination file as copied, use --forget. With that
     option, all given (positional) arguments are unmarked as copies. The
-    destination file(s) will be left in place (still tracked).
+    destination file(s) will be left in place (still tracked). Note that
+    :hg:`copy --forget` behaves the same way as :hg:`rename --forget`.
 
     This command takes effect with the next commit by default.
 
@@ -5914,6 +5915,7 @@ def remove(ui, repo, *pats, **opts):
 @command(
     b'rename|move|mv',
     [
+        (b'', b'forget', None, _(b'unmark a destination file as renamed')),
         (b'A', b'after', None, _(b'record a rename that has already occurred')),
         (
             b'',
@@ -5945,8 +5947,13 @@ def rename(ui, repo, *pats, **opts):
     exist in the working directory. If invoked with -A/--after, the
     operation is recorded, but no copying is performed.
 
-    This command takes effect at the next commit. To undo a rename
-    before that, see :hg:`revert`.
+    To undo marking a destination file as renamed, use --forget. With that
+    option, all given (positional) arguments are unmarked as renames. The
+    destination file(s) will be left in place (still tracked). The source
+    file(s) will not be restored. Note that :hg:`rename --forget` behaves
+    the same way as :hg:`copy --forget`.
+
+    This command takes effect with the next commit by default.
 
     Returns 0 on success, 1 if errors are encountered.
     """
