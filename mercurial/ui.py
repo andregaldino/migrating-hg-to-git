@@ -948,7 +948,48 @@ class ui(object):
                     )
         return items
 
-    def walkconfig(self, untrusted=False):
+    def walkconfig(self, untrusted=False, all_known=False):
+        defined = self._walk_config(untrusted)
+        if not all_known:
+            for d in defined:
+                yield d
+            return
+        known = self._walk_known()
+        current_defined = next(defined, None)
+        current_known = next(known, None)
+        while current_defined is not None or current_known is not None:
+            if current_defined is None:
+                yield current_known
+                current_known = next(known, None)
+            elif current_known is None:
+                yield current_defined
+                current_defined = next(defined, None)
+            elif current_known[0:2] == current_defined[0:2]:
+                yield current_defined
+                current_defined = next(defined, None)
+                current_known = next(known, None)
+            elif current_known[0:2] < current_defined[0:2]:
+                yield current_known
+                current_known = next(known, None)
+            else:
+                yield current_defined
+                current_defined = next(defined, None)
+
+    def _walk_known(self):
+        for section, items in sorted(self._knownconfig.items()):
+            for k, i in sorted(items.items()):
+                # We don't have a way to display generic well, so skip them
+                if i.generic:
+                    continue
+                if callable(i.default):
+                    default = i.default()
+                elif i.default is configitems.dynamicdefault:
+                    default = b'<DYNAMIC>'
+                else:
+                    default = i.default
+                yield section, i.name, default
+
+    def _walk_config(self, untrusted):
         cfg = self._data(untrusted)
         for section in cfg.sections():
             for name, value in self.configitems(section, untrusted):

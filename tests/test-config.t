@@ -408,6 +408,32 @@ configs should be read in lexicographical order
   $ HGRCPATH=configs hg config section.key
   99
 
+Listing all config options
+==========================
+
+The feature is experimental and behavior may varies. This test exists to make sure the code is run. We grep it to avoid too much variability in its current experimental state.
+
+  $ hg config --exp-all-known | grep commit
+  commands.commit.interactive.git=False
+  commands.commit.interactive.ignoreblanklines=False
+  commands.commit.interactive.ignorews=False
+  commands.commit.interactive.ignorewsamount=False
+  commands.commit.interactive.ignorewseol=False
+  commands.commit.interactive.nobinary=False
+  commands.commit.interactive.nodates=False
+  commands.commit.interactive.noprefix=False
+  commands.commit.interactive.showfunc=False
+  commands.commit.interactive.unified=None
+  commands.commit.interactive.word-diff=False
+  commands.commit.post-status=False
+  convert.git.committeractions=[*'messagedifferent'] (glob)
+  convert.svn.dangerous-set-commit-dates=False
+  experimental.copytrace.sourcecommitlimit=100
+  phases.new-commit=draft
+  ui.allowemptycommit=False
+  ui.commitsubrepos=False
+
+
 Configuration priority
 ======================
 

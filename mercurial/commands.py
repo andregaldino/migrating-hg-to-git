@@ -2200,6 +2200,21 @@ def _docommit(ui, repo, *pats, **opts):
     b'config|showconfig|debugconfig',
     [
         (b'u', b'untrusted', None, _(b'show untrusted configuration options')),
+        # This is experimental because we need
+        # * reasonable behavior around aliases,
+        # * decide if we display [debug] [experimental] and [devel] section par
+        #   default
+        # * some way to display "generic" config entry (the one matching
+        #   regexp,
+        # * proper display of the different value type
+        # * a better way to handle <DYNAMIC> values (and variable types),
+        # * maybe some type information ?
+        (
+            b'',
+            b'exp-all-known',
+            None,
+            _(b'show all known config option (EXPERIMENTAL)'),
+        ),
         (b'e', b'edit', None, _(b'edit user config')),
         (b'l', b'local', None, _(b'edit repository config')),
         (b'', b'source', None, _(b'show source of configuration value')),
@@ -2336,8 +2351,10 @@ def config(ui, repo, *values, **opts):
     selentries = set(selentries)
 
     matched = False
+    all_known = opts[b'exp_all_known']
     show_source = ui.debugflag or opts.get(b'source')
-    for section, name, value in ui.walkconfig(untrusted=untrusted):
+    entries = ui.walkconfig(untrusted=untrusted, all_known=all_known)
+    for section, name, value in entries:
         source = ui.configsource(section, name, untrusted)
         value = pycompat.bytestr(value)
         defaultvalue = ui.configdefault(section, name)
