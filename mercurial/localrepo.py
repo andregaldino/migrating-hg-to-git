@@ -73,6 +73,7 @@ from . import (
     txnutil,
     util,
     vfs as vfsmod,
+    wireprototypes,
 )
 
 from .interfaces import (
@@ -1495,6 +1496,8 @@ class localrepository(object):
                 bundle2.getrepocaps(self, role=b'client')
             )
             caps.add(b'bundle2=' + urlreq.quote(capsblob))
+        if self.ui.configbool(b'experimental', b'narrow'):
+            caps.add(wireprototypes.NARROWCAP)
         return caps
 
     # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:

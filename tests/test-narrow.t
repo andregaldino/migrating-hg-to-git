@@ -61,7 +61,7 @@ Error if '.' or '..' are in the directory to track.
   [255]
 
 Names with '.' in them are OK.
-  $ hg clone --narrow ssh://user@dummy/master should-work --include a/.b/c
+  $ hg clone --narrow ./master should-work --include a/.b/c
   requesting all changes
   adding changesets
   adding manifests
