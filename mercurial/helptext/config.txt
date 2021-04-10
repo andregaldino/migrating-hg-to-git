@@ -1702,7 +1702,8 @@ location of the repository. Example::
 
 These symbolic names can be used from the command line. To pull
 from ``my_server``: :hg:`pull my_server`. To push to ``local_path``:
-:hg:`push local_path`.
+:hg:`push local_path`. You can check :hg:`help urls` for details about
+valid URLs.
 
 Options containing colons (``:``) denote sub-options that can influence
 behavior for that specific path. Example::
