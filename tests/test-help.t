@@ -1842,6 +1842,9 @@ Test section lookup
         my_server = https://example.com/my_path
         my_server:pushurl = ssh://example.com/my_path
   
+      Paths using the 'path://otherpath' scheme will inherit the sub-options
+      value from the path they point to.
+  
       The following sub-options can be defined:
   
       "pushurl"

@@ -5,6 +5,7 @@ Valid URLs are of the form::
   http://[user[:pass]@]host[:port]/[path][#revision]
   https://[user[:pass]@]host[:port]/[path][#revision]
   ssh://[user@]host[:port]/[path][#revision]
+  path://pathname
 
 Paths in the local filesystem can either point to Mercurial
 repositories or to bundle files (as created by :hg:`bundle` or
@@ -64,3 +65,12 @@ default:
 default-push:
   The push command will look for a path named 'default-push', and
   prefer it over 'default' if both are defined.
+
+These alias can also be use in the `path://` scheme::
+
+  [paths]
+  alias1 = URL1
+  alias2 = path://alias1
+  ...
+
+check :hg:`help config.paths` for details about the behavior of such "sub-path".
