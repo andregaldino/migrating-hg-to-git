@@ -5,7 +5,7 @@ use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::{format_bytes, join};
-use hg::config::Config;
+use hg::config::{Config, ConfigSource};
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
@@ -167,8 +167,74 @@ fn main() {
             )
         }
     }
-    let repo_path = early_args.repo.as_deref().map(get_path_from_bytes);
-    let repo_result = match Repo::find(&non_repo_config, repo_path) {
+    let repo_arg = early_args.repo.unwrap_or(Vec::new());
+    let repo_path: Option<PathBuf> = {
+        if repo_arg.is_empty() {
+            None
+        } else {
+            let local_config = {
+                if std::env::var_os("HGRCSKIPREPO").is_none() {
+                    let current_dir = hg::utils::current_dir();
+                    // TODO: handle errors from current_dir
+                    if let Ok(current_dir_path) = current_dir {
+                        let config_files = vec![
+                            ConfigSource::AbsPath(
+                                current_dir_path.join(".hg/hgrc"),
+                            ),
+                            ConfigSource::AbsPath(
+                                current_dir_path.join(".hg/hgrc-not-shared"),
+                            ),
+                        ];
+                        // TODO: handle errors from
+                        // `load_from_explicit_sources`
+                        Config::load_from_explicit_sources(config_files).ok()
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
+            let non_repo_config_val = {
+                let non_repo_val = non_repo_config.get(b"paths", &repo_arg);
+                match &non_repo_val {
+                    Some(val) if val.len() > 0 => home::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("~"))
+                        .join(get_path_from_bytes(val))
+                        .canonicalize()
+                        // TODO: handle error and make it similar to python
+                        // implementation maybe?
+                        .ok(),
+                    _ => None,
+                }
+            };
+
+            let config_val = match &local_config {
+                None => non_repo_config_val,
+                Some(val) => {
+                    let local_config_val = val.get(b"paths", &repo_arg);
+                    match &local_config_val {
+                        Some(val) if val.len() > 0 => {
+                            // presence of a local_config assures that
+                            // current_dir
+                            // wont result in an Error
+                            let canpath = hg::utils::current_dir()
+                                .unwrap()
+                                .join(get_path_from_bytes(val))
+                                .canonicalize();
+                            canpath.ok().or(non_repo_config_val)
+                        }
+                        _ => non_repo_config_val,
+                    }
+                }
+            };
+            config_val.or(Some(get_path_from_bytes(&repo_arg).to_path_buf()))
+        }
+    };
+
+    let repo_result = match Repo::find(&non_repo_config, repo_path.to_owned())
+    {
         Ok(repo) => Ok(repo),
         Err(RepoError::NotFound { at }) if repo_path.is_none() => {
             // Not finding a repo is not fatal yet, if `-R` was not given

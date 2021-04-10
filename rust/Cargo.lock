@@ -831,6 +831,7 @@ dependencies = [
  "env_logger",
  "format-bytes",
  "hg-core",
+ "home",
  "lazy_static",
  "log",
  "micro-timer",

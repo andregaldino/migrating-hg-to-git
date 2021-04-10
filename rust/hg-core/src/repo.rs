@@ -53,7 +53,7 @@ impl Repo {
     /// Having two methods would just move that `if` to almost all callers.
     pub fn find(
         config: &Config,
-        explicit_path: Option<&Path>,
+        explicit_path: Option<PathBuf>,
     ) -> Result<Self, RepoError> {
         if let Some(root) = explicit_path {
             if root.join(".hg").is_dir() {

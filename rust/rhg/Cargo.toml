@@ -12,6 +12,7 @@ hg-core = { path = "../hg-core"}
 chrono = "0.4.19"
 clap = "2.33.1"
 derive_more = "0.99"
+home = "0.5.3"
 lazy_static = "1.4.0"
 log = "0.4.11"
 micro-timer = "0.3.1"

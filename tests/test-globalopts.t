@@ -65,8 +65,6 @@ Testing -R/--repository:
 
 -R with path aliases:
 
-TODO: add rhg support for path aliases
-#if no-rhg
   $ cd c
   $ hg -R default identify
   8580ff50825a tip
@@ -81,7 +79,6 @@ TODO: add rhg support for path aliases
   $ HOME=`pwd`/../ hg -R relativetohome identify
   8580ff50825a tip
   $ cd ..
-#endif
 
 #if no-outer-repo
 
