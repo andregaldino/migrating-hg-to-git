@@ -811,7 +811,7 @@ def _findcommonincoming(orig, *args, **kwargs):
     return common, True, remoteheads
 
 
-def _push(orig, ui, repo, dest=None, *args, **opts):
+def _push(orig, ui, repo, *dests, **opts):
     opts = pycompat.byteskwargs(opts)
     bookmark = opts.get(b'bookmark')
     # we only support pushing one infinitepush bookmark at once
@@ -839,18 +839,18 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
             oldphasemove = extensions.wrapfunction(
                 exchange, b'_localphasemove', _phasemove
             )
-        # Copy-paste from `push` command
-        path = ui.getpath(dest, default=(b'default-push', b'default'))
-        if not path:
-            raise error.Abort(
-                _(b'default repository not configured!'),
-                hint=_(b"see 'hg help config.paths'"),
-            )
+
+        paths = list(urlutil.get_push_paths(repo, ui, dests))
+        if len(paths) > 1:
+            msg = _(b'cannot push to multiple path with infinitepush')
+            raise error.Abort(msg)
+
+        path = paths[0]
         destpath = path.pushloc or path.loc
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before push and restore after
         remotescratchbookmarks = _readscratchremotebookmarks(ui, repo, destpath)
-        result = orig(ui, repo, dest, *args, **pycompat.strkwargs(opts))
+        result = orig(ui, repo, *dests, **pycompat.strkwargs(opts))
         if common.isremotebooksenabled(ui):
             if bookmark and scratchpush:
                 other = hg.peer(repo, opts, destpath)
