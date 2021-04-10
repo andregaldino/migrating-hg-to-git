@@ -28,6 +28,10 @@ from ..utils import hashutil
 
 _nullhash = hashutil.sha1(sha1nodeconstants.nullid)
 
+# revision data contains extra metadata not part of the official digest
+# Only used in changegroup >= v4.
+CG_FLAG_SIDEDATA = 1
+
 
 def hashrevisionsha1(text, p1, p2):
     """Compute the SHA-1 for revision data and its parents.
@@ -486,7 +490,7 @@ def emitrevisions(
 
                 available.add(rev)
 
-        sidedata = None
+        serialized_sidedata = None
         if sidedata_helpers:
             sidedata = store.sidedata(rev)
             sidedata = run_sidedata_helpers(
@@ -495,18 +499,26 @@ def emitrevisions(
                 sidedata=sidedata,
                 rev=rev,
             )
-            sidedata = sidedatamod.serialize_sidedata(sidedata)
+            if sidedata:
+                serialized_sidedata = sidedatamod.serialize_sidedata(sidedata)
+
+        flags = flagsfn(rev) if flagsfn else 0
+        protocol_flags = 0
+        if serialized_sidedata:
+            # Advertise that sidedata exists to the other side
+            protocol_flags |= CG_FLAG_SIDEDATA
 
         yield resultcls(
             node=node,
             p1node=fnode(p1rev),
             p2node=fnode(p2rev),
             basenode=fnode(baserev),
-            flags=flagsfn(rev) if flagsfn else 0,
+            flags=flags,
             baserevisionsize=baserevisionsize,
             revision=revision,
             delta=delta,
-            sidedata=sidedata,
+            sidedata=serialized_sidedata,
+            protocol_flags=protocol_flags,
         )
 
         prevrev = rev

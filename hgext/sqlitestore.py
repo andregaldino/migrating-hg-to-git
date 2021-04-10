@@ -289,6 +289,7 @@ class sqliterevisiondelta(object):
     revision = attr.ib()
     delta = attr.ib()
     sidedata = attr.ib()
+    protocol_flags = attr.ib()
     linknode = attr.ib(default=None)
 
 

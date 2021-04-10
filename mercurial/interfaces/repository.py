@@ -27,14 +27,12 @@ REPO_FEATURE_SHALLOW_FILE_STORAGE = b'shallowfilestorage'
 REVISION_FLAG_CENSORED = 1 << 15
 REVISION_FLAG_ELLIPSIS = 1 << 14
 REVISION_FLAG_EXTSTORED = 1 << 13
-REVISION_FLAG_SIDEDATA = 1 << 12
-REVISION_FLAG_HASCOPIESINFO = 1 << 11
+REVISION_FLAG_HASCOPIESINFO = 1 << 12
 
 REVISION_FLAGS_KNOWN = (
     REVISION_FLAG_CENSORED
     | REVISION_FLAG_ELLIPSIS
     | REVISION_FLAG_EXTSTORED
-    | REVISION_FLAG_SIDEDATA
     | REVISION_FLAG_HASCOPIESINFO
 )
 
@@ -455,6 +453,13 @@ class irevisiondelta(interfaceutil.Interface):
 
     sidedata = interfaceutil.Attribute(
         """Raw sidedata bytes for the given revision."""
+    )
+
+    protocol_flags = interfaceutil.Attribute(
+        """Single byte of integer flags that can influence the protocol.
+
+        This is a bitwise composition of the ``storageutil.CG_FLAG*`` constants.
+        """
     )
 
 

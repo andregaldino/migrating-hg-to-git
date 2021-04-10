@@ -331,6 +331,8 @@ class remotefilelog(object):
                 delta=delta,
                 # Sidedata is not supported yet
                 sidedata=None,
+                # Protocol flags are not used yet
+                protocol_flags=0,
             )
 
     def revdiff(self, node1, node2):

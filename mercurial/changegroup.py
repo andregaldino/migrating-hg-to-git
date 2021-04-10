@@ -34,10 +34,12 @@ from . import (
 from .interfaces import repository
 from .revlogutils import sidedata as sidedatamod
 from .revlogutils import constants as revlog_constants
+from .utils import storageutil
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct(b"20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct(b"20s20s20s20s20s")
 _CHANGEGROUPV3_DELTA_HEADER = struct.Struct(b">20s20s20s20s20sH")
+_CHANGEGROUPV4_DELTA_HEADER = struct.Struct(b">B20s20s20s20s20sH")
 
 LFS_REQUIREMENT = b'lfs'
 
@@ -194,7 +196,8 @@ class cg1unpacker(object):
         else:
             deltabase = prevnode
         flags = 0
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def deltachunk(self, prevnode):
         l = self._chunklength()
@@ -203,10 +206,9 @@ class cg1unpacker(object):
         headerdata = readexactly(self._stream, self.deltaheadersize)
         header = self.deltaheader.unpack(headerdata)
         delta = readexactly(self._stream, l - self.deltaheadersize)
-        node, p1, p2, deltabase, cs, flags = self._deltaheader(header, prevnode)
-        # cg4 forward-compat
-        sidedata = {}
-        return (node, p1, p2, cs, deltabase, delta, flags, sidedata)
+        header = self._deltaheader(header, prevnode)
+        node, p1, p2, deltabase, cs, flags, protocol_flags = header
+        return node, p1, p2, cs, deltabase, delta, flags, protocol_flags
 
     def getchunks(self):
         """returns all the chunks contains in the bundle
@@ -597,7 +599,8 @@ class cg2unpacker(cg1unpacker):
     def _deltaheader(self, headertuple, prevnode):
         node, p1, p2, deltabase, cs = headertuple
         flags = 0
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
 
 class cg3unpacker(cg2unpacker):
@@ -615,7 +618,8 @@ class cg3unpacker(cg2unpacker):
 
     def _deltaheader(self, headertuple, prevnode):
         node, p1, p2, deltabase, cs, flags = headertuple
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def _unpackmanifests(self, repo, revmap, trp, prog, addrevisioncb=None):
         super(cg3unpacker, self)._unpackmanifests(
@@ -638,18 +642,24 @@ class cg4unpacker(cg3unpacker):
     cg4 streams add support for exchanging sidedata.
     """
 
+    deltaheader = _CHANGEGROUPV4_DELTA_HEADER
+    deltaheadersize = deltaheader.size
     version = b'04'
+
+    def _deltaheader(self, headertuple, prevnode):
+        protocol_flags, node, p1, p2, deltabase, cs, flags = headertuple
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def deltachunk(self, prevnode):
         res = super(cg4unpacker, self).deltachunk(prevnode)
         if not res:
             return res
 
-        (node, p1, p2, cs, deltabase, delta, flags, _sidedata) = res
+        (node, p1, p2, cs, deltabase, delta, flags, protocol_flags) = res
 
-        sidedata_raw = getchunk(self._stream)
         sidedata = {}
-        if len(sidedata_raw) > 0:
+        if protocol_flags & storageutil.CG_FLAG_SIDEDATA:
+            sidedata_raw = getchunk(self._stream)
             sidedata = sidedatamod.deserialize_sidedata(sidedata_raw)
 
         return node, p1, p2, cs, deltabase, delta, flags, sidedata
@@ -695,10 +705,10 @@ def _revisiondeltatochunks(repo, delta, headerfn):
         yield prefix
     yield data
 
-    sidedata = delta.sidedata
-    if sidedata is not None:
+    if delta.protocol_flags & storageutil.CG_FLAG_SIDEDATA:
         # Need a separate chunk for sidedata to be able to differentiate
         # "raw delta" length and sidedata length
+        sidedata = delta.sidedata
         yield chunkheader(len(sidedata))
         yield sidedata
 
@@ -1640,11 +1650,18 @@ def _makecg4packer(
     fullnodes=None,
     remote_sidedata=None,
 ):
-    # Same header func as cg3. Sidedata is in a separate chunk from the delta to
-    # differenciate "raw delta" and sidedata.
-    builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
-        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
-    )
+    # Sidedata is in a separate chunk from the delta to differentiate
+    # "raw delta" and sidedata.
+    def builddeltaheader(d):
+        return _CHANGEGROUPV4_DELTA_HEADER.pack(
+            d.protocol_flags,
+            d.node,
+            d.p1node,
+            d.p2node,
+            d.basenode,
+            d.linknode,
+            d.flags,
+        )
 
     return cgpacker(
         repo,
@@ -1930,7 +1947,6 @@ def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
     sd_computers = collections.defaultdict(list)
     # Computers for categories to remove from sidedata
     sd_removers = collections.defaultdict(list)
-
     to_generate = remote_sd_categories - repo._wanted_sidedata
     to_remove = repo._wanted_sidedata - remote_sd_categories
     if pull:

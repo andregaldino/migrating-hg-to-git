@@ -55,7 +55,6 @@ from .revlogutils.flagutil import (
     REVIDX_HASCOPIESINFO,
     REVIDX_ISCENSORED,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
-    REVIDX_SIDEDATA,
 )
 from .thirdparty import attr
 from . import (
@@ -98,7 +97,6 @@ REVLOGV1_FLAGS
 REVLOGV2_FLAGS
 REVIDX_ISCENSORED
 REVIDX_ELLIPSIS
-REVIDX_SIDEDATA
 REVIDX_HASCOPIESINFO
 REVIDX_EXTSTORED
 REVIDX_DEFAULT_FLAGS
@@ -196,6 +194,7 @@ class revlogrevisiondelta(object):
     revision = attr.ib()
     delta = attr.ib()
     sidedata = attr.ib()
+    protocol_flags = attr.ib()
     linknode = attr.ib(default=None)
 
 
