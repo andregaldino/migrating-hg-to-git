@@ -1360,28 +1360,28 @@ def outgoing(ui, repo, dest, opts):
 
     limit = logcmdutil.getlimit(opts)
     o, other = _outgoing(ui, repo, dest, opts)
+    ret = 1
     try:
-        if not o:
-            cmdutil.outgoinghooks(ui, repo, other, opts, o)
-            return recurse()
+        if o:
+            ret = 0
 
-        if opts.get(b'newest_first'):
-            o.reverse()
-        ui.pager(b'outgoing')
-        displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
-        count = 0
-        for n in o:
-            if limit is not None and count >= limit:
-                break
-            parents = [p for p in repo.changelog.parents(n) if p != nullid]
-            if opts.get(b'no_merges') and len(parents) == 2:
-                continue
-            count += 1
-            displayer.show(repo[n])
-        displayer.close()
+            if opts.get(b'newest_first'):
+                o.reverse()
+            ui.pager(b'outgoing')
+            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+            count = 0
+            for n in o:
+                if limit is not None and count >= limit:
+                    break
+                parents = [p for p in repo.changelog.parents(n) if p != nullid]
+                if opts.get(b'no_merges') and len(parents) == 2:
+                    continue
+                count += 1
+                displayer.show(repo[n])
+            displayer.close()
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
-        recurse()
-        return 0  # exit code is zero since we found outgoing changes
+        ret = min(ret, recurse())
+        return ret  # exit code is zero since we found outgoing changes
     finally:
         other.close()
 
