@@ -1855,30 +1855,29 @@ def outgoing(repo, subset, x):
     dest = (
         l and getstring(l[0], _(b"outgoing requires a repository path")) or b''
     )
-    if not dest:
+    if dest:
         # ui.getpath() explicitly tests for None, not just a boolean
-        dest = None
-    path = repo.ui.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.Abort(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
-        )
-    dest = path.pushloc or path.loc
-    branches = path.branch, []
+        dests = [dest]
+    else:
+        dests = []
+    missing = set()
+    for path in urlutil.get_push_paths(repo, repo.ui, dests):
+        dest = path.pushloc or path.loc
+        branches = path.branch, []
 
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
-    if revs:
-        revs = [repo.lookup(rev) for rev in revs]
-    other = hg.peer(repo, {}, dest)
-    try:
-        repo.ui.pushbuffer()
-        outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
-        repo.ui.popbuffer()
-    finally:
-        other.close()
+        revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
+        if revs:
+            revs = [repo.lookup(rev) for rev in revs]
+        other = hg.peer(repo, {}, dest)
+        try:
+            repo.ui.pushbuffer()
+            outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
+            repo.ui.popbuffer()
+        finally:
+            other.close()
+        missing.update(outgoing.missing)
     cl = repo.changelog
-    o = {cl.rev(r) for r in outgoing.missing}
+    o = {cl.rev(r) for r in missing}
     return subset & o
 
 
