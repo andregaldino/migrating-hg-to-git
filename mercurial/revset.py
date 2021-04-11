@@ -1842,6 +1842,9 @@ def origin(repo, subset, x):
 def outgoing(repo, subset, x):
     """Changesets not found in the specified destination repository, or the
     default push location.
+
+    If the location resolve to multiple repositories, the union of all
+    outgoing changeset will be used.
     """
     # Avoid cycles.
     from . import (
