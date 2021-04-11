@@ -1348,15 +1348,17 @@ def _outgoing(ui, repo, dest, opts):
         raise
 
 
+def _outgoing_recurse(ui, repo, dest, opts):
+    ret = 1
+    if opts.get(b'subrepos'):
+        ctx = repo[None]
+        for subpath in sorted(ctx.substate):
+            sub = ctx.sub(subpath)
+            ret = min(ret, sub.outgoing(ui, dest, opts))
+    return ret
+
+
 def outgoing(ui, repo, dest, opts):
-    def recurse():
-        ret = 1
-        if opts.get(b'subrepos'):
-            ctx = repo[None]
-            for subpath in sorted(ctx.substate):
-                sub = ctx.sub(subpath)
-                ret = min(ret, sub.outgoing(ui, dest, opts))
-        return ret
 
     limit = logcmdutil.getlimit(opts)
     o, other = _outgoing(ui, repo, dest, opts)
@@ -1380,7 +1382,7 @@ def outgoing(ui, repo, dest, opts):
                 displayer.show(repo[n])
             displayer.close()
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
-        ret = min(ret, recurse())
+        ret = min(ret, _outgoing_recurse(ui, repo, dest, opts))
         return ret  # exit code is zero since we found outgoing changes
     finally:
         other.close()
