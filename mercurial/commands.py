@@ -4972,22 +4972,6 @@ def outgoing(ui, repo, dest=None, **opts):
         )
 
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'graph'):
-        logcmdutil.checkunsupportedgraphflags([], opts)
-        o, other = hg._outgoing(ui, repo, dest, opts)
-        if not o:
-            cmdutil.outgoinghooks(ui, repo, other, opts, o)
-            return
-
-        revdag = logcmdutil.graphrevs(repo, o, opts)
-        ui.pager(b'outgoing')
-        displayer = logcmdutil.changesetdisplayer(ui, repo, opts, buffered=True)
-        logcmdutil.displaygraph(
-            ui, repo, revdag, displayer, graphmod.asciiedges
-        )
-        cmdutil.outgoinghooks(ui, repo, other, opts, o)
-        return 0
-
     if opts.get(b'bookmarks'):
         dest = path.pushloc or path.loc
         other = hg.peer(repo, opts, dest)

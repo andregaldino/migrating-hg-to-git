@@ -32,6 +32,7 @@ from . import (
     error,
     exchange,
     extensions,
+    graphmod,
     httppeer,
     localrepo,
     lock,
@@ -1382,18 +1383,29 @@ def _outgoing_filter(repo, revs, opts):
 
 
 def outgoing(ui, repo, dest, opts):
-
+    if opts.get(b'graph'):
+        logcmdutil.checkunsupportedgraphflags([], opts)
     o, other = _outgoing(ui, repo, dest, opts)
     ret = 1
     try:
         if o:
             ret = 0
 
-            ui.pager(b'outgoing')
-            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
-            for n in _outgoing_filter(repo, o, opts):
-                displayer.show(repo[n])
-            displayer.close()
+            if opts.get(b'graph'):
+                revdag = logcmdutil.graphrevs(repo, o, opts)
+                ui.pager(b'outgoing')
+                displayer = logcmdutil.changesetdisplayer(
+                    ui, repo, opts, buffered=True
+                )
+                logcmdutil.displaygraph(
+                    ui, repo, revdag, displayer, graphmod.asciiedges
+                )
+            else:
+                ui.pager(b'outgoing')
+                displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
+                for n in _outgoing_filter(repo, o, opts):
+                    displayer.show(repo[n])
+                displayer.close()
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
         ret = min(ret, _outgoing_recurse(ui, repo, dest, opts))
         return ret  # exit code is zero since we found outgoing changes
