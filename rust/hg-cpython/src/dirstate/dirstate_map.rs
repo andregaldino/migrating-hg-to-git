@@ -10,7 +10,6 @@
 
 use std::cell::{Ref, RefCell};
 use std::convert::TryInto;
-use std::time::Duration;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
@@ -27,6 +26,7 @@ use crate::{
     parsers::dirstate_parents_to_pytuple,
 };
 use hg::{
+    dirstate::parsers::Timestamp,
     dirstate_tree::dispatch::DirstateMapMethods,
     errors::HgError,
     revlog::Node,
@@ -312,7 +312,7 @@ py_class!(pub class DirstateMap |py| {
         p2: PyObject,
         now: PyObject
     ) -> PyResult<PyBytes> {
-        let now = Duration::new(now.extract(py)?, 0);
+        let now = Timestamp(now.extract(py)?);
         let parents = DirstateParents {
             p1: extract_node_id(py, &p1)?,
             p2: extract_node_id(py, &p2)?,

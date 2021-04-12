@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::dirstate::parsers::Timestamp;
 use crate::errors::HgError;
 use crate::revlog::node::NULL_NODE;
 use crate::{
@@ -22,7 +23,6 @@ use std::collections::HashSet;
 use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::ops::Deref;
-use std::time::Duration;
 
 pub type FileFoldMap = FastHashMap<HgPathBuf, HgPathBuf>;
 
@@ -389,7 +389,7 @@ impl DirstateMap {
     pub fn pack(
         &mut self,
         parents: DirstateParents,
-        now: Duration,
+        now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         let packed =
             pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)?;

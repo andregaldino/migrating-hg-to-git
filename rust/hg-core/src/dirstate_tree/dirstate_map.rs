@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::time::Duration;
 
 use super::path_with_basename::WithBasename;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::parse_dirstate_parents;
+use crate::dirstate::parsers::Timestamp;
 
 use crate::matchers::Matcher;
 use crate::revlog::node::NULL_NODE;
@@ -328,7 +328,7 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     fn pack(
         &mut self,
         _parents: DirstateParents,
-        _now: Duration,
+        _now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         let _ = self.iter_node_data_mut();
         todo!()

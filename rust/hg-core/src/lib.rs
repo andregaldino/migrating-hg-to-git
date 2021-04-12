@@ -8,7 +8,7 @@ mod ancestors;
 pub mod dagops;
 pub mod errors;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
-mod dirstate;
+pub mod dirstate;
 pub mod dirstate_tree;
 pub mod discovery;
 pub mod requirements;

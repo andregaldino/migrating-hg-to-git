@@ -1,6 +1,6 @@
 use std::path::PathBuf;
-use std::time::Duration;
 
+use crate::dirstate::parsers::Timestamp;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::CopyMapIter;
@@ -90,7 +90,7 @@ pub trait DirstateMapMethods {
     fn pack(
         &mut self,
         parents: DirstateParents,
-        now: Duration,
+        now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError>;
 
     fn build_file_fold_map(&mut self) -> &FastHashMap<HgPathBuf, HgPathBuf>;
@@ -254,7 +254,7 @@ impl DirstateMapMethods for DirstateMap {
     fn pack(
         &mut self,
         parents: DirstateParents,
-        now: Duration,
+        now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         self.pack(parents, now)
     }

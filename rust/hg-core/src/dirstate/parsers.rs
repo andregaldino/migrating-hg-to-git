@@ -13,7 +13,6 @@ use byteorder::{BigEndian, WriteBytesExt};
 use bytes_cast::BytesCast;
 use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
-use std::time::Duration;
 
 /// Parents are stored in the dirstate as byte hashes.
 pub const PARENT_SIZE: usize = 20;
@@ -83,15 +82,17 @@ pub fn parse_dirstate_entries<'a>(
     Ok(parents)
 }
 
-/// `now` is the duration in seconds since the Unix epoch
+/// Seconds since the Unix epoch
+pub struct Timestamp(pub u64);
+
 pub fn pack_dirstate(
     state_map: &mut StateMap,
     copy_map: &CopyMap,
     parents: DirstateParents,
-    now: Duration,
+    now: Timestamp,
 ) -> Result<Vec<u8>, HgError> {
     // TODO move away from i32 before 2038.
-    let now: i32 = now.as_secs().try_into().expect("time overflow");
+    let now: i32 = now.0.try_into().expect("time overflow");
 
     let expected_size: usize = state_map
         .iter()
@@ -171,7 +172,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = b"1234567891011121314100000000000000000000".to_vec();
 
         assert_eq!(
@@ -202,7 +203,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = [
             49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
             51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -242,7 +243,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = [
             49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
             51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -282,7 +283,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
@@ -360,7 +361,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
@@ -406,7 +407,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();

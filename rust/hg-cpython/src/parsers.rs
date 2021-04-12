@@ -14,13 +14,13 @@ use cpython::{
     PythonObject, ToPyObject,
 };
 use hg::{
-    pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
-    DirstateParents, FastHashMap, PARENT_SIZE,
+    dirstate::parsers::Timestamp, pack_dirstate, parse_dirstate,
+    utils::hg_path::HgPathBuf, DirstateEntry, DirstateParents, FastHashMap,
+    PARENT_SIZE,
 };
 use std::convert::TryInto;
 
 use crate::dirstate::{extract_dirstate, make_dirstate_tuple};
-use std::time::Duration;
 
 fn parse_dirstate_wrapper(
     py: Python,
@@ -98,7 +98,7 @@ fn pack_dirstate_wrapper(
             p1: p1.try_into().unwrap(),
             p2: p2.try_into().unwrap(),
         },
-        Duration::from_secs(now.as_object().extract::<u64>(py)?),
+        Timestamp(now.as_object().extract::<u64>(py)?),
     ) {
         Ok(packed) => {
             for (filename, entry) in dirstate_map.iter() {
