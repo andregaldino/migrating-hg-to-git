@@ -30,6 +30,13 @@ pub struct DirstateMap {
     parents: Option<DirstateParents>,
     dirty_parents: bool,
     root: ChildNodes,
+
+    /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
+    nodes_with_entry_count: usize,
+
+    /// Number of nodes anywhere in the tree that have
+    /// `.copy_source.is_some()`.
+    nodes_with_copy_source_count: usize,
 }
 
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
@@ -59,6 +66,8 @@ impl DirstateMap {
             parents: None,
             dirty_parents: false,
             root: ChildNodes::new(),
+            nodes_with_entry_count: 0,
+            nodes_with_copy_source_count: 0,
         }
     }
 
@@ -78,8 +87,13 @@ impl DirstateMap {
         }
     }
 
-    fn get_or_insert_node(&mut self, path: &HgPath) -> &mut Node {
-        let mut child_nodes = &mut self.root;
+    /// This takes `root` instead of `&mut self` so that callers can mutate
+    /// other fields while the returned borrow is still valid
+    fn get_or_insert_node<'tree>(
+        root: &'tree mut ChildNodes,
+        path: &HgPath,
+    ) -> &'tree mut Node {
+        let mut child_nodes = root;
         let mut inclusive_ancestor_paths =
             WithBasename::inclusive_ancestors_of(path);
         let mut ancestor_path = inclusive_ancestor_paths
@@ -103,6 +117,35 @@ impl DirstateMap {
             } else {
                 return child_node;
             }
+        }
+    }
+
+    /// The meaning of `new_copy_source` is:
+    ///
+    /// * `Some(Some(x))`: set `Node::copy_source` to `Some(x)`
+    /// * `Some(None)`: set `Node::copy_source` to `None`
+    /// * `None`: leave `Node::copy_source` unchanged
+    fn add_file_node(
+        &mut self,
+        path: &HgPath,
+        new_entry: DirstateEntry,
+        new_copy_source: Option<Option<HgPathBuf>>,
+    ) {
+        let node = Self::get_or_insert_node(&mut self.root, path);
+        if node.entry.is_none() {
+            self.nodes_with_entry_count += 1
+        }
+        if let Some(source) = &new_copy_source {
+            if node.copy_source.is_none() && source.is_some() {
+                self.nodes_with_copy_source_count += 1
+            }
+            if node.copy_source.is_some() && source.is_none() {
+                self.nodes_with_copy_source_count -= 1
+            }
+        }
+        node.entry = Some(new_entry);
+        if let Some(source) = new_copy_source {
+            node.copy_source = source
         }
     }
 
@@ -194,7 +237,9 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
             p1: NULL_NODE,
             p2: NULL_NODE,
         });
-        self.root.clear()
+        self.root.clear();
+        self.nodes_with_entry_count = 0;
+        self.nodes_with_copy_source_count = 0;
     }
 
     fn add_file(
@@ -315,9 +360,11 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         let parents = parse_dirstate_entries(
             file_contents,
             |path, entry, copy_source| {
-                let node = self.get_or_insert_node(path);
-                node.entry = Some(*entry);
-                node.copy_source = copy_source.map(HgPath::to_owned);
+                self.add_file_node(
+                    path,
+                    *entry,
+                    Some(copy_source.map(HgPath::to_owned)),
+                )
             },
         )?;
 
@@ -393,7 +440,7 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn copy_map_len(&self) -> usize {
-        todo!()
+        self.nodes_with_copy_source_count
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
@@ -429,7 +476,7 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.nodes_with_entry_count
     }
 
     fn contains_key(&self, key: &HgPath) -> bool {
