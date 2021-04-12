@@ -5720,12 +5720,9 @@ def push(ui, repo, *dests, **opts):
                 # this lets simultaneous -r, -b options continue working
                 opts.setdefault(b'rev', []).append(b"null")
 
-    if not dests:
-        dests = [None]
     some_pushed = False
     result = 0
-    for dest in dests:
-        path = ui.getpath(dest, default=(b'default-push', b'default'))
+    for path in urlutil.get_push_paths(repo, ui, dests):
         if not path:
             raise error.ConfigError(
                 _(b'default repository not configured!'),

@@ -445,6 +445,14 @@ def removeauth(u):
     return bytes(u)
 
 
+def get_push_paths(repo, ui, dests):
+    """yields all the `path` selected as push destination by `dests`"""
+    if not dests:
+        dests = [None]
+    for dest in dests:
+        yield ui.getpath(dest, default=(b'default-push', b'default'))
+
+
 def parseurl(path, branches=None):
     '''parse url#branch, returning (url, (branch, branches))'''
     u = url(path)
