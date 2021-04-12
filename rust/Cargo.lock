@@ -64,9 +64,9 @@ checksum = "08c48aae112d48ed9f069b33538ea9e3e90aa263cfa3d1c24309612b1f7472de"
 
 [[package]]
 name = "bytes-cast"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3196ba300c7bc9282a4331e878496cb3e9603a898a8f1446601317163e16ca52"
+checksum = "0d434f9a4ecbe987e7ccfda7274b6f82ea52c9b63742565a65cb5e8ba0f2c452"
 dependencies = [
  "bytes-cast-derive",
 ]

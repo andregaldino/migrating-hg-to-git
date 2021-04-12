@@ -4,7 +4,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::HgError;
-use crate::utils::hg_path::HgPath;
+use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::{
     dirstate::{CopyMap, EntryState, RawEntry, StateMap},
     DirstateEntry, DirstateParents,
@@ -82,8 +82,70 @@ pub fn parse_dirstate_entries<'a>(
     Ok(parents)
 }
 
+fn packed_filename_and_copy_source_size(
+    filename: &HgPathBuf,
+    copy_source: Option<&HgPathBuf>,
+) -> usize {
+    filename.len()
+        + if let Some(source) = copy_source {
+            b"\0".len() + source.len()
+        } else {
+            0
+        }
+}
+
+pub fn packed_entry_size(
+    filename: &HgPathBuf,
+    copy_source: Option<&HgPathBuf>,
+) -> usize {
+    MIN_ENTRY_SIZE
+        + packed_filename_and_copy_source_size(filename, copy_source)
+}
+
+pub fn pack_entry(
+    filename: &HgPathBuf,
+    entry: &DirstateEntry,
+    copy_source: Option<&HgPathBuf>,
+    packed: &mut Vec<u8>,
+) {
+    let length = packed_filename_and_copy_source_size(filename, copy_source);
+
+    // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
+    packed.write_u8(entry.state.into()).unwrap();
+    packed.write_i32::<BigEndian>(entry.mode).unwrap();
+    packed.write_i32::<BigEndian>(entry.size).unwrap();
+    packed.write_i32::<BigEndian>(entry.mtime).unwrap();
+    packed.write_i32::<BigEndian>(length as i32).unwrap();
+    packed.extend(filename.as_bytes());
+    if let Some(source) = copy_source {
+        packed.push(b'\0');
+        packed.extend(source.as_bytes());
+    }
+}
+
 /// Seconds since the Unix epoch
 pub struct Timestamp(pub u64);
+
+pub fn clear_ambiguous_mtime(
+    entry: &mut DirstateEntry,
+    mtime_now: i32,
+) -> bool {
+    let ambiguous =
+        entry.state == EntryState::Normal && entry.mtime == mtime_now;
+    if ambiguous {
+        // The file was last modified "simultaneously" with the current
+        // write to dirstate (i.e. within the same second for file-
+        // systems with a granularity of 1 sec). This commonly happens
+        // for at least a couple of files on 'update'.
+        // The user could change the file without changing its size
+        // within the same second. Invalidate the file's mtime in
+        // dirstate, forcing future 'status' calls to compare the
+        // contents of the file if the size is the same. This prevents
+        // mistakenly treating such files as clean.
+        entry.mtime = -1;
+    }
+    ambiguous
+}
 
 pub fn pack_dirstate(
     state_map: &mut StateMap,
@@ -97,11 +159,7 @@ pub fn pack_dirstate(
     let expected_size: usize = state_map
         .iter()
         .map(|(filename, _)| {
-            let mut length = MIN_ENTRY_SIZE + filename.len();
-            if let Some(copy) = copy_map.get(filename) {
-                length += copy.len() + 1;
-            }
-            length
+            packed_entry_size(filename, copy_map.get(filename))
         })
         .sum();
     let expected_size = expected_size + PARENT_SIZE * 2;
@@ -112,39 +170,8 @@ pub fn pack_dirstate(
     packed.extend(parents.p2.as_bytes());
 
     for (filename, entry) in state_map.iter_mut() {
-        let new_filename = filename.to_owned();
-        let mut new_mtime: i32 = entry.mtime;
-        if entry.state == EntryState::Normal && entry.mtime == now {
-            // The file was last modified "simultaneously" with the current
-            // write to dirstate (i.e. within the same second for file-
-            // systems with a granularity of 1 sec). This commonly happens
-            // for at least a couple of files on 'update'.
-            // The user could change the file without changing its size
-            // within the same second. Invalidate the file's mtime in
-            // dirstate, forcing future 'status' calls to compare the
-            // contents of the file if the size is the same. This prevents
-            // mistakenly treating such files as clean.
-            new_mtime = -1;
-            *entry = DirstateEntry {
-                mtime: new_mtime,
-                ..*entry
-            };
-        }
-        let mut new_filename = new_filename.into_vec();
-        if let Some(copy) = copy_map.get(filename) {
-            new_filename.push(b'\0');
-            new_filename.extend(copy.bytes());
-        }
-
-        // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
-        packed.write_u8(entry.state.into()).unwrap();
-        packed.write_i32::<BigEndian>(entry.mode).unwrap();
-        packed.write_i32::<BigEndian>(entry.size).unwrap();
-        packed.write_i32::<BigEndian>(new_mtime).unwrap();
-        packed
-            .write_i32::<BigEndian>(new_filename.len() as i32)
-            .unwrap();
-        packed.extend(new_filename)
+        clear_ambiguous_mtime(entry, now);
+        pack_entry(filename, entry, copy_map.get(filename), &mut packed)
     }
 
     if packed.len() != expected_size {

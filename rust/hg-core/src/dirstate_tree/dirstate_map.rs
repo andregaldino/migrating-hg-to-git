@@ -1,11 +1,14 @@
-use std::collections::BTreeMap;
+use bytes_cast::BytesCast;
 use std::path::PathBuf;
+use std::{collections::BTreeMap, convert::TryInto};
 
 use super::path_with_basename::WithBasename;
+use crate::dirstate::parsers::clear_ambiguous_mtime;
+use crate::dirstate::parsers::pack_entry;
+use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::parse_dirstate_parents;
 use crate::dirstate::parsers::Timestamp;
-
 use crate::matchers::Matcher;
 use crate::revlog::node::NULL_NODE;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
@@ -327,11 +330,38 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
 
     fn pack(
         &mut self,
-        _parents: DirstateParents,
-        _now: Timestamp,
+        parents: DirstateParents,
+        now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
-        let _ = self.iter_node_data_mut();
-        todo!()
+        // Optizimation (to be measured?): pre-compute size to avoid `Vec`
+        // reallocations
+        let mut size = parents.as_bytes().len();
+        for (path, node) in self.iter_nodes() {
+            if node.entry.is_some() {
+                size += packed_entry_size(
+                    path.full_path(),
+                    node.copy_source.as_ref(),
+                )
+            }
+        }
+
+        let mut packed = Vec::with_capacity(size);
+        packed.extend(parents.as_bytes());
+
+        let now: i32 = now.0.try_into().expect("time overflow");
+        for (path, opt_entry, copy_source) in self.iter_node_data_mut() {
+            if let Some(entry) = opt_entry {
+                clear_ambiguous_mtime(entry, now);
+                pack_entry(
+                    path.full_path(),
+                    entry,
+                    copy_source.as_ref(),
+                    &mut packed,
+                );
+            }
+        }
+        self.dirty_parents = false;
+        Ok(packed)
     }
 
     fn build_file_fold_map(&mut self) -> &FastHashMap<HgPathBuf, HgPathBuf> {
