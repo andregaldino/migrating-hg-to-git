@@ -89,6 +89,25 @@ impl DirstateMap {
 
     /// This takes `root` instead of `&mut self` so that callers can mutate
     /// other fields while the returned borrow is still valid
+    fn get_node_mut<'tree>(
+        root: &'tree mut ChildNodes,
+        path: &HgPath,
+    ) -> Option<&'tree mut Node> {
+        let mut children = root;
+        let mut components = path.components();
+        let mut component =
+            components.next().expect("expected at least one components");
+        loop {
+            let child = children.get_mut(component)?;
+            if let Some(next_component) = components.next() {
+                component = next_component;
+                children = &mut child.children;
+            } else {
+                return Some(child);
+            }
+        }
+    }
+
     fn get_or_insert_node<'tree>(
         root: &'tree mut ChildNodes,
         path: &HgPath,
@@ -463,16 +482,26 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         self.get_node(key)?.copy_source.as_ref()
     }
 
-    fn copy_map_remove(&mut self, _key: &HgPath) -> Option<HgPathBuf> {
-        todo!()
+    fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf> {
+        let count = &mut self.nodes_with_copy_source_count;
+        Self::get_node_mut(&mut self.root, key).and_then(|node| {
+            if node.copy_source.is_some() {
+                *count -= 1
+            }
+            node.copy_source.take()
+        })
     }
 
     fn copy_map_insert(
         &mut self,
-        _key: HgPathBuf,
-        _value: HgPathBuf,
+        key: HgPathBuf,
+        value: HgPathBuf,
     ) -> Option<HgPathBuf> {
-        todo!()
+        let node = Self::get_or_insert_node(&mut self.root, &key);
+        if node.copy_source.is_none() {
+            self.nodes_with_copy_source_count += 1
+        }
+        node.copy_source.replace(value)
     }
 
     fn len(&self) -> usize {
