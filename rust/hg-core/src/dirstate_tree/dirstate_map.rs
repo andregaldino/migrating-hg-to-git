@@ -287,12 +287,14 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         todo!()
     }
 
-    fn clear_ambiguous_times(
-        &mut self,
-        _filenames: Vec<HgPathBuf>,
-        _now: i32,
-    ) {
-        todo!()
+    fn clear_ambiguous_times(&mut self, filenames: Vec<HgPathBuf>, now: i32) {
+        for filename in filenames {
+            if let Some(node) = Self::get_node_mut(&mut self.root, &filename) {
+                if let Some(entry) = node.entry.as_mut() {
+                    clear_ambiguous_mtime(entry, now);
+                }
+            }
+        }
     }
 
     fn non_normal_entries_contains(&mut self, _key: &HgPath) -> bool {

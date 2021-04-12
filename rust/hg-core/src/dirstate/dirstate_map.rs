@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::Timestamp;
 use crate::errors::HgError;
 use crate::revlog::node::NULL_NODE;
@@ -188,20 +189,12 @@ impl DirstateMap {
         now: i32,
     ) {
         for filename in filenames {
-            let mut changed = false;
             if let Some(entry) = self.state_map.get_mut(&filename) {
-                if entry.state == EntryState::Normal && entry.mtime == now {
-                    changed = true;
-                    *entry = DirstateEntry {
-                        mtime: MTIME_UNSET,
-                        ..*entry
-                    };
+                if clear_ambiguous_mtime(entry, now) {
+                    self.get_non_normal_other_parent_entries()
+                        .0
+                        .insert(filename.to_owned());
                 }
-            }
-            if changed {
-                self.get_non_normal_other_parent_entries()
-                    .0
-                    .insert(filename.to_owned());
             }
         }
     }
