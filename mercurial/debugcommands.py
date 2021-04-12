@@ -1060,7 +1060,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     if not remote_revs:
 
-        remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
+        remoteurl, branches = urlutil.parseurl(ui.expandpath(remoteurl))
         remote = hg.peer(repo, opts, remoteurl)
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
     else:
@@ -3652,7 +3652,7 @@ def debugssl(ui, repo, source=None, **opts):
             )
         source = b"default"
 
-    source, branches = hg.parseurl(ui.expandpath(source))
+    source, branches = urlutil.parseurl(ui.expandpath(source))
     url = urlutil.url(source)
 
     defaultport = {b'https': 443, b'ssh': 22}
@@ -3762,7 +3762,7 @@ def debugbackupbundle(ui, repo, *pats, **opts):
     for backup in backups:
         # Much of this is copied from the hg incoming logic
         source = ui.expandpath(os.path.relpath(backup, encoding.getcwd()))
-        source, branches = hg.parseurl(source, opts.get(b"branch"))
+        source, branches = urlutil.parseurl(source, opts.get(b"branch"))
         try:
             other = hg.peer(repo, opts, source)
         except error.LookupError as ex:

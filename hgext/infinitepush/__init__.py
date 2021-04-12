@@ -116,6 +116,7 @@ from mercurial.pycompat import (
 from mercurial.utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 from mercurial import (
@@ -683,7 +684,9 @@ def _lookupwrap(orig):
 def _pull(orig, ui, repo, source=b"default", **opts):
     opts = pycompat.byteskwargs(opts)
     # Copy paste from `pull` command
-    source, branches = hg.parseurl(ui.expandpath(source), opts.get(b'branch'))
+    source, branches = urlutil.parseurl(
+        ui.expandpath(source), opts.get(b'branch')
+    )
 
     scratchbookmarks = {}
     unfi = repo.unfiltered()

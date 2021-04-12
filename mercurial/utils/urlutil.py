@@ -445,6 +445,16 @@ def removeauth(u):
     return bytes(u)
 
 
+def parseurl(path, branches=None):
+    '''parse url#branch, returning (url, (branch, branches))'''
+    u = url(path)
+    branch = None
+    if u.fragment:
+        branch = u.fragment
+        u.fragment = None
+    return bytes(u), (branch, branches or [])
+
+
 class paths(dict):
     """Represents a collection of paths and their configs.
 

@@ -43,12 +43,12 @@ def openstore(repo=None, remote=None, put=False, ui=None):
         # meaning the current directory.
         if repo is None:
             path = ui.expandpath(b'default')
-            path, _branches = hg.parseurl(path)
+            path, _branches = urlutil.parseurl(path)
             remote = hg.peer(repo or ui, {}, path)
         elif path == b'default-push' or path == b'default':
             remote = repo
         else:
-            path, _branches = hg.parseurl(path)
+            path, _branches = urlutil.parseurl(path)
             remote = hg.peer(repo or ui, {}, path)
 
     # The path could be a scheme so use Mercurial's normal functionality

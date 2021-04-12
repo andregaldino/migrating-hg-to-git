@@ -132,13 +132,9 @@ def addbranchrevs(lrepo, other, branches, revs):
 
 def parseurl(path, branches=None):
     '''parse url#branch, returning (url, (branch, branches))'''
-
-    u = urlutil.url(path)
-    branch = None
-    if u.fragment:
-        branch = u.fragment
-        u.fragment = None
-    return bytes(u), (branch, branches or [])
+    msg = b'parseurl(...) moved to mercurial.utils.urlutil'
+    util.nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.parseurl(path, branches=branches)
 
 
 schemes = {
@@ -285,7 +281,7 @@ def sharedreposource(repo):
 
     # the sharedpath always ends in the .hg; we want the path to the repo
     source = repo.vfs.split(repo.sharedpath)[0]
-    srcurl, branches = parseurl(source)
+    srcurl, branches = urlutil.parseurl(source)
     srcrepo = repository(repo.ui, srcurl)
     repo.srcrepo = srcrepo
     return srcrepo
@@ -312,7 +308,7 @@ def share(
 
     if isinstance(source, bytes):
         origsource = ui.expandpath(source)
-        source, branches = parseurl(origsource)
+        source, branches = urlutil.parseurl(origsource)
         srcrepo = repository(ui, source)
         rev, checkout = addbranchrevs(srcrepo, srcrepo, branches, None)
     else:
@@ -676,7 +672,7 @@ def clone(
 
     if isinstance(source, bytes):
         origsource = ui.expandpath(source)
-        source, branches = parseurl(origsource, branch)
+        source, branches = urlutil.parseurl(origsource, branch)
         srcpeer = peer(ui, peeropts, source)
     else:
         srcpeer = source.peer()  # in case we were called with a localrepo
@@ -1266,7 +1262,9 @@ def _incoming(
         (remoterepo, incomingchangesetlist, displayer) parameters,
     and is supposed to contain only code that can't be unified.
     """
-    source, branches = parseurl(ui.expandpath(source), opts.get(b'branch'))
+    source, branches = urlutil.parseurl(
+        ui.expandpath(source), opts.get(b'branch')
+    )
     other = peer(repo, opts, source)
     cleanupfn = other.close
     try:

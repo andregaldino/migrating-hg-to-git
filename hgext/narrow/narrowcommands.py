@@ -594,7 +594,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         # be used for finding local-only changes for narrowing. They will
         # also define the set of revisions to update for widening.
         remotepath = ui.expandpath(remotepath or b'default')
-        url, branches = hg.parseurl(remotepath)
+        url, branches = urlutil.parseurl(remotepath)
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
         remote = hg.peer(repo, opts, url)
 

@@ -531,7 +531,7 @@ def _getoutgoing(repo, dest, revs):
     '''Return the revisions present locally but not in dest'''
     ui = repo.ui
     url = ui.expandpath(dest or b'default-push', dest or b'default')
-    url = hg.parseurl(url)[0]
+    url = urlutil.parseurl(url)[0]
     ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
 
     revs = [r for r in revs if r >= 0]

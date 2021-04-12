@@ -1614,7 +1614,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         outgoing = discovery.outgoing(repo, common, heads)
     else:
         dest = ui.expandpath(dest or b'default-push', dest or b'default')
-        dest, branches = hg.parseurl(dest, opts.get(b'branch'))
+        dest, branches = urlutil.parseurl(dest, opts.get(b'branch'))
         other = hg.peer(repo, opts, dest)
         revs = [repo[r].hex() for r in revs]
         revs, checkout = hg.addbranchrevs(repo, repo, branches, revs)
@@ -3841,7 +3841,7 @@ def identify(
     peer = None
     try:
         if source:
-            source, branches = hg.parseurl(ui.expandpath(source))
+            source, branches = urlutil.parseurl(ui.expandpath(source))
             # only pass ui when no repo
             peer = hg.peer(repo or ui, opts, source)
             repo = peer.local()
@@ -4311,7 +4311,7 @@ def incoming(ui, repo, source=b"default", **opts):
     cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
-        source, branches = hg.parseurl(
+        source, branches = urlutil.parseurl(
             ui.expandpath(source), opts.get(b'branch')
         )
         other = hg.peer(repo, opts, source)
@@ -5390,7 +5390,7 @@ def pull(ui, repo, *sources, **opts):
     if not sources:
         sources = [b'default']
     for source in sources:
-        source, branches = hg.parseurl(
+        source, branches = urlutil.parseurl(
             ui.expandpath(source), opts.get(b'branch')
         )
         ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(source))
@@ -7225,7 +7225,7 @@ def summary(ui, repo, **opts):
             return
 
     def getincoming():
-        source, branches = hg.parseurl(ui.expandpath(b'default'))
+        source, branches = urlutil.parseurl(ui.expandpath(b'default'))
         sbranch = branches[0]
         try:
             other = hg.peer(repo, {}, source)
@@ -7248,7 +7248,9 @@ def summary(ui, repo, **opts):
         source = sbranch = sother = commoninc = incoming = None
 
     def getoutgoing():
-        dest, branches = hg.parseurl(ui.expandpath(b'default-push', b'default'))
+        dest, branches = urlutil.parseurl(
+            ui.expandpath(b'default-push', b'default')
+        )
         dbranch = branches[0]
         revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
         if source != dest:

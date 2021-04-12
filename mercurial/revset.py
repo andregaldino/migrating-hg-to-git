@@ -41,6 +41,7 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 # helpers for processing parsed tree
@@ -2122,7 +2123,7 @@ def remote(repo, subset, x):
         # i18n: "remote" is a keyword
         dest = getstring(l[1], _(b"remote requires a repository path"))
     dest = repo.ui.expandpath(dest or b'default')
-    dest, branches = hg.parseurl(dest)
+    dest, branches = urlutil.parseurl(dest)
 
     other = hg.peer(repo, {}, dest)
     n = other.lookup(q)

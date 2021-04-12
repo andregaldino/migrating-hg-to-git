@@ -1042,7 +1042,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     if opts is None:
         opts = {}
     dest = ui.expandpath(remote or b'default-push', remote or b'default')
-    dest, branches = hg.parseurl(dest, None)[:2]
+    dest, branches = urlutil.parseurl(dest, None)[:2]
     ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
 
     revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
