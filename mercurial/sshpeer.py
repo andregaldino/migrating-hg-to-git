@@ -24,6 +24,7 @@ from . import (
 from .utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -662,11 +663,11 @@ def instance(ui, path, create, intents=None, createopts=None):
 
     The returned object conforms to the ``wireprotov1peer.wirepeer`` interface.
     """
-    u = util.url(path, parsequery=False, parsefragment=False)
+    u = urlutil.url(path, parsequery=False, parsefragment=False)
     if u.scheme != b'ssh' or not u.host or u.path is None:
         raise error.RepoError(_(b"couldn't parse location %s") % path)
 
-    util.checksafessh(path)
+    urlutil.checksafessh(path)
 
     if u.passwd is not None:
         raise error.RepoError(_(b'password in URL not supported'))

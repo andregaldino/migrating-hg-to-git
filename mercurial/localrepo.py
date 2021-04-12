@@ -85,6 +85,7 @@ from .utils import (
     hashutil,
     procutil,
     stringutil,
+    urlutil,
 )
 
 from .revlogutils import (
@@ -3404,7 +3405,7 @@ def undoname(fn):
 
 
 def instance(ui, path, create, intents=None, createopts=None):
-    localpath = util.urllocalpath(path)
+    localpath = urlutil.urllocalpath(path)
     if create:
         createrepository(ui, localpath, createopts=createopts)
 

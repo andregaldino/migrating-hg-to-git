@@ -52,7 +52,9 @@ from mercurial import (
     pycompat,
     registrar,
     templater,
-    util,
+)
+from mercurial.utils import (
+    urlutil,
 )
 
 cmdtable = {}
@@ -86,7 +88,7 @@ class ShortRepository(object):
         )
 
     def resolve(self, url):
-        # Should this use the util.url class, or is manual parsing better?
+        # Should this use the urlutil.url class, or is manual parsing better?
         try:
             url = url.split(b'://', 1)[1]
         except IndexError:
@@ -137,7 +139,7 @@ def extsetup(ui):
             )
         hg.schemes[scheme] = ShortRepository(url, scheme, t)
 
-    extensions.wrapfunction(util, b'hasdriveletter', hasdriveletter)
+    extensions.wrapfunction(urlutil, b'hasdriveletter', hasdriveletter)
 
 
 @command(b'debugexpandscheme', norepo=True)

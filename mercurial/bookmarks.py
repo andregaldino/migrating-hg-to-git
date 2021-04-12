@@ -27,6 +27,9 @@ from . import (
     txnutil,
     util,
 )
+from .utils import (
+    urlutil,
+)
 
 # label constants
 # until 3.5, bookmarks.current was the advertised name, not
@@ -597,10 +600,10 @@ def _diverge(ui, b, path, localmarks, remotenode):
     # try to use an @pathalias suffix
     # if an @pathalias already exists, we overwrite (update) it
     if path.startswith(b"file:"):
-        path = util.url(path).path
+        path = urlutil.url(path).path
     for p, u in ui.configitems(b"paths"):
         if u.startswith(b"file:"):
-            u = util.url(u).path
+            u = urlutil.url(u).path
         if path == u:
             return b'%s@%s' % (b, p)
 

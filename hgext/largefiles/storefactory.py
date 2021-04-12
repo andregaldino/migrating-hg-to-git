@@ -12,6 +12,9 @@ from mercurial import (
     hg,
     util,
 )
+from mercurial.utils import (
+    urlutil,
+)
 
 from . import (
     lfutil,
@@ -71,7 +74,7 @@ def openstore(repo=None, remote=None, put=False, ui=None):
 
     raise error.Abort(
         _(b'%s does not appear to be a largefile store')
-        % util.hidepassword(path)
+        % urlutil.hidepassword(path)
     )
 
 

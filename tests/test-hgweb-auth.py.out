@@ -211,7 +211,7 @@ CFG: {b'y.password': b'ypassword', b'y.prefix': b'http://y@example.org/foo'}
 URI: http://example.org/foo
      abort
 
-*** Test urllib2 and util.url
+*** Test urllib2 and urlutil.url
 
 URIs: http://user@example.com:8080/foo http://example.com:8080/foo
 ('user', '')

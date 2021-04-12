@@ -74,6 +74,7 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 if pycompat.TYPE_CHECKING:
@@ -4319,7 +4320,7 @@ def incoming(ui, repo, source=b"default", **opts):
                 ui.warn(_(b"remote doesn't support bookmarks\n"))
                 return 0
             ui.pager(b'incoming')
-            ui.status(_(b'comparing with %s\n') % util.hidepassword(source))
+            ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(source))
             return bookmarks.incoming(ui, repo, other)
         finally:
             other.close()
@@ -4994,7 +4995,7 @@ def outgoing(ui, repo, dest=None, **opts):
             if b'bookmarks' not in other.listkeys(b'namespaces'):
                 ui.warn(_(b"remote doesn't support bookmarks\n"))
                 return 0
-            ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
+            ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
             ui.pager(b'outgoing')
             return bookmarks.outgoing(ui, repo, other)
         finally:
@@ -5142,7 +5143,7 @@ def paths(ui, repo, search=None, **opts):
 
     fm = ui.formatter(b'paths', opts)
     if fm.isplain():
-        hidepassword = util.hidepassword
+        hidepassword = urlutil.hidepassword
     else:
         hidepassword = bytes
     if ui.quiet:
@@ -5392,7 +5393,7 @@ def pull(ui, repo, *sources, **opts):
         source, branches = hg.parseurl(
             ui.expandpath(source), opts.get(b'branch')
         )
-        ui.status(_(b'pulling from %s\n') % util.hidepassword(source))
+        ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(source))
         ui.flush()
         other = hg.peer(repo, opts, source)
         update_conflict = None
@@ -5732,7 +5733,7 @@ def push(ui, repo, *dests, **opts):
             )
         dest = path.pushloc or path.loc
         branches = (path.branch, opts.get(b'branch') or [])
-        ui.status(_(b'pushing to %s\n') % util.hidepassword(dest))
+        ui.status(_(b'pushing to %s\n') % urlutil.hidepassword(dest))
         revs, checkout = hg.addbranchrevs(
             repo, repo, branches, opts.get(b'rev')
         )
@@ -7235,7 +7236,7 @@ def summary(ui, repo, **opts):
         revs, checkout = hg.addbranchrevs(repo, other, branches, None)
         if revs:
             revs = [other.lookup(rev) for rev in revs]
-        ui.debug(b'comparing with %s\n' % util.hidepassword(source))
+        ui.debug(b'comparing with %s\n' % urlutil.hidepassword(source))
         repo.ui.pushbuffer()
         commoninc = discovery.findcommonincoming(repo, other, heads=revs)
         repo.ui.popbuffer()
@@ -7257,7 +7258,7 @@ def summary(ui, repo, **opts):
                 if opts.get(b'remote'):
                     raise
                 return dest, dbranch, None, None
-            ui.debug(b'comparing with %s\n' % util.hidepassword(dest))
+            ui.debug(b'comparing with %s\n' % urlutil.hidepassword(dest))
         elif sother is None:
             # there is no explicit destination peer, but source one is invalid
             return dest, dbranch, None, None
@@ -7599,7 +7600,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
             try:
                 txnname = b'unbundle'
                 if not isinstance(gen, bundle2.unbundle20):
-                    txnname = b'unbundle\n%s' % util.hidepassword(url)
+                    txnname = b'unbundle\n%s' % urlutil.hidepassword(url)
                 with repo.transaction(txnname) as tr:
                     op = bundle2.applybundle(
                         repo, gen, tr, source=b'unbundle', url=url

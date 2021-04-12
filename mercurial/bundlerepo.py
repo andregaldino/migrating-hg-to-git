@@ -43,6 +43,9 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    urlutil,
+)
 
 
 class bundlerevlog(revlog.revlog):
@@ -475,7 +478,7 @@ def instance(ui, path, create, intents=None, createopts=None):
             cwd = pathutil.normasprefix(cwd)
             if parentpath.startswith(cwd):
                 parentpath = parentpath[len(cwd) :]
-    u = util.url(path)
+    u = urlutil.url(path)
     path = u.localpath()
     if u.scheme == b'bundle':
         s = path.split(b"+", 1)

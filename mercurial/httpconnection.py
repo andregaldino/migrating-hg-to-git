@@ -18,6 +18,10 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    urlutil,
+)
+
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -99,7 +103,7 @@ def readauthforuri(ui, uri, user):
         if not prefix:
             continue
 
-        prefixurl = util.url(prefix)
+        prefixurl = urlutil.url(prefix)
         if prefixurl.user and prefixurl.user != user:
             # If a username was set in the prefix, it must match the username in
             # the URI.

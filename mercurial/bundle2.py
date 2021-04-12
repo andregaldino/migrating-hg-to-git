@@ -177,7 +177,10 @@ from . import (
     url,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -2073,7 +2076,7 @@ def handleremotechangegroup(op, inpart):
         raw_url = inpart.params[b'url']
     except KeyError:
         raise error.Abort(_(b'remote-changegroup: missing "%s" param') % b'url')
-    parsed_url = util.url(raw_url)
+    parsed_url = urlutil.url(raw_url)
     if parsed_url.scheme not in capabilities[b'remote-changegroup']:
         raise error.Abort(
             _(b'remote-changegroup does not support %s urls')
@@ -2110,7 +2113,7 @@ def handleremotechangegroup(op, inpart):
     cg = exchange.readbundle(op.repo.ui, real_part, raw_url)
     if not isinstance(cg, changegroup.cg1unpacker):
         raise error.Abort(
-            _(b'%s: not a bundle version 1.0') % util.hidepassword(raw_url)
+            _(b'%s: not a bundle version 1.0') % urlutil.hidepassword(raw_url)
         )
     ret = _processchangegroup(op, cg, tr, op.source, b'bundle2')
     if op.reply is not None:
@@ -2126,7 +2129,7 @@ def handleremotechangegroup(op, inpart):
     except error.Abort as e:
         raise error.Abort(
             _(b'bundle at %s is corrupted:\n%s')
-            % (util.hidepassword(raw_url), e.message)
+            % (urlutil.hidepassword(raw_url), e.message)
         )
     assert not inpart.read()
 

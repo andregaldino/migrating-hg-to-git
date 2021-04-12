@@ -12,6 +12,9 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 
 from mercurial import node, util
+from mercurial.utils import (
+    urlutil,
+)
 
 from . import lfutil
 
@@ -29,13 +32,13 @@ class StoreError(Exception):
     def longmessage(self):
         return _(b"error getting id %s from url %s for file %s: %s\n") % (
             self.hash,
-            util.hidepassword(self.url),
+            urlutil.hidepassword(self.url),
             self.filename,
             self.detail,
         )
 
     def __str__(self):
-        return b"%s: %s" % (util.hidepassword(self.url), self.detail)
+        return b"%s: %s" % (urlutil.hidepassword(self.url), self.detail)
 
 
 class basestore(object):
@@ -79,7 +82,7 @@ class basestore(object):
                 if not available.get(hash):
                     ui.warn(
                         _(b'%s: largefile %s not available from %s\n')
-                        % (filename, hash, util.hidepassword(self.url))
+                        % (filename, hash, urlutil.hidepassword(self.url))
                     )
                     missing.append(filename)
                     continue

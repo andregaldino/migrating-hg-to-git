@@ -44,6 +44,7 @@ from .utils import (
     dateutil,
     hashutil,
     procutil,
+    urlutil,
 )
 
 hg = None
@@ -57,8 +58,8 @@ def _expandedabspath(path):
     """
     get a path or url and if it is a path expand it and return an absolute path
     """
-    expandedpath = util.urllocalpath(util.expandpath(path))
-    u = util.url(expandedpath)
+    expandedpath = urlutil.urllocalpath(util.expandpath(path))
+    u = urlutil.url(expandedpath)
     if not u.scheme:
         path = util.normpath(os.path.abspath(u.path))
     return path
@@ -745,7 +746,7 @@ class hgsubrepo(abstractsubrepo):
 
                 self.ui.status(
                     _(b'cloning subrepo %s from %s\n')
-                    % (subrelpath(self), util.hidepassword(srcurl))
+                    % (subrelpath(self), urlutil.hidepassword(srcurl))
                 )
                 peer = getpeer()
                 try:
@@ -765,7 +766,7 @@ class hgsubrepo(abstractsubrepo):
         else:
             self.ui.status(
                 _(b'pulling subrepo %s from %s\n')
-                % (subrelpath(self), util.hidepassword(srcurl))
+                % (subrelpath(self), urlutil.hidepassword(srcurl))
             )
             cleansub = self.storeclean(srcurl)
             peer = getpeer()
@@ -849,12 +850,12 @@ class hgsubrepo(abstractsubrepo):
             if self.storeclean(dsturl):
                 self.ui.status(
                     _(b'no changes made to subrepo %s since last push to %s\n')
-                    % (subrelpath(self), util.hidepassword(dsturl))
+                    % (subrelpath(self), urlutil.hidepassword(dsturl))
                 )
                 return None
         self.ui.status(
             _(b'pushing subrepo %s to %s\n')
-            % (subrelpath(self), util.hidepassword(dsturl))
+            % (subrelpath(self), urlutil.hidepassword(dsturl))
         )
         other = hg.peer(self._repo, {b'ssh': ssh}, dsturl)
         try:
@@ -1284,7 +1285,7 @@ class svnsubrepo(abstractsubrepo):
         args.append(b'%s@%s' % (state[0], state[1]))
 
         # SEC: check that the ssh url is safe
-        util.checksafessh(state[0])
+        urlutil.checksafessh(state[0])
 
         status, err = self._svncommand(args, failok=True)
         _sanitize(self.ui, self.wvfs, b'.svn')
@@ -1582,7 +1583,7 @@ class gitsubrepo(abstractsubrepo):
     def _fetch(self, source, revision):
         if self._gitmissing():
             # SEC: check for safe ssh url
-            util.checksafessh(source)
+            urlutil.checksafessh(source)
 
             source = self._abssource(source)
             self.ui.status(

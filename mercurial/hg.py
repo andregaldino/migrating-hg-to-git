@@ -55,6 +55,7 @@ from . import (
 from .utils import (
     hashutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -65,7 +66,7 @@ sharedbookmarks = b'bookmarks'
 
 
 def _local(path):
-    path = util.expandpath(util.urllocalpath(path))
+    path = util.expandpath(urlutil.urllocalpath(path))
 
     try:
         # we use os.stat() directly here instead of os.path.isfile()
@@ -132,7 +133,7 @@ def addbranchrevs(lrepo, other, branches, revs):
 def parseurl(path, branches=None):
     '''parse url#branch, returning (url, (branch, branches))'''
 
-    u = util.url(path)
+    u = urlutil.url(path)
     branch = None
     if u.fragment:
         branch = u.fragment
@@ -152,7 +153,7 @@ schemes = {
 
 
 def _peerlookup(path):
-    u = util.url(path)
+    u = urlutil.url(path)
     scheme = u.scheme or b'file'
     thing = schemes.get(scheme) or schemes[b'file']
     try:
@@ -177,7 +178,7 @@ def islocal(repo):
 
 def openpath(ui, path, sendaccept=True):
     '''open path with open if local, url.open if remote'''
-    pathurl = util.url(path, parsequery=False, parsefragment=False)
+    pathurl = urlutil.url(path, parsequery=False, parsefragment=False)
     if pathurl.islocal():
         return util.posixfile(pathurl.localpath(), b'rb')
     else:
@@ -265,7 +266,7 @@ def defaultdest(source):
     >>> defaultdest(b'http://example.org/foo/')
     'foo'
     """
-    path = util.url(source).path
+    path = urlutil.url(source).path
     if not path:
         return b''
     return os.path.basename(os.path.normpath(path))
@@ -571,7 +572,7 @@ def clonewithshare(
 
     # Resolve the value to put in [paths] section for the source.
     if islocal(source):
-        defaultpath = os.path.abspath(util.urllocalpath(source))
+        defaultpath = os.path.abspath(urlutil.urllocalpath(source))
     else:
         defaultpath = source
 
@@ -693,8 +694,8 @@ def clone(
         else:
             dest = ui.expandpath(dest)
 
-        dest = util.urllocalpath(dest)
-        source = util.urllocalpath(source)
+        dest = urlutil.urllocalpath(dest)
+        source = urlutil.urllocalpath(source)
 
         if not dest:
             raise error.InputError(_(b"empty destination path is not valid"))
@@ -825,7 +826,7 @@ def clone(
 
         abspath = origsource
         if islocal(origsource):
-            abspath = os.path.abspath(util.urllocalpath(origsource))
+            abspath = os.path.abspath(urlutil.urllocalpath(origsource))
 
         if islocal(dest):
             cleandir = dest
@@ -939,7 +940,7 @@ def clone(
                         local.setnarrowpats(storeincludepats, storeexcludepats)
                         narrowspec.copytoworkingcopy(local)
 
-                u = util.url(abspath)
+                u = urlutil.url(abspath)
                 defaulturl = bytes(u)
                 local.ui.setconfig(b'paths', b'default', defaulturl, b'clone')
                 if not stream:
@@ -986,7 +987,7 @@ def clone(
         destrepo = destpeer.local()
         if destrepo:
             template = uimod.samplehgrcs[b'cloned']
-            u = util.url(abspath)
+            u = urlutil.url(abspath)
             u.passwd = None
             defaulturl = bytes(u)
             destrepo.vfs.write(b'hgrc', util.tonativeeol(template % defaulturl))
@@ -1269,7 +1270,7 @@ def _incoming(
     other = peer(repo, opts, source)
     cleanupfn = other.close
     try:
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(source))
+        ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(source))
         revs, checkout = addbranchrevs(repo, other, branches, opts.get(b'rev'))
 
         if revs:
@@ -1330,7 +1331,7 @@ def _outgoing(ui, repo, dest, opts):
     dest = path.pushloc or path.loc
     branches = path.branch, opts.get(b'branch') or []
 
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
+    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
     revs, checkout = addbranchrevs(repo, repo, branches, opts.get(b'rev'))
     if revs:
         revs = [repo[rev].node() for rev in scmutil.revrange(repo, revs)]

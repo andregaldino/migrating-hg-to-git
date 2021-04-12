@@ -99,7 +99,10 @@ from mercurial import (
     templater,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    urlutil,
+)
 
 stringio = util.stringio
 
@@ -529,7 +532,7 @@ def _getoutgoing(repo, dest, revs):
     ui = repo.ui
     url = ui.expandpath(dest or b'default-push', dest or b'default')
     url = hg.parseurl(url)[0]
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(url))
+    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
 
     revs = [r for r in revs if r >= 0]
     if not revs:

@@ -22,7 +22,10 @@ from . import (
     util,
 )
 
-from .utils import procutil
+from .utils import (
+    procutil,
+    urlutil,
+)
 
 
 def runservice(
@@ -184,7 +187,7 @@ def _createcmdservice(ui, repo, opts):
 def _createhgwebservice(ui, repo, opts):
     # this way we can check if something was given in the command-line
     if opts.get(b'port'):
-        opts[b'port'] = util.getport(opts.get(b'port'))
+        opts[b'port'] = urlutil.getport(opts.get(b'port'))
 
     alluis = {ui}
     if repo:

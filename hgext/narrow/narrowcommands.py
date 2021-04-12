@@ -36,6 +36,9 @@ from mercurial import (
     util,
     wireprototypes,
 )
+from mercurial.utils import (
+    urlutil,
+)
 
 table = {}
 command = registrar.command(table)
@@ -592,7 +595,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         # also define the set of revisions to update for widening.
         remotepath = ui.expandpath(remotepath or b'default')
         url, branches = hg.parseurl(remotepath)
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(url))
+        ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
         remote = hg.peer(repo, opts, url)
 
         try:

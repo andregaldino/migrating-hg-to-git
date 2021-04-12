@@ -108,6 +108,7 @@ from mercurial import (
 from mercurial.utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 release = lockmod.release
@@ -2509,7 +2510,7 @@ class queue(object):
                     )
                 filename = normname(filename)
                 self.checkreservedname(filename)
-                if util.url(filename).islocal():
+                if urlutil.url(filename).islocal():
                     originpath = self.join(filename)
                     if not os.path.isfile(originpath):
                         raise error.Abort(

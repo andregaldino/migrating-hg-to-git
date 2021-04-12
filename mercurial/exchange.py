@@ -42,6 +42,7 @@ from . import (
 from .utils import (
     hashutil,
     stringutil,
+    urlutil,
 )
 
 urlerr = util.urlerr
@@ -1465,7 +1466,7 @@ class transactionmanager(util.transactional):
     def transaction(self):
         """Return an open transaction object, constructing if necessary"""
         if not self._tr:
-            trname = b'%s\n%s' % (self.source, util.hidepassword(self.url))
+            trname = b'%s\n%s' % (self.source, urlutil.hidepassword(self.url))
             self._tr = self.repo.transaction(trname)
             self._tr.hookargs[b'source'] = self.source
             self._tr.hookargs[b'url'] = self.url
@@ -2647,7 +2648,7 @@ def unbundle(repo, cg, heads, source, url):
         # push can proceed
         if not isinstance(cg, bundle2.unbundle20):
             # legacy case: bundle1 (changegroup 01)
-            txnname = b"\n".join([source, util.hidepassword(url)])
+            txnname = b"\n".join([source, urlutil.hidepassword(url)])
             with repo.lock(), repo.transaction(txnname) as tr:
                 op = bundle2.applybundle(repo, cg, tr, source, url)
                 r = bundle2.combinechangegroupresults(op)

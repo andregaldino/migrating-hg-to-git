@@ -34,6 +34,7 @@ from . import (
 from .utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 if pycompat.TYPE_CHECKING:
@@ -139,7 +140,7 @@ def _smtp(ui):
         defaultport = 465
     else:
         defaultport = 25
-    mailport = util.getport(ui.config(b'smtp', b'port', defaultport))
+    mailport = urlutil.getport(ui.config(b'smtp', b'port', defaultport))
     ui.note(_(b'sending mail: smtp host %s, port %d\n') % (mailhost, mailport))
     s.connect(host=mailhost, port=mailport)
     if starttls:

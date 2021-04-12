@@ -28,6 +28,9 @@ from .. import (
     pycompat,
     util,
 )
+from ..utils import (
+    urlutil,
+)
 
 httpservermod = util.httpserver
 socketserver = util.socketserver
@@ -431,7 +434,7 @@ def create_server(ui, app):
         sys.setdefaultencoding(oldenc)
 
     address = ui.config(b'web', b'address')
-    port = util.getport(ui.config(b'web', b'port'))
+    port = urlutil.getport(ui.config(b'web', b'port'))
     try:
         return cls(ui, app, (address, port), handler)
     except socket.error as inst:

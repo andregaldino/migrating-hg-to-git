@@ -19,9 +19,11 @@ from mercurial import (
     lock,
     pycompat,
     registrar,
-    util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    urlutil,
+)
 
 release = lock.release
 cmdtable = {}
@@ -109,7 +111,8 @@ def fetch(ui, repo, source=b'default', **opts):
 
         other = hg.peer(repo, opts, ui.expandpath(source))
         ui.status(
-            _(b'pulling from %s\n') % util.hidepassword(ui.expandpath(source))
+            _(b'pulling from %s\n')
+            % urlutil.hidepassword(ui.expandpath(source))
         )
         revs = None
         if opts[b'rev']:
@@ -180,7 +183,7 @@ def fetch(ui, repo, source=b'default', **opts):
         if not err:
             # we don't translate commit messages
             message = cmdutil.logmessage(ui, opts) or (
-                b'Automated merge with %s' % util.removeauth(other.url())
+                b'Automated merge with %s' % urlutil.removeauth(other.url())
             )
             editopt = opts.get(b'edit') or opts.get(b'force_editor')
             editor = cmdutil.getcommiteditor(edit=editopt, editform=b'fetch')

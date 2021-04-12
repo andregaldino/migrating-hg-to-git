@@ -23,7 +23,10 @@ from . import (
     pycompat,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 nullstate = (b'', b'', b'empty')
 
@@ -136,10 +139,10 @@ def state(ctx, ui):
             kind = kind[1:]
             src = src.lstrip()  # strip any extra whitespace after ']'
 
-        if not util.url(src).isabs():
+        if not urlutil.url(src).isabs():
             parent = _abssource(repo, abort=False)
             if parent:
-                parent = util.url(parent)
+                parent = urlutil.url(parent)
                 parent.path = posixpath.join(parent.path or b'', src)
                 parent.path = posixpath.normpath(parent.path)
                 joined = bytes(parent)
@@ -400,13 +403,13 @@ def _abssource(repo, push=False, abort=True):
     """return pull/push path of repo - either based on parent repo .hgsub info
     or on the top repo config. Abort or return None if no source found."""
     if util.safehasattr(repo, b'_subparent'):
-        source = util.url(repo._subsource)
+        source = urlutil.url(repo._subsource)
         if source.isabs():
             return bytes(source)
         source.path = posixpath.normpath(source.path)
         parent = _abssource(repo._subparent, push, abort=False)
         if parent:
-            parent = util.url(util.pconvert(parent))
+            parent = urlutil.url(util.pconvert(parent))
             parent.path = posixpath.join(parent.path or b'', source.path)
             parent.path = posixpath.normpath(parent.path)
             return bytes(parent)
@@ -435,7 +438,7 @@ def _abssource(repo, push=False, abort=True):
             #
             #   D:\>python -c "import os; print os.path.abspath('C:relative')"
             #   C:\some\path\relative
-            if util.hasdriveletter(path):
+            if urlutil.hasdriveletter(path):
                 if len(path) == 2 or path[2:3] not in br'\/':
                     path = os.path.abspath(path)
             return path

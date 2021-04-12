@@ -26,7 +26,10 @@ from . import (
     urllibcompat,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 httplib = util.httplib
 stringio = util.stringio
@@ -75,17 +78,17 @@ class passwordmgr(object):
                 user, passwd = auth.get(b'username'), auth.get(b'password')
                 self.ui.debug(b"using auth.%s.* for authentication\n" % group)
         if not user or not passwd:
-            u = util.url(pycompat.bytesurl(authuri))
+            u = urlutil.url(pycompat.bytesurl(authuri))
             u.query = None
             if not self.ui.interactive():
                 raise error.Abort(
                     _(b'http authorization required for %s')
-                    % util.hidepassword(bytes(u))
+                    % urlutil.hidepassword(bytes(u))
                 )
 
             self.ui.write(
                 _(b"http authorization required for %s\n")
-                % util.hidepassword(bytes(u))
+                % urlutil.hidepassword(bytes(u))
             )
             self.ui.write(_(b"realm: %s\n") % pycompat.bytesurl(realm))
             if user:
@@ -128,7 +131,7 @@ class proxyhandler(urlreq.proxyhandler):
                 proxyurl.startswith(b'http:') or proxyurl.startswith(b'https:')
             ):
                 proxyurl = b'http://' + proxyurl + b'/'
-            proxy = util.url(proxyurl)
+            proxy = urlutil.url(proxyurl)
             if not proxy.user:
                 proxy.user = ui.config(b"http_proxy", b"user")
                 proxy.passwd = ui.config(b"http_proxy", b"passwd")
@@ -155,7 +158,9 @@ class proxyhandler(urlreq.proxyhandler):
             # expects them to be.
             proxyurl = str(proxy)
             proxies = {'http': proxyurl, 'https': proxyurl}
-            ui.debug(b'proxying through %s\n' % util.hidepassword(bytes(proxy)))
+            ui.debug(
+                b'proxying through %s\n' % urlutil.hidepassword(bytes(proxy))
+            )
         else:
             proxies = {}
 
@@ -219,7 +224,7 @@ def _generic_start_transaction(handler, h, req):
         new_tunnel = False
 
     if new_tunnel or tunnel_host == urllibcompat.getfullurl(req):  # has proxy
-        u = util.url(pycompat.bytesurl(tunnel_host))
+        u = urlutil.url(pycompat.bytesurl(tunnel_host))
         if new_tunnel or u.scheme == b'https':  # only use CONNECT for HTTPS
             h.realhostport = b':'.join([u.host, (u.port or b'443')])
             h.headers = req.headers.copy()
@@ -675,7 +680,7 @@ def opener(
 
 
 def open(ui, url_, data=None, sendaccept=True):
-    u = util.url(url_)
+    u = urlutil.url(url_)
     if u.scheme:
         u.scheme = u.scheme.lower()
         url_, authinfo = u.authinfo()

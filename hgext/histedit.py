@@ -242,6 +242,7 @@ from mercurial import (
 from mercurial.utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 pickle = util.pickle
@@ -1042,7 +1043,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
         opts = {}
     dest = ui.expandpath(remote or b'default-push', remote or b'default')
     dest, branches = hg.parseurl(dest, None)[:2]
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
+    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
 
     revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
     other = hg.peer(repo, opts, dest)

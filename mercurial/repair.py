@@ -28,11 +28,11 @@ from . import (
     pycompat,
     requirements,
     scmutil,
-    util,
 )
 from .utils import (
     hashutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -245,7 +245,7 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
                 tmpbundleurl = b'bundle:' + vfs.join(tmpbundlefile)
                 txnname = b'strip'
                 if not isinstance(gen, bundle2.unbundle20):
-                    txnname = b"strip\n%s" % util.hidepassword(tmpbundleurl)
+                    txnname = b"strip\n%s" % urlutil.hidepassword(tmpbundleurl)
                 with repo.transaction(txnname) as tr:
                     bundle2.applybundle(
                         repo, gen, tr, source=b'strip', url=tmpbundleurl

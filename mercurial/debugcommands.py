@@ -98,6 +98,7 @@ from .utils import (
     dateutil,
     procutil,
     stringutil,
+    urlutil,
 )
 
 from .revlogutils import (
@@ -1061,7 +1062,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
         remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
         remote = hg.peer(repo, opts, remoteurl)
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(remoteurl))
+        ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
     else:
         branches = (None, [])
         remote_filtered_revs = scmutil.revrange(
@@ -3652,7 +3653,7 @@ def debugssl(ui, repo, source=None, **opts):
         source = b"default"
 
     source, branches = hg.parseurl(ui.expandpath(source))
-    url = util.url(source)
+    url = urlutil.url(source)
 
     defaultport = {b'https': 443, b'ssh': 22}
     if url.scheme in defaultport:
@@ -4525,7 +4526,7 @@ def debugwireproto(ui, repo, path=None, **opts):
         # We bypass hg.peer() so we can proxy the sockets.
         # TODO consider not doing this because we skip
         # ``hg.wirepeersetupfuncs`` and potentially other useful functionality.
-        u = util.url(path)
+        u = urlutil.url(path)
         if u.scheme != b'http':
             raise error.Abort(_(b'only http:// paths are currently supported'))
 

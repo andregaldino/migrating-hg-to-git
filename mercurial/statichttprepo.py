@@ -26,6 +26,9 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    urlutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -162,7 +165,7 @@ class statichttprepository(
         self.ui = ui
 
         self.root = path
-        u = util.url(path.rstrip(b'/') + b"/.hg")
+        u = urlutil.url(path.rstrip(b'/') + b"/.hg")
         self.path, authinfo = u.authinfo()
 
         vfsclass = build_opener(ui, authinfo)

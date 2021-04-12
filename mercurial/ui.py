@@ -559,7 +559,7 @@ class ui(object):
                         )
                         p = p.replace(b'%%', b'%')
                     p = util.expandpath(p)
-                    if not util.hasscheme(p) and not os.path.isabs(p):
+                    if not urlutil.hasscheme(p) and not os.path.isabs(p):
                         p = os.path.normpath(os.path.join(root, p))
                     c.alter(b"paths", n, p)
 

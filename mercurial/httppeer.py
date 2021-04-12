@@ -38,6 +38,7 @@ from .interfaces import (
 from .utils import (
     cborutil,
     stringutil,
+    urlutil,
 )
 
 httplib = util.httplib
@@ -305,7 +306,7 @@ def sendrequest(ui, opener, req):
     except httplib.HTTPException as inst:
         ui.debug(
             b'http error requesting %s\n'
-            % util.hidepassword(req.get_full_url())
+            % urlutil.hidepassword(req.get_full_url())
         )
         ui.traceback()
         raise IOError(None, inst)
@@ -352,14 +353,14 @@ def parsev1commandresponse(
     except AttributeError:
         proto = pycompat.bytesurl(resp.headers.get('content-type', ''))
 
-    safeurl = util.hidepassword(baseurl)
+    safeurl = urlutil.hidepassword(baseurl)
     if proto.startswith(b'application/hg-error'):
         raise error.OutOfBandError(resp.read())
 
     # Pre 1.0 versions of Mercurial used text/plain and
     # application/hg-changegroup. We don't support such old servers.
     if not proto.startswith(b'application/mercurial-'):
-        ui.debug(b"requested URL: '%s'\n" % util.hidepassword(requrl))
+        ui.debug(b"requested URL: '%s'\n" % urlutil.hidepassword(requrl))
         msg = _(
             b"'%s' does not appear to be an hg repository:\n"
             b"---%%<--- (%s)\n%s\n---%%<---\n"
@@ -1058,7 +1059,7 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     ``requestbuilder`` is the type used for constructing HTTP requests.
     It exists as an argument so extensions can override the default.
     """
-    u = util.url(path)
+    u = urlutil.url(path)
     if u.query or u.fragment:
         raise error.Abort(
             _(b'unsupported URL component: "%s"') % (u.query or u.fragment)

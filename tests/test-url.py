@@ -275,7 +275,7 @@ check(
 def test_url():
     """
     >>> from mercurial import error, pycompat
-    >>> from mercurial.util import url
+    >>> from mercurial.utils.urlutil import url
     >>> from mercurial.utils.stringutil import forcebytestr
 
     This tests for edge cases in url.URL's parsing algorithm. Most of
