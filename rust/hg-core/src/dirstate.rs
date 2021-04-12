@@ -66,6 +66,16 @@ pub enum EntryState {
     Unknown,
 }
 
+impl EntryState {
+    pub fn is_tracked(self) -> bool {
+        use EntryState::*;
+        match self {
+            Normal | Added | Merged => true,
+            Removed | Unknown => false,
+        }
+    }
+}
+
 impl TryFrom<u8> for EntryState {
     type Error = HgError;
 

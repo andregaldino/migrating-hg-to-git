@@ -46,11 +46,29 @@ pub struct DirstateMap {
 /// string prefix.
 type ChildNodes = BTreeMap<WithBasename<HgPathBuf>, Node>;
 
+/// Represents a file or a directory
 #[derive(Default)]
 struct Node {
+    /// `None` for directories
     entry: Option<DirstateEntry>,
+
     copy_source: Option<HgPathBuf>,
+
     children: ChildNodes,
+
+    /// How many (non-inclusive) descendants of this node are tracked files
+    tracked_descendants_count: usize,
+}
+
+impl Node {
+    /// Whether this node has a `DirstateEntry` with `.state.is_tracked()`
+    fn is_tracked_file(&self) -> bool {
+        if let Some(entry) = &self.entry {
+            entry.state.is_tracked()
+        } else {
+            false
+        }
+    }
 }
 
 /// `(full_path, entry, copy_source)`
@@ -87,11 +105,40 @@ impl DirstateMap {
         }
     }
 
+    /// Returns a mutable reference to the node at `path` if it exists
+    ///
     /// This takes `root` instead of `&mut self` so that callers can mutate
     /// other fields while the returned borrow is still valid
     fn get_node_mut<'tree>(
         root: &'tree mut ChildNodes,
         path: &HgPath,
+    ) -> Option<&'tree mut Node> {
+        Self::each_and_get(root, path, |_| {})
+    }
+
+    /// Call `each` for each ancestor node of the one at `path` (not including
+    /// that node itself), starting from nearest the root.
+    ///
+    /// Panics (possibly after some calls to `each`) if there is no node at
+    /// `path`.
+    fn for_each_ancestor_node<'tree>(
+        &mut self,
+        path: &HgPath,
+        each: impl FnMut(&mut Node),
+    ) {
+        let parent = path.parent();
+        if !parent.is_empty() {
+            Self::each_and_get(&mut self.root, parent, each)
+                .expect("missing dirstate node");
+        }
+    }
+
+    /// Common implementation detail of `get_node_mut` and
+    /// `for_each_ancestor_node`
+    fn each_and_get<'tree>(
+        root: &'tree mut ChildNodes,
+        path: &HgPath,
+        mut each: impl FnMut(&mut Node),
     ) -> Option<&'tree mut Node> {
         let mut children = root;
         let mut components = path.components();
@@ -99,6 +146,7 @@ impl DirstateMap {
             components.next().expect("expected at least one components");
         loop {
             let child = children.get_mut(component)?;
+            each(child);
             if let Some(next_component) = components.next() {
                 component = next_component;
                 children = &mut child.children;
@@ -162,9 +210,28 @@ impl DirstateMap {
                 self.nodes_with_copy_source_count -= 1
             }
         }
+        let tracked_count_increment =
+            match (node.is_tracked_file(), new_entry.state.is_tracked()) {
+                (false, true) => 1,
+                (true, false) => -1,
+                _ => 0,
+            };
+
         node.entry = Some(new_entry);
         if let Some(source) = new_copy_source {
             node.copy_source = source
+        }
+        // Borrow of `self.root` through `node` ends here
+
+        match tracked_count_increment {
+            1 => self.for_each_ancestor_node(path, |node| {
+                node.tracked_descendants_count += 1
+            }),
+            // We can’t use `+= -1` because the counter is unsigned
+            -1 => self.for_each_ancestor_node(path, |node| {
+                node.tracked_descendants_count -= 1
+            }),
+            _ => {}
         }
     }
 
@@ -335,16 +402,28 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
 
     fn has_tracked_dir(
         &mut self,
-        _directory: &HgPath,
+        directory: &HgPath,
     ) -> Result<bool, DirstateMapError> {
-        todo!()
+        if let Some(node) = self.get_node(directory) {
+            // A node without a `DirstateEntry` was created to hold child
+            // nodes, and is therefore a directory.
+            Ok(node.entry.is_none() && node.tracked_descendants_count > 0)
+        } else {
+            Ok(false)
+        }
     }
 
     fn has_dir(
         &mut self,
-        _directory: &HgPath,
+        directory: &HgPath,
     ) -> Result<bool, DirstateMapError> {
-        todo!()
+        if let Some(node) = self.get_node(directory) {
+            // A node without a `DirstateEntry` was created to hold child
+            // nodes, and is therefore a directory.
+            Ok(node.entry.is_none())
+        } else {
+            Ok(false)
+        }
     }
 
     fn parents(
@@ -437,11 +516,15 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
-        todo!()
+        // Do nothing, this `DirstateMap` does not a separate `all_dirs` that
+        // needs to be recomputed
+        Ok(())
     }
 
     fn set_dirs(&mut self) -> Result<(), DirstateMapError> {
-        todo!()
+        // Do nothing, this `DirstateMap` does not a separate `dirs` that needs
+        // to be recomputed
+        Ok(())
     }
 
     fn status<'a>(
