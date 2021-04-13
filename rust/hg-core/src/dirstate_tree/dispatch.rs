@@ -11,7 +11,6 @@ use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
-use crate::FastHashMap;
 use crate::HgPathCow;
 use crate::PatternFileWarning;
 use crate::StateMapIter;
@@ -92,8 +91,6 @@ pub trait DirstateMapMethods {
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError>;
-
-    fn build_file_fold_map(&mut self) -> &FastHashMap<HgPathBuf, HgPathBuf>;
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError>;
 
@@ -257,10 +254,6 @@ impl DirstateMapMethods for DirstateMap {
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         self.pack(parents, now)
-    }
-
-    fn build_file_fold_map(&mut self) -> &FastHashMap<HgPathBuf, HgPathBuf> {
-        self.build_file_fold_map()
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {

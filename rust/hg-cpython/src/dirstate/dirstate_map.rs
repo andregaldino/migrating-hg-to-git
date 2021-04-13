@@ -30,6 +30,7 @@ use hg::{
     dirstate_tree::dispatch::DirstateMapMethods,
     errors::HgError,
     revlog::Node,
+    utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
     DirstateMapError, DirstateParents, EntryState, StateMapIter,
@@ -329,14 +330,16 @@ py_class!(pub class DirstateMap |py| {
 
     def filefoldmapasdict(&self) -> PyResult<PyDict> {
         let dict = PyDict::new(py);
-        for (key, value) in
-            self.inner(py).borrow_mut().build_file_fold_map().iter()
-        {
-            dict.set_item(
-                py,
-                PyBytes::new(py, key.as_bytes()).into_object(),
-                PyBytes::new(py, value.as_bytes()).into_object(),
-            )?;
+        for (path, entry) in self.inner(py).borrow_mut().iter() {
+            if entry.state != EntryState::Removed {
+                let key = normalize_case(path);
+                let value = path;
+                dict.set_item(
+                    py,
+                    PyBytes::new(py, key.as_bytes()).into_object(),
+                    PyBytes::new(py, value.as_bytes()).into_object(),
+                )?;
+            }
         }
         Ok(dict)
     }
