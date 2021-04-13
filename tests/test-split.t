@@ -1063,7 +1063,6 @@ Test that creating an empty split or "no-op"
   |
   o  public 0:222799e2f90b r0
   
-FIXME: This should not show "So far it has been split into"
   $ printf 'd\na\n' | HGEDITOR=cat hg split || true
   diff --git a/foo b/foo
   new file mode 100644
@@ -1076,9 +1075,7 @@ FIXME: This should not show "So far it has been split into"
   examine changes to 'foo'?
   (enter ? for help) [Ynesfdaq?] a
   
-  HG: Splitting ae694b2901bb. So far it has been split into:
-  HG: - 0:222799e2f90b "r0"
-  HG: Write commit message for the next split changeset.
+  HG: Splitting ae694b2901bb. Write commit message for the first split changeset.
   foo
   
   
@@ -1094,13 +1091,12 @@ FIXME: This should not show "So far it has been split into"
   rollback completed (obsstore-on !)
   abort: changeset ae694b2901bb cannot obsolete itself (obsstore-on !)
 FIXME: this should not have stripped the commit we just no-op split
-(obsstore-off only), or made r0 draft.
+(obsstore-off only)
   $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
   warning: ignoring unknown working parent ae694b2901bb! (obsstore-off !)
   @  draft 1:ae694b2901bb foo (obsstore-on !)
   | (obsstore-on !)
-  o  public 0:222799e2f90b r0 (obsstore-on !)
-  o  draft 0:222799e2f90b r0 (obsstore-off !)
+  o  public 0:222799e2f90b r0
   
 
 Now try the same thing but modifying the message so we don't trigger the
@@ -1121,7 +1117,6 @@ identical changeset failures
   $ cat > $TESTTMP/messages <<EOF
   > message1
   > EOF
-FIXME: This should not show "So far it has been split into"
   $ printf 'd\na\n' | HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py" hg split
   diff --git a/foo b/foo
   new file mode 100644
@@ -1134,9 +1129,7 @@ FIXME: This should not show "So far it has been split into"
   examine changes to 'foo'?
   (enter ? for help) [Ynesfdaq?] a
   
-  EDITOR: HG: Splitting ae694b2901bb. So far it has been split into:
-  EDITOR: HG: - 0:222799e2f90b "r0"
-  EDITOR: HG: Write commit message for the next split changeset.
+  EDITOR: HG: Splitting ae694b2901bb. Write commit message for the first split changeset.
   EDITOR: foo
   EDITOR: 
   EDITOR: 
@@ -1148,15 +1141,13 @@ FIXME: This should not show "So far it has been split into"
   EDITOR: HG: added foo
   created new head
   saved backup bundle to $TESTTMP/noop2/.hg/strip-backup/ae694b2901bb-28e0b457-split.hg (obsstore-off !)
-FIXME: this should not have made r0 draft
   $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
   @  draft 1:de675559d3f9 message1 (obsstore-off !)
   @  draft 2:de675559d3f9 message1 (obsstore-on !)
   |
-  o  draft 0:222799e2f90b r0
+  o  public 0:222799e2f90b r0
   
 #if obsstore-on
-FIXME: this should not have marked 222799e (r0) as a precursor of anything.
   $ hg debugobsolete
-  ae694b2901bb8b0f8c4b5e075ddec0d63468d57a 222799e2f90be09ccbe49f519c4615d8375a9242 de675559d3f93ffc822c6eb7490e5c73033f17c7 0 * (glob)
+  ae694b2901bb8b0f8c4b5e075ddec0d63468d57a de675559d3f93ffc822c6eb7490e5c73033f17c7 0 * (glob)
 #endif

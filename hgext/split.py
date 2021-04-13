@@ -171,9 +171,13 @@ def dosplit(ui, repo, tr, ctx, opts):
                 b'message': header + ctx.description(),
             }
         )
+        origctx = repo[b'.']
         commands.commit(ui, repo, **pycompat.strkwargs(opts))
         newctx = repo[b'.']
-        committed.append(newctx)
+        # Ensure user didn't do a "no-op" split (such as deselecting
+        # everything).
+        if origctx.node() != newctx.node():
+            committed.append(newctx)
 
     if not committed:
         raise error.InputError(_(b'cannot split an empty revision'))
