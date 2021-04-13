@@ -448,9 +448,15 @@ def removeauth(u):
 def get_push_paths(repo, ui, dests):
     """yields all the `path` selected as push destination by `dests`"""
     if not dests:
-        dests = [None]
-    for dest in dests:
-        yield ui.getpath(dest, default=(b'default-push', b'default'))
+        if b'default-push' in ui.paths:
+            yield ui.paths[b'default-push']
+        elif b'default' in ui.paths:
+            yield ui.paths[b'default']
+        else:
+            yield None
+    else:
+        for dest in dests:
+            yield ui.getpath(dest)
 
 
 def get_pull_paths(repo, ui, sources, default_branches=()):
