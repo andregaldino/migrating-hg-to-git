@@ -4923,10 +4923,10 @@ statemod.addunfinished(
     + logopts
     + remoteopts
     + subrepoopts,
-    _(b'[-M] [-p] [-n] [-f] [-r REV]... [DEST]'),
+    _(b'[-M] [-p] [-n] [-f] [-r REV]... [DEST]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
 )
-def outgoing(ui, repo, dest=None, **opts):
+def outgoing(ui, repo, *dests, **opts):
     """show changesets not found in the destination
 
     Show changesets not found in the specified destination repository
@@ -4962,30 +4962,24 @@ def outgoing(ui, repo, dest=None, **opts):
 
     Returns 0 if there are outgoing changes, 1 otherwise.
     """
-    # hg._outgoing() needs to re-resolve the path in order to handle #branch
-    # style URLs, so don't overwrite dest.
-    path = ui.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.ConfigError(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
-        )
-
     opts = pycompat.byteskwargs(opts)
     if opts.get(b'bookmarks'):
-        dest = path.pushloc or path.loc
-        other = hg.peer(repo, opts, dest)
-        try:
-            if b'bookmarks' not in other.listkeys(b'namespaces'):
-                ui.warn(_(b"remote doesn't support bookmarks\n"))
-                return 0
-            ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
-            ui.pager(b'outgoing')
-            return bookmarks.outgoing(ui, repo, other)
-        finally:
-            other.close()
+        for path in urlutil.get_push_paths(repo, ui, dests):
+            dest = path.pushloc or path.loc
+            other = hg.peer(repo, opts, dest)
+            try:
+                if b'bookmarks' not in other.listkeys(b'namespaces'):
+                    ui.warn(_(b"remote doesn't support bookmarks\n"))
+                    return 0
+                ui.status(
+                    _(b'comparing with %s\n') % urlutil.hidepassword(dest)
+                )
+                ui.pager(b'outgoing')
+                return bookmarks.outgoing(ui, repo, other)
+            finally:
+                other.close()
 
-    return hg.outgoing(ui, repo, dest, opts)
+    return hg.outgoing(ui, repo, dests, opts)
 
 
 @command(

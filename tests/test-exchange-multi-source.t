@@ -130,6 +130,46 @@ push
   $ cp -R ./branch-E ./branch-E-push
   $ cp -R ./branch-G ./branch-G-push
   $ cp -R ./branch-H ./branch-H-push
+  $ hg out -G -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push
+  comparing with ./branch-E-push
+  searching for changes
+  comparing with ./branch-G-push
+  searching for changes
+  comparing with ./branch-H-push
+  searching for changes
+  o  changeset:   7:40faebb2ec45
+  |  tag:         tip
+  |  parent:      2:f838bfaca5c7
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     H
+  |
+  | o  changeset:   6:c521a06b234b
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     G
+  | |
+  | o  changeset:   5:2f3a4c5c1417
+  |    parent:      1:27547f69f254
+  |    user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     F
+  |
+  | o  changeset:   4:a603bfb5a83e
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     E
+  | |
+  | o  changeset:   3:b3325c91a4d9
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     D
+  |
+  o  changeset:   2:f838bfaca5c7
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     C
+  
   $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push
   pushing to ./branch-E-push
   searching for changes
@@ -291,6 +331,26 @@ We only push a specific branch with --rev
   $ cp -R ./branch-E ./branch-E-push
   $ cp -R ./branch-G ./branch-G-push
   $ cp -R ./branch-H ./branch-H-push
+  $ hg out -G -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push --rev default
+  comparing with ./branch-E-push
+  searching for changes
+  comparing with ./branch-G-push
+  searching for changes
+  comparing with ./branch-H-push
+  searching for changes
+  no changes found
+  o  changeset:   7:40faebb2ec45
+  |  tag:         tip
+  |  parent:      2:f838bfaca5c7
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     H
+  |
+  o  changeset:   2:f838bfaca5c7
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     C
+  
   $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push --rev default
   pushing to ./branch-E-push
   searching for changes
@@ -349,6 +409,26 @@ Same push, but the first one is a no-op
   $ cp -R ./branch-E ./branch-E-push
   $ cp -R ./branch-G ./branch-G-push
   $ cp -R ./branch-H ./branch-H-push
+  $ hg out -G -R test-repo-bare ./branch-G-push ./branch-H-push ./branch-E-push --rev default
+  comparing with ./branch-G-push
+  searching for changes
+  comparing with ./branch-H-push
+  searching for changes
+  no changes found
+  comparing with ./branch-E-push
+  searching for changes
+  o  changeset:   7:40faebb2ec45
+  |  tag:         tip
+  |  parent:      2:f838bfaca5c7
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     H
+  |
+  o  changeset:   2:f838bfaca5c7
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     C
+  
   $ hg push --force -R test-repo-bare ./branch-G-push ./branch-H-push ./branch-E-push --rev default
   pushing to ./branch-G-push
   searching for changes

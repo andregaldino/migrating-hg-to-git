@@ -1320,51 +1320,53 @@ def incoming(ui, repo, source, opts):
     return _incoming(display, subreporecurse, ui, repo, source, opts)
 
 
-def _outgoing(ui, repo, dest, opts, subpath=None):
-    path = ui.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.Abort(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
-        )
-    dest = path.pushloc or path.loc
-    if subpath is not None:
-        subpath = urlutil.url(subpath)
-        if subpath.isabs():
-            dest = bytes(subpath)
-        else:
-            p = urlutil.url(dest)
-            p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
-            dest = bytes(p)
+def _outgoing(ui, repo, dests, opts, subpath=None):
+    out = set()
+    others = []
+    for path in urlutil.get_push_paths(repo, ui, dests):
+        dest = path.pushloc or path.loc
+        if subpath is not None:
+            subpath = urlutil.url(subpath)
+            if subpath.isabs():
+                dest = bytes(subpath)
+            else:
+                p = urlutil.url(dest)
+                p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
+                dest = bytes(p)
+        branches = path.branch, opts.get(b'branch') or []
 
-    branches = path.branch, opts.get(b'branch') or []
+        ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
+        revs, checkout = addbranchrevs(repo, repo, branches, opts.get(b'rev'))
+        if revs:
+            revs = [repo[rev].node() for rev in scmutil.revrange(repo, revs)]
 
-    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
-    revs, checkout = addbranchrevs(repo, repo, branches, opts.get(b'rev'))
-    if revs:
-        revs = [repo[rev].node() for rev in scmutil.revrange(repo, revs)]
+        other = peer(repo, opts, dest)
+        try:
+            outgoing = discovery.findcommonoutgoing(
+                repo, other, revs, force=opts.get(b'force')
+            )
+            o = outgoing.missing
+            out.update(o)
+            if not o:
+                scmutil.nochangesfound(repo.ui, repo, outgoing.excluded)
+            others.append(other)
+        except:  # re-raises
+            other.close()
+            raise
+    # make sure this is ordered by revision number
+    outgoing_revs = list(out)
+    cl = repo.changelog
+    outgoing_revs.sort(key=cl.rev)
+    return outgoing_revs, others
 
-    other = peer(repo, opts, dest)
-    try:
-        outgoing = discovery.findcommonoutgoing(
-            repo, other, revs, force=opts.get(b'force')
-        )
-        o = outgoing.missing
-        if not o:
-            scmutil.nochangesfound(repo.ui, repo, outgoing.excluded)
-        return o, other
-    except:  # re-raises
-        other.close()
-        raise
 
-
-def _outgoing_recurse(ui, repo, dest, opts):
+def _outgoing_recurse(ui, repo, dests, opts):
     ret = 1
     if opts.get(b'subrepos'):
         ctx = repo[None]
         for subpath in sorted(ctx.substate):
             sub = ctx.sub(subpath)
-            ret = min(ret, sub.outgoing(ui, dest, opts))
+            ret = min(ret, sub.outgoing(ui, dests, opts))
     return ret
 
 
@@ -1391,10 +1393,10 @@ def _outgoing_filter(repo, revs, opts):
         yield n
 
 
-def outgoing(ui, repo, dest, opts, subpath=None):
+def outgoing(ui, repo, dests, opts, subpath=None):
     if opts.get(b'graph'):
         logcmdutil.checkunsupportedgraphflags([], opts)
-    o, other = _outgoing(ui, repo, dest, opts, subpath=subpath)
+    o, others = _outgoing(ui, repo, dests, opts, subpath=subpath)
     ret = 1
     try:
         if o:
@@ -1415,11 +1417,13 @@ def outgoing(ui, repo, dest, opts, subpath=None):
                 for n in _outgoing_filter(repo, o, opts):
                     displayer.show(repo[n])
                 displayer.close()
-        cmdutil.outgoinghooks(ui, repo, other, opts, o)
-        ret = min(ret, _outgoing_recurse(ui, repo, dest, opts))
+        for oth in others:
+            cmdutil.outgoinghooks(ui, repo, oth, opts, o)
+            ret = min(ret, _outgoing_recurse(ui, repo, dests, opts))
         return ret  # exit code is zero since we found outgoing changes
     finally:
-        other.close()
+        for oth in others:
+            oth.close()
 
 
 def verify(repo, level=None):
