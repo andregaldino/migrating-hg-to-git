@@ -5703,11 +5703,6 @@ def push(ui, repo, *dests, **opts):
     some_pushed = False
     result = 0
     for path in urlutil.get_push_paths(repo, ui, dests):
-        if not path:
-            raise error.ConfigError(
-                _(b'default repository not configured!'),
-                hint=_(b"see 'hg help config.paths'"),
-            )
         dest = path.pushloc or path.loc
         branches = (path.branch, opts.get(b'branch') or [])
         ui.status(_(b'pushing to %s\n') % urlutil.hidepassword(dest))

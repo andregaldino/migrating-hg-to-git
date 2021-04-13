@@ -453,7 +453,10 @@ def get_push_paths(repo, ui, dests):
         elif b'default' in ui.paths:
             yield ui.paths[b'default']
         else:
-            yield None
+            raise error.ConfigError(
+                _(b'default repository not configured!'),
+                hint=_(b"see 'hg help config.paths'"),
+            )
     else:
         for dest in dests:
             yield ui.getpath(dest)
