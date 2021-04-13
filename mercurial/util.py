@@ -2177,6 +2177,7 @@ def fscasesensitive(path):
         return True
 
 
+_re2_input = lambda x: x
 try:
     import re2  # pytype: disable=import-error
 
@@ -2188,11 +2189,21 @@ except ImportError:
 class _re(object):
     def _checkre2(self):
         global _re2
+        global _re2_input
         try:
             # check if match works, see issue3964
-            _re2 = bool(re2.match(br'\[([^\[]+)\]', b'[ui]'))
+            check_pattern = br'\[([^\[]+)\]'
+            check_input = b'[ui]'
+            _re2 = bool(re2.match(check_pattern, check_input))
         except ImportError:
             _re2 = False
+        except TypeError:
+            # the `pyre-2` project provides a re2 module that accept bytes
+            # the `fb-re2` project provides a re2 module that acccept sysstr
+            check_pattern = pycompat.sysstr(check_pattern)
+            check_input = pycompat.sysstr(check_input)
+            _re2 = bool(re2.match(check_pattern, check_input))
+            _re2_input = pycompat.sysstr
 
     def compile(self, pat, flags=0):
         """Compile a regular expression, using re2 if possible
@@ -2208,7 +2219,7 @@ class _re(object):
             if flags & remod.MULTILINE:
                 pat = b'(?m)' + pat
             try:
-                return re2.compile(pat)
+                return re2.compile(_re2_input(pat))
             except re2.error:
                 pass
         return remod.compile(pat, flags)
