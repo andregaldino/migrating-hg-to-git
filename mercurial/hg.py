@@ -1358,27 +1358,40 @@ def _outgoing_recurse(ui, repo, dest, opts):
     return ret
 
 
+def _outgoing_filter(repo, revs, opts):
+    """apply revision filtering/ordering option for outgoing"""
+    limit = logcmdutil.getlimit(opts)
+    no_merges = opts.get(b'no_merges')
+    if opts.get(b'newest_first'):
+        revs.reverse()
+    if limit is None and not no_merges:
+        for r in revs:
+            yield r
+        return
+
+    count = 0
+    cl = repo.changelog
+    for n in revs:
+        if limit is not None and count >= limit:
+            break
+        parents = [p for p in cl.parents(n) if p != nullid]
+        if no_merges and len(parents) == 2:
+            continue
+        count += 1
+        yield n
+
+
 def outgoing(ui, repo, dest, opts):
 
-    limit = logcmdutil.getlimit(opts)
     o, other = _outgoing(ui, repo, dest, opts)
     ret = 1
     try:
         if o:
             ret = 0
 
-            if opts.get(b'newest_first'):
-                o.reverse()
             ui.pager(b'outgoing')
             displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
-            count = 0
-            for n in o:
-                if limit is not None and count >= limit:
-                    break
-                parents = [p for p in repo.changelog.parents(n) if p != nullid]
-                if opts.get(b'no_merges') and len(parents) == 2:
-                    continue
-                count += 1
+            for n in _outgoing_filter(repo, o, opts):
                 displayer.show(repo[n])
             displayer.close()
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
