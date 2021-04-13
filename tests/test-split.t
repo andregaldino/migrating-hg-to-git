@@ -1086,16 +1086,9 @@ Test that creating an empty split or "no-op"
   HG: branch 'default'
   HG: added foo
   warning: commit already existed in the repository!
-  saved backup bundle to $TESTTMP/noop/.hg/strip-backup/ae694b2901bb-28e0b457-split.hg (obsstore-off !)
-  transaction abort! (obsstore-on !)
-  rollback completed (obsstore-on !)
-  abort: changeset ae694b2901bb cannot obsolete itself (obsstore-on !)
-FIXME: this should not have stripped the commit we just no-op split
-(obsstore-off only)
   $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
-  warning: ignoring unknown working parent ae694b2901bb! (obsstore-off !)
-  @  draft 1:ae694b2901bb foo (obsstore-on !)
-  | (obsstore-on !)
+  @  draft 1:ae694b2901bb foo
+  |
   o  public 0:222799e2f90b r0
   
 

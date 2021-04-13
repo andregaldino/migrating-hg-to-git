@@ -182,12 +182,15 @@ def dosplit(ui, repo, tr, ctx, opts):
     if not committed:
         raise error.InputError(_(b'cannot split an empty revision'))
 
-    scmutil.cleanupnodes(
-        repo,
-        {ctx.node(): [c.node() for c in committed]},
-        operation=b'split',
-        fixphase=True,
-    )
+    if len(committed) != 1 or committed[0].node() != ctx.node():
+        # Ensure we don't strip a node if we produce the same commit as already
+        # exists
+        scmutil.cleanupnodes(
+            repo,
+            {ctx.node(): [c.node() for c in committed]},
+            operation=b'split',
+            fixphase=True,
+        )
 
     return committed[-1]
 
