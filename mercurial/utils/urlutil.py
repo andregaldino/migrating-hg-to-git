@@ -453,6 +453,15 @@ def get_push_paths(repo, ui, dests):
         yield ui.getpath(dest, default=(b'default-push', b'default'))
 
 
+def get_pull_paths(repo, ui, sources, default_branches=()):
+    """yields all the `(path, branch)` selected as pull source by `sources`"""
+    if not sources:
+        sources = [b'default']
+    for source in sources:
+        url = ui.expandpath(source)
+        yield parseurl(url, default_branches)
+
+
 def parseurl(path, branches=None):
     '''parse url#branch, returning (url, (branch, branches))'''
     u = url(path)

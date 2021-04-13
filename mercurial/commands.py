@@ -5387,12 +5387,8 @@ def pull(ui, repo, *sources, **opts):
         hint = _(b'use hg pull followed by hg update DEST')
         raise error.InputError(msg, hint=hint)
 
-    if not sources:
-        sources = [b'default']
-    for source in sources:
-        source, branches = urlutil.parseurl(
-            ui.expandpath(source), opts.get(b'branch')
-        )
+    sources = urlutil.get_pull_paths(repo, ui, sources, opts.get(b'branch'))
+    for source, branches in sources:
         ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(source))
         ui.flush()
         other = hg.peer(repo, opts, source)
