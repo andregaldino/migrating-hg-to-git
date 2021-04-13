@@ -1161,12 +1161,12 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
   status will cause the transaction to be rolled back. The reason for the
   transaction opening will be in ``$HG_TXNNAME``, and a unique identifier for
   the transaction will be in ``$HG_TXNID``. The rest of the available data will
-  vary according the transaction type. New changesets will add ``$HG_NODE``
-  (the ID of the first added changeset), ``$HG_NODE_LAST`` (the ID of the last
-  added changeset), ``$HG_URL`` and ``$HG_SOURCE`` variables.  Bookmark and
-  phase changes will set ``$HG_BOOKMARK_MOVED`` and ``$HG_PHASES_MOVED`` to
-  ``1`` respectively.  The number of new obsmarkers, if any, will be in
-  ``$HG_NEW_OBSMARKERS``, etc.
+  vary according the transaction type.  Changes unbundled to the repository will
+  add ``$HG_URL`` and ``$HG_SOURCE``.  New changesets will add ``$HG_NODE`` (the
+  ID of the first added changeset), ``$HG_NODE_LAST`` (the ID of the last added
+  changeset).  Bookmark and phase changes will set ``$HG_BOOKMARK_MOVED`` and
+  ``$HG_PHASES_MOVED`` to ``1`` respectively.  The number of new obsmarkers, if
+  any, will be in ``$HG_NEW_OBSMARKERS``, etc.
 
 ``pretxnclose-bookmark``
   Run right before a bookmark change is actually finalized. Any repository
