@@ -125,3 +125,17 @@ test-py3-chg:
         PYTHON: python3
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
         TEST_HGMODULEPOLICY: "c"
+
+check-pytype-py3:
+    extends: .runtests_template
+    when: manual
+    before_script:
+      - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
+      - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
+      - cd /tmp/mercurial-ci/
+      - make local PYTHON=$PYTHON
+      - $PYTHON -m pip install --user -U pytype==2021.04.15
+    variables:
+        RUNTEST_ARGS: " --allow-slow-tests tests/test-check-pytype.t"
+        PYTHON: python3
+        TEST_HGMODULEPOLICY: "c"
