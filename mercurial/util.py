@@ -2189,10 +2189,11 @@ class _re(object):
     def _checkre2(self):
         global _re2
         global _re2_input
+
+        check_pattern = br'\[([^\[]+)\]'
+        check_input = b'[ui]'
         try:
             # check if match works, see issue3964
-            check_pattern = br'\[([^\[]+)\]'
-            check_input = b'[ui]'
             _re2 = bool(re2.match(check_pattern, check_input))
         except ImportError:
             _re2 = False
