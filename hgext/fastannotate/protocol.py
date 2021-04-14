@@ -20,6 +20,9 @@ from mercurial import (
     wireprotov1peer,
     wireprotov1server,
 )
+from mercurial.utils import (
+    urlutil,
+)
 from . import context
 
 # common
@@ -151,9 +154,9 @@ def peersetup(ui, peer):
 def annotatepeer(repo):
     ui = repo.ui
 
-    remotepath = ui.expandpath(
-        ui.config(b'fastannotate', b'remotepath', b'default')
-    )
+    remotedest = ui.config(b'fastannotate', b'remotepath', b'default')
+    r = urlutil.get_unique_pull_path(b'fastannotate', repo, ui, remotedest)
+    remotepath = r[0]
     peer = hg.peer(ui, {}, remotepath)
 
     try:
