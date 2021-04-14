@@ -915,7 +915,13 @@ def perfdiscovery(ui, repo, path, **opts):
     """benchmark discovery between local repo and the peer at given path"""
     repos = [repo, None]
     timer, fm = gettimer(ui, opts)
-    path = ui.expandpath(path)
+
+    try:
+        from mercurial.utils.urlutil import get_unique_pull_path
+
+        path = get_unique_pull_path(b'perfdiscovery', repo, ui, path)[0]
+    except ImportError:
+        path = ui.expandpath(path)
 
     def s():
         repos[1] = hg.peer(ui, opts, path)
