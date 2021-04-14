@@ -471,6 +471,25 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
         yield parseurl(url, default_branches)
 
 
+def get_unique_push_path(action, repo, ui, dest=None):
+    """return a unique `path` or abort if multiple are found
+
+    This is useful for command and action that does not support multiple
+    destination (yet).
+
+    Note that for now, we cannot get multiple destination so this function is "trivial".
+
+    The `action` parameter will be used for the error message.
+    """
+    if dest is None:
+        dests = []
+    else:
+        dests = [dest]
+    dests = list(get_push_paths(repo, ui, dests))
+    assert len(dests) == 1
+    return dests[0]
+
+
 def get_unique_pull_path(action, repo, ui, source=None, default_branches=()):
     """return a unique `(path, branch)` or abort if multiple are found
 
