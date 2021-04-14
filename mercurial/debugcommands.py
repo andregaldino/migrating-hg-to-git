@@ -3765,8 +3765,14 @@ def debugbackupbundle(ui, repo, *pats, **opts):
 
     for backup in backups:
         # Much of this is copied from the hg incoming logic
-        source = ui.expandpath(os.path.relpath(backup, encoding.getcwd()))
-        source, branches = urlutil.parseurl(source, opts.get(b"branch"))
+        source = os.path.relpath(backup, encoding.getcwd())
+        source, branches = urlutil.get_unique_pull_path(
+            b'debugbackupbundle',
+            repo,
+            ui,
+            source,
+            default_branches=opts.get(b'branch'),
+        )
         try:
             other = hg.peer(repo, opts, source)
         except error.LookupError as ex:
