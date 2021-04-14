@@ -3864,7 +3864,9 @@ def identify(
     peer = None
     try:
         if source:
-            source, branches = urlutil.parseurl(ui.expandpath(source))
+            source, branches = urlutil.get_unique_pull_path(
+                b'identify', repo, ui, source
+            )
             # only pass ui when no repo
             peer = hg.peer(repo or ui, opts, source)
             repo = peer.local()
