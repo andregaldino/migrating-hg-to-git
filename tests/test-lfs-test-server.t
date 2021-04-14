@@ -17,7 +17,7 @@
 #endif
 
 #if no-windows git-server
-  $ lfs-test-server &> lfs-server.log &
+  $ lfs-test-server > lfs-server.log 2>&1 &
   $ echo $! >> $DAEMON_PIDS
 #endif
 
@@ -890,7 +890,7 @@ Check error message when object does not exist:
   $ mkdir $TESTTMP/lfs-server2
   $ cd $TESTTMP/lfs-server2
 #if no-windows git-server
-  $ lfs-test-server &> lfs-server.log &
+  $ lfs-test-server > lfs-server.log 2>&1 &
   $ echo $! >> $DAEMON_PIDS
 #endif
 
