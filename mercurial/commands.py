@@ -7210,7 +7210,12 @@ def summary(ui, repo, **opts):
             return
 
     def getincoming():
-        source, branches = urlutil.parseurl(ui.expandpath(b'default'))
+        # XXX We should actually skip this if no default is specified, instead
+        # of passing "default" which will resolve as "./default/" if no default
+        # path is defined.
+        source, branches = urlutil.get_unique_pull_path(
+            b'summary', repo, ui, b'default'
+        )
         sbranch = branches[0]
         try:
             other = hg.peer(repo, {}, source)
@@ -7233,11 +7238,22 @@ def summary(ui, repo, **opts):
         source = sbranch = sother = commoninc = incoming = None
 
     def getoutgoing():
-        dest, branches = urlutil.parseurl(
-            ui.expandpath(b'default-push', b'default')
-        )
-        dbranch = branches[0]
-        revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
+        # XXX We should actually skip this if no default is specified, instead
+        # of passing "default" which will resolve as "./default/" if no default
+        # path is defined.
+        d = None
+        if b'default-push' in ui.paths:
+            d = b'default-push'
+        elif b'default' in ui.paths:
+            d = b'default'
+        if d is not None:
+            path = urlutil.get_unique_push_path(b'summary', repo, ui, d)
+            dest = path.pushloc or path.loc
+            dbranch = path.branch
+        else:
+            dest = b'default'
+            dbranch = None
+        revs, checkout = hg.addbranchrevs(repo, repo, (dbranch, []), None)
         if source != dest:
             try:
                 dother = hg.peer(repo, {}, dest)
