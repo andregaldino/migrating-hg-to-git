@@ -467,7 +467,15 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
     if not sources:
         sources = [b'default']
     for source in sources:
-        url = ui.expandpath(source)
+        if source in ui.paths:
+            url = ui.paths[source].rawloc
+        else:
+            # Try to resolve as a local path or URI.
+            try:
+                # we pass the ui instance are warning might need to be issued
+                url = path(ui, None, rawloc=source).rawloc
+            except ValueError:
+                url = source
         yield parseurl(url, default_branches)
 
 
