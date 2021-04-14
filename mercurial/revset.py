@@ -2121,8 +2121,11 @@ def remote(repo, subset, x):
     if len(l) > 1:
         # i18n: "remote" is a keyword
         dest = getstring(l[1], _(b"remote requires a repository path"))
-    dest = repo.ui.expandpath(dest or b'default')
-    dest, branches = urlutil.parseurl(dest)
+    if not dest:
+        dest = b'default'
+    dest, branches = urlutil.get_unique_pull_path(
+        b'remote', repo, repo.ui, dest
+    )
 
     other = hg.peer(repo, {}, dest)
     n = other.lookup(q)
