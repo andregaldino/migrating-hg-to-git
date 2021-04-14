@@ -1255,7 +1255,14 @@ def abortmerge(ui, repo):
 
 
 def _incoming(
-    displaychlist, subreporecurse, ui, repo, source, opts, buffered=False
+    displaychlist,
+    subreporecurse,
+    ui,
+    repo,
+    source,
+    opts,
+    buffered=False,
+    subpath=None,
 ):
     """
     Helper for incoming / gincoming.
@@ -1270,6 +1277,14 @@ def _incoming(
         msg %= len(srcs)
         raise error.Abort(msg)
     source, branches = srcs[0]
+    if subpath is not None:
+        subpath = urlutil.url(subpath)
+        if subpath.isabs():
+            source = bytes(subpath)
+        else:
+            p = urlutil.url(source)
+            p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
+            source = bytes(p)
     other = peer(repo, opts, source)
     cleanupfn = other.close
     try:
@@ -1297,7 +1312,7 @@ def _incoming(
     return 0  # exit code is zero since we found incoming changes
 
 
-def incoming(ui, repo, source, opts):
+def incoming(ui, repo, source, opts, subpath=None):
     def subreporecurse():
         ret = 1
         if opts.get(b'subrepos'):
@@ -1321,7 +1336,9 @@ def incoming(ui, repo, source, opts):
             count += 1
             displayer.show(other[n])
 
-    return _incoming(display, subreporecurse, ui, repo, source, opts)
+    return _incoming(
+        display, subreporecurse, ui, repo, source, opts, subpath=subpath
+    )
 
 
 def _outgoing(ui, repo, dests, opts, subpath=None):

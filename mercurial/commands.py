@@ -4351,11 +4351,7 @@ def incoming(ui, repo, source=b"default", **opts):
             finally:
                 other.close()
 
-    repo._subtoppath = ui.expandpath(source)
-    try:
-        return hg.incoming(ui, repo, source, opts)
-    finally:
-        del repo._subtoppath
+    return hg.incoming(ui, repo, source, opts)
 
 
 @command(
