@@ -2868,7 +2868,7 @@ Don't prompt for a CC header.
 
 dest#branch URIs:
   $ hg email --date '1980-1-1 0:1' -n -t foo -s test -o ../t#test
-  comparing with ../t
+  comparing with ../t#test
   From [test]: test
   this patch series consists of 1 patches.
   

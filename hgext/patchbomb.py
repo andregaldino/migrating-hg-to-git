@@ -530,9 +530,9 @@ def _getpatchmsgs(repo, sender, revs, patchnames=None, **opts):
 def _getoutgoing(repo, dest, revs):
     '''Return the revisions present locally but not in dest'''
     ui = repo.ui
-    url = ui.expandpath(dest or b'default-push', dest or b'default')
-    url = urlutil.parseurl(url)[0]
-    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
+    paths = urlutil.get_push_paths(repo, ui, [dest])
+    safe_paths = [urlutil.hidepassword(p.rawloc) for p in paths]
+    ui.status(_(b'comparing with %s\n') % b','.join(safe_paths))
 
     revs = [r for r in revs if r >= 0]
     if not revs:
