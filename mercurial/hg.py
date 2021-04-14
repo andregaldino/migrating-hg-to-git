@@ -672,8 +672,8 @@ def clone(
     """
 
     if isinstance(source, bytes):
-        origsource = ui.expandpath(source)
-        source, branches = urlutil.parseurl(origsource, branch)
+        src = urlutil.get_clone_path(ui, source, branch)
+        origsource, source, branches = src
         srcpeer = peer(ui, peeropts, source)
     else:
         srcpeer = source.peer()  # in case we were called with a localrepo

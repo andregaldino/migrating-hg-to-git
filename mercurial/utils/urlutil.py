@@ -471,6 +471,13 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
         yield parseurl(url, default_branches)
 
 
+def get_clone_path(ui, source, default_branches=()):
+    """return the `(origsource, path, branch)` selected as clone source"""
+    url = ui.expandpath(source)
+    path, branch = parseurl(url, default_branches)
+    return url, path, branch
+
+
 def parseurl(path, branches=None):
     '''parse url#branch, returning (url, (branch, branches))'''
     u = url(path)
