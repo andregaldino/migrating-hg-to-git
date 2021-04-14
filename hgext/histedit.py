@@ -1041,11 +1041,12 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     Used by initialization code"""
     if opts is None:
         opts = {}
-    dest = ui.expandpath(remote or b'default-push', remote or b'default')
-    dest, branches = urlutil.parseurl(dest, None)[:2]
+    path = urlutil.get_unique_push_path(b'histedit', repo, ui, remote)
+    dest = path.pushloc or path.loc
+
     ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
 
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
+    revs, checkout = hg.addbranchrevs(repo, repo, (path.branch, []), None)
     other = hg.peer(repo, opts, dest)
 
     if revs:
