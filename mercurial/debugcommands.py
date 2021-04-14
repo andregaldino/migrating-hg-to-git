@@ -1060,7 +1060,9 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     if not remote_revs:
 
-        remoteurl, branches = urlutil.parseurl(ui.expandpath(remoteurl))
+        remoteurl, branches = urlutil.get_unique_pull_path(
+            b'debugdiscovery', repo, ui, remoteurl
+        )
         remote = hg.peer(repo, opts, remoteurl)
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
     else:
