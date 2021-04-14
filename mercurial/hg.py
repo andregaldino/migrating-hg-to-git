@@ -689,7 +689,7 @@ def clone(
             if dest:
                 ui.status(_(b"destination directory: %s\n") % dest)
         else:
-            dest = ui.expandpath(dest)
+            dest = urlutil.get_clone_path(ui, dest)[0]
 
         dest = urlutil.urllocalpath(dest)
         source = urlutil.urllocalpath(source)
