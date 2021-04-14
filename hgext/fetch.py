@@ -109,11 +109,9 @@ def fetch(ui, repo, source=b'default', **opts):
                 )
             )
 
-        other = hg.peer(repo, opts, ui.expandpath(source))
-        ui.status(
-            _(b'pulling from %s\n')
-            % urlutil.hidepassword(ui.expandpath(source))
-        )
+        path = urlutil.get_unique_pull_path(b'fetch', repo, ui, source)[0]
+        other = hg.peer(repo, opts, path)
+        ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(path))
         revs = None
         if opts[b'rev']:
             try:
