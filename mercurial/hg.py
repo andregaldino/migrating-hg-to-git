@@ -1263,9 +1263,13 @@ def _incoming(
         (remoterepo, incomingchangesetlist, displayer) parameters,
     and is supposed to contain only code that can't be unified.
     """
-    source, branches = urlutil.parseurl(
-        ui.expandpath(source), opts.get(b'branch')
-    )
+    srcs = urlutil.get_pull_paths(repo, ui, [source], opts.get(b'branch'))
+    srcs = list(srcs)
+    if len(srcs) != 1:
+        msg = _('for now, incoming supports only a single source, %d provided')
+        msg %= len(srcs)
+        raise error.Abort(msg)
+    source, branches = srcs[0]
     other = peer(repo, opts, source)
     cleanupfn = other.close
     try:

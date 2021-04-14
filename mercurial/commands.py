@@ -4311,19 +4311,20 @@ def incoming(ui, repo, source=b"default", **opts):
     cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
-        source, branches = urlutil.parseurl(
-            ui.expandpath(source), opts.get(b'branch')
-        )
-        other = hg.peer(repo, opts, source)
-        try:
-            if b'bookmarks' not in other.listkeys(b'namespaces'):
-                ui.warn(_(b"remote doesn't support bookmarks\n"))
-                return 0
-            ui.pager(b'incoming')
-            ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(source))
-            return bookmarks.incoming(ui, repo, other)
-        finally:
-            other.close()
+        srcs = urlutil.get_pull_paths(repo, ui, [source], opts.get(b'branch'))
+        for source, branches in srcs:
+            other = hg.peer(repo, opts, source)
+            try:
+                if b'bookmarks' not in other.listkeys(b'namespaces'):
+                    ui.warn(_(b"remote doesn't support bookmarks\n"))
+                    return 0
+                ui.pager(b'incoming')
+                ui.status(
+                    _(b'comparing with %s\n') % urlutil.hidepassword(source)
+                )
+                return bookmarks.incoming(ui, repo, other)
+            finally:
+                other.close()
 
     repo._subtoppath = ui.expandpath(source)
     try:
