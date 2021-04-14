@@ -509,8 +509,22 @@ def get_unique_pull_path(action, repo, ui, source=None, default_branches=()):
     The `action` parameter will be used for the error message.
     """
     if source is None:
-        source = b'default'
-    url = ui.expandpath(source)
+        if b'default' in ui.paths:
+            url = ui.paths[b'default'].rawloc
+        else:
+            # XXX this is the historical default behavior, but that is not
+            # great, consider breaking BC on this.
+            url = b'default'
+    else:
+        if source in ui.paths:
+            url = ui.paths[source].rawloc
+        else:
+            # Try to resolve as a local path or URI.
+            try:
+                # we pass the ui instance are warning might need to be issued
+                url = path(ui, None, rawloc=source).rawloc
+            except ValueError:
+                url = source
     return parseurl(url, default_branches)
 
 
