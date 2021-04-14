@@ -3654,7 +3654,9 @@ def debugssl(ui, repo, source=None, **opts):
             )
         source = b"default"
 
-    source, branches = urlutil.parseurl(ui.expandpath(source))
+    source, branches = urlutil.get_unique_pull_path(
+        b'debugssl', repo, ui, source
+    )
     url = urlutil.url(source)
 
     defaultport = {b'https': 443, b'ssh': 22}
