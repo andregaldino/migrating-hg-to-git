@@ -40,6 +40,8 @@
 #endif
 
   $ cat >> $HGRCPATH <<EOF
+  > [ui]
+  > paginate=no
   > [experimental]
   > lfs.worker-enable = False
   > [extensions]
