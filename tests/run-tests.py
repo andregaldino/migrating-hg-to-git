@@ -301,6 +301,7 @@ def Popen4(cmd, wd, timeout, env=None):
             while time.time() - start < timeout and p.returncode is None:
                 time.sleep(0.1)
             p.timeout = True
+            vlog('# Timout reached for process %d' % p.pid)
             if p.returncode is None:
                 terminate(p)
 
