@@ -5,6 +5,9 @@ from mercurial import (
     hg,
     registrar,
 )
+from mercurial.utils import (
+    urlutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -18,7 +21,7 @@ def getflogheads(ui, repo, path):
     Used for testing purpose
     """
 
-    dest = repo.ui.expandpath(b'default')
+    dest = urlutil.get_unique_pull_path(b'getflogheads', repo, ui)[0]
     peer = hg.peer(repo, {}, dest)
 
     try:
