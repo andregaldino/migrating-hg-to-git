@@ -382,7 +382,10 @@ def _getbundle(repo, dest, **opts):
     if btype:
         opts['type'] = btype
     try:
-        commands.bundle(ui, repo, tmpfn, dest, **opts)
+        dests = []
+        if dest:
+            dests = [dest]
+        commands.bundle(ui, repo, tmpfn, *dests, **opts)
         return util.readfile(tmpfn)
     finally:
         try:

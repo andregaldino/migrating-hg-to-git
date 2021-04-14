@@ -1531,10 +1531,10 @@ def branches(ui, repo, active=False, closed=False, **opts):
         ),
     ]
     + remoteopts,
-    _(b'[-f] [-t BUNDLESPEC] [-a] [-r REV]... [--base REV]... FILE [DEST]'),
+    _(b'[-f] [-t BUNDLESPEC] [-a] [-r REV]... [--base REV]... FILE [DEST]...'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
 )
-def bundle(ui, repo, fname, dest=None, **opts):
+def bundle(ui, repo, fname, *dests, **opts):
     """create a bundle file
 
     Generate a bundle file containing data to be transferred to another
@@ -1545,7 +1545,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
     all the nodes you specify with --base parameters. Otherwise, hg
     will assume the repository has all the nodes in destination, or
     default-push/default if no destination is specified, where destination
-    is the repository you provide through DEST option.
+    is the repositories you provide through DEST option.
 
     You can change bundle format with the -t/--type option. See
     :hg:`help bundlespec` for documentation on this format. By default,
@@ -1590,9 +1590,9 @@ def bundle(ui, repo, fname, dest=None, **opts):
         )
 
     if opts.get(b'all'):
-        if dest:
+        if dests:
             raise error.InputError(
-                _(b"--all is incompatible with specifying a destination")
+                _(b"--all is incompatible with specifying destinations")
             )
         if opts.get(b'base'):
             ui.warn(_(b"ignoring --base because --all was specified\n"))
@@ -1605,31 +1605,54 @@ def bundle(ui, repo, fname, dest=None, **opts):
         )
 
     if base:
-        if dest:
+        if dests:
             raise error.InputError(
-                _(b"--base is incompatible with specifying a destination")
+                _(b"--base is incompatible with specifying destinations")
             )
         common = [repo[rev].node() for rev in base]
         heads = [repo[r].node() for r in revs] if revs else None
         outgoing = discovery.outgoing(repo, common, heads)
+        missing = outgoing.missing
+        excluded = outgoing.excluded
     else:
-        dest = ui.expandpath(dest or b'default-push', dest or b'default')
-        dest, branches = urlutil.parseurl(dest, opts.get(b'branch'))
-        other = hg.peer(repo, opts, dest)
-        revs = [repo[r].hex() for r in revs]
-        revs, checkout = hg.addbranchrevs(repo, repo, branches, revs)
-        heads = revs and pycompat.maplist(repo.lookup, revs) or revs
-        outgoing = discovery.findcommonoutgoing(
-            repo,
-            other,
-            onlyheads=heads,
-            force=opts.get(b'force'),
-            portable=True,
-        )
+        missing = set()
+        excluded = set()
+        for path in urlutil.get_push_paths(repo, ui, dests):
+            other = hg.peer(repo, opts, path.rawloc)
+            if revs is not None:
+                hex_revs = [repo[r].hex() for r in revs]
+            else:
+                hex_revs = None
+            branches = (path.branch, [])
+            head_revs, checkout = hg.addbranchrevs(
+                repo, repo, branches, hex_revs
+            )
+            heads = (
+                head_revs
+                and pycompat.maplist(repo.lookup, head_revs)
+                or head_revs
+            )
+            outgoing = discovery.findcommonoutgoing(
+                repo,
+                other,
+                onlyheads=heads,
+                force=opts.get(b'force'),
+                portable=True,
+            )
+            missing.update(outgoing.missing)
+            excluded.update(outgoing.excluded)
 
-    if not outgoing.missing:
-        scmutil.nochangesfound(ui, repo, not base and outgoing.excluded)
+    if not missing:
+        scmutil.nochangesfound(ui, repo, not base and excluded)
         return 1
+
+    if heads:
+        outgoing = discovery.outgoing(
+            repo, missingroots=missing, ancestorsof=heads
+        )
+    else:
+        outgoing = discovery.outgoing(repo, missingroots=missing)
+    outgoing.excluded = sorted(excluded)
 
     if cgversion == b'01':  # bundle1
         bversion = b'HG10' + bundlespec.wirecompression

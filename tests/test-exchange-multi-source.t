@@ -170,6 +170,11 @@ push
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     C
   
+  $ hg bundle -R test-repo-bare bundle.hg ./branch-E-push ./branch-G-push ./branch-H-push
+  searching for changes
+  searching for changes
+  searching for changes
+  6 changesets found
   $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push
   pushing to ./branch-E-push
   searching for changes
@@ -351,6 +356,11 @@ We only push a specific branch with --rev
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     C
   
+  $ hg bundle -R test-repo-bare bundle.hg ./branch-E-push ./branch-G-push ./branch-H-push --rev default
+  searching for changes
+  searching for changes
+  searching for changes
+  2 changesets found
   $ hg push --force -R test-repo-bare ./branch-E-push ./branch-G-push ./branch-H-push --rev default
   pushing to ./branch-E-push
   searching for changes
@@ -429,6 +439,11 @@ Same push, but the first one is a no-op
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     C
   
+  $ hg bundle -R test-repo-bare bundle.hg ./branch-G-push ./branch-H-push ./branch-E-push --rev default
+  searching for changes
+  searching for changes
+  searching for changes
+  2 changesets found
   $ hg push --force -R test-repo-bare ./branch-G-push ./branch-H-push ./branch-E-push --rev default
   pushing to ./branch-G-push
   searching for changes

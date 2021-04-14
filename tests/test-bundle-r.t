@@ -171,14 +171,15 @@
 should fail
 
   $ hg -R test bundle --base 2 -r tip test-bundle-branch1.hg test-3
-  abort: --base is incompatible with specifying a destination
+  abort: --base is incompatible with specifying destinations
   [10]
   $ hg -R test bundle -a -r tip test-bundle-branch1.hg test-3
-  abort: --all is incompatible with specifying a destination
+  abort: --all is incompatible with specifying destinations
   [10]
   $ hg -R test bundle -r tip test-bundle-branch1.hg
-  abort: repository default-push not found
-  [255]
+  config error: default repository not configured!
+  (see 'hg help config.paths')
+  [30]
 
   $ hg -R test bundle --base 2 -r tip test-bundle-branch1.hg
   2 changesets found
