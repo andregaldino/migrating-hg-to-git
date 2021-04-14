@@ -471,6 +471,22 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
         yield parseurl(url, default_branches)
 
 
+def get_unique_pull_path(action, repo, ui, source=None, default_branches=()):
+    """return a unique `(path, branch)` or abort if multiple are found
+
+    This is useful for command and action that does not support multiple
+    destination (yet).
+
+    Note that for now, we cannot get multiple destination so this function is "trivial".
+
+    The `action` parameter will be used for the error message.
+    """
+    if source is None:
+        source = b'default'
+    url = ui.expandpath(source)
+    return parseurl(url, default_branches)
+
+
 def get_clone_path(ui, source, default_branches=()):
     """return the `(origsource, path, branch)` selected as clone source"""
     url = ui.expandpath(source)
