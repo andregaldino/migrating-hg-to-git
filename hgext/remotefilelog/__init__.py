@@ -888,7 +888,7 @@ def gcclient(ui, cachepath):
         progress.update(count)
         count += 1
         try:
-            path = ui.expandpath(os.path.normpath(path))
+            path = util.expandpath(os.path.normpath(path))
         except TypeError as e:
             ui.warn(_(b"warning: malformed path: %r:%s\n") % (path, e))
             traceback.print_exc()
