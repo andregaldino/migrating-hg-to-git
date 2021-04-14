@@ -593,8 +593,8 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         # Find the revisions we have in common with the remote. These will
         # be used for finding local-only changes for narrowing. They will
         # also define the set of revisions to update for widening.
-        remotepath = ui.expandpath(remotepath or b'default')
-        url, branches = urlutil.parseurl(remotepath)
+        r = urlutil.get_unique_pull_path(b'tracked', repo, ui, remotepath)
+        url, branches = r
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(url))
         remote = hg.peer(repo, opts, url)
 
