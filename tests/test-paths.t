@@ -348,10 +348,10 @@ dependency detection.
   $ hg id
   000000000000
   $ hg path
-  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
   [255]
   $ hg pull chain_path
-  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
   [255]
 
 Doing an actual circle should always be an issue
@@ -365,10 +365,10 @@ Doing an actual circle should always be an issue
   $ hg id
   000000000000
   $ hg path
-  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
   [255]
   $ hg pull chain_path
-  abort: cannot use `path://other_default`, "other_default" is also define as a `path://`
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
   [255]
 
 Test basic error cases

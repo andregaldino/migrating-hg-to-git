@@ -643,11 +643,11 @@ class path(object):
             try:
                 subpath = paths[self.url.host]
             except KeyError:
-                m = _('cannot use `%s`, "%s" is not a known path')
+                m = _(b'cannot use `%s`, "%s" is not a known path')
                 m %= (self.rawloc, self.url.host)
                 raise error.Abort(m)
             if subpath.raw_url.scheme == b'path':
-                m = _('cannot use `%s`, "%s" is also define as a `path://`')
+                m = _(b'cannot use `%s`, "%s" is also defined as a `path://`')
                 m %= (self.rawloc, self.url.host)
                 raise error.Abort(m)
             self.url = subpath.url
