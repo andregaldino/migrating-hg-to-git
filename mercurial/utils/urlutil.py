@@ -20,6 +20,10 @@ from .. import (
     urllibcompat,
 )
 
+from . import (
+    stringutil,
+)
+
 
 if pycompat.TYPE_CHECKING:
     from typing import (
@@ -639,19 +643,30 @@ class paths(dict):
 
         home_path = os.path.expanduser(b'~')
 
-        for name, loc in ui.configitems(b'paths', ignoresub=True):
+        for name, value in ui.configitems(b'paths', ignoresub=True):
             # No location is the same as not existing.
-            if not loc:
+            if not value:
                 continue
             _value, sub_opts = ui.configsuboptions(b'paths', name)
             s = ui.configsource(b'paths', name)
-            root_key = (name, loc, s)
+            root_key = (name, value, s)
             root = ui._path_to_root.get(root_key, home_path)
-            loc = os.path.expandvars(loc)
-            loc = os.path.expanduser(loc)
-            if not hasscheme(loc) and not os.path.isabs(loc):
-                loc = os.path.normpath(os.path.join(root, loc))
-            self[name] = [path(ui, name, rawloc=loc, suboptions=sub_opts)]
+
+            multi_url = sub_opts.get(b'multi-urls')
+            if multi_url is not None and stringutil.parsebool(multi_url):
+                base_locs = stringutil.parselist(value)
+            else:
+                base_locs = [value]
+
+            paths = []
+            for loc in base_locs:
+                loc = os.path.expandvars(loc)
+                loc = os.path.expanduser(loc)
+                if not hasscheme(loc) and not os.path.isabs(loc):
+                    loc = os.path.normpath(os.path.join(root, loc))
+                p = path(ui, name, rawloc=loc, suboptions=sub_opts)
+                paths.append(p)
+            self[name] = paths
 
         for name, old_paths in sorted(self.items()):
             new_paths = []
@@ -748,6 +763,17 @@ def pushurlpathoption(ui, path, value):
 @pathsuboption(b'pushrev', b'pushrev')
 def pushrevpathoption(ui, path, value):
     return value
+
+
+@pathsuboption(b'multi-urls', b'multi_urls')
+def multiurls_pathoption(ui, path, value):
+    res = stringutil.parsebool(value)
+    if res is None:
+        ui.warn(
+            _(b'(paths.%s:multi-urls not a boolean; ignoring)\n') % path.name
+        )
+        res = False
+    return res
 
 
 def _chain_path(base_path, ui, paths):

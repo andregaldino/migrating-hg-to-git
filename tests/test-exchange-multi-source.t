@@ -611,3 +611,177 @@ The update has conflict and interrupt the pull.
   |
   %  A 0
   
+
+Testing multi-path definition
+----------------------------
+
+  $ hg clone main-repo repo-paths --rev 0
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 4a2df7238c3b
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cp -R ./branch-E ./branch-E-paths
+  $ cp -R ./branch-G ./branch-G-paths
+  $ cp -R ./branch-H ./branch-H-paths
+  $ cat << EOF >> repo-paths/.hg/hgrc
+  > [paths]
+  > E=../branch-E-paths
+  > G=../branch-G-paths
+  > H=../branch-H-paths
+  > EHG=path://E,path://H,path://G
+  > EHG:multi-urls=yes
+  > GEH=path://G,path://E,path://H
+  > GEH:multi-urls=yes
+  > EOF
+
+Do various operations and verify that order matters
+
+  $ hg -R repo-paths push EHG --force
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  [1]
+  $ hg -R repo-paths push GEH --force
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  [1]
+  $ hg -R repo-paths push EHG GEH --force
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  [1]
+  $ hg -R repo-paths pull EHG
+  pulling from $TESTTMP/branch-E-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files
+  new changesets 27547f69f254:a603bfb5a83e
+  (run 'hg update' to get a working copy)
+  pulling from $TESTTMP/branch-H-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  new changesets 40faebb2ec45
+  (run 'hg heads' to see heads, 'hg merge' to merge)
+  pulling from $TESTTMP/branch-G-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files (+1 heads)
+  new changesets 2f3a4c5c1417:c521a06b234b
+  (run 'hg heads .' to see heads, 'hg merge' to merge)
+  $ hg -R repo-paths pull GEH
+  pulling from $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  $ hg -R repo-paths pull EHG GEH
+  pulling from $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pulling from $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  $ hg -R repo-paths push EHG --force
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 3 changes to 3 files (+2 heads)
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files (+2 heads)
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files (+2 heads)
+  $ hg -R repo-paths push GEH --force
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  [1]
+  $ hg -R repo-paths push EHG GEH --force
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-G-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-E-paths
+  searching for changes
+  no changes found
+  pushing to $TESTTMP/branch-H-paths
+  searching for changes
+  no changes found
+  [1]
