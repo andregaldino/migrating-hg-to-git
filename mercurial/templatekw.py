@@ -667,14 +667,19 @@ def showpeerurls(context, mapping):
     urls = util.sortdict((k, p.rawloc) for k, p in all_paths)
 
     def makemap(k):
-        p = paths[k]
-        d = {b'name': k, b'url': p.rawloc}
-        sub_opts = util.sortdict(sorted(pycompat.iteritems(p.suboptions)))
-        d.update(sub_opts)
+        ps = paths[k]
+        d = {b'name': k}
+        if len(ps) == 1:
+            d[b'url'] = ps[0].rawloc
+            sub_opts = pycompat.iteritems(ps[0].suboptions)
+            sub_opts = util.sortdict(sorted(sub_opts))
+            d.update(sub_opts)
         path_dict = util.sortdict()
-        path_dict[b'url'] = p.rawloc
-        path_dict.update(sub_opts)
-        d[b'urls'] = [path_dict]
+        for p in ps:
+            sub_opts = util.sortdict(sorted(pycompat.iteritems(p.suboptions)))
+            path_dict[b'url'] = p.rawloc
+            path_dict.update(sub_opts)
+            d[b'urls'] = [path_dict]
         return d
 
     def format_one(k):
