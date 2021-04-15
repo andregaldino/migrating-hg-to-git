@@ -707,7 +707,7 @@ def pushrevpathoption(ui, path, value):
 class path(object):
     """Represents an individual path and its configuration."""
 
-    def __init__(self, ui, name, rawloc=None, suboptions=None):
+    def __init__(self, ui=None, name=None, rawloc=None, suboptions=None):
         """Construct a path from its config options.
 
         ``ui`` is the ``ui`` instance the path is coming from.
@@ -719,6 +719,13 @@ class path(object):
         filesystem path with a .hg directory or b) a URL. If not,
         ``ValueError`` is raised.
         """
+        if ui is None:
+            # used in copy
+            assert name is None
+            assert rawloc is None
+            assert suboptions is None
+            return
+
         if not rawloc:
             raise ValueError(b'rawloc must be defined')
 
@@ -773,6 +780,16 @@ class path(object):
             suboptions = subpath._all_sub_opts.copy()
             suboptions.update(self._own_sub_opts)
             self._apply_suboptions(ui, suboptions)
+
+    def copy(self):
+        """make a copy of this path object"""
+        new = self.__class__()
+        for k, v in self.__dict__.items():
+            new_copy = getattr(v, 'copy', None)
+            if new_copy is not None:
+                v = new_copy()
+            new.__dict__[k] = v
+        return new
 
     def _validate_path(self):
         # When given a raw location but not a symbolic name, validate the
