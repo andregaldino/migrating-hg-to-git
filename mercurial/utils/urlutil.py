@@ -471,7 +471,15 @@ def get_push_paths(repo, ui, dests):
             )
     else:
         for dest in dests:
-            yield ui.getpath(dest)
+            if dest in ui.paths:
+                yield ui.paths[dest]
+            else:
+                path = try_path(ui, dest)
+                if path is None:
+                    msg = _(b'repository %s does not exist')
+                    msg %= dest
+                    raise error.RepoError(msg)
+                yield path
 
 
 def get_pull_paths(repo, ui, sources, default_branches=()):
