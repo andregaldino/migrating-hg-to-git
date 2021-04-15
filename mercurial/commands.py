@@ -5126,15 +5126,9 @@ def paths(ui, repo, search=None, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+
+    pathitems = urlutil.list_paths(ui, search)
     ui.pager(b'paths')
-    if search:
-        pathitems = [
-            (name, path)
-            for name, path in pycompat.iteritems(ui.paths)
-            if name == search
-        ]
-    else:
-        pathitems = sorted(pycompat.iteritems(ui.paths))
 
     fm = ui.formatter(b'paths', opts)
     if fm.isplain():
