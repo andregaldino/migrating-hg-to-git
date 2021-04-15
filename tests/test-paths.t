@@ -98,6 +98,9 @@ log template:
   expand: $TESTTMP/a/$SOMETHING/bar
   $ hg log -rnull -T '{get(peerurls, "dupe")}\n'
   $TESTTMP/b#tip
+  $ hg log -rnull -T '{peerurls % "{urls|json}\n"}'
+  [{"pushurl": "https://example.com/dupe", "url": "$TESTTMP/b#tip"}]
+  [{"url": "$TESTTMP/a/$SOMETHING/bar"}]
 
  (sub options can be populated by map/dot operation)
 
