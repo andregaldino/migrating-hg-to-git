@@ -445,6 +445,18 @@ def removeauth(u):
     return bytes(u)
 
 
+def try_path(ui, url):
+    """try to build a path from a url
+
+    Return None if no Path could built.
+    """
+    try:
+        # we pass the ui instance are warning might need to be issued
+        return path(ui, None, rawloc=url)
+    except ValueError:
+        return None
+
+
 def get_push_paths(repo, ui, dests):
     """yields all the `path` selected as push destination by `dests`"""
     if not dests:
@@ -471,10 +483,10 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
             url = ui.paths[source].rawloc
         else:
             # Try to resolve as a local path or URI.
-            try:
-                # we pass the ui instance are warning might need to be issued
-                url = path(ui, None, rawloc=source).rawloc
-            except ValueError:
+            path = try_path(ui, source)
+            if path is not None:
+                url = path.rawloc
+            else:
                 url = source
         yield parseurl(url, default_branches)
 
@@ -520,10 +532,10 @@ def get_unique_pull_path(action, repo, ui, source=None, default_branches=()):
             url = ui.paths[source].rawloc
         else:
             # Try to resolve as a local path or URI.
-            try:
-                # we pass the ui instance are warning might need to be issued
-                url = path(ui, None, rawloc=source).rawloc
-            except ValueError:
+            path = try_path(ui, source)
+            if path is not None:
+                url = path.rawloc
+            else:
                 url = source
     return parseurl(url, default_branches)
 
@@ -542,10 +554,10 @@ def get_clone_path(ui, source, default_branches=()):
             url = ui.paths[source].rawloc
         else:
             # Try to resolve as a local path or URI.
-            try:
-                # we pass the ui instance are warning might need to be issued
-                url = path(ui, None, rawloc=source).rawloc
-            except ValueError:
+            path = try_path(ui, source)
+            if path is not None:
+                url = path.rawloc
+            else:
                 url = source
     clone_path, branch = parseurl(url, default_branches)
     return url, clone_path, branch
@@ -607,16 +619,14 @@ class paths(dict):
         # This may need to raise in the future.
         if not name:
             return None
-
-        try:
+        if name in self:
             return self[name]
-        except KeyError:
+        else:
             # Try to resolve as a local path or URI.
-            try:
-                # we pass the ui instance are warning might need to be issued
-                return path(ui, None, rawloc=name)
-            except ValueError:
+            path = try_path(ui, name)
+            if path is None:
                 raise error.RepoError(_(b'repository %s does not exist') % name)
+            return path.rawloc
 
 
 _pathsuboptions = {}
