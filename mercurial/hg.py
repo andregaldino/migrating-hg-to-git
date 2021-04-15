@@ -1320,7 +1320,7 @@ def incoming(ui, repo, source, opts):
     return _incoming(display, subreporecurse, ui, repo, source, opts)
 
 
-def _outgoing(ui, repo, dest, opts):
+def _outgoing(ui, repo, dest, opts, subpath=None):
     path = ui.getpath(dest, default=(b'default-push', b'default'))
     if not path:
         raise error.Abort(
@@ -1328,6 +1328,15 @@ def _outgoing(ui, repo, dest, opts):
             hint=_(b"see 'hg help config.paths'"),
         )
     dest = path.pushloc or path.loc
+    if subpath is not None:
+        subpath = urlutil.url(subpath)
+        if subpath.isabs():
+            dest = bytes(subpath)
+        else:
+            p = urlutil.url(dest)
+            p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
+            dest = bytes(p)
+
     branches = path.branch, opts.get(b'branch') or []
 
     ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
@@ -1382,10 +1391,10 @@ def _outgoing_filter(repo, revs, opts):
         yield n
 
 
-def outgoing(ui, repo, dest, opts):
+def outgoing(ui, repo, dest, opts, subpath=None):
     if opts.get(b'graph'):
         logcmdutil.checkunsupportedgraphflags([], opts)
-    o, other = _outgoing(ui, repo, dest, opts)
+    o, other = _outgoing(ui, repo, dest, opts, subpath=subpath)
     ret = 1
     try:
         if o:

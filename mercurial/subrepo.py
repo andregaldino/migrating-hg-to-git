@@ -873,7 +873,8 @@ class hgsubrepo(abstractsubrepo):
             opts = copy.copy(opts)
             opts.pop(b'rev', None)
             opts.pop(b'branch', None)
-        return hg.outgoing(ui, self._repo, _abssource(self._repo, True), opts)
+        subpath = subrepoutil.repo_rel_or_abs_source(self._repo)
+        return hg.outgoing(ui, self._repo, dest, opts, subpath=subpath)
 
     @annotatesubrepoerror
     def incoming(self, ui, source, opts):

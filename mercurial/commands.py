@@ -4985,11 +4985,7 @@ def outgoing(ui, repo, dest=None, **opts):
         finally:
             other.close()
 
-    repo._subtoppath = path.pushloc or path.loc
-    try:
-        return hg.outgoing(ui, repo, dest, opts)
-    finally:
-        del repo._subtoppath
+    return hg.outgoing(ui, repo, dest, opts)
 
 
 @command(
