@@ -175,7 +175,7 @@ unknown sub-options aren't displayed
   > EOF
 
   $ hg paths
-  (paths.default:pushurl not a URL; ignoring)
+  (paths.default:pushurl not a URL; ignoring: "/not/a/url")
   default = /path/to/nothing
 
 #fragment is not allowed in :pushurl

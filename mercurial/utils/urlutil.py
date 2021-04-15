@@ -742,7 +742,9 @@ def pushurlpathoption(ui, path, value):
     u = url(value)
     # Actually require a URL.
     if not u.scheme:
-        ui.warn(_(b'(paths.%s:pushurl not a URL; ignoring)\n') % path.name)
+        msg = _(b'(paths.%s:pushurl not a URL; ignoring: "%s")\n')
+        msg %= (path.name, value)
+        ui.warn(msg)
         return None
 
     # Don't support the #foo syntax in the push URL to declare branch to
