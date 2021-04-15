@@ -383,6 +383,24 @@ def precommit(ui, wctx, status, match, force=False):
     return subs, commitsubs, newstate
 
 
+def repo_rel_or_abs_source(repo):
+    """return the source of this repo
+
+    Either absolute or relative the outermost repo"""
+    parent = repo
+    chunks = []
+    while util.safehasattr(parent, b'_subparent'):
+        source = urlutil.url(parent._subsource)
+        chunks.append(bytes(source))
+        if source.isabs():
+            break
+        parent = parent._subparent
+
+    chunks.reverse()
+    path = posixpath.join(*chunks)
+    return posixpath.normpath(path)
+
+
 def reporelpath(repo):
     # type: (localrepo.localrepository) -> bytes
     """return path to this (sub)repo as seen from outermost repo"""
