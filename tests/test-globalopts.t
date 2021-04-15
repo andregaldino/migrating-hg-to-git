@@ -74,6 +74,10 @@ TODO: add rhg support for path aliases
   8580ff50825a tip
   $ echo '[paths]' >> $HGRCPATH
   $ echo 'relativetohome = a' >> $HGRCPATH
+  $ hg path | grep relativetohome
+  relativetohome = $TESTTMP/a
+  $ HOME=`pwd`/../ hg path | grep relativetohome
+  relativetohome = $TESTTMP/a
   $ HOME=`pwd`/../ hg -R relativetohome identify
   8580ff50825a tip
   $ cd ..

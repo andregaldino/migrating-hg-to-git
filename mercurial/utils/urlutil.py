@@ -637,11 +637,20 @@ class paths(dict):
     def __init__(self, ui):
         dict.__init__(self)
 
+        home_path = os.path.expanduser(b'~')
+
         for name, loc in ui.configitems(b'paths', ignoresub=True):
             # No location is the same as not existing.
             if not loc:
                 continue
-            loc, sub_opts = ui.configsuboptions(b'paths', name)
+            _value, sub_opts = ui.configsuboptions(b'paths', name)
+            s = ui.configsource(b'paths', name)
+            root_key = (name, loc, s)
+            root = ui._path_to_root.get(root_key, home_path)
+            loc = os.path.expandvars(loc)
+            loc = os.path.expanduser(loc)
+            if not hasscheme(loc) and not os.path.isabs(loc):
+                loc = os.path.normpath(os.path.join(root, loc))
             self[name] = [path(ui, name, rawloc=loc, suboptions=sub_opts)]
 
         for name, old_paths in sorted(self.items()):

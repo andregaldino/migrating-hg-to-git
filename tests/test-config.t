@@ -337,8 +337,14 @@ sub-options in [paths] aren't expanded
   > EOF
 
   $ hg showconfig paths
+  paths.foo=~/foo
   paths.foo:suboption=~/foo
-  paths.foo=$TESTTMP/foo
+
+note: The path expansion no longer happens at the config level, but the path is
+still expanded:
+
+  $ hg path | grep foo
+  foo = $TESTTMP/foo
 
 edit failure
 

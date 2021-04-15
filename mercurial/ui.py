@@ -233,6 +233,8 @@ class ui(object):
         self._trustusers = set()
         self._trustgroups = set()
         self.callhooks = True
+        # hold the root to use for each [paths] entry
+        self._path_to_root = {}
         # Insecure server connections requested.
         self.insecureconnections = False
         # Blocked time
@@ -264,6 +266,7 @@ class ui(object):
             self._trustgroups = src._trustgroups.copy()
             self.environ = src.environ
             self.callhooks = src.callhooks
+            self._path_to_root = src._path_to_root
             self.insecureconnections = src.insecureconnections
             self._colormode = src._colormode
             self._terminfoparams = src._terminfoparams.copy()
@@ -545,22 +548,26 @@ class ui(object):
             root = root or encoding.getcwd()
             for c in self._tcfg, self._ucfg, self._ocfg:
                 for n, p in c.items(b'paths'):
+                    old_p = p
+                    s = self.configsource(b'paths', n) or b'none'
+                    root_key = (n, p, s)
+                    if root_key not in self._path_to_root:
+                        self._path_to_root[root_key] = root
                     # Ignore sub-options.
                     if b':' in n:
                         continue
                     if not p:
                         continue
                     if b'%%' in p:
-                        s = self.configsource(b'paths', n) or b'none'
+                        if s is None:
+                            s = 'none'
                         self.warn(
                             _(b"(deprecated '%%' in path %s=%s from %s)\n")
                             % (n, p, s)
                         )
                         p = p.replace(b'%%', b'%')
-                    p = util.expandpath(p)
-                    if not urlutil.hasscheme(p) and not os.path.isabs(p):
-                        p = os.path.normpath(os.path.join(root, p))
-                    c.alter(b"paths", n, p)
+                    if p != old_p:
+                        c.alter(b"paths", n, p)
 
         if section in (None, b'ui'):
             # update ui options

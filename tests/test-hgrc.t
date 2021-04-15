@@ -255,7 +255,7 @@ source of paths is not mangled
   > EOF
   $ hg showconfig --source paths
   plain: True
-  $TESTTMP/hgrc:17: paths.foo=$TESTTMP/bar
+  $TESTTMP/hgrc:17: paths.foo=bar
 
 Test we can skip the user configuration
 
