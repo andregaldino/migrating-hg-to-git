@@ -672,7 +672,10 @@ def showpeerurls(context, mapping):
         d.update((o, v) for o, v in sorted(pycompat.iteritems(p.suboptions)))
         return d
 
-    return _hybrid(None, urls, makemap, lambda k: b'%s=%s' % (k, urls[k]))
+    def format_one(k):
+        return b'%s=%s' % (k, urls[k])
+
+    return _hybrid(None, urls, makemap, format_one)
 
 
 @templatekeyword(b"predecessors", requires={b'repo', b'ctx'})
