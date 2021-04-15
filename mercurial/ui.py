@@ -887,10 +887,10 @@ class ui(object):
         """
         # default is not always a list
         v = self.configwith(
-            config.parselist, section, name, default, b'list', untrusted
+            stringutil.parselist, section, name, default, b'list', untrusted
         )
         if isinstance(v, bytes):
-            return config.parselist(v)
+            return stringutil.parselist(v)
         elif v is None:
             return []
         return v

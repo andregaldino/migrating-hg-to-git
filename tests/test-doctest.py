@@ -131,7 +131,6 @@ expected_mods_tested = set(
         ('mercurial.changelog', '{}'),
         ('mercurial.cmdutil', '{}'),
         ('mercurial.color', '{}'),
-        ('mercurial.config', '{}'),
         ('mercurial.dagparser', "{'optionflags': 4}"),
         ('mercurial.encoding', '{}'),
         ('mercurial.fancyopts', '{}'),

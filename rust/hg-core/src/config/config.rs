@@ -361,10 +361,11 @@ impl Config {
     ///
     /// This is appropriate for new configuration keys. The value syntax is
     /// **not** the same as most existing list-valued config, which has Python
-    /// parsing implemented in `parselist()` in `mercurial/config.py`.
-    /// Faithfully porting that parsing algorithm to Rust (including behavior
-    /// that are arguably bugs) turned out to be non-trivial and hasn’t been
-    /// completed as of this writing.
+    /// parsing implemented in `parselist()` in
+    /// `mercurial/utils/stringutil.py`. Faithfully porting that parsing
+    /// algorithm to Rust (including behavior that are arguably bugs)
+    /// turned out to be non-trivial and hasn’t been completed as of this
+    /// writing.
     ///
     /// Instead, the "simple" syntax is: split on comma, then trim leading and
     /// trailing whitespace of each component. Quotes or backslashes are not

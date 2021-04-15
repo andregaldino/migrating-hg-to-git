@@ -868,6 +868,96 @@ def parsebool(s):
     return _booleans.get(s.lower(), None)
 
 
+def parselist(value):
+    """parse a configuration value as a list of comma/space separated strings
+
+    >>> parselist(b'this,is "a small" ,test')
+    ['this', 'is', 'a small', 'test']
+    """
+
+    def _parse_plain(parts, s, offset):
+        whitespace = False
+        while offset < len(s) and (
+            s[offset : offset + 1].isspace() or s[offset : offset + 1] == b','
+        ):
+            whitespace = True
+            offset += 1
+        if offset >= len(s):
+            return None, parts, offset
+        if whitespace:
+            parts.append(b'')
+        if s[offset : offset + 1] == b'"' and not parts[-1]:
+            return _parse_quote, parts, offset + 1
+        elif s[offset : offset + 1] == b'"' and parts[-1][-1:] == b'\\':
+            parts[-1] = parts[-1][:-1] + s[offset : offset + 1]
+            return _parse_plain, parts, offset + 1
+        parts[-1] += s[offset : offset + 1]
+        return _parse_plain, parts, offset + 1
+
+    def _parse_quote(parts, s, offset):
+        if offset < len(s) and s[offset : offset + 1] == b'"':  # ""
+            parts.append(b'')
+            offset += 1
+            while offset < len(s) and (
+                s[offset : offset + 1].isspace()
+                or s[offset : offset + 1] == b','
+            ):
+                offset += 1
+            return _parse_plain, parts, offset
+
+        while offset < len(s) and s[offset : offset + 1] != b'"':
+            if (
+                s[offset : offset + 1] == b'\\'
+                and offset + 1 < len(s)
+                and s[offset + 1 : offset + 2] == b'"'
+            ):
+                offset += 1
+                parts[-1] += b'"'
+            else:
+                parts[-1] += s[offset : offset + 1]
+            offset += 1
+
+        if offset >= len(s):
+            real_parts = _configlist(parts[-1])
+            if not real_parts:
+                parts[-1] = b'"'
+            else:
+                real_parts[0] = b'"' + real_parts[0]
+                parts = parts[:-1]
+                parts.extend(real_parts)
+            return None, parts, offset
+
+        offset += 1
+        while offset < len(s) and s[offset : offset + 1] in [b' ', b',']:
+            offset += 1
+
+        if offset < len(s):
+            if offset + 1 == len(s) and s[offset : offset + 1] == b'"':
+                parts[-1] += b'"'
+                offset += 1
+            else:
+                parts.append(b'')
+        else:
+            return None, parts, offset
+
+        return _parse_plain, parts, offset
+
+    def _configlist(s):
+        s = s.rstrip(b' ,')
+        if not s:
+            return []
+        parser, parts, offset = _parse_plain, [b''], 0
+        while parser:
+            parser, parts, offset = parser(parts, s, offset)
+        return parts
+
+    if value is not None and isinstance(value, bytes):
+        result = _configlist(value.lstrip(b' ,\n'))
+    else:
+        result = value
+    return result or []
+
+
 def evalpythonliteral(s):
     """Evaluate a string containing a Python literal expression"""
     # We could backport our tokenizer hack to rewrite '' to u'' if we want
