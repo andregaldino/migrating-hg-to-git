@@ -27,7 +27,10 @@ from . import (
     templateutil,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 _hybrid = templateutil.hybrid
 hybriddict = templateutil.hybriddict
@@ -660,9 +663,8 @@ def showpeerurls(context, mapping):
     repo = context.resource(mapping, b'repo')
     # see commands.paths() for naming of dictionary keys
     paths = repo.ui.paths
-    urls = util.sortdict(
-        (k, p.rawloc) for k, p in sorted(pycompat.iteritems(paths))
-    )
+    all_paths = urlutil.list_paths(repo.ui)
+    urls = util.sortdict((k, p.rawloc) for k, p in all_paths)
 
     def makemap(k):
         p = paths[k]
