@@ -445,6 +445,18 @@ def removeauth(u):
     return bytes(u)
 
 
+def list_paths(ui, target_path=None):
+    """list all the (name, paths) in the passed ui"""
+    if target_path is None:
+        return sorted(pycompat.iteritems(ui.paths))
+    else:
+        path = ui.paths.get(target_path)
+        if path is None:
+            return []
+        else:
+            return [(target_path, path)]
+
+
 def try_path(ui, url):
     """try to build a path from a url
 
