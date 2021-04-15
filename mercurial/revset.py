@@ -1856,7 +1856,6 @@ def outgoing(repo, subset, x):
         l and getstring(l[0], _(b"outgoing requires a repository path")) or b''
     )
     if dest:
-        # ui.getpath() explicitly tests for None, not just a boolean
         dests = [dest]
     else:
         dests = []
