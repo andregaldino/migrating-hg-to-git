@@ -53,7 +53,11 @@ def persisted_data(revlog):
     try:
         with revlog.opener(filename) as fd:
             if use_mmap:
-                data = util.buffer(util.mmapread(fd, data_length))
+                try:
+                    data = util.buffer(util.mmapread(fd, data_length))
+                except ValueError:
+                    # raised when the read file is too small
+                    data = b''
             else:
                 data = fd.read(data_length)
     except (IOError, OSError) as e:

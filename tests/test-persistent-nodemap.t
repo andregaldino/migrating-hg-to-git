@@ -799,9 +799,13 @@ truncate the file
 
 Check that Mercurial reaction to this event
 
-  $ hg -R corruption-test-repo log -r .
-  abort: index 00changelog.i is corrupted
-  [50]
+  $ hg -R corruption-test-repo log -r . --traceback
+  changeset:   5005:90d5d3ba2fc4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a2
+  
 
 
 stream clone
