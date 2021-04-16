@@ -684,8 +684,12 @@ def _lookupwrap(orig):
 def _pull(orig, ui, repo, source=b"default", **opts):
     opts = pycompat.byteskwargs(opts)
     # Copy paste from `pull` command
-    source, branches = urlutil.parseurl(
-        ui.expandpath(source), opts.get(b'branch')
+    source, branches = urlutil.get_unique_pull_path(
+        b"infinite-push's pull",
+        repo,
+        ui,
+        source,
+        default_branches=opts.get(b'branch'),
     )
 
     scratchbookmarks = {}
