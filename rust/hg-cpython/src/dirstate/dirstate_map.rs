@@ -8,7 +8,7 @@
 //! Bindings for the `hg::dirstate::dirstate_map` file provided by the
 //! `hg-core` package.
 
-use std::cell::{Ref, RefCell};
+use std::cell::{RefCell, RefMut};
 use std::convert::TryInto;
 
 use cpython::{
@@ -527,11 +527,11 @@ py_class!(pub class DirstateMap |py| {
 });
 
 impl DirstateMap {
-    pub fn get_inner<'a>(
+    pub fn get_inner_mut<'a>(
         &'a self,
         py: Python<'a>,
-    ) -> Ref<'a, Box<dyn DirstateMapMethods + Send>> {
-        self.inner(py).borrow()
+    ) -> RefMut<'a, Box<dyn DirstateMapMethods + Send>> {
+        self.inner(py).borrow_mut()
     }
     fn translate_key(
         py: Python,

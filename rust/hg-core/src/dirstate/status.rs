@@ -97,7 +97,8 @@ type IoResult<T> = std::io::Result<T>;
 
 /// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait, 'static>`, so add
 /// an explicit lifetime here to not fight `'static` bounds "out of nowhere".
-type IgnoreFnType<'a> = Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
+pub type IgnoreFnType<'a> =
+    Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
 
 /// We have a good mix of owned (from directory traversal) and borrowed (from
 /// the dirstate/explicit) paths, this comes up a lot.

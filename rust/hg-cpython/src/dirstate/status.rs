@@ -112,7 +112,7 @@ pub fn status_wrapper(
     let root_dir = get_path_from_bytes(bytes.data(py));
 
     let dmap: DirstateMap = dmap.to_py_object(py);
-    let dmap = dmap.get_inner(py);
+    let mut dmap = dmap.get_inner_mut(py);
 
     let ignore_files: PyResult<Vec<_>> = ignore_files
         .iter(py)

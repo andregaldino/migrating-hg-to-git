@@ -576,14 +576,14 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     }
 
     fn status<'a>(
-        &'a self,
-        _matcher: &'a (dyn Matcher + Sync),
-        _root_dir: PathBuf,
-        _ignore_files: Vec<PathBuf>,
-        _options: StatusOptions,
+        &'a mut self,
+        matcher: &'a (dyn Matcher + Sync),
+        root_dir: PathBuf,
+        ignore_files: Vec<PathBuf>,
+        options: StatusOptions,
     ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>
     {
-        todo!()
+        super::status::status(self, matcher, root_dir, ignore_files, options)
     }
 
     fn copy_map_len(&self) -> usize {

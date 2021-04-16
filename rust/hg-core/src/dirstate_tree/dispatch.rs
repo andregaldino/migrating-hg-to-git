@@ -96,7 +96,7 @@ pub trait DirstateMapMethods {
     fn set_dirs(&mut self) -> Result<(), DirstateMapError>;
 
     fn status<'a>(
-        &'a self,
+        &'a mut self,
         matcher: &'a (dyn Matcher + Sync),
         root_dir: PathBuf,
         ignore_files: Vec<PathBuf>,
@@ -258,7 +258,7 @@ impl DirstateMapMethods for DirstateMap {
     }
 
     fn status<'a>(
-        &'a self,
+        &'a mut self,
         matcher: &'a (dyn Matcher + Sync),
         root_dir: PathBuf,
         ignore_files: Vec<PathBuf>,
