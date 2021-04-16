@@ -95,7 +95,7 @@ pub enum Dispatch {
 
 type IoResult<T> = std::io::Result<T>;
 
-/// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait, 'static>`, so add
+/// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait + 'static>`, so add
 /// an explicit lifetime here to not fight `'static` bounds "out of nowhere".
 pub type IgnoreFnType<'a> =
     Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
@@ -255,7 +255,7 @@ pub struct StatusOptions {
     pub collect_traversed_dirs: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DirstateStatus<'a> {
     /// Tracked files whose contents have changed since the parent revision
     pub modified: Vec<HgPathCow<'a>>,

@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use std::borrow::Borrow;
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
@@ -532,6 +533,24 @@ impl TryFrom<PathBuf> for HgPathBuf {
     type Error = HgPathError;
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
         path_to_hg_path_buf(path)
+    }
+}
+
+impl From<HgPathBuf> for Cow<'_, HgPath> {
+    fn from(path: HgPathBuf) -> Self {
+        Cow::Owned(path)
+    }
+}
+
+impl<'a> From<&'a HgPath> for Cow<'a, HgPath> {
+    fn from(path: &'a HgPath) -> Self {
+        Cow::Borrowed(path)
+    }
+}
+
+impl<'a> From<&'a HgPathBuf> for Cow<'a, HgPath> {
+    fn from(path: &'a HgPathBuf) -> Self {
+        Cow::Borrowed(&**path)
     }
 }
 

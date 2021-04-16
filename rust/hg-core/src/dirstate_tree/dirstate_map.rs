@@ -27,7 +27,7 @@ use crate::StatusOptions;
 pub struct DirstateMap {
     parents: Option<DirstateParents>,
     dirty_parents: bool,
-    root: ChildNodes,
+    pub(super) root: ChildNodes,
 
     /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
     nodes_with_entry_count: usize,
@@ -42,17 +42,17 @@ pub struct DirstateMap {
 /// path, so comparing full paths gives the same result as comparing base
 /// names. However `BTreeMap` would waste time always re-comparing the same
 /// string prefix.
-type ChildNodes = BTreeMap<WithBasename<HgPathBuf>, Node>;
+pub(super) type ChildNodes = BTreeMap<WithBasename<HgPathBuf>, Node>;
 
 /// Represents a file or a directory
 #[derive(Default)]
-struct Node {
+pub(super) struct Node {
     /// `None` for directories
-    entry: Option<DirstateEntry>,
+    pub(super) entry: Option<DirstateEntry>,
 
-    copy_source: Option<HgPathBuf>,
+    pub(super) copy_source: Option<HgPathBuf>,
 
-    children: ChildNodes,
+    pub(super) children: ChildNodes,
 
     /// How many (non-inclusive) descendants of this node are tracked files
     tracked_descendants_count: usize,
@@ -66,6 +66,10 @@ impl Node {
         } else {
             false
         }
+    }
+
+    pub(super) fn state(&self) -> Option<EntryState> {
+        self.entry.as_ref().map(|entry| entry.state)
     }
 }
 

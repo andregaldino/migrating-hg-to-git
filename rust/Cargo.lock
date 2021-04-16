@@ -358,6 +358,7 @@ dependencies = [
  "format-bytes",
  "home",
  "im-rc",
+ "itertools",
  "lazy_static",
  "log",
  "memmap",

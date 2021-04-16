@@ -42,6 +42,19 @@ impl DirstateEntry {
     pub fn is_from_other_parent(&self) -> bool {
         self.state == EntryState::Normal && self.size == SIZE_FROM_OTHER_PARENT
     }
+
+    // TODO: other platforms
+    #[cfg(unix)]
+    pub fn mode_changed(
+        &self,
+        filesystem_metadata: &std::fs::Metadata,
+    ) -> bool {
+        use std::os::unix::fs::MetadataExt;
+        const EXEC_BIT_MASK: u32 = 0o100;
+        let dirstate_exec_bit = (self.mode as u32) & EXEC_BIT_MASK;
+        let fs_exec_bit = filesystem_metadata.mode() & EXEC_BIT_MASK;
+        dirstate_exec_bit != fs_exec_bit
+    }
 }
 
 #[derive(BytesCast)]
