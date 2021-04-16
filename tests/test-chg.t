@@ -529,7 +529,7 @@ FIXME: Run 4 should not be >3x Run 1's number of samples.
   > EOF
   Run 1: * samples (glob)
   Run 4: * samples (glob)
-  Run 4 > 3 * Run 1: True
+  Run 4 > 3 * Run 1: False
 (Disabling with --no-profile on the commandline still works, but isn't permanent)
   $ newchg log -r . --no-profile
   $ filteredchg log -r .

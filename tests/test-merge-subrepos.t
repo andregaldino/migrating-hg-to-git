@@ -61,7 +61,7 @@ A deleted subrepo file is flagged as dirty, like the top level repo
   > --config blackbox.track='command commandfinish'
   9bfe45a197d7+ tip
   $ cat .hg/blackbox.log
-  * @9bfe45a197d7b0ab09bf287729dd57e9619c9da5+ (*)> serve --cmdserver chgunix * (glob) (chg !)
+  * @9bfe45a197d7b0ab09bf287729dd57e9619c9da5+ (*)> serve --no-profile --cmdserver chgunix * (glob) (chg !)
   * @9bfe45a197d7b0ab09bf287729dd57e9619c9da5+ (*)> id --config *extensions.blackbox=* --config *blackbox.dirty=True* (glob)
   * @9bfe45a197d7b0ab09bf287729dd57e9619c9da5+ (*)> id --config *extensions.blackbox=* --config *blackbox.dirty=True* exited 0 * (glob)
 

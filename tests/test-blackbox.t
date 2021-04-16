@@ -221,7 +221,7 @@ extension and python hooks - use the eol extension for a pythonhook
   1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pythonhook-preupdate: hgext.eol.preupdate finished in * seconds (glob)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> exthook-update: echo hooked finished in * seconds (glob)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> update exited 0 after * seconds (glob)
-  1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> serve --cmdserver chgunix --address $TESTTMP.chgsock/server.* --daemon-postexec 'chdir:/' (glob) (chg !)
+  1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> serve --no-profile --cmdserver chgunix --address $TESTTMP.chgsock/server.* --daemon-postexec 'chdir:/' (glob) (chg !)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> blackbox -l 5
 
 log rotation
