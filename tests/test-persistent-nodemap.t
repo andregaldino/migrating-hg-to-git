@@ -747,6 +747,63 @@ The persistent nodemap should exist after a streaming clone
   data-unused: 0
   data-unused: 0.000%
 
+Test various corruption case
+============================
+
+Missing datafile
+----------------
+
+Test behavior with a missing datafile
+
+  $ hg clone --quiet --pull test-repo corruption-test-repo
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog-*.nd (glob)
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+  $ rm corruption-test-repo/.hg/store/00changelog*.nd
+  $ hg log -R corruption-test-repo -r .
+  changeset:   5005:90d5d3ba2fc4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a2
+  
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+
+Truncated data file
+-------------------
+
+Test behavior with a too short datafile
+
+rebuild the missing data
+  $ hg -R corruption-test-repo debugupdatecache
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog-*.nd (glob)
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+
+truncate the file
+
+  $ datafilepath=`ls corruption-test-repo/.hg/store/00changelog*.nd`
+  $ f -s $datafilepath
+  corruption-test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
+  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp status=none
+  $ mv $datafilepath-tmp $datafilepath
+  $ f -s $datafilepath
+  corruption-test-repo/.hg/store/00changelog-*.nd: size=10000 (glob)
+
+Check that Mercurial reaction to this event
+
+  $ hg -R corruption-test-repo log -r .
+  abort: index 00changelog.i is corrupted
+  [50]
+
+
 stream clone
 ------------
 
