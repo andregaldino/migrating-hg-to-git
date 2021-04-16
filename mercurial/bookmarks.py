@@ -600,11 +600,12 @@ def _diverge(ui, b, path, localmarks, remotenode):
     # if an @pathalias already exists, we overwrite (update) it
     if path.startswith(b"file:"):
         path = urlutil.url(path).path
-    for p, u in ui.configitems(b"paths"):
-        if u.startswith(b"file:"):
-            u = urlutil.url(u).path
-        if path == u:
-            return b'%s@%s' % (b, p)
+    for name, p in urlutil.list_paths(ui):
+        loc = p.rawloc
+        if loc.startswith(b"file:"):
+            loc = urlutil.url(loc).path
+        if path == loc:
+            return b'%s@%s' % (b, name)
 
     # assign a unique "@number" suffix newly
     for x in range(1, 100):
