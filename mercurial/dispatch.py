@@ -1064,6 +1064,16 @@ def _dispatch(req):
     if req.earlyoptions[b'profile']:
         for ui_ in uis:
             ui_.setconfig(b'profiling', b'enabled', b'true', b'--profile')
+    elif req.earlyoptions[b'profile'] is False:
+        # Check for it being set already, so that we don't pollute the config
+        # with this when using chg in the very common case that it's not
+        # enabled.
+        if lui.configbool(b'profiling', b'enabled'):
+            # Only do this on lui so that `chg foo` with a user config setting
+            # profiling.enabled=1 still shows profiling information (chg will
+            # specify `--no-profile` when `hg serve` is starting up, we don't
+            # want that to propagate to every later invocation).
+            lui.setconfig(b'profiling', b'enabled', b'false', b'--no-profile')
 
     profile = lui.configbool(b'profiling', b'enabled')
     with profiling.profile(lui, enabled=profile) as profiler:
