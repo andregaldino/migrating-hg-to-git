@@ -3776,7 +3776,7 @@ def clearunfinished(repo):
             raise error.StateError(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
-        if s._opname == b'merge' or state._reportonly:
+        if s._opname == b'merge' or s._reportonly:
             continue
         if s._clearable and s.isunfinished(repo):
             util.unlink(repo.vfs.join(s._fname))
