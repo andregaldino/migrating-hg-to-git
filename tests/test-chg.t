@@ -458,6 +458,7 @@ Test that chg works (sets to the user's actual LC_CTYPE) even when python
   LC_CTYPE=
   $ (unset LC_ALL; unset LANG; LC_CTYPE=unsupported_value chg \
   >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  *cannot change locale* (glob) (?)
   LC_CTYPE=unsupported_value
   $ (unset LC_ALL; unset LANG; LC_CTYPE= chg \
   >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
