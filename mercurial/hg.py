@@ -1272,7 +1272,7 @@ def _incoming(
     srcs = urlutil.get_pull_paths(repo, ui, [source], opts.get(b'branch'))
     srcs = list(srcs)
     if len(srcs) != 1:
-        msg = _('for now, incoming supports only a single source, %d provided')
+        msg = _(b'for now, incoming supports only a single source, %d provided')
         msg %= len(srcs)
         raise error.Abort(msg)
     source, branches = srcs[0]
