@@ -304,10 +304,19 @@ class ResponseExpected(Abort):
         Abort.__init__(self, _(b'response expected'))
 
 
-class OutOfBandError(Hint, Exception):
+class OutOfBandError(Abort):
     """Exception raised when a remote repo reports failure"""
 
-    __bytes__ = _tobytes
+    def __init__(self, *messages, **kwargs):
+        from .i18n import _
+
+        if messages:
+            message = _(b"remote error:\n%s") % b''.join(messages)
+            # Abort.format() adds a trailing newline
+            message = message.rstrip(b'\n')
+        else:
+            message = _(b"remote error")
+        super(OutOfBandError, self).__init__(message, **kwargs)
 
 
 class ParseError(Abort):

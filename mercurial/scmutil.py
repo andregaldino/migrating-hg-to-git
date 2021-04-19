@@ -181,17 +181,6 @@ def callcatch(ui, func):
                 encoding.strtolocal(inst.strerror),
             )
         )
-    except error.OutOfBandError as inst:
-        detailed_exit_code = 100
-        if inst.args:
-            msg = _(b"abort: remote error:\n")
-        else:
-            msg = _(b"abort: remote error\n")
-        ui.error(msg)
-        if inst.args:
-            ui.error(b''.join(inst.args))
-        if inst.hint:
-            ui.error(b'(%s)\n' % inst.hint)
     except error.RepoError as inst:
         ui.error(_(b"abort: %s\n") % inst)
         if inst.hint:
@@ -233,6 +222,8 @@ def callcatch(ui, func):
             detailed_exit_code = 30
         elif isinstance(inst, error.HookAbort):
             detailed_exit_code = 40
+        elif isinstance(inst, error.OutOfBandError):
+            detailed_exit_code = 100
         elif isinstance(inst, error.SecurityError):
             detailed_exit_code = 150
         elif isinstance(inst, error.CanceledError):
