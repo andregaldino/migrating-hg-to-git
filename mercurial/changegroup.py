@@ -844,7 +844,8 @@ def deltagroup(
     If topic is not None, progress detail will be generated using this
     topic name (e.g. changesets, manifests, etc).
 
-    See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+    See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+    `sidedata_helpers`.
     """
     if not nodes:
         return
@@ -1212,7 +1213,8 @@ class cgpacker(object):
         if generate is False, the state will be fully populated and no chunk
         stream will be yielded
 
-        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+        See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+        `sidedata_helpers`.
         """
         clrevorder = {}
         manifests = {}
@@ -1317,7 +1319,8 @@ class cgpacker(object):
         `source` is unused here, but is used by extensions like remotefilelog to
         change what is sent based in pulls vs pushes, etc.
 
-        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+        See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+        `sidedata_helpers`.
         """
         repo = self._repo
         mfl = repo.manifestlog

@@ -2702,7 +2702,8 @@ class revlog(object):
         argument controls whether to force compute deltas against both parents
         for merges. By default, the current default is used.
 
-        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+        See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+        `sidedata_helpers`.
         """
         if deltareuse not in self.DELTAREUSEALL:
             raise ValueError(

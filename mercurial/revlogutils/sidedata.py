@@ -96,6 +96,26 @@ def deserialize_sidedata(blob):
 
 
 def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
+    """
+    Returns a dictionary mapping revlog types to tuples of
+    `(repo, computers, removers)`:
+        * `repo` is used as an argument for computers
+        * `computers` is a list of `(category, (keys, computer, flags)` that
+           compute the missing sidedata categories that were asked:
+           * `category` is the sidedata category
+           * `keys` are the sidedata keys to be affected
+           * `flags` is a bitmask (an integer) of flags to remove when
+              removing the category.
+           * `computer` is the function `(repo, store, rev, sidedata)` that
+             returns a tuple of
+             `(new sidedata dict, (flags to add, flags to remove))`.
+             For example, it will return `({}, (0, 1 << 15))` to return no
+             sidedata, with no flags to add and one flag to remove.
+        * `removers` will remove the keys corresponding to the categories
+          that are present, but not needed.
+        If both `computers` and `removers` are empty, sidedata will simply not
+        be transformed.
+    """
     # Computers for computing sidedata on-the-fly
     sd_computers = collections.defaultdict(list)
     # Computers for categories to remove from sidedata
@@ -121,7 +141,7 @@ def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
     the given helpers.
     - `store`: the revlog this applies to (changelog, manifest, or filelog
       instance)
-    - `sidedata_helpers`: see `storageutil.emitrevisions`
+    - `sidedata_helpers`: see `get_sidedata_helpers`
     - `sidedata`: previous sidedata at the given rev, if any
     - `rev`: affected rev of `store`
     """

@@ -364,24 +364,7 @@ def emitrevisions(
     ``assumehaveparentrevisions``
     ``sidedata_helpers`` (optional)
         If not None, means that sidedata should be included.
-        A dictionary of revlog type to tuples of `(repo, computers, removers)`:
-            * `repo` is used as an argument for computers
-            * `computers` is a list of `(category, (keys, computer, flags)` that
-               compute the missing sidedata categories that were asked:
-               * `category` is the sidedata category
-               * `keys` are the sidedata keys to be affected
-               * `flags` is a bitmask (an integer) of flags to remove when
-                  removing the category.
-               * `computer` is the function `(repo, store, rev, sidedata)` that
-                 returns a tuple of
-                 `(new sidedata dict, (flags to add, flags to remove))`.
-                 For example, it will return `({}, (0, 1 << 15))` to return no
-                 sidedata, with no flags to add and one flag to remove.
-            * `removers` will remove the keys corresponding to the categories
-              that are present, but not needed.
-        If both `computers` and `removers` are empty, sidedata are simply not
-        transformed.
-        Revlog types are `changelog`, `manifest` or `filelog`.
+        See `revlogutil.sidedata.get_sidedata_helpers`.
     """
 
     fnode = store.node
