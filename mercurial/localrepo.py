@@ -3370,14 +3370,23 @@ class localrepository(object):
             return
         self._wanted_sidedata.add(pycompat.bytestr(category))
 
-    def register_sidedata_computer(self, kind, category, keys, computer, flags):
+    def register_sidedata_computer(
+        self, kind, category, keys, computer, flags, replace=False
+    ):
         if kind not in revlogconst.ALL_KINDS:
             msg = _(b"unexpected revlog kind '%s'.")
             raise error.ProgrammingError(msg % kind)
         category = pycompat.bytestr(category)
-        if category in self._sidedata_computers.get(kind, []):
+        already_registered = category in self._sidedata_computers.get(kind, [])
+        if already_registered and not replace:
             msg = _(
                 b"cannot register a sidedata computer twice for category '%s'."
+            )
+            raise error.ProgrammingError(msg % category)
+        if replace and not already_registered:
+            msg = _(
+                b"cannot replace a sidedata computer that isn't registered "
+                b"for category '%s'."
             )
             raise error.ProgrammingError(msg % category)
         self._sidedata_computers.setdefault(kind, {})
