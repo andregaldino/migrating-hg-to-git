@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset sidedata upgraded upgraded-parallel pull push
+#testcases filelog compatibility changeset sidedata upgraded upgraded-parallel pull push pull-upgrade
 
 =====================================================
 Test Copy tracing for chain of copies involving merge
@@ -73,6 +73,16 @@ use git diff to see rename
   > EOF
 #endif
 
+
+#if pull-upgrade
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = no
+  > exp-use-copies-side-data-changeset = no
+  > [experimental]
+  > changegroup4 = yes
+  > EOF
+#endif
 
   $ cat > same-content.txt << EOF
   > Here is some content that will be the same accros multiple file.
@@ -1707,6 +1717,29 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #endif
 
 #if pull
+  $ cd ..
+  $ mv repo-chain repo-source
+  $ hg init repo-chain
+  $ cd repo-chain
+  $ hg pull ../repo-source
+  pulling from ../repo-source
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 80 changesets with 44 changes to 25 files (+39 heads)
+  new changesets a3a31bbefea6:908ce9259ffa
+  (run 'hg heads' to see heads, 'hg merge' to merge)
+#endif
+
+#if pull-upgrade
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > [experimental]
+  > changegroup4 = yes
+  > EOF
   $ cd ..
   $ mv repo-chain repo-source
   $ hg init repo-chain
