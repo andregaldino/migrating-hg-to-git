@@ -39,7 +39,7 @@ Trying to stream clone when the server does not support it
   streaming all changes
   remote: abort: server does not support narrow stream clones
   abort: pull failed on remote
-  [255]
+  [100]
 
 Enable stream clone on the server
 

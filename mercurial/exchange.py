@@ -1147,19 +1147,19 @@ def _pushbundle2(pushop):
                     },
                 ).result()
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
         try:
             trgetter = None
             if pushback:
                 trgetter = pushop.trmanager.transaction
             op = bundle2.processbundle(pushop.repo, reply, trgetter)
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
         except bundle2.AbortFromPart as exc:
             pushop.ui.error(_(b'remote: %s\n') % exc)
             if exc.hint is not None:
                 pushop.ui.error(_(b'remote: %s\n') % (b'(%s)' % exc.hint))
-            raise error.Abort(_(b'push failed on remote'))
+            raise error.RemoteError(_(b'push failed on remote'))
     except error.PushkeyFailed as exc:
         partid = int(exc.partid)
         if partid not in pushop.pkfailcb:
@@ -1875,9 +1875,9 @@ def _pullbundle2(pullop):
             bundle2.processbundle(pullop.repo, bundle, op=op)
         except bundle2.AbortFromPart as exc:
             pullop.repo.ui.error(_(b'remote: abort: %s\n') % exc)
-            raise error.Abort(_(b'pull failed on remote'), hint=exc.hint)
+            raise error.RemoteError(_(b'pull failed on remote'), hint=exc.hint)
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
 
     if pullop.fetch:
         pullop.cgresult = bundle2.combinechangegroupresults(op)

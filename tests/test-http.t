@@ -505,7 +505,7 @@ check abort error reporting while pulling/cloning
   requesting all changes
   remote: abort: this is an exercise
   abort: pull failed on remote
-  [255]
+  [100]
   $ cat error.log
 
 disable pull-based clones
@@ -517,7 +517,7 @@ disable pull-based clones
   remote: abort: server has pull-based clones disabled
   abort: pull failed on remote
   (remove --pull if specified or upgrade Mercurial)
-  [255]
+  [100]
 
 #if no-reposimplestore
 ... but keep stream clones working

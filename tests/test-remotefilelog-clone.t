@@ -89,7 +89,7 @@ check its contents separately.
   $ TEMP_STDERR=full-clone-from-shallow.stderr.tmp
   $ hg clone --noupdate ssh://user@dummy/shallow full 2>$TEMP_STDERR
   streaming all changes
-  [255]
+  [100]
   $ cat $TEMP_STDERR
   remote: abort: Cannot clone from a shallow repo to a full repo.
   abort: pull failed on remote

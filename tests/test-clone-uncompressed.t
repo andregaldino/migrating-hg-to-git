@@ -408,7 +408,7 @@ Clone not allowed when full bundles disabled and can't serve secrets
   remote: abort: server has pull-based clones disabled
   abort: pull failed on remote
   (remove --pull if specified or upgrade Mercurial)
-  [255]
+  [100]
 
 Local stream clone with secrets involved
 (This is just a test over behavior: if you have access to the repo's files,
@@ -629,7 +629,7 @@ Clone non-publishing with obsolescence
   streaming all changes
   remote: abort: server has obsolescence markers, but client cannot receive them via stream clone
   abort: pull failed on remote
-  [255]
+  [100]
 
   $ killdaemons.py
 

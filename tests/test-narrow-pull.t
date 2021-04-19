@@ -151,4 +151,4 @@ Can pull into repo with a single commit
   transaction abort!
   rollback completed
   abort: pull failed on remote
-  [255]
+  [100]

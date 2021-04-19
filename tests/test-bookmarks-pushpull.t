@@ -1217,7 +1217,7 @@ Using ssh
   no changes found
   remote: prepushkey hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
 #endif
 
@@ -1257,7 +1257,7 @@ Using http
   no changes found
   remote: prepushkey hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
 #endif
 
@@ -1334,7 +1334,7 @@ attempt to move the bookmark is rejected
   no changes found
   remote: prepushkey.no-bm-move hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 #endif
 
 -- test for pushing bookmarks pointing to secret changesets

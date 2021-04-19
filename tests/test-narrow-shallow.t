@@ -110,9 +110,9 @@ cannot clone with zero or negative depth
   requesting all changes
   remote: abort: depth must be positive, got 0
   abort: pull failed on remote
-  [255]
+  [100]
   $ hg clone --narrow ssh://user@dummy/master bad --include "d2" --depth -1
   requesting all changes
   remote: abort: depth must be positive, got -1
   abort: pull failed on remote
-  [255]
+  [100]

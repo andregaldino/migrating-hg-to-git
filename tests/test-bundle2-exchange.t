@@ -548,7 +548,7 @@ Doing the actual push: Abort error
   remote: Abandon ship!
   remote: (don't panic)
   abort: push failed on remote
-  [255]
+  [100]
 
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
@@ -556,7 +556,7 @@ Doing the actual push: Abort error
   remote: Abandon ship!
   remote: (don't panic)
   abort: push failed on remote
-  [255]
+  [100]
 
 
 Doing the actual push: unknown mandatory parts
@@ -570,19 +570,19 @@ Doing the actual push: unknown mandatory parts
   pushing to other
   searching for changes
   abort: missing support for test:unknown
-  [255]
+  [100]
 
   $ hg -R main push ssh://user@dummy/other -r e7ec4e813ba6
   pushing to ssh://user@dummy/other
   searching for changes
   abort: missing support for test:unknown
-  [255]
+  [100]
 
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
   searching for changes
   abort: missing support for test:unknown
-  [255]
+  [100]
 
 Doing the actual push: race
 
@@ -653,7 +653,7 @@ Doing the actual push: hook abort
   remote: rollback completed
   remote: pretxnclose.failpush hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
@@ -668,7 +668,7 @@ Doing the actual push: hook abort
   remote: rollback completed
   remote: pretxnclose.failpush hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
 (check that no 'pending' files remain)
 
@@ -712,7 +712,7 @@ Check error from hook during the unbundling process itself
   remote: rollback completed
   remote: pretxnchangegroup hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
   searching for changes
@@ -725,7 +725,7 @@ Check error from hook during the unbundling process itself
   remote: rollback completed
   remote: pretxnchangegroup hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
 Check output capture control.
 
@@ -760,7 +760,7 @@ Check output capture control.
   remote: rollback completed
   remote: pretxnchangegroup hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
   $ hg -R main push http://localhost:$HGPORT2/ -r e7ec4e813ba6
   pushing to http://localhost:$HGPORT2/
   searching for changes
@@ -773,7 +773,7 @@ Check output capture control.
   remote: rollback completed
   remote: pretxnchangegroup hook exited with status 1
   abort: push failed on remote
-  [255]
+  [100]
 
 Check abort from mandatory pushkey
 
@@ -950,7 +950,7 @@ Test lazily acquiring the lock during unbundle
   searching for changes
   remote: Lock should not be taken
   abort: push failed on remote
-  [255]
+  [100]
 
   $ cat >> ../lazylock/.hg/hgrc <<EOF
   > [experimental]

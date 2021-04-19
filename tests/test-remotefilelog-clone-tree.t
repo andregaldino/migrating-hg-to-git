@@ -95,7 +95,7 @@
 #   flakiness here
   $ hg clone --noupdate ssh://user@dummy/shallow full 2>/dev/null
   streaming all changes
-  [255]
+  [100]
 
 # getbundle full clone
 

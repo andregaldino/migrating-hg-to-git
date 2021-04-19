@@ -293,7 +293,7 @@ TODO: fail more gracefully.
   requesting all changes
   remote: abort: no common changegroup version
   abort: pull failed on remote
-  [255]
+  [100]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
 

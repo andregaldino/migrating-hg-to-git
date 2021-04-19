@@ -487,7 +487,7 @@ Test hg-ssh in read-only mode:
   remote: Permission denied
   remote: pretxnopen.hg-ssh hook failed
   abort: push failed on remote
-  [255]
+  [100]
 
   $ cd $TESTTMP
 
@@ -681,7 +681,7 @@ remote hook failure is attributed to remote
   remote: rollback completed
   remote: pretxnchangegroup.fail hook failed
   abort: push failed on remote
-  [255]
+  [100]
 
 abort during pull is properly reported as such
 
@@ -696,7 +696,7 @@ abort during pull is properly reported as such
   searching for changes
   remote: abort: this is an exercise
   abort: pull failed on remote
-  [255]
+  [100]
 
 abort with no error hint when there is a ssh problem when pulling
 
