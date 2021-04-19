@@ -247,6 +247,8 @@ def generatev1(repo):
             if size:
                 entries.append((name, size))
                 total_bytes += size
+        _test_sync_point_walk_1(repo)
+    _test_sync_point_walk_2(repo)
 
     repo.ui.debug(
         b'%d files, %d bytes to transfer\n' % (len(entries), total_bytes)
@@ -593,6 +595,14 @@ def _emit2(repo, entries, totalfilesize):
                 fp.close()
 
 
+def _test_sync_point_walk_1(repo):
+    """a function for synchronisation during tests"""
+
+
+def _test_sync_point_walk_2(repo):
+    """a function for synchronisation during tests"""
+
+
 def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
@@ -635,6 +645,8 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
         chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
         assert first is None
+        _test_sync_point_walk_1(repo)
+    _test_sync_point_walk_2(repo)
 
     return len(entries), totalfilesize, chunks
 

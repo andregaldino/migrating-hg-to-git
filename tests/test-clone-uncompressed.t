@@ -433,14 +433,35 @@ Stream clone while repo is changing:
 extension for delaying the server process so we reliably can modify the repo
 while cloning
 
-  $ cat > delayer.py <<EOF
-  > import time
-  > from mercurial import extensions, vfs
-  > def __call__(orig, self, path, *args, **kwargs):
-  >     if path == 'data/f1.i':
-  >         time.sleep(2)
-  >     return orig(self, path, *args, **kwargs)
-  > extensions.wrapfunction(vfs.vfs, '__call__', __call__)
+  $ cat > stream_steps.py <<EOF
+  > import os
+  > import sys
+  > from mercurial import (
+  >     encoding,
+  >     extensions,
+  >     streamclone,
+  >     testing,
+  > )
+  > WALKED_FILE_1 = encoding.environ[b'HG_TEST_STREAM_WALKED_FILE_1']
+  > WALKED_FILE_2 = encoding.environ[b'HG_TEST_STREAM_WALKED_FILE_2']
+  > 
+  > def _test_sync_point_walk_1(orig, repo):
+  >     testing.write_file(WALKED_FILE_1)
+  > 
+  > def _test_sync_point_walk_2(orig, repo):
+  >     assert repo._currentlock(repo._lockref) is None
+  >     testing.wait_file(WALKED_FILE_2)
+  > 
+  > extensions.wrapfunction(
+  >     streamclone,
+  >     '_test_sync_point_walk_1',
+  >     _test_sync_point_walk_1
+  > )
+  > extensions.wrapfunction(
+  >     streamclone,
+  >     '_test_sync_point_walk_2',
+  >     _test_sync_point_walk_2
+  > )
   > EOF
 
 prepare repo with small and big file to cover both code paths in emitrevlogdata
@@ -449,20 +470,32 @@ prepare repo with small and big file to cover both code paths in emitrevlogdata
   $ touch repo/f1
   $ $TESTDIR/seq.py 50000 > repo/f2
   $ hg -R repo ci -Aqm "0"
-  $ hg serve -R repo -p $HGPORT1 -d --pid-file=hg.pid --config extensions.delayer=delayer.py
+  $ HG_TEST_STREAM_WALKED_FILE_1="$TESTTMP/sync_file_walked_1"
+  $ export HG_TEST_STREAM_WALKED_FILE_1
+  $ HG_TEST_STREAM_WALKED_FILE_2="$TESTTMP/sync_file_walked_2"
+  $ export HG_TEST_STREAM_WALKED_FILE_2
+  $ HG_TEST_STREAM_WALKED_FILE_3="$TESTTMP/sync_file_walked_3"
+  $ export HG_TEST_STREAM_WALKED_FILE_3
+#   $ cat << EOF >> $HGRCPATH
+#   > [hooks]
+#   > pre-clone=rm -f "$TESTTMP/sync_file_walked_*"
+#   > EOF
+  $ hg serve -R repo -p $HGPORT1 -d --error errors.log --pid-file=hg.pid --config extensions.stream_steps="$RUNTESTDIR/testlib/ext-stream-clone-steps.py"
   $ cat hg.pid >> $DAEMON_PIDS
 
 clone while modifying the repo between stating file with write lock and
 actually serving file content
 
-  $ hg clone -q --stream -U http://localhost:$HGPORT1 clone &
-  $ sleep 1
+  $ (hg clone -q --stream -U http://localhost:$HGPORT1 clone; touch "$HG_TEST_STREAM_WALKED_FILE_3") &
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
   $ echo >> repo/f1
   $ echo >> repo/f2
   $ hg -R repo ci -m "1" --config ui.timeout.warn=-1
-  $ wait
+  $ touch $HG_TEST_STREAM_WALKED_FILE_2
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
   $ hg -R clone id
   000000000000
+  $ cat errors.log
   $ cd ..
 
 Stream repository with bookmarks
