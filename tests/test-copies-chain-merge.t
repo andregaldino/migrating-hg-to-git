@@ -1,4 +1,4 @@
-#testcases filelog compatibility changeset sidedata upgraded upgraded-parallel pull
+#testcases filelog compatibility changeset sidedata upgraded upgraded-parallel pull push
 
 =====================================================
 Test Copy tracing for chain of copies involving merge
@@ -58,6 +58,14 @@ use git diff to see rename
 #endif
 
 #if pull
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-use-side-data = yes
+  > exp-use-copies-side-data-changeset = yes
+  > EOF
+#endif
+
+#if push
   $ cat >> $HGRCPATH << EOF
   > [format]
   > exp-use-side-data = yes
@@ -1712,6 +1720,21 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   added 80 changesets with 44 changes to 25 files (+39 heads)
   new changesets a3a31bbefea6:908ce9259ffa
   (run 'hg heads' to see heads, 'hg merge' to merge)
+#endif
+
+#if push
+  $ cd ..
+  $ mv repo-chain repo-source
+  $ hg init repo-chain
+  $ cd repo-source
+  $ hg push ../repo-chain
+  pushing to ../repo-chain
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 80 changesets with 44 changes to 25 files (+39 heads)
+  $ cd ../repo-chain
 #endif
 
 #if no-compatibility no-filelog no-changeset
