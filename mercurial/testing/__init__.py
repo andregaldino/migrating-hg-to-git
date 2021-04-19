@@ -28,3 +28,8 @@ def wait_file(path, timeout=10):
         if time.time() - start > timeout:
             raise RuntimeError(b"timed out waiting for file: %s" % path)
         time.sleep(0.01)
+
+
+def write_file(path, content=b''):
+    with open(path, 'wb') as f:
+        f.write(content)
