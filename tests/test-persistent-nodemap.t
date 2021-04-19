@@ -809,9 +809,14 @@ Check that Mercurial reaction to this event
 
 
 stream clone
-------------
+============
 
 The persistent nodemap should exist after a streaming clone
+
+Simple case
+-----------
+
+No race condition
 
   $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
   adding [s] 00manifest.n (70 bytes)
@@ -836,3 +841,128 @@ The persistent nodemap should exist after a streaming clone
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
+
+new data appened
+-----------------
+
+Other commit happening on the server during the stream clone
+
+setup the step-by-step stream cloning
+
+  $ HG_TEST_STREAM_WALKED_FILE_1="$TESTTMP/sync_file_walked_1"
+  $ export HG_TEST_STREAM_WALKED_FILE_1
+  $ HG_TEST_STREAM_WALKED_FILE_2="$TESTTMP/sync_file_walked_2"
+  $ export HG_TEST_STREAM_WALKED_FILE_2
+  $ HG_TEST_STREAM_WALKED_FILE_3="$TESTTMP/sync_file_walked_3"
+  $ export HG_TEST_STREAM_WALKED_FILE_3
+  $ cat << EOF >> test-repo/.hg/hgrc
+  > [extensions]
+  > steps=$RUNTESTDIR/testlib/ext-stream-clone-steps.py
+  > EOF
+
+Check and record file state beforehand
+
+  $ f --size test-repo/.hg/store/00changelog*
+  test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
+  test-repo/.hg/store/00changelog.d: size=376891 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=368890 (no-zstd !)
+  test-repo/.hg/store/00changelog.i: size=320384
+  test-repo/.hg/store/00changelog.n: size=70
+  $ hg -R test-repo debugnodemap --metadata | tee server-metadata.txt
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
+Prepare a commit
+
+  $ echo foo >> test-repo/foo
+  $ hg -R test-repo/ add test-repo/foo
+
+Do a mix of clone and commit at the same time so that the file listed on disk differ at actual transfer time.
+
+  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-1 --debug 2>> clone-output | egrep '00(changelog|manifest)' >> clone-output; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
+  $ hg -R test-repo/ commit -m foo
+  $ touch $HG_TEST_STREAM_WALKED_FILE_2
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
+  $ cat clone-output
+  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-rust no-pure !)
+  abort: pull failed on remote (known-bad-output no-rust no-pure !)
+  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-rust no-pure !)
+  adding [s] 00manifest-*.nd (118 KB) (glob) (rust !)
+  adding [s] 00changelog.n (70 bytes) (rust !)
+  adding [s] 00changelog.d (368 KB) (zstd rust !)
+  adding [s] 00changelog-*.nd (118 KB) (glob) (rust !)
+  adding [s] 00manifest.i (313 KB) (rust !)
+  adding [s] 00changelog.i (313 KB) (rust !)
+  adding [s] 00manifest-*.nd (118 KB) (glob) (pure !)
+  adding [s] 00changelog.n (70 bytes) (pure !)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  adding [s] 00changelog-*.nd (118 KB) (glob) (pure !)
+  adding [s] 00manifest.i (313 KB) (pure !)
+  adding [s] 00changelog.i (313 KB) (pure !)
+
+Check the result state
+
+  $ f --size stream-clone-race-1/.hg/store/00changelog*
+  stream-clone-race-1/.hg/store/00changelog*: file not found (known-bad-output no-rust no-pure !)
+  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob) (rust !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd rust !)
+  stream-clone-race-1/.hg/store/00changelog.i: size=320384 (rust !)
+  stream-clone-race-1/.hg/store/00changelog.n: size=70 (rust !)
+  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob) (pure !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd pure !)
+  stream-clone-race-1/.hg/store/00changelog.i: size=320384 (pure !)
+  stream-clone-race-1/.hg/store/00changelog.n: size=70 (pure !)
+
+  $ hg -R stream-clone-race-1 debugnodemap --metadata | tee client-metadata.txt
+  abort: repository stream-clone-race-1 not found (known-bad-output no-rust no-pure !)
+  uid: * (glob) (rust !)
+  tip-rev: 5005 (rust !)
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (rust !)
+  data-length: 121088 (rust !)
+  data-unused: 0 (rust !)
+  data-unused: 0.000% (rust !)
+  uid: * (glob) (pure !)
+  tip-rev: 5005 (pure !)
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (pure !)
+  data-length: 121088 (pure !)
+  data-unused: 0 (pure !)
+  data-unused: 0.000% (pure !)
+
+We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
+(ie: the following diff should be empty)
+
+  $ diff -u server-metadata.txt client-metadata.txt
+  --- server-metadata.txt	* (glob) (known-bad-output !)
+  +++ client-metadata.txt	* (glob) (known-bad-output !)
+  @@ -1,4 +1,4 @@ (known-bad-output rust !)
+  @@ -1,4 +1,4 @@ (known-bad-output pure !)
+  @@ -1,6 +0,0 @@ (known-bad-output no-rust no-pure !)
+  -uid: * (glob) (known-bad-output !)
+  +uid: * (glob) (known-bad-output rust !)
+   tip-rev: 5005 (known-bad-output rust !)
+   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output rust !)
+   data-length: 121088 (known-bad-output rust !)
+  +uid: * (glob) (known-bad-output pure !)
+   tip-rev: 5005 (known-bad-output pure !)
+   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output pure !)
+   data-length: 121088 (known-bad-output pure !)
+  -tip-rev: 5005 (known-bad-output no-rust no-pure !)
+  -tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output no-rust no-pure !)
+  -data-length: 121088 (known-bad-output no-rust no-pure !)
+  -data-unused: 0 (known-bad-output no-rust no-pure !)
+  -data-unused: 0.000% (known-bad-output no-rust no-pure !)
+  [1]
+
+Clean up after the test.
+
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_1"
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_2"
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_3"
