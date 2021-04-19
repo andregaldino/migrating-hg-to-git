@@ -966,3 +966,100 @@ Clean up after the test.
   $ rm -f "$HG_TEST_STREAM_WALKED_FILE_1"
   $ rm -f "$HG_TEST_STREAM_WALKED_FILE_2"
   $ rm -f "$HG_TEST_STREAM_WALKED_FILE_3"
+
+full regeneration
+-----------------
+
+A full nodemap is generated
+
+(ideally this test would append enough data to make sure the nodemap data file
+get changed, however to make thing simpler we will force the regeneration for
+this test.
+
+Check the initial state
+
+  $ f --size test-repo/.hg/store/00changelog*
+  test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
+  test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
+  test-repo/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
+  test-repo/.hg/store/00changelog.d: size=376950 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=368949 (no-zstd !)
+  test-repo/.hg/store/00changelog.i: size=320448
+  test-repo/.hg/store/00changelog.n: size=70
+  $ hg -R test-repo debugnodemap --metadata | tee server-metadata-2.txt
+  uid: * (glob)
+  tip-rev: 5006
+  tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+  data-length: 121344 (rust !)
+  data-unused: 192 (rust !)
+  data-unused: 0.158% (rust !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.000% (no-rust no-pure !)
+  data-length: 121344 (pure !)
+  data-unused: 192 (pure !)
+  data-unused: 0.158% (pure !)
+
+Performe the mix of clone and full refresh of the nodemap, so that the files
+(and filenames) are different between listing time and actual transfer time.
+
+  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-2 --debug 2>> clone-output-2 | egrep '00(changelog|manifest)' >> clone-output-2; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
+  $ rm test-repo/.hg/store/00changelog.n
+  $ rm test-repo/.hg/store/00changelog-*.nd
+  $ hg -R test-repo/ debugupdatecache
+  $ touch $HG_TEST_STREAM_WALKED_FILE_2
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
+  $ cat clone-output-2
+  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output rust !)
+  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output pure !)
+  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-pure no-rust !)
+  abort: pull failed on remote (known-bad-output !)
+  adding [s] undo.backup.00manifest.n (70 bytes) (known-bad-output !)
+  adding [s] undo.backup.00changelog.n (70 bytes) (known-bad-output !)
+  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest.d (492 KB) (zstd !)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00manifest-*.nd (118 KB) (glob) (rust !)
+  adding [s] 00manifest-*.nd (118 KB) (glob) (pure !)
+  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output rust !)
+  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-pure no-rust !)
+  adding [s] 00changelog.n (70 bytes) (pure !)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output pure !)
+
+Check the result.
+
+  $ f --size stream-clone-race-2/.hg/store/00changelog*
+  stream-clone-race-2/.hg/store/00changelog*: file not found (known-bad-output !)
+
+  $ hg -R stream-clone-race-2 debugnodemap --metadata | tee client-metadata-2.txt
+  abort: repository stream-clone-race-2 not found (known-bad-output !)
+
+We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
+(ie: the following diff should be empty)
+
+  $ diff -u server-metadata-2.txt client-metadata-2.txt
+  --- server-metadata-2.txt	* (glob) (known-bad-output !)
+  +++ client-metadata-2.txt	* (glob) (known-bad-output !)
+  @@ -1,6 +0,0 @@ (known-bad-output !)
+  -uid: * (glob) (known-bad-output !)
+  -tip-rev: 5006 (known-bad-output !)
+  -tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b (known-bad-output !)
+  -data-length: 121344 (known-bad-output rust !)
+  -data-unused: 192 (known-bad-output rust !)
+  -data-unused: 0.158% (known-bad-output rust !)
+  -data-length: 121344 (known-bad-output pure !)
+  -data-unused: 192 (known-bad-output pure !)
+  -data-unused: 0.158% (known-bad-output pure !)
+  -data-length: 121152 (known-bad-output no-rust no-pure !)
+  -data-unused: 0 (known-bad-output no-rust no-pure !)
+  -data-unused: 0.000% (known-bad-output no-rust no-pure !)
+  [1]
+
+Clean up after the test
+
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_1
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_2
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_3
+
