@@ -169,7 +169,7 @@ Cannot stream clone when server.uncompressed is set
 
   $ killdaemons.py
   $ cd server
-  $ hg serve -p $HGPORT -d --pid-file=hg.pid
+  $ hg serve -p $HGPORT -d --pid-file=hg.pid --error errors.txt
   $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
 
@@ -184,6 +184,7 @@ Basic clone
   transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
+  $ cat server/errors.txt
 #endif
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT clone1
@@ -205,6 +206,7 @@ Basic clone
   rbc-revs-v1
   tags2
   tags2-served
+  $ cat server/errors.txt
 #endif
 
 getbundle requests with stream=1 are uncompressed
