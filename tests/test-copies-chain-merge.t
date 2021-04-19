@@ -3406,12 +3406,7 @@ Merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mBF-change-m-0")'
   M b
   A d
-    h (filelog !)
-    h (sidedata !)
-    h (upgraded !)
-    h (upgraded-parallel !)
-    h (changeset !)
-    h (compatibility !)
+    h
   A t
     p
   R a
@@ -3565,24 +3560,15 @@ The result from mAEm is the same for the subsequent merge:
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAEm")' f
   A f
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE,Km")' f
   A f
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AEm")' f
   A f
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility !)
 
 
 The result from mEAm is the same for the subsequent merge:
@@ -3590,23 +3576,17 @@ The result from mEAm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEAm")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA,Jm")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EAm")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
 
 Subcase: chaining conflicting rename resolution
 ```````````````````````````````````````````````
@@ -3621,24 +3601,17 @@ The result from mPQm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQm")' v
   A v
     r (filelog !)
-    p (sidedata !)
-    p (upgraded !)
-    p (upgraded-parallel !)
+    p (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mPQ,Tm")' v
   A v
     r (filelog !)
-    p (sidedata !)
-    p (upgraded !)
-    p (upgraded-parallel !)
+    p (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mT,PQm")' v
   A v
     r (filelog !)
-    p (sidedata !)
-    p (upgraded !)
-    p (upgraded-parallel !)
-
+    p (no-changeset no-compatibility no-filelog !)
 
 The result from mQPm is the same for the subsequent merge:
 
@@ -3653,9 +3626,7 @@ The result from mQPm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mS,QPm")' v
   A v
     r (filelog !)
-    r (sidedata !)
-    r (upgraded !)
-    r (upgraded-parallel !)
+    r (no-changeset no-compatibility no-filelog !)
 
 
 Subcase: chaining salvage information during a merge
@@ -3734,30 +3705,22 @@ reference output:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFGm")' d
   A d
     a (filelog !)
-    h (sidedata !)
-    h (upgraded !)
-    h (upgraded-parallel !)
+    h (no-changeset no-compatibility no-filelog !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGFm")' d
   A d
     a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility no-filelog !)
 
 Chained output
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mO,FGm")' d
   A d
     a (filelog !)
-    h (sidedata !)
-    h (upgraded !)
-    h (upgraded-parallel !)
+    h (no-changeset no-compatibility no-filelog !)
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mFG,Om")' d
   A d
     a (filelog !)
-    h (sidedata !)
-    h (upgraded !)
-    h (upgraded-parallel !)
+    h (no-changeset no-compatibility no-filelog !)
 
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mGF,Nm")' d
@@ -3780,17 +3743,11 @@ The result from mAEm is the same for the subsequent merge:
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE-change-m")' f
   A f
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mAE-change,Km")' f
   A f
-    a (filelog !)
-    a (sidedata !)
-    a (upgraded !)
-    a (upgraded-parallel !)
+    a (no-changeset no-compatibility !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mK,AE-change-m")' f
   A f
@@ -3802,20 +3759,14 @@ The result from mEAm is the same for the subsequent merge:
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA-change-m")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mEA-change,Jm")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
 
   $ hg status --copies --rev 'desc("i-0")' --rev 'desc("mJ,EA-change-m")' f
   A f
     a (filelog !)
-    b (sidedata !)
-    b (upgraded !)
-    b (upgraded-parallel !)
+    b (no-changeset no-compatibility no-filelog !)
