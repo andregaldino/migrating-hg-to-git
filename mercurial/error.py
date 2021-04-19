@@ -304,7 +304,11 @@ class ResponseExpected(Abort):
         Abort.__init__(self, _(b'response expected'))
 
 
-class OutOfBandError(Abort):
+class RemoteError(Abort):
+    """Exception raised when interacting with a remote repo fails"""
+
+
+class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
 
     def __init__(self, *messages, **kwargs):

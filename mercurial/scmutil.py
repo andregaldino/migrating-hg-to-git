@@ -222,7 +222,7 @@ def callcatch(ui, func):
             detailed_exit_code = 30
         elif isinstance(inst, error.HookAbort):
             detailed_exit_code = 40
-        elif isinstance(inst, error.OutOfBandError):
+        elif isinstance(inst, error.RemoteError):
             detailed_exit_code = 100
         elif isinstance(inst, error.SecurityError):
             detailed_exit_code = 150
