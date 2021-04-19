@@ -419,7 +419,7 @@ Test committing half a rename
 Test upgrading/downgrading to sidedata storage
 ==============================================
 
-downgrading (keeping some sidedata)
+downgrading
 
   $ hg debugformat -v
   format-variant     repo config default
@@ -465,11 +465,7 @@ downgrading (keeping some sidedata)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
-  1 sidedata entries
-   entry-0014 size 14
   $ hg debugsidedata -c -- 1
-  1 sidedata entries
-   entry-0014 size 14
   $ hg debugsidedata -m -- 0
 
 upgrading

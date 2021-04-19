@@ -12,6 +12,7 @@ import stat
 from ..i18n import _
 from ..pycompat import getattr
 from .. import (
+    changegroup,
     changelog,
     error,
     filelog,
@@ -19,13 +20,32 @@ from .. import (
     metadata,
     pycompat,
     requirements,
-    revlog,
     scmutil,
     store,
     util,
     vfs as vfsmod,
 )
-from ..revlogutils import nodemap
+from ..revlogutils import (
+    constants as revlogconst,
+    flagutil,
+    nodemap,
+    sidedata as sidedatamod,
+)
+
+
+def get_sidedata_helpers(srcrepo, dstrepo):
+    use_w = srcrepo.ui.configbool(b'experimental', b'worker.repository-upgrade')
+    sequential = pycompat.iswindows or not use_w
+    if not sequential:
+        srcrepo.register_sidedata_computer(
+            revlogconst.KIND_CHANGELOG,
+            sidedatamod.SD_FILES,
+            (sidedatamod.SD_FILES,),
+            metadata._get_worker_sidedata_adder(srcrepo, dstrepo),
+            flagutil.REVIDX_HASCOPIESINFO,
+            replace=True,
+        )
+    return changegroup.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def _revlogfrompath(repo, rl_type, path):
@@ -89,25 +109,6 @@ UPGRADE_ALL_REVLOGS = frozenset(
 )
 
 
-def getsidedatacompanion(srcrepo, dstrepo):
-    sidedatacompanion = None
-    removedreqs = srcrepo.requirements - dstrepo.requirements
-    addedreqs = dstrepo.requirements - srcrepo.requirements
-    if requirements.SIDEDATA_REQUIREMENT in removedreqs:
-
-        def sidedatacompanion(rl, rev):
-            rl = getattr(rl, '_revlog', rl)
-            if rl.flags(rev) & revlog.REVIDX_SIDEDATA:
-                return True, (), {}, 0, 0
-            return False, (), {}, 0, 0
-
-    elif requirements.COPIESSDC_REQUIREMENT in addedreqs:
-        sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)
-    elif requirements.COPIESSDC_REQUIREMENT in removedreqs:
-        sidedatacompanion = metadata.getsidedataremover(srcrepo, dstrepo)
-    return sidedatacompanion
-
-
 def matchrevlog(revlogfilter, rl_type):
     """check if a revlog is selected for cloning.
 
@@ -131,7 +132,7 @@ def _perform_clone(
     rl_type,
     unencoded,
     upgrade_op,
-    sidedatacompanion,
+    sidedata_helpers,
     oncopiedrevision,
 ):
     """ returns the new revlog object created"""
@@ -147,7 +148,7 @@ def _perform_clone(
             addrevisioncb=oncopiedrevision,
             deltareuse=upgrade_op.delta_reuse_mode,
             forcedeltabothparents=upgrade_op.force_re_delta_both_parents,
-            sidedatacompanion=sidedatacompanion,
+            sidedata_helpers=sidedata_helpers,
         )
     else:
         msg = _(b'blindly copying %s containing %i revisions\n')
@@ -257,7 +258,7 @@ def _clonerevlogs(
     def oncopiedrevision(rl, rev, node):
         progress.increment()
 
-    sidedatacompanion = getsidedatacompanion(srcrepo, dstrepo)
+    sidedata_helpers = get_sidedata_helpers(srcrepo, dstrepo)
 
     # Migrating filelogs
     ui.status(
@@ -282,7 +283,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
@@ -322,7 +323,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
@@ -361,7 +362,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)

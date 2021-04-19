@@ -14,7 +14,6 @@ import struct
 from .node import nullrev
 from . import (
     error,
-    pycompat,
     requirements as requirementsmod,
     util,
 )
@@ -837,14 +836,6 @@ def set_sidedata_spec_for_repo(repo):
     )
 
 
-def getsidedataadder(srcrepo, destrepo):
-    use_w = srcrepo.ui.configbool(b'experimental', b'worker.repository-upgrade')
-    if pycompat.iswindows or not use_w:
-        return _get_simple_sidedata_adder(srcrepo, destrepo)
-    else:
-        return _get_worker_sidedata_adder(srcrepo, destrepo)
-
-
 def _sidedata_worker(srcrepo, revs_queue, sidedata_queue, tokens):
     """The function used by worker precomputing sidedata
 
@@ -911,57 +902,21 @@ def _get_worker_sidedata_adder(srcrepo, destrepo):
     # received, when shelve 43 for later use.
     staging = {}
 
-    def sidedata_companion(revlog, rev):
-        data = {}, False
-        if util.safehasattr(revlog, b'filteredrevs'):  # this is a changelog
-            # Is the data previously shelved ?
-            data = staging.pop(rev, None)
-            if data is None:
-                # look at the queued result until we find the one we are lookig
-                # for (shelve the other ones)
+    def sidedata_companion(repo, revlog, rev, old_sidedata):
+        # Is the data previously shelved ?
+        data = staging.pop(rev, None)
+        if data is None:
+            # look at the queued result until we find the one we are lookig
+            # for (shelve the other ones)
+            r, data = sidedataq.get()
+            while r != rev:
+                staging[r] = data
                 r, data = sidedataq.get()
-                while r != rev:
-                    staging[r] = data
-                    r, data = sidedataq.get()
-            tokens.release()
+        tokens.release()
         sidedata, has_copies_info = data
         new_flag = 0
         if has_copies_info:
             new_flag = sidedataflag.REVIDX_HASCOPIESINFO
-        return False, (), sidedata, new_flag, 0
+        return sidedata, (new_flag, 0)
 
     return sidedata_companion
-
-
-def _get_simple_sidedata_adder(srcrepo, destrepo):
-    """The simple version of the sidedata computation
-
-    It just compute it in the same thread on request"""
-
-    def sidedatacompanion(revlog, rev):
-        sidedata, has_copies_info = {}, False
-        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
-            sidedata, has_copies_info = _getsidedata(srcrepo, rev)
-        new_flag = 0
-        if has_copies_info:
-            new_flag = sidedataflag.REVIDX_HASCOPIESINFO
-
-        return False, (), sidedata, new_flag, 0
-
-    return sidedatacompanion
-
-
-def getsidedataremover(srcrepo, destrepo):
-    def sidedatacompanion(revlog, rev):
-        f = ()
-        if util.safehasattr(revlog, 'filteredrevs'):  # this is a changelog
-            if revlog.flags(rev) & sidedataflag.REVIDX_SIDEDATA:
-                f = (
-                    sidedatamod.SD_P1COPIES,
-                    sidedatamod.SD_P2COPIES,
-                    sidedatamod.SD_FILESADDED,
-                    sidedatamod.SD_FILESREMOVED,
-                )
-        return False, f, {}, 0, sidedataflag.REVIDX_HASCOPIESINFO
-
-    return sidedatacompanion

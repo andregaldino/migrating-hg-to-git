@@ -85,6 +85,7 @@ from .utils import (
 
 # blanked usage of all the name to prevent pyflakes constraints
 # We need these name available in the module for extensions.
+
 REVLOGV0
 REVLOGV1
 REVLOGV2
@@ -1997,7 +1998,7 @@ class revlog(object):
 
         if sidedata is None:
             sidedata = {}
-        elif not self.hassidedata:
+        elif sidedata and not self.hassidedata:
             raise error.ProgrammingError(
                 _(b"trying to add sidedata to a revlog who don't support them")
             )
@@ -2658,7 +2659,7 @@ class revlog(object):
         addrevisioncb=None,
         deltareuse=DELTAREUSESAMEREVS,
         forcedeltabothparents=None,
-        sidedatacompanion=None,
+        sidedata_helpers=None,
     ):
         """Copy this revlog to another, possibly with format changes.
 
@@ -2701,21 +2702,7 @@ class revlog(object):
         argument controls whether to force compute deltas against both parents
         for merges. By default, the current default is used.
 
-        If not None, the `sidedatacompanion` is callable that accept two
-        arguments:
-
-            (srcrevlog, rev)
-
-        and return a quintet that control changes to sidedata content from the
-        old revision to the new clone result:
-
-            (dropall, filterout, update, new_flags, dropped_flags)
-
-        * if `dropall` is True, all sidedata should be dropped
-        * `filterout` is a set of sidedata keys that should be dropped
-        * `update` is a mapping of additionnal/new key -> value
-        * new_flags is a bitfields of new flags that the revision should get
-        * dropped_flags is a bitfields of new flags that the revision shoudl not longer have
+        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
         """
         if deltareuse not in self.DELTAREUSEALL:
             raise ValueError(
@@ -2755,7 +2742,7 @@ class revlog(object):
                 addrevisioncb,
                 deltareuse,
                 forcedeltabothparents,
-                sidedatacompanion,
+                sidedata_helpers,
             )
 
         finally:
@@ -2770,7 +2757,7 @@ class revlog(object):
         addrevisioncb,
         deltareuse,
         forcedeltabothparents,
-        sidedatacompanion,
+        sidedata_helpers,
     ):
         """perform the core duty of `revlog.clone` after parameter processing"""
         deltacomputer = deltautil.deltacomputer(destrevlog)
@@ -2786,31 +2773,18 @@ class revlog(object):
             p2 = index[entry[6]][7]
             node = entry[7]
 
-            sidedataactions = (False, [], {}, 0, 0)
-            if sidedatacompanion is not None:
-                sidedataactions = sidedatacompanion(self, rev)
-
             # (Possibly) reuse the delta from the revlog if allowed and
             # the revlog chunk is a delta.
             cachedelta = None
             rawtext = None
-            if any(sidedataactions) or deltareuse == self.DELTAREUSEFULLADD:
-                dropall = sidedataactions[0]
-                filterout = sidedataactions[1]
-                update = sidedataactions[2]
-                new_flags = sidedataactions[3]
-                dropped_flags = sidedataactions[4]
+            if deltareuse == self.DELTAREUSEFULLADD:
                 text, sidedata = self._revisiondata(rev)
-                if dropall:
-                    sidedata = {}
-                for key in filterout:
-                    sidedata.pop(key, None)
-                sidedata.update(update)
-                if not sidedata:
-                    sidedata = None
 
-                flags |= new_flags
-                flags &= ~dropped_flags
+                if sidedata_helpers is not None:
+                    (sidedata, new_flags) = storageutil.run_sidedata_helpers(
+                        self, sidedata_helpers, sidedata, rev
+                    )
+                    flags = flags | new_flags[0] & ~new_flags[1]
 
                 destrevlog.addrevision(
                     text,
@@ -2830,8 +2804,17 @@ class revlog(object):
                     if dp != nullrev:
                         cachedelta = (dp, bytes(self._chunk(rev)))
 
+                sidedata = None
                 if not cachedelta:
-                    rawtext = self.rawdata(rev)
+                    rawtext, sidedata = self._revisiondata(rev)
+                if sidedata is None:
+                    sidedata = self.sidedata(rev)
+
+                if sidedata_helpers is not None:
+                    (sidedata, new_flags) = storageutil.run_sidedata_helpers(
+                        self, sidedata_helpers, sidedata, rev
+                    )
+                    flags = flags | new_flags[0] & ~new_flags[1]
 
                 ifh = destrevlog.opener(
                     destrevlog.indexfile, b'a+', checkambig=False
@@ -2852,6 +2835,7 @@ class revlog(object):
                         ifh,
                         dfh,
                         deltacomputer=deltacomputer,
+                        sidedata=sidedata,
                     )
                 finally:
                     if dfh:

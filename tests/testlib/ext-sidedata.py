@@ -12,6 +12,7 @@ import struct
 
 from mercurial.node import nullrev
 from mercurial import (
+    changegroup,
     extensions,
     requirements,
     revlog,
@@ -19,6 +20,7 @@ from mercurial import (
 
 from mercurial.upgrade_utils import engine as upgrade_engine
 
+from mercurial.revlogutils import constants
 from mercurial.revlogutils import sidedata
 
 
@@ -54,13 +56,15 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
     return text, sd
 
 
-def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
-    sidedatacompanion = orig(srcrepo, dstrepo)
+def wrapget_sidedata_helpers(orig, srcrepo, dstrepo):
+    repo, computers, removers = orig(srcrepo, dstrepo)
+    assert not computers and not removers  # deal with composition later
     addedreqs = dstrepo.requirements - srcrepo.requirements
-    if requirements.SIDEDATA_REQUIREMENT in addedreqs:
-        assert sidedatacompanion is None  # deal with composition later
 
-        def sidedatacompanion(revlog, rev):
+    if requirements.SIDEDATA_REQUIREMENT in addedreqs:
+
+        def computer(repo, revlog, rev, old_sidedata):
+            assert not old_sidedata  # not supported yet
             update = {}
             revlog.sidedatanocheck = True
             try:
@@ -73,16 +77,25 @@ def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
             # and sha2 hashes
             sha256 = hashlib.sha256(text).digest()
             update[sidedata.SD_TEST2] = struct.pack('>32s', sha256)
-            return False, (), update, 0, 0
+            return update, (0, 0)
 
-    return sidedatacompanion
+        srcrepo.register_sidedata_computer(
+            constants.KIND_CHANGELOG,
+            b"whatever",
+            (sidedata.SD_TEST1, sidedata.SD_TEST2),
+            computer,
+            0,
+        )
+        dstrepo.register_wanted_sidedata(b"whatever")
+
+    return changegroup.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)
     extensions.wrapfunction(revlog.revlog, '_revisiondata', wrap_revisiondata)
     extensions.wrapfunction(
-        upgrade_engine, 'getsidedatacompanion', wrapgetsidedatacompanion
+        upgrade_engine, 'get_sidedata_helpers', wrapget_sidedata_helpers
     )
 
 
