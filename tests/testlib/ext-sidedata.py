@@ -12,7 +12,6 @@ import struct
 
 from mercurial.node import nullrev
 from mercurial import (
-    changegroup,
     extensions,
     requirements,
     revlog,
@@ -88,7 +87,7 @@ def wrapget_sidedata_helpers(orig, srcrepo, dstrepo):
         )
         dstrepo.register_wanted_sidedata(b"whatever")
 
-    return changegroup.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
+    return sidedata.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def extsetup(ui):

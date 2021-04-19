@@ -49,7 +49,6 @@ from . import (
     match as matchmod,
     mergestate as mergestatemod,
     mergeutil,
-    metadata as metadatamod,
     namespaces,
     narrowspec,
     obsolete,
@@ -90,6 +89,7 @@ from .utils import (
 from .revlogutils import (
     concurrency_checker as revlogchecker,
     constants as revlogconst,
+    sidedata as sidedatamod,
 )
 
 release = lockmod.release
@@ -1407,7 +1407,7 @@ class localrepository(object):
 
         self._wanted_sidedata = set()
         self._sidedata_computers = {}
-        metadatamod.set_sidedata_spec_for_repo(self)
+        sidedatamod.set_sidedata_spec_for_repo(self)
 
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""

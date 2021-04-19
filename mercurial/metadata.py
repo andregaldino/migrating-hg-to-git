@@ -14,12 +14,10 @@ import struct
 from .node import nullrev
 from . import (
     error,
-    requirements as requirementsmod,
     util,
 )
 
 from .revlogutils import (
-    constants as revlogconst,
     flagutil as sidedataflag,
     sidedata as sidedatamod,
 )
@@ -822,18 +820,6 @@ def copies_sidedata_computer(repo, revlog, rev, existing_sidedata):
     sidedata, has_copies_info = _getsidedata(repo, rev)
     flags_to_add = sidedataflag.REVIDX_HASCOPIESINFO if has_copies_info else 0
     return sidedata, (flags_to_add, 0)
-
-
-def set_sidedata_spec_for_repo(repo):
-    if requirementsmod.COPIESSDC_REQUIREMENT in repo.requirements:
-        repo.register_wanted_sidedata(sidedatamod.SD_FILES)
-    repo.register_sidedata_computer(
-        revlogconst.KIND_CHANGELOG,
-        sidedatamod.SD_FILES,
-        (sidedatamod.SD_FILES,),
-        copies_sidedata_computer,
-        sidedataflag.REVIDX_HASCOPIESINFO,
-    )
 
 
 def _sidedata_worker(srcrepo, revs_queue, sidedata_queue, tokens):

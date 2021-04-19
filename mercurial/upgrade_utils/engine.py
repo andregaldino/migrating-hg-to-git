@@ -12,7 +12,6 @@ import stat
 from ..i18n import _
 from ..pycompat import getattr
 from .. import (
-    changegroup,
     changelog,
     error,
     filelog,
@@ -45,7 +44,7 @@ def get_sidedata_helpers(srcrepo, dstrepo):
             flagutil.REVIDX_HASCOPIESINFO,
             replace=True,
         )
-    return changegroup.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
+    return sidedatamod.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def _revlogfrompath(repo, rl_type, path):

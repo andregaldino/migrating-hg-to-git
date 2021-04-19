@@ -2781,7 +2781,7 @@ class revlog(object):
                 text, sidedata = self._revisiondata(rev)
 
                 if sidedata_helpers is not None:
-                    (sidedata, new_flags) = storageutil.run_sidedata_helpers(
+                    (sidedata, new_flags) = sidedatautil.run_sidedata_helpers(
                         self, sidedata_helpers, sidedata, rev
                     )
                     flags = flags | new_flags[0] & ~new_flags[1]
@@ -2811,7 +2811,7 @@ class revlog(object):
                     sidedata = self.sidedata(rev)
 
                 if sidedata_helpers is not None:
-                    (sidedata, new_flags) = storageutil.run_sidedata_helpers(
+                    (sidedata, new_flags) = sidedatautil.run_sidedata_helpers(
                         self, sidedata_helpers, sidedata, rev
                     )
                     flags = flags | new_flags[0] & ~new_flags[1]
@@ -3089,7 +3089,7 @@ class revlog(object):
             current_offset = fp.tell()
             for rev in range(startrev, endrev + 1):
                 entry = self.index[rev]
-                new_sidedata, flags = storageutil.run_sidedata_helpers(
+                new_sidedata, flags = sidedatautil.run_sidedata_helpers(
                     store=self,
                     sidedata_helpers=helpers,
                     sidedata={},

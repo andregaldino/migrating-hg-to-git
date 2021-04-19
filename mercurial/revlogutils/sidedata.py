@@ -32,9 +32,11 @@ the concept.
 
 from __future__ import absolute_import
 
+import collections
 import struct
 
-from .. import error
+from .. import error, requirements as requirementsmod
+from ..revlogutils import constants, flagutil
 from ..utils import hashutil
 
 ## sidedata type constant
@@ -91,3 +93,63 @@ def deserialize_sidedata(blob):
         sidedata[key] = entrytext
         dataoffset = nextdataoffset
     return sidedata
+
+
+def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
+    # Computers for computing sidedata on-the-fly
+    sd_computers = collections.defaultdict(list)
+    # Computers for categories to remove from sidedata
+    sd_removers = collections.defaultdict(list)
+    to_generate = remote_sd_categories - repo._wanted_sidedata
+    to_remove = repo._wanted_sidedata - remote_sd_categories
+    if pull:
+        to_generate, to_remove = to_remove, to_generate
+
+    for revlog_kind, computers in repo._sidedata_computers.items():
+        for category, computer in computers.items():
+            if category in to_generate:
+                sd_computers[revlog_kind].append(computer)
+            if category in to_remove:
+                sd_removers[revlog_kind].append(computer)
+
+    sidedata_helpers = (repo, sd_computers, sd_removers)
+    return sidedata_helpers
+
+
+def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
+    """Returns the sidedata for the given revision after running through
+    the given helpers.
+    - `store`: the revlog this applies to (changelog, manifest, or filelog
+      instance)
+    - `sidedata_helpers`: see `storageutil.emitrevisions`
+    - `sidedata`: previous sidedata at the given rev, if any
+    - `rev`: affected rev of `store`
+    """
+    repo, sd_computers, sd_removers = sidedata_helpers
+    kind = store.revlog_kind
+    flags_to_add = 0
+    flags_to_remove = 0
+    for _keys, sd_computer, _flags in sd_computers.get(kind, []):
+        sidedata, flags = sd_computer(repo, store, rev, sidedata)
+        flags_to_add |= flags[0]
+        flags_to_remove |= flags[1]
+    for keys, _computer, flags in sd_removers.get(kind, []):
+        for key in keys:
+            sidedata.pop(key, None)
+        flags_to_remove |= flags
+    return sidedata, (flags_to_add, flags_to_remove)
+
+
+def set_sidedata_spec_for_repo(repo):
+    # prevent cycle metadata -> revlogutils.sidedata -> metadata
+    from .. import metadata
+
+    if requirementsmod.COPIESSDC_REQUIREMENT in repo.requirements:
+        repo.register_wanted_sidedata(SD_FILES)
+    repo.register_sidedata_computer(
+        constants.KIND_CHANGELOG,
+        SD_FILES,
+        (SD_FILES,),
+        metadata.copies_sidedata_computer,
+        flagutil.REVIDX_HASCOPIESINFO,
+    )

@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import os
 import struct
 import weakref
@@ -301,7 +300,7 @@ class cg1unpacker(object):
             and srctype == b'pull'
         )
         if adding_sidedata:
-            sidedata_helpers = get_sidedata_helpers(
+            sidedata_helpers = sidedatamod.get_sidedata_helpers(
                 repo,
                 sidedata_categories or set(),
                 pull=True,
@@ -1073,7 +1072,9 @@ class cgpacker(object):
                 # TODO a better approach would be for the strip bundle to
                 # correctly advertise its sidedata categories directly.
                 remote_sidedata = repo._wanted_sidedata
-            sidedata_helpers = get_sidedata_helpers(repo, remote_sidedata)
+            sidedata_helpers = sidedatamod.get_sidedata_helpers(
+                repo, remote_sidedata
+            )
 
         clstate, deltas = self._generatechangelog(
             cl,
@@ -1940,24 +1941,3 @@ def _addchangegroupfiles(
                 )
 
     return revisions, files
-
-
-def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
-    # Computers for computing sidedata on-the-fly
-    sd_computers = collections.defaultdict(list)
-    # Computers for categories to remove from sidedata
-    sd_removers = collections.defaultdict(list)
-    to_generate = remote_sd_categories - repo._wanted_sidedata
-    to_remove = repo._wanted_sidedata - remote_sd_categories
-    if pull:
-        to_generate, to_remove = to_remove, to_generate
-
-    for revlog_kind, computers in repo._sidedata_computers.items():
-        for category, computer in computers.items():
-            if category in to_generate:
-                sd_computers[revlog_kind].append(computer)
-            if category in to_remove:
-                sd_removers[revlog_kind].append(computer)
-
-    sidedata_helpers = (repo, sd_computers, sd_removers)
-    return sidedata_helpers

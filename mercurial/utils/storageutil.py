@@ -499,7 +499,7 @@ def emitrevisions(
         sidedata_flags = (0, 0)
         if sidedata_helpers:
             old_sidedata = store.sidedata(rev)
-            sidedata, sidedata_flags = run_sidedata_helpers(
+            sidedata, sidedata_flags = sidedatamod.run_sidedata_helpers(
                 store=store,
                 sidedata_helpers=sidedata_helpers,
                 sidedata=old_sidedata,
@@ -530,30 +530,6 @@ def emitrevisions(
         )
 
         prevrev = rev
-
-
-def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
-    """Returns the sidedata for the given revision after running through
-    the given helpers.
-    - `store`: the revlog this applies to (changelog, manifest, or filelog
-      instance)
-    - `sidedata_helpers`: see `storageutil.emitrevisions`
-    - `sidedata`: previous sidedata at the given rev, if any
-    - `rev`: affected rev of `store`
-    """
-    repo, sd_computers, sd_removers = sidedata_helpers
-    kind = store.revlog_kind
-    flags_to_add = 0
-    flags_to_remove = 0
-    for _keys, sd_computer, _flags in sd_computers.get(kind, []):
-        sidedata, flags = sd_computer(repo, store, rev, sidedata)
-        flags_to_add |= flags[0]
-        flags_to_remove |= flags[1]
-    for keys, _computer, flags in sd_removers.get(kind, []):
-        for key in keys:
-            sidedata.pop(key, None)
-        flags_to_remove |= flags
-    return sidedata, (flags_to_add, flags_to_remove)
 
 
 def deltaiscensored(delta, baserev, baselenfn):
