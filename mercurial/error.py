@@ -311,16 +311,15 @@ class RemoteError(Abort):
 class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
 
-    def __init__(self, *messages, **kwargs):
+    def __init__(self, message=None, hint=None):
         from .i18n import _
 
-        if messages:
-            message = _(b"remote error:\n%s") % b''.join(messages)
+        if message:
             # Abort.format() adds a trailing newline
-            message = message.rstrip(b'\n')
+            message = _(b"remote error:\n%s") % message.rstrip(b'\n')
         else:
             message = _(b"remote error")
-        super(OutOfBandError, self).__init__(message, **kwargs)
+        super(OutOfBandError, self).__init__(message, hint=hint)
 
 
 class ParseError(Abort):
