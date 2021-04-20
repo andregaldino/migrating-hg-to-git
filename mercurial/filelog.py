@@ -1,6 +1,6 @@
 # filelog.py - file history class for mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -32,6 +32,8 @@ class filelog(object):
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
         self._revlog.filename = path
+        self._revlog.revlog_kind = b'filelog'
+        self.nullid = self._revlog.nullid
 
     def __len__(self):
         return len(self._revlog)
@@ -102,6 +104,7 @@ class filelog(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         return self._revlog.emitrevisions(
             nodes,
@@ -109,6 +112,7 @@ class filelog(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         )
 
     def addrevision(
@@ -176,7 +180,8 @@ class filelog(object):
     def add(self, text, meta, transaction, link, p1=None, p2=None):
         if meta or text.startswith(b'\1\n'):
             text = storageutil.packmeta(meta, text)
-        return self.addrevision(text, transaction, link, p1, p2)
+        rev = self.addrevision(text, transaction, link, p1, p2)
+        return self.node(rev)
 
     def renamed(self, node):
         return storageutil.filerevisioncopied(self, node)

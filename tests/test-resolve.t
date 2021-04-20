@@ -153,15 +153,15 @@ can not update or merge when there are unresolved conflicts
   $ hg up 0
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
   $ hg merge 2
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
   $ hg merge --force 2
   abort: outstanding merge conflicts
   (use 'hg resolve' to resolve)
-  [255]
+  [20]
 
 set up conflict-free merge
 
@@ -255,11 +255,13 @@ insert unsupported advisory merge record
     ancestor path: file1 (node 2ed2a3912a0b24502043eae84ee4b279c18b90dd)
     other path: file1 (node 6f4310b00b9a147241b071a60c28a650827fb03d)
     extra: ancestorlinknode = 99726c03216e233810a2564cbc0adfe395007eac
+    extra: merged = yes
   file: file2 (state "u")
     local path: file2 (hash cb99b709a1978bd205ab9dfd4c5aaa1fc91c7523, flags "")
     ancestor path: file2 (node 2ed2a3912a0b24502043eae84ee4b279c18b90dd)
     other path: file2 (node 6f4310b00b9a147241b071a60c28a650827fb03d)
     extra: ancestorlinknode = 99726c03216e233810a2564cbc0adfe395007eac
+    extra: merged = yes
   $ hg resolve -l
   R file1
   U file2
@@ -271,7 +273,7 @@ test json output
    {
     "commits": [{"label": "working copy", "name": "local", "node": "57653b9f834a4493f7240b0681efcb9ae7cab745"}, {"label": "merge rev", "name": "other", "node": "dc77451844e37f03f5c559e3b8529b2b48d381d1"}],
     "extras": [],
-    "files": [{"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file1", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "60b27f004e454aca81b0480209cce5081ec52390", "local_path": "file1", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file1", "path": "file1", "state": "r"}, {"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file2", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}], "local_flags": "", "local_key": "cb99b709a1978bd205ab9dfd4c5aaa1fc91c7523", "local_path": "file2", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file2", "path": "file2", "state": "u"}]
+    "files": [{"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file1", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}, {"key": "merged", "value": "yes"}], "local_flags": "", "local_key": "60b27f004e454aca81b0480209cce5081ec52390", "local_path": "file1", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file1", "path": "file1", "state": "r"}, {"ancestor_node": "2ed2a3912a0b24502043eae84ee4b279c18b90dd", "ancestor_path": "file2", "extras": [{"key": "ancestorlinknode", "value": "99726c03216e233810a2564cbc0adfe395007eac"}, {"key": "merged", "value": "yes"}], "local_flags": "", "local_key": "cb99b709a1978bd205ab9dfd4c5aaa1fc91c7523", "local_path": "file2", "other_node": "6f4310b00b9a147241b071a60c28a650827fb03d", "other_path": "file2", "path": "file2", "state": "u"}]
    }
   ]
 
@@ -344,6 +346,24 @@ Try with --all from the hint
   $ hg resolve -l
   R file1
   R file2
+Test with :mergediff conflict markers
+  $ hg resolve --unmark
+  $ hg resolve --re-merge -t :mergediff file2
+  merging file2
+  warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
+  [1]
+  $ hg resolve -l
+  U file1
+  U file2
+  $ hg --config commands.resolve.mark-check=abort resolve -m
+  warning: the following files still have conflict markers:
+    file2
+  abort: conflict markers detected
+  (use --all to mark anyway)
+  [20]
+  $ hg resolve -l
+  U file1
+  U file2
 Test option value 'warn'
   $ hg resolve --unmark
   $ hg resolve -l

@@ -1106,14 +1106,13 @@ obsolete revision.
 
   $ printf "foo\n" > foo.changed
   $ hg commit -Aqm "foo"
-  $ hg debugobsolete `hg parents --template '{node}'`
-  1 new obsolescence markers
-  obsoleted 1 changesets
+  $ hg ci --amend -m rewritten
   $ hg --hidden fix -r 0
   abort: fixing obsolete revision could cause divergence
   [255]
 
   $ hg --hidden fix -r 0 --config experimental.evolution.allowdivergence=true
+  2 new content-divergent changesets
   $ hg cat -r tip foo.changed
   FOO
 

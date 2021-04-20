@@ -38,6 +38,7 @@ Show all commands except debug commands
   paths
   phase
   pull
+  purge
   push
   recover
   remove
@@ -129,6 +130,7 @@ Show debug commands if there are no other candidates
   debugrevspec
   debugserve
   debugsetparents
+  debugshell
   debugsidedata
   debugssl
   debugstrip
@@ -270,7 +272,7 @@ Show all commands + options
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
   debugcapabilities: 
-  debugchangedfiles: 
+  debugchangedfiles: compute
   debugcheckstate: 
   debugcolor: style
   debugcommands: 
@@ -281,7 +283,7 @@ Show all commands + options
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
   debugdirstate: nodates, dates, datesort
-  debugdiscovery: old, nonheads, rev, seed, ssh, remotecmd, insecure
+  debugdiscovery: old, nonheads, rev, seed, local-as-revs, remote-as-revs, ssh, remotecmd, insecure, template
   debugdownload: output
   debugextensions: template
   debugfileset: rev, all-files, show-matcher, show-stage
@@ -318,6 +320,7 @@ Show all commands + options
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
   debugserve: sshstdio, logiofd, logiofile
   debugsetparents: 
+  debugshell: 
   debugsidedata: changelog, manifest, dir
   debugssl: 
   debugstrip: rev, force, no-backup, nobackup, , keep, bookmark, soft
@@ -354,10 +357,11 @@ Show all commands + options
   paths: template
   phase: public, draft, secret, force, rev
   pull: update, force, confirm, rev, bookmark, branch, ssh, remotecmd, insecure
+  purge: abort-on-err, all, ignored, dirs, files, print, print0, confirm, include, exclude
   push: force, rev, bookmark, all-bookmarks, branch, new-branch, pushvars, publish, ssh, remotecmd, insecure
   recover: verify
   remove: after, force, subrepos, include, exclude, dry-run
-  rename: after, at-rev, force, include, exclude, dry-run
+  rename: forget, after, at-rev, force, include, exclude, dry-run
   resolve: all, list, mark, unmark, no-status, re-merge, tool, include, exclude, template
   revert: all, date, rev, no-backup, interactive, include, exclude, dry-run
   rollback: dry-run, force

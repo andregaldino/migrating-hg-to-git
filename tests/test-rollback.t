@@ -103,7 +103,7 @@ rollback by pretxncommit saves commit message (issue1635)
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status * (glob)
-  [255]
+  [40]
   $ cat .hg/last-message.txt ; echo
   precious commit message
 
@@ -118,7 +118,7 @@ same thing, but run $EDITOR
   note: commit message saved in .hg/last-message.txt
   note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
   abort: pretxncommit hook exited with status * (glob)
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   another precious commit message
 
@@ -380,7 +380,7 @@ An I/O error writing "transaction abort" is handled
   warn during abort
   rollback completed
   abort: pretxncommit hook exited with status 1
-  [255]
+  [40]
 
   $ hg commit -m 'commit 1'
   warn during pretxncommit
@@ -405,7 +405,7 @@ An I/O error during txnabort should still result in rollback
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
-  [255]
+  [40]
 
   $ hg commit -m 'commit 1'
   warn during pretxncommit
@@ -431,7 +431,7 @@ An I/O error writing "rollback completed" is handled
   transaction abort!
   warn during abort
   abort: pretxncommit hook exited with status 1
-  [255]
+  [40]
 
   $ hg verify
   checking changesets

@@ -324,7 +324,7 @@ File conflict is not allowed
   $ hg up -q 4
   abort: conflicting changes
   (commit or update --clean to discard changes)
-  [255]
+  [20]
   $ hg up -m 4
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')

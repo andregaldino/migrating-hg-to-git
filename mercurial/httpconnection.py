@@ -1,6 +1,6 @@
 # httpconnection.py - urllib2 handler for new http support
 #
-# Copyright 2005, 2006, 2007, 2008 Matt Mackall <mpm@selenic.com>
+# Copyright 2005, 2006, 2007, 2008 Olivia Mackall <olivia@selenic.com>
 # Copyright 2006, 2007 Alexis S. L. Carvalho <alexis@cecm.usp.br>
 # Copyright 2006 Vadim Gelfer <vadim.gelfer@gmail.com>
 # Copyright 2011 Google, Inc.
@@ -18,6 +18,10 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    urlutil,
+)
+
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -99,7 +103,7 @@ def readauthforuri(ui, uri, user):
         if not prefix:
             continue
 
-        prefixurl = util.url(prefix)
+        prefixurl = urlutil.url(prefix)
         if prefixurl.user and prefixurl.user != user:
             # If a username was set in the prefix, it must match the username in
             # the URI.

@@ -6,5 +6,11 @@ pub const OK: ExitCode = 0;
 /// Generic abort
 pub const ABORT: ExitCode = 255;
 
-/// Command not implemented by rhg
-pub const UNIMPLEMENTED_COMMAND: ExitCode = 252;
+// Abort when there is a config related error
+pub const CONFIG_ERROR_ABORT: ExitCode = 30;
+
+/// Generic something completed but did not succeed
+pub const UNSUCCESSFUL: ExitCode = 1;
+
+/// Command or feature not implemented by rhg
+pub const UNIMPLEMENTED: ExitCode = 252;

@@ -2,12 +2,17 @@
 Test the persistent on-disk nodemap
 ===================================
 
+
+#if no-rust
+
   $ cat << EOF >> $HGRCPATH
   > [format]
   > use-persistent-nodemap=yes
   > [devel]
   > persistent-nodemap=yes
   > EOF
+
+#endif
 
   $ hg init test-repo --config storage.revlog.persistent-nodemap.slow-path=allow
   $ cd test-repo
@@ -56,11 +61,12 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   generaldelta:       yes
   share-safe:          no
   sparserevlog:       yes
-  sidedata:            no
   persistent-nodemap: yes
   copies-sdc:          no
+  revlog-v2:           no
   plain-cl-delta:     yes
-  compression:        zlib
+  compression:        zlib (no-zstd !)
+  compression:        zstd (zstd !)
   compression-level:  default
   $ hg debugbuilddag .+5000 --new-file
 
@@ -575,17 +581,19 @@ downgrading
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo --run --no-backup --quiet
+  $ hg debugupgraderepo --run --no-backup
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      removed: persistent-nodemap
   
   processed revlogs:
@@ -593,8 +601,17 @@ downgrading
     - changelog
     - manifest
   
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  downgrading repository to not use persistent nodemap feature
+  removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  [1]
+  00changelog-*.nd (glob)
+  00manifest-*.nd (glob)
+  undo.backup.00changelog.n
+  undo.backup.00manifest.n
   $ hg debugnodemap --metadata
 
 
@@ -611,29 +628,42 @@ upgrading
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo --run --no-backup --quiet
+  $ hg debugupgraderepo --run --no-backup
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
      added: persistent-nodemap
+  
+  persistent-nodemap
+     Speedup revision lookup by node id.
   
   processed revlogs:
     - all-filelogs
     - changelog
     - manifest
   
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  upgrading repository to use persistent nodemap feature
+  removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n
   00manifest-*.nd (glob)
   00manifest.n
+  undo.backup.00changelog.n
+  undo.backup.00manifest.n
 
   $ hg debugnodemap --metadata
   uid: * (glob)
@@ -649,7 +679,8 @@ Running unrelated upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (no-zstd !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
   
   optimisations: re-delta-all
   
@@ -716,20 +747,88 @@ The persistent nodemap should exist after a streaming clone
   data-unused: 0
   data-unused: 0.000%
 
+Test various corruption case
+============================
+
+Missing datafile
+----------------
+
+Test behavior with a missing datafile
+
+  $ hg clone --quiet --pull test-repo corruption-test-repo
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog-*.nd (glob)
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+  $ rm corruption-test-repo/.hg/store/00changelog*.nd
+  $ hg log -R corruption-test-repo -r .
+  changeset:   5005:90d5d3ba2fc4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a2
+  
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+
+Truncated data file
+-------------------
+
+Test behavior with a too short datafile
+
+rebuild the missing data
+  $ hg -R corruption-test-repo debugupdatecache
+  $ ls -1 corruption-test-repo/.hg/store/00changelog*
+  corruption-test-repo/.hg/store/00changelog-*.nd (glob)
+  corruption-test-repo/.hg/store/00changelog.d
+  corruption-test-repo/.hg/store/00changelog.i
+  corruption-test-repo/.hg/store/00changelog.n
+
+truncate the file
+
+  $ datafilepath=`ls corruption-test-repo/.hg/store/00changelog*.nd`
+  $ f -s $datafilepath
+  corruption-test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
+  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp status=none
+  $ mv $datafilepath-tmp $datafilepath
+  $ f -s $datafilepath
+  corruption-test-repo/.hg/store/00changelog-*.nd: size=10000 (glob)
+
+Check that Mercurial reaction to this event
+
+  $ hg -R corruption-test-repo log -r . --traceback
+  changeset:   5005:90d5d3ba2fc4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a2
+  
+
+
 stream clone
-------------
+============
 
 The persistent nodemap should exist after a streaming clone
 
+Simple case
+-----------
+
+No race condition
+
   $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
   adding [s] 00manifest.n (70 bytes)
-  adding [s] 00manifest.i (313 KB)
-  adding [s] 00manifest.d (452 KB)
   adding [s] 00manifest-*.nd (118 KB) (glob)
   adding [s] 00changelog.n (70 bytes)
-  adding [s] 00changelog.i (313 KB)
-  adding [s] 00changelog.d (360 KB)
   adding [s] 00changelog-*.nd (118 KB) (glob)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
+  adding [s] 00manifest.i (313 KB)
+  adding [s] 00changelog.i (313 KB)
   $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n
@@ -742,3 +841,212 @@ The persistent nodemap should exist after a streaming clone
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
+
+new data appened
+-----------------
+
+Other commit happening on the server during the stream clone
+
+setup the step-by-step stream cloning
+
+  $ HG_TEST_STREAM_WALKED_FILE_1="$TESTTMP/sync_file_walked_1"
+  $ export HG_TEST_STREAM_WALKED_FILE_1
+  $ HG_TEST_STREAM_WALKED_FILE_2="$TESTTMP/sync_file_walked_2"
+  $ export HG_TEST_STREAM_WALKED_FILE_2
+  $ HG_TEST_STREAM_WALKED_FILE_3="$TESTTMP/sync_file_walked_3"
+  $ export HG_TEST_STREAM_WALKED_FILE_3
+  $ cat << EOF >> test-repo/.hg/hgrc
+  > [extensions]
+  > steps=$RUNTESTDIR/testlib/ext-stream-clone-steps.py
+  > EOF
+
+Check and record file state beforehand
+
+  $ f --size test-repo/.hg/store/00changelog*
+  test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
+  test-repo/.hg/store/00changelog.d: size=376891 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=368890 (no-zstd !)
+  test-repo/.hg/store/00changelog.i: size=320384
+  test-repo/.hg/store/00changelog.n: size=70
+  $ hg -R test-repo debugnodemap --metadata | tee server-metadata.txt
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
+Prepare a commit
+
+  $ echo foo >> test-repo/foo
+  $ hg -R test-repo/ add test-repo/foo
+
+Do a mix of clone and commit at the same time so that the file listed on disk differ at actual transfer time.
+
+  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-1 --debug 2>> clone-output | egrep '00(changelog|manifest)' >> clone-output; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
+  $ hg -R test-repo/ commit -m foo
+  $ touch $HG_TEST_STREAM_WALKED_FILE_2
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
+  $ cat clone-output
+  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest-*.nd (118 KB) (glob)
+  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
+  adding [s] 00manifest.i (313 KB)
+  adding [s] 00changelog.i (313 KB)
+
+Check the result state
+
+  $ f --size stream-clone-race-1/.hg/store/00changelog*
+  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob)
+  stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd !)
+  stream-clone-race-1/.hg/store/00changelog.i: size=320384
+  stream-clone-race-1/.hg/store/00changelog.n: size=70
+
+  $ hg -R stream-clone-race-1 debugnodemap --metadata | tee client-metadata.txt
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
+We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
+(ie: the following diff should be empty)
+
+This isn't the case for the `no-rust` `no-pure` implementation as it use a very minimal nodemap implementation that unconditionnaly rewrite the nodemap "all the time".
+
+#if no-rust no-pure
+  $ diff -u server-metadata.txt client-metadata.txt
+  --- server-metadata.txt	* (glob)
+  +++ client-metadata.txt	* (glob)
+  @@ -1,4 +1,4 @@
+  -uid: * (glob)
+  +uid: * (glob)
+   tip-rev: 5005
+   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+   data-length: 121088
+  [1]
+#else
+  $ diff -u server-metadata.txt client-metadata.txt
+#endif
+
+
+Clean up after the test.
+
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_1"
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_2"
+  $ rm -f "$HG_TEST_STREAM_WALKED_FILE_3"
+
+full regeneration
+-----------------
+
+A full nodemap is generated
+
+(ideally this test would append enough data to make sure the nodemap data file
+get changed, however to make thing simpler we will force the regeneration for
+this test.
+
+Check the initial state
+
+  $ f --size test-repo/.hg/store/00changelog*
+  test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
+  test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
+  test-repo/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
+  test-repo/.hg/store/00changelog.d: size=376950 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=368949 (no-zstd !)
+  test-repo/.hg/store/00changelog.i: size=320448
+  test-repo/.hg/store/00changelog.n: size=70
+  $ hg -R test-repo debugnodemap --metadata | tee server-metadata-2.txt
+  uid: * (glob)
+  tip-rev: 5006
+  tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+  data-length: 121344 (rust !)
+  data-length: 121344 (pure !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 192 (rust !)
+  data-unused: 192 (pure !)
+  data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.158% (rust !)
+  data-unused: 0.158% (pure !)
+  data-unused: 0.000% (no-rust no-pure !)
+
+Performe the mix of clone and full refresh of the nodemap, so that the files
+(and filenames) are different between listing time and actual transfer time.
+
+  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-2 --debug 2>> clone-output-2 | egrep '00(changelog|manifest)' >> clone-output-2; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
+  $ rm test-repo/.hg/store/00changelog.n
+  $ rm test-repo/.hg/store/00changelog-*.nd
+  $ hg -R test-repo/ debugupdatecache
+  $ touch $HG_TEST_STREAM_WALKED_FILE_2
+  $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
+  $ cat clone-output-2
+  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest-*.nd (118 KB) (glob)
+  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
+  adding [s] 00manifest.d (492 KB) (zstd !)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00changelog.d (360 KB) (no-zstd !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
+  adding [s] 00manifest.i (313 KB)
+  adding [s] 00changelog.i (313 KB)
+
+Check the result.
+
+  $ f --size stream-clone-race-2/.hg/store/00changelog*
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=376950 (zstd !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=368949 (no-zstd !)
+  stream-clone-race-2/.hg/store/00changelog.i: size=320448
+  stream-clone-race-2/.hg/store/00changelog.n: size=70
+
+  $ hg -R stream-clone-race-2 debugnodemap --metadata | tee client-metadata-2.txt
+  uid: * (glob)
+  tip-rev: 5006
+  tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+  data-length: 121344 (rust !)
+  data-unused: 192 (rust !)
+  data-unused: 0.158% (rust !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.000% (no-rust no-pure !)
+  data-length: 121344 (pure !)
+  data-unused: 192 (pure !)
+  data-unused: 0.158% (pure !)
+
+We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
+(ie: the following diff should be empty)
+
+This isn't the case for the `no-rust` `no-pure` implementation as it use a very minimal nodemap implementation that unconditionnaly rewrite the nodemap "all the time".
+
+#if no-rust no-pure
+  $ diff -u server-metadata-2.txt client-metadata-2.txt
+  --- server-metadata-2.txt	* (glob)
+  +++ client-metadata-2.txt	* (glob)
+  @@ -1,4 +1,4 @@
+  -uid: * (glob)
+  +uid: * (glob)
+   tip-rev: 5006
+   tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+   data-length: 121152
+  [1]
+#else
+  $ diff -u server-metadata-2.txt client-metadata-2.txt
+#endif
+
+Clean up after the test
+
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_1
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_2
+  $ rm -f $HG_TEST_STREAM_WALKED_FILE_3
+

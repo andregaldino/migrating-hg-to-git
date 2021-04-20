@@ -43,6 +43,9 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    urlutil,
+)
 
 
 class bundlerevlog(revlog.revlog):
@@ -61,7 +64,7 @@ class bundlerevlog(revlog.revlog):
         self.repotiprev = n - 1
         self.bundlerevs = set()  # used by 'bundle()' revset expression
         for deltadata in cgunpacker.deltaiter():
-            node, p1, p2, cs, deltabase, delta, flags = deltadata
+            node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
 
             size = len(delta)
             start = cgunpacker.tell() - size
@@ -175,9 +178,15 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
 
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(
-        self, opener, cgunpacker, linkmapper, dirlogstarts=None, dir=b''
+        self,
+        nodeconstants,
+        opener,
+        cgunpacker,
+        linkmapper,
+        dirlogstarts=None,
+        dir=b'',
     ):
-        manifest.manifestrevlog.__init__(self, opener, tree=dir)
+        manifest.manifestrevlog.__init__(self, nodeconstants, opener, tree=dir)
         bundlerevlog.__init__(
             self, opener, self.indexfile, cgunpacker, linkmapper
         )
@@ -192,6 +201,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
         if d in self._dirlogstarts:
             self.bundle.seek(self._dirlogstarts[d])
             return bundlemanifest(
+                self.nodeconstants,
                 self.opener,
                 self.bundle,
                 self._linkmapper,
@@ -368,7 +378,9 @@ class bundlerepository(object):
         # consume the header if it exists
         self._cgunpacker.manifestheader()
         linkmapper = self.unfiltered().changelog.rev
-        rootstore = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
+        rootstore = bundlemanifest(
+            self.nodeconstants, self.svfs, self._cgunpacker, linkmapper
+        )
         self.filestart = self._cgunpacker.tell()
 
         return manifest.manifestlog(
@@ -466,7 +478,7 @@ def instance(ui, path, create, intents=None, createopts=None):
             cwd = pathutil.normasprefix(cwd)
             if parentpath.startswith(cwd):
                 parentpath = parentpath[len(cwd) :]
-    u = util.url(path)
+    u = urlutil.url(path)
     path = u.localpath()
     if u.scheme == b'bundle':
         s = path.split(b"+", 1)

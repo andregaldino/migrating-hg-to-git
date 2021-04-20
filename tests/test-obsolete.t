@@ -97,8 +97,10 @@ Killing a single changeset with replacement
   # rev p1rev p2rev start   end deltastart base   p1   p2 rawsize totalsize compression heads chainlen
       0    -1    -1     0    59          0    0    0    0      58        58           0     1        0
       1     0    -1    59   118         59   59    0    0      58       116           0     1        0
-      2     1    -1   118   193        118  118   59    0      76       192           0     1        0
-      3     1    -1   193   260        193  193   59    0      66       258           0     2        0
+      2     1    -1   118   193        118  118   59    0      76       192           0     1        0 (no-zstd !)
+      3     1    -1   193   260        193  193   59    0      66       258           0     2        0 (no-zstd !)
+      2     1    -1   118   195        118  118   59    0      76       192           0     1        0 (zstd !)
+      3     1    -1   195   262        195  195   59    0      66       258           0     2        0 (zstd !)
   $ hg debugobsolete
   245bde4270cd1072a27757984f9cda8ba26f08ca cdbce2fbb16313928851e97e0d85413f3f7eb77f C (Thu Jan 01 00:00:01 1970 -0002) {'user': 'test'}
 
@@ -1844,6 +1846,7 @@ The local node should now point to a non-existent commit
     ancestor path: file (node bc7ebe2d260cff30d2a39a130d84add36216f791)
     other path: file (node b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3)
     extra: ancestorlinknode = b73b8c9a4ab4da89a5a35a6f10dfb13edc84ca37
+    extra: merged = yes
 We should be able to see the log (without the deleted commit, of course)
   $ hg log -G
   @  0:f53e9479dce5 (draft) [tip ] first

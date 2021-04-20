@@ -29,7 +29,8 @@ clone via stream
 #if no-reposimplestore
   $ hg clone --stream http://localhost:$HGPORT/ copy 2>&1
   streaming all changes
-  9 files to transfer, 715 bytes of data
+  9 files to transfer, 715 bytes of data (no-zstd !)
+  9 files to transfer, 717 bytes of data (zstd !)
   transferred * bytes in * seconds (*/sec) (glob)
   updating to branch default
   4 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -348,20 +349,20 @@ test http authentication
   list of changesets:
   7f4e523d01f2cc3765ac8934da3d14db775ff872
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 224 bytes payload
+  bundle2-output-part: "replycaps" 207 bytes payload
   bundle2-output-part: "check:phases" 24 bytes payload
   bundle2-output-part: "check:updated-heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   sending unbundle command
-  sending 1040 bytes
+  sending 1023 bytes
   devel-peer-request: POST http://localhost:$HGPORT2/?cmd=unbundle
-  devel-peer-request:   Content-length 1040
+  devel-peer-request:   Content-length 1023
   devel-peer-request:   Content-type application/mercurial-0.1
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
   devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   16 bytes of commands arguments in headers
-  devel-peer-request:   1040 bytes of data
+  devel-peer-request:   1023 bytes of data
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
@@ -382,6 +383,7 @@ test http authentication
   devel-peer-request:   16 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 15 bytes
+  (sent 9 HTTP requests and * bytes; received * bytes in responses) (glob) (?)
   $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
@@ -503,7 +505,7 @@ check abort error reporting while pulling/cloning
   requesting all changes
   remote: abort: this is an exercise
   abort: pull failed on remote
-  [255]
+  [100]
   $ cat error.log
 
 disable pull-based clones
@@ -515,7 +517,7 @@ disable pull-based clones
   remote: abort: server has pull-based clones disabled
   abort: pull failed on remote
   (remove --pull if specified or upgrade Mercurial)
-  [255]
+  [100]
 
 #if no-reposimplestore
 ... but keep stream clones working

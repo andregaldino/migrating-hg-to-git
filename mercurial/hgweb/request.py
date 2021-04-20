@@ -1,7 +1,7 @@
 # hgweb/request.py - An http request from either CGI or the standalone server.
 #
 # Copyright 21 May 2005 - (c) 2005 Jake Edge <jake@edge2.net>
-# Copyright 2005, 2006 Matt Mackall <mpm@selenic.com>
+# Copyright 2005, 2006 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -16,6 +16,9 @@ from .. import (
     error,
     pycompat,
     util,
+)
+from ..utils import (
+    urlutil,
 )
 
 
@@ -184,7 +187,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
         reponame = env.get(b'REPO_NAME')
 
     if altbaseurl:
-        altbaseurl = util.url(altbaseurl)
+        altbaseurl = urlutil.url(altbaseurl)
 
     # https://www.python.org/dev/peps/pep-0333/#environ-variables defines
     # the environment variables.

@@ -202,7 +202,7 @@ check saving last-message.txt
   transaction abort!
   rollback completed
   abort: pretxncommit.abortfolding hook failed
-  [255]
+  [40]
 
   $ cat .hg/last-message.txt
   f

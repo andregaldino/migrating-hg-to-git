@@ -161,10 +161,10 @@ def normalize_windows_version(version):
     >>> normalize_windows_version("5.3rc1")
     '5.3.0.1'
 
-    >>> normalize_windows_version("5.3rc1+2-abcdef")
+    >>> normalize_windows_version("5.3rc1+hg2.abcdef")
     '5.3.0.1'
 
-    >>> normalize_windows_version("5.3+2-abcdef")
+    >>> normalize_windows_version("5.3+hg2.abcdef")
     '5.3.0.2'
     """
     if '+' in version:
@@ -188,8 +188,8 @@ def normalize_windows_version(version):
         if rc is not None:
             versions.append(rc)
         elif extra:
-            # <commit count>-<hash>+<date>
-            versions.append(int(extra.split('-')[0]))
+            # hg<commit count>.<hash>+<date>
+            versions.append(int(extra.split('.')[0][2:]))
 
     return '.'.join('%d' % x for x in versions[0:4])
 

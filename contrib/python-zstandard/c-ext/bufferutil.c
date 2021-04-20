@@ -758,7 +758,7 @@ PyTypeObject ZstdBufferWithSegmentsCollectionType = {
 };
 
 void bufferutil_module_init(PyObject* mod) {
-	Py_TYPE(&ZstdBufferWithSegmentsType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdBufferWithSegmentsType, &PyType_Type);
 	if (PyType_Ready(&ZstdBufferWithSegmentsType) < 0) {
 		return;
 	}
@@ -766,7 +766,7 @@ void bufferutil_module_init(PyObject* mod) {
 	Py_INCREF(&ZstdBufferWithSegmentsType);
 	PyModule_AddObject(mod, "BufferWithSegments", (PyObject*)&ZstdBufferWithSegmentsType);
 
-	Py_TYPE(&ZstdBufferSegmentsType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdBufferSegmentsType, &PyType_Type);
 	if (PyType_Ready(&ZstdBufferSegmentsType) < 0) {
 		return;
 	}
@@ -774,7 +774,7 @@ void bufferutil_module_init(PyObject* mod) {
 	Py_INCREF(&ZstdBufferSegmentsType);
 	PyModule_AddObject(mod, "BufferSegments", (PyObject*)&ZstdBufferSegmentsType);
 
-	Py_TYPE(&ZstdBufferSegmentType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdBufferSegmentType, &PyType_Type);
 	if (PyType_Ready(&ZstdBufferSegmentType) < 0) {
 		return;
 	}
@@ -782,7 +782,7 @@ void bufferutil_module_init(PyObject* mod) {
 	Py_INCREF(&ZstdBufferSegmentType);
 	PyModule_AddObject(mod, "BufferSegment", (PyObject*)&ZstdBufferSegmentType);
 
-	Py_TYPE(&ZstdBufferWithSegmentsCollectionType) = &PyType_Type;
+	Py_SET_TYPE(&ZstdBufferWithSegmentsCollectionType, &PyType_Type);
 	if (PyType_Ready(&ZstdBufferWithSegmentsCollectionType) < 0) {
 		return;
 	}

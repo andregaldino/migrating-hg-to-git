@@ -186,8 +186,10 @@ debugdelta chain basic output
   node trie capacity: 4
   node trie count: 2
   node trie depth: 1
-  node trie last rev scanned: -1
-  node trie lookups: 4
+  node trie last rev scanned: -1 (no-rust !)
+  node trie last rev scanned: 3 (rust !)
+  node trie lookups: 4 (no-rust !)
+  node trie lookups: 2 (rust !)
   node trie misses: 1
   node trie splits: 1
   revs in memory: 3
@@ -368,7 +370,8 @@ debugdelta chain with sparse read enabled
   7 1
   8 1
   9 1
-  10 2
+  10 2 (no-zstd !)
+  10 1 (zstd !)
   11 1
   $ hg --config extensions.strip= strip --no-backup -r 1
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -636,7 +639,6 @@ Test debugcapabilities command:
     remote-changegroup
       http
       https
-    rev-branch-cache
     stream
       v2
 
@@ -654,8 +656,10 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 463
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 444 (no-rust !)
+  remote: 463 (rust !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
   remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

@@ -1,3 +1,17 @@
+Windows needs ';' as a file separator in an environment variable, and MSYS
+doesn't automatically convert it in every case.
+
+#if windows
+  $ path_list_var() {
+  >     echo $1 | sed 's/:/;/'
+  > }
+#else
+  $ path_list_var() {
+  >     echo $1
+  > }
+#endif
+
+
 hide outer repo
   $ hg init
 
@@ -388,3 +402,114 @@ configs should be read in lexicographical order
   > done
   $ HGRCPATH=configs hg config section.key
   99
+
+Configuration priority
+======================
+
+setup necessary file
+
+  $ cat > file-A.rc << EOF
+  > [config-test]
+  > basic = value-A
+  > pre-include= value-A
+  > %include ./included.rc
+  > post-include= value-A
+  > [command-templates]
+  > log = "value-A\n"
+  > EOF
+
+  $ cat > file-B.rc << EOF
+  > [config-test]
+  > basic = value-B
+  > [ui]
+  > logtemplate = "value-B\n"
+  > EOF
+
+
+  $ cat > included.rc << EOF
+  > [config-test]
+  > pre-include= value-included
+  > post-include= value-included
+  > EOF
+
+  $ cat > file-C.rc << EOF
+  > %include ./included-alias-C.rc
+  > [ui]
+  > logtemplate = "value-C\n"
+  > EOF
+
+  $ cat > included-alias-C.rc << EOF
+  > [command-templates]
+  > log = "value-included\n"
+  > EOF
+
+
+  $ cat > file-D.rc << EOF
+  > [command-templates]
+  > log = "value-D\n"
+  > %include ./included-alias-D.rc
+  > EOF
+
+  $ cat > included-alias-D.rc << EOF
+  > [ui]
+  > logtemplate = "value-included\n"
+  > EOF
+
+Simple order checking
+---------------------
+
+If file B is read after file A, value from B overwrite value from A.
+
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg config config-test.basic
+  value-B
+
+Ordering from include
+---------------------
+
+value from an include overwrite value defined before the include, but not the one defined after the include
+
+  $ HGRCPATH="file-A.rc" hg config config-test.pre-include
+  value-included
+  $ HGRCPATH="file-A.rc" hg config config-test.post-include
+  value-A
+
+command line override
+---------------------
+
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg config config-test.basic --config config-test.basic=value-CLI
+  value-CLI
+
+Alias ordering
+--------------
+
+The official config is now `command-templates.log`, the historical
+`ui.logtemplate` is a valid alternative for it.
+
+When both are defined, The config value read the last "win", this should keep
+being true if the config have other alias. In other word, the config value read
+earlier will be considered "lower level" and the config read later would be
+considered "higher level". And higher level values wins.
+
+  $ HGRCPATH="file-A.rc" hg log -r .
+  value-A
+  $ HGRCPATH="file-B.rc" hg log -r .
+  value-B
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg log -r .
+  value-B
+
+Alias and include
+-----------------
+
+The pre/post include priority should also apply when tie-breaking alternatives.
+See the case above for details about the two config options used.
+
+  $ HGRCPATH="file-C.rc" hg log -r .
+  value-C
+  $ HGRCPATH="file-D.rc" hg log -r .
+  value-included
+
+command line override
+---------------------
+
+  $ HGRCPATH=`path_list_var "file-A.rc:file-B.rc"` hg log -r . --config ui.logtemplate="value-CLI\n"
+  value-CLI

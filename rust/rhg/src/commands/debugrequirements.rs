@@ -1,30 +1,22 @@
-use crate::commands::Command;
 use crate::error::CommandError;
-use crate::ui::Ui;
-use hg::repo::Repo;
-use hg::requirements;
 
 pub const HELP_TEXT: &str = "
 Print the current repo requirements.
 ";
 
-pub struct DebugRequirementsCommand {}
-
-impl DebugRequirementsCommand {
-    pub fn new() -> Self {
-        DebugRequirementsCommand {}
-    }
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("debugrequirements").about(HELP_TEXT)
 }
 
-impl Command for DebugRequirementsCommand {
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
-        let mut output = String::new();
-        for req in requirements::load(&repo)? {
-            output.push_str(&req);
-            output.push('\n');
-        }
-        ui.write_stdout(output.as_bytes())?;
-        Ok(())
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let repo = invocation.repo?;
+    let mut output = String::new();
+    let mut requirements: Vec<_> = repo.requirements().iter().collect();
+    requirements.sort();
+    for req in requirements {
+        output.push_str(req);
+        output.push('\n');
     }
+    invocation.ui.write_stdout(output.as_bytes())?;
+    Ok(())
 }

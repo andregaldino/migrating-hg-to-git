@@ -1,91 +1,65 @@
-use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
-use crate::ui::utf8_to_local;
-use crate::ui::Ui;
-use hg::operations::{
-    debug_data, DebugDataError, DebugDataErrorKind, DebugDataKind,
-};
-use hg::repo::Repo;
+use crate::error::CommandError;
+use clap::Arg;
+use clap::ArgGroup;
+use hg::operations::{debug_data, DebugDataKind};
 use micro_timer::timed;
 
 pub const HELP_TEXT: &str = "
 Dump the contents of a data file revision
 ";
 
-pub struct DebugDataCommand<'a> {
-    rev: &'a str,
-    kind: DebugDataKind,
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("debugdata")
+        .arg(
+            Arg::with_name("changelog")
+                .help("open changelog")
+                .short("-c")
+                .long("--changelog"),
+        )
+        .arg(
+            Arg::with_name("manifest")
+                .help("open manifest")
+                .short("-m")
+                .long("--manifest"),
+        )
+        .group(
+            ArgGroup::with_name("")
+                .args(&["changelog", "manifest"])
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("rev")
+                .help("revision")
+                .required(true)
+                .value_name("REV"),
+        )
+        .about(HELP_TEXT)
 }
 
-impl<'a> DebugDataCommand<'a> {
-    pub fn new(rev: &'a str, kind: DebugDataKind) -> Self {
-        DebugDataCommand { rev, kind }
-    }
-}
+#[timed]
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let args = invocation.subcommand_args;
+    let rev = args
+        .value_of("rev")
+        .expect("rev should be a required argument");
+    let kind =
+        match (args.is_present("changelog"), args.is_present("manifest")) {
+            (true, false) => DebugDataKind::Changelog,
+            (false, true) => DebugDataKind::Manifest,
+            (true, true) => {
+                unreachable!("Should not happen since options are exclusive")
+            }
+            (false, false) => {
+                unreachable!("Should not happen since options are required")
+            }
+        };
 
-impl<'a> Command for DebugDataCommand<'a> {
-    #[timed]
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
-        let data = debug_data(&repo, self.rev, self.kind)
-            .map_err(|e| to_command_error(self.rev, e))?;
+    let repo = invocation.repo?;
+    let data = debug_data(repo, rev, kind).map_err(|e| (e, rev))?;
 
-        let mut stdout = ui.stdout_buffer();
-        stdout.write_all(&data)?;
-        stdout.flush()?;
+    let mut stdout = invocation.ui.stdout_buffer();
+    stdout.write_all(&data)?;
+    stdout.flush()?;
 
-        Ok(())
-    }
-}
-
-/// Convert operation errors to command errors
-fn to_command_error(rev: &str, err: DebugDataError) -> CommandError {
-    match err.kind {
-        DebugDataErrorKind::IoError(err) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!("abort: {}\n", err)).into(),
-            )),
-        },
-        DebugDataErrorKind::InvalidRevision => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: invalid revision identifier{}\n",
-                    rev
-                ))
-                .into(),
-            )),
-        },
-        DebugDataErrorKind::AmbiguousPrefix => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier{}\n",
-                    rev
-                ))
-                .into(),
-            )),
-        },
-        DebugDataErrorKind::UnsuportedRevlogVersion(version) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unsupported revlog version {}\n",
-                    version
-                ))
-                .into(),
-            )),
-        },
-        DebugDataErrorKind::CorruptedRevlog => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                "abort: corrupted revlog\n".into(),
-            )),
-        },
-        DebugDataErrorKind::UnknowRevlogDataFormat(format) => CommandError {
-            kind: CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: unknow revlog dataformat {:?}\n",
-                    format
-                ))
-                .into(),
-            )),
-        },
-    }
+    Ok(())
 }

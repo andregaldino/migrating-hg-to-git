@@ -5,21 +5,23 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::{utils::hg_path::HgPathBuf, DirstateParseError, FastHashMap};
+use crate::errors::HgError;
+use crate::revlog::Node;
+use crate::{utils::hg_path::HgPathBuf, FastHashMap};
+use bytes_cast::{unaligned, BytesCast};
 use std::collections::hash_map;
 use std::convert::TryFrom;
 
 pub mod dirs_multiset;
 pub mod dirstate_map;
-#[cfg(feature = "dirstate-tree")]
-pub mod dirstate_tree;
 pub mod parsers;
 pub mod status;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, BytesCast)]
+#[repr(C)]
 pub struct DirstateParents {
-    pub p1: [u8; 20],
-    pub p2: [u8; 20],
+    pub p1: Node,
+    pub p2: Node,
 }
 
 /// The C implementation uses all signed types. This will be an issue
@@ -33,20 +35,24 @@ pub struct DirstateEntry {
     pub size: i32,
 }
 
+#[derive(BytesCast)]
+#[repr(C)]
+struct RawEntry {
+    state: u8,
+    mode: unaligned::I32Be,
+    size: unaligned::I32Be,
+    mtime: unaligned::I32Be,
+    length: unaligned::I32Be,
+}
+
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the
 /// other parent. This allows revert to pick the right status back during a
 /// merge.
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
-#[cfg(not(feature = "dirstate-tree"))]
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
-#[cfg(not(feature = "dirstate-tree"))]
 pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
 
-#[cfg(feature = "dirstate-tree")]
-pub type StateMap = dirstate_tree::tree::Tree;
-#[cfg(feature = "dirstate-tree")]
-pub type StateMapIter<'a> = dirstate_tree::iter::Iter<'a>;
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> = hash_map::Iter<'a, HgPathBuf, HgPathBuf>;
 
@@ -60,7 +66,7 @@ pub enum EntryState {
 }
 
 impl TryFrom<u8> for EntryState {
-    type Error = DirstateParseError;
+    type Error = HgError;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         match value {
@@ -69,8 +75,8 @@ impl TryFrom<u8> for EntryState {
             b'r' => Ok(EntryState::Removed),
             b'm' => Ok(EntryState::Merged),
             b'?' => Ok(EntryState::Unknown),
-            _ => Err(DirstateParseError::CorruptedEntry(format!(
-                "Incorrect entry state {}",
+            _ => Err(HgError::CorruptedRepository(format!(
+                "Incorrect dirstate entry state {}",
                 value
             ))),
         }

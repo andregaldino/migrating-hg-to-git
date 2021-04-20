@@ -195,3 +195,22 @@ Test --template argument, with backwards compatibility
   alltogether     11 *********************************************************
 
   $ cd ..
+
+count lines that look like headings but are not
+
+  $ hg init not-headers
+  $ cd not-headers
+  $ cat > a <<EOF
+  > diff
+  > @@ -195,3 +195,21 @@
+  > -- a/tests/test-churn.t
+  > ++ b/tests/test-churn.t
+  > EOF
+  $ hg ci -Am adda -u user1
+  adding a
+  $ hg churn --diffstat
+  user1           +4/-0 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  $ hg rm a
+  $ hg ci -Am removea -u user1
+  $ hg churn --diffstat
+  user1           +4/-4 +++++++++++++++++++++++++++---------------------------

@@ -2868,7 +2868,7 @@ Don't prompt for a CC header.
 
 dest#branch URIs:
   $ hg email --date '1980-1-1 0:1' -n -t foo -s test -o ../t#test
-  comparing with ../t
+  comparing with ../t#test
   From [test]: test
   this patch series consists of 1 patches.
   
@@ -2998,7 +2998,7 @@ Multi rev + flag
 bad value setting
 -----------------
 
-  $ echo 'intro=mpmwearaclownnose' >> $HGRCPATH
+  $ echo 'intro=oliviawearaclownnose' >> $HGRCPATH
 
 single rev
 
@@ -3006,7 +3006,7 @@ single rev
   From [test]: test
   this patch series consists of 1 patches.
   
-  warning: invalid patchbomb.intro value "mpmwearaclownnose"
+  warning: invalid patchbomb.intro value "oliviawearaclownnose"
   (should be one of always, never, auto)
   -f test foo
   MIME-Version: 1.0
@@ -3047,7 +3047,7 @@ Shell characters in addresses
   $ hg email --date '1980-1-1 0:1' -v -t '~foo/bar@example.com' -f 'me*@example.com' -r '10'
   this patch series consists of 1 patches.
   
-  warning: invalid patchbomb.intro value "mpmwearaclownnose"
+  warning: invalid patchbomb.intro value "oliviawearaclownnose"
   (should be one of always, never, auto)
   -f me*@example.com ~foo/bar@example.com
   MIME-Version: 1.0

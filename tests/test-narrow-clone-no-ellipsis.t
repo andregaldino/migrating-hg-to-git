@@ -26,6 +26,8 @@ narrow clone a file, f10
   dotencode
   fncache
   narrowhg-experimental
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

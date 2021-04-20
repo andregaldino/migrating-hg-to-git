@@ -235,7 +235,7 @@ and that combination of '--edit' and '--message' doesn't abort execution)
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   original message
   

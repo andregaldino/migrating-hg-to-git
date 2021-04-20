@@ -228,6 +228,17 @@ should match
 should show no copies
   $ hg st -C
 
+note: since filelog based copy tracing only trace copy for new file, the copy information here is not displayed.
+
+  $ hg status --copies --change .
+  M bar
+
+They are a devel option to walk all file and fine this information anyway.
+
+  $ hg status --copies --change . --config devel.copy-tracing.trace-all-files=yes
+  M bar
+    foo
+
 copy --after on an added file
   $ cp bar baz
   $ hg add baz
@@ -266,18 +277,24 @@ mention --force:
   $ rm baz xyzzy
 
 
-Test unmarking copy of a single file
+Test unmarking copy/rename of a single file
 
 # Set up by creating a copy
   $ hg cp bar baz
-# Test uncopying a non-existent file
+# Test unmarking as copy a non-existent file
   $ hg copy --forget non-existent
   non-existent: $ENOENT$
-# Test uncopying an tracked but unrelated file
+  $ hg rename --forget non-existent
+  non-existent: $ENOENT$
+# Test unmarking as copy an tracked but unrelated file
   $ hg copy --forget foo
   foo: not unmarking as copy - file is not marked as copied
-# Test uncopying a copy source
+  $ hg rename --forget foo
+  foo: not unmarking as copy - file is not marked as copied
+# Test unmarking as copy a copy source
   $ hg copy --forget bar
+  bar: not unmarking as copy - file is not marked as copied
+  $ hg rename --forget bar
   bar: not unmarking as copy - file is not marked as copied
 # baz should still be marked as a copy
   $ hg st -C
@@ -287,15 +304,36 @@ Test unmarking copy of a single file
   $ hg copy --forget baz
   $ hg st -C
   A baz
-# Test uncopy with matching an non-matching patterns
+  $ rm bar
+  $ hg rename --after bar baz
+  $ hg st -C
+  A baz
+    bar
+  R bar
+  $ hg rename --forget baz
+  $ hg st -C
+  A baz
+  R bar
+  $ hg revert bar
+# Test unmarking as copy with matching an non-matching patterns
   $ hg cp bar baz --after
   $ hg copy --forget bar baz
   bar: not unmarking as copy - file is not marked as copied
+  $ hg cp bar baz --after
+  $ hg rename --forget bar baz
+  bar: not unmarking as copy - file is not marked as copied
   $ hg st -C
   A baz
-# Test uncopy with no exact matches
+# Test unmarking as copy with no exact matches
   $ hg cp bar baz --after
   $ hg copy --forget .
+  $ hg st -C
+  A baz
+  $ hg cp bar baz --after
+  $ hg st -C
+  A baz
+    bar
+  $ hg rename --forget .
   $ hg st -C
   A baz
   $ hg forget baz

@@ -20,6 +20,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    requirements as requirementsmod,
     scmutil,
     store,
     util,
@@ -83,7 +84,7 @@ def canperformstreamclone(pullop, bundle2=False):
     # is advertised and contains a comma-delimited list of requirements.
     requirements = set()
     if remote.capable(b'stream'):
-        requirements.add(b'revlogv1')
+        requirements.add(requirementsmod.REVLOGV1_REQUIREMENT)
     else:
         streamreqs = remote.capable(b'streamreqs')
         # This is weird and shouldn't happen with modern servers.
@@ -242,10 +243,12 @@ def generatev1(repo):
     # Get consistent snapshot of repo, lock during scan.
     with repo.lock():
         repo.ui.debug(b'scanning\n')
-        for name, ename, size in _walkstreamfiles(repo):
+        for file_type, name, ename, size in _walkstreamfiles(repo):
             if size:
                 entries.append((name, size))
                 total_bytes += size
+        _test_sync_point_walk_1(repo)
+    _test_sync_point_walk_2(repo)
 
     repo.ui.debug(
         b'%d files, %d bytes to transfer\n' % (len(entries), total_bytes)
@@ -592,6 +595,14 @@ def _emit2(repo, entries, totalfilesize):
                 fp.close()
 
 
+def _test_sync_point_walk_1(repo):
+    """a function for synchronisation during tests"""
+
+
+def _test_sync_point_walk_2(repo):
+    """a function for synchronisation during tests"""
+
+
 def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
@@ -615,9 +626,12 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
             matcher = narrowspec.match(repo.root, includes, excludes)
 
         repo.ui.debug(b'scanning\n')
-        for name, ename, size in _walkstreamfiles(repo, matcher):
+        for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
-                entries.append((_srcstore, name, _fileappend, size))
+                ft = _fileappend
+                if rl_type & store.FILEFLAGS_VOLATILE:
+                    ft = _filefull
+                entries.append((_srcstore, name, ft, size))
                 totalfilesize += size
         for name in _walkstreamfullstorefiles(repo):
             if repo.svfs.exists(name):
@@ -634,6 +648,8 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
         chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
         assert first is None
+        _test_sync_point_walk_1(repo)
+    _test_sync_point_walk_2(repo)
 
     return len(entries), totalfilesize, chunks
 

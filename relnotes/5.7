@@ -17,6 +17,8 @@
    can be e.g. `rebase`. As part of this effort, the default format
    from `hg rebase` was reorganized a bit.
 
+ * `hg purge` is now a core command using `--confirm` by default.
+
  * `hg diff` and `hg extdiff` now support `--from <rev>` and `--to <rev>`
    arguments as clearer alternatives to `-r <revs>`. `-r <revs>` has been
    deprecated.
@@ -43,6 +45,9 @@
  * The `branchmap` cache is updated more intelligently and can be
    significantly faster for repositories with many branches and changesets.
 
+ * The `rev-branch-cache` is now updated incrementally whenever changesets
+   are added.
+
 
 == New Experimental Features ==
 
@@ -64,4 +69,5 @@
 
 == Internal API Changes ==
 
-
+ * `changelog.branchinfo` is deprecated and will be removed after 5.8.
+   It is superseded by `changelogrevision.branchinfo`.

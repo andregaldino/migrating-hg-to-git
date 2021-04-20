@@ -10,7 +10,10 @@ from __future__ import absolute_import
 
 import errno
 
-from . import pycompat
+from . import (
+    encoding,
+    pycompat,
+)
 
 from .utils import (
     dateutil,
@@ -32,7 +35,7 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
             if err.errno != errno.ENOENT:
                 ui.debug(
                     b"warning: cannot remove '%s': %s\n"
-                    % (newpath, err.strerror)
+                    % (newpath, encoding.strtolocal(err.strerror))
                 )
         try:
             if newpath:
@@ -41,7 +44,7 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
             if err.errno != errno.ENOENT:
                 ui.debug(
                     b"warning: cannot rename '%s' to '%s': %s\n"
-                    % (newpath, oldpath, err.strerror)
+                    % (newpath, oldpath, encoding.strtolocal(err.strerror))
                 )
 
     if maxsize > 0:

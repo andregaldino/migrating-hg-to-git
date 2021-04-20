@@ -453,6 +453,10 @@ class irevisiondelta(interfaceutil.Interface):
         """
     )
 
+    sidedata = interfaceutil.Attribute(
+        """Raw sidedata bytes for the given revision."""
+    )
+
 
 class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
@@ -518,6 +522,10 @@ class ifileindex(interfaceutil.Interface):
     * DAG data (storing and querying the relationship between nodes).
     * Metadata to facilitate storage.
     """
+
+    nullid = interfaceutil.Attribute(
+        """node for the null revision for use as delta base."""
+    )
 
     def __len__():
         """Obtain the number of revisions stored for this file."""
@@ -734,7 +742,7 @@ class ifilemutation(interfaceutil.Interface):
         flags=0,
         cachedelta=None,
     ):
-        """Add a new revision to the store.
+        """Add a new revision to the store and return its number.
 
         This is similar to ``add()`` except it operates at a lower level.
 
@@ -769,7 +777,14 @@ class ifilemutation(interfaceutil.Interface):
         ``nullid``, in which case the header from the delta can be ignored
         and the delta used as the fulltext.
 
-        ``addrevisioncb`` should be called for each node as it is committed.
+        ``alwayscache`` instructs the lower layers to cache the content of the
+        newly added revision, even if it needs to be explicitly computed.
+        This used to be the default when ``addrevisioncb`` was provided up to
+        Mercurial 5.8.
+
+        ``addrevisioncb`` should be called for each new rev as it is committed.
+        ``duplicaterevisioncb`` should be called for all revs with a
+        pre-existing node.
 
         ``maybemissingparents`` is a bool indicating whether the incoming
         data may reference parents/ancestor revisions that aren't present.
@@ -1132,6 +1147,10 @@ class imanifestrevisionwritable(imanifestrevisionbase):
 class imanifeststorage(interfaceutil.Interface):
     """Storage interface for manifest data."""
 
+    nodeconstants = interfaceutil.Attribute(
+        """nodeconstants used by the current repository."""
+    )
+
     tree = interfaceutil.Attribute(
         """The path to the directory this manifest tracks.
 
@@ -1355,6 +1374,10 @@ class imanifestlog(interfaceutil.Interface):
     tree manifests.
     """
 
+    nodeconstants = interfaceutil.Attribute(
+        """nodeconstants used by the current repository."""
+    )
+
     def __getitem__(node):
         """Obtain a manifest instance for a given binary node.
 
@@ -1422,6 +1445,13 @@ class ilocalrepositorymain(interfaceutil.Interface):
 
     This currently captures the reality of things - not how things should be.
     """
+
+    nodeconstants = interfaceutil.Attribute(
+        """Constant nodes matching the hash function used by the repository."""
+    )
+    nullid = interfaceutil.Attribute(
+        """null revision for the hash function used by the repository."""
+    )
 
     supportedformats = interfaceutil.Attribute(
         """Set of requirements that apply to stream clone.
@@ -1641,6 +1671,14 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def revbranchcache():
         pass
 
+    def register_changeset(rev, changelogrevision):
+        """Extension point for caches for new nodes.
+
+        Multiple consumers are expected to need parts of the changelogrevision,
+        so it is provided as optimization to avoid duplicate lookups. A simple
+        cache would be fragile when other revisions are accessed, too."""
+        pass
+
     def branchtip(branchtip, ignoremissing=False):
         """Return the tip node for a given branch."""
 
@@ -1811,6 +1849,12 @@ class ilocalrepositorymain(interfaceutil.Interface):
         pass
 
     def savecommitmessage(text):
+        pass
+
+    def register_sidedata_computer(kind, category, keys, computer):
+        pass
+
+    def register_wanted_sidedata(category):
         pass
 
 

@@ -1,6 +1,6 @@
 # scmutil.py - Mercurial core utility functions
 #
-#  Copyright Matt Mackall <mpm@selenic.com> and other
+#  Copyright Olivia Mackall <olivia@selenic.com> and other
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.

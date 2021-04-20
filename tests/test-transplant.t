@@ -1091,7 +1091,7 @@ revision restores dirstate correctly.
   transaction abort!
   rollback completed
   abort: pretxncommit.abort hook exited with status 1
-  [255]
+  [40]
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
   > pretxncommit.abort = !

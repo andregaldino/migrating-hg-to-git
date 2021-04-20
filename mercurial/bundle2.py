@@ -177,7 +177,10 @@ from . import (
     url,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -1598,7 +1601,6 @@ capabilities = {
     b'digests': tuple(sorted(util.DIGESTS.keys())),
     b'remote-changegroup': (b'http', b'https'),
     b'hgtagsfnodes': (),
-    b'rev-branch-cache': (),
     b'phases': (b'heads',),
     b'stream': (b'v2',),
 }
@@ -1642,6 +1644,9 @@ def getrepocaps(repo, allowpushback=False, role=None):
             caps.pop(b'stream')
     # Else always advertise support on client, because payload support
     # should always be advertised.
+
+    # b'rev-branch-cache is no longer advertised, but still supported
+    # for legacy clients.
 
     return caps
 
@@ -1769,7 +1774,7 @@ def addparttagsfnodescache(repo, bundler, outgoing):
     for node in outgoing.ancestorsof:
         # Don't compute missing, as this may slow down serving.
         fnode = cache.getfnode(node, computemissing=False)
-        if fnode is not None:
+        if fnode:
             chunks.extend([node, fnode])
 
     if chunks:
@@ -1808,6 +1813,28 @@ def _formatrequirementsparams(requirements):
     requirements = _formatrequirementsspec(requirements)
     params = b"%s%s" % (urlreq.quote(b"requirements="), requirements)
     return params
+
+
+def format_remote_wanted_sidedata(repo):
+    """Formats a repo's wanted sidedata categories into a bytestring for
+    capabilities exchange."""
+    wanted = b""
+    if repo._wanted_sidedata:
+        wanted = b','.join(
+            pycompat.bytestr(c) for c in sorted(repo._wanted_sidedata)
+        )
+    return wanted
+
+
+def read_remote_wanted_sidedata(remote):
+    sidedata_categories = remote.capable(b'exp-wanted-sidedata')
+    return read_wanted_sidedata(sidedata_categories)
+
+
+def read_wanted_sidedata(formatted):
+    if formatted:
+        return set(formatted.split(b','))
+    return set()
 
 
 def addpartbundlestream2(bundler, repo, **kwargs):
@@ -1955,6 +1982,7 @@ def combinechangegroupresults(op):
         b'version',
         b'nbchanges',
         b'exp-sidedata',
+        b'exp-wanted-sidedata',
         b'treemanifest',
         b'targetphase',
     ),
@@ -1997,11 +2025,15 @@ def handlechangegroup(op, inpart):
     targetphase = inpart.params.get(b'targetphase')
     if targetphase is not None:
         extrakwargs['targetphase'] = int(targetphase)
+
+    remote_sidedata = inpart.params.get(b'exp-wanted-sidedata')
+    extrakwargs['sidedata_categories'] = read_wanted_sidedata(remote_sidedata)
+
     ret = _processchangegroup(
         op,
         cg,
         tr,
-        b'bundle2',
+        op.source,
         b'bundle2',
         expectedtotal=nbchangesets,
         **extrakwargs
@@ -2044,7 +2076,7 @@ def handleremotechangegroup(op, inpart):
         raw_url = inpart.params[b'url']
     except KeyError:
         raise error.Abort(_(b'remote-changegroup: missing "%s" param') % b'url')
-    parsed_url = util.url(raw_url)
+    parsed_url = urlutil.url(raw_url)
     if parsed_url.scheme not in capabilities[b'remote-changegroup']:
         raise error.Abort(
             _(b'remote-changegroup does not support %s urls')
@@ -2081,9 +2113,9 @@ def handleremotechangegroup(op, inpart):
     cg = exchange.readbundle(op.repo.ui, real_part, raw_url)
     if not isinstance(cg, changegroup.cg1unpacker):
         raise error.Abort(
-            _(b'%s: not a bundle version 1.0') % util.hidepassword(raw_url)
+            _(b'%s: not a bundle version 1.0') % urlutil.hidepassword(raw_url)
         )
-    ret = _processchangegroup(op, cg, tr, b'bundle2', b'bundle2')
+    ret = _processchangegroup(op, cg, tr, op.source, b'bundle2')
     if op.reply is not None:
         # This is definitely not the final form of this
         # return. But one need to start somewhere.
@@ -2097,7 +2129,7 @@ def handleremotechangegroup(op, inpart):
     except error.Abort as e:
         raise error.Abort(
             _(b'bundle at %s is corrupted:\n%s')
-            % (util.hidepassword(raw_url), e.message)
+            % (urlutil.hidepassword(raw_url), e.message)
         )
     assert not inpart.read()
 
@@ -2117,7 +2149,7 @@ def handlecheckbookmarks(op, inpart):
     contains binary encoded (bookmark, node) tuple. If the local state does
     not marks the one in the part, a PushRaced exception is raised
     """
-    bookdata = bookmarks.binarydecode(inpart)
+    bookdata = bookmarks.binarydecode(op.repo, inpart)
 
     msgstandard = (
         b'remote repository changed while pushing - please try again '
@@ -2347,7 +2379,7 @@ def handlebookmark(op, inpart):
     When mode is 'records', the information is recorded into the 'bookmarks'
     records of the bundle operation. This behavior is suitable for pulling.
     """
-    changes = bookmarks.binarydecode(inpart)
+    changes = bookmarks.binarydecode(op.repo, inpart)
 
     pushkeycompat = op.repo.ui.configbool(
         b'server', b'bookmarks-pushkey-compat'
@@ -2478,35 +2510,10 @@ rbcstruct = struct.Struct(b'>III')
 
 @parthandler(b'cache:rev-branch-cache')
 def handlerbc(op, inpart):
-    """receive a rev-branch-cache payload and update the local cache
-
-    The payload is a series of data related to each branch
-
-    1) branch name length
-    2) number of open heads
-    3) number of closed heads
-    4) open heads nodes
-    5) closed heads nodes
-    """
-    total = 0
-    rawheader = inpart.read(rbcstruct.size)
-    cache = op.repo.revbranchcache()
-    cl = op.repo.unfiltered().changelog
-    while rawheader:
-        header = rbcstruct.unpack(rawheader)
-        total += header[1] + header[2]
-        utf8branch = inpart.read(header[0])
-        branch = encoding.tolocal(utf8branch)
-        for x in pycompat.xrange(header[1]):
-            node = inpart.read(20)
-            rev = cl.rev(node)
-            cache.setdata(branch, rev, node, False)
-        for x in pycompat.xrange(header[2]):
-            node = inpart.read(20)
-            rev = cl.rev(node)
-            cache.setdata(branch, rev, node, True)
-        rawheader = inpart.read(rbcstruct.size)
-    cache.write()
+    """Legacy part, ignored for compatibility with bundles from or
+    for Mercurial before 5.7. Newer Mercurial computes the cache
+    efficiently enough during unbundling that the additional transfer
+    is unnecessary."""
 
 
 @parthandler(b'pushvars')
@@ -2561,8 +2568,6 @@ def widen_bundle(
     for r in repo.revs(b"::%ln", common):
         commonnodes.add(cl.node(r))
     if commonnodes:
-        # XXX: we should only send the filelogs (and treemanifest). user
-        # already has the changelog and manifest
         packer = changegroup.getbundler(
             cgversion,
             repo,
@@ -2584,5 +2589,7 @@ def widen_bundle(
             part.addparam(b'treemanifest', b'1')
         if b'exp-sidedata-flag' in repo.requirements:
             part.addparam(b'exp-sidedata', b'1')
+            wanted = format_remote_wanted_sidedata(repo)
+            part.addparam(b'exp-wanted-sidedata', wanted)
 
     return bundler

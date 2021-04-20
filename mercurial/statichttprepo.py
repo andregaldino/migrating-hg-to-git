@@ -2,7 +2,7 @@
 #
 # This provides read-only repo access to repositories exported via static http
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -12,6 +12,7 @@ from __future__ import absolute_import
 import errno
 
 from .i18n import _
+from .node import sha1nodeconstants
 from . import (
     branchmap,
     changelog,
@@ -24,6 +25,9 @@ from . import (
     url,
     util,
     vfs as vfsmod,
+)
+from .utils import (
+    urlutil,
 )
 
 urlerr = util.urlerr
@@ -161,7 +165,7 @@ class statichttprepository(
         self.ui = ui
 
         self.root = path
-        u = util.url(path.rstrip(b'/') + b"/.hg")
+        u = urlutil.url(path.rstrip(b'/') + b"/.hg")
         self.path, authinfo = u.authinfo()
 
         vfsclass = build_opener(ui, authinfo)
@@ -172,6 +176,7 @@ class statichttprepository(
         self.names = namespaces.namespaces()
         self.filtername = None
         self._extrafilterid = None
+        self._wanted_sidedata = set()
 
         try:
             requirements = set(self.vfs.read(b'requires').splitlines())
@@ -197,6 +202,8 @@ class statichttprepository(
             requirements, supportedrequirements
         )
         localrepo.ensurerequirementscompatible(ui, requirements)
+        self.nodeconstants = sha1nodeconstants
+        self.nullid = self.nodeconstants.nullid
 
         # setup store
         self.store = localrepo.makestore(requirements, self.path, vfsclass)
@@ -206,7 +213,7 @@ class statichttprepository(
         self._filecache = {}
         self.requirements = requirements
 
-        rootmanifest = manifest.manifestrevlog(self.svfs)
+        rootmanifest = manifest.manifestrevlog(self.nodeconstants, self.svfs)
         self.manifestlog = manifest.manifestlog(
             self.svfs, self, rootmanifest, self.narrowmatch()
         )

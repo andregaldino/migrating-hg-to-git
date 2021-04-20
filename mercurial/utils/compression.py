@@ -685,9 +685,11 @@ class _zstdengine(compressionengine):
         # while providing no worse compression. It strikes a good balance
         # between speed and compression.
         level = opts.get(b'level', 3)
+        # default to single-threaded compression
+        threads = opts.get(b'threads', 0)
 
         zstd = self._module
-        z = zstd.ZstdCompressor(level=level).compressobj()
+        z = zstd.ZstdCompressor(level=level, threads=threads).compressobj()
         for chunk in it:
             data = z.compress(chunk)
             if data:

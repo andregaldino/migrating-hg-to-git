@@ -439,6 +439,8 @@ marker after the option. It is treated as a normal paragraph:
 a             First item.
 ab            Second item. Indentation and wrapping is
               handled automatically.
+c:d           a key with colon
+efg::hh       a key with many colon
 
 Next list:
 
@@ -456,6 +458,9 @@ ab            Second item.
               wrapping is
               handled
               automatically.
+c:d           a key with colon
+efg::hh       a key with many
+              colon
 
 Next list:
 
@@ -476,6 +481,10 @@ html format:
  <dd>First item.
  <dt>ab
  <dd>Second item. Indentation and wrapping is handled automatically.
+ <dt>c:d
+ <dd>a key with colon
+ <dt>efg::hh
+ <dd>a key with many colon
 </dl>
 <p>
 Next list:

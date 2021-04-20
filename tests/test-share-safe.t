@@ -7,6 +7,11 @@ setup
   > use-share-safe = True
   > [storage]
   > revlog.persistent-nodemap.slow-path=allow
+  > # enforce zlib to ensure we can upgrade to zstd later
+  > [format]
+  > revlog-compression=zlib
+  > # we want to be able to enable it later
+  > use-persistent-nodemap=no
   > EOF
 
 prepare source repo
@@ -352,18 +357,27 @@ Upgrade
     - changelog
     - manifest
   
-  $ hg debugupgraderepo --run -q
+  $ hg debugupgraderepo --run
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store
      added: share-safe
   
+  share-safe
+     Upgrades a repository to share-safe format so that future shares of this repository share its requirements and configs.
+  
   processed revlogs:
     - all-filelogs
     - changelog
     - manifest
   
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  upgrading repository requirements
+  removing temporary repository $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
 
   $ hg debugrequirements
@@ -433,7 +447,7 @@ Test that downgrading works too
     - changelog
     - manifest
   
-  $ hg debugupgraderepo -q --run
+  $ hg debugupgraderepo --run
   upgrade will perform the following actions:
   
   requirements
@@ -445,6 +459,12 @@ Test that downgrading works too
     - changelog
     - manifest
   
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  upgrading repository requirements
+  removing temporary repository $TESTTMP/non-share-safe/.hg/upgrade.* (glob)
   repository downgraded to not use share safe mode, existing shares will not work and needs to be reshared.
 
   $ hg debugrequirements

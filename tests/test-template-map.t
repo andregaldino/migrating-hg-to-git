@@ -1606,7 +1606,7 @@ Check the bisect template
 
   $ hg bisect -g 1
   $ hg bisect -b 3 --noupdate
-  Testing changeset 2:97054abb4ab8 (2 changesets remaining, ~1 tests)
+  Testing changeset 2:97054abb4ab8 "no person" (2 changesets remaining, ~1 tests)
   $ hg log -T bisect -r 0:4
   changeset:   0:1e4e1b8f71e0
   bisect:      good (implicit)

@@ -22,8 +22,10 @@
 
   $ hgcloneshallow ssh://user@dummy/master shallow --noupdate
   streaming all changes
-  2 files to transfer, 528 bytes of data
-  transferred 528 bytes in * seconds (*/sec) (glob)
+  2 files to transfer, 528 bytes of data (no-zstd !)
+  transferred 528 bytes in * seconds (* */sec) (glob) (no-zstd !)
+  2 files to transfer, 532 bytes of data (zstd !)
+  transferred 532 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   $ cd shallow
@@ -86,6 +88,7 @@
   $ printf "[remotefilelog]\npullprefetch=bookmark()\n" >> .hg/hgrc
   $ hg strip tip
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/109c3a557a73-3f43405e-backup.hg (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
 
   $ clearcache
   $ hg pull
@@ -163,8 +166,10 @@
 
   $ hgcloneshallow ssh://user@dummy/master shallow2
   streaming all changes
-  2 files to transfer, 528 bytes of data
-  transferred 528 bytes in * seconds * (glob)
+  2 files to transfer, 528 bytes of data (no-zstd !)
+  transferred 528 bytes in * seconds * (glob) (no-zstd !)
+  2 files to transfer, 532 bytes of data (zstd !)
+  transferred 532 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -180,7 +185,7 @@
   x: untracked file differs
   3 files fetched over 1 fetches - (3 misses, 0.00% hit ratio) over * (glob)
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg revert --all
 
 # Test batch fetching of lookup files during hg status

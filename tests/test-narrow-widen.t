@@ -431,7 +431,7 @@ Widening that fails can be recovered from
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.bad hook exited with status 1
-  [255]
+  [40]
   $ hg l
   $ hg bookmarks
   no bookmarks set

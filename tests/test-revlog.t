@@ -22,10 +22,10 @@ Unknown flags on revlog version 1 are rejected
 Unknown version is rejected
 
   >>> with open('.hg/store/00changelog.i', 'wb') as fh:
-  ...     fh.write(b'\x00\x00\x00\x02') and None
+  ...     fh.write(b'\x00\x00\xbe\xef') and None
 
   $ hg log
-  abort: unknown version (2) in revlog 00changelog.i
+  abort: unknown version (48879) in revlog 00changelog.i
   [50]
 
   $ cd ..

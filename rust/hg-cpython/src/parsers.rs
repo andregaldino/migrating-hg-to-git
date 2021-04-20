@@ -15,8 +15,7 @@ use cpython::{
 };
 use hg::{
     pack_dirstate, parse_dirstate, utils::hg_path::HgPathBuf, DirstateEntry,
-    DirstatePackError, DirstateParents, DirstateParseError, FastHashMap,
-    PARENT_SIZE,
+    DirstateParents, FastHashMap, PARENT_SIZE,
 };
 use std::convert::TryInto;
 
@@ -54,26 +53,9 @@ fn parse_dirstate_wrapper(
                     PyBytes::new(py, copy_path.as_bytes()),
                 )?;
             }
-            Ok(
-                (PyBytes::new(py, &parents.p1), PyBytes::new(py, &parents.p2))
-                    .to_py_object(py),
-            )
+            Ok(dirstate_parents_to_pytuple(py, parents))
         }
-        Err(e) => Err(PyErr::new::<exc::ValueError, _>(
-            py,
-            match e {
-                DirstateParseError::TooLittleData => {
-                    "too little data for parents".to_string()
-                }
-                DirstateParseError::Overflow => {
-                    "overflow in dirstate".to_string()
-                }
-                DirstateParseError::CorruptedEntry(e) => e,
-                DirstateParseError::Damaged => {
-                    "dirstate appears to be damaged".to_string()
-                }
-            },
-        )),
+        Err(e) => Err(PyErr::new::<exc::ValueError, _>(py, e.to_string())),
     }
 }
 
@@ -128,18 +110,9 @@ fn pack_dirstate_wrapper(
             }
             Ok(PyBytes::new(py, &packed))
         }
-        Err(error) => Err(PyErr::new::<exc::ValueError, _>(
-            py,
-            match error {
-                DirstatePackError::CorruptedParent => {
-                    "expected a 20-byte hash".to_string()
-                }
-                DirstatePackError::CorruptedEntry(e) => e,
-                DirstatePackError::BadSize(expected, actual) => {
-                    format!("bad dirstate size: {} != {}", actual, expected)
-                }
-            },
-        )),
+        Err(error) => {
+            Err(PyErr::new::<exc::ValueError, _>(py, error.to_string()))
+        }
     }
 }
 
@@ -178,4 +151,13 @@ pub fn init_parsers_module(py: Python, package: &str) -> PyResult<PyModule> {
     sys_modules.set_item(py, dotted_name, &m)?;
 
     Ok(m)
+}
+
+pub(crate) fn dirstate_parents_to_pytuple(
+    py: Python,
+    parents: &DirstateParents,
+) -> PyTuple {
+    let p1 = PyBytes::new(py, parents.p1.as_bytes());
+    let p2 = PyBytes::new(py, parents.p2.as_bytes());
+    (p1, p2).to_py_object(py)
 }

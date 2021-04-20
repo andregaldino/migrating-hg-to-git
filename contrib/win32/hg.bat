@@ -4,6 +4,8 @@ rem Windows Driver script for Mercurial
 setlocal
 set HG=%~f0
 
+set PYTHONLEGACYWINDOWSSTDIO=1
+
 rem Use a full path to Python (relative to this script) if it exists,
 rem as the standard Python install does not put python.exe on the PATH...
 rem Otherwise, expect that python.exe can be found on the PATH.

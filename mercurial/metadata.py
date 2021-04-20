@@ -18,6 +18,7 @@ from .node import (
 from . import (
     error,
     pycompat,
+    requirements as requirementsmod,
     util,
 )
 
@@ -321,12 +322,12 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
     │ (Some, None) │      OR      │🄻  Deleted    │       ø      │      ø       │
     │              │🄷  Deleted[1] │              │              │              │
     ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-    │              │🄸  No Changes │              │              │              │
-    │ (None, Some) │     OR       │      ø       │🄼   Added     │🄽   Merged    │
+    │              │🄸  No Changes │              │              │   🄽 Touched  │
+    │ (None, Some) │     OR       │      ø       │🄼   Added     │OR 🅀 Salvaged │
     │              │🄹  Salvaged[2]│              │   (copied?)  │   (copied?)  │
     ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-    │              │              │              │              │              │
-    │ (Some, Some) │🄺  No Changes │      ø       │🄾   Merged    │🄿   Merged    │
+    │              │              │              │   🄾 Touched  │   🄿 Merged   │
+    │ (Some, Some) │🄺  No Changes │      ø       │OR 🅁 Salvaged │OR 🅂 Touched  │
     │              │     [3]      │              │   (copied?)  │   (copied?)  │
     └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 
@@ -414,6 +415,7 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
       nice bonus. However do not any of this yet.
     """
 
+    repo = ctx.repo()
     md = ChangingFiles()
 
     m = ctx.manifest()
@@ -453,8 +455,23 @@ def _process_merge(p1_ctx, p2_ctx, ctx):
                 # case 🄻 — both deleted the file.
                 md.mark_removed(filename)
             elif d1[1][0] is not None and d2[1][0] is not None:
-                # case 🄽 🄾 🄿
-                md.mark_merged(filename)
+                if d1[0][0] is None or d2[0][0] is None:
+                    if any(_find(ma, filename) is not None for ma in mas):
+                        # case 🅀 or 🅁
+                        md.mark_salvaged(filename)
+                    else:
+                        # case 🄽 🄾 : touched
+                        md.mark_touched(filename)
+                else:
+                    fctx = repo.filectx(filename, fileid=d1[1][0])
+                    if fctx.p2().rev() == nullrev:
+                        # case 🅂
+                        # lets assume we can trust the file history. If the
+                        # filenode is not a merge, the file was not merged.
+                        md.mark_touched(filename)
+                    else:
+                        # case 🄿
+                        md.mark_merged(filename)
                 copy_candidates.append(filename)
             else:
                 # Impossible case, the post-merge file status cannot be None on
@@ -804,6 +821,21 @@ def _getsidedata(srcrepo, rev):
     return encode_files_sidedata(files), files.has_copies_info
 
 
+def copies_sidedata_computer(repo, revlog, rev, existing_sidedata):
+    return _getsidedata(repo, rev)[0]
+
+
+def set_sidedata_spec_for_repo(repo):
+    if requirementsmod.COPIESSDC_REQUIREMENT in repo.requirements:
+        repo.register_wanted_sidedata(sidedatamod.SD_FILES)
+        repo.register_sidedata_computer(
+            b"changelog",
+            sidedatamod.SD_FILES,
+            (sidedatamod.SD_FILES,),
+            copies_sidedata_computer,
+        )
+
+
 def getsidedataadder(srcrepo, destrepo):
     use_w = srcrepo.ui.configbool(b'experimental', b'worker.repository-upgrade')
     if pycompat.iswindows or not use_w:
@@ -882,14 +914,14 @@ def _get_worker_sidedata_adder(srcrepo, destrepo):
         data = {}, False
         if util.safehasattr(revlog, b'filteredrevs'):  # this is a changelog
             # Is the data previously shelved ?
-            sidedata = staging.pop(rev, None)
-            if sidedata is None:
+            data = staging.pop(rev, None)
+            if data is None:
                 # look at the queued result until we find the one we are lookig
                 # for (shelve the other ones)
                 r, data = sidedataq.get()
                 while r != rev:
                     staging[r] = data
-                    r, sidedata = sidedataq.get()
+                    r, data = sidedataq.get()
             tokens.release()
         sidedata, has_copies_info = data
         new_flag = 0

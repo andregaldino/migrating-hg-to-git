@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2014 Matt Mackall <mpm@selenic.com>
+# Copyright 2014 Olivia Mackall <olivia@selenic.com>
 #
 # A tool/hook to run basic sanity checks on commits/patches for
 # submission to Mercurial. Install by adding the following to your

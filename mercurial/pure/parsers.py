@@ -1,6 +1,6 @@
 # parsers.py - Python implementation of parsers.c
 #
-# Copyright 2009 Matt Mackall <mpm@selenic.com> and others
+# Copyright 2009 Olivia Mackall <olivia@selenic.com> and others
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -17,6 +17,7 @@ from .. import (
 )
 
 from ..revlogutils import nodemap as nodemaputil
+from ..revlogutils import constants as revlog_constants
 
 stringio = pycompat.bytesio
 
@@ -33,13 +34,6 @@ def dirstatetuple(*x):
     return x
 
 
-indexformatng = b">Qiiiiii20s12x"
-indexfirst = struct.calcsize(b'Q')
-sizeint = struct.calcsize(b'i')
-indexsize = struct.calcsize(indexformatng)
-nullitem = (0, 0, 0, -1, -1, -1, -1, nullid)
-
-
 def gettype(q):
     return int(q & 0xFFFF)
 
@@ -49,6 +43,19 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
+    # Format of an index entry according to Python's `struct` language
+    index_format = revlog_constants.INDEX_ENTRY_V1
+    # Size of a C unsigned long long int, platform independent
+    big_int_size = struct.calcsize(b'>Q')
+    # Size of a C long int, platform independent
+    int_size = struct.calcsize(b'>i')
+    # An empty index entry, used as a default value to be overridden, or nullrev
+    null_item = (0, 0, 0, -1, -1, -1, -1, nullid)
+
+    @util.propertycache
+    def entry_size(self):
+        return self.index_format.size
+
     @property
     def nodemap(self):
         msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
@@ -94,7 +101,7 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        data = _pack(indexformatng, *tup)
+        data = self.index_format.pack(*tup)
         self._extra.append(data)
 
     def _check_index(self, i):
@@ -105,14 +112,14 @@ class BaseIndexObject(object):
 
     def __getitem__(self, i):
         if i == -1:
-            return nullitem
+            return self.null_item
         self._check_index(i)
         if i >= self._lgt:
             data = self._extra[i - self._lgt]
         else:
             index = self._calculate_index(i)
-            data = self._data[index : index + indexsize]
-        r = _unpack(indexformatng, data)
+            data = self._data[index : index + self.entry_size]
+        r = self.index_format.unpack(data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
@@ -120,13 +127,13 @@ class BaseIndexObject(object):
 
 class IndexObject(BaseIndexObject):
     def __init__(self, data):
-        assert len(data) % indexsize == 0
+        assert len(data) % self.entry_size == 0
         self._data = data
-        self._lgt = len(data) // indexsize
+        self._lgt = len(data) // self.entry_size
         self._extra = []
 
     def _calculate_index(self, i):
-        return i * indexsize
+        return i * self.entry_size
 
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
@@ -135,7 +142,7 @@ class IndexObject(BaseIndexObject):
         self._check_index(i)
         self._stripnodes(i)
         if i < self._lgt:
-            self._data = self._data[: i * indexsize]
+            self._data = self._data[: i * self.entry_size]
             self._lgt = i
             self._extra = []
         else:
@@ -198,14 +205,16 @@ class InlinedIndexObject(BaseIndexObject):
         if lgt is not None:
             self._offsets = [0] * lgt
         count = 0
-        while off <= len(self._data) - indexsize:
+        while off <= len(self._data) - self.entry_size:
+            start = off + self.big_int_size
             (s,) = struct.unpack(
-                b'>i', self._data[off + indexfirst : off + sizeint + indexfirst]
+                b'>i',
+                self._data[start : start + self.int_size],
             )
             if lgt is not None:
                 self._offsets[count] = off
             count += 1
-            off += indexsize + s
+            off += self.entry_size + s
         if off != len(self._data):
             raise ValueError(b"corrupted data")
         return count
@@ -227,10 +236,68 @@ class InlinedIndexObject(BaseIndexObject):
         return self._offsets[i]
 
 
-def parse_index2(data, inline):
+def parse_index2(data, inline, revlogv2=False):
     if not inline:
-        return IndexObject(data), None
-    return InlinedIndexObject(data, inline), (0, data)
+        cls = IndexObject2 if revlogv2 else IndexObject
+        return cls(data), None
+    cls = InlinedIndexObject2 if revlogv2 else InlinedIndexObject
+    return cls(data, inline), (0, data)
+
+
+class Index2Mixin(object):
+    index_format = revlog_constants.INDEX_ENTRY_V2
+    null_item = (0, 0, 0, -1, -1, -1, -1, nullid, 0, 0)
+
+    def replace_sidedata_info(self, i, sidedata_offset, sidedata_length):
+        """
+        Replace an existing index entry's sidedata offset and length with new
+        ones.
+        This cannot be used outside of the context of sidedata rewriting,
+        inside the transaction that creates the revision `i`.
+        """
+        if i < 0:
+            raise KeyError
+        self._check_index(i)
+        sidedata_format = b">Qi"
+        packed_size = struct.calcsize(sidedata_format)
+        if i >= self._lgt:
+            packed = _pack(sidedata_format, sidedata_offset, sidedata_length)
+            old = self._extra[i - self._lgt]
+            new = old[:64] + packed + old[64 + packed_size :]
+            self._extra[i - self._lgt] = new
+        else:
+            msg = b"cannot rewrite entries outside of this transaction"
+            raise KeyError(msg)
+
+
+class IndexObject2(Index2Mixin, IndexObject):
+    pass
+
+
+class InlinedIndexObject2(Index2Mixin, InlinedIndexObject):
+    def _inline_scan(self, lgt):
+        sidedata_length_pos = 72
+        off = 0
+        if lgt is not None:
+            self._offsets = [0] * lgt
+        count = 0
+        while off <= len(self._data) - self.entry_size:
+            start = off + self.big_int_size
+            (data_size,) = struct.unpack(
+                b'>i',
+                self._data[start : start + self.int_size],
+            )
+            start = off + sidedata_length_pos
+            (side_data_size,) = struct.unpack(
+                b'>i', self._data[start : start + self.int_size]
+            )
+            if lgt is not None:
+                self._offsets[count] = off
+            count += 1
+            off += self.entry_size + data_size + side_data_size
+        if off != len(self._data):
+            raise ValueError(b"corrupted data")
+        return count
 
 
 def parse_index_devel_nodemap(data, inline):

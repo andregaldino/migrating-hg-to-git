@@ -228,7 +228,7 @@ class profile(object):
             if self._output == b'blackbox':
                 self._fp = util.stringio()
             elif self._output:
-                path = self._ui.expandpath(self._output)
+                path = util.expandpath(self._output)
                 self._fp = open(path, b'wb')
             elif pycompat.iswindows:
                 # parse escape sequence by win32print()

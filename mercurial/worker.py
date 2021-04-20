@@ -442,7 +442,7 @@ def partition(lst, nslices):
     we ever write workers that need to preserve grouping in input
     we should consider allowing callers to specify a partition strategy.
 
-    mpm is not a fan of this partitioning strategy when files are involved.
+    olivia is not a fan of this partitioning strategy when files are involved.
     In his words:
 
         Single-threaded Mercurial makes a point of creating and visiting

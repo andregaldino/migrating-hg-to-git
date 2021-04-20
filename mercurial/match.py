@@ -1,12 +1,13 @@
 # match.py - filename matching
 #
-#  Copyright 2008, 2009 Matt Mackall <mpm@selenic.com> and others
+#  Copyright 2008, 2009 Olivia Mackall <olivia@selenic.com> and others
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
 from __future__ import absolute_import, print_function
 
+import bisect
 import copy
 import itertools
 import os
@@ -798,14 +799,38 @@ class exactmatcher(basematcher):
     def visitdir(self, dir):
         return dir in self._dirs
 
+    @propertycache
+    def _visitchildrenset_candidates(self):
+        """A memoized set of candidates for visitchildrenset."""
+        return self._fileset | self._dirs - {b''}
+
+    @propertycache
+    def _sorted_visitchildrenset_candidates(self):
+        """A memoized sorted list of candidates for visitchildrenset."""
+        return sorted(self._visitchildrenset_candidates)
+
     def visitchildrenset(self, dir):
         if not self._fileset or dir not in self._dirs:
             return set()
 
-        candidates = self._fileset | self._dirs - {b''}
-        if dir != b'':
+        if dir == b'':
+            candidates = self._visitchildrenset_candidates
+        else:
+            candidates = self._sorted_visitchildrenset_candidates
             d = dir + b'/'
-            candidates = {c[len(d) :] for c in candidates if c.startswith(d)}
+            # Use bisect to find the first element potentially starting with d
+            # (i.e. >= d). This should always find at least one element (we'll
+            # assert later if this is not the case).
+            first = bisect.bisect_left(candidates, d)
+            # We need a representation of the first element that is > d that
+            # does not start with d, so since we added a `/` on the end of dir,
+            # we'll add whatever comes after slash (we could probably assume
+            # that `0` is after `/`, but let's not) to the end of dir instead.
+            dnext = dir + encoding.strtolocal(chr(ord(b'/') + 1))
+            # Use bisect to find the first element >= d_next
+            last = bisect.bisect_left(candidates, dnext, lo=first)
+            dlen = len(d)
+            candidates = {c[dlen:] for c in candidates[first:last]}
         # self._dirs includes all of the directories, recursively, so if
         # we're attempting to match foo/bar/baz.txt, it'll have '', 'foo',
         # 'foo/bar' in it. Thus we can safely ignore a candidate that has a

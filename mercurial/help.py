@@ -1,6 +1,6 @@
 # help.py - help data for mercurial
 #
-# Copyright 2006 Matt Mackall <mpm@selenic.com>
+# Copyright 2006 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -829,10 +829,11 @@ def help_(
         def appendcmds(cmds):
             cmds = sorted(cmds)
             for c in cmds:
+                display_cmd = c
                 if ui.verbose:
-                    rst.append(b" :%s: %s\n" % (b', '.join(syns[c]), h[c]))
-                else:
-                    rst.append(b' :%s: %s\n' % (c, h[c]))
+                    display_cmd = b', '.join(syns[c])
+                display_cmd = display_cmd.replace(b':', br'\:')
+                rst.append(b' :%s: %s\n' % (display_cmd, h[c]))
 
         if name in (b'shortlist', b'debug'):
             # List without categories.

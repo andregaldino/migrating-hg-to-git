@@ -68,6 +68,12 @@ local:
 build:
 	$(PYTHON) setup.py $(PURE) build $(COMPILERFLAG)
 
+build-chg:
+	make -C contrib/chg
+
+build-rhg:
+	(cd rust/rhg; cargo build --release)
+
 wheel:
 	FORCE_SETUPTOOLS=1 $(PYTHON) setup.py $(PURE) bdist_wheel $(COMPILERFLAG)
 
@@ -96,6 +102,9 @@ install: install-bin install-doc
 install-bin: build
 	$(PYTHON) setup.py $(PURE) install --root="$(DESTDIR)/" --prefix="$(PREFIX)" --force
 
+install-chg: build-chg
+	make -C contrib/chg install PREFIX="$(PREFIX)"
+
 install-doc: doc
 	cd doc && $(MAKE) $(MFLAGS) install
 
@@ -106,6 +115,9 @@ install-home-bin: build
 
 install-home-doc: doc
 	cd doc && $(MAKE) $(MFLAGS) PREFIX="$(HOME)" install
+
+install-rhg: build-rhg
+	install -m 755 rust/target/release/rhg "$(PREFIX)"/bin/
 
 MANIFEST-doc:
 	$(MAKE) -C doc MANIFEST
@@ -175,7 +187,7 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 	$(PYFILESCMD) | xargs \
 	  xgettext --package-name "Mercurial" \
 	  --msgid-bugs-address "<mercurial-devel@mercurial-scm.org>" \
-	  --copyright-holder "Matt Mackall <mpm@selenic.com> and others" \
+	  --copyright-holder "Olivia Mackall <olivia@selenic.com> and others" \
 	  --from-code ISO-8859-1 --join --sort-by-file --add-comments=i18n: \
 	  -d hg -p i18n -o hg.pot.tmp
 	$(PYTHON) i18n/posplit i18n/hg.pot.tmp

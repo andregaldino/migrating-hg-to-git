@@ -39,7 +39,7 @@ Trying to unamend when there was no amend done
 
   $ hg unamend
   abort: changeset must have one predecessor, found 0 predecessors
-  [255]
+  [10]
 
 Unamend on clean wdir and tip
 

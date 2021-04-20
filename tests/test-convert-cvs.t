@@ -521,7 +521,7 @@ Commit messages of version 1.2 - 1.4 use u3042 in 3 encodings below.
 |cp932     |\x82\xa0      |  x      x     o    |
 
   $ mkdir -p cvsrepo/transcoding
-  $ python <<EOF
+  $ "$PYTHON" <<EOF
   > fp = open('cvsrepo/transcoding/file,v', 'wb')
   > fp.write((b'''
   > head	1.4;

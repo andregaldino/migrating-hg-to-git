@@ -10,7 +10,7 @@ from .node import (
     bin,
     hex,
     nullhex,
-    nullid,
+    nullrev,
 )
 from . import (
     error,
@@ -341,7 +341,7 @@ class _mergestate_base(object):
         flo = fco.flags()
         fla = fca.flags()
         if b'x' in flags + flo + fla and b'l' not in flags + flo + fla:
-            if fca.node() == nullid and flags != flo:
+            if fca.rev() == nullrev and flags != flo:
                 if preresolve:
                     self._repo.ui.warn(
                         _(
@@ -382,7 +382,6 @@ class _mergestate_base(object):
         if merge_ret is None:
             # If return value of merge is None, then there are no real conflict
             del self._state[dfile]
-            self._stateextras.pop(dfile, None)
             self._dirty = True
         elif not merge_ret:
             self.mark(dfile, MERGE_RECORD_RESOLVED)

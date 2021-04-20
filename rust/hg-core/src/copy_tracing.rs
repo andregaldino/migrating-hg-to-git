@@ -1,46 +1,121 @@
+#[cfg(test)]
+#[macro_use]
+mod tests_support;
+
+#[cfg(test)]
+mod tests;
+
 use crate::utils::hg_path::HgPath;
 use crate::utils::hg_path::HgPathBuf;
 use crate::Revision;
 use crate::NULL_REVISION;
 
-use im_rc::ordmap::DiffItem;
+use bytes_cast::{unaligned, BytesCast};
 use im_rc::ordmap::Entry;
 use im_rc::ordmap::OrdMap;
+use im_rc::OrdSet;
 
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::convert::TryInto;
 
 pub type PathCopies = HashMap<HgPathBuf, HgPathBuf>;
 
 type PathToken = usize;
 
-#[derive(Clone, Debug, PartialEq, Copy)]
-struct TimeStampedPathCopy {
+#[derive(Clone, Debug)]
+struct CopySource {
     /// revision at which the copy information was added
     rev: Revision,
     /// the copy source, (Set to None in case of deletion of the associated
     /// key)
     path: Option<PathToken>,
+    /// a set of previous `CopySource.rev` value directly or indirectly
+    /// overwritten by this one.
+    overwritten: OrdSet<Revision>,
+}
+
+impl CopySource {
+    /// create a new CopySource
+    ///
+    /// Use this when no previous copy source existed.
+    fn new(rev: Revision, path: Option<PathToken>) -> Self {
+        Self {
+            rev,
+            path,
+            overwritten: OrdSet::new(),
+        }
+    }
+
+    /// create a new CopySource from merging two others
+    ///
+    /// Use this when merging two InternalPathCopies requires active merging of
+    /// some entries.
+    fn new_from_merge(rev: Revision, winner: &Self, loser: &Self) -> Self {
+        let mut overwritten = OrdSet::new();
+        overwritten.extend(winner.overwritten.iter().copied());
+        overwritten.extend(loser.overwritten.iter().copied());
+        overwritten.insert(winner.rev);
+        overwritten.insert(loser.rev);
+        Self {
+            rev,
+            path: winner.path,
+            overwritten: overwritten,
+        }
+    }
+
+    /// Update the value of a pre-existing CopySource
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn overwrite(&mut self, rev: Revision, path: Option<PathToken>) {
+        self.overwritten.insert(self.rev);
+        self.rev = rev;
+        self.path = path;
+    }
+
+    /// Mark pre-existing copy information as "dropped" by a file deletion
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn mark_delete(&mut self, rev: Revision) {
+        self.overwritten.insert(self.rev);
+        self.rev = rev;
+        self.path = None;
+    }
+
+    /// Mark pre-existing copy information as "dropped" by a file deletion
+    ///
+    /// Use this when recording copy information from  parent → child edges
+    fn mark_delete_with_pair(&mut self, rev: Revision, other: &Self) {
+        self.overwritten.insert(self.rev);
+        if other.rev != rev {
+            self.overwritten.insert(other.rev);
+        }
+        self.overwritten.extend(other.overwritten.iter().copied());
+        self.rev = rev;
+        self.path = None;
+    }
+
+    fn is_overwritten_by(&self, other: &Self) -> bool {
+        other.overwritten.contains(&self.rev)
+    }
+}
+
+// For the same "dest", content generated for a given revision will always be
+// the same.
+impl PartialEq for CopySource {
+    fn eq(&self, other: &Self) -> bool {
+        #[cfg(debug_assertions)]
+        {
+            if self.rev == other.rev {
+                debug_assert!(self.path == other.path);
+                debug_assert!(self.overwritten == other.overwritten);
+            }
+        }
+        self.rev == other.rev
+    }
 }
 
 /// maps CopyDestination to Copy Source (+ a "timestamp" for the operation)
-type TimeStampedPathCopies = OrdMap<PathToken, TimeStampedPathCopy>;
-
-/// hold parent 1, parent 2 and relevant files actions.
-pub type RevInfo<'a> = (Revision, Revision, ChangedFiles<'a>);
-
-/// represent the files affected by a changesets
-///
-/// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
-/// all the data categories tracked by it.
-/// This hold a subset of mercurial.metadata.ChangingFiles as we do not need
-/// all the data categories tracked by it.
-pub struct ChangedFiles<'a> {
-    nb_items: u32,
-    index: &'a [u8],
-    data: &'a [u8],
-}
+type InternalPathCopies = OrdMap<PathToken, CopySource>;
 
 /// Represent active changes that affect the copy tracing.
 enum Action<'a> {
@@ -51,7 +126,8 @@ enum Action<'a> {
     Removed(&'a HgPath),
     /// The parent ? children edge introduce copy information between (dest,
     /// source)
-    Copied(&'a HgPath, &'a HgPath),
+    CopiedFromP1(&'a HgPath, &'a HgPath),
+    CopiedFromP2(&'a HgPath, &'a HgPath),
 }
 
 /// This express the possible "special" case we can get in a merge
@@ -67,9 +143,6 @@ enum MergeCase {
     Normal,
 }
 
-type FileChange<'a> = (u8, &'a HgPath, &'a HgPath);
-
-const EMPTY: &[u8] = b"";
 const COPY_MASK: u8 = 3;
 const P1_COPY: u8 = 2;
 const P2_COPY: u8 = 3;
@@ -78,142 +151,94 @@ const REMOVED: u8 = 12;
 const MERGED: u8 = 8;
 const SALVAGED: u8 = 16;
 
+#[derive(BytesCast)]
+#[repr(C)]
+struct ChangedFilesIndexEntry {
+    flags: u8,
+
+    /// Only the end position is stored. The start is at the end of the
+    /// previous entry.
+    destination_path_end_position: unaligned::U32Be,
+
+    source_index_entry_position: unaligned::U32Be,
+}
+
+fn _static_assert_size_of() {
+    let _ = std::mem::transmute::<ChangedFilesIndexEntry, [u8; 9]>;
+}
+
+/// Represents the files affected by a changeset.
+///
+/// This holds a subset of `mercurial.metadata.ChangingFiles` as we do not need
+/// all the data categories tracked by it.
+pub struct ChangedFiles<'a> {
+    index: &'a [ChangedFilesIndexEntry],
+    paths: &'a [u8],
+}
+
 impl<'a> ChangedFiles<'a> {
-    const INDEX_START: usize = 4;
-    const ENTRY_SIZE: u32 = 9;
-    const FILENAME_START: u32 = 1;
-    const COPY_SOURCE_START: u32 = 5;
-
     pub fn new(data: &'a [u8]) -> Self {
-        assert!(
-            data.len() >= 4,
-            "data size ({}) is too small to contain the header (4)",
-            data.len()
-        );
-        let nb_items_raw: [u8; 4] = (&data[0..=3])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        let nb_items = u32::from_be_bytes(nb_items_raw);
-
-        let index_size = (nb_items * Self::ENTRY_SIZE) as usize;
-        let index_end = Self::INDEX_START + index_size;
-
-        assert!(
-            data.len() >= index_end,
-            "data size ({}) is too small to fit the index_data ({})",
-            data.len(),
-            index_end
-        );
-
-        let ret = ChangedFiles {
-            nb_items,
-            index: &data[Self::INDEX_START..index_end],
-            data: &data[index_end..],
-        };
-        let max_data = ret.filename_end(nb_items - 1) as usize;
-        assert!(
-            ret.data.len() >= max_data,
-            "data size ({}) is too small to fit all data ({})",
-            data.len(),
-            index_end + max_data
-        );
-        ret
+        let (header, rest) = unaligned::U32Be::from_bytes(data).unwrap();
+        let nb_index_entries = header.get() as usize;
+        let (index, paths) =
+            ChangedFilesIndexEntry::slice_from_bytes(rest, nb_index_entries)
+                .unwrap();
+        Self { index, paths }
     }
 
     pub fn new_empty() -> Self {
         ChangedFiles {
-            nb_items: 0,
-            index: EMPTY,
-            data: EMPTY,
+            index: &[],
+            paths: &[],
         }
     }
 
-    /// internal function to return an individual entry at a given index
-    fn entry(&'a self, idx: u32) -> FileChange<'a> {
-        if idx >= self.nb_items {
-            panic!(
-                "index for entry is higher that the number of file {} >= {}",
-                idx, self.nb_items
-            )
-        }
-        let flags = self.flags(idx);
-        let filename = self.filename(idx);
-        let copy_idx = self.copy_idx(idx);
-        let copy_source = self.filename(copy_idx);
-        (flags, filename, copy_source)
-    }
-
-    /// internal function to return the filename of the entry at a given index
-    fn filename(&self, idx: u32) -> &HgPath {
-        let filename_start;
-        if idx == 0 {
-            filename_start = 0;
+    /// Internal function to return the filename of the entry at a given index
+    fn path(&self, idx: usize) -> &HgPath {
+        let start = if idx == 0 {
+            0
         } else {
-            filename_start = self.filename_end(idx - 1)
-        }
-        let filename_end = self.filename_end(idx);
-        let filename_start = filename_start as usize;
-        let filename_end = filename_end as usize;
-        HgPath::new(&self.data[filename_start..filename_end])
-    }
-
-    /// internal function to return the flag field of the entry at a given
-    /// index
-    fn flags(&self, idx: u32) -> u8 {
-        let idx = idx as usize;
-        self.index[idx * (Self::ENTRY_SIZE as usize)]
-    }
-
-    /// internal function to return the end of a filename part at a given index
-    fn filename_end(&self, idx: u32) -> u32 {
-        let start = (idx * Self::ENTRY_SIZE) + Self::FILENAME_START;
-        let end = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
-        let start = start as usize;
-        let end = end as usize;
-        let raw = (&self.index[start..end])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        u32::from_be_bytes(raw)
-    }
-
-    /// internal function to return index of the copy source of the entry at a
-    /// given index
-    fn copy_idx(&self, idx: u32) -> u32 {
-        let start = (idx * Self::ENTRY_SIZE) + Self::COPY_SOURCE_START;
-        let end = (idx + 1) * Self::ENTRY_SIZE;
-        let start = start as usize;
-        let end = end as usize;
-        let raw = (&self.index[start..end])
-            .try_into()
-            .expect("failed to turn 4 bytes into 4 bytes");
-        u32::from_be_bytes(raw)
+            self.index[idx - 1].destination_path_end_position.get() as usize
+        };
+        let end = self.index[idx].destination_path_end_position.get() as usize;
+        HgPath::new(&self.paths[start..end])
     }
 
     /// Return an iterator over all the `Action` in this instance.
-    fn iter_actions(&self, parent: Parent) -> ActionsIterator {
-        ActionsIterator {
-            changes: &self,
-            parent: parent,
-            current: 0,
-        }
+    fn iter_actions(&self) -> impl Iterator<Item = Action> {
+        self.index.iter().enumerate().flat_map(move |(idx, entry)| {
+            let path = self.path(idx);
+            if (entry.flags & ACTION_MASK) == REMOVED {
+                Some(Action::Removed(path))
+            } else if (entry.flags & COPY_MASK) == P1_COPY {
+                let source_idx =
+                    entry.source_index_entry_position.get() as usize;
+                Some(Action::CopiedFromP1(path, self.path(source_idx)))
+            } else if (entry.flags & COPY_MASK) == P2_COPY {
+                let source_idx =
+                    entry.source_index_entry_position.get() as usize;
+                Some(Action::CopiedFromP2(path, self.path(source_idx)))
+            } else {
+                None
+            }
+        })
     }
 
     /// return the MergeCase value associated with a filename
     fn get_merge_case(&self, path: &HgPath) -> MergeCase {
-        if self.nb_items == 0 {
+        if self.index.is_empty() {
             return MergeCase::Normal;
         }
         let mut low_part = 0;
-        let mut high_part = self.nb_items;
+        let mut high_part = self.index.len();
 
         while low_part < high_part {
             let cursor = (low_part + high_part - 1) / 2;
-            let (flags, filename, _source) = self.entry(cursor);
-            match path.cmp(filename) {
+            match path.cmp(self.path(cursor)) {
                 Ordering::Less => low_part = cursor + 1,
                 Ordering::Greater => high_part = cursor,
                 Ordering::Equal => {
-                    return match flags & ACTION_MASK {
+                    return match self.index[cursor].flags & ACTION_MASK {
                         MERGED => MergeCase::Merged,
                         SALVAGED => MergeCase::Salvaged,
                         _ => MergeCase::Normal,
@@ -223,100 +248,6 @@ impl<'a> ChangedFiles<'a> {
         }
         MergeCase::Normal
     }
-}
-
-/// A struct responsible for answering "is X ancestors of Y" quickly
-///
-/// The structure will delegate ancestors call to a callback, and cache the
-/// result.
-#[derive(Debug)]
-struct AncestorOracle<'a, A: Fn(Revision, Revision) -> bool> {
-    inner: &'a A,
-    pairs: HashMap<(Revision, Revision), bool>,
-}
-
-impl<'a, A: Fn(Revision, Revision) -> bool> AncestorOracle<'a, A> {
-    fn new(func: &'a A) -> Self {
-        Self {
-            inner: func,
-            pairs: HashMap::default(),
-        }
-    }
-
-    fn record_overwrite(&mut self, anc: Revision, desc: Revision) {
-        self.pairs.insert((anc, desc), true);
-    }
-
-    /// returns `true` if `anc` is an ancestors of `desc`, `false` otherwise
-    fn is_overwrite(&mut self, anc: Revision, desc: Revision) -> bool {
-        if anc > desc {
-            false
-        } else if anc == desc {
-            true
-        } else {
-            if let Some(b) = self.pairs.get(&(anc, desc)) {
-                *b
-            } else {
-                let b = (self.inner)(anc, desc);
-                self.pairs.insert((anc, desc), b);
-                b
-            }
-        }
-    }
-}
-
-struct ActionsIterator<'a> {
-    changes: &'a ChangedFiles<'a>,
-    parent: Parent,
-    current: u32,
-}
-
-impl<'a> Iterator for ActionsIterator<'a> {
-    type Item = Action<'a>;
-
-    fn next(&mut self) -> Option<Action<'a>> {
-        let copy_flag = match self.parent {
-            Parent::FirstParent => P1_COPY,
-            Parent::SecondParent => P2_COPY,
-        };
-        while self.current < self.changes.nb_items {
-            let (flags, file, source) = self.changes.entry(self.current);
-            self.current += 1;
-            if (flags & ACTION_MASK) == REMOVED {
-                return Some(Action::Removed(file));
-            }
-            let copy = flags & COPY_MASK;
-            if copy == copy_flag {
-                return Some(Action::Copied(file, source));
-            }
-        }
-        return None;
-    }
-}
-
-/// A small struct whose purpose is to ensure lifetime of bytes referenced in
-/// ChangedFiles
-///
-/// It is passed to the RevInfoMaker callback who can assign any necessary
-/// content to the `data` attribute. The copy tracing code is responsible for
-/// keeping the DataHolder alive at least as long as the ChangedFiles object.
-pub struct DataHolder<D> {
-    /// RevInfoMaker callback should assign data referenced by the
-    /// ChangedFiles struct it return to this attribute. The DataHolder
-    /// lifetime will be at least as long as the ChangedFiles one.
-    pub data: Option<D>,
-}
-
-pub type RevInfoMaker<'a, D> =
-    Box<dyn for<'r> Fn(Revision, &'r mut DataHolder<D>) -> RevInfo<'r> + 'a>;
-
-/// enum used to carry information about the parent → child currently processed
-#[derive(Copy, Clone, Debug)]
-enum Parent {
-    /// The `p1(x) → x` edge
-    FirstParent,
-    /// The `p2(x) → x` edge
-    SecondParent,
 }
 
 /// A small "tokenizer" responsible of turning full HgPath into lighter
@@ -345,123 +276,110 @@ impl TwoWayPathMap {
     }
 
     fn untokenize(&self, token: PathToken) -> &HgPathBuf {
-        assert!(token < self.path.len(), format!("Unknown token: {}", token));
+        assert!(token < self.path.len(), "Unknown token: {}", token);
         &self.path[token]
     }
 }
 
 /// Same as mercurial.copies._combine_changeset_copies, but in Rust.
-///
-/// Arguments are:
-///
-/// revs: all revisions to be considered
-/// children: a {parent ? [childrens]} mapping
-/// target_rev: the final revision we are combining copies to
-/// rev_info(rev): callback to get revision information:
-///   * first parent
-///   * second parent
-///   * ChangedFiles
-/// isancestors(low_rev, high_rev): callback to check if a revision is an
-///                                 ancestor of another
-pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
-    revs: Vec<Revision>,
-    mut children_count: HashMap<Revision, usize>,
-    target_rev: Revision,
-    rev_info: RevInfoMaker<D>,
-    is_ancestor: &A,
-) -> PathCopies {
-    let mut all_copies = HashMap::new();
-    let mut oracle = AncestorOracle::new(is_ancestor);
+pub struct CombineChangesetCopies {
+    all_copies: HashMap<Revision, InternalPathCopies>,
+    path_map: TwoWayPathMap,
+    children_count: HashMap<Revision, usize>,
+}
 
-    let mut path_map = TwoWayPathMap::default();
+impl CombineChangesetCopies {
+    pub fn new(children_count: HashMap<Revision, usize>) -> Self {
+        Self {
+            all_copies: HashMap::new(),
+            path_map: TwoWayPathMap::default(),
+            children_count,
+        }
+    }
 
-    for rev in revs {
-        let mut d: DataHolder<D> = DataHolder { data: None };
-        let (p1, p2, changes) = rev_info(rev, &mut d);
+    /// Combined the given `changes` data specific to `rev` with the data
+    /// previously given for its parents (and transitively, its ancestors).
+    pub fn add_revision(
+        &mut self,
+        rev: Revision,
+        p1: Revision,
+        p2: Revision,
+        changes: ChangedFiles<'_>,
+    ) {
+        self.add_revision_inner(rev, p1, p2, changes.iter_actions(), |path| {
+            changes.get_merge_case(path)
+        })
+    }
 
-        // We will chain the copies information accumulated for the parent with
-        // the individual copies information the curent revision.  Creating a
-        // new TimeStampedPath for each `rev` → `children` vertex.
-        let mut copies: Option<TimeStampedPathCopies> = None;
-        if p1 != NULL_REVISION {
-            // Retrieve data computed in a previous iteration
-            let parent_copies = get_and_clean_parent_copies(
-                &mut all_copies,
-                &mut children_count,
+    /// Separated out from `add_revsion` so that unit tests can call this
+    /// without synthetizing a `ChangedFiles` in binary format.
+    fn add_revision_inner<'a>(
+        &mut self,
+        rev: Revision,
+        p1: Revision,
+        p2: Revision,
+        copy_actions: impl Iterator<Item = Action<'a>>,
+        get_merge_case: impl Fn(&HgPath) -> MergeCase + Copy,
+    ) {
+        // Retrieve data computed in a previous iteration
+        let p1_copies = match p1 {
+            NULL_REVISION => None,
+            _ => get_and_clean_parent_copies(
+                &mut self.all_copies,
+                &mut self.children_count,
                 p1,
-            );
-            if let Some(parent_copies) = parent_copies {
-                // combine it with data for that revision
-                let vertex_copies = add_from_changes(
-                    &mut path_map,
-                    &mut oracle,
-                    &parent_copies,
-                    &changes,
-                    Parent::FirstParent,
-                    rev,
-                );
-                // keep that data around for potential later combination
-                copies = Some(vertex_copies);
-            }
-        }
-        if p2 != NULL_REVISION {
-            // Retrieve data computed in a previous iteration
-            let parent_copies = get_and_clean_parent_copies(
-                &mut all_copies,
-                &mut children_count,
+            ), // will be None if the vertex is not to be traversed
+        };
+        let p2_copies = match p2 {
+            NULL_REVISION => None,
+            _ => get_and_clean_parent_copies(
+                &mut self.all_copies,
+                &mut self.children_count,
                 p2,
-            );
-            if let Some(parent_copies) = parent_copies {
-                // combine it with data for that revision
-                let vertex_copies = add_from_changes(
-                    &mut path_map,
-                    &mut oracle,
-                    &parent_copies,
-                    &changes,
-                    Parent::SecondParent,
-                    rev,
-                );
-
-                copies = match copies {
-                    None => Some(vertex_copies),
-                    // Merge has two parents needs to combines their copy
-                    // information.
-                    //
-                    // If we got data from both parents, We need to combine
-                    // them.
-                    Some(copies) => Some(merge_copies_dict(
-                        &path_map,
-                        rev,
-                        vertex_copies,
-                        copies,
-                        &changes,
-                        &mut oracle,
-                    )),
-                };
-            }
-        }
-        match copies {
-            Some(copies) => {
-                all_copies.insert(rev, copies);
-            }
-            _ => {}
+            ), // will be None if the vertex is not to be traversed
+        };
+        // combine it with data for that revision
+        let (p1_copies, p2_copies) = chain_changes(
+            &mut self.path_map,
+            p1_copies,
+            p2_copies,
+            copy_actions,
+            rev,
+        );
+        let copies = match (p1_copies, p2_copies) {
+            (None, None) => None,
+            (c, None) => c,
+            (None, c) => c,
+            (Some(p1_copies), Some(p2_copies)) => Some(merge_copies_dict(
+                &self.path_map,
+                rev,
+                p2_copies,
+                p1_copies,
+                get_merge_case,
+            )),
+        };
+        if let Some(c) = copies {
+            self.all_copies.insert(rev, c);
         }
     }
 
-    // Drop internal information (like the timestamp) and return the final
-    // mapping.
-    let tt_result = all_copies
-        .remove(&target_rev)
-        .expect("target revision was not processed");
-    let mut result = PathCopies::default();
-    for (dest, tt_source) in tt_result {
-        if let Some(path) = tt_source.path {
-            let path_dest = path_map.untokenize(dest).to_owned();
-            let path_path = path_map.untokenize(path).to_owned();
-            result.insert(path_dest, path_path);
+    /// Drop intermediate data (such as which revision a copy was from) and
+    /// return the final mapping.
+    pub fn finish(mut self, target_rev: Revision) -> PathCopies {
+        let tt_result = self
+            .all_copies
+            .remove(&target_rev)
+            .expect("target revision was not processed");
+        let mut result = PathCopies::default();
+        for (dest, tt_source) in tt_result {
+            if let Some(path) = tt_source.path {
+                let path_dest = self.path_map.untokenize(dest).to_owned();
+                let path_path = self.path_map.untokenize(path).to_owned();
+                result.insert(path_dest, path_path);
+            }
         }
+        result
     }
-    result
 }
 
 /// fetch previous computed information
@@ -471,68 +389,67 @@ pub fn combine_changeset_copies<A: Fn(Revision, Revision) -> bool, D>(
 ///
 /// If parent is not part of the set we are expected to walk, return None.
 fn get_and_clean_parent_copies(
-    all_copies: &mut HashMap<Revision, TimeStampedPathCopies>,
+    all_copies: &mut HashMap<Revision, InternalPathCopies>,
     children_count: &mut HashMap<Revision, usize>,
     parent_rev: Revision,
-) -> Option<TimeStampedPathCopies> {
+) -> Option<InternalPathCopies> {
     let count = children_count.get_mut(&parent_rev)?;
     *count -= 1;
     if *count == 0 {
         match all_copies.remove(&parent_rev) {
             Some(c) => Some(c),
-            None => Some(TimeStampedPathCopies::default()),
+            None => Some(InternalPathCopies::default()),
         }
     } else {
         match all_copies.get(&parent_rev) {
             Some(c) => Some(c.clone()),
-            None => Some(TimeStampedPathCopies::default()),
+            None => Some(InternalPathCopies::default()),
         }
     }
 }
 
 /// Combine ChangedFiles with some existing PathCopies information and return
 /// the result
-fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
+fn chain_changes<'a>(
     path_map: &mut TwoWayPathMap,
-    oracle: &mut AncestorOracle<A>,
-    base_copies: &TimeStampedPathCopies,
-    changes: &ChangedFiles,
-    parent: Parent,
+    base_p1_copies: Option<InternalPathCopies>,
+    base_p2_copies: Option<InternalPathCopies>,
+    copy_actions: impl Iterator<Item = Action<'a>>,
     current_rev: Revision,
-) -> TimeStampedPathCopies {
-    let mut copies = base_copies.clone();
-    for action in changes.iter_actions(parent) {
+) -> (Option<InternalPathCopies>, Option<InternalPathCopies>) {
+    // Fast path the "nothing to do" case.
+    if let (None, None) = (&base_p1_copies, &base_p2_copies) {
+        return (None, None);
+    }
+
+    let mut p1_copies = base_p1_copies.clone();
+    let mut p2_copies = base_p2_copies.clone();
+    for action in copy_actions {
         match action {
-            Action::Copied(path_dest, path_source) => {
-                let dest = path_map.tokenize(path_dest);
-                let source = path_map.tokenize(path_source);
-                let entry;
-                if let Some(v) = base_copies.get(&source) {
-                    entry = match &v.path {
-                        Some(path) => Some((*(path)).to_owned()),
-                        None => Some(source.to_owned()),
-                    }
-                } else {
-                    entry = Some(source.to_owned());
+            Action::CopiedFromP1(path_dest, path_source) => {
+                match &mut p1_copies {
+                    None => (), // This is not a vertex we should proceed.
+                    Some(copies) => add_one_copy(
+                        current_rev,
+                        path_map,
+                        copies,
+                        base_p1_copies.as_ref().unwrap(),
+                        path_dest,
+                        path_source,
+                    ),
                 }
-                // Each new entry is introduced by the children, we
-                // record this information as we will need it to take
-                // the right decision when merging conflicting copy
-                // information. See merge_copies_dict for details.
-                match copies.entry(dest) {
-                    Entry::Vacant(slot) => {
-                        let ttpc = TimeStampedPathCopy {
-                            rev: current_rev,
-                            path: entry,
-                        };
-                        slot.insert(ttpc);
-                    }
-                    Entry::Occupied(mut slot) => {
-                        let mut ttpc = slot.get_mut();
-                        oracle.record_overwrite(ttpc.rev, current_rev);
-                        ttpc.rev = current_rev;
-                        ttpc.path = entry;
-                    }
+            }
+            Action::CopiedFromP2(path_dest, path_source) => {
+                match &mut p2_copies {
+                    None => (), // This is not a vertex we should proceed.
+                    Some(copies) => add_one_copy(
+                        current_rev,
+                        path_map,
+                        copies,
+                        base_p2_copies.as_ref().unwrap(),
+                        path_dest,
+                        path_source,
+                    ),
                 }
             }
             Action::Removed(deleted_path) => {
@@ -540,164 +457,131 @@ fn add_from_changes<A: Fn(Revision, Revision) -> bool>(
                 //
                 // We need to explicitly record them as dropped to
                 // propagate this information when merging two
-                // TimeStampedPathCopies object.
+                // InternalPathCopies object.
                 let deleted = path_map.tokenize(deleted_path);
-                copies.entry(deleted).and_modify(|old| {
-                    oracle.record_overwrite(old.rev, current_rev);
-                    old.rev = current_rev;
-                    old.path = None;
-                });
+
+                let p1_entry = match &mut p1_copies {
+                    None => None,
+                    Some(copies) => match copies.entry(deleted) {
+                        Entry::Occupied(e) => Some(e),
+                        Entry::Vacant(_) => None,
+                    },
+                };
+                let p2_entry = match &mut p2_copies {
+                    None => None,
+                    Some(copies) => match copies.entry(deleted) {
+                        Entry::Occupied(e) => Some(e),
+                        Entry::Vacant(_) => None,
+                    },
+                };
+
+                match (p1_entry, p2_entry) {
+                    (None, None) => (),
+                    (Some(mut e), None) => {
+                        e.get_mut().mark_delete(current_rev)
+                    }
+                    (None, Some(mut e)) => {
+                        e.get_mut().mark_delete(current_rev)
+                    }
+                    (Some(mut e1), Some(mut e2)) => {
+                        let cs1 = e1.get_mut();
+                        let cs2 = e2.get();
+                        if cs1 == cs2 {
+                            cs1.mark_delete(current_rev);
+                        } else {
+                            cs1.mark_delete_with_pair(current_rev, &cs2);
+                        }
+                        e2.insert(cs1.clone());
+                    }
+                }
             }
         }
     }
-    copies
+    (p1_copies, p2_copies)
+}
+
+// insert one new copy information in an InternalPathCopies
+//
+// This deal with chaining and overwrite.
+fn add_one_copy(
+    current_rev: Revision,
+    path_map: &mut TwoWayPathMap,
+    copies: &mut InternalPathCopies,
+    base_copies: &InternalPathCopies,
+    path_dest: &HgPath,
+    path_source: &HgPath,
+) {
+    let dest = path_map.tokenize(path_dest);
+    let source = path_map.tokenize(path_source);
+    let entry;
+    if let Some(v) = base_copies.get(&source) {
+        entry = match &v.path {
+            Some(path) => Some((*(path)).to_owned()),
+            None => Some(source.to_owned()),
+        }
+    } else {
+        entry = Some(source.to_owned());
+    }
+    // Each new entry is introduced by the children, we
+    // record this information as we will need it to take
+    // the right decision when merging conflicting copy
+    // information. See merge_copies_dict for details.
+    match copies.entry(dest) {
+        Entry::Vacant(slot) => {
+            let ttpc = CopySource::new(current_rev, entry);
+            slot.insert(ttpc);
+        }
+        Entry::Occupied(mut slot) => {
+            let ttpc = slot.get_mut();
+            ttpc.overwrite(current_rev, entry);
+        }
+    }
 }
 
 /// merge two copies-mapping together, minor and major
 ///
 /// In case of conflict, value from "major" will be picked, unless in some
 /// cases. See inline documentation for details.
-fn merge_copies_dict<A: Fn(Revision, Revision) -> bool>(
+fn merge_copies_dict(
     path_map: &TwoWayPathMap,
     current_merge: Revision,
-    mut minor: TimeStampedPathCopies,
-    mut major: TimeStampedPathCopies,
-    changes: &ChangedFiles,
-    oracle: &mut AncestorOracle<A>,
-) -> TimeStampedPathCopies {
-    // This closure exist as temporary help while multiple developper are
-    // actively working on this code. Feel free to re-inline it once this
-    // code is more settled.
-    let mut cmp_value =
-        |dest: &PathToken,
-         src_minor: &TimeStampedPathCopy,
-         src_major: &TimeStampedPathCopy| {
-            compare_value(
-                path_map,
+    minor: InternalPathCopies,
+    major: InternalPathCopies,
+    get_merge_case: impl Fn(&HgPath) -> MergeCase + Copy,
+) -> InternalPathCopies {
+    use crate::utils::{ordmap_union_with_merge, MergeResult};
+
+    ordmap_union_with_merge(minor, major, |&dest, src_minor, src_major| {
+        let (pick, overwrite) = compare_value(
+            current_merge,
+            || get_merge_case(path_map.untokenize(dest)),
+            src_minor,
+            src_major,
+        );
+        if overwrite {
+            let (winner, loser) = match pick {
+                MergePick::Major | MergePick::Any => (src_major, src_minor),
+                MergePick::Minor => (src_minor, src_major),
+            };
+            MergeResult::UseNewValue(CopySource::new_from_merge(
                 current_merge,
-                changes,
-                oracle,
-                dest,
-                src_minor,
-                src_major,
-            )
-        };
-    if minor.is_empty() {
-        major
-    } else if major.is_empty() {
-        minor
-    } else if minor.len() * 2 < major.len() {
-        // Lets says we are merging two TimeStampedPathCopies instance A and B.
-        //
-        // If A contains N items, the merge result will never contains more
-        // than N values differents than the one in A
-        //
-        // If B contains M items, with M > N, the merge result will always
-        // result in a minimum of M - N value differents than the on in
-        // A
-        //
-        // As a result, if N < (M-N), we know that simply iterating over A will
-        // yield less difference than iterating over the difference
-        // between A and B.
-        //
-        // This help performance a lot in case were a tiny
-        // TimeStampedPathCopies is merged with a much larger one.
-        for (dest, src_minor) in minor {
-            let src_major = major.get(&dest);
-            match src_major {
-                None => major.insert(dest, src_minor),
-                Some(src_major) => {
-                    match cmp_value(&dest, &src_minor, src_major) {
-                        MergePick::Any | MergePick::Major => None,
-                        MergePick::Minor => major.insert(dest, src_minor),
-                    }
-                }
-            };
-        }
-        major
-    } else if major.len() * 2 < minor.len() {
-        // This use the same rational than the previous block.
-        // (Check previous block documentation for details.)
-        for (dest, src_major) in major {
-            let src_minor = minor.get(&dest);
-            match src_minor {
-                None => minor.insert(dest, src_major),
-                Some(src_minor) => {
-                    match cmp_value(&dest, src_minor, &src_major) {
-                        MergePick::Any | MergePick::Minor => None,
-                        MergePick::Major => minor.insert(dest, src_major),
-                    }
-                }
-            };
-        }
-        minor
-    } else {
-        let mut override_minor = Vec::new();
-        let mut override_major = Vec::new();
-
-        let mut to_major = |k: &PathToken, v: &TimeStampedPathCopy| {
-            override_major.push((k.clone(), v.clone()))
-        };
-        let mut to_minor = |k: &PathToken, v: &TimeStampedPathCopy| {
-            override_minor.push((k.clone(), v.clone()))
-        };
-
-        // The diff function leverage detection of the identical subpart if
-        // minor and major has some common ancestors. This make it very
-        // fast is most case.
-        //
-        // In case where the two map are vastly different in size, the current
-        // approach is still slowish because the iteration will iterate over
-        // all the "exclusive" content of the larger on. This situation can be
-        // frequent when the subgraph of revision we are processing has a lot
-        // of roots. Each roots adding they own fully new map to the mix (and
-        // likely a small map, if the path from the root to the "main path" is
-        // small.
-        //
-        // We could do better by detecting such situation and processing them
-        // differently.
-        for d in minor.diff(&major) {
-            match d {
-                DiffItem::Add(k, v) => to_minor(k, v),
-                DiffItem::Remove(k, v) => to_major(k, v),
-                DiffItem::Update { old, new } => {
-                    let (dest, src_major) = new;
-                    let (_, src_minor) = old;
-                    match cmp_value(dest, src_minor, src_major) {
-                        MergePick::Major => to_minor(dest, src_major),
-                        MergePick::Minor => to_major(dest, src_minor),
-                        // If the two entry are identical, no need to do
-                        // anything (but diff should not have yield them)
-                        MergePick::Any => unreachable!(),
-                    }
-                }
-            };
-        }
-
-        let updates;
-        let mut result;
-        if override_major.is_empty() {
-            result = major
-        } else if override_minor.is_empty() {
-            result = minor
+                winner,
+                loser,
+            ))
         } else {
-            if override_minor.len() < override_major.len() {
-                updates = override_minor;
-                result = minor;
-            } else {
-                updates = override_major;
-                result = major;
-            }
-            for (k, v) in updates {
-                result.insert(k, v);
+            match pick {
+                MergePick::Any | MergePick::Major => {
+                    MergeResult::UseRightValue
+                }
+                MergePick::Minor => MergeResult::UseLeftValue,
             }
         }
-        result
-    }
+    })
 }
 
 /// represent the side that should prevail when merging two
-/// TimeStampedPathCopies
+/// InternalPathCopies
+#[derive(Debug, PartialEq)]
 enum MergePick {
     /// The "major" (p1) side prevails
     Major,
@@ -709,89 +593,88 @@ enum MergePick {
 
 /// decide which side prevails in case of conflicting values
 #[allow(clippy::if_same_then_else)]
-fn compare_value<A: Fn(Revision, Revision) -> bool>(
-    path_map: &TwoWayPathMap,
+fn compare_value(
     current_merge: Revision,
-    changes: &ChangedFiles,
-    oracle: &mut AncestorOracle<A>,
-    dest: &PathToken,
-    src_minor: &TimeStampedPathCopy,
-    src_major: &TimeStampedPathCopy,
-) -> MergePick {
-    if src_major.rev == current_merge {
-        if src_minor.rev == current_merge {
-            if src_major.path.is_none() {
-                // We cannot get different copy information for both p1 and p2
-                // from the same revision. Unless this was a
-                // deletion
-                MergePick::Any
-            } else {
-                unreachable!();
-            }
-        } else {
-            // The last value comes the current merge, this value -will- win
-            // eventually.
-            oracle.record_overwrite(src_minor.rev, src_major.rev);
-            MergePick::Major
-        }
+    merge_case_for_dest: impl Fn() -> MergeCase,
+    src_minor: &CopySource,
+    src_major: &CopySource,
+) -> (MergePick, bool) {
+    if src_major == src_minor {
+        (MergePick::Any, false)
+    } else if src_major.rev == current_merge {
+        // minor is different according to per minor == major check earlier
+        debug_assert!(src_minor.rev != current_merge);
+
+        // The last value comes the current merge, this value -will- win
+        // eventually.
+        (MergePick::Major, true)
     } else if src_minor.rev == current_merge {
         // The last value comes the current merge, this value -will- win
         // eventually.
-        oracle.record_overwrite(src_major.rev, src_minor.rev);
-        MergePick::Minor
+        (MergePick::Minor, true)
     } else if src_major.path == src_minor.path {
+        debug_assert!(src_major.rev != src_major.rev);
         // we have the same value, but from other source;
-        if src_major.rev == src_minor.rev {
-            // If the two entry are identical, they are both valid
-            MergePick::Any
-        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
-            MergePick::Minor
+        if src_major.is_overwritten_by(src_minor) {
+            (MergePick::Minor, false)
+        } else if src_minor.is_overwritten_by(src_major) {
+            (MergePick::Major, false)
         } else {
-            MergePick::Major
+            (MergePick::Any, true)
         }
-    } else if src_major.rev == src_minor.rev {
-        // We cannot get copy information for both p1 and p2 in the
-        // same rev. So this is the same value.
-        unreachable!(
-            "conflict information from p1 and p2 in the same revision"
-        );
     } else {
-        let dest_path = path_map.untokenize(*dest);
-        let action = changes.get_merge_case(dest_path);
-        if src_major.path.is_none() && action == MergeCase::Salvaged {
+        debug_assert!(src_major.rev != src_major.rev);
+        let action = merge_case_for_dest();
+        if src_minor.path.is_some()
+            && src_major.path.is_none()
+            && action == MergeCase::Salvaged
+        {
             // If the file is "deleted" in the major side but was
             // salvaged by the merge, we keep the minor side alive
-            MergePick::Minor
-        } else if src_minor.path.is_none() && action == MergeCase::Salvaged {
+            (MergePick::Minor, true)
+        } else if src_major.path.is_some()
+            && src_minor.path.is_none()
+            && action == MergeCase::Salvaged
+        {
             // If the file is "deleted" in the minor side but was
             // salvaged by the merge, unconditionnaly preserve the
             // major side.
-            MergePick::Major
-        } else if action == MergeCase::Merged {
-            // If the file was actively merged, copy information
-            // from each side might conflict.  The major side will
-            // win such conflict.
-            MergePick::Major
-        } else if oracle.is_overwrite(src_major.rev, src_minor.rev) {
-            // If the minor side is strictly newer than the major
-            // side, it should be kept.
-            MergePick::Minor
-        } else if src_major.path.is_some() {
-            // without any special case, the "major" value win
-            // other the "minor" one.
-            MergePick::Major
-        } else if oracle.is_overwrite(src_minor.rev, src_major.rev) {
-            // the "major" rev is a direct ancestors of "minor",
-            // any different value should
-            // overwrite
-            MergePick::Major
+            (MergePick::Major, true)
+        } else if src_minor.is_overwritten_by(src_major) {
+            // The information from the minor version are strictly older than
+            // the major version
+            if action == MergeCase::Merged {
+                // If the file was actively merged, its means some non-copy
+                // activity happened on the other branch. It
+                // mean the older copy information are still relevant.
+                //
+                // The major side wins such conflict.
+                (MergePick::Major, true)
+            } else {
+                // No activity on the minor branch, pick the newer one.
+                (MergePick::Major, false)
+            }
+        } else if src_major.is_overwritten_by(src_minor) {
+            if action == MergeCase::Merged {
+                // If the file was actively merged, its means some non-copy
+                // activity happened on the other branch. It
+                // mean the older copy information are still relevant.
+                //
+                // The major side wins such conflict.
+                (MergePick::Major, true)
+            } else {
+                // No activity on the minor branch, pick the newer one.
+                (MergePick::Minor, false)
+            }
+        } else if src_minor.path.is_none() {
+            // the minor side has no relevant information, pick the alive one
+            (MergePick::Major, true)
+        } else if src_major.path.is_none() {
+            // the major side has no relevant information, pick the alive one
+            (MergePick::Minor, true)
         } else {
-            // major version is None (so the file was deleted on
-            // that branch) and that branch is independant (neither
-            // minor nor major is an ancestors of the other one.)
-            // We preserve the new
-            // information about the new file.
-            MergePick::Minor
+            // by default the major side wins
+            (MergePick::Major, true)
         }
     }
 }

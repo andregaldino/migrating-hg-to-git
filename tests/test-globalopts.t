@@ -65,6 +65,8 @@ Testing -R/--repository:
 
 -R with path aliases:
 
+TODO: add rhg support for path aliases
+#if no-rhg
   $ cd c
   $ hg -R default identify
   8580ff50825a tip
@@ -75,6 +77,7 @@ Testing -R/--repository:
   $ HOME=`pwd`/../ hg -R relativetohome identify
   8580ff50825a tip
   $ cd ..
+#endif
 
 #if no-outer-repo
 
@@ -215,6 +218,8 @@ Testing --config:
 
   $ hg --cwd c --config paths.quuxfoo=bar paths | grep quuxfoo > /dev/null && echo quuxfoo
   quuxfoo
+TODO: add rhg support for detailed exit codes
+#if no-rhg
   $ hg --cwd c --config '' tip -q
   abort: malformed --config option: '' (use --config section.name=value)
   [10]
@@ -230,6 +235,7 @@ Testing --config:
   $ hg --cwd c --config .b= tip -q
   abort: malformed --config option: '.b=' (use --config section.name=value)
   [10]
+#endif
 
 Testing --debug:
 
@@ -264,7 +270,7 @@ Testing --debug:
 
 Testing --traceback:
 
-#if no-chg
+#if no-chg no-rhg
   $ hg --cwd c --config x --traceback id 2>&1 | grep -i 'traceback'
   Traceback (most recent call last):
   Traceback (most recent call last): (py3 !)
@@ -351,6 +357,7 @@ Testing -h/--help:
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -483,6 +490,7 @@ Testing -h/--help:
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files

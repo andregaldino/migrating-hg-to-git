@@ -90,7 +90,7 @@ class gitstore(object):  # store.basicstore):
             return os.path.join(self.path, b'..', b'.hg', f)
         raise NotImplementedError(b'Need to pick file for %s.' % f)
 
-    def changelog(self, trypending):
+    def changelog(self, trypending, concurrencychecker):
         # TODO we don't have a plan for trypending in hg's git support yet
         return gitlog.changelog(self.git, self._db)
 

@@ -11,4 +11,6 @@
 
 mod config;
 mod layer;
-pub use config::Config;
+mod values;
+pub use config::{Config, ConfigValueParseError};
+pub use layer::{ConfigError, ConfigParseError};

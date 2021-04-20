@@ -1,7 +1,7 @@
 # repair.py - functions for repository repair for mercurial
 #
 # Copyright 2005, 2006 Chris Mason <mason@suse.com>
-# Copyright 2007 Matt Mackall
+# Copyright 2007 Olivia Mackall
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -28,11 +28,11 @@ from . import (
     pycompat,
     requirements,
     scmutil,
-    util,
 )
 from .utils import (
     hashutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -245,7 +245,7 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
                 tmpbundleurl = b'bundle:' + vfs.join(tmpbundlefile)
                 txnname = b'strip'
                 if not isinstance(gen, bundle2.unbundle20):
-                    txnname = b"strip\n%s" % util.hidepassword(tmpbundleurl)
+                    txnname = b"strip\n%s" % urlutil.hidepassword(tmpbundleurl)
                 with repo.transaction(txnname) as tr:
                     bundle2.applybundle(
                         repo, gen, tr, source=b'strip', url=tmpbundleurl
@@ -308,11 +308,12 @@ def softstrip(ui, repo, nodelist, backup=True, topic=b'backup'):
     if not tostrip:
         return None
 
-    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
+    backupfile = None
     if backup:
         node = tostrip[0]
         backupfile = _createstripbackup(repo, tostrip, node, topic)
 
+    newbmtarget, updatebm = _bookmarkmovements(repo, tostrip)
     with repo.transaction(b'strip') as tr:
         phases.retractboundary(repo, tr, phases.archived, tostrip)
         bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
@@ -427,7 +428,7 @@ def manifestrevlogs(repo):
     if scmutil.istreemanifest(repo):
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
-        for unencoded, encoded, size in repo.store.datafiles():
+        for t, unencoded, encoded, size in repo.store.datafiles():
             if unencoded.startswith(b'meta/') and unencoded.endswith(
                 b'00manifest.i'
             ):
@@ -442,7 +443,7 @@ def rebuildfncache(ui, repo):
     """
     repo = repo.unfiltered()
 
-    if b'fncache' not in repo.requirements:
+    if requirements.FNCACHE_REQUIREMENT not in repo.requirements:
         ui.warn(
             _(
                 b'(not rebuilding fncache because repository does not '

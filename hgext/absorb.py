@@ -102,6 +102,9 @@ class nullui(object):
 class emptyfilecontext(object):
     """minimal filecontext representing an empty file"""
 
+    def __init__(self, repo):
+        self._repo = repo
+
     def data(self):
         return b''
 
@@ -212,7 +215,7 @@ def getfilestack(stack, path, seenfctxs=None):
         if path in pctx:
             fctxs.append(pctx[path])
         else:
-            fctxs.append(emptyfilecontext())
+            fctxs.append(emptyfilecontext(pctx.repo()))
 
     fctxs.reverse()
     # note: we rely on a property of hg: filerev is not reused for linear

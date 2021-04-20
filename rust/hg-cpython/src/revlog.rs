@@ -12,13 +12,13 @@ use crate::{
 use cpython::{
     buffer::{Element, PyBuffer},
     exc::{IndexError, ValueError},
-    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyModule, PyObject,
-    PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
+    ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyInt, PyModule,
+    PyObject, PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
 };
 use hg::{
     nodemap::{Block, NodeMapError, NodeTree},
-    revlog::{nodemap::NodeMap, RevlogIndex},
-    NodeError, Revision,
+    revlog::{nodemap::NodeMap, NodePrefix, RevlogIndex},
+    Revision,
 };
 use std::cell::RefCell;
 
@@ -64,7 +64,7 @@ py_class!(pub class MixedIndex |py| {
         let nt = opt.as_ref().unwrap();
         let idx = &*self.cindex(py).borrow();
         let node = node_from_py_bytes(py, &node)?;
-        nt.find_bin(idx, (&node).into()).map_err(|e| nodemap_error(py, e))
+        nt.find_bin(idx, node.into()).map_err(|e| nodemap_error(py, e))
     }
 
     /// same as `get_rev()` but raises a bare `error.RevlogError` if node
@@ -107,7 +107,9 @@ py_class!(pub class MixedIndex |py| {
             String::from_utf8_lossy(node.data(py)).to_string()
         };
 
-        nt.find_hex(idx, &node_as_string)
+        let prefix = NodePrefix::from_hex(&node_as_string).map_err(|_| PyErr::new::<ValueError, _>(py, "Invalid node or prefix"))?;
+
+        nt.find_bin(idx, prefix)
             // TODO make an inner API returning the node directly
             .map(|opt| opt.map(
                 |rev| PyBytes::new(py, idx.node(rev).unwrap().as_bytes())))
@@ -283,6 +285,10 @@ py_class!(pub class MixedIndex |py| {
         self.inner_update_nodemap_data(py, docket, nm_data)
     }
 
+    @property
+    def entry_size(&self) -> PyResult<PyInt> {
+        self.cindex(py).borrow().inner().getattr(py, "entry_size")?.extract::<PyInt>(py)
+    }
 
 });
 
@@ -468,15 +474,7 @@ fn nodemap_error(py: Python, err: NodeMapError) -> PyErr {
     match err {
         NodeMapError::MultipleResults => revlog_error(py),
         NodeMapError::RevisionNotInIndex(r) => rev_not_in_index(py, r),
-        NodeMapError::InvalidNodePrefix(s) => invalid_node_prefix(py, &s),
     }
-}
-
-fn invalid_node_prefix(py: Python, ne: &NodeError) -> PyErr {
-    PyErr::new::<ValueError, _>(
-        py,
-        format!("Invalid node or prefix: {:?}", ne),
-    )
 }
 
 /// Create the module, with __package__ given from parent

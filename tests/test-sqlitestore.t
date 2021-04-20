@@ -17,6 +17,8 @@ New repo should not use SQLite by default
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -31,6 +33,8 @@ storage.new-repo-backend=sqlite is recognized
   exp-sqlite-comp-001=$BUNDLE2_COMPRESSIONS$ (no-zstd !)
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -49,6 +53,8 @@ Can force compression to zlib
   exp-sqlite-comp-001=$BUNDLE2_COMPRESSIONS$
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -62,6 +68,8 @@ Can force compression to none
   exp-sqlite-comp-001=none
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

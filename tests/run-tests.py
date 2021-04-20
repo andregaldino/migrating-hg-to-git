@@ -2,7 +2,7 @@
 #
 # run-tests.py - Run a set of tests on Mercurial
 #
-# Copyright 2006 Matt Mackall <mpm@selenic.com>
+# Copyright 2006 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -301,6 +301,7 @@ def Popen4(cmd, wd, timeout, env=None):
             while time.time() - start < timeout and p.returncode is None:
                 time.sleep(0.1)
             p.timeout = True
+            vlog('# Timout reached for process %d' % p.pid)
             if p.returncode is None:
                 terminate(p)
 
@@ -540,6 +541,11 @@ def getparser():
         action="store_true",
         help="show chg debug logs",
     )
+    hgconf.add_argument(
+        "--rhg",
+        action="store_true",
+        help="install and use rhg Rust implementation in place of hg",
+    )
     hgconf.add_argument("--compiler", help="compiler to build with")
     hgconf.add_argument(
         '--extra-config-opt',
@@ -552,6 +558,7 @@ def getparser():
         "--local",
         action="store_true",
         help="shortcut for --with-hg=<testdir>/../hg, "
+        "--with-rhg=<testdir>/../rust/target/release/rhg if --rhg is set, "
         "and --with-chg=<testdir>/../contrib/chg/chg if --chg is set",
     )
     hgconf.add_argument(
@@ -578,6 +585,11 @@ def getparser():
         "--with-chg",
         metavar="CHG",
         help="use specified chg wrapper in place of hg",
+    )
+    hgconf.add_argument(
+        "--with-rhg",
+        metavar="RHG",
+        help="use specified rhg Rust implementation in place of hg",
     )
     hgconf.add_argument(
         "--with-hg",
@@ -667,13 +679,17 @@ def parseargs(args, parser):
         parser.error('--rust cannot be used with --no-rust')
 
     if options.local:
-        if options.with_hg or options.with_chg:
-            parser.error('--local cannot be used with --with-hg or --with-chg')
+        if options.with_hg or options.with_rhg or options.with_chg:
+            parser.error(
+                '--local cannot be used with --with-hg or --with-rhg or --with-chg'
+            )
         testdir = os.path.dirname(_sys2bytes(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
         pathandattrs = [(b'hg', 'with_hg')]
         if options.chg:
             pathandattrs.append((b'contrib/chg/chg', 'with_chg'))
+        if options.rhg:
+            pathandattrs.append((b'rust/target/release/rhg', 'with_rhg'))
         for relpath, attr in pathandattrs:
             binpath = os.path.join(reporootdir, relpath)
             if os.name != 'nt' and not os.access(binpath, os.X_OK):
@@ -696,6 +712,8 @@ def parseargs(args, parser):
 
     if (options.chg or options.with_chg) and os.name == 'nt':
         parser.error('chg does not work on %s' % os.name)
+    if (options.rhg or options.with_rhg) and os.name == 'nt':
+        parser.error('rhg does not work on %s' % os.name)
     if options.with_chg:
         options.chg = False  # no installation to temporary location
         options.with_chg = canonpath(_sys2bytes(options.with_chg))
@@ -704,12 +722,28 @@ def parseargs(args, parser):
             and os.access(options.with_chg, os.X_OK)
         ):
             parser.error('--with-chg must specify a chg executable')
+    if options.with_rhg:
+        options.rhg = False  # no installation to temporary location
+        options.with_rhg = canonpath(_sys2bytes(options.with_rhg))
+        if not (
+            os.path.isfile(options.with_rhg)
+            and os.access(options.with_rhg, os.X_OK)
+        ):
+            parser.error('--with-rhg must specify a rhg executable')
     if options.chg and options.with_hg:
         # chg shares installation location with hg
         parser.error(
             '--chg does not work when --with-hg is specified '
             '(use --with-chg instead)'
         )
+    if options.rhg and options.with_hg:
+        # rhg shares installation location with hg
+        parser.error(
+            '--rhg does not work when --with-hg is specified '
+            '(use --with-rhg instead)'
+        )
+    if options.rhg and options.chg:
+        parser.error('--rhg and --chg do not work together')
 
     if options.color == 'always' and not pygmentspresent:
         sys.stderr.write(
@@ -1338,6 +1372,7 @@ class Test(unittest.TestCase):
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
         if os.name == 'nt':
+            env['REALUSERPROFILE'] = env['USERPROFILE']
             # py3.8+ ignores HOME: https://bugs.python.org/issue36264
             env['USERPROFILE'] = env['HOME']
         formated_timeout = _bytes2sys(b"%d" % default_defaults['timeout'][1])
@@ -2278,7 +2313,7 @@ class TestResult(unittest._TextTestResult):
                         if test.path.endswith(b'.t'):
                             rename(test.errpath, test.path)
                         else:
-                            rename(test.errpath, '%s.out' % test.path)
+                            rename(test.errpath, b'%s.out' % test.path)
                         accepted = True
             if not accepted:
                 self.faildata[test.name] = b''.join(lines)
@@ -3098,6 +3133,25 @@ class TestRunner(object):
             chgbindir = os.path.dirname(os.path.realpath(self.options.with_chg))
             self._hgcommand = os.path.basename(self.options.with_chg)
 
+        # configure fallback and replace "hg" command by "rhg"
+        rhgbindir = self._bindir
+        if self.options.rhg or self.options.with_rhg:
+            # Affects hghave.py
+            osenvironb[b'RHG_INSTALLED_AS_HG'] = b'1'
+            # Affects configuration. Alternatives would be setting configuration through
+            # `$HGRCPATH` but some tests override that, or changing `_hgcommand` to include
+            # `--config` but that disrupts tests that print command lines and check expected
+            # output.
+            osenvironb[b'RHG_ON_UNSUPPORTED'] = b'fallback'
+            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = os.path.join(
+                self._bindir, self._hgcommand
+            )
+        if self.options.rhg:
+            self._hgcommand = b'rhg'
+        elif self.options.with_rhg:
+            rhgbindir = os.path.dirname(os.path.realpath(self.options.with_rhg))
+            self._hgcommand = os.path.basename(self.options.with_rhg)
+
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
 
@@ -3116,6 +3170,8 @@ class TestRunner(object):
             path.insert(2, realdir)
         if chgbindir != self._bindir:
             path.insert(1, chgbindir)
+        if rhgbindir != self._bindir:
+            path.insert(1, rhgbindir)
         if self._testdir != runtestdir:
             path = [self._testdir] + path
         if self._tmpbindir != self._bindir:
@@ -3335,6 +3391,9 @@ class TestRunner(object):
                 if self.options.chg:
                     assert self._installdir
                     self._installchg()
+                if self.options.rhg:
+                    assert self._installdir
+                    self._installrhg()
 
                 log(
                     'running %d tests using %d parallel processes'
@@ -3679,6 +3738,33 @@ class TestRunner(object):
             b'prefix': self._installdir,
         }
         cwd = os.path.join(self._hgroot, b'contrib', b'chg')
+        vlog("# Running", cmd)
+        proc = subprocess.Popen(
+            cmd,
+            shell=True,
+            cwd=cwd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        out, _err = proc.communicate()
+        if proc.returncode != 0:
+            if PYTHON3:
+                sys.stdout.buffer.write(out)
+            else:
+                sys.stdout.write(out)
+            sys.exit(1)
+
+    def _installrhg(self):
+        """Install rhg into the test environment"""
+        vlog('# Performing temporary installation of rhg')
+        assert os.path.dirname(self._bindir) == self._installdir
+        assert self._hgroot, 'must be called after _installhg()'
+        cmd = b'"%(make)s" install-rhg PREFIX="%(prefix)s"' % {
+            b'make': b'make',  # TODO: switch by option or environment?
+            b'prefix': self._installdir,
+        }
+        cwd = self._hgroot
         vlog("# Running", cmd)
         proc = subprocess.Popen(
             cmd,

@@ -1,6 +1,6 @@
 # error.py - Mercurial exceptions
 #
-# Copyright 2005-2008 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2008 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -20,7 +20,13 @@ from . import pycompat
 
 if pycompat.TYPE_CHECKING:
     from typing import (
+        Any,
+        AnyStr,
+        Iterable,
+        List,
         Optional,
+        Sequence,
+        Union,
     )
 
 
@@ -60,6 +66,7 @@ class RevlogError(StorageError):
 
 class SidedataHashError(RevlogError):
     def __init__(self, key, expected, got):
+        self.hint = None
         self.sidedatakey = key
         self.expecteddigest = expected
         self.actualdigest = got
@@ -77,9 +84,9 @@ class LookupError(RevlogError, KeyError):
         # Python 2.6+ complain about the 'message' property being deprecated
         self.lookupmessage = message
         if isinstance(name, bytes) and len(name) == 20:
-            from .node import short
+            from .node import hex
 
-            name = short(name)
+            name = hex(name)
         # if name is a binary node, it can be None
         RevlogError.__init__(
             self, b'%s@%s: %s' % (index, pycompat.bytestr(name), message)
@@ -108,6 +115,7 @@ class CommandError(Exception):
     """Exception raised on errors in parsing the command line."""
 
     def __init__(self, command, message):
+        # type: (bytes, bytes) -> None
         self.command = command
         self.message = message
         super(CommandError, self).__init__()
@@ -119,6 +127,7 @@ class UnknownCommand(Exception):
     """Exception raised if command is not in the command table."""
 
     def __init__(self, command, all_commands=None):
+        # type: (bytes, Optional[List[bytes]]) -> None
         self.command = command
         self.all_commands = all_commands
         super(UnknownCommand, self).__init__()
@@ -130,6 +139,7 @@ class AmbiguousCommand(Exception):
     """Exception raised if command shortcut matches more than one command."""
 
     def __init__(self, prefix, matches):
+        # type: (bytes, List[bytes]) -> None
         self.prefix = prefix
         self.matches = matches
         super(AmbiguousCommand, self).__init__()
@@ -141,6 +151,7 @@ class WorkerError(Exception):
     """Exception raised when a worker process dies."""
 
     def __init__(self, status_code):
+        # type: (int) -> None
         self.status_code = status_code
         # Pass status code to superclass just so it becomes part of __bytes__
         super(WorkerError, self).__init__(status_code)
@@ -158,6 +169,7 @@ class ConflictResolutionRequired(InterventionRequired):
     """Exception raised when a continuable command required merge conflict resolution."""
 
     def __init__(self, opname):
+        # type: (bytes) -> None
         from .i18n import _
 
         self.opname = opname
@@ -193,6 +205,7 @@ class Abort(Hint, Exception):
             return pycompat.sysstr(self.__bytes__())
 
     def format(self):
+        # type: () -> bytes
         from .i18n import _
 
         message = _(b"abort: %s\n") % self.message
@@ -246,10 +259,12 @@ class ConfigError(Abort):
     """Exception raised when parsing config files"""
 
     def __init__(self, message, location=None, hint=None):
+        # type: (bytes, Optional[bytes], Optional[bytes]) -> None
         super(ConfigError, self).__init__(message, hint=hint)
         self.location = location
 
     def format(self):
+        # type: () -> bytes
         from .i18n import _
 
         if self.location is not None:
@@ -289,20 +304,34 @@ class ResponseExpected(Abort):
         Abort.__init__(self, _(b'response expected'))
 
 
-class OutOfBandError(Hint, Exception):
+class RemoteError(Abort):
+    """Exception raised when interacting with a remote repo fails"""
+
+
+class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
 
-    __bytes__ = _tobytes
+    def __init__(self, message=None, hint=None):
+        from .i18n import _
+
+        if message:
+            # Abort.format() adds a trailing newline
+            message = _(b"remote error:\n%s") % message.rstrip(b'\n')
+        else:
+            message = _(b"remote error")
+        super(OutOfBandError, self).__init__(message, hint=hint)
 
 
 class ParseError(Abort):
     """Raised when parsing config files and {rev,file}sets (msg[, pos])"""
 
     def __init__(self, message, location=None, hint=None):
+        # type: (bytes, Optional[Union[bytes, int]], Optional[bytes]) -> None
         super(ParseError, self).__init__(message, hint=hint)
         self.location = location
 
     def format(self):
+        # type: () -> bytes
         from .i18n import _
 
         if self.location is not None:
@@ -322,6 +351,7 @@ class PatchError(Exception):
 
 
 def getsimilar(symbols, value):
+    # type: (Iterable[bytes], bytes) -> List[bytes]
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
     # The cutoff for similarity here is pretty arbitrary. It should
     # probably be investigated and tweaked.
@@ -329,6 +359,7 @@ def getsimilar(symbols, value):
 
 
 def similarity_hint(similar):
+    # type: (List[bytes]) -> Optional[bytes]
     from .i18n import _
 
     if len(similar) == 1:
@@ -344,6 +375,7 @@ class UnknownIdentifier(ParseError):
     """Exception raised when a {rev,file}set references an unknown identifier"""
 
     def __init__(self, function, symbols):
+        # type: (bytes, Iterable[bytes]) -> None
         from .i18n import _
 
         similar = getsimilar(symbols, function)
@@ -378,6 +410,7 @@ class StdioError(IOError):
     """Raised if I/O to stdout or stderr fails"""
 
     def __init__(self, err):
+        # type: (IOError) -> None
         IOError.__init__(self, err.errno, err.strerror)
 
     # no __bytes__() because error message is derived from the standard IOError
@@ -385,6 +418,7 @@ class StdioError(IOError):
 
 class UnsupportedMergeRecords(Abort):
     def __init__(self, recordtypes):
+        # type: (Iterable[bytes]) -> None
         from .i18n import _
 
         self.recordtypes = sorted(recordtypes)
@@ -403,12 +437,15 @@ class UnknownVersion(Abort):
     """generic exception for aborting from an encounter with an unknown version"""
 
     def __init__(self, msg, hint=None, version=None):
+        # type: (bytes, Optional[bytes], Optional[bytes]) -> None
         self.version = version
         super(UnknownVersion, self).__init__(msg, hint=hint)
 
 
 class LockError(IOError):
     def __init__(self, errno, strerror, filename, desc):
+        # TODO: figure out if this should be bytes or str
+        # _type: (int, str, str, bytes) -> None
         IOError.__init__(self, errno, strerror, filename)
         self.desc = desc
 
@@ -455,6 +492,7 @@ class ProgrammingError(Hint, RuntimeError):
     """Raised if a mercurial (core or extension) developer made a mistake"""
 
     def __init__(self, msg, *args, **kwargs):
+        # type: (AnyStr, Any, Any) -> None
         # On Python 3, turn the message back into a string since this is
         # an internal-only error that won't be printed except in a
         # stack traces.
@@ -498,7 +536,7 @@ class BundleUnknownFeatureError(BundleValueError):
                     entries.append(b"%s=%r" % (par, pycompat.maybebytestr(val)))
         if entries:
             msg = b'%s - %s' % (msg, b', '.join(entries))
-        ValueError.__init__(self, msg)
+        ValueError.__init__(self, msg)  # TODO: convert to str?
 
 
 class ReadOnlyPartError(RuntimeError):
@@ -532,6 +570,7 @@ class CensoredNodeError(StorageError):
     """
 
     def __init__(self, filename, node, tombstone):
+        # type: (bytes, bytes, bytes) -> None
         from .node import short
 
         StorageError.__init__(self, b'%s:%s' % (filename, short(node)))
@@ -587,5 +626,6 @@ class WireprotoCommandError(Exception):
     """
 
     def __init__(self, message, args=None):
+        # type: (bytes, Optional[Sequence[bytes]]) -> None
         self.message = message
         self.messageargs = args

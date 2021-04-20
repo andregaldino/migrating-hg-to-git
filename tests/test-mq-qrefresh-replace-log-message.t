@@ -191,7 +191,7 @@ Test saving last-message.txt:
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
   $ cat .hg/last-message.txt
   Fifth commit message
    This is the 5th log message
@@ -235,7 +235,7 @@ external process
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
 
 (rebuilding at failure of qrefresh bases on rev #0, and it causes
 dropping status of "file2")
@@ -273,7 +273,7 @@ dropping status of "file2")
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
 
   $ sh "$TESTTMP/checkvisibility.sh"
   ====
@@ -315,7 +315,7 @@ dropping status of "file2")
   rollback completed
   qrefresh interrupted while patch was popped! (revert --all, qpush to recover)
   abort: pretxncommit.unexpectedabort hook exited with status 1
-  [255]
+  [40]
 
   $ sh "$TESTTMP/checkvisibility.sh"
   ====

@@ -13,29 +13,21 @@
 //! is used in a more abstract context.
 
 use super::{
-    node::NULL_NODE, Node, NodeError, NodePrefix, NodePrefixRef, Revision,
-    RevlogIndex, NULL_REVISION,
+    node::NULL_NODE, Node, NodePrefix, Revision, RevlogIndex, NULL_REVISION,
 };
 
+use bytes_cast::{unaligned, BytesCast};
 use std::cmp::max;
 use std::fmt;
-use std::mem;
+use std::mem::{self, align_of, size_of};
 use std::ops::Deref;
 use std::ops::Index;
-use std::slice;
 
 #[derive(Debug, PartialEq)]
 pub enum NodeMapError {
     MultipleResults,
-    InvalidNodePrefix(NodeError),
     /// A `Revision` stored in the nodemap could not be found in the index
     RevisionNotInIndex(Revision),
-}
-
-impl From<NodeError> for NodeMapError {
-    fn from(err: NodeError) -> Self {
-        NodeMapError::InvalidNodePrefix(err)
-    }
 }
 
 /// Mapping system from Mercurial nodes to revision numbers.
@@ -82,23 +74,8 @@ pub trait NodeMap {
     fn find_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<Revision>, NodeMapError>;
-
-    /// Find the unique Revision whose `Node` hexadecimal string representation
-    /// starts with a given prefix
-    ///
-    /// If no Revision matches the given prefix, `Ok(None)` is returned.
-    ///
-    /// If several Revisions match the given prefix, a [`MultipleResults`]
-    /// error is returned.
-    fn find_hex(
-        &self,
-        idx: &impl RevlogIndex,
-        prefix: &str,
-    ) -> Result<Option<Revision>, NodeMapError> {
-        self.find_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
-    }
 
     /// Give the size of the shortest node prefix that determines
     /// the revision uniquely.
@@ -114,18 +91,8 @@ pub trait NodeMap {
     fn unique_prefix_len_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        node_prefix: NodePrefixRef<'a>,
+        node_prefix: NodePrefix,
     ) -> Result<Option<usize>, NodeMapError>;
-
-    /// Same as `unique_prefix_len_bin`, with the hexadecimal representation
-    /// of the prefix as input.
-    fn unique_prefix_len_hex(
-        &self,
-        idx: &impl RevlogIndex,
-        prefix: &str,
-    ) -> Result<Option<usize>, NodeMapError> {
-        self.unique_prefix_len_bin(idx, NodePrefix::from_hex(prefix)?.borrow())
-    }
 
     /// Same as `unique_prefix_len_bin`, with a full `Node` as input
     fn unique_prefix_len_node(
@@ -149,7 +116,7 @@ pub trait MutableNodeMap: NodeMap {
 /// Low level NodeTree [`Blocks`] elements
 ///
 /// These are exactly as for instance on persistent storage.
-type RawElement = i32;
+type RawElement = unaligned::I32Be;
 
 /// High level representation of values in NodeTree
 /// [`Blocks`](struct.Block.html)
@@ -168,23 +135,24 @@ impl From<RawElement> for Element {
     ///
     /// See [`Block`](struct.Block.html) for explanation about the encoding.
     fn from(raw: RawElement) -> Element {
-        if raw >= 0 {
-            Element::Block(raw as usize)
-        } else if raw == -1 {
+        let int = raw.get();
+        if int >= 0 {
+            Element::Block(int as usize)
+        } else if int == -1 {
             Element::None
         } else {
-            Element::Rev(-raw - 2)
+            Element::Rev(-int - 2)
         }
     }
 }
 
 impl From<Element> for RawElement {
     fn from(element: Element) -> RawElement {
-        match element {
+        RawElement::from(match element {
             Element::None => 0,
-            Element::Block(i) => i as RawElement,
+            Element::Block(i) => i as i32,
             Element::Rev(rev) => -rev - 2,
-        }
+        })
     }
 }
 
@@ -212,42 +180,24 @@ impl From<Element> for RawElement {
 /// represented at all, because we want an immutable empty nodetree
 /// to be valid.
 
-#[derive(Copy, Clone)]
-pub struct Block([u8; BLOCK_SIZE]);
+const ELEMENTS_PER_BLOCK: usize = 16; // number of different values in a nybble
 
-/// Not derivable for arrays of length >32 until const generics are stable
-impl PartialEq for Block {
-    fn eq(&self, other: &Self) -> bool {
-        self.0[..] == other.0[..]
-    }
-}
-
-pub const BLOCK_SIZE: usize = 64;
+#[derive(Copy, Clone, BytesCast, PartialEq)]
+#[repr(transparent)]
+pub struct Block([RawElement; ELEMENTS_PER_BLOCK]);
 
 impl Block {
     fn new() -> Self {
-        // -1 in 2's complement to create an absent node
-        let byte: u8 = 255;
-        Block([byte; BLOCK_SIZE])
+        let absent_node = RawElement::from(-1);
+        Block([absent_node; ELEMENTS_PER_BLOCK])
     }
 
     fn get(&self, nybble: u8) -> Element {
-        let index = nybble as usize * mem::size_of::<RawElement>();
-        Element::from(RawElement::from_be_bytes([
-            self.0[index],
-            self.0[index + 1],
-            self.0[index + 2],
-            self.0[index + 3],
-        ]))
+        self.0[nybble as usize].into()
     }
 
     fn set(&mut self, nybble: u8, element: Element) {
-        let values = RawElement::to_be_bytes(element.into());
-        let index = nybble as usize * mem::size_of::<RawElement>();
-        self.0[index] = values[0];
-        self.0[index + 1] = values[1];
-        self.0[index + 2] = values[2];
-        self.0[index + 3] = values[3];
+        self.0[nybble as usize] = element.into()
     }
 }
 
@@ -295,7 +245,7 @@ impl Index<usize> for NodeTree {
 /// Return `None` unless the `Node` for `rev` has given prefix in `index`.
 fn has_prefix_or_none(
     idx: &impl RevlogIndex,
-    prefix: NodePrefixRef,
+    prefix: NodePrefix,
     rev: Revision,
 ) -> Result<Option<Revision>, NodeMapError> {
     idx.node(rev)
@@ -316,7 +266,7 @@ fn has_prefix_or_none(
 /// revision is the only one for a *subprefix* of the one being looked up.
 fn validate_candidate(
     idx: &impl RevlogIndex,
-    prefix: NodePrefixRef,
+    prefix: NodePrefix,
     candidate: (Option<Revision>, usize),
 ) -> Result<(Option<Revision>, usize), NodeMapError> {
     let (rev, steps) = candidate;
@@ -398,16 +348,17 @@ impl NodeTree {
         // Transmute the `Vec<Block>` to a `Vec<u8>`. Blocks are contiguous
         // bytes, so this is perfectly safe.
         let bytes = unsafe {
-            // Assert that `Block` hasn't been changed and has no padding
-            let _: [u8; 4 * BLOCK_SIZE] =
-                std::mem::transmute([Block::new(); 4]);
+            // Check for compatible allocation layout.
+            // (Optimized away by constant-folding + dead code elimination.)
+            assert_eq!(size_of::<Block>(), 64);
+            assert_eq!(align_of::<Block>(), 1);
 
             // /!\ Any use of `vec` after this is use-after-free.
             // TODO: use `into_raw_parts` once stabilized
             Vec::from_raw_parts(
                 vec.as_ptr() as *mut u8,
-                vec.len() * BLOCK_SIZE,
-                vec.capacity() * BLOCK_SIZE,
+                vec.len() * size_of::<Block>(),
+                vec.capacity() * size_of::<Block>(),
             )
         };
         (readonly, bytes)
@@ -442,7 +393,7 @@ impl NodeTree {
     /// `NodeTree`).
     fn lookup(
         &self,
-        prefix: NodePrefixRef,
+        prefix: NodePrefix,
     ) -> Result<(Option<Revision>, usize), NodeMapError> {
         for (i, visit_item) in self.visit(prefix).enumerate() {
             if let Some(opt) = visit_item.final_revision() {
@@ -452,10 +403,7 @@ impl NodeTree {
         Err(NodeMapError::MultipleResults)
     }
 
-    fn visit<'n, 'p>(
-        &'n self,
-        prefix: NodePrefixRef<'p>,
-    ) -> NodeTreeVisitor<'n, 'p> {
+    fn visit<'n>(&'n self, prefix: NodePrefix) -> NodeTreeVisitor<'n> {
         NodeTreeVisitor {
             nt: self,
             prefix,
@@ -613,7 +561,7 @@ impl NodeTreeBytes {
         amount: usize,
     ) -> Self {
         assert!(buffer.len() >= amount);
-        let len_in_blocks = amount / BLOCK_SIZE;
+        let len_in_blocks = amount / size_of::<Block>();
         NodeTreeBytes {
             buffer,
             len_in_blocks,
@@ -625,18 +573,17 @@ impl Deref for NodeTreeBytes {
     type Target = [Block];
 
     fn deref(&self) -> &[Block] {
-        unsafe {
-            slice::from_raw_parts(
-                (&self.buffer).as_ptr() as *const Block,
-                self.len_in_blocks,
-            )
-        }
+        Block::slice_from_bytes(&self.buffer, self.len_in_blocks)
+            // `NodeTreeBytes::new` already asserted that `self.buffer` is
+            // large enough.
+            .unwrap()
+            .0
     }
 }
 
-struct NodeTreeVisitor<'n, 'p> {
+struct NodeTreeVisitor<'n> {
     nt: &'n NodeTree,
-    prefix: NodePrefixRef<'p>,
+    prefix: NodePrefix,
     visit: usize,
     nybble_idx: usize,
     done: bool,
@@ -649,11 +596,11 @@ struct NodeTreeVisitItem {
     element: Element,
 }
 
-impl<'n, 'p> Iterator for NodeTreeVisitor<'n, 'p> {
+impl<'n> Iterator for NodeTreeVisitor<'n> {
     type Item = NodeTreeVisitItem;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.done || self.nybble_idx >= self.prefix.len() {
+        if self.done || self.nybble_idx >= self.prefix.nybbles_len() {
             return None;
         }
 
@@ -718,18 +665,18 @@ impl NodeMap for NodeTree {
     fn find_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<Revision>, NodeMapError> {
-        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+        validate_candidate(idx, prefix, self.lookup(prefix)?)
             .map(|(opt, _shortest)| opt)
     }
 
     fn unique_prefix_len_bin<'a>(
         &self,
         idx: &impl RevlogIndex,
-        prefix: NodePrefixRef<'a>,
+        prefix: NodePrefix,
     ) -> Result<Option<usize>, NodeMapError> {
-        validate_candidate(idx, prefix.clone(), self.lookup(prefix)?)
+        validate_candidate(idx, prefix, self.lookup(prefix)?)
             .map(|(opt, shortest)| opt.map(|_rev| shortest))
     }
 }
@@ -774,13 +721,13 @@ mod tests {
         let mut raw = [255u8; 64];
 
         let mut counter = 0;
-        for val in [0, 15, -2, -1, -3].iter() {
-            for byte in RawElement::to_be_bytes(*val).iter() {
+        for val in [0_i32, 15, -2, -1, -3].iter() {
+            for byte in val.to_be_bytes().iter() {
                 raw[counter] = *byte;
                 counter += 1;
             }
         }
-        let block = Block(raw);
+        let (block, _) = Block::from_bytes(&raw).unwrap();
         assert_eq!(block.get(0), Element::Block(0));
         assert_eq!(block.get(1), Element::Block(15));
         assert_eq!(block.get(3), Element::None);
@@ -822,6 +769,10 @@ mod tests {
         ])
     }
 
+    fn hex(s: &str) -> NodePrefix {
+        NodePrefix::from_hex(s).unwrap()
+    }
+
     #[test]
     fn test_nt_debug() {
         let nt = sample_nodetree();
@@ -840,11 +791,11 @@ mod tests {
         pad_insert(&mut idx, 1, "1234deadcafe");
 
         let nt = NodeTree::from(vec![block! {1: Rev(1)}]);
-        assert_eq!(nt.find_hex(&idx, "1")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "12")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "1234de")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "1a")?, None);
-        assert_eq!(nt.find_hex(&idx, "ab")?, None);
+        assert_eq!(nt.find_bin(&idx, hex("1"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("12"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("1234de"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("1a"))?, None);
+        assert_eq!(nt.find_bin(&idx, hex("ab"))?, None);
 
         // and with full binary Nodes
         assert_eq!(nt.find_node(&idx, idx.get(&1).unwrap())?, Some(1));
@@ -861,12 +812,12 @@ mod tests {
 
         let nt = sample_nodetree();
 
-        assert_eq!(nt.find_hex(&idx, "0"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "01"), Ok(Some(9)));
-        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "00a"), Ok(Some(0)));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "00a"), Ok(Some(3)));
-        assert_eq!(nt.find_hex(&idx, "000"), Ok(Some(NULL_REVISION)));
+        assert_eq!(nt.find_bin(&idx, hex("0")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("01")), Ok(Some(9)));
+        assert_eq!(nt.find_bin(&idx, hex("00")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("00a")), Ok(Some(0)));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("00a")), Ok(Some(3)));
+        assert_eq!(nt.find_bin(&idx, hex("000")), Ok(Some(NULL_REVISION)));
     }
 
     #[test]
@@ -884,13 +835,13 @@ mod tests {
             root: block![0: Block(1), 1:Block(3), 12: Rev(2)],
             masked_inner_blocks: 1,
         };
-        assert_eq!(nt.find_hex(&idx, "10")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "c")?, Some(2));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "c")?, Some(1));
-        assert_eq!(nt.find_hex(&idx, "00"), Err(MultipleResults));
-        assert_eq!(nt.find_hex(&idx, "000")?, Some(NULL_REVISION));
-        assert_eq!(nt.unique_prefix_len_hex(&idx, "000")?, Some(3));
-        assert_eq!(nt.find_hex(&idx, "01")?, Some(9));
+        assert_eq!(nt.find_bin(&idx, hex("10"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("c"))?, Some(2));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("c"))?, Some(1));
+        assert_eq!(nt.find_bin(&idx, hex("00")), Err(MultipleResults));
+        assert_eq!(nt.find_bin(&idx, hex("000"))?, Some(NULL_REVISION));
+        assert_eq!(nt.unique_prefix_len_bin(&idx, hex("000"))?, Some(3));
+        assert_eq!(nt.find_bin(&idx, hex("01"))?, Some(9));
         assert_eq!(nt.masked_readonly_blocks(), 2);
         Ok(())
     }
@@ -923,14 +874,14 @@ mod tests {
             &self,
             prefix: &str,
         ) -> Result<Option<Revision>, NodeMapError> {
-            self.nt.find_hex(&self.index, prefix)
+            self.nt.find_bin(&self.index, hex(prefix))
         }
 
         fn unique_prefix_len_hex(
             &self,
             prefix: &str,
         ) -> Result<Option<usize>, NodeMapError> {
-            self.nt.unique_prefix_len_hex(&self.index, prefix)
+            self.nt.unique_prefix_len_bin(&self.index, hex(prefix))
         }
 
         /// Drain `added` and restart a new one
@@ -1108,7 +1059,7 @@ mod tests {
         let (_, bytes) = idx.nt.into_readonly_and_added_bytes();
 
         // only the root block has been changed
-        assert_eq!(bytes.len(), BLOCK_SIZE);
+        assert_eq!(bytes.len(), size_of::<Block>());
         // big endian for -2
         assert_eq!(&bytes[4..2 * 4], [255, 255, 255, 254]);
         // big endian for -6

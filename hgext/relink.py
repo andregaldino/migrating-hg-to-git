@@ -19,7 +19,10 @@ from mercurial import (
     registrar,
     util,
 )
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    stringutil,
+    urlutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -62,10 +65,11 @@ def relink(ui, repo, origin=None, **opts):
         util, b'samedevice'
     ):
         raise error.Abort(_(b'hardlinks are not supported on this system'))
-    src = hg.repository(
-        repo.baseui,
-        ui.expandpath(origin or b'default-relink', origin or b'default'),
-    )
+
+    if origin is None and b'default-relink' in ui.paths:
+        origin = b'default-relink'
+    path, __ = urlutil.get_unique_pull_path(b'relink', repo, ui, origin)
+    src = hg.repository(repo.baseui, path)
     ui.status(_(b'relinking %s to %s\n') % (src.store.path, repo.store.path))
     if repo.root == src.root:
         ui.status(_(b'there is nothing to relink\n'))

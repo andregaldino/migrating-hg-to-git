@@ -293,7 +293,7 @@ TODO: fail more gracefully.
   requesting all changes
   remote: abort: no common changegroup version
   abort: pull failed on remote
-  [255]
+  [100]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/server/.hg/requires:lfs
 
@@ -462,6 +462,7 @@ lfs content, and the extension enabled.
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  (sent 8 HTTP requests and * bytes; received * bytes in responses) (glob) (?)
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs

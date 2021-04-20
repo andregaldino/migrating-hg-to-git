@@ -223,10 +223,6 @@ Graft out of order, skipping a merge and a duplicate
   committing changelog
   updating the branch cache
   grafting 5:97f8bfe72746 "5"
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     on local side:
-      src: 'c' -> dst: 'b' 
-    checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 6b9e5368ca4e+, remote: 97f8bfe72746
@@ -240,10 +236,6 @@ Graft out of order, skipping a merge and a duplicate
   $ HGEDITOR=cat hg graft 4 3 --log --debug
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
-    all copies found (* = to merge, ! = divergent, % = renamed and deleted):
-     on local side:
-      src: 'c' -> dst: 'b' 
-    checking for directory renames
   resolving manifests
    branchmerge: True, force: True, partial: False
    ancestor: 4c60f11aa304, local: 1905859650ec+, remote: 9c233e8e184d

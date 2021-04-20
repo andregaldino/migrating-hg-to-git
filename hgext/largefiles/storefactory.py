@@ -12,12 +12,16 @@ from mercurial import (
     hg,
     util,
 )
+from mercurial.utils import (
+    urlutil,
+)
 
 from . import (
     lfutil,
     localstore,
     wirestore,
 )
+
 
 # During clone this function is passed the src's ui object
 # but it needs the dest's ui object so it can read out of
@@ -28,24 +32,27 @@ def openstore(repo=None, remote=None, put=False, ui=None):
 
     if not remote:
         lfpullsource = getattr(repo, 'lfpullsource', None)
-        if lfpullsource:
-            path = ui.expandpath(lfpullsource)
-        elif put:
-            path = ui.expandpath(b'default-push', b'default')
+        if put:
+            path = urlutil.get_unique_push_path(
+                b'lfpullsource', repo, ui, lfpullsource
+            )
         else:
-            path = ui.expandpath(b'default')
+            path, _branches = urlutil.get_unique_pull_path(
+                b'lfpullsource', repo, ui, lfpullsource
+            )
 
-        # ui.expandpath() leaves 'default-push' and 'default' alone if
-        # they cannot be expanded: fallback to the empty string,
-        # meaning the current directory.
+        # XXX we should not explicitly pass b'default', as this will result in
+        # b'default' being returned if no `paths.default` was defined. We
+        # should explicitely handle the lack of value instead.
         if repo is None:
-            path = ui.expandpath(b'default')
-            path, _branches = hg.parseurl(path)
+            path, _branches = urlutil.get_unique_pull_path(
+                b'lfs', repo, ui, b'default'
+            )
             remote = hg.peer(repo or ui, {}, path)
         elif path == b'default-push' or path == b'default':
             remote = repo
         else:
-            path, _branches = hg.parseurl(path)
+            path, _branches = urlutil.parseurl(path)
             remote = hg.peer(repo or ui, {}, path)
 
     # The path could be a scheme so use Mercurial's normal functionality
@@ -71,7 +78,7 @@ def openstore(repo=None, remote=None, put=False, ui=None):
 
     raise error.Abort(
         _(b'%s does not appear to be a largefile store')
-        % util.hidepassword(path)
+        % urlutil.hidepassword(path)
     )
 
 

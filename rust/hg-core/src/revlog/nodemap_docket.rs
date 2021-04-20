@@ -1,5 +1,7 @@
+use crate::errors::{HgError, HgResultExt};
+use crate::requirements;
+use bytes_cast::{unaligned, BytesCast};
 use memmap::Mmap;
-use std::convert::TryInto;
 use std::path::{Path, PathBuf};
 
 use super::revlog::RevlogError;
@@ -11,6 +13,16 @@ const ONDISK_VERSION: u8 = 1;
 pub(super) struct NodeMapDocket {
     pub data_length: usize,
     // TODO: keep here more of the data from `parse()` when we need it
+}
+
+#[derive(BytesCast)]
+#[repr(C)]
+struct DocketHeader {
+    uid_size: u8,
+    _tip_rev: unaligned::U64Be,
+    data_length: unaligned::U64Be,
+    _data_unused: unaligned::U64Be,
+    tip_node_size: unaligned::U64Be,
 }
 
 impl NodeMapDocket {
@@ -27,81 +39,69 @@ impl NodeMapDocket {
         repo: &Repo,
         index_path: &Path,
     ) -> Result<Option<(Self, Mmap)>, RevlogError> {
+        if !repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT)
+        {
+            // If .hg/requires does not opt it, don’t try to open a nodemap
+            return Ok(None);
+        }
+
         let docket_path = index_path.with_extension("n");
-        let docket_bytes = match repo.store_vfs().read(&docket_path) {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Ok(None)
-            }
-            Err(e) => return Err(RevlogError::IoError(e)),
-            Ok(bytes) => bytes,
+        let docket_bytes = if let Some(bytes) =
+            repo.store_vfs().read(&docket_path).io_not_found_as_none()?
+        {
+            bytes
+        } else {
+            return Ok(None);
         };
 
-        let mut input = if let Some((&ONDISK_VERSION, rest)) =
+        let input = if let Some((&ONDISK_VERSION, rest)) =
             docket_bytes.split_first()
         {
             rest
         } else {
             return Ok(None);
         };
-        let input = &mut input;
 
-        let uid_size = read_u8(input)? as usize;
-        let _tip_rev = read_be_u64(input)?;
+        /// Treat any error as a parse error
+        fn parse<T, E>(result: Result<T, E>) -> Result<T, RevlogError> {
+            result.map_err(|_| {
+                HgError::corrupted("nodemap docket parse error").into()
+            })
+        }
+
+        let (header, rest) = parse(DocketHeader::from_bytes(input))?;
+        let uid_size = header.uid_size as usize;
         // TODO: do we care about overflow for 4 GB+ nodemap files on 32-bit
         // systems?
-        let data_length = read_be_u64(input)? as usize;
-        let _data_unused = read_be_u64(input)?;
-        let tip_node_size = read_be_u64(input)? as usize;
-        let uid = read_bytes(input, uid_size)?;
-        let _tip_node = read_bytes(input, tip_node_size)?;
-
-        let uid =
-            std::str::from_utf8(uid).map_err(|_| RevlogError::Corrupted)?;
+        let tip_node_size = header.tip_node_size.get() as usize;
+        let data_length = header.data_length.get() as usize;
+        let (uid, rest) = parse(u8::slice_from_bytes(rest, uid_size))?;
+        let (_tip_node, _rest) =
+            parse(u8::slice_from_bytes(rest, tip_node_size))?;
+        let uid = parse(std::str::from_utf8(uid))?;
         let docket = NodeMapDocket { data_length };
 
         let data_path = rawdata_path(&docket_path, uid);
-        // TODO: use `std::fs::read` here when the `persistent-nodemap.mmap`
+        // TODO: use `vfs.read()` here when the `persistent-nodemap.mmap`
         // config is false?
-        match repo.store_vfs().mmap_open(&data_path) {
-            Ok(mmap) => {
-                if mmap.len() >= data_length {
-                    Ok(Some((docket, mmap)))
-                } else {
-                    Err(RevlogError::Corrupted)
-                }
+        if let Some(mmap) = repo
+            .store_vfs()
+            .mmap_open(&data_path)
+            .io_not_found_as_none()?
+        {
+            if mmap.len() >= data_length {
+                Ok(Some((docket, mmap)))
+            } else {
+                Err(HgError::corrupted("persistent nodemap too short").into())
             }
-            Err(error) => {
-                if error.kind() == std::io::ErrorKind::NotFound {
-                    Ok(None)
-                } else {
-                    Err(RevlogError::IoError(error))
-                }
-            }
+        } else {
+            // Even if .hg/requires opted in, some revlogs are deemed small
+            // enough to not need a persistent nodemap.
+            Ok(None)
         }
     }
-}
-
-fn read_bytes<'a>(
-    input: &mut &'a [u8],
-    count: usize,
-) -> Result<&'a [u8], RevlogError> {
-    if let Some(start) = input.get(..count) {
-        *input = &input[count..];
-        Ok(start)
-    } else {
-        Err(RevlogError::Corrupted)
-    }
-}
-
-fn read_u8<'a>(input: &mut &[u8]) -> Result<u8, RevlogError> {
-    Ok(read_bytes(input, 1)?[0])
-}
-
-fn read_be_u64<'a>(input: &mut &[u8]) -> Result<u64, RevlogError> {
-    let array = read_bytes(input, std::mem::size_of::<u64>())?
-        .try_into()
-        .unwrap();
-    Ok(u64::from_be_bytes(array))
 }
 
 fn rawdata_path(docket_path: &Path, uid: &str) -> PathBuf {

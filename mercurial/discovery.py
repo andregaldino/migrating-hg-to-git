@@ -1,6 +1,6 @@
 # discovery.py - protocol changeset discovery functions
 #
-# Copyright 2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -270,9 +270,12 @@ def _headssummary(pushop):
     # C. Update newmap with outgoing changes.
     # This will possibly add new heads and remove existing ones.
     newmap = branchmap.remotebranchcache(
-        (branch, heads[1])
-        for branch, heads in pycompat.iteritems(headssum)
-        if heads[0] is not None
+        repo,
+        (
+            (branch, heads[1])
+            for branch, heads in pycompat.iteritems(headssum)
+            if heads[0] is not None
+        ),
     )
     newmap.update(repo, (ctx.rev() for ctx in missingctx))
     for branch, newheads in pycompat.iteritems(newmap):

@@ -22,6 +22,7 @@ from . import (
     narrowspec,
     phases,
     pycompat,
+    requirements as requirementsmod,
     setdiscovery,
 )
 from .interfaces import repository
@@ -183,7 +184,7 @@ def _checkuserawstorefiledata(pullop):
 
     # TODO This is super hacky. There needs to be a storage API for this. We
     # also need to check for compatibility with the remote.
-    if b'revlogv1' not in repo.requirements:
+    if requirementsmod.REVLOGV1_REQUIREMENT not in repo.requirements:
         return False
 
     return True
@@ -358,18 +359,20 @@ def _processchangesetdata(repo, tr, objs):
         # Linkrev for changelog is always self.
         return len(cl)
 
-    def ondupchangeset(cl, node):
-        added.append(node)
+    def ondupchangeset(cl, rev):
+        added.append(cl.node(rev))
 
-    def onchangeset(cl, node):
+    def onchangeset(cl, rev):
         progress.increment()
 
-        revision = cl.changelogrevision(node)
-        added.append(node)
+        revision = cl.changelogrevision(rev)
+        added.append(cl.node(rev))
 
         # We need to preserve the mapping of changelog revision to node
         # so we can set the linkrev accordingly when manifests are added.
-        manifestnodes[cl.rev(node)] = revision.manifest
+        manifestnodes[rev] = revision.manifest
+
+        repo.register_changeset(rev, revision)
 
     nodesbyphase = {phase: set() for phase in phases.phasenames.values()}
     remotebookmarks = {}
@@ -414,12 +417,15 @@ def _processchangesetdata(repo, tr, objs):
                 mdiff.trivialdiffheader(len(data)) + data,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported
+                {},
             )
 
     cl.addgroup(
         iterrevisions(),
         linkrev,
         weakref.proxy(tr),
+        alwayscache=True,
         addrevisioncb=onchangeset,
         duplicaterevisioncb=ondupchangeset,
     )
@@ -492,6 +498,8 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()
@@ -533,8 +541,8 @@ def _fetchmanifests(repo, tr, remote, manifestnodes):
             # Chomp off header object.
             next(objs)
 
-            def onchangeset(cl, node):
-                added.append(node)
+            def onchangeset(cl, rev):
+                added.append(cl.node(rev))
 
             rootmanifest.addgroup(
                 iterrevisions(objs, progress),
@@ -617,6 +625,8 @@ def _fetchfiles(repo, tr, remote, fnodes, linkrevs):
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()
@@ -715,6 +725,8 @@ def _fetchfilesfromcsets(
                 delta,
                 # Flags not yet supported.
                 0,
+                # Sidedata not yet supported.
+                {},
             )
 
             progress.increment()

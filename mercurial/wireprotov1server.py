@@ -1,6 +1,6 @@
 # wireprotov1server.py - Wire protocol version 1 server functionality
 #
-# Copyright 2005-2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -27,6 +27,7 @@ from . import (
     exchange,
     pushkey as pushkeymod,
     pycompat,
+    requirements as requirementsmod,
     streamclone,
     util,
     wireprototypes,
@@ -108,7 +109,7 @@ def bundle1allowed(repo, action):
     4. server.bundle1
     """
     ui = repo.ui
-    gd = b'generaldelta' in repo.requirements
+    gd = requirementsmod.GENERALDELTA_REQUIREMENT in repo.requirements
 
     if gd:
         v = ui.configbool(b'server', b'bundle1gd.%s' % action)
@@ -310,7 +311,7 @@ def _capabilities(repo, proto):
             caps.append(b'stream-preferred')
         requiredformats = repo.requirements & repo.supportedformats
         # if our local revlogs are just revlogv1, add 'stream' cap
-        if not requiredformats - {b'revlogv1'}:
+        if not requiredformats - {requirementsmod.REVLOGV1_REQUIREMENT}:
             caps.append(b'stream')
         # otherwise, add 'streamreqs' detailing our local revlog format
         else:

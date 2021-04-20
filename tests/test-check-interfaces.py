@@ -85,6 +85,7 @@ def checkzobject(o, allowextra=False):
 class dummyrepo(object):
     def __init__(self):
         self.ui = uimod.ui()
+        self._wanted_sidedata = set()
 
     def filtered(self, name):
         pass
@@ -111,6 +112,10 @@ class badpeer(httppeer.httppeer):
 
 class dummypipe(object):
     def close(self):
+        pass
+
+    @property
+    def closed(self):
         pass
 
 
@@ -243,7 +248,10 @@ def main():
 
     # Conforms to imanifestlog.
     ml = manifest.manifestlog(
-        vfs, repo, manifest.manifestrevlog(repo.svfs), repo.narrowmatch()
+        vfs,
+        repo,
+        manifest.manifestrevlog(repo.nodeconstants, repo.svfs),
+        repo.narrowmatch(),
     )
     checkzobject(ml)
     checkzobject(repo.manifestlog)
@@ -258,7 +266,7 @@ def main():
     # Conforms to imanifestdict.
     checkzobject(mctx.read())
 
-    mrl = manifest.manifestrevlog(vfs)
+    mrl = manifest.manifestrevlog(repo.nodeconstants, vfs)
     checkzobject(mrl)
 
     ziverify.verifyClass(repository.irevisiondelta, revlog.revlogrevisiondelta)
@@ -272,6 +280,7 @@ def main():
         flags=b'',
         baserevisionsize=None,
         revision=b'',
+        sidedata=b'',
         delta=None,
     )
     checkzobject(rd)

@@ -15,6 +15,9 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    urlutil,
+)
 
 # directory name in .hg/ in which remotenames files will be present
 remotenamedir = b'logexchange'
@@ -117,7 +120,7 @@ def activepath(repo, remote):
     # represent the remotepath with user defined path name if exists
     for path, url in repo.ui.configitems(b'paths'):
         # remove auth info from user defined url
-        noauthurl = util.removeauth(url)
+        noauthurl = urlutil.removeauth(url)
 
         # Standardize on unix style paths, otherwise some {remotenames} end up
         # being an absolute path on Windows.

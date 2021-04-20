@@ -15,7 +15,10 @@ from mercurial import (
     util,
 )
 
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    stringutil,
+    urlutil,
+)
 
 from . import (
     basestore,
@@ -40,11 +43,11 @@ class remotestore(basestore.basestore):
         if self.sendfile(source, hash):
             raise error.Abort(
                 _(b'remotestore: could not put %s to remote store %s')
-                % (source, util.hidepassword(self.url))
+                % (source, urlutil.hidepassword(self.url))
             )
         self.ui.debug(
             _(b'remotestore: put %s to remote store %s\n')
-            % (source, util.hidepassword(self.url))
+            % (source, urlutil.hidepassword(self.url))
         )
 
     def exists(self, hashes):
@@ -80,7 +83,7 @@ class remotestore(basestore.basestore):
             # keep trying with the other files... they will probably
             # all fail too.
             raise error.Abort(
-                b'%s: %s' % (util.hidepassword(self.url), e.reason)
+                b'%s: %s' % (urlutil.hidepassword(self.url), e.reason)
             )
         except IOError as e:
             raise basestore.StoreError(

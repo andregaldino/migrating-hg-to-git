@@ -6,7 +6,14 @@ GENDOC=gendoc.py ../mercurial/commands.py ../mercurial/help.py \
 PREFIX=/usr/local
 MANDIR=$(PREFIX)/share/man
 INSTALL=install -m 644
-PYTHON?=python
+# Default to Python 3.
+#
+# Windows ships Python 3 as `python.exe`, which may not be on PATH.  py.exe is.
+ifeq ($(OS),Windows_NT)
+PYTHON?=py -3
+else
+PYTHON?=python3
+endif
 RSTARGS=
 
 export HGENCODING=UTF-8

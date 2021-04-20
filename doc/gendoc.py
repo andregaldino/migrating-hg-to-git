@@ -31,6 +31,7 @@ from mercurial import (
     commands,
     encoding,
     extensions,
+    fancyopts,
     help,
     minirst,
     pycompat,
@@ -86,6 +87,8 @@ def get_opts(opts):
         if b'\n' in desc:
             # only remove line breaks and indentation
             desc = b' '.join(l.lstrip() for l in desc.split(b'\n'))
+        if isinstance(default, fancyopts.customopt):
+            default = default.getdefaultvalue()
         if default:
             default = stringutil.forcebytestr(default)
             desc += _(b" (default: %s)") % default
@@ -314,7 +317,12 @@ def commandprinter(ui, cmdtable, sectionfunc, subsectionfunc):
                 ui.write(b"\n")
             # aliases
             if d[b'aliases']:
-                ui.write(_(b"    aliases: %s\n\n") % b" ".join(d[b'aliases']))
+                # Note the empty comment, this is required to separate this
+                # (which should be a blockquote) from any preceding things (such
+                # as a definition list).
+                ui.write(
+                    _(b"..\n\n    aliases: %s\n\n") % b" ".join(d[b'aliases'])
+                )
 
 
 def allextensionnames():
@@ -327,6 +335,11 @@ if __name__ == "__main__":
         doc = encoding.strtolocal(sys.argv[1])
 
     ui = uimod.ui.load()
+    # Trigger extensions to load. This is disabled by default because it uses
+    # the current user's configuration, which is often not what is wanted.
+    if encoding.environ.get(b'GENDOC_LOAD_CONFIGURED_EXTENSIONS', b'0') != b'0':
+        extensions.loadall(ui)
+
     if doc == b'hg.1.gendoc':
         showdoc(ui)
     else:

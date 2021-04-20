@@ -1,6 +1,6 @@
 # changelog bisection for mercurial
 #
-# Copyright 2007 Matt Mackall
+# Copyright 2007 Olivia Mackall
 # Copyright 2005, 2006 Benoit Boissinot <benoit.boissinot@ens-lyon.org>
 #
 # Inspired by git bisect, extension skeleton taken from mq.py.

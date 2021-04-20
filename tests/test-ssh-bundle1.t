@@ -72,8 +72,10 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
+  4 files to transfer, 602 bytes of data (no-zstd !)
+  transferred 602 bytes in * seconds (*) (glob) (no-zstd !)
+  4 files to transfer, 621 bytes of data (zstd !)
+  transferred 621 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -94,8 +96,10 @@ clone bookmarks via stream
   $ hg -R local-stream book mybook
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/local-stream stream2
   streaming all changes
-  4 files to transfer, 602 bytes of data
-  transferred 602 bytes in * seconds (*) (glob)
+  4 files to transfer, 602 bytes of data (no-zstd !)
+  transferred 602 bytes in * seconds (*) (glob) (no-zstd !)
+  4 files to transfer, 621 bytes of data (zstd !)
+  transferred 621 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -482,9 +486,11 @@ debug output
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   sending hello command
   sending between command
-  remote: 463 (sshv1 !)
+  remote: 444 (sshv1 no-rust !)
+  remote: 463 (sshv1 rust !)
   protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
   remote: 1 (sshv1 !)
   sending protocaps command
   preparing listkeys for "bookmarks"

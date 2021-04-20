@@ -286,8 +286,6 @@ def findcommonheads(
     ui,
     local,
     remote,
-    initialsamplesize=100,
-    fullsamplesize=200,
     abortwhenunrelated=True,
     ancestorsof=None,
     audit=None,
@@ -315,7 +313,8 @@ def findcommonheads(
         ownheads = [rev for rev in cl.headrevs() if rev != nullrev]
 
     initial_head_exchange = ui.configbool(b'devel', b'discovery.exchange-heads')
-
+    initialsamplesize = ui.configint(b'devel', b'discovery.sample-size.initial')
+    fullsamplesize = ui.configint(b'devel', b'discovery.sample-size')
     # We also ask remote about all the local heads. That set can be arbitrarily
     # large, so we used to limit it size to `initialsamplesize`. We no longer
     # do as it proved counter productive. The skipped heads could lead to a
@@ -391,7 +390,7 @@ def findcommonheads(
         if audit is not None:
             audit[b'total-roundtrips'] = 1
 
-        if cl.tip() == nullid:
+        if cl.tiprev() == nullrev:
             if srvheadhashes != [nullid]:
                 return [nullid], True, srvheadhashes
             return [nullid], False, []
@@ -430,9 +429,12 @@ def findcommonheads(
     # full blown discovery
 
     # if the server has a limit to its arguments size, we can't grow the sample.
-    hard_limit_sample = remote.limitedarguments
-    grow_sample = local.ui.configbool(b'devel', b'discovery.grow-sample')
-    hard_limit_sample = hard_limit_sample and grow_sample
+    configbool = local.ui.configbool
+    grow_sample = configbool(b'devel', b'discovery.grow-sample')
+    grow_sample = grow_sample and not remote.limitedarguments
+
+    dynamic_sample = configbool(b'devel', b'discovery.grow-sample.dynamic')
+    hard_limit_sample = not (dynamic_sample or remote.limitedarguments)
 
     randomize = ui.configbool(b'devel', b'discovery.randomize')
     disco = partialdiscovery(
@@ -455,7 +457,7 @@ def findcommonheads(
                 ui.debug(b"taking initial sample\n")
             samplefunc = disco.takefullsample
             targetsize = fullsamplesize
-            if not hard_limit_sample:
+            if grow_sample:
                 fullsamplesize = int(fullsamplesize * samplegrowth)
         else:
             # use even cheaper initial sample

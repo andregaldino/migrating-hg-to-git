@@ -49,7 +49,7 @@ Update - local file conflicts with remote directory:
   $ hg up dir
   a/b: untracked file conflicts with directory
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg up dir --config merge.checkunknown=warn
   a/b: replacing untracked file
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -70,7 +70,7 @@ Update - local symlink conflicts with remote directory:
   $ hg up dir
   a/b: untracked file conflicts with directory
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg up dir --config merge.checkunknown=warn
   a/b: replacing untracked file
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -89,7 +89,7 @@ Update - local directory conflicts with remote file
   $ hg up file
   a/b: untracked directory conflicts with file
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg up file --config merge.checkunknown=warn
   a/b: replacing untracked files in directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -107,7 +107,7 @@ Update - local directory conflicts with remote symlink
   $ hg up link
   a/b: untracked directory conflicts with file
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ hg up link --config merge.checkunknown=warn
   a/b: replacing untracked files in directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

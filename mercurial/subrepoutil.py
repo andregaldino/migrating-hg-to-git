@@ -1,6 +1,6 @@
 # subrepoutil.py - sub-repository operations and substate handling
 #
-# Copyright 2009-2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2009-2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -23,12 +23,36 @@ from . import (
     pycompat,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 nullstate = (b'', b'', b'empty')
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Any,
+        Dict,
+        List,
+        Optional,
+        Set,
+        Tuple,
+    )
+    from . import (
+        context,
+        localrepo,
+        match as matchmod,
+        scmutil,
+        subrepo,
+        ui as uimod,
+    )
+
+    Substate = Dict[bytes, Tuple[bytes, bytes, bytes]]
+
 
 def state(ctx, ui):
+    # type: (context.changectx, uimod.ui) -> Substate
     """return a state dict, mapping subrepo paths configured in .hgsub
     to tuple: (source from .hgsub, revision from .hgsubstate, kind
     (key in types dict))
@@ -84,6 +108,7 @@ def state(ctx, ui):
                 raise
 
     def remap(src):
+        # type: (bytes) -> bytes
         for pattern, repl in p.items(b'subpaths'):
             # Turn r'C:\foo\bar' into r'C:\\foo\\bar' since re.sub
             # does a string decode.
@@ -105,7 +130,7 @@ def state(ctx, ui):
         return src
 
     state = {}
-    for path, src in p[b''].items():
+    for path, src in p.items(b''):  # type: bytes
         kind = b'hg'
         if src.startswith(b'['):
             if b']' not in src:
@@ -114,10 +139,10 @@ def state(ctx, ui):
             kind = kind[1:]
             src = src.lstrip()  # strip any extra whitespace after ']'
 
-        if not util.url(src).isabs():
+        if not urlutil.url(src).isabs():
             parent = _abssource(repo, abort=False)
             if parent:
-                parent = util.url(parent)
+                parent = urlutil.url(parent)
                 parent.path = posixpath.join(parent.path or b'', src)
                 parent.path = posixpath.normpath(parent.path)
                 joined = bytes(parent)
@@ -136,6 +161,7 @@ def state(ctx, ui):
 
 
 def writestate(repo, state):
+    # type: (localrepo.localrepository, Substate) -> None
     """rewrite .hgsubstate in (outer) repo with these subrepo states"""
     lines = [
         b'%s %s\n' % (state[s][1], s)
@@ -146,6 +172,8 @@ def writestate(repo, state):
 
 
 def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
+    # type: (localrepo.localrepository, context.workingctx, context.changectx, context.changectx, bool, Optional[Any]) -> Substate
+    # TODO: type the `labels` arg
     """delegated from merge.applyupdates: merging of .hgsubstate file
     in working context, merging context and ancestor context"""
     if mctx == actx:  # backwards?
@@ -285,6 +313,7 @@ def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
 
 
 def precommit(ui, wctx, status, match, force=False):
+    # type: (uimod.ui, context.workingcommitctx, scmutil.status, matchmod.basematcher, bool) -> Tuple[List[bytes], Set[bytes], Substate]
     """Calculate .hgsubstate changes that should be applied before committing
 
     Returns (subs, commitsubs, newstate) where
@@ -354,7 +383,26 @@ def precommit(ui, wctx, status, match, force=False):
     return subs, commitsubs, newstate
 
 
+def repo_rel_or_abs_source(repo):
+    """return the source of this repo
+
+    Either absolute or relative the outermost repo"""
+    parent = repo
+    chunks = []
+    while util.safehasattr(parent, b'_subparent'):
+        source = urlutil.url(parent._subsource)
+        chunks.append(bytes(source))
+        if source.isabs():
+            break
+        parent = parent._subparent
+
+    chunks.reverse()
+    path = posixpath.join(*chunks)
+    return posixpath.normpath(path)
+
+
 def reporelpath(repo):
+    # type: (localrepo.localrepository) -> bytes
     """return path to this (sub)repo as seen from outermost repo"""
     parent = repo
     while util.safehasattr(parent, b'_subparent'):
@@ -363,21 +411,23 @@ def reporelpath(repo):
 
 
 def subrelpath(sub):
+    # type: (subrepo.abstractsubrepo) -> bytes
     """return path to this subrepo as seen from outermost repo"""
     return sub._relpath
 
 
 def _abssource(repo, push=False, abort=True):
+    # type: (localrepo.localrepository, bool, bool) -> Optional[bytes]
     """return pull/push path of repo - either based on parent repo .hgsub info
     or on the top repo config. Abort or return None if no source found."""
     if util.safehasattr(repo, b'_subparent'):
-        source = util.url(repo._subsource)
+        source = urlutil.url(repo._subsource)
         if source.isabs():
             return bytes(source)
         source.path = posixpath.normpath(source.path)
         parent = _abssource(repo._subparent, push, abort=False)
         if parent:
-            parent = util.url(util.pconvert(parent))
+            parent = urlutil.url(util.pconvert(parent))
             parent.path = posixpath.join(parent.path or b'', source.path)
             parent.path = posixpath.normpath(parent.path)
             return bytes(parent)
@@ -406,7 +456,7 @@ def _abssource(repo, push=False, abort=True):
             #
             #   D:\>python -c "import os; print os.path.abspath('C:relative')"
             #   C:\some\path\relative
-            if util.hasdriveletter(path):
+            if urlutil.hasdriveletter(path):
                 if len(path) == 2 or path[2:3] not in br'\/':
                     path = os.path.abspath(path)
             return path
@@ -416,6 +466,7 @@ def _abssource(repo, push=False, abort=True):
 
 
 def newcommitphase(ui, ctx):
+    # type: (uimod.ui, context.changectx) -> int
     commitphase = phases.newcommitphase(ui)
     substate = getattr(ctx, "substate", None)
     if not substate:

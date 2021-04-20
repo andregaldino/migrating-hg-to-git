@@ -27,6 +27,8 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -61,6 +63,8 @@
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -85,9 +89,9 @@ check its contents separately.
   $ TEMP_STDERR=full-clone-from-shallow.stderr.tmp
   $ hg clone --noupdate ssh://user@dummy/shallow full 2>$TEMP_STDERR
   streaming all changes
-  remote: abort: Cannot clone from a shallow repo to a full repo.
-  [255]
+  [100]
   $ cat $TEMP_STDERR
+  remote: abort: Cannot clone from a shallow repo to a full repo.
   abort: pull failed on remote
   $ rm $TEMP_STDERR
 
@@ -110,6 +114,8 @@ check its contents separately.
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

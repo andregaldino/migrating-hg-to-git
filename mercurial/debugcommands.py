@@ -1,6 +1,6 @@
 # debugcommands.py - command processing for debug* commands
 #
-# Copyright 2005-2016 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2016 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import codecs
 import collections
+import contextlib
 import difflib
 import errno
 import glob
@@ -69,6 +70,7 @@ from . import (
     pycompat,
     registrar,
     repair,
+    repoview,
     revlog,
     revset,
     revsetlang,
@@ -96,6 +98,7 @@ from .utils import (
     dateutil,
     procutil,
     stringutil,
+    urlutil,
 )
 
 from .revlogutils import (
@@ -345,7 +348,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
         def showchunks(named):
             ui.write(b"\n%s%s\n" % (indent_string, named))
             for deltadata in gen.deltaiter():
-                node, p1, p2, cs, deltabase, delta, flags = deltadata
+                node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
                 ui.write(
                     b"%s%s %s %s %s %s %d\n"
                     % (
@@ -371,7 +374,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
             raise error.Abort(_(b'use debugbundle2 for this file'))
         gen.changelogheader()
         for deltadata in gen.deltaiter():
-            node, p1, p2, cs, deltabase, delta, flags = deltadata
+            node, p1, p2, cs, deltabase, delta, flags, sidedata = deltadata
             ui.write(b"%s%s\n" % (indent_string, hex(node)))
 
 
@@ -470,27 +473,47 @@ def debugcapabilities(ui, path, **opts):
     """lists the capabilities of a remote peer"""
     opts = pycompat.byteskwargs(opts)
     peer = hg.peer(ui, opts, path)
-    caps = peer.capabilities()
-    ui.writenoi18n(b'Main capabilities:\n')
-    for c in sorted(caps):
-        ui.write(b'  %s\n' % c)
-    b2caps = bundle2.bundle2caps(peer)
-    if b2caps:
-        ui.writenoi18n(b'Bundle2 capabilities:\n')
-        for key, values in sorted(pycompat.iteritems(b2caps)):
-            ui.write(b'  %s\n' % key)
-            for v in values:
-                ui.write(b'    %s\n' % v)
+    try:
+        caps = peer.capabilities()
+        ui.writenoi18n(b'Main capabilities:\n')
+        for c in sorted(caps):
+            ui.write(b'  %s\n' % c)
+        b2caps = bundle2.bundle2caps(peer)
+        if b2caps:
+            ui.writenoi18n(b'Bundle2 capabilities:\n')
+            for key, values in sorted(pycompat.iteritems(b2caps)):
+                ui.write(b'  %s\n' % key)
+                for v in values:
+                    ui.write(b'    %s\n' % v)
+    finally:
+        peer.close()
 
 
-@command(b'debugchangedfiles', [], b'REV')
-def debugchangedfiles(ui, repo, rev):
+@command(
+    b'debugchangedfiles',
+    [
+        (
+            b'',
+            b'compute',
+            False,
+            b"compute information instead of reading it from storage",
+        ),
+    ],
+    b'REV',
+)
+def debugchangedfiles(ui, repo, rev, **opts):
     """list the stored files changes for a revision"""
     ctx = scmutil.revsingle(repo, rev, None)
-    sd = repo.changelog.sidedata(ctx.rev())
-    files_block = sd.get(sidedata.SD_FILES)
-    if files_block is not None:
-        files = metadata.decode_files_sidedata(sd)
+    files = None
+
+    if opts['compute']:
+        files = metadata.compute_all_files_changes(ctx)
+    else:
+        sd = repo.changelog.sidedata(ctx.rev())
+        files_block = sd.get(sidedata.SD_FILES)
+        if files_block is not None:
+            files = metadata.decode_files_sidedata(sd)
+    if files is not None:
         for f in sorted(files.touched):
             if f in files.added:
                 action = b"added"
@@ -964,19 +987,110 @@ def debugstate(ui, repo, **opts):
         ),
         (b'', b'rev', [], b'restrict discovery to this set of revs'),
         (b'', b'seed', b'12323', b'specify the random seed use for discovery'),
+        (
+            b'',
+            b'local-as-revs',
+            b"",
+            b'treat local has having these revisions only',
+        ),
+        (
+            b'',
+            b'remote-as-revs',
+            b"",
+            b'use local as remote, with only these these revisions',
+        ),
     ]
-    + cmdutil.remoteopts,
+    + cmdutil.remoteopts
+    + cmdutil.formatteropts,
     _(b'[--rev REV] [OTHER]'),
 )
 def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
-    """runs the changeset discovery protocol in isolation"""
+    """runs the changeset discovery protocol in isolation
+
+    The local peer can be "replaced" by a subset of the local repository by
+    using the `--local-as-revs` flag. Int he same way, usual `remote` peer can
+    be "replaced" by a subset of the local repository using the
+    `--local-as-revs` flag. This is useful to efficiently debug pathological
+    discovery situation.
+
+    The following developer oriented config are relevant for people playing with this command:
+
+    * devel.discovery.exchange-heads=True
+
+      If False, the discovery will not start with
+      remote head fetching and local head querying.
+
+    * devel.discovery.grow-sample=True
+
+      If False, the sample size used in set discovery will not be increased
+      through the process
+
+    * devel.discovery.grow-sample.dynamic=True
+
+      When discovery.grow-sample.dynamic is True, the default, the sample size is
+      adapted to the shape of the undecided set (it is set to the max of:
+      <target-size>, len(roots(undecided)), len(heads(undecided)
+
+    * devel.discovery.grow-sample.rate=1.05
+
+      the rate at which the sample grow
+
+    * devel.discovery.randomize=True
+
+      If andom sampling during discovery are deterministic. It is meant for
+      integration tests.
+
+    * devel.discovery.sample-size=200
+
+      Control the initial size of the discovery sample
+
+    * devel.discovery.sample-size.initial=100
+
+      Control the initial size of the discovery for initial change
+    """
     opts = pycompat.byteskwargs(opts)
-    remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
-    remote = hg.peer(repo, opts, remoteurl)
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(remoteurl))
+    unfi = repo.unfiltered()
+
+    # setup potential extra filtering
+    local_revs = opts[b"local_as_revs"]
+    remote_revs = opts[b"remote_as_revs"]
 
     # make sure tests are repeatable
     random.seed(int(opts[b'seed']))
+
+    if not remote_revs:
+
+        remoteurl, branches = urlutil.get_unique_pull_path(
+            b'debugdiscovery', repo, ui, remoteurl
+        )
+        remote = hg.peer(repo, opts, remoteurl)
+        ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
+    else:
+        branches = (None, [])
+        remote_filtered_revs = scmutil.revrange(
+            unfi, [b"not (::(%s))" % remote_revs]
+        )
+        remote_filtered_revs = frozenset(remote_filtered_revs)
+
+        def remote_func(x):
+            return remote_filtered_revs
+
+        repoview.filtertable[b'debug-discovery-remote-filter'] = remote_func
+
+        remote = repo.peer()
+        remote._repo = remote._repo.filtered(b'debug-discovery-remote-filter')
+
+    if local_revs:
+        local_filtered_revs = scmutil.revrange(
+            unfi, [b"not (::(%s))" % local_revs]
+        )
+        local_filtered_revs = frozenset(local_filtered_revs)
+
+        def local_func(x):
+            return local_filtered_revs
+
+        repoview.filtertable[b'debug-discovery-local-filter'] = local_func
+        repo = repo.filtered(b'debug-discovery-local-filter')
 
     data = {}
     if opts.get(b'old'):
@@ -1014,8 +1128,21 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
 
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts[b'rev']
-    with util.timedcm('debug-discovery') as t:
-        common, hds = doit(localrevs, remoterevs)
+
+    fm = ui.formatter(b'debugdiscovery', opts)
+    if fm.strict_format:
+
+        @contextlib.contextmanager
+        def may_capture_output():
+            ui.pushbuffer()
+            yield
+            data[b'output'] = ui.popbuffer()
+
+    else:
+        may_capture_output = util.nullcontextmanager
+    with may_capture_output():
+        with util.timedcm('debug-discovery') as t:
+            common, hds = doit(localrevs, remoterevs)
 
     # compute all statistics
     heads_common = set(common)
@@ -1066,50 +1193,41 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     data[b'nb-ini_und-common'] = len(common_initial_undecided)
     data[b'nb-ini_und-missing'] = len(missing_initial_undecided)
 
+    fm.startitem()
+    fm.data(**pycompat.strkwargs(data))
     # display discovery summary
-    ui.writenoi18n(b"elapsed time:  %(elapsed)f seconds\n" % data)
-    ui.writenoi18n(b"round-trips:           %(total-roundtrips)9d\n" % data)
-    ui.writenoi18n(b"heads summary:\n")
-    ui.writenoi18n(b"  total common heads:  %(nb-common-heads)9d\n" % data)
-    ui.writenoi18n(
-        b"    also local heads:  %(nb-common-heads-local)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    also remote heads: %(nb-common-heads-remote)9d\n" % data
-    )
-    ui.writenoi18n(b"    both:              %(nb-common-heads-both)9d\n" % data)
-    ui.writenoi18n(b"  local heads:         %(nb-head-local)9d\n" % data)
-    ui.writenoi18n(
-        b"    common:            %(nb-common-heads-local)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    missing:           %(nb-head-local-missing)9d\n" % data
-    )
-    ui.writenoi18n(b"  remote heads:        %(nb-head-remote)9d\n" % data)
-    ui.writenoi18n(
-        b"    common:            %(nb-common-heads-remote)9d\n" % data
-    )
-    ui.writenoi18n(
-        b"    unknown:           %(nb-head-remote-unknown)9d\n" % data
-    )
-    ui.writenoi18n(b"local changesets:      %(nb-revs)9d\n" % data)
-    ui.writenoi18n(b"  common:              %(nb-revs-common)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-common-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-common-roots)9d\n" % data)
-    ui.writenoi18n(b"  missing:             %(nb-revs-missing)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-missing-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-missing-roots)9d\n" % data)
-    ui.writenoi18n(b"  first undecided set: %(nb-ini_und)9d\n" % data)
-    ui.writenoi18n(b"    heads:             %(nb-ini_und-heads)9d\n" % data)
-    ui.writenoi18n(b"    roots:             %(nb-ini_und-roots)9d\n" % data)
-    ui.writenoi18n(b"    common:            %(nb-ini_und-common)9d\n" % data)
-    ui.writenoi18n(b"    missing:           %(nb-ini_und-missing)9d\n" % data)
+    fm.plain(b"elapsed time:  %(elapsed)f seconds\n" % data)
+    fm.plain(b"round-trips:           %(total-roundtrips)9d\n" % data)
+    fm.plain(b"heads summary:\n")
+    fm.plain(b"  total common heads:  %(nb-common-heads)9d\n" % data)
+    fm.plain(b"    also local heads:  %(nb-common-heads-local)9d\n" % data)
+    fm.plain(b"    also remote heads: %(nb-common-heads-remote)9d\n" % data)
+    fm.plain(b"    both:              %(nb-common-heads-both)9d\n" % data)
+    fm.plain(b"  local heads:         %(nb-head-local)9d\n" % data)
+    fm.plain(b"    common:            %(nb-common-heads-local)9d\n" % data)
+    fm.plain(b"    missing:           %(nb-head-local-missing)9d\n" % data)
+    fm.plain(b"  remote heads:        %(nb-head-remote)9d\n" % data)
+    fm.plain(b"    common:            %(nb-common-heads-remote)9d\n" % data)
+    fm.plain(b"    unknown:           %(nb-head-remote-unknown)9d\n" % data)
+    fm.plain(b"local changesets:      %(nb-revs)9d\n" % data)
+    fm.plain(b"  common:              %(nb-revs-common)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-common-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-common-roots)9d\n" % data)
+    fm.plain(b"  missing:             %(nb-revs-missing)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-missing-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-missing-roots)9d\n" % data)
+    fm.plain(b"  first undecided set: %(nb-ini_und)9d\n" % data)
+    fm.plain(b"    heads:             %(nb-ini_und-heads)9d\n" % data)
+    fm.plain(b"    roots:             %(nb-ini_und-roots)9d\n" % data)
+    fm.plain(b"    common:            %(nb-ini_und-common)9d\n" % data)
+    fm.plain(b"    missing:           %(nb-ini_und-missing)9d\n" % data)
 
     if ui.verbose:
-        ui.writenoi18n(
+        fm.plain(
             b"common heads: %s\n"
             % b" ".join(sorted(short(n) for n in heads_common))
         )
+    fm.end()
 
 
 _chunksize = 4 << 10
@@ -2214,9 +2332,9 @@ def debugnamecomplete(ui, repo, *args):
             b'',
             b'dump-new',
             False,
-            _(b'write a (new) persistent binary nodemap on stdin'),
+            _(b'write a (new) persistent binary nodemap on stdout'),
         ),
-        (b'', b'dump-disk', False, _(b'dump on-disk data on stdin')),
+        (b'', b'dump-disk', False, _(b'dump on-disk data on stdout')),
         (
             b'',
             b'check',
@@ -2546,12 +2664,17 @@ def debugpeer(ui, path):
     with ui.configoverride(overrides):
         peer = hg.peer(ui, {}, path)
 
-        local = peer.local() is not None
-        canpush = peer.canpush()
+        try:
+            local = peer.local() is not None
+            canpush = peer.canpush()
 
-        ui.write(_(b'url: %s\n') % peer.url())
-        ui.write(_(b'local: %s\n') % (_(b'yes') if local else _(b'no')))
-        ui.write(_(b'pushable: %s\n') % (_(b'yes') if canpush else _(b'no')))
+            ui.write(_(b'url: %s\n') % peer.url())
+            ui.write(_(b'local: %s\n') % (_(b'yes') if local else _(b'no')))
+            ui.write(
+                _(b'pushable: %s\n') % (_(b'yes') if canpush else _(b'no'))
+            )
+        finally:
+            peer.close()
 
 
 @command(
@@ -2654,26 +2777,30 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     """
 
     target = hg.peer(ui, {}, repopath)
-    if keyinfo:
-        key, old, new = keyinfo
-        with target.commandexecutor() as e:
-            r = e.callcommand(
-                b'pushkey',
-                {
-                    b'namespace': namespace,
-                    b'key': key,
-                    b'old': old,
-                    b'new': new,
-                },
-            ).result()
+    try:
+        if keyinfo:
+            key, old, new = keyinfo
+            with target.commandexecutor() as e:
+                r = e.callcommand(
+                    b'pushkey',
+                    {
+                        b'namespace': namespace,
+                        b'key': key,
+                        b'old': old,
+                        b'new': new,
+                    },
+                ).result()
 
-        ui.status(pycompat.bytestr(r) + b'\n')
-        return not r
-    else:
-        for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
-            ui.write(
-                b"%s\t%s\n" % (stringutil.escapestr(k), stringutil.escapestr(v))
-            )
+            ui.status(pycompat.bytestr(r) + b'\n')
+            return not r
+        else:
+            for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
+                ui.write(
+                    b"%s\t%s\n"
+                    % (stringutil.escapestr(k), stringutil.escapestr(v))
+                )
+    finally:
+        target.close()
 
 
 @command(b'debugpvec', [], _(b'A B'))
@@ -3527,8 +3654,10 @@ def debugssl(ui, repo, source=None, **opts):
             )
         source = b"default"
 
-    source, branches = hg.parseurl(ui.expandpath(source))
-    url = util.url(source)
+    source, branches = urlutil.get_unique_pull_path(
+        b'debugssl', repo, ui, source
+    )
+    url = urlutil.url(source)
 
     defaultport = {b'https': 443, b'ssh': 22}
     if url.scheme in defaultport:
@@ -3636,8 +3765,14 @@ def debugbackupbundle(ui, repo, *pats, **opts):
 
     for backup in backups:
         # Much of this is copied from the hg incoming logic
-        source = ui.expandpath(os.path.relpath(backup, encoding.getcwd()))
-        source, branches = hg.parseurl(source, opts.get(b"branch"))
+        source = os.path.relpath(backup, encoding.getcwd())
+        source, branches = urlutil.get_unique_pull_path(
+            b'debugbackupbundle',
+            repo,
+            ui,
+            source,
+            default_branches=opts.get(b'branch'),
+        )
         try:
             other = hg.peer(repo, opts, source)
         except error.LookupError as ex:
@@ -3719,6 +3854,23 @@ def debugsub(ui, repo, rev=None):
         ui.writenoi18n(b' revision %s\n' % v[1])
 
 
+@command(b'debugshell', optionalrepo=True)
+def debugshell(ui, repo):
+    """run an interactive Python interpreter
+
+    The local namespace is provided with a reference to the ui and
+    the repo instance (if available).
+    """
+    import code
+
+    imported_objects = {
+        'ui': ui,
+        'repo': repo,
+    }
+
+    code.interact(local=imported_objects)
+
+
 @command(
     b'debugsuccessorssets',
     [(b'', b'closest', False, _(b'return closest successors sets only'))],
@@ -3779,10 +3931,19 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
 def debugtagscache(ui, repo):
     """display the contents of .hg/cache/hgtagsfnodes1"""
     cache = tagsmod.hgtagsfnodescache(repo.unfiltered())
+    flog = repo.file(b'.hgtags')
     for r in repo:
         node = repo[r].node()
         tagsnode = cache.getfnode(node, computemissing=False)
-        tagsnodedisplay = hex(tagsnode) if tagsnode else b'missing/invalid'
+        if tagsnode:
+            tagsnodedisplay = hex(tagsnode)
+            if not flog.hasnode(tagsnode):
+                tagsnodedisplay += b' (unknown node)'
+        elif tagsnode is None:
+            tagsnodedisplay = b'missing'
+        else:
+            tagsnodedisplay = b'invalid'
+
         ui.write(b'%d %s %s\n' % (r, hex(node), tagsnodedisplay))
 
 
@@ -4000,19 +4161,22 @@ def debugwhyunstable(ui, repo, rev):
 def debugwireargs(ui, repopath, *vals, **opts):
     opts = pycompat.byteskwargs(opts)
     repo = hg.peer(ui, opts, repopath)
-    for opt in cmdutil.remoteopts:
-        del opts[opt[1]]
-    args = {}
-    for k, v in pycompat.iteritems(opts):
-        if v:
-            args[k] = v
-    args = pycompat.strkwargs(args)
-    # run twice to check that we don't mess up the stream for the next command
-    res1 = repo.debugwireargs(*vals, **args)
-    res2 = repo.debugwireargs(*vals, **args)
-    ui.write(b"%s\n" % res1)
-    if res1 != res2:
-        ui.warn(b"%s\n" % res2)
+    try:
+        for opt in cmdutil.remoteopts:
+            del opts[opt[1]]
+        args = {}
+        for k, v in pycompat.iteritems(opts):
+            if v:
+                args[k] = v
+        args = pycompat.strkwargs(args)
+        # run twice to check that we don't mess up the stream for the next command
+        res1 = repo.debugwireargs(*vals, **args)
+        res2 = repo.debugwireargs(*vals, **args)
+        ui.write(b"%s\n" % res1)
+        if res1 != res2:
+            ui.warn(b"%s\n" % res2)
+    finally:
+        repo.close()
 
 
 def _parsewirelangblocks(fh):
@@ -4372,7 +4536,7 @@ def debugwireproto(ui, repo, path=None, **opts):
         # We bypass hg.peer() so we can proxy the sockets.
         # TODO consider not doing this because we skip
         # ``hg.wirepeersetupfuncs`` and potentially other useful functionality.
-        u = util.url(path)
+        u = urlutil.url(path)
         if u.scheme != b'http':
             raise error.Abort(_(b'only http:// paths are currently supported'))
 

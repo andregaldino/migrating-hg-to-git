@@ -1,6 +1,6 @@
 # dispatch.py - command dispatching for mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -50,6 +50,7 @@ from . import (
 from .utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -990,7 +991,7 @@ def _getlocal(ui, rpath, wd=None):
             lui.readconfig(os.path.join(path, b".hg", b"hgrc-not-shared"), path)
 
     if rpath:
-        path = lui.expandpath(rpath)
+        path = urlutil.get_clone_path(lui, rpath)[0]
         lui = ui.copy()
         if rcutil.use_repo_hgrc():
             _readsharedsourceconfig(lui, path)

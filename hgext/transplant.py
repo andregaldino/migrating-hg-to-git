@@ -47,6 +47,7 @@ from mercurial import (
 from mercurial.utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 
@@ -818,7 +819,8 @@ def _dotransplant(ui, repo, *revs, **opts):
 
     sourcerepo = opts.get(b'source')
     if sourcerepo:
-        peer = hg.peer(repo, opts, ui.expandpath(sourcerepo))
+        u = urlutil.get_unique_pull_path(b'transplant', repo, ui, sourcerepo)[0]
+        peer = hg.peer(repo, opts, u)
         heads = pycompat.maplist(peer.lookup, opts.get(b'branch', ()))
         target = set(heads)
         for r in revs:

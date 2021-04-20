@@ -1,7 +1,7 @@
 # coding: utf8
 # copies.py - copy detection for Mercurial
 #
-# Copyright 2008 Matt Mackall <mpm@selenic.com>
+# Copyright 2008 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -59,14 +59,13 @@ def _filter(src, dst, t):
     # Cases 1, 3, and 5 are then removed by _filter().
 
     for k, v in list(t.items()):
-        # remove copies from files that didn't exist
-        if v not in src:
+        if k == v:  # case 3
             del t[k]
-        # remove criss-crossed copies
-        elif k in src and v in dst:
+        elif v not in src:  # case 5
+            # remove copies from files that didn't exist
             del t[k]
-        # remove copies to files that were then removed
-        elif k not in dst:
+        elif k not in dst:  # case 1
+            # remove copies to files that were then removed
             del t[k]
 
 
@@ -150,15 +149,23 @@ def _committedforwardcopies(a, b, base, match):
     # optimization, since the ctx.files() for a merge commit is not correct for
     # this comparison.
     forwardmissingmatch = match
-    if b.p1() == a and b.p2().node() == nullid:
+    if b.p1() == a and b.p2().rev() == nullrev:
         filesmatcher = matchmod.exact(b.files())
         forwardmissingmatch = matchmod.intersectmatchers(match, filesmatcher)
-    missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
+    if repo.ui.configbool(b'devel', b'copy-tracing.trace-all-files'):
+        missing = list(b.walk(match))
+        # _computeforwardmissing(a, b, match=forwardmissingmatch)
+        if debug:
+            dbg(b'debug.copies:      searching all files: %d\n' % len(missing))
+    else:
+        missing = _computeforwardmissing(a, b, match=forwardmissingmatch)
+        if debug:
+            dbg(
+                b'debug.copies:      missing files to search: %d\n'
+                % len(missing)
+            )
 
     ancestrycontext = a._repo.changelog.ancestors([b.rev()], inclusive=True)
-
-    if debug:
-        dbg(b'debug.copies:      missing files to search: %d\n' % len(missing))
 
     for f in sorted(missing):
         if debug:
@@ -267,6 +274,7 @@ def _changesetforwardcopies(a, b, match):
     revs = cl.findmissingrevs(common=[a.rev()], heads=[b.rev()])
     roots = set()
     has_graph_roots = False
+    multi_thread = repo.ui.configbool(b'devel', b'copy-tracing.multi-thread')
 
     # iterate over `only(B, A)`
     for r in revs:
@@ -314,7 +322,13 @@ def _changesetforwardcopies(a, b, match):
                     children_count[p] += 1
         revinfo = _revinfo_getter(repo, match)
         return _combine_changeset_copies(
-            revs, children_count, b.rev(), revinfo, match, isancestor
+            revs,
+            children_count,
+            b.rev(),
+            revinfo,
+            match,
+            isancestor,
+            multi_thread,
         )
     else:
         # When not using side-data, we will process the edges "from" the parent.
@@ -339,7 +353,7 @@ def _changesetforwardcopies(a, b, match):
 
 
 def _combine_changeset_copies(
-    revs, children_count, targetrev, revinfo, match, isancestor
+    revs, children_count, targetrev, revinfo, match, isancestor, multi_thread
 ):
     """combine the copies information for each item of iterrevs
 
@@ -356,7 +370,7 @@ def _combine_changeset_copies(
 
     if rustmod is not None:
         final_copies = rustmod.combine_changeset_copies(
-            list(revs), children_count, targetrev, revinfo, isancestor
+            list(revs), children_count, targetrev, revinfo, multi_thread
         )
     else:
         isancestor = cached_is_ancestor(isancestor)
@@ -427,7 +441,11 @@ def _combine_changeset_copies(
                     # potential filelog related behavior.
                     assert parent == 2
                     current_copies = _merge_copies_dict(
-                        newcopies, current_copies, isancestor, changes
+                        newcopies,
+                        current_copies,
+                        isancestor,
+                        changes,
+                        current_rev,
                     )
             all_copies[current_rev] = current_copies
 
@@ -449,7 +467,7 @@ PICK_MAJOR = 1
 PICK_EITHER = 2
 
 
-def _merge_copies_dict(minor, major, isancestor, changes):
+def _merge_copies_dict(minor, major, isancestor, changes, current_merge):
     """merge two copies-mapping together, minor and major
 
     In case of conflict, value from "major" will be picked.
@@ -467,39 +485,75 @@ def _merge_copies_dict(minor, major, isancestor, changes):
         if other is None:
             minor[dest] = value
         else:
-            pick = _compare_values(changes, isancestor, dest, other, value)
-            if pick == PICK_MAJOR:
+            pick, overwrite = _compare_values(
+                changes, isancestor, dest, other, value
+            )
+            if overwrite:
+                if pick == PICK_MAJOR:
+                    minor[dest] = (current_merge, value[1])
+                else:
+                    minor[dest] = (current_merge, other[1])
+            elif pick == PICK_MAJOR:
                 minor[dest] = value
     return minor
 
 
 def _compare_values(changes, isancestor, dest, minor, major):
-    """compare two value within a _merge_copies_dict loop iteration"""
+    """compare two value within a _merge_copies_dict loop iteration
+
+    return (pick, overwrite).
+
+    - pick is one of PICK_MINOR, PICK_MAJOR or PICK_EITHER
+    - overwrite is True if pick is a return of an ambiguity that needs resolution.
+    """
     major_tt, major_value = major
     minor_tt, minor_value = minor
 
-    # evacuate some simple case first:
     if major_tt == minor_tt:
         # if it comes from the same revision it must be the same value
         assert major_value == minor_value
-        return PICK_EITHER
-    elif major[1] == minor[1]:
-        return PICK_EITHER
-
-    # actual merging needed: content from "major" wins, unless it is older than
-    # the branch point or there is a merge
-    elif changes is not None and major[1] is None and dest in changes.salvaged:
-        return PICK_MINOR
-    elif changes is not None and minor[1] is None and dest in changes.salvaged:
-        return PICK_MAJOR
-    elif changes is not None and dest in changes.merged:
-        return PICK_MAJOR
-    elif not isancestor(major_tt, minor_tt):
-        if major[1] is not None:
-            return PICK_MAJOR
-        elif isancestor(minor_tt, major_tt):
-            return PICK_MAJOR
-    return PICK_MINOR
+        return PICK_EITHER, False
+    elif (
+        changes is not None
+        and minor_value is not None
+        and major_value is None
+        and dest in changes.salvaged
+    ):
+        # In this case, a deletion was reverted, the "alive" value overwrite
+        # the deleted one.
+        return PICK_MINOR, True
+    elif (
+        changes is not None
+        and major_value is not None
+        and minor_value is None
+        and dest in changes.salvaged
+    ):
+        # In this case, a deletion was reverted, the "alive" value overwrite
+        # the deleted one.
+        return PICK_MAJOR, True
+    elif isancestor(minor_tt, major_tt):
+        if changes is not None and dest in changes.merged:
+            # change to dest happened on the branch without copy-source change,
+            # so both source are valid and "major" wins.
+            return PICK_MAJOR, True
+        else:
+            return PICK_MAJOR, False
+    elif isancestor(major_tt, minor_tt):
+        if changes is not None and dest in changes.merged:
+            # change to dest happened on the branch without copy-source change,
+            # so both source are valid and "major" wins.
+            return PICK_MAJOR, True
+        else:
+            return PICK_MINOR, False
+    elif minor_value is None:
+        # in case of conflict, the "alive" side wins.
+        return PICK_MAJOR, True
+    elif major_value is None:
+        # in case of conflict, the "alive" side wins.
+        return PICK_MINOR, True
+    else:
+        # in case of conflict where both side are alive, major wins.
+        return PICK_MAJOR, True
 
 
 def _revinfo_getter_extra(repo):
@@ -650,22 +704,28 @@ def _forwardcopies(a, b, base=None, match=None):
 
 
 def _backwardrenames(a, b, match):
+    """find renames from a to b"""
     if a._repo.ui.config(b'experimental', b'copytrace') == b'off':
         return {}
 
-    # Even though we're not taking copies into account, 1:n rename situations
-    # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
-    # arbitrarily pick one of the renames.
     # We don't want to pass in "match" here, since that would filter
     # the destination by it. Since we're reversing the copies, we want
     # to filter the source instead.
-    f = _forwardcopies(b, a)
+    copies = _forwardcopies(b, a)
+    return _reverse_renames(copies, a, match)
+
+
+def _reverse_renames(copies, dst, match):
+    """given copies to context 'dst', finds renames from that context"""
+    # Even though we're not taking copies into account, 1:n rename situations
+    # can still exist (e.g. hg cp a b; hg mv a c). In those cases we
+    # arbitrarily pick one of the renames.
     r = {}
-    for k, v in sorted(pycompat.iteritems(f)):
+    for k, v in sorted(pycompat.iteritems(copies)):
         if match and not match(v):
             continue
         # remove copies
-        if v in a:
+        if v in dst:
             continue
         r[v] = k
     return r
@@ -701,9 +761,17 @@ def pathcopies(x, y, match=None):
         base = None
         if a.rev() != nullrev:
             base = x
+        x_copies = _forwardcopies(a, x)
+        y_copies = _forwardcopies(a, y, base, match=match)
+        same_keys = set(x_copies) & set(y_copies)
+        for k in same_keys:
+            if x_copies.get(k) == y_copies.get(k):
+                del x_copies[k]
+                del y_copies[k]
+        x_backward_renames = _reverse_renames(x_copies, x, match)
         copies = _chain(
-            _backwardrenames(x, a, match=match),
-            _forwardcopies(a, y, base, match=match),
+            x_backward_renames,
+            y_copies,
         )
     _filter(x, y, copies)
     return copies
@@ -1042,11 +1110,17 @@ def _dir_renames(repo, ctx, copy, fullcopy, addedfilesfn):
             b"   discovered dir src: '%s' -> dst: '%s'\n" % (d, dirmove[d])
         )
 
+    # Sort the directories in reverse order, so we find children first
+    # For example, if dir1/ was renamed to dir2/, and dir1/subdir1/
+    # was renamed to dir2/subdir2/, we want to move dir1/subdir1/file
+    # to dir2/subdir2/file (not dir2/subdir1/file)
+    dirmove_children_first = sorted(dirmove, reverse=True)
+
     movewithdir = {}
     # check unaccounted nonoverlapping files against directory moves
     for f in addedfilesfn():
         if f not in fullcopy:
-            for d in dirmove:
+            for d in dirmove_children_first:
                 if f.startswith(d):
                     # new file added in a directory that was moved, move it
                     df = dirmove[d] + f[len(d) :]
@@ -1220,6 +1294,15 @@ def graftcopies(wctx, ctx, base):
     by merge.update().
     """
     new_copies = pathcopies(base, ctx)
-    _filter(wctx.p1(), wctx, new_copies)
+    parent = wctx.p1()
+    _filter(parent, wctx, new_copies)
+    # Extra filtering to drop copy information for files that existed before
+    # the graft. This is to handle the case of grafting a rename onto a commit
+    # that already has the rename. Otherwise the presence of copy information
+    # would result in the creation of an empty commit where we would prefer to
+    # not create one.
+    for dest, __ in list(new_copies.items()):
+        if dest in parent:
+            del new_copies[dest]
     for dst, src in pycompat.iteritems(new_copies):
         wctx[dst].markcopied(src)

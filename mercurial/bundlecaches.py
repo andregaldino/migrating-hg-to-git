@@ -9,6 +9,7 @@ from .thirdparty import attr
 
 from . import (
     error,
+    requirements as requirementsmod,
     sslutil,
     util,
 )
@@ -164,7 +165,7 @@ def parsebundlespec(repo, spec, strict=True):
             compression = spec
             version = b'v1'
             # Generaldelta repos require v2.
-            if b'generaldelta' in repo.requirements:
+            if requirementsmod.GENERALDELTA_REQUIREMENT in repo.requirements:
                 version = b'v2'
             # Modern compression engines require v2.
             if compression not in _bundlespecv1compengines:

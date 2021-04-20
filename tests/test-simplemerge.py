@@ -141,8 +141,6 @@ class TestMerge3(TestCase):
         """No conflicts because nothing changed"""
         m3 = Merge3([b'aaa', b'bbb'], [b'aaa', b'bbb'], [b'aaa', b'bbb'])
 
-        self.assertEqual(m3.find_unconflicted(), [(0, 2)])
-
         self.assertEqual(
             list(m3.find_sync_regions()),
             [(0, 2, 0, 2, 0, 2), (2, 2, 2, 2, 2, 2)],
@@ -188,8 +186,6 @@ class TestMerge3(TestCase):
         m3 = Merge3(
             [b'aaa', b'bbb'], [b'aaa', b'111', b'bbb'], [b'aaa', b'bbb']
         )
-
-        self.assertEqual(m3.find_unconflicted(), [(0, 1), (1, 2)])
 
         self.assertEqual(
             list(m3.find_sync_regions()),
@@ -271,8 +267,6 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'222\n', b'bbb\n'],
         )
 
-        self.assertEqual(m3.find_unconflicted(), [(0, 1), (1, 2)])
-
         self.assertEqual(
             list(m3.find_sync_regions()),
             [(0, 1, 0, 1, 0, 1), (1, 2, 2, 3, 2, 3), (2, 2, 3, 3, 3, 3)],
@@ -323,8 +317,6 @@ bbb
             [b'aaa', b'222', b'bbb'],
         )
 
-        self.assertEqual(m3.find_unconflicted(), [(0, 1), (2, 3)])
-
         self.assertEqual(
             list(m3.find_sync_regions()),
             [(0, 1, 0, 1, 0, 1), (2, 3, 2, 3, 2, 3), (3, 3, 3, 3, 3, 3)],
@@ -337,8 +329,6 @@ bbb
             [b'aaa', b'111', b'111', b'111', b'bbb'],
             [b'aaa', b'222', b'222', b'222', b'222', b'bbb'],
         )
-
-        self.assertEqual(m3.find_unconflicted(), [(0, 1), (3, 4)])
 
         self.assertEqual(
             list(m3.find_sync_regions()),

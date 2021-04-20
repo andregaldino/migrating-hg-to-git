@@ -570,9 +570,19 @@ coreconfigitem(
     default=0,
 )
 coreconfigitem(
+    b'convert',
+    b'svn.dangerous-set-commit-dates',
+    default=False,
+)
+coreconfigitem(
     b'debug',
     b'dirstate.delaywrite',
     default=0,
+)
+coreconfigitem(
+    b'debug',
+    b'revlog.verifyposition.changelog',
+    default=b'',
 )
 coreconfigitem(
     b'defaults',
@@ -608,6 +618,12 @@ coreconfigitem(
 coreconfigitem(
     b'devel',
     b'check-relroot',
+    default=False,
+)
+# Track copy information for all file, not just "added" one (very slow)
+coreconfigitem(
+    b'devel',
+    b'copy-tracing.trace-all-files',
     default=False,
 )
 coreconfigitem(
@@ -689,6 +705,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'devel',
+    b'copy-tracing.multi-thread',
+    default=True,
+)
+coreconfigitem(
+    b'devel',
     b'debug.extensions',
     default=False,
 )
@@ -716,6 +737,14 @@ coreconfigitem(
     b'discovery.grow-sample',
     default=True,
 )
+# When discovery.grow-sample.dynamic is True, the default, the sample size is
+# adapted to the shape of the undecided set (it is set to the max of:
+# <target-size>, len(roots(undecided)), len(heads(undecided)
+coreconfigitem(
+    b'devel',
+    b'discovery.grow-sample.dynamic',
+    default=True,
+)
 # discovery.grow-sample.rate control the rate at which the sample grow
 coreconfigitem(
     b'devel',
@@ -729,7 +758,25 @@ coreconfigitem(
     b'discovery.randomize',
     default=True,
 )
+# Control the initial size of the discovery sample
+coreconfigitem(
+    b'devel',
+    b'discovery.sample-size',
+    default=200,
+)
+# Control the initial size of the discovery for initial change
+coreconfigitem(
+    b'devel',
+    b'discovery.sample-size.initial',
+    default=100,
+)
 _registerdiffopts(section=b'diff')
+coreconfigitem(
+    b'diff',
+    b'merge',
+    default=False,
+    experimental=True,
+)
 coreconfigitem(
     b'email',
     b'bcc',
@@ -823,6 +870,31 @@ coreconfigitem(
 coreconfigitem(
     b'experimental',
     b'bundlecomplevel.zstd',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.bzip2',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.gzip',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.none',
+    default=None,
+)
+coreconfigitem(
+    b'experimental',
+    b'bundlecompthreads.zstd',
     default=None,
 )
 coreconfigitem(
@@ -1235,7 +1307,7 @@ coreconfigitem(
 coreconfigitem(
     b'format',
     b'revlog-compression',
-    default=lambda: [b'zlib'],
+    default=lambda: [b'zstd', b'zlib'],
     alias=[(b'experimental', b'format.compression')],
 )
 coreconfigitem(
@@ -1253,10 +1325,36 @@ coreconfigitem(
     b'usestore',
     default=True,
 )
+
+
+def _persistent_nodemap_default():
+    """compute `use-persistent-nodemap` default value
+
+    The feature is disabled unless a fast implementation is available.
+    """
+    from . import policy
+
+    return policy.importrust('revlog') is not None
+
+
 coreconfigitem(
     b'format',
     b'use-persistent-nodemap',
+    default=_persistent_nodemap_default,
+)
+# TODO needs to grow a docket file to at least store the last offset of the data
+# file when rewriting sidedata.
+# Will also need a way of dealing with garbage data if we allow rewriting
+# *existing* sidedata.
+# Exchange-wise, we will also need to do something more efficient than keeping
+# references to the affected revlogs, especially memory-wise when rewriting
+# sidedata.
+# Also... compress the sidedata? (this should be coming very soon)
+coreconfigitem(
+    b'format',
+    b'exp-revlogv2.2',
     default=False,
+    experimental=True,
 )
 coreconfigitem(
     b'format',

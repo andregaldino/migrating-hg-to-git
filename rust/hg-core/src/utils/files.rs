@@ -17,13 +17,13 @@ use crate::utils::{
 use lazy_static::lazy_static;
 use same_file::is_same_file;
 use std::borrow::{Cow, ToOwned};
+use std::ffi::OsStr;
 use std::fs::Metadata;
-use std::io::Read;
 use std::iter::FusedIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
+pub fn get_os_str_from_bytes(bytes: &[u8]) -> &OsStr {
     let os_str;
     #[cfg(unix)]
     {
@@ -33,16 +33,24 @@ pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
     // TODO Handle other platforms
     // TODO: convert from WTF8 to Windows MBCS (ANSI encoding).
     // Perhaps, the return type would have to be Result<PathBuf>.
+    os_str
+}
 
-    Path::new(os_str)
+pub fn get_path_from_bytes(bytes: &[u8]) -> &Path {
+    Path::new(get_os_str_from_bytes(bytes))
 }
 
 // TODO: need to convert from WTF8 to MBCS bytes on Windows.
 // that's why Vec<u8> is returned.
 #[cfg(unix)]
 pub fn get_bytes_from_path(path: impl AsRef<Path>) -> Vec<u8> {
+    get_bytes_from_os_str(path.as_ref())
+}
+
+#[cfg(unix)]
+pub fn get_bytes_from_os_str(str: impl AsRef<OsStr>) -> Vec<u8> {
     use std::os::unix::ffi::OsStrExt;
-    path.as_ref().as_os_str().as_bytes().to_vec()
+    str.as_ref().as_bytes().to_vec()
 }
 
 /// An iterator over repository path yielding itself and its ancestors.
@@ -191,6 +199,12 @@ impl HgMetadata {
             st_ctime: metadata.ctime(),
         }
     }
+
+    pub fn is_symlink(&self) -> bool {
+        // This is way too manual, but `HgMetadata` will go away in the
+        // near-future dirstate rewrite anyway.
+        self.st_mode & 0170000 == 0120000
+    }
 }
 
 /// Returns the canonical path of `name`, given `cwd` and `root`
@@ -276,7 +290,13 @@ pub fn relativize_path(path: &HgPath, cwd: impl AsRef<HgPath>) -> Cow<[u8]> {
     if cwd.as_ref().is_empty() {
         Cow::Borrowed(path.as_bytes())
     } else {
-        let mut res: Vec<u8> = Vec::new();
+        // This is not all accurate as to how large `res` will actually be, but
+        // profiling `rhg files` on a large-ish repo shows it’s better than
+        // starting from a zero-capacity `Vec` and letting `extend` reallocate
+        // repeatedly.
+        let guesstimate = path.as_bytes().len();
+
+        let mut res: Vec<u8> = Vec::with_capacity(guesstimate);
         let mut path_iter = path.as_bytes().split(|b| *b == b'/').peekable();
         let mut cwd_iter =
             cwd.as_ref().as_bytes().split(|b| *b == b'/').peekable();
@@ -307,17 +327,6 @@ pub fn relativize_path(path: &HgPath, cwd: impl AsRef<HgPath>) -> Cow<[u8]> {
         }
         Cow::Owned(res)
     }
-}
-
-/// Reads a file in one big chunk instead of doing multiple reads
-pub fn read_whole_file(filepath: &Path) -> std::io::Result<Vec<u8>> {
-    let mut file = std::fs::File::open(filepath)?;
-    let size = file.metadata()?.len();
-
-    let mut res = vec![0; size as usize];
-    file.read_exact(&mut res)?;
-
-    Ok(res)
 }
 
 #[cfg(test)]

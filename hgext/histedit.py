@@ -242,6 +242,7 @@ from mercurial import (
 from mercurial.utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 pickle = util.pickle
@@ -1040,11 +1041,12 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     Used by initialization code"""
     if opts is None:
         opts = {}
-    dest = ui.expandpath(remote or b'default-push', remote or b'default')
-    dest, branches = hg.parseurl(dest, None)[:2]
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
+    path = urlutil.get_unique_push_path(b'histedit', repo, ui, remote)
+    dest = path.pushloc or path.loc
 
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
+    ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
+
+    revs, checkout = hg.addbranchrevs(repo, repo, (path.branch, []), None)
     other = hg.peer(repo, opts, dest)
 
     if revs:
@@ -1581,10 +1583,19 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
     def layout(mode):
         maxy, maxx = stdscr.getmaxyx()
         helplen = len(helplines(mode))
+        mainlen = maxy - helplen - 12
+        if mainlen < 1:
+            raise error.Abort(
+                _(b"terminal dimensions %d by %d too small for curses histedit")
+                % (maxy, maxx),
+                hint=_(
+                    b"enlarge your terminal or use --config ui.interface=text"
+                ),
+            )
         return {
             b'commit': (12, maxx),
             b'help': (helplen, maxx),
-            b'main': (maxy - helplen - 12, maxx),
+            b'main': (mainlen, maxx),
         }
 
     def drawvertwin(size, y, x):
@@ -1614,63 +1625,60 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
     stdscr.clear()
     stdscr.refresh()
     while True:
-        try:
-            oldmode, _ = state[b'mode']
-            if oldmode == MODE_INIT:
-                changemode(state, MODE_RULES)
-            e = event(state, ch)
+        oldmode, unused = state[b'mode']
+        if oldmode == MODE_INIT:
+            changemode(state, MODE_RULES)
+        e = event(state, ch)
 
-            if e == E_QUIT:
-                return False
-            if e == E_HISTEDIT:
-                return state[b'rules']
+        if e == E_QUIT:
+            return False
+        if e == E_HISTEDIT:
+            return state[b'rules']
+        else:
+            if e == E_RESIZE:
+                size = screen_size()
+                if size != stdscr.getmaxyx():
+                    curses.resizeterm(*size)
+
+            curmode, unused = state[b'mode']
+            sizes = layout(curmode)
+            if curmode != oldmode:
+                state[b'page_height'] = sizes[b'main'][0]
+                # Adjust the view to fit the current screen size.
+                movecursor(state, state[b'pos'], state[b'pos'])
+
+            # Pack the windows against the top, each pane spread across the
+            # full width of the screen.
+            y, x = (0, 0)
+            helpwin, y, x = drawvertwin(sizes[b'help'], y, x)
+            mainwin, y, x = drawvertwin(sizes[b'main'], y, x)
+            commitwin, y, x = drawvertwin(sizes[b'commit'], y, x)
+
+            if e in (E_PAGEDOWN, E_PAGEUP, E_LINEDOWN, E_LINEUP):
+                if e == E_PAGEDOWN:
+                    changeview(state, +1, b'page')
+                elif e == E_PAGEUP:
+                    changeview(state, -1, b'page')
+                elif e == E_LINEDOWN:
+                    changeview(state, +1, b'line')
+                elif e == E_LINEUP:
+                    changeview(state, -1, b'line')
+
+            # start rendering
+            commitwin.erase()
+            helpwin.erase()
+            mainwin.erase()
+            if curmode == MODE_PATCH:
+                renderpatch(mainwin, state)
+            elif curmode == MODE_HELP:
+                renderstring(mainwin, state, __doc__.strip().splitlines())
             else:
-                if e == E_RESIZE:
-                    size = screen_size()
-                    if size != stdscr.getmaxyx():
-                        curses.resizeterm(*size)
-
-                curmode, _ = state[b'mode']
-                sizes = layout(curmode)
-                if curmode != oldmode:
-                    state[b'page_height'] = sizes[b'main'][0]
-                    # Adjust the view to fit the current screen size.
-                    movecursor(state, state[b'pos'], state[b'pos'])
-
-                # Pack the windows against the top, each pane spread across the
-                # full width of the screen.
-                y, x = (0, 0)
-                helpwin, y, x = drawvertwin(sizes[b'help'], y, x)
-                mainwin, y, x = drawvertwin(sizes[b'main'], y, x)
-                commitwin, y, x = drawvertwin(sizes[b'commit'], y, x)
-
-                if e in (E_PAGEDOWN, E_PAGEUP, E_LINEDOWN, E_LINEUP):
-                    if e == E_PAGEDOWN:
-                        changeview(state, +1, b'page')
-                    elif e == E_PAGEUP:
-                        changeview(state, -1, b'page')
-                    elif e == E_LINEDOWN:
-                        changeview(state, +1, b'line')
-                    elif e == E_LINEUP:
-                        changeview(state, -1, b'line')
-
-                # start rendering
-                commitwin.erase()
-                helpwin.erase()
-                mainwin.erase()
-                if curmode == MODE_PATCH:
-                    renderpatch(mainwin, state)
-                elif curmode == MODE_HELP:
-                    renderstring(mainwin, state, __doc__.strip().splitlines())
-                else:
-                    renderrules(mainwin, state)
-                    rendercommit(commitwin, state)
-                renderhelp(helpwin, state)
-                curses.doupdate()
-                # done rendering
-                ch = encoding.strtolocal(stdscr.getkey())
-        except curses.error:
-            pass
+                renderrules(mainwin, state)
+                rendercommit(commitwin, state)
+            renderhelp(helpwin, state)
+            curses.doupdate()
+            # done rendering
+            ch = encoding.strtolocal(stdscr.getkey())
 
 
 def _chistedit(ui, repo, freeargs, opts):

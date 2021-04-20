@@ -1,11 +1,16 @@
 # requirements.py - objects and functions related to repository requirements
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
 from __future__ import absolute_import
+
+GENERALDELTA_REQUIREMENT = b'generaldelta'
+DOTENCODE_REQUIREMENT = b'dotencode'
+STORE_REQUIREMENT = b'store'
+FNCACHE_REQUIREMENT = b'fncache'
 
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
@@ -21,9 +26,11 @@ INTERNAL_PHASE_REQUIREMENT = b'internal-phase'
 # Stores manifest in Tree structure
 TREEMANIFEST_REQUIREMENT = b'treemanifest'
 
+REVLOGV1_REQUIREMENT = b'revlogv1'
+
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
-REVLOGV2_REQUIREMENT = b'exp-revlogv2.1'
+REVLOGV2_REQUIREMENT = b'exp-revlogv2.2'
 
 # A repository with the sparserevlog feature will have delta chains that
 # can spread over a larger span. Sparse reading cuts these large spans into

@@ -266,14 +266,14 @@ F onto G - rebase onto a descendant:
 
   $ hg rebase -s 5 -d 6
   abort: source and destination form a cycle
-  [255]
+  [10]
 
 G onto B - merge revision with both parents not in ancestors of target:
 
   $ hg rebase -s 6 -d 1
   rebasing 6:eea13746799a "G"
   abort: cannot rebase 6:eea13746799a without moving at least one of its parents
-  [255]
+  [10]
   $ hg rebase --abort
   rebase aborted
 
@@ -325,9 +325,8 @@ Check rebasing public changeset
 
   $ hg pull --config phases.publish=True -q -r 6 . # update phase of 6
   $ hg rebase -d 0 -b 6
-  abort: cannot rebase public changesets
-  (see 'hg help phases' for details)
-  [10]
+  nothing to rebase
+  [1]
   $ hg rebase -d 5 -b 6
   abort: cannot rebase public changesets
   (see 'hg help phases' for details)

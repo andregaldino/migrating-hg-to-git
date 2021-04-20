@@ -46,12 +46,21 @@ class exthelper(object):
         # ext.py
         eh = exthelper.exthelper()
 
-        # As needed:
+        # As needed (failure to do this will mean your registration will not
+        # happen):
         cmdtable = eh.cmdtable
         configtable = eh.configtable
         filesetpredicate = eh.filesetpredicate
         revsetpredicate = eh.revsetpredicate
         templatekeyword = eh.templatekeyword
+
+        # As needed (failure to do this will mean your eh.wrap*-decorated
+        # functions will not wrap, and/or your eh.*setup-decorated functions
+        # will not execute):
+        uisetup = eh.finaluisetup
+        extsetup = eh.finalextsetup
+        reposetup = eh.finalreposetup
+        uipopulate = eh.finaluipopulate
 
         @eh.command(b'mynewcommand',
             [(b'r', b'rev', [], _(b'operate on these revisions'))],
@@ -155,7 +164,7 @@ class exthelper(object):
             c(ui)
 
     def finalextsetup(self, ui):
-        """Method to be used as a the extension extsetup
+        """Method to be used as the extension extsetup
 
         The following operations belong here:
 
@@ -201,6 +210,9 @@ class exthelper(object):
 
         example::
 
+            # Required, otherwise your uisetup function(s) will not execute.
+            uisetup = eh.finaluisetup
+
             @eh.uisetup
             def setupbabar(ui):
                 print('this is uisetup!')
@@ -212,6 +224,9 @@ class exthelper(object):
         """Decorated function will be executed during uipopulate
 
         example::
+
+            # Required, otherwise your uipopulate function(s) will not execute.
+            uipopulate = eh.finaluipopulate
 
             @eh.uipopulate
             def setupfoo(ui):
@@ -225,6 +240,9 @@ class exthelper(object):
 
         example::
 
+            # Required, otherwise your extsetup function(s) will not execute.
+            extsetup = eh.finalextsetup
+
             @eh.extsetup
             def setupcelestine(ui):
                 print('this is extsetup!')
@@ -236,6 +254,9 @@ class exthelper(object):
         """Decorated function will be executed during reposetup
 
         example::
+
+            # Required, otherwise your reposetup function(s) will not execute.
+            reposetup = eh.finalreposetup
 
             @eh.reposetup
             def setupzephir(ui, repo):
@@ -257,6 +278,11 @@ class exthelper(object):
         installed during `extsetup`.
 
         example::
+
+            # Required if `extension` is not provided
+            uisetup = eh.finaluisetup
+            # Required if `extension` is provided
+            extsetup = eh.finalextsetup
 
             @eh.wrapcommand(b'summary')
             def wrapsummary(orig, ui, repo, *args, **kwargs):
@@ -298,8 +324,11 @@ class exthelper(object):
 
         example::
 
-            @eh.function(discovery, b'checkheads')
-            def wrapfunction(orig, *args, **kwargs):
+            # Required, otherwise the function will not be wrapped
+            uisetup = eh.finaluisetup
+
+            @eh.wrapfunction(discovery, b'checkheads')
+            def wrapcheckheads(orig, *args, **kwargs):
                 ui.note(b'His head smashed in and his heart cut out')
                 return orig(*args, **kwargs)
         """

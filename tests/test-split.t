@@ -1046,3 +1046,101 @@ Test that color codes don't end up in the commit message template
   [ ui.warning|rollback completed]
   [ ui.error|abort: empty commit message]
   [10]
+
+Test that creating an empty split or "no-op"
+(identical to original) commit doesn't cause chaos
+--------------------------------------------------
+
+  $ hg init $TESTTMP/noop
+  $ cd $TESTTMP/noop
+  $ echo r0 > r0
+  $ hg ci -qAm r0
+  $ hg phase -p
+  $ echo foo > foo
+  $ hg ci -qAm foo
+  $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
+  @  draft 1:ae694b2901bb foo
+  |
+  o  public 0:222799e2f90b r0
+  
+  $ printf 'd\na\n' | HGEDITOR=cat hg split || true
+  diff --git a/foo b/foo
+  new file mode 100644
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] d
+  
+  no changes to record
+  diff --git a/foo b/foo
+  new file mode 100644
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  HG: Splitting ae694b2901bb. Write commit message for the first split changeset.
+  foo
+  
+  
+  HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  HG: Leave message empty to abort commit.
+  HG: --
+  HG: user: test
+  HG: branch 'default'
+  HG: added foo
+  warning: commit already existed in the repository!
+  $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
+  @  draft 1:ae694b2901bb foo
+  |
+  o  public 0:222799e2f90b r0
+  
+
+Now try the same thing but modifying the message so we don't trigger the
+identical changeset failures
+
+  $ hg init $TESTTMP/noop2
+  $ cd $TESTTMP/noop2
+  $ echo r0 > r0
+  $ hg ci -qAm r0
+  $ hg phase -p
+  $ echo foo > foo
+  $ hg ci -qAm foo
+  $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
+  @  draft 1:ae694b2901bb foo
+  |
+  o  public 0:222799e2f90b r0
+  
+  $ cat > $TESTTMP/messages <<EOF
+  > message1
+  > EOF
+  $ printf 'd\na\n' | HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py" hg split
+  diff --git a/foo b/foo
+  new file mode 100644
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] d
+  
+  no changes to record
+  diff --git a/foo b/foo
+  new file mode 100644
+  examine changes to 'foo'?
+  (enter ? for help) [Ynesfdaq?] a
+  
+  EDITOR: HG: Splitting ae694b2901bb. Write commit message for the first split changeset.
+  EDITOR: foo
+  EDITOR: 
+  EDITOR: 
+  EDITOR: HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+  EDITOR: HG: Leave message empty to abort commit.
+  EDITOR: HG: --
+  EDITOR: HG: user: test
+  EDITOR: HG: branch 'default'
+  EDITOR: HG: added foo
+  created new head
+  saved backup bundle to $TESTTMP/noop2/.hg/strip-backup/ae694b2901bb-28e0b457-split.hg (obsstore-off !)
+  $ hg log -G -T'{phase} {rev}:{node|short} {desc}'
+  @  draft 1:de675559d3f9 message1 (obsstore-off !)
+  @  draft 2:de675559d3f9 message1 (obsstore-on !)
+  |
+  o  public 0:222799e2f90b r0
+  
+#if obsstore-on
+  $ hg debugobsolete
+  ae694b2901bb8b0f8c4b5e075ddec0d63468d57a de675559d3f93ffc822c6eb7490e5c73033f17c7 0 * (glob)
+#endif

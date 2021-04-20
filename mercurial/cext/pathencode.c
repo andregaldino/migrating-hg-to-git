@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pythoncapi_compat.h"
 
 #include "util.h"
 
@@ -678,7 +679,7 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 	}
 
 	assert(PyBytes_Check(ret));
-	Py_SIZE(ret) = destlen;
+	Py_SET_SIZE(ret, destlen);
 
 	return ret;
 }

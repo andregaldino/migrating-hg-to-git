@@ -108,6 +108,7 @@ from mercurial import (
 from mercurial.utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 release = lockmod.release
@@ -2509,7 +2510,7 @@ class queue(object):
                     )
                 filename = normname(filename)
                 self.checkreservedname(filename)
-                if util.url(filename).islocal():
+                if urlutil.url(filename).islocal():
                     originpath = self.join(filename)
                     if not os.path.isfile(originpath):
                         raise error.Abort(
@@ -2862,11 +2863,12 @@ def clone(ui, source, dest=None, **opts):
     # main repo (destination and sources)
     if dest is None:
         dest = hg.defaultdest(source)
-    sr = hg.peer(ui, opts, ui.expandpath(source))
+    __, source_path, __ = urlutil.get_clone_path(ui, source)
+    sr = hg.peer(ui, opts, source_path)
 
     # patches repo (source only)
     if opts.get(b'patches'):
-        patchespath = ui.expandpath(opts.get(b'patches'))
+        __, patchespath, __ = urlutil.get_clone_path(ui, opts.get(b'patches'))
     else:
         patchespath = patchdir(sr)
     try:

@@ -1,6 +1,6 @@
 # merge.py - directory-level update/merge handling for Mercurial
 #
-# Copyright 2006, 2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2006, 2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -234,7 +234,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, mresult, mergeforce):
         else:
             warn(_(b"%s: untracked file differs\n") % f)
     if abortconflicts:
-        raise error.Abort(
+        raise error.StateError(
             _(
                 b"untracked files in working directory "
                 b"differ from files in requested revision"
@@ -342,7 +342,7 @@ def _checkcollision(repo, wmf, mresult):
     for f in pmmf:
         fold = util.normcase(f)
         if fold in foldmap:
-            raise error.Abort(
+            raise error.StateError(
                 _(b"case-folding collision between %s and %s")
                 % (f, foldmap[fold])
             )
@@ -353,7 +353,7 @@ def _checkcollision(repo, wmf, mresult):
     for fold, f in sorted(foldmap.items()):
         if fold.startswith(foldprefix) and not f.startswith(unfoldprefix):
             # the folded prefix matches but actual casing is different
-            raise error.Abort(
+            raise error.StateError(
                 _(b"case-folding collision between %s and directory of %s")
                 % (lastfull, f)
             )
@@ -505,7 +505,9 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
     if invalidconflicts:
         for p in invalidconflicts:
             repo.ui.warn(_(b"%s: is both a file and a directory\n") % p)
-        raise error.Abort(_(b"destination manifest contains path conflicts"))
+        raise error.StateError(
+            _(b"destination manifest contains path conflicts")
+        )
 
 
 def _filternarrowactions(narrowmatch, branchmerge, mresult):
@@ -1696,6 +1698,7 @@ def applyupdates(
         tocomplete = []
         for f, args, msg in mergeactions:
             repo.ui.debug(b" %s: %s -> m (premerge)\n" % (f, msg))
+            ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f)
             if f == b'.hgsubstate':  # subrepo states need updating
                 subrepoutil.submerge(
@@ -1711,6 +1714,7 @@ def applyupdates(
         # merge
         for f, args, msg in tocomplete:
             repo.ui.debug(b" %s: %s -> m (merge)\n" % (f, msg))
+            ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f, total=numupdates)
             ms.resolve(f, wctx)
 
@@ -1919,10 +1923,10 @@ def _update(
         ### check phase
         if not overwrite:
             if len(pl) > 1:
-                raise error.Abort(_(b"outstanding uncommitted merge"))
+                raise error.StateError(_(b"outstanding uncommitted merge"))
             ms = wc.mergestate()
-            if list(ms.unresolved()):
-                raise error.Abort(
+            if ms.unresolvedcount():
+                raise error.StateError(
                     _(b"outstanding merge conflicts"),
                     hint=_(b"use 'hg resolve' to resolve"),
                 )
@@ -2008,7 +2012,7 @@ def _update(
             if mresult.hasconflicts():
                 msg = _(b"conflicting changes")
                 hint = _(b"commit or update --clean to discard changes")
-                raise error.Abort(msg, hint=hint)
+                raise error.StateError(msg, hint=hint)
 
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or
@@ -2325,6 +2329,7 @@ def purge(
     removefiles=True,
     abortonerror=False,
     noop=False,
+    confirm=False,
 ):
     """Purge the working directory of untracked files.
 
@@ -2344,6 +2349,8 @@ def purge(
 
     ``noop`` controls whether to actually remove files. If not defined, actions
     will be taken.
+
+    ``confirm`` ask confirmation before actually removing anything.
 
     Returns an iterable of relative paths in the working directory that were
     or would be removed.
@@ -2371,6 +2378,35 @@ def purge(
             matcher.traversedir = directories.append
 
         status = repo.status(match=matcher, ignored=ignored, unknown=unknown)
+
+        if confirm:
+            nb_ignored = len(status.ignored)
+            nb_unkown = len(status.unknown)
+            if nb_unkown and nb_ignored:
+                msg = _(b"permanently delete %d unkown and %d ignored files?")
+                msg %= (nb_unkown, nb_ignored)
+            elif nb_unkown:
+                msg = _(b"permanently delete %d unkown files?")
+                msg %= nb_unkown
+            elif nb_ignored:
+                msg = _(b"permanently delete %d ignored files?")
+                msg %= nb_ignored
+            elif removeemptydirs:
+                dir_count = 0
+                for f in directories:
+                    if matcher(f) and not repo.wvfs.listdir(f):
+                        dir_count += 1
+                if dir_count:
+                    msg = _(
+                        b"permanently delete at least %d empty directories?"
+                    )
+                    msg %= dir_count
+                else:
+                    # XXX we might be missing directory there
+                    return res
+            msg += b" (yN)$$ &Yes $$ &No"
+            if repo.ui.promptchoice(msg, default=1) == 1:
+                raise error.CanceledError(_(b'removal cancelled'))
 
         if removefiles:
             for f in sorted(status.unknown + status.ignored):

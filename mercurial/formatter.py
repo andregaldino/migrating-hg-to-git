@@ -1,6 +1,6 @@
 # formatter.py - generic output formatting for mercurial
 #
-# Copyright 2012 Matt Mackall <mpm@selenic.com>
+# Copyright 2012 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -178,6 +178,11 @@ class _nullconverter(object):
 
 
 class baseformatter(object):
+
+    # set to True if the formater output a strict format that does not support
+    # arbitrary output in the stream.
+    strict_format = False
+
     def __init__(self, ui, topic, opts, converter):
         self._ui = ui
         self._topic = topic
@@ -418,6 +423,9 @@ class cborformatter(baseformatter):
 
 
 class jsonformatter(baseformatter):
+
+    strict_format = True
+
     def __init__(self, ui, out, topic, opts):
         baseformatter.__init__(self, ui, topic, opts, _nullconverter)
         self._out = out

@@ -1,6 +1,6 @@
 # commands.py - command processing for mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -74,7 +74,14 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
+
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        List,
+    )
+
 
 table = {}
 table.update(debugcommandsmod.command._table)
@@ -1107,9 +1114,8 @@ def bisect(
                     transition = b"bad"
                 state[transition].append(node)
                 ctx = repo[node]
-                ui.status(
-                    _(b'changeset %d:%s: %s\n') % (ctx.rev(), ctx, transition)
-                )
+                summary = cmdutil.format_changeset_summary(ui, ctx, b'bisect')
+                ui.status(_(b'changeset %s: %s\n') % (summary, transition))
                 hbisect.checkstate(state)
                 # bisect
                 nodes, changesets, bgood = hbisect.bisect(repo, state)
@@ -1125,15 +1131,15 @@ def bisect(
     nodes, changesets, good = hbisect.bisect(repo, state)
     if extend:
         if not changesets:
-            extendnode = hbisect.extendrange(repo, state, nodes, good)
-            if extendnode is not None:
+            extendctx = hbisect.extendrange(repo, state, nodes, good)
+            if extendctx is not None:
                 ui.write(
-                    _(b"Extending search to changeset %d:%s\n")
-                    % (extendnode.rev(), extendnode)
+                    _(b"Extending search to changeset %s\n")
+                    % cmdutil.format_changeset_summary(ui, extendctx, b'bisect')
                 )
-                state[b'current'] = [extendnode.node()]
+                state[b'current'] = [extendctx.node()]
                 hbisect.save_state(repo, state)
-                return mayupdate(repo, extendnode.node())
+                return mayupdate(repo, extendctx.node())
         raise error.StateError(_(b"nothing to extend"))
 
     if changesets == 0:
@@ -1146,12 +1152,13 @@ def bisect(
         while size <= changesets:
             tests, size = tests + 1, size * 2
         rev = repo.changelog.rev(node)
+        summary = cmdutil.format_changeset_summary(ui, repo[rev], b'bisect')
         ui.write(
             _(
-                b"Testing changeset %d:%s "
+                b"Testing changeset %s "
                 b"(%d changesets remaining, ~%d tests)\n"
             )
-            % (rev, short(node), changesets, tests)
+            % (summary, changesets, tests)
         )
         state[b'current'] = [node]
         hbisect.save_state(repo, state)
@@ -1524,10 +1531,10 @@ def branches(ui, repo, active=False, closed=False, **opts):
         ),
     ]
     + remoteopts,
-    _(b'[-f] [-t BUNDLESPEC] [-a] [-r REV]... [--base REV]... FILE [DEST]'),
+    _(b'[-f] [-t BUNDLESPEC] [-a] [-r REV]... [--base REV]... FILE [DEST]...'),
     helpcategory=command.CATEGORY_IMPORT_EXPORT,
 )
-def bundle(ui, repo, fname, dest=None, **opts):
+def bundle(ui, repo, fname, *dests, **opts):
     """create a bundle file
 
     Generate a bundle file containing data to be transferred to another
@@ -1538,7 +1545,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
     all the nodes you specify with --base parameters. Otherwise, hg
     will assume the repository has all the nodes in destination, or
     default-push/default if no destination is specified, where destination
-    is the repository you provide through DEST option.
+    is the repositories you provide through DEST option.
 
     You can change bundle format with the -t/--type option. See
     :hg:`help bundlespec` for documentation on this format. By default,
@@ -1583,9 +1590,9 @@ def bundle(ui, repo, fname, dest=None, **opts):
         )
 
     if opts.get(b'all'):
-        if dest:
+        if dests:
             raise error.InputError(
-                _(b"--all is incompatible with specifying a destination")
+                _(b"--all is incompatible with specifying destinations")
             )
         if opts.get(b'base'):
             ui.warn(_(b"ignoring --base because --all was specified\n"))
@@ -1598,31 +1605,54 @@ def bundle(ui, repo, fname, dest=None, **opts):
         )
 
     if base:
-        if dest:
+        if dests:
             raise error.InputError(
-                _(b"--base is incompatible with specifying a destination")
+                _(b"--base is incompatible with specifying destinations")
             )
         common = [repo[rev].node() for rev in base]
         heads = [repo[r].node() for r in revs] if revs else None
         outgoing = discovery.outgoing(repo, common, heads)
+        missing = outgoing.missing
+        excluded = outgoing.excluded
     else:
-        dest = ui.expandpath(dest or b'default-push', dest or b'default')
-        dest, branches = hg.parseurl(dest, opts.get(b'branch'))
-        other = hg.peer(repo, opts, dest)
-        revs = [repo[r].hex() for r in revs]
-        revs, checkout = hg.addbranchrevs(repo, repo, branches, revs)
-        heads = revs and pycompat.maplist(repo.lookup, revs) or revs
-        outgoing = discovery.findcommonoutgoing(
-            repo,
-            other,
-            onlyheads=heads,
-            force=opts.get(b'force'),
-            portable=True,
-        )
+        missing = set()
+        excluded = set()
+        for path in urlutil.get_push_paths(repo, ui, dests):
+            other = hg.peer(repo, opts, path.rawloc)
+            if revs is not None:
+                hex_revs = [repo[r].hex() for r in revs]
+            else:
+                hex_revs = None
+            branches = (path.branch, [])
+            head_revs, checkout = hg.addbranchrevs(
+                repo, repo, branches, hex_revs
+            )
+            heads = (
+                head_revs
+                and pycompat.maplist(repo.lookup, head_revs)
+                or head_revs
+            )
+            outgoing = discovery.findcommonoutgoing(
+                repo,
+                other,
+                onlyheads=heads,
+                force=opts.get(b'force'),
+                portable=True,
+            )
+            missing.update(outgoing.missing)
+            excluded.update(outgoing.excluded)
 
-    if not outgoing.missing:
-        scmutil.nochangesfound(ui, repo, not base and outgoing.excluded)
+    if not missing:
+        scmutil.nochangesfound(ui, repo, not base and excluded)
         return 1
+
+    if heads:
+        outgoing = discovery.outgoing(
+            repo, missingroots=missing, ancestorsof=heads
+        )
+    else:
+        outgoing = discovery.outgoing(repo, missingroots=missing)
+    outgoing.excluded = sorted(excluded)
 
     if cgversion == b'01':  # bundle1
         bversion = b'HG10' + bundlespec.wirecompression
@@ -1647,6 +1677,14 @@ def bundle(ui, repo, fname, dest=None, **opts):
         complevel = ui.configint(b'experimental', b'bundlecomplevel')
     if complevel is not None:
         compopts[b'level'] = complevel
+
+    compthreads = ui.configint(
+        b'experimental', b'bundlecompthreads.' + bundlespec.compression
+    )
+    if compthreads is None:
+        compthreads = ui.configint(b'experimental', b'bundlecompthreads')
+    if compthreads is not None:
+        compopts[b'threads'] = compthreads
 
     # Bundling of obsmarker and phases is optional as not all clients
     # support the necessary features.
@@ -2399,7 +2437,8 @@ def copy(ui, repo, *pats, **opts):
 
     To undo marking a destination file as copied, use --forget. With that
     option, all given (positional) arguments are unmarked as copies. The
-    destination file(s) will be left in place (still tracked).
+    destination file(s) will be left in place (still tracked). Note that
+    :hg:`copy --forget` behaves the same way as :hg:`rename --forget`.
 
     This command takes effect with the next commit by default.
 
@@ -2550,7 +2589,7 @@ def diff(ui, repo, *pats, **opts):
     if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
         ctx2 = scmutil.revsingle(repo, change, None)
-        ctx1 = ctx2.p1()
+        ctx1 = logcmdutil.diff_parent(ctx2)
     elif from_rev or to_rev:
         repo = scmutil.unhidehashlikerevs(
             repo, [from_rev] + [to_rev], b'nowarn'
@@ -3287,7 +3326,8 @@ def _dograft(ui, repo, *revs, **opts):
                 )
             # checking that newnodes exist because old state files won't have it
             elif statedata.get(b'newnodes') is not None:
-                statedata[b'newnodes'].append(node)
+                nn = statedata[b'newnodes']  # type: List[bytes]
+                nn.append(node)
 
     # remove state when we complete successfully
     if not opts.get(b'dry_run'):
@@ -3821,132 +3861,140 @@ def identify(
     output = []
     revs = []
 
-    if source:
-        source, branches = hg.parseurl(ui.expandpath(source))
-        peer = hg.peer(repo or ui, opts, source)  # only pass ui when no repo
-        repo = peer.local()
-        revs, checkout = hg.addbranchrevs(repo, peer, branches, None)
-
-    fm = ui.formatter(b'identify', opts)
-    fm.startitem()
-
-    if not repo:
-        if num or branch or tags:
-            raise error.InputError(
-                _(b"can't query remote revision number, branch, or tags")
+    peer = None
+    try:
+        if source:
+            source, branches = urlutil.get_unique_pull_path(
+                b'identify', repo, ui, source
             )
-        if not rev and revs:
-            rev = revs[0]
-        if not rev:
-            rev = b"tip"
+            # only pass ui when no repo
+            peer = hg.peer(repo or ui, opts, source)
+            repo = peer.local()
+            revs, checkout = hg.addbranchrevs(repo, peer, branches, None)
 
-        remoterev = peer.lookup(rev)
-        hexrev = fm.hexfunc(remoterev)
-        if default or id:
-            output = [hexrev]
-        fm.data(id=hexrev)
+        fm = ui.formatter(b'identify', opts)
+        fm.startitem()
 
-        @util.cachefunc
-        def getbms():
-            bms = []
+        if not repo:
+            if num or branch or tags:
+                raise error.InputError(
+                    _(b"can't query remote revision number, branch, or tags")
+                )
+            if not rev and revs:
+                rev = revs[0]
+            if not rev:
+                rev = b"tip"
 
-            if b'bookmarks' in peer.listkeys(b'namespaces'):
-                hexremoterev = hex(remoterev)
-                bms = [
-                    bm
-                    for bm, bmr in pycompat.iteritems(
-                        peer.listkeys(b'bookmarks')
+            remoterev = peer.lookup(rev)
+            hexrev = fm.hexfunc(remoterev)
+            if default or id:
+                output = [hexrev]
+            fm.data(id=hexrev)
+
+            @util.cachefunc
+            def getbms():
+                bms = []
+
+                if b'bookmarks' in peer.listkeys(b'namespaces'):
+                    hexremoterev = hex(remoterev)
+                    bms = [
+                        bm
+                        for bm, bmr in pycompat.iteritems(
+                            peer.listkeys(b'bookmarks')
+                        )
+                        if bmr == hexremoterev
+                    ]
+
+                return sorted(bms)
+
+            if fm.isplain():
+                if bookmarks:
+                    output.extend(getbms())
+                elif default and not ui.quiet:
+                    # multiple bookmarks for a single parent separated by '/'
+                    bm = b'/'.join(getbms())
+                    if bm:
+                        output.append(bm)
+            else:
+                fm.data(node=hex(remoterev))
+                if bookmarks or b'bookmarks' in fm.datahint():
+                    fm.data(bookmarks=fm.formatlist(getbms(), name=b'bookmark'))
+        else:
+            if rev:
+                repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
+            ctx = scmutil.revsingle(repo, rev, None)
+
+            if ctx.rev() is None:
+                ctx = repo[None]
+                parents = ctx.parents()
+                taglist = []
+                for p in parents:
+                    taglist.extend(p.tags())
+
+                dirty = b""
+                if ctx.dirty(missing=True, merge=False, branch=False):
+                    dirty = b'+'
+                fm.data(dirty=dirty)
+
+                hexoutput = [fm.hexfunc(p.node()) for p in parents]
+                if default or id:
+                    output = [b"%s%s" % (b'+'.join(hexoutput), dirty)]
+                fm.data(id=b"%s%s" % (b'+'.join(hexoutput), dirty))
+
+                if num:
+                    numoutput = [b"%d" % p.rev() for p in parents]
+                    output.append(b"%s%s" % (b'+'.join(numoutput), dirty))
+
+                fm.data(
+                    parents=fm.formatlist(
+                        [fm.hexfunc(p.node()) for p in parents], name=b'node'
                     )
-                    if bmr == hexremoterev
-                ]
+                )
+            else:
+                hexoutput = fm.hexfunc(ctx.node())
+                if default or id:
+                    output = [hexoutput]
+                fm.data(id=hexoutput)
 
-            return sorted(bms)
+                if num:
+                    output.append(pycompat.bytestr(ctx.rev()))
+                taglist = ctx.tags()
 
-        if fm.isplain():
-            if bookmarks:
-                output.extend(getbms())
-            elif default and not ui.quiet:
+            if default and not ui.quiet:
+                b = ctx.branch()
+                if b != b'default':
+                    output.append(b"(%s)" % b)
+
+                # multiple tags for a single parent separated by '/'
+                t = b'/'.join(taglist)
+                if t:
+                    output.append(t)
+
                 # multiple bookmarks for a single parent separated by '/'
-                bm = b'/'.join(getbms())
+                bm = b'/'.join(ctx.bookmarks())
                 if bm:
                     output.append(bm)
-        else:
-            fm.data(node=hex(remoterev))
-            if bookmarks or b'bookmarks' in fm.datahint():
-                fm.data(bookmarks=fm.formatlist(getbms(), name=b'bookmark'))
-    else:
-        if rev:
-            repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-        ctx = scmutil.revsingle(repo, rev, None)
+            else:
+                if branch:
+                    output.append(ctx.branch())
 
-        if ctx.rev() is None:
-            ctx = repo[None]
-            parents = ctx.parents()
-            taglist = []
-            for p in parents:
-                taglist.extend(p.tags())
+                if tags:
+                    output.extend(taglist)
 
-            dirty = b""
-            if ctx.dirty(missing=True, merge=False, branch=False):
-                dirty = b'+'
-            fm.data(dirty=dirty)
+                if bookmarks:
+                    output.extend(ctx.bookmarks())
 
-            hexoutput = [fm.hexfunc(p.node()) for p in parents]
-            if default or id:
-                output = [b"%s%s" % (b'+'.join(hexoutput), dirty)]
-            fm.data(id=b"%s%s" % (b'+'.join(hexoutput), dirty))
+            fm.data(node=ctx.hex())
+            fm.data(branch=ctx.branch())
+            fm.data(tags=fm.formatlist(taglist, name=b'tag', sep=b':'))
+            fm.data(bookmarks=fm.formatlist(ctx.bookmarks(), name=b'bookmark'))
+            fm.context(ctx=ctx)
 
-            if num:
-                numoutput = [b"%d" % p.rev() for p in parents]
-                output.append(b"%s%s" % (b'+'.join(numoutput), dirty))
-
-            fm.data(
-                parents=fm.formatlist(
-                    [fm.hexfunc(p.node()) for p in parents], name=b'node'
-                )
-            )
-        else:
-            hexoutput = fm.hexfunc(ctx.node())
-            if default or id:
-                output = [hexoutput]
-            fm.data(id=hexoutput)
-
-            if num:
-                output.append(pycompat.bytestr(ctx.rev()))
-            taglist = ctx.tags()
-
-        if default and not ui.quiet:
-            b = ctx.branch()
-            if b != b'default':
-                output.append(b"(%s)" % b)
-
-            # multiple tags for a single parent separated by '/'
-            t = b'/'.join(taglist)
-            if t:
-                output.append(t)
-
-            # multiple bookmarks for a single parent separated by '/'
-            bm = b'/'.join(ctx.bookmarks())
-            if bm:
-                output.append(bm)
-        else:
-            if branch:
-                output.append(ctx.branch())
-
-            if tags:
-                output.extend(taglist)
-
-            if bookmarks:
-                output.extend(ctx.bookmarks())
-
-        fm.data(node=ctx.hex())
-        fm.data(branch=ctx.branch())
-        fm.data(tags=fm.formatlist(taglist, name=b'tag', sep=b':'))
-        fm.data(bookmarks=fm.formatlist(ctx.bookmarks(), name=b'bookmark'))
-        fm.context(ctx=ctx)
-
-    fm.plain(b"%s\n" % b' '.join(output))
-    fm.end()
+        fm.plain(b"%s\n" % b' '.join(output))
+        fm.end()
+    finally:
+        if peer:
+            peer.close()
 
 
 @command(
@@ -4288,22 +4336,22 @@ def incoming(ui, repo, source=b"default", **opts):
     cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
-        source, branches = hg.parseurl(
-            ui.expandpath(source), opts.get(b'branch')
-        )
-        other = hg.peer(repo, opts, source)
-        if b'bookmarks' not in other.listkeys(b'namespaces'):
-            ui.warn(_(b"remote doesn't support bookmarks\n"))
-            return 0
-        ui.pager(b'incoming')
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(source))
-        return bookmarks.incoming(ui, repo, other)
+        srcs = urlutil.get_pull_paths(repo, ui, [source], opts.get(b'branch'))
+        for source, branches in srcs:
+            other = hg.peer(repo, opts, source)
+            try:
+                if b'bookmarks' not in other.listkeys(b'namespaces'):
+                    ui.warn(_(b"remote doesn't support bookmarks\n"))
+                    return 0
+                ui.pager(b'incoming')
+                ui.status(
+                    _(b'comparing with %s\n') % urlutil.hidepassword(source)
+                )
+                return bookmarks.incoming(ui, repo, other)
+            finally:
+                other.close()
 
-    repo._subtoppath = ui.expandpath(source)
-    try:
-        return hg.incoming(ui, repo, source, opts)
-    finally:
-        del repo._subtoppath
+    return hg.incoming(ui, repo, source, opts)
 
 
 @command(
@@ -4328,7 +4376,9 @@ def init(ui, dest=b".", **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    hg.peer(ui, opts, ui.expandpath(dest), create=True)
+    path = urlutil.get_clone_path(ui, dest)[1]
+    peer = hg.peer(ui, opts, path, create=True)
+    peer.close()
 
 
 @command(
@@ -4896,10 +4946,10 @@ statemod.addunfinished(
     + logopts
     + remoteopts
     + subrepoopts,
-    _(b'[-M] [-p] [-n] [-f] [-r REV]... [DEST]'),
+    _(b'[-M] [-p] [-n] [-f] [-r REV]... [DEST]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
 )
-def outgoing(ui, repo, dest=None, **opts):
+def outgoing(ui, repo, *dests, **opts):
     """show changesets not found in the destination
 
     Show changesets not found in the specified destination repository
@@ -4935,47 +4985,24 @@ def outgoing(ui, repo, dest=None, **opts):
 
     Returns 0 if there are outgoing changes, 1 otherwise.
     """
-    # hg._outgoing() needs to re-resolve the path in order to handle #branch
-    # style URLs, so don't overwrite dest.
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.ConfigError(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
-        )
-
     opts = pycompat.byteskwargs(opts)
-    if opts.get(b'graph'):
-        logcmdutil.checkunsupportedgraphflags([], opts)
-        o, other = hg._outgoing(ui, repo, dest, opts)
-        if not o:
-            cmdutil.outgoinghooks(ui, repo, other, opts, o)
-            return
-
-        revdag = logcmdutil.graphrevs(repo, o, opts)
-        ui.pager(b'outgoing')
-        displayer = logcmdutil.changesetdisplayer(ui, repo, opts, buffered=True)
-        logcmdutil.displaygraph(
-            ui, repo, revdag, displayer, graphmod.asciiedges
-        )
-        cmdutil.outgoinghooks(ui, repo, other, opts, o)
-        return 0
-
     if opts.get(b'bookmarks'):
-        dest = path.pushloc or path.loc
-        other = hg.peer(repo, opts, dest)
-        if b'bookmarks' not in other.listkeys(b'namespaces'):
-            ui.warn(_(b"remote doesn't support bookmarks\n"))
-            return 0
-        ui.status(_(b'comparing with %s\n') % util.hidepassword(dest))
-        ui.pager(b'outgoing')
-        return bookmarks.outgoing(ui, repo, other)
+        for path in urlutil.get_push_paths(repo, ui, dests):
+            dest = path.pushloc or path.loc
+            other = hg.peer(repo, opts, dest)
+            try:
+                if b'bookmarks' not in other.listkeys(b'namespaces'):
+                    ui.warn(_(b"remote doesn't support bookmarks\n"))
+                    return 0
+                ui.status(
+                    _(b'comparing with %s\n') % urlutil.hidepassword(dest)
+                )
+                ui.pager(b'outgoing')
+                return bookmarks.outgoing(ui, repo, other)
+            finally:
+                other.close()
 
-    repo._subtoppath = path.pushloc or path.loc
-    try:
-        return hg.outgoing(ui, repo, dest, opts)
-    finally:
-        del repo._subtoppath
+    return hg.outgoing(ui, repo, dests, opts)
 
 
 @command(
@@ -5113,7 +5140,7 @@ def paths(ui, repo, search=None, **opts):
 
     fm = ui.formatter(b'paths', opts)
     if fm.isplain():
-        hidepassword = util.hidepassword
+        hidepassword = urlutil.hidepassword
     else:
         hidepassword = bytes
     if ui.quiet:
@@ -5244,9 +5271,11 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
     :optupdate: updating working directory is needed or not
     :checkout: update destination revision (or None to default destination)
     :brev: a name, which might be a bookmark to be activated after updating
+
+    return True if update raise any conflict, False otherwise.
     """
     if modheads == 0:
-        return
+        return False
     if optupdate:
         try:
             return hg.updatetotally(ui, repo, checkout, brev)
@@ -5268,6 +5297,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
             ui.status(_(b"(run 'hg heads' to see heads)\n"))
     elif not ui.configbool(b'commands', b'update.requiredest'):
         ui.status(_(b"(run 'hg update' to get a working copy)\n"))
+    return False
 
 
 @command(
@@ -5308,11 +5338,11 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
         ),
     ]
     + remoteopts,
-    _(b'[-u] [-f] [-r REV]... [-e CMD] [--remotecmd CMD] [SOURCE]'),
+    _(b'[-u] [-f] [-r REV]... [-e CMD] [--remotecmd CMD] [SOURCE]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
     helpbasic=True,
 )
-def pull(ui, repo, source=b"default", **opts):
+def pull(ui, repo, *sources, **opts):
     """pull changes from the specified source
 
     Pull changes from a remote repository to a local one.
@@ -5336,6 +5366,10 @@ def pull(ui, repo, source=b"default", **opts):
     If SOURCE is omitted, the 'default' path will be used.
     See :hg:`help urls` for more information.
 
+    If multiple sources are specified, they will be pulled sequentially as if
+    the command was run multiple time. If --update is specify and the command
+    will stop at the first failed --update.
+
     Specifying bookmark as ``.`` is equivalent to specifying the active
     bookmark's name.
 
@@ -5350,101 +5384,211 @@ def pull(ui, repo, source=b"default", **opts):
         hint = _(b'use hg pull followed by hg update DEST')
         raise error.InputError(msg, hint=hint)
 
-    source, branches = hg.parseurl(ui.expandpath(source), opts.get(b'branch'))
-    ui.status(_(b'pulling from %s\n') % util.hidepassword(source))
-    ui.flush()
-    other = hg.peer(repo, opts, source)
-    try:
-        revs, checkout = hg.addbranchrevs(
-            repo, other, branches, opts.get(b'rev')
-        )
+    sources = urlutil.get_pull_paths(repo, ui, sources, opts.get(b'branch'))
+    for source, branches in sources:
+        ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(source))
+        ui.flush()
+        other = hg.peer(repo, opts, source)
+        update_conflict = None
+        try:
+            revs, checkout = hg.addbranchrevs(
+                repo, other, branches, opts.get(b'rev')
+            )
 
-        pullopargs = {}
+            pullopargs = {}
 
-        nodes = None
-        if opts.get(b'bookmark') or revs:
-            # The list of bookmark used here is the same used to actually update
-            # the bookmark names, to avoid the race from issue 4689 and we do
-            # all lookup and bookmark queries in one go so they see the same
-            # version of the server state (issue 4700).
-            nodes = []
-            fnodes = []
-            revs = revs or []
-            if revs and not other.capable(b'lookup'):
-                err = _(
-                    b"other repository doesn't support revision lookup, "
-                    b"so a rev cannot be specified."
-                )
-                raise error.Abort(err)
-            with other.commandexecutor() as e:
-                fremotebookmarks = e.callcommand(
-                    b'listkeys', {b'namespace': b'bookmarks'}
-                )
-                for r in revs:
-                    fnodes.append(e.callcommand(b'lookup', {b'key': r}))
-            remotebookmarks = fremotebookmarks.result()
-            remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
-            pullopargs[b'remotebookmarks'] = remotebookmarks
-            for b in opts.get(b'bookmark', []):
-                b = repo._bookmarks.expandname(b)
-                if b not in remotebookmarks:
-                    raise error.InputError(
-                        _(b'remote bookmark %s not found!') % b
+            nodes = None
+            if opts.get(b'bookmark') or revs:
+                # The list of bookmark used here is the same used to actually update
+                # the bookmark names, to avoid the race from issue 4689 and we do
+                # all lookup and bookmark queries in one go so they see the same
+                # version of the server state (issue 4700).
+                nodes = []
+                fnodes = []
+                revs = revs or []
+                if revs and not other.capable(b'lookup'):
+                    err = _(
+                        b"other repository doesn't support revision lookup, "
+                        b"so a rev cannot be specified."
                     )
-                nodes.append(remotebookmarks[b])
-            for i, rev in enumerate(revs):
-                node = fnodes[i].result()
-                nodes.append(node)
-                if rev == checkout:
-                    checkout = node
+                    raise error.Abort(err)
+                with other.commandexecutor() as e:
+                    fremotebookmarks = e.callcommand(
+                        b'listkeys', {b'namespace': b'bookmarks'}
+                    )
+                    for r in revs:
+                        fnodes.append(e.callcommand(b'lookup', {b'key': r}))
+                remotebookmarks = fremotebookmarks.result()
+                remotebookmarks = bookmarks.unhexlifybookmarks(remotebookmarks)
+                pullopargs[b'remotebookmarks'] = remotebookmarks
+                for b in opts.get(b'bookmark', []):
+                    b = repo._bookmarks.expandname(b)
+                    if b not in remotebookmarks:
+                        raise error.InputError(
+                            _(b'remote bookmark %s not found!') % b
+                        )
+                    nodes.append(remotebookmarks[b])
+                for i, rev in enumerate(revs):
+                    node = fnodes[i].result()
+                    nodes.append(node)
+                    if rev == checkout:
+                        checkout = node
 
-        wlock = util.nullcontextmanager()
-        if opts.get(b'update'):
-            wlock = repo.wlock()
-        with wlock:
-            pullopargs.update(opts.get(b'opargs', {}))
-            modheads = exchange.pull(
-                repo,
-                other,
-                heads=nodes,
-                force=opts.get(b'force'),
-                bookmarks=opts.get(b'bookmark', ()),
-                opargs=pullopargs,
-                confirm=opts.get(b'confirm'),
-            ).cgresult
+            wlock = util.nullcontextmanager()
+            if opts.get(b'update'):
+                wlock = repo.wlock()
+            with wlock:
+                pullopargs.update(opts.get(b'opargs', {}))
+                modheads = exchange.pull(
+                    repo,
+                    other,
+                    heads=nodes,
+                    force=opts.get(b'force'),
+                    bookmarks=opts.get(b'bookmark', ()),
+                    opargs=pullopargs,
+                    confirm=opts.get(b'confirm'),
+                ).cgresult
 
-            # brev is a name, which might be a bookmark to be activated at
-            # the end of the update. In other words, it is an explicit
-            # destination of the update
-            brev = None
+                # brev is a name, which might be a bookmark to be activated at
+                # the end of the update. In other words, it is an explicit
+                # destination of the update
+                brev = None
 
-            if checkout:
-                checkout = repo.unfiltered().changelog.rev(checkout)
+                if checkout:
+                    checkout = repo.unfiltered().changelog.rev(checkout)
 
-                # order below depends on implementation of
-                # hg.addbranchrevs(). opts['bookmark'] is ignored,
-                # because 'checkout' is determined without it.
-                if opts.get(b'rev'):
-                    brev = opts[b'rev'][0]
-                elif opts.get(b'branch'):
-                    brev = opts[b'branch'][0]
-                else:
-                    brev = branches[0]
-            repo._subtoppath = source
-            try:
-                ret = postincoming(
-                    ui, repo, modheads, opts.get(b'update'), checkout, brev
-                )
-            except error.FilteredRepoLookupError as exc:
-                msg = _(b'cannot update to target: %s') % exc.args[0]
-                exc.args = (msg,) + exc.args[1:]
-                raise
-            finally:
-                del repo._subtoppath
+                    # order below depends on implementation of
+                    # hg.addbranchrevs(). opts['bookmark'] is ignored,
+                    # because 'checkout' is determined without it.
+                    if opts.get(b'rev'):
+                        brev = opts[b'rev'][0]
+                    elif opts.get(b'branch'):
+                        brev = opts[b'branch'][0]
+                    else:
+                        brev = branches[0]
+                repo._subtoppath = source
+                try:
+                    update_conflict = postincoming(
+                        ui, repo, modheads, opts.get(b'update'), checkout, brev
+                    )
+                except error.FilteredRepoLookupError as exc:
+                    msg = _(b'cannot update to target: %s') % exc.args[0]
+                    exc.args = (msg,) + exc.args[1:]
+                    raise
+                finally:
+                    del repo._subtoppath
 
-    finally:
-        other.close()
-    return ret
+        finally:
+            other.close()
+        # skip the remaining pull source if they are some conflict.
+        if update_conflict:
+            break
+    if update_conflict:
+        return 1
+    else:
+        return 0
+
+
+@command(
+    b'purge|clean',
+    [
+        (b'a', b'abort-on-err', None, _(b'abort if an error occurs')),
+        (b'', b'all', None, _(b'purge ignored files too')),
+        (b'i', b'ignored', None, _(b'purge only ignored files')),
+        (b'', b'dirs', None, _(b'purge empty directories')),
+        (b'', b'files', None, _(b'purge files')),
+        (b'p', b'print', None, _(b'print filenames instead of deleting them')),
+        (
+            b'0',
+            b'print0',
+            None,
+            _(
+                b'end filenames with NUL, for use with xargs'
+                b' (implies -p/--print)'
+            ),
+        ),
+        (b'', b'confirm', None, _(b'ask before permanently deleting files')),
+    ]
+    + cmdutil.walkopts,
+    _(b'hg purge [OPTION]... [DIR]...'),
+    helpcategory=command.CATEGORY_WORKING_DIRECTORY,
+)
+def purge(ui, repo, *dirs, **opts):
+    """removes files not tracked by Mercurial
+
+    Delete files not known to Mercurial. This is useful to test local
+    and uncommitted changes in an otherwise-clean source tree.
+
+    This means that purge will delete the following by default:
+
+    - Unknown files: files marked with "?" by :hg:`status`
+    - Empty directories: in fact Mercurial ignores directories unless
+      they contain files under source control management
+
+    But it will leave untouched:
+
+    - Modified and unmodified tracked files
+    - Ignored files (unless -i or --all is specified)
+    - New files added to the repository (with :hg:`add`)
+
+    The --files and --dirs options can be used to direct purge to delete
+    only files, only directories, or both. If neither option is given,
+    both will be deleted.
+
+    If directories are given on the command line, only files in these
+    directories are considered.
+
+    Be careful with purge, as you could irreversibly delete some files
+    you forgot to add to the repository. If you only want to print the
+    list of files that this program would delete, use the --print
+    option.
+    """
+    opts = pycompat.byteskwargs(opts)
+    cmdutil.check_at_most_one_arg(opts, b'all', b'ignored')
+
+    act = not opts.get(b'print')
+    eol = b'\n'
+    if opts.get(b'print0'):
+        eol = b'\0'
+        act = False  # --print0 implies --print
+    if opts.get(b'all', False):
+        ignored = True
+        unknown = True
+    else:
+        ignored = opts.get(b'ignored', False)
+        unknown = not ignored
+
+    removefiles = opts.get(b'files')
+    removedirs = opts.get(b'dirs')
+    confirm = opts.get(b'confirm')
+    if confirm is None:
+        try:
+            extensions.find(b'purge')
+            confirm = False
+        except KeyError:
+            confirm = True
+
+    if not removefiles and not removedirs:
+        removefiles = True
+        removedirs = True
+
+    match = scmutil.match(repo[None], dirs, opts)
+
+    paths = mergemod.purge(
+        repo,
+        match,
+        unknown=unknown,
+        ignored=ignored,
+        removeemptydirs=removedirs,
+        removefiles=removefiles,
+        abortonerror=opts.get(b'abort_on_err'),
+        noop=not act,
+        confirm=confirm,
+    )
+
+    for path in paths:
+        if not act:
+            ui.write(b'%s%s' % (path, eol))
 
 
 @command(
@@ -5482,11 +5626,11 @@ def pull(ui, repo, source=b"default", **opts):
         ),
     ]
     + remoteopts,
-    _(b'[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]'),
+    _(b'[-f] [-r REV]... [-e CMD] [--remotecmd CMD] [DEST]...'),
     helpcategory=command.CATEGORY_REMOTE_REPO_MANAGEMENT,
     helpbasic=True,
 )
-def push(ui, repo, dest=None, **opts):
+def push(ui, repo, *dests, **opts):
     """push changes to the specified destination
 
     Push changesets from the local repository to the specified
@@ -5521,6 +5665,9 @@ def push(ui, repo, dest=None, **opts):
 
     Please see :hg:`help urls` for important details about ``ssh://``
     URLs. If DESTINATION is omitted, a default path will be used.
+
+    When passed multiple destinations, push will process them one after the
+    other, but stop should an error occur.
 
     .. container:: verbose
 
@@ -5566,75 +5713,89 @@ def push(ui, repo, dest=None, **opts):
                 # this lets simultaneous -r, -b options continue working
                 opts.setdefault(b'rev', []).append(b"null")
 
-    path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.ConfigError(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
+    some_pushed = False
+    result = 0
+    for path in urlutil.get_push_paths(repo, ui, dests):
+        dest = path.pushloc or path.loc
+        branches = (path.branch, opts.get(b'branch') or [])
+        ui.status(_(b'pushing to %s\n') % urlutil.hidepassword(dest))
+        revs, checkout = hg.addbranchrevs(
+            repo, repo, branches, opts.get(b'rev')
         )
-    dest = path.pushloc or path.loc
-    branches = (path.branch, opts.get(b'branch') or [])
-    ui.status(_(b'pushing to %s\n') % util.hidepassword(dest))
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, opts.get(b'rev'))
-    other = hg.peer(repo, opts, dest)
+        other = hg.peer(repo, opts, dest)
 
-    if revs:
-        revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
-        if not revs:
-            raise error.InputError(
-                _(b"specified revisions evaluate to an empty set"),
-                hint=_(b"use different revision arguments"),
+        try:
+            if revs:
+                revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
+                if not revs:
+                    raise error.InputError(
+                        _(b"specified revisions evaluate to an empty set"),
+                        hint=_(b"use different revision arguments"),
+                    )
+            elif path.pushrev:
+                # It doesn't make any sense to specify ancestor revisions. So limit
+                # to DAG heads to make discovery simpler.
+                expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
+                revs = scmutil.revrange(repo, [expr])
+                revs = [repo[rev].node() for rev in revs]
+                if not revs:
+                    raise error.InputError(
+                        _(
+                            b'default push revset for path evaluates to an empty set'
+                        )
+                    )
+            elif ui.configbool(b'commands', b'push.require-revs'):
+                raise error.InputError(
+                    _(b'no revisions specified to push'),
+                    hint=_(b'did you mean "hg push -r ."?'),
+                )
+
+            repo._subtoppath = dest
+            try:
+                # push subrepos depth-first for coherent ordering
+                c = repo[b'.']
+                subs = c.substate  # only repos that are committed
+                for s in sorted(subs):
+                    sub_result = c.sub(s).push(opts)
+                    if sub_result == 0:
+                        return 1
+            finally:
+                del repo._subtoppath
+
+            opargs = dict(
+                opts.get(b'opargs', {})
+            )  # copy opargs since we may mutate it
+            opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
+
+            pushop = exchange.push(
+                repo,
+                other,
+                opts.get(b'force'),
+                revs=revs,
+                newbranch=opts.get(b'new_branch'),
+                bookmarks=opts.get(b'bookmark', ()),
+                publish=opts.get(b'publish'),
+                opargs=opargs,
             )
-    elif path.pushrev:
-        # It doesn't make any sense to specify ancestor revisions. So limit
-        # to DAG heads to make discovery simpler.
-        expr = revsetlang.formatspec(b'heads(%r)', path.pushrev)
-        revs = scmutil.revrange(repo, [expr])
-        revs = [repo[rev].node() for rev in revs]
-        if not revs:
-            raise error.InputError(
-                _(b'default push revset for path evaluates to an empty set')
-            )
-    elif ui.configbool(b'commands', b'push.require-revs'):
-        raise error.InputError(
-            _(b'no revisions specified to push'),
-            hint=_(b'did you mean "hg push -r ."?'),
-        )
 
-    repo._subtoppath = dest
-    try:
-        # push subrepos depth-first for coherent ordering
-        c = repo[b'.']
-        subs = c.substate  # only repos that are committed
-        for s in sorted(subs):
-            result = c.sub(s).push(opts)
-            if result == 0:
-                return not result
-    finally:
-        del repo._subtoppath
+            if pushop.cgresult == 0:
+                result = 1
+            elif pushop.cgresult is not None:
+                some_pushed = True
 
-    opargs = dict(opts.get(b'opargs', {}))  # copy opargs since we may mutate it
-    opargs.setdefault(b'pushvars', []).extend(opts.get(b'pushvars', []))
+            if pushop.bkresult is not None:
+                if pushop.bkresult == 2:
+                    result = 2
+                elif not result and pushop.bkresult:
+                    result = 2
 
-    pushop = exchange.push(
-        repo,
-        other,
-        opts.get(b'force'),
-        revs=revs,
-        newbranch=opts.get(b'new_branch'),
-        bookmarks=opts.get(b'bookmark', ()),
-        publish=opts.get(b'publish'),
-        opargs=opargs,
-    )
+            if result:
+                break
 
-    result = not pushop.cgresult
-
-    if pushop.bkresult is not None:
-        if pushop.bkresult == 2:
-            result = 2
-        elif not result and pushop.bkresult:
-            result = 2
-
+        finally:
+            other.close()
+    if result == 0 and not some_pushed:
+        result = 1
     return result
 
 
@@ -5740,6 +5901,7 @@ def remove(ui, repo, *pats, **opts):
 @command(
     b'rename|move|mv',
     [
+        (b'', b'forget', None, _(b'unmark a destination file as renamed')),
         (b'A', b'after', None, _(b'record a rename that has already occurred')),
         (
             b'',
@@ -5771,8 +5933,13 @@ def rename(ui, repo, *pats, **opts):
     exist in the working directory. If invoked with -A/--after, the
     operation is recorded, but no copying is performed.
 
-    This command takes effect at the next commit. To undo a rename
-    before that, see :hg:`revert`.
+    To undo marking a destination file as renamed, use --forget. With that
+    option, all given (positional) arguments are unmarked as renames. The
+    destination file(s) will be left in place (still tracked). The source
+    file(s) will not be restored. Note that :hg:`rename --forget` behaves
+    the same way as :hg:`copy --forget`.
+
+    This command takes effect with the next commit by default.
 
     Returns 0 on success, 1 if errors are encountered.
     """
@@ -6083,7 +6250,7 @@ def resolve(ui, repo, *pats, **opts):
             if hint:
                 ui.warn(hint)
 
-    unresolvedf = list(ms.unresolved())
+    unresolvedf = ms.unresolvedcount()
     if not unresolvedf:
         ui.status(_(b'(no more unresolved files)\n'))
         cmdutil.checkafterresolved(repo)
@@ -7043,7 +7210,12 @@ def summary(ui, repo, **opts):
             return
 
     def getincoming():
-        source, branches = hg.parseurl(ui.expandpath(b'default'))
+        # XXX We should actually skip this if no default is specified, instead
+        # of passing "default" which will resolve as "./default/" if no default
+        # path is defined.
+        source, branches = urlutil.get_unique_pull_path(
+            b'summary', repo, ui, b'default'
+        )
         sbranch = branches[0]
         try:
             other = hg.peer(repo, {}, source)
@@ -7054,7 +7226,7 @@ def summary(ui, repo, **opts):
         revs, checkout = hg.addbranchrevs(repo, other, branches, None)
         if revs:
             revs = [other.lookup(rev) for rev in revs]
-        ui.debug(b'comparing with %s\n' % util.hidepassword(source))
+        ui.debug(b'comparing with %s\n' % urlutil.hidepassword(source))
         repo.ui.pushbuffer()
         commoninc = discovery.findcommonincoming(repo, other, heads=revs)
         repo.ui.popbuffer()
@@ -7066,9 +7238,22 @@ def summary(ui, repo, **opts):
         source = sbranch = sother = commoninc = incoming = None
 
     def getoutgoing():
-        dest, branches = hg.parseurl(ui.expandpath(b'default-push', b'default'))
-        dbranch = branches[0]
-        revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
+        # XXX We should actually skip this if no default is specified, instead
+        # of passing "default" which will resolve as "./default/" if no default
+        # path is defined.
+        d = None
+        if b'default-push' in ui.paths:
+            d = b'default-push'
+        elif b'default' in ui.paths:
+            d = b'default'
+        if d is not None:
+            path = urlutil.get_unique_push_path(b'summary', repo, ui, d)
+            dest = path.pushloc or path.loc
+            dbranch = path.branch
+        else:
+            dest = b'default'
+            dbranch = None
+        revs, checkout = hg.addbranchrevs(repo, repo, (dbranch, []), None)
         if source != dest:
             try:
                 dother = hg.peer(repo, {}, dest)
@@ -7076,7 +7261,7 @@ def summary(ui, repo, **opts):
                 if opts.get(b'remote'):
                     raise
                 return dest, dbranch, None, None
-            ui.debug(b'comparing with %s\n' % util.hidepassword(dest))
+            ui.debug(b'comparing with %s\n' % urlutil.hidepassword(dest))
         elif sother is None:
             # there is no explicit destination peer, but source one is invalid
             return dest, dbranch, None, None
@@ -7101,6 +7286,12 @@ def summary(ui, repo, **opts):
         dest = dbranch = dother = outgoing = None
 
     if opts.get(b'remote'):
+        # Help pytype.  --remote sets both `needsincoming` and `needsoutgoing`.
+        # The former always sets `sother` (or raises an exception if it can't);
+        # the latter always sets `outgoing`.
+        assert sother is not None
+        assert outgoing is not None
+
         t = []
         if incoming:
             t.append(_(b'1 or more incoming'))
@@ -7412,7 +7603,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
             try:
                 txnname = b'unbundle'
                 if not isinstance(gen, bundle2.unbundle20):
-                    txnname = b'unbundle\n%s' % util.hidepassword(url)
+                    txnname = b'unbundle\n%s' % urlutil.hidepassword(url)
                 with repo.transaction(txnname) as tr:
                     op = bundle2.applybundle(
                         repo, gen, tr, source=b'unbundle', url=url
@@ -7428,7 +7619,10 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
                 )
             modheads = bundle2.combinechangegroupresults(op)
 
-    return postincoming(ui, repo, modheads, opts.get('update'), None, None)
+    if postincoming(ui, repo, modheads, opts.get('update'), None, None):
+        return 1
+    else:
+        return 0
 
 
 @command(
@@ -7708,7 +7902,7 @@ def version_(ui, **opts):
     )
     license = _(
         b"(see https://mercurial-scm.org for more information)\n"
-        b"\nCopyright (C) 2005-2021 Matt Mackall and others\n"
+        b"\nCopyright (C) 2005-2021 Olivia Mackall and others\n"
         b"This is free software; see the source for copying conditions. "
         b"There is NO\nwarranty; "
         b"not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"

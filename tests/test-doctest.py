@@ -158,6 +158,7 @@ expected_mods_tested = set(
         ('mercurial.util', '{}'),
         ('mercurial.utils.dateutil', '{}'),
         ('mercurial.utils.stringutil', '{}'),
+        ('mercurial.utils.urlutil', '{}'),
         ('tests.drawdag', '{}'),
         ('tests.test-run-tests', '{}'),
         ('tests.test-url', "{'optionflags': 4}"),

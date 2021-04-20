@@ -10,7 +10,10 @@ from mercurial import (
     url,
     util,
 )
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    stringutil,
+    urlutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -60,7 +63,7 @@ def test(auth, urls=None):
         print('URI:', pycompat.strurl(uri))
         try:
             pm = url.passwordmgr(ui, urlreq.httppasswordmgrwithdefaultrealm())
-            u, authinfo = util.url(uri).authinfo()
+            u, authinfo = urlutil.url(uri).authinfo()
             if authinfo is not None:
                 pm.add_password(*_stringifyauthinfo(authinfo))
             print(
@@ -198,10 +201,12 @@ test(
 def testauthinfo(fullurl, authurl):
     print('URIs:', fullurl, authurl)
     pm = urlreq.httppasswordmgrwithdefaultrealm()
-    ai = _stringifyauthinfo(util.url(pycompat.bytesurl(fullurl)).authinfo()[1])
+    ai = _stringifyauthinfo(
+        urlutil.url(pycompat.bytesurl(fullurl)).authinfo()[1]
+    )
     pm.add_password(*ai)
     print(pm.find_user_password('test', authurl))
 
 
-print('\n*** Test urllib2 and util.url\n')
+print('\n*** Test urllib2 and urlutil.url\n')
 testauthinfo('http://user@example.com:8080/foo', 'http://example.com:8080/foo')

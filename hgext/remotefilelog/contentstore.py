@@ -365,7 +365,7 @@ class manifestrevlogstore(object):
             ledger.markdataentry(self, treename, node)
             ledger.markhistoryentry(self, treename, node)
 
-        for path, encoded, size in self._store.datafiles():
+        for t, path, encoded, size in self._store.datafiles():
             if path[:5] != b'meta/' or path[-2:] != b'.i':
                 continue
 

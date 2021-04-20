@@ -116,7 +116,7 @@
   $ hg strip -r .
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/19edf50f4de7-df3d0f74-backup.hg (glob)
-  4 files fetched over 2 fetches - (4 misses, 0.00% hit ratio) over *s (glob)
+  3 files fetched over 2 fetches - (3 misses, 0.00% hit ratio) over *s (glob)
 
 # unbundle
 
@@ -133,13 +133,14 @@
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files
+  added 1 changesets with 3 changes to 3 files
   new changesets 19edf50f4de7 (1 drafts)
   (run 'hg update' to get a working copy)
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
 
   $ hg up
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  4 files fetched over 1 fetches - (4 misses, 0.00% hit ratio) over *s (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
   $ cat a
   a
 
@@ -148,7 +149,7 @@
   $ clearcache
   $ hg revert -r .~2 y z
   no changes needed to z
-  2 files fetched over 2 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
   $ hg checkout -C -r . -q
 
 # explicit bundle should produce full bundle file
@@ -159,7 +160,7 @@
   $ cd ..
 
   $ hgcloneshallow ssh://user@dummy/master shallow2 -q
-  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
+  2 files fetched over 1 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
   $ cd shallow2
   $ hg unbundle ../local.bundle
   adding changesets

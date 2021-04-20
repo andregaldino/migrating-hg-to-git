@@ -25,7 +25,9 @@ Recommends: ca-certificates
 Suggests: wish
 Replaces: mercurial-common
 Breaks: mercurial-common
+Provides: python3-mercurial
 Architecture: any
+Homepage: https://www.mercurial-scm.org/
 Description: fast, easy to use, distributed revision control tool.
  Mercurial is a fast, lightweight Source Control Management system designed
  for efficient handling of very large distributed projects.

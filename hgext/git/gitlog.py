@@ -8,6 +8,7 @@ from mercurial.node import (
     nullhex,
     nullid,
     nullrev,
+    sha1nodeconstants,
     wdirhex,
 )
 from mercurial import (
@@ -217,7 +218,7 @@ class changelog(baselog):
             n = nodeorrev
         # handle looking up nullid
         if n == nullid:
-            return hgchangelog._changelogrevision(extra={})
+            return hgchangelog._changelogrevision(extra={}, manifest=nullid)
         hn = gitutil.togitnode(n)
         # We've got a real commit!
         files = [
@@ -422,6 +423,8 @@ class changelog(baselog):
 
 
 class manifestlog(baselog):
+    nodeconstants = sha1nodeconstants
+
     def __getitem__(self, node):
         return self.get(b'', node)
 

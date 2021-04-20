@@ -542,7 +542,7 @@ Unknown digest
   searching for changes
   remote: remote-changegroup
   abort: missing support for remote-changegroup - digest:foo
-  [255]
+  [100]
 
 Missing digest
 

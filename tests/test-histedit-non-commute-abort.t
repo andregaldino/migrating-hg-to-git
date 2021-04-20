@@ -84,6 +84,7 @@ insert unsupported advisory merge record
     ancestor path: e (node 0000000000000000000000000000000000000000)
     other path: e (node 6b67ccefd5ce6de77e7ead4f5292843a0255329f)
     extra: ancestorlinknode = 0000000000000000000000000000000000000000
+    extra: merged = yes
   $ hg resolve -l
   U e
 

@@ -78,7 +78,7 @@ Interrupting the pull is safe
   transaction abort!
   rollback completed
   abort: pretxnchangegroup.bad hook exited with status 1
-  [255]
+  [40]
   $ hg id
   223311e70a6f tip
 
@@ -147,7 +147,8 @@ Can pull into repo with a single commit
   $ hg clone -q --narrow ssh://user@dummy/master narrow2 --include "f1" -r 0
   $ cd narrow2
   $ hg pull -q -r 1
+  remote: abort: unexpected error: unable to resolve parent while packing '00manifest.i' 1 for changeset 0
   transaction abort!
   rollback completed
   abort: pull failed on remote
-  [255]
+  [100]

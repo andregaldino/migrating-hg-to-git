@@ -12,7 +12,7 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 
 from mercurial.node import (
-    nullid,
+    nullrev,
     short,
 )
 
@@ -27,6 +27,7 @@ from mercurial import (
     revsetlang,
     rewriteutil,
     scmutil,
+    util,
 )
 
 # allow people to use split without explicitly enabling rebase extension
@@ -69,57 +70,62 @@ def split(ui, repo, *revs, **opts):
     if opts.get(b'rev'):
         revlist.append(opts.get(b'rev'))
     revlist.extend(revs)
-    with repo.wlock(), repo.lock(), repo.transaction(b'split') as tr:
-        revs = scmutil.revrange(repo, revlist or [b'.'])
-        if len(revs) > 1:
-            raise error.InputError(_(b'cannot split multiple revisions'))
+    with repo.wlock(), repo.lock():
+        tr = repo.transaction(b'split')
+        # If the rebase somehow runs into conflicts, make sure
+        # we close the transaction so the user can continue it.
+        with util.acceptintervention(tr):
+            revs = scmutil.revrange(repo, revlist or [b'.'])
+            if len(revs) > 1:
+                raise error.InputError(_(b'cannot split multiple revisions'))
 
-        rev = revs.first()
-        ctx = repo[rev]
-        # Handle nullid specially here (instead of leaving for precheck()
-        # below) so we get a nicer message and error code.
-        if rev is None or ctx.node() == nullid:
-            ui.status(_(b'nothing to split\n'))
-            return 1
-        if ctx.node() is None:
-            raise error.InputError(_(b'cannot split working directory'))
+            rev = revs.first()
+            # Handle nullrev specially here (instead of leaving for precheck()
+            # below) so we get a nicer message and error code.
+            if rev is None or rev == nullrev:
+                ui.status(_(b'nothing to split\n'))
+                return 1
+            ctx = repo[rev]
+            if ctx.node() is None:
+                raise error.InputError(_(b'cannot split working directory'))
 
-        if opts.get(b'rebase'):
-            # Skip obsoleted descendants and their descendants so the rebase
-            # won't cause conflicts for sure.
-            descendants = list(repo.revs(b'(%d::) - (%d)', rev, rev))
-            torebase = list(
-                repo.revs(
-                    b'%ld - (%ld & obsolete())::', descendants, descendants
+            if opts.get(b'rebase'):
+                # Skip obsoleted descendants and their descendants so the rebase
+                # won't cause conflicts for sure.
+                descendants = list(repo.revs(b'(%d::) - (%d)', rev, rev))
+                torebase = list(
+                    repo.revs(
+                        b'%ld - (%ld & obsolete())::', descendants, descendants
+                    )
                 )
-            )
-        else:
-            torebase = []
-        rewriteutil.precheck(repo, [rev] + torebase, b'split')
+            else:
+                torebase = []
+            rewriteutil.precheck(repo, [rev] + torebase, b'split')
 
-        if len(ctx.parents()) > 1:
-            raise error.InputError(_(b'cannot split a merge changeset'))
+            if len(ctx.parents()) > 1:
+                raise error.InputError(_(b'cannot split a merge changeset'))
 
-        cmdutil.bailifchanged(repo)
+            cmdutil.bailifchanged(repo)
 
-        # Deactivate bookmark temporarily so it won't get moved unintentionally
-        bname = repo._activebookmark
-        if bname and repo._bookmarks[bname] != ctx.node():
-            bookmarks.deactivate(repo)
+            # Deactivate bookmark temporarily so it won't get moved
+            # unintentionally
+            bname = repo._activebookmark
+            if bname and repo._bookmarks[bname] != ctx.node():
+                bookmarks.deactivate(repo)
 
-        wnode = repo[b'.'].node()
-        top = None
-        try:
-            top = dosplit(ui, repo, tr, ctx, opts)
-        finally:
-            # top is None: split failed, need update --clean recovery.
-            # wnode == ctx.node(): wnode split, no need to update.
-            if top is None or wnode != ctx.node():
-                hg.clean(repo, wnode, show_stats=False)
-            if bname:
-                bookmarks.activate(repo, bname)
-        if torebase and top:
-            dorebase(ui, repo, torebase, top)
+            wnode = repo[b'.'].node()
+            top = None
+            try:
+                top = dosplit(ui, repo, tr, ctx, opts)
+            finally:
+                # top is None: split failed, need update --clean recovery.
+                # wnode == ctx.node(): wnode split, no need to update.
+                if top is None or wnode != ctx.node():
+                    hg.clean(repo, wnode, show_stats=False)
+                if bname:
+                    bookmarks.activate(repo, bname)
+            if torebase and top:
+                dorebase(ui, repo, torebase, top)
 
 
 def dosplit(ui, repo, tr, ctx, opts):
@@ -165,19 +171,26 @@ def dosplit(ui, repo, tr, ctx, opts):
                 b'message': header + ctx.description(),
             }
         )
+        origctx = repo[b'.']
         commands.commit(ui, repo, **pycompat.strkwargs(opts))
         newctx = repo[b'.']
-        committed.append(newctx)
+        # Ensure user didn't do a "no-op" split (such as deselecting
+        # everything).
+        if origctx.node() != newctx.node():
+            committed.append(newctx)
 
     if not committed:
         raise error.InputError(_(b'cannot split an empty revision'))
 
-    scmutil.cleanupnodes(
-        repo,
-        {ctx.node(): [c.node() for c in committed]},
-        operation=b'split',
-        fixphase=True,
-    )
+    if len(committed) != 1 or committed[0].node() != ctx.node():
+        # Ensure we don't strip a node if we produce the same commit as already
+        # exists
+        scmutil.cleanupnodes(
+            repo,
+            {ctx.node(): [c.node() for c in committed]},
+            operation=b'split',
+            fixphase=True,
+        )
 
     return committed[-1]
 

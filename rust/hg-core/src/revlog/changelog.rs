@@ -1,12 +1,13 @@
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
-use crate::revlog::NodePrefixRef;
 use crate::revlog::Revision;
+use crate::revlog::{Node, NodePrefix};
 
 /// A specialized `Revlog` to work with `changelog` data format.
 pub struct Changelog {
     /// The generic `revlog` format.
-    revlog: Revlog,
+    pub(crate) revlog: Revlog,
 }
 
 impl Changelog {
@@ -19,7 +20,7 @@ impl Changelog {
     /// Return the `ChangelogEntry` a given node id.
     pub fn get_node(
         &self,
-        node: NodePrefixRef,
+        node: NodePrefix,
     ) -> Result<ChangelogEntry, RevlogError> {
         let rev = self.revlog.get_node_rev(node)?;
         self.get_rev(rev)
@@ -32,6 +33,10 @@ impl Changelog {
     ) -> Result<ChangelogEntry, RevlogError> {
         let bytes = self.revlog.get_rev_data(rev)?;
         Ok(ChangelogEntry { bytes })
+    }
+
+    pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        Some(self.revlog.index.get_entry(rev)?.hash())
     }
 }
 
@@ -53,6 +58,8 @@ impl ChangelogEntry {
     /// Return the node id of the `manifest` referenced by this `changelog`
     /// entry.
     pub fn manifest_node(&self) -> Result<&[u8], RevlogError> {
-        self.lines().next().ok_or(RevlogError::Corrupted)
+        self.lines()
+            .next()
+            .ok_or_else(|| HgError::corrupted("empty changelog entry").into())
     }
 }

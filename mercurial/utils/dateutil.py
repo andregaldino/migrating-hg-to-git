@@ -18,6 +18,18 @@ from .. import (
     pycompat,
 )
 
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        Callable,
+        Dict,
+        Iterable,
+        Optional,
+        Tuple,
+        Union,
+    )
+
+    hgdate = Tuple[float, int]  # (unixtime, offset)
+
 # used by parsedate
 defaultdateformats = (
     b'%Y-%m-%dT%H:%M:%S',  # the 'real' ISO8601
@@ -62,13 +74,16 @@ extendeddateformats = defaultdateformats + (
 
 
 def makedate(timestamp=None):
+    # type: (Optional[float]) -> hgdate
     """Return a unix timestamp (or the current time) as a (unixtime,
     offset) tuple based off the local timezone."""
     if timestamp is None:
         timestamp = time.time()
     if timestamp < 0:
         hint = _(b"check your clock")
-        raise error.Abort(_(b"negative timestamp: %d") % timestamp, hint=hint)
+        raise error.InputError(
+            _(b"negative timestamp: %d") % timestamp, hint=hint
+        )
     delta = datetime.datetime.utcfromtimestamp(
         timestamp
     ) - datetime.datetime.fromtimestamp(timestamp)
@@ -77,6 +92,7 @@ def makedate(timestamp=None):
 
 
 def datestr(date=None, format=b'%a %b %d %H:%M:%S %Y %1%2'):
+    # type: (Optional[hgdate], bytes) -> bytes
     """represent a (unixtime, offset) tuple as a localized time.
     unixtime is seconds since the epoch, and offset is the time zone's
     number of seconds away from UTC.
@@ -114,11 +130,13 @@ def datestr(date=None, format=b'%a %b %d %H:%M:%S %Y %1%2'):
 
 
 def shortdate(date=None):
+    # type: (Optional[hgdate]) -> bytes
     """turn (timestamp, tzoff) tuple into iso 8631 date."""
     return datestr(date, format=b'%Y-%m-%d')
 
 
 def parsetimezone(s):
+    # type: (bytes) -> Tuple[Optional[int], bytes]
     """find a trailing timezone, if any, in string, and return a
     (offset, remainder) pair"""
     s = pycompat.bytestr(s)
@@ -154,6 +172,7 @@ def parsetimezone(s):
 
 
 def strdate(string, format, defaults=None):
+    # type: (bytes, bytes, Optional[Dict[bytes, Tuple[bytes, bytes]]]) -> hgdate
     """parse a localized time string and return a (unixtime, offset) tuple.
     if the string cannot be parsed, ValueError is raised."""
     if defaults is None:
@@ -196,6 +215,7 @@ def strdate(string, format, defaults=None):
 
 
 def parsedate(date, formats=None, bias=None):
+    # type: (Union[bytes, hgdate], Optional[Iterable[bytes]], Optional[Dict[bytes, bytes]]) -> hgdate
     """parse a localized date/time and return a (unixtime, offset) tuple.
 
     The date may be a "unixtime offset" string or in one of the specified
@@ -221,8 +241,11 @@ def parsedate(date, formats=None, bias=None):
         bias = {}
     if not date:
         return 0, 0
-    if isinstance(date, tuple) and len(date) == 2:
-        return date
+    if isinstance(date, tuple):
+        if len(date) == 2:
+            return date
+        else:
+            raise error.ProgrammingError(b"invalid date format")
     if not formats:
         formats = defaultdateformats
     date = date.strip()
@@ -282,6 +305,7 @@ def parsedate(date, formats=None, bias=None):
 
 
 def matchdate(date):
+    # type: (bytes) -> Callable[[float], bool]
     """Return a function that matches a given date match specifier
 
     Formats include:
@@ -311,10 +335,12 @@ def matchdate(date):
     """
 
     def lower(date):
+        # type: (bytes) -> float
         d = {b'mb': b"1", b'd': b"1"}
         return parsedate(date, extendeddateformats, d)[0]
 
     def upper(date):
+        # type: (bytes) -> float
         d = {b'mb': b"12", b'HI': b"23", b'M': b"59", b'S': b"59"}
         for days in (b"31", b"30", b"29"):
             try:
@@ -328,24 +354,26 @@ def matchdate(date):
     date = date.strip()
 
     if not date:
-        raise error.Abort(_(b"dates cannot consist entirely of whitespace"))
+        raise error.InputError(
+            _(b"dates cannot consist entirely of whitespace")
+        )
     elif date[0:1] == b"<":
         if not date[1:]:
-            raise error.Abort(_(b"invalid day spec, use '<DATE'"))
+            raise error.InputError(_(b"invalid day spec, use '<DATE'"))
         when = upper(date[1:])
         return lambda x: x <= when
     elif date[0:1] == b">":
         if not date[1:]:
-            raise error.Abort(_(b"invalid day spec, use '>DATE'"))
+            raise error.InputError(_(b"invalid day spec, use '>DATE'"))
         when = lower(date[1:])
         return lambda x: x >= when
     elif date[0:1] == b"-":
         try:
             days = int(date[1:])
         except ValueError:
-            raise error.Abort(_(b"invalid day spec: %s") % date[1:])
+            raise error.InputError(_(b"invalid day spec: %s") % date[1:])
         if days < 0:
-            raise error.Abort(
+            raise error.InputError(
                 _(b"%s must be nonnegative (see 'hg help dates')") % date[1:]
             )
         when = makedate()[0] - days * 3600 * 24

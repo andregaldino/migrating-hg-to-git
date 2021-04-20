@@ -54,6 +54,7 @@ from mercurial.i18n import _
 from mercurial.node import (
     nullid,
     nullrev,
+    sha1nodeconstants,
     short,
 )
 from mercurial.thirdparty import attr
@@ -288,6 +289,7 @@ class sqliterevisiondelta(object):
     baserevisionsize = attr.ib()
     revision = attr.ib()
     delta = attr.ib()
+    sidedata = attr.ib()
     linknode = attr.ib(default=None)
 
 
@@ -304,6 +306,7 @@ class sqlitefilestore(object):
     """Implements storage for an individual tracked path."""
 
     def __init__(self, db, path, compression):
+        self.nullid = sha1nodeconstants.nullid
         self._db = db
         self._path = path
 
@@ -586,6 +589,7 @@ class sqlitefilestore(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         if nodesorder not in (b'nodes', b'storage', b'linear', None):
             raise error.ProgrammingError(
@@ -624,6 +628,7 @@ class sqlitefilestore(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         ):
 
             yield delta
@@ -636,7 +641,8 @@ class sqlitefilestore(object):
         if meta or filedata.startswith(b'\x01\n'):
             filedata = storageutil.packmeta(meta, filedata)
 
-        return self.addrevision(filedata, transaction, linkrev, p1, p2)
+        rev = self.addrevision(filedata, transaction, linkrev, p1, p2)
+        return self.node(rev)
 
     def addrevision(
         self,
@@ -658,15 +664,16 @@ class sqlitefilestore(object):
         if validatehash:
             self._checkhash(revisiondata, node, p1, p2)
 
-        if node in self._nodetorev:
-            return node
+        rev = self._nodetorev.get(node)
+        if rev is not None:
+            return rev
 
-        node = self._addrawrevision(
+        rev = self._addrawrevision(
             node, revisiondata, transaction, linkrev, p1, p2
         )
 
         self._revisioncache[node] = revisiondata
-        return node
+        return rev
 
     def addgroup(
         self,
@@ -679,7 +686,16 @@ class sqlitefilestore(object):
     ):
         empty = True
 
-        for node, p1, p2, linknode, deltabase, delta, wireflags in deltas:
+        for (
+            node,
+            p1,
+            p2,
+            linknode,
+            deltabase,
+            delta,
+            wireflags,
+            sidedata,
+        ) in deltas:
             storeflags = 0
 
             if wireflags & repository.REVISION_FLAG_CENSORED:
@@ -741,7 +757,7 @@ class sqlitefilestore(object):
                     )
 
                 if duplicaterevisioncb:
-                    duplicaterevisioncb(self, node)
+                    duplicaterevisioncb(self, self.rev(node))
                 empty = False
                 continue
 
@@ -752,7 +768,7 @@ class sqlitefilestore(object):
                 text = None
                 storedelta = (deltabase, delta)
 
-            self._addrawrevision(
+            rev = self._addrawrevision(
                 node,
                 text,
                 transaction,
@@ -764,7 +780,7 @@ class sqlitefilestore(object):
             )
 
             if addrevisioncb:
-                addrevisioncb(self, node)
+                addrevisioncb(self, rev)
             empty = False
 
         return not empty
@@ -896,6 +912,10 @@ class sqlitefilestore(object):
 
     def files(self):
         return []
+
+    def sidedata(self, nodeorrev, _df=None):
+        # Not supported for now
+        return {}
 
     def storageinfo(
         self,
@@ -1079,7 +1099,7 @@ class sqlitefilestore(object):
         self._revtonode[rev] = node
         self._revisions[node] = entry
 
-        return node
+        return rev
 
 
 class sqliterepository(localrepo.localrepository):

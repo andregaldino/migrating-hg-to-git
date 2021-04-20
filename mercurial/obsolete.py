@@ -560,10 +560,11 @@ class obsstore(object):
     # parents: (tuple of nodeid) or None, parents of predecessors
     #          None is used when no data has been recorded
 
-    def __init__(self, svfs, defaultformat=_fm1version, readonly=False):
+    def __init__(self, repo, svfs, defaultformat=_fm1version, readonly=False):
         # caches for various obsolescence related cache
         self.caches = {}
         self.svfs = svfs
+        self.repo = repo
         self._defaultformat = defaultformat
         self._readonly = readonly
 
@@ -806,7 +807,7 @@ def makestore(ui, repo):
     if defaultformat is not None:
         kwargs['defaultformat'] = defaultformat
     readonly = not isenabled(repo, createmarkersopt)
-    store = obsstore(repo.svfs, readonly=readonly, **kwargs)
+    store = obsstore(repo, repo.svfs, readonly=readonly, **kwargs)
     if store and readonly:
         ui.warn(
             _(b'obsolete feature not enabled but %i markers found!\n')

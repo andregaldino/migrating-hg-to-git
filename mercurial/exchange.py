@@ -1,6 +1,6 @@
 # exchange.py - utility to exchange data between repos.
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -42,6 +42,7 @@ from . import (
 from .utils import (
     hashutil,
     stringutil,
+    urlutil,
 )
 
 urlerr = util.urlerr
@@ -420,7 +421,20 @@ def push(
                 b'unbundle wire protocol command'
             )
         )
-
+    for category in sorted(bundle2.read_remote_wanted_sidedata(pushop.remote)):
+        # Check that a computer is registered for that category for at least
+        # one revlog kind.
+        for kind, computers in repo._sidedata_computers.items():
+            if computers.get(category):
+                break
+        else:
+            raise error.Abort(
+                _(
+                    b'cannot push: required sidedata category not supported'
+                    b" by this client: '%s'"
+                )
+                % pycompat.bytestr(category)
+            )
     # get lock as we might write phase data
     wlock = lock = None
     try:
@@ -814,7 +828,7 @@ def _pushb2checkbookmarks(pushop, bundler):
     data = []
     for book, old, new in pushop.outbookmarks:
         data.append((book, old))
-    checkdata = bookmod.binaryencode(data)
+    checkdata = bookmod.binaryencode(pushop.repo, data)
     bundler.newpart(b'check:bookmarks', data=checkdata)
 
 
@@ -865,8 +879,15 @@ def _pushb2ctx(pushop, bundler):
         if not cgversions:
             raise error.Abort(_(b'no common changegroup version'))
         version = max(cgversions)
+
+    remote_sidedata = bundle2.read_remote_wanted_sidedata(pushop.remote)
     cgstream = changegroup.makestream(
-        pushop.repo, pushop.outgoing, version, b'push'
+        pushop.repo,
+        pushop.outgoing,
+        version,
+        b'push',
+        bundlecaps=b2caps,
+        remote_sidedata=remote_sidedata,
     )
     cgpart = bundler.newpart(b'changegroup', data=cgstream)
     if cgversions:
@@ -1007,7 +1028,7 @@ def _pushb2bookmarkspart(pushop, bundler):
         _abortonsecretctx(pushop, new, book)
         data.append((book, new))
         allactions.append((book, _bmaction(old, new)))
-    checkdata = bookmod.binaryencode(data)
+    checkdata = bookmod.binaryencode(pushop.repo, data)
     bundler.newpart(b'bookmarks', data=checkdata)
 
     def handlereply(op):
@@ -1126,19 +1147,19 @@ def _pushbundle2(pushop):
                     },
                 ).result()
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
         try:
             trgetter = None
             if pushback:
                 trgetter = pushop.trmanager.transaction
             op = bundle2.processbundle(pushop.repo, reply, trgetter)
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
         except bundle2.AbortFromPart as exc:
-            pushop.ui.status(_(b'remote: %s\n') % exc)
+            pushop.ui.error(_(b'remote: %s\n') % exc)
             if exc.hint is not None:
-                pushop.ui.status(_(b'remote: %s\n') % (b'(%s)' % exc.hint))
-            raise error.Abort(_(b'push failed on remote'))
+                pushop.ui.error(_(b'remote: %s\n') % (b'(%s)' % exc.hint))
+            raise error.RemoteError(_(b'push failed on remote'))
     except error.PushkeyFailed as exc:
         partid = int(exc.partid)
         if partid not in pushop.pkfailcb:
@@ -1445,7 +1466,7 @@ class transactionmanager(util.transactional):
     def transaction(self):
         """Return an open transaction object, constructing if necessary"""
         if not self._tr:
-            trname = b'%s\n%s' % (self.source, util.hidepassword(self.url))
+            trname = b'%s\n%s' % (self.source, urlutil.hidepassword(self.url))
             self._tr = self.repo.transaction(trname)
             self._tr.hookargs[b'source'] = self.source
             self._tr.hookargs[b'url'] = self.url
@@ -1606,6 +1627,23 @@ def pull(
                 b" %s"
             ) % (b', '.join(sorted(missing)))
             raise error.Abort(msg)
+
+    for category in repo._wanted_sidedata:
+        # Check that a computer is registered for that category for at least
+        # one revlog kind.
+        for kind, computers in repo._sidedata_computers.items():
+            if computers.get(category):
+                break
+        else:
+            # This should never happen since repos are supposed to be able to
+            # generate the sidedata they require.
+            raise error.ProgrammingError(
+                _(
+                    b'sidedata category requested by local side without local'
+                    b"support: '%s'"
+                )
+                % pycompat.bytestr(category)
+            )
 
     pullop.trmanager = transactionmanager(repo, b'pull', remote.url())
     wlock = util.nullcontextmanager()
@@ -1820,6 +1858,10 @@ def _pullbundle2(pullop):
             pullop.stepsdone.add(b'obsmarkers')
     _pullbundle2extraprepare(pullop, kwargs)
 
+    remote_sidedata = bundle2.read_remote_wanted_sidedata(pullop.remote)
+    if remote_sidedata:
+        kwargs[b'remote_sidedata'] = remote_sidedata
+
     with pullop.remote.commandexecutor() as e:
         args = dict(kwargs)
         args[b'source'] = b'pull'
@@ -1832,10 +1874,10 @@ def _pullbundle2(pullop):
             op.modes[b'bookmarks'] = b'records'
             bundle2.processbundle(pullop.repo, bundle, op=op)
         except bundle2.AbortFromPart as exc:
-            pullop.repo.ui.status(_(b'remote: abort: %s\n') % exc)
-            raise error.Abort(_(b'pull failed on remote'), hint=exc.hint)
+            pullop.repo.ui.error(_(b'remote: abort: %s\n') % exc)
+            raise error.RemoteError(_(b'pull failed on remote'), hint=exc.hint)
         except error.BundleValueError as exc:
-            raise error.Abort(_(b'missing support for %s') % exc)
+            raise error.RemoteError(_(b'missing support for %s') % exc)
 
     if pullop.fetch:
         pullop.cgresult = bundle2.combinechangegroupresults(op)
@@ -2249,7 +2291,13 @@ def bundle2requested(bundlecaps):
 
 
 def getbundlechunks(
-    repo, source, heads=None, common=None, bundlecaps=None, **kwargs
+    repo,
+    source,
+    heads=None,
+    common=None,
+    bundlecaps=None,
+    remote_sidedata=None,
+    **kwargs
 ):
     """Return chunks constituting a bundle's raw data.
 
@@ -2279,7 +2327,12 @@ def getbundlechunks(
         return (
             info,
             changegroup.makestream(
-                repo, outgoing, b'01', source, bundlecaps=bundlecaps
+                repo,
+                outgoing,
+                b'01',
+                source,
+                bundlecaps=bundlecaps,
+                remote_sidedata=remote_sidedata,
             ),
         )
 
@@ -2303,6 +2356,7 @@ def getbundlechunks(
             source,
             bundlecaps=bundlecaps,
             b2caps=b2caps,
+            remote_sidedata=remote_sidedata,
             **pycompat.strkwargs(kwargs)
         )
 
@@ -2325,6 +2379,7 @@ def _getbundlechangegrouppart(
     b2caps=None,
     heads=None,
     common=None,
+    remote_sidedata=None,
     **kwargs
 ):
     """add a changegroup part to the requested bundle"""
@@ -2355,7 +2410,13 @@ def _getbundlechangegrouppart(
         matcher = None
 
     cgstream = changegroup.makestream(
-        repo, outgoing, version, source, bundlecaps=bundlecaps, matcher=matcher
+        repo,
+        outgoing,
+        version,
+        source,
+        bundlecaps=bundlecaps,
+        matcher=matcher,
+        remote_sidedata=remote_sidedata,
     )
 
     part = bundler.newpart(b'changegroup', data=cgstream)
@@ -2369,6 +2430,8 @@ def _getbundlechangegrouppart(
 
     if b'exp-sidedata-flag' in repo.requirements:
         part.addparam(b'exp-sidedata', b'1')
+        sidedata = bundle2.format_remote_wanted_sidedata(repo)
+        part.addparam(b'exp-wanted-sidedata', sidedata)
 
     if (
         kwargs.get('narrow', False)
@@ -2393,7 +2456,7 @@ def _getbundlebookmarkpart(
     if not b2caps or b'bookmarks' not in b2caps:
         raise error.Abort(_(b'no common bookmarks exchange method'))
     books = bookmod.listbinbookmarks(repo)
-    data = bookmod.binaryencode(books)
+    data = bookmod.binaryencode(repo, books)
     if data:
         bundler.newpart(b'bookmarks', data=data)
 
@@ -2585,7 +2648,7 @@ def unbundle(repo, cg, heads, source, url):
         # push can proceed
         if not isinstance(cg, bundle2.unbundle20):
             # legacy case: bundle1 (changegroup 01)
-            txnname = b"\n".join([source, util.hidepassword(url)])
+            txnname = b"\n".join([source, urlutil.hidepassword(url)])
             with repo.lock(), repo.transaction(txnname) as tr:
                 op = bundle2.applybundle(repo, cg, tr, source, url)
                 r = bundle2.combinechangegroupresults(op)

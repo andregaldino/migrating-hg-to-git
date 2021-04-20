@@ -93,8 +93,10 @@ Copy a file onto another file
      x y
   $ hg debugp1copies -r 1
   x -> y
-Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
+  x -> y (no-filelog !)
+  $ hg debugpathcopies 0 1  --config devel.copy-tracing.trace-all-files=yes
+  x -> y
 
 Copy a file onto another file with same content. If metadata is stored in changeset, this does not
 produce a new filelog entry. The changeset's "files" entry should still list the file.
@@ -111,8 +113,10 @@ produce a new filelog entry. The changeset's "files" entry should still list the
      x x2
   $ hg debugp1copies -r 1
   x -> x2
-Incorrectly doesn't show the rename
   $ hg debugpathcopies 0 1
+  x -> x2 (no-filelog !)
+  $ hg debugpathcopies 0 1  --config devel.copy-tracing.trace-all-files=yes
+  x -> x2
 
 Rename file in a loop: x->y->z->x
   $ newrepo
@@ -373,6 +377,29 @@ of the merge to the merge should include the copy from the other side.
   x -> y
   $ hg debugpathcopies 1 3
   x -> z
+
+Copy x->y on two separate branches. Pathcopies from one branch to the other
+should not report the copy.
+  $ newrepo
+  $ echo x > x
+  $ hg ci -Aqm 'add x'
+  $ hg cp x y
+  $ hg ci -qm 'copy x to y'
+  $ hg co -q 0
+  $ hg graft 1 -q
+  $ hg l
+  @  2 copy x to y
+  |  y
+  | o  1 copy x to y
+  |/   y
+  o  0 add x
+     x
+  $ hg debugp1copies -r 1
+  x -> y
+  $ hg debugp1copies -r 2
+  x -> y
+  $ hg debugpathcopies 1 2
+  $ hg debugpathcopies 2 1
 
 Copy x to y on one side of merge, create y and rename to z on the other side.
   $ newrepo

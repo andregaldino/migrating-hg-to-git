@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import nullid
+from .node import nullrev
 from . import (
     error,
     mdiff,
@@ -402,31 +402,6 @@ class Merge3Text(object):
 
         return sl
 
-    def find_unconflicted(self):
-        """Return a list of ranges in base that are not conflicted."""
-        am = mdiff.get_matching_blocks(self.basetext, self.atext)
-        bm = mdiff.get_matching_blocks(self.basetext, self.btext)
-
-        unc = []
-
-        while am and bm:
-            # there is an unconflicted block at i; how long does it
-            # extend?  until whichever one ends earlier.
-            a1 = am[0][0]
-            a2 = a1 + am[0][2]
-            b1 = bm[0][0]
-            b2 = b1 + bm[0][2]
-            i = intersect((a1, a2), (b1, b2))
-            if i:
-                unc.append(i)
-
-            if a2 < b2:
-                del am[0]
-            else:
-                del bm[0]
-
-        return unc
-
 
 def _verifytext(text, path, ui, opts):
     """verifies that text is non-binary (unless opts[text] is passed,
@@ -452,7 +427,7 @@ def _picklabels(defaults, overrides):
 def is_not_null(ctx):
     if not util.safehasattr(ctx, "node"):
         return False
-    return ctx.node() != nullid
+    return ctx.rev() != nullrev
 
 
 def _mergediff(m3, name_a, name_b, name_base):

@@ -1125,7 +1125,7 @@ repositories visible to an external hook.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ cp .hg/bookmarks.pending.saved .hg/bookmarks.pending
 
 (check visible bookmarks while transaction running in repo)
@@ -1158,7 +1158,7 @@ repositories visible to an external hook.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
 
 Check pretxnclose-bookmark can abort a transaction
 --------------------------------------------------
@@ -1242,7 +1242,7 @@ attempt to create on a default changeset
   transaction abort!
   rollback completed
   abort: pretxnclose-bookmark.force-public hook exited with status 1
-  [255]
+  [40]
 
 create on a public changeset
 
@@ -1254,4 +1254,4 @@ move to the other branch
   transaction abort!
   rollback completed
   abort: pretxnclose-bookmark.force-forward hook exited with status 1
-  [255]
+  [40]

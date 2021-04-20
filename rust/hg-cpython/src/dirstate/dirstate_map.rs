@@ -14,8 +14,8 @@ use std::time::Duration;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
-    PyObject, PyResult, PyString, PyTuple, Python, PythonObject, ToPyObject,
-    UnsafePyLeaked,
+    PyObject, PyResult, PySet, PyString, PyTuple, Python, PythonObject,
+    ToPyObject, UnsafePyLeaked,
 };
 
 use crate::{
@@ -24,12 +24,14 @@ use crate::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
+    parsers::dirstate_parents_to_pytuple,
 };
 use hg::{
+    errors::HgError,
+    revlog::Node,
     utils::hg_path::{HgPath, HgPathBuf},
     DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateMapError, DirstateParents, DirstateParseError, EntryState,
-    StateMapIter, PARENT_SIZE,
+    DirstateMapError, DirstateParents, EntryState, StateMapIter,
 };
 
 // TODO
@@ -84,13 +86,13 @@ py_class!(pub class DirstateMap |py| {
             HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
             oldstate.extract::<PyBytes>(py)?.data(py)[0]
                 .try_into()
-                .map_err(|e: DirstateParseError| {
+                .map_err(|e: HgError| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
                 })?,
             DirstateEntry {
                 state: state.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
                 mode: mode.extract(py)?,
@@ -113,7 +115,7 @@ py_class!(pub class DirstateMap |py| {
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
                 size.extract(py)?,
@@ -137,7 +139,7 @@ py_class!(pub class DirstateMap |py| {
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
                 oldstate.extract::<PyBytes>(py)?.data(py)[0]
                     .try_into()
-                    .map_err(|e: DirstateParseError| {
+                    .map_err(|e: HgError| {
                         PyErr::new::<exc::ValueError, _>(py, e.to_string())
                     })?,
             )
@@ -173,18 +175,11 @@ py_class!(pub class DirstateMap |py| {
         let (_, other_parent) =
             inner_shared.get_non_normal_other_parent_entries();
 
-        let locals = PyDict::new(py);
-        locals.set_item(
-            py,
-            "other_parent",
-            other_parent
-                .iter()
-                .map(|v| PyBytes::new(py, v.as_bytes()))
-                .collect::<Vec<PyBytes>>()
-                .to_py_object(py),
-        )?;
-
-        py.eval("set(other_parent)", None, Some(&locals))
+        let set = PySet::empty(py)?;
+        for path in other_parent.iter() {
+            set.add(py, PyBytes::new(py, path.as_bytes()))?;
+        }
+        Ok(set.into_object())
     }
 
     def non_normal_entries(&self) -> PyResult<NonNormalEntries> {
@@ -285,10 +280,7 @@ py_class!(pub class DirstateMap |py| {
     def parents(&self, st: PyObject) -> PyResult<PyTuple> {
         self.inner(py).borrow_mut()
             .parents(st.extract::<PyBytes>(py)?.data(py))
-            .and_then(|d| {
-                Ok((PyBytes::new(py, &d.p1), PyBytes::new(py, &d.p2))
-                    .to_py_object(py))
-            })
+            .map(|parents| dirstate_parents_to_pytuple(py, parents))
             .or_else(|_| {
                 Err(PyErr::new::<exc::OSError, _>(
                     py,
@@ -311,9 +303,8 @@ py_class!(pub class DirstateMap |py| {
             .read(st.extract::<PyBytes>(py)?.data(py))
         {
             Ok(Some(parents)) => Ok(Some(
-                (PyBytes::new(py, &parents.p1), PyBytes::new(py, &parents.p2))
-                    .to_py_object(py)
-                    .into_object(),
+                dirstate_parents_to_pytuple(py, parents)
+                    .into_object()
             )),
             Ok(None) => Ok(Some(py.None())),
             Err(_) => Err(PyErr::new::<exc::OSError, _>(
@@ -549,35 +540,15 @@ impl DirstateMap {
     ) -> Ref<'a, RustDirstateMap> {
         self.inner(py).borrow()
     }
-    #[cfg(not(feature = "dirstate-tree"))]
     fn translate_key(
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
-    #[cfg(not(feature = "dirstate-tree"))]
     fn translate_key_value(
         py: Python,
         res: (&HgPathBuf, &DirstateEntry),
-    ) -> PyResult<Option<(PyBytes, PyObject)>> {
-        let (f, entry) = res;
-        Ok(Some((
-            PyBytes::new(py, f.as_bytes()),
-            make_dirstate_tuple(py, &entry)?,
-        )))
-    }
-    #[cfg(feature = "dirstate-tree")]
-    fn translate_key(
-        py: Python,
-        res: (HgPathBuf, DirstateEntry),
-    ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0.as_bytes())))
-    }
-    #[cfg(feature = "dirstate-tree")]
-    fn translate_key_value(
-        py: Python,
-        res: (HgPathBuf, DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
         Ok(Some((
@@ -601,7 +572,7 @@ py_shared_iterator!(
     Option<(PyBytes, PyObject)>
 );
 
-fn extract_node_id(py: Python, obj: &PyObject) -> PyResult<[u8; PARENT_SIZE]> {
+fn extract_node_id(py: Python, obj: &PyObject) -> PyResult<Node> {
     let bytes = obj.extract::<PyBytes>(py)?;
     match bytes.data(py).try_into() {
         Ok(s) => Ok(s),

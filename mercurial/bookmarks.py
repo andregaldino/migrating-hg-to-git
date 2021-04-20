@@ -27,6 +27,9 @@ from . import (
     txnutil,
     util,
 )
+from .utils import (
+    urlutil,
+)
 
 # label constants
 # until 3.5, bookmarks.current was the advertised name, not
@@ -597,10 +600,10 @@ def _diverge(ui, b, path, localmarks, remotenode):
     # try to use an @pathalias suffix
     # if an @pathalias already exists, we overwrite (update) it
     if path.startswith(b"file:"):
-        path = util.url(path).path
+        path = urlutil.url(path).path
     for p, u in ui.configitems(b"paths"):
         if u.startswith(b"file:"):
-            u = util.url(u).path
+            u = urlutil.url(u).path
         if path == u:
             return b'%s@%s' % (b, p)
 
@@ -623,7 +626,7 @@ def unhexlifybookmarks(marks):
 _binaryentry = struct.Struct(b'>20sH')
 
 
-def binaryencode(bookmarks):
+def binaryencode(repo, bookmarks):
     """encode a '(bookmark, node)' iterable into a binary stream
 
     the binary format is:
@@ -645,7 +648,7 @@ def binaryencode(bookmarks):
     return b''.join(binarydata)
 
 
-def binarydecode(stream):
+def binarydecode(repo, stream):
     """decode a binary stream into an '(bookmark, node)' iterable
 
     the binary format is:

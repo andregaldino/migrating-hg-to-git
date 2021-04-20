@@ -910,7 +910,8 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Repository with this on-disk format require Mercurial version 5.4 or above.
 
-    Disabled by default.
+    By default this format variant is disabled if fast implementation is not
+    available and enabled by default if the fast implementation is available.
 
 ``use-share-safe``
     Enforce "safe" behaviors for all "shares" that access this repository.
@@ -966,7 +967,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     On some systems, the Mercurial installation may lack `zstd` support.
 
-    Default is `zlib`.
+    Default is `zstd` if available, `zlib` otherwise.
 
 ``bookmarks-in-store``
     Store bookmarks in .hg/store/. This means that bookmarks are shared when
@@ -1150,7 +1151,7 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
 ``pretxnopen``
   Run before any new repository transaction is open. The reason for the
   transaction will be in ``$HG_TXNNAME``, and a unique identifier for the
-  transaction will be in ``HG_TXNID``. A non-zero status will prevent the
+  transaction will be in ``$HG_TXNID``. A non-zero status will prevent the
   transaction from being opened.
 
 ``pretxnclose``
@@ -1159,12 +1160,13 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
   content or change it. Exit status 0 allows the commit to proceed. A non-zero
   status will cause the transaction to be rolled back. The reason for the
   transaction opening will be in ``$HG_TXNNAME``, and a unique identifier for
-  the transaction will be in ``HG_TXNID``. The rest of the available data will
-  vary according the transaction type. New changesets will add ``$HG_NODE``
-  (the ID of the first added changeset), ``$HG_NODE_LAST`` (the ID of the last
-  added changeset), ``$HG_URL`` and ``$HG_SOURCE`` variables.  Bookmark and
-  phase changes will set ``HG_BOOKMARK_MOVED`` and ``HG_PHASES_MOVED`` to ``1``
-  respectively, etc.
+  the transaction will be in ``$HG_TXNID``. The rest of the available data will
+  vary according the transaction type.  Changes unbundled to the repository will
+  add ``$HG_URL`` and ``$HG_SOURCE``.  New changesets will add ``$HG_NODE`` (the
+  ID of the first added changeset), ``$HG_NODE_LAST`` (the ID of the last added
+  changeset).  Bookmark and phase changes will set ``$HG_BOOKMARK_MOVED`` and
+  ``$HG_PHASES_MOVED`` to ``1`` respectively.  The number of new obsmarkers, if
+  any, will be in ``$HG_NEW_OBSMARKERS``, etc.
 
 ``pretxnclose-bookmark``
   Run right before a bookmark change is actually finalized. Any repository
@@ -1178,7 +1180,7 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
   will be empty.
   In addition, the reason for the transaction opening will be in
   ``$HG_TXNNAME``, and a unique identifier for the transaction will be in
-  ``HG_TXNID``.
+  ``$HG_TXNID``.
 
 ``pretxnclose-phase``
   Run right before a phase change is actually finalized. Any repository change
@@ -1190,7 +1192,7 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
   while the previous ``$HG_OLDPHASE``. In case of new node, ``$HG_OLDPHASE``
   will be empty.  In addition, the reason for the transaction opening will be in
   ``$HG_TXNNAME``, and a unique identifier for the transaction will be in
-  ``HG_TXNID``. The hook is also run for newly added revisions. In this case
+  ``$HG_TXNID``. The hook is also run for newly added revisions. In this case
   the ``$HG_OLDPHASE`` entry will be empty.
 
 ``txnclose``
@@ -1701,7 +1703,8 @@ location of the repository. Example::
 
 These symbolic names can be used from the command line. To pull
 from ``my_server``: :hg:`pull my_server`. To push to ``local_path``:
-:hg:`push local_path`.
+:hg:`push local_path`. You can check :hg:`help urls` for details about
+valid URLs.
 
 Options containing colons (``:``) denote sub-options that can influence
 behavior for that specific path. Example::
@@ -1709,6 +1712,9 @@ behavior for that specific path. Example::
     [paths]
     my_server = https://example.com/my_path
     my_server:pushurl = ssh://example.com/my_path
+
+Paths using the `path://otherpath` scheme will inherit the sub-options value from
+the path they point to.
 
 The following sub-options can be defined:
 

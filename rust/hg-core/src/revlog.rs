@@ -9,7 +9,7 @@ pub mod node;
 pub mod nodemap;
 mod nodemap_docket;
 pub mod path_encode;
-pub use node::{Node, NodeError, NodePrefix, NodePrefixRef};
+pub use node::{FromHexError, Node, NodePrefix};
 pub mod changelog;
 pub mod index;
 pub mod manifest;
@@ -34,6 +34,9 @@ pub const NULL_REVISION: Revision = -1;
 /// it out explicitely, same as in `mercurial.node`
 #[allow(clippy::unreadable_literal)]
 pub const WORKING_DIRECTORY_REVISION: Revision = 0x7fffffff;
+
+pub const WORKING_DIRECTORY_HEX: &str =
+    "ffffffffffffffffffffffffffffffffffffffff";
 
 /// The simplest expression of what we need of Mercurial DAGs.
 pub trait Graph {

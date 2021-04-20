@@ -116,6 +116,7 @@ from mercurial.pycompat import (
 from mercurial.utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 from mercurial import (
@@ -683,7 +684,13 @@ def _lookupwrap(orig):
 def _pull(orig, ui, repo, source=b"default", **opts):
     opts = pycompat.byteskwargs(opts)
     # Copy paste from `pull` command
-    source, branches = hg.parseurl(ui.expandpath(source), opts.get(b'branch'))
+    source, branches = urlutil.get_unique_pull_path(
+        b"infinite-push's pull",
+        repo,
+        ui,
+        source,
+        default_branches=opts.get(b'branch'),
+    )
 
     scratchbookmarks = {}
     unfi = repo.unfiltered()
@@ -704,16 +711,19 @@ def _pull(orig, ui, repo, source=b"default", **opts):
 
         if scratchbookmarks:
             other = hg.peer(repo, opts, source)
-            fetchedbookmarks = other.listkeyspatterns(
-                b'bookmarks', patterns=scratchbookmarks
-            )
-            for bookmark in scratchbookmarks:
-                if bookmark not in fetchedbookmarks:
-                    raise error.Abort(
-                        b'remote bookmark %s not found!' % bookmark
-                    )
-                scratchbookmarks[bookmark] = fetchedbookmarks[bookmark]
-                revs.append(fetchedbookmarks[bookmark])
+            try:
+                fetchedbookmarks = other.listkeyspatterns(
+                    b'bookmarks', patterns=scratchbookmarks
+                )
+                for bookmark in scratchbookmarks:
+                    if bookmark not in fetchedbookmarks:
+                        raise error.Abort(
+                            b'remote bookmark %s not found!' % bookmark
+                        )
+                    scratchbookmarks[bookmark] = fetchedbookmarks[bookmark]
+                    revs.append(fetchedbookmarks[bookmark])
+            finally:
+                other.close()
         opts[b'bookmark'] = bookmarks
         opts[b'rev'] = revs
 
@@ -805,7 +815,7 @@ def _findcommonincoming(orig, *args, **kwargs):
     return common, True, remoteheads
 
 
-def _push(orig, ui, repo, dest=None, *args, **opts):
+def _push(orig, ui, repo, *dests, **opts):
     opts = pycompat.byteskwargs(opts)
     bookmark = opts.get(b'bookmark')
     # we only support pushing one infinitepush bookmark at once
@@ -833,25 +843,28 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
             oldphasemove = extensions.wrapfunction(
                 exchange, b'_localphasemove', _phasemove
             )
-        # Copy-paste from `push` command
-        path = ui.paths.getpath(dest, default=(b'default-push', b'default'))
-        if not path:
-            raise error.Abort(
-                _(b'default repository not configured!'),
-                hint=_(b"see 'hg help config.paths'"),
-            )
+
+        paths = list(urlutil.get_push_paths(repo, ui, dests))
+        if len(paths) > 1:
+            msg = _(b'cannot push to multiple path with infinitepush')
+            raise error.Abort(msg)
+
+        path = paths[0]
         destpath = path.pushloc or path.loc
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before push and restore after
         remotescratchbookmarks = _readscratchremotebookmarks(ui, repo, destpath)
-        result = orig(ui, repo, dest, *args, **pycompat.strkwargs(opts))
+        result = orig(ui, repo, *dests, **pycompat.strkwargs(opts))
         if common.isremotebooksenabled(ui):
             if bookmark and scratchpush:
                 other = hg.peer(repo, opts, destpath)
-                fetchedbookmarks = other.listkeyspatterns(
-                    b'bookmarks', patterns=[bookmark]
-                )
-                remotescratchbookmarks.update(fetchedbookmarks)
+                try:
+                    fetchedbookmarks = other.listkeyspatterns(
+                        b'bookmarks', patterns=[bookmark]
+                    )
+                    remotescratchbookmarks.update(fetchedbookmarks)
+                finally:
+                    other.close()
             _saveremotebookmarks(repo, remotescratchbookmarks, destpath)
     if oldphasemove:
         exchange._localphasemove = oldphasemove

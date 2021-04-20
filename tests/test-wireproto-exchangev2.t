@@ -1099,7 +1099,8 @@ Output is flaky, save it in a file and check part independently
   $ cat clone-output | grep "received frame"
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation) (no-zstd !)
+  received frame(size=1283; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation) (zstd !)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
@@ -1196,7 +1197,8 @@ Output is flaky, save it in a file and check part independently
   $ cat clone-output | grep "received frame"
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
-  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)
+  received frame(size=1275; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation) (no-zstd !)
+  received frame(size=1283; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation) (zstd !)
   received frame(size=0; request=1; stream=2; streamflags=; type=command-response; flags=eos)
   received frame(size=9; request=1; stream=2; streamflags=stream-begin; type=stream-settings; flags=eos)
   received frame(size=11; request=1; stream=2; streamflags=encoded; type=command-response; flags=continuation)

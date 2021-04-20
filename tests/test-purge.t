@@ -1,8 +1,3 @@
-  $ cat <<EOF >> $HGRCPATH
-  > [extensions]
-  > purge =
-  > EOF
-
 init
 
   $ hg init t
@@ -18,11 +13,35 @@ setup
   $ echo 'ignored' > .hgignore
   $ hg ci -qAmr3 -d'2 0'
 
+purge without the extension
+
+  $ hg st
+  $ touch foo
+  $ hg purge
+  permanently delete 1 unkown files? (yN) n
+  abort: removal cancelled
+  [250]
+  $ hg st
+  ? foo
+  $ hg purge --no-confirm
+  $ hg st
+
+now enabling the extension
+
+  $ cat <<EOF >> $HGRCPATH
+  > [extensions]
+  > purge =
+  > EOF
+
 delete an empty directory
 
   $ mkdir empty_dir
   $ hg purge -p -v
   empty_dir
+  $ hg purge --confirm
+  permanently delete at least 1 empty directories? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v
   removing directory empty_dir
   $ ls -A
@@ -62,6 +81,10 @@ delete an untracked file
   $ hg purge -p
   untracked_file
   untracked_file_readonly
+  $ hg purge --confirm
+  permanently delete 2 unkown files? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v
   removing file untracked_file
   removing file untracked_file_readonly
@@ -121,6 +144,10 @@ delete only part of the tree
   $ cd directory
   $ hg purge -p ../untracked_directory
   untracked_directory/nested_directory
+  $ hg purge --confirm
+  permanently delete 1 unkown files? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v ../untracked_directory
   removing directory untracked_directory/nested_directory
   removing directory untracked_directory
@@ -138,6 +165,7 @@ skip ignored files if -i or --all not specified
 
   $ touch ignored
   $ hg purge -p
+  $ hg purge --confirm
   $ hg purge -v
   $ touch untracked_file
   $ ls
@@ -147,6 +175,10 @@ skip ignored files if -i or --all not specified
   untracked_file
   $ hg purge -p -i
   ignored
+  $ hg purge --confirm -i
+  permanently delete 1 ignored files? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v -i
   removing file ignored
   $ ls -A
@@ -159,6 +191,10 @@ skip ignored files if -i or --all not specified
   $ hg purge -p --all
   ignored
   untracked_file
+  $ hg purge --confirm --all
+  permanently delete 1 unkown and 1 ignored files? (yN) n
+  abort: removal cancelled
+  [250]
   $ hg purge -v --all
   removing file ignored
   removing file untracked_file

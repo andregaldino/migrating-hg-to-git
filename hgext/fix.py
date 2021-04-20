@@ -131,8 +131,10 @@ import re
 import subprocess
 
 from mercurial.i18n import _
-from mercurial.node import nullrev
-from mercurial.node import wdirrev
+from mercurial.node import (
+    nullrev,
+    wdirrev,
+)
 
 from mercurial.utils import procutil
 
@@ -433,8 +435,9 @@ def getrevstofix(ui, repo, opts):
     if not (len(revs) == 1 and wdirrev in revs):
         cmdutil.checkunfinished(repo)
         rewriteutil.precheck(repo, revs, b'fix')
-    if wdirrev in revs and list(
-        mergestatemod.mergestate.read(repo).unresolved()
+    if (
+        wdirrev in revs
+        and mergestatemod.mergestate.read(repo).unresolvedcount()
     ):
         raise error.Abort(b'unresolved conflicts', hint=b"use 'hg resolve'")
     if not revs:

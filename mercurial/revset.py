@@ -1,6 +1,6 @@
 # revset.py - revision set queries for mercurial
 #
-# Copyright 2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -41,6 +41,7 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+    urlutil,
 )
 
 # helpers for processing parsed tree
@@ -1335,6 +1336,29 @@ def followlines(repo, subset, x):
     return subset & rs
 
 
+@predicate(b'nodefromfile(path)')
+def nodefromfile(repo, subset, x):
+    """
+    An alias for ``::.`` (ancestors of the working directory's first parent).
+    If file pattern is specified, the histories of files matching given
+    pattern in the revision given by startrev are followed, including copies.
+    """
+    path = getstring(x, _(b"nodefromfile require a file path"))
+    listed_rev = set()
+    try:
+        with pycompat.open(path, 'rb') as f:
+            for line in f:
+                n = line.strip()
+                rn = _node(repo, n)
+                if rn is not None:
+                    listed_rev.add(rn)
+    except IOError as exc:
+        m = _(b'cannot open nodes file "%s": %s')
+        m %= (path, encoding.strtolocal(exc.strerror))
+        raise error.Abort(m)
+    return subset & baseset(listed_rev)
+
+
 @predicate(b'all()', safe=True)
 def getall(repo, subset, x):
     """All changesets, the same as ``0:tip``."""
@@ -1697,13 +1721,9 @@ def named(repo, subset, x):
     return subset & names
 
 
-@predicate(b'id(string)', safe=True)
-def node_(repo, subset, x):
-    """Revision non-ambiguously specified by the given hex string prefix."""
-    # i18n: "id" is a keyword
-    l = getargs(x, 1, 1, _(b"id requires one argument"))
-    # i18n: "id" is a keyword
-    n = getstring(l[0], _(b"id requires a string"))
+def _node(repo, n):
+    """process a node input"""
+    rn = None
     if len(n) == 40:
         try:
             rn = repo.changelog.rev(bin(n))
@@ -1712,7 +1732,6 @@ def node_(repo, subset, x):
         except (LookupError, TypeError):
             rn = None
     else:
-        rn = None
         try:
             pm = scmutil.resolvehexnodeidprefix(repo, n)
             if pm is not None:
@@ -1721,6 +1740,17 @@ def node_(repo, subset, x):
             pass
         except error.WdirUnsupported:
             rn = wdirrev
+    return rn
+
+
+@predicate(b'id(string)', safe=True)
+def node_(repo, subset, x):
+    """Revision non-ambiguously specified by the given hex string prefix."""
+    # i18n: "id" is a keyword
+    l = getargs(x, 1, 1, _(b"id requires one argument"))
+    # i18n: "id" is a keyword
+    n = getstring(l[0], _(b"id requires a string"))
+    rn = _node(repo, n)
 
     if rn is None:
         return baseset()
@@ -1825,27 +1855,28 @@ def outgoing(repo, subset, x):
     dest = (
         l and getstring(l[0], _(b"outgoing requires a repository path")) or b''
     )
-    if not dest:
-        # ui.paths.getpath() explicitly tests for None, not just a boolean
-        dest = None
-    path = repo.ui.paths.getpath(dest, default=(b'default-push', b'default'))
-    if not path:
-        raise error.Abort(
-            _(b'default repository not configured!'),
-            hint=_(b"see 'hg help config.paths'"),
-        )
-    dest = path.pushloc or path.loc
-    branches = path.branch, []
+    if dest:
+        dests = [dest]
+    else:
+        dests = []
+    missing = set()
+    for path in urlutil.get_push_paths(repo, repo.ui, dests):
+        dest = path.pushloc or path.loc
+        branches = path.branch, []
 
-    revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
-    if revs:
-        revs = [repo.lookup(rev) for rev in revs]
-    other = hg.peer(repo, {}, dest)
-    repo.ui.pushbuffer()
-    outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
-    repo.ui.popbuffer()
+        revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
+        if revs:
+            revs = [repo.lookup(rev) for rev in revs]
+        other = hg.peer(repo, {}, dest)
+        try:
+            repo.ui.pushbuffer()
+            outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
+            repo.ui.popbuffer()
+        finally:
+            other.close()
+        missing.update(outgoing.missing)
     cl = repo.changelog
-    o = {cl.rev(r) for r in outgoing.missing}
+    o = {cl.rev(r) for r in missing}
     return subset & o
 
 
@@ -2089,8 +2120,11 @@ def remote(repo, subset, x):
     if len(l) > 1:
         # i18n: "remote" is a keyword
         dest = getstring(l[1], _(b"remote requires a repository path"))
-    dest = repo.ui.expandpath(dest or b'default')
-    dest, branches = hg.parseurl(dest)
+    if not dest:
+        dest = b'default'
+    dest, branches = urlutil.get_unique_pull_path(
+        b'remote', repo, repo.ui, dest
+    )
 
     other = hg.peer(repo, {}, dest)
     n = other.lookup(q)

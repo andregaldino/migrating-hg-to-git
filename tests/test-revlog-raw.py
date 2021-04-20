@@ -51,10 +51,10 @@ _extheader = b'E\n'
 def readprocessor(self, rawtext):
     # True: the returned text could be used to verify hash
     text = rawtext[len(_extheader) :].replace(b'i', b'1')
-    return text, True, {}
+    return text, True
 
 
-def writeprocessor(self, text, sidedata):
+def writeprocessor(self, text):
     # False: the returned rawtext shouldn't be used to verify hash
     rawtext = _extheader + text.replace(b'1', b'i')
     return rawtext, False
@@ -147,6 +147,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 b'flags': rlog.flags(r),
                 b'deltabase': rlog.node(deltaparent),
                 b'delta': rlog.revdiff(deltaparent, r),
+                b'sidedata': rlog.sidedata(r),
             }
 
         def deltaiter(self):
@@ -159,10 +160,11 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 deltabase = chunkdata[b'deltabase']
                 delta = chunkdata[b'delta']
                 flags = chunkdata[b'flags']
+                sidedata = chunkdata[b'sidedata']
 
                 chain = node
 
-                yield (node, p1, p2, cs, deltabase, delta, flags)
+                yield (node, p1, p2, cs, deltabase, delta, flags, sidedata)
 
     def linkmap(lnode):
         return rlog.rev(lnode)
@@ -293,7 +295,7 @@ def writecases(rlog, tr):
 
         # Verify text, rawtext, and rawsize
         if isext:
-            rawtext = writeprocessor(None, text, {})[0]
+            rawtext = writeprocessor(None, text)[0]
         else:
             rawtext = text
         if rlog.rawsize(rev) != len(rawtext):

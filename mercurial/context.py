@@ -1,6 +1,6 @@
 # context.py - changeset and file context objects for mercurial
 #
-# Copyright 2006, 2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2006, 2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -2599,6 +2599,7 @@ class overlayworkingctx(committablectx):
             b'flags': flags,
             b'copied': copied,
         }
+        util.clearcachedproperty(self, b'_manifest')
 
     def filectx(self, path, filelog=None):
         return overlayworkingfilectx(
@@ -2884,7 +2885,7 @@ class memctx(committablectx):
         # "1 < len(self._parents)" can't be used for checking
         # existence of the 2nd parent, because "memctx._parents" is
         # explicitly initialized by the list, of which length is 2.
-        if p2.node() != nullid:
+        if p2.rev() != nullrev:
             man2 = p2.manifest()
             managing = lambda f: f in man1 or f in man2
         else:
@@ -2902,7 +2903,7 @@ class memctx(committablectx):
         return scmutil.status(modified, added, removed, [], [], [], [])
 
     def parents(self):
-        if self._parents[1].node() == nullid:
+        if self._parents[1].rev() == nullrev:
             return [self._parents[0]]
         return self._parents
 
@@ -2999,7 +3000,7 @@ class metadataonlyctx(committablectx):
             parents = [repo[p] for p in parents if p is not None]
         parents = parents[:]
         while len(parents) < 2:
-            parents.append(repo[nullid])
+            parents.append(repo[nullrev])
         p1, p2 = self._parents = parents
 
         # sanity check to ensure that the reused manifest parents are
@@ -3051,7 +3052,7 @@ class metadataonlyctx(committablectx):
         # "1 < len(self._parents)" can't be used for checking
         # existence of the 2nd parent, because "metadataonlyctx._parents" is
         # explicitly initialized by the list, of which length is 2.
-        if p2.node() != nullid:
+        if p2.rev() != nullrev:
             man2 = p2.manifest()
             managing = lambda f: f in man1 or f in man2
         else:

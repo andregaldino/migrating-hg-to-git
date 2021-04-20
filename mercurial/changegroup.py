@@ -1,12 +1,13 @@
 # changegroup.py - Mercurial changegroup manipulation functions
 #
-#  Copyright 2006 Matt Mackall <mpm@selenic.com>
+#  Copyright 2006 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
 from __future__ import absolute_import
 
+import collections
 import os
 import struct
 import weakref
@@ -32,6 +33,7 @@ from . import (
 )
 
 from .interfaces import repository
+from .revlogutils import sidedata as sidedatamod
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct(b"20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct(b"20s20s20s20s20s")
@@ -202,7 +204,9 @@ class cg1unpacker(object):
         header = self.deltaheader.unpack(headerdata)
         delta = readexactly(self._stream, l - self.deltaheadersize)
         node, p1, p2, deltabase, cs, flags = self._deltaheader(header, prevnode)
-        return (node, p1, p2, cs, deltabase, delta, flags)
+        # cg4 forward-compat
+        sidedata = {}
+        return (node, p1, p2, cs, deltabase, delta, flags, sidedata)
 
     def getchunks(self):
         """returns all the chunks contains in the bundle
@@ -249,7 +253,7 @@ class cg1unpacker(object):
                     pos = next
             yield closechunk()
 
-    def _unpackmanifests(self, repo, revmap, trp, prog):
+    def _unpackmanifests(self, repo, revmap, trp, prog, addrevisioncb=None):
         self.callback = prog.increment
         # no need to check for empty manifest group here:
         # if the result of the merge of 1 and 2 is the same in 3 and 4,
@@ -257,7 +261,8 @@ class cg1unpacker(object):
         # be empty during the pull
         self.manifestheader()
         deltas = self.deltaiter()
-        repo.manifestlog.getstorage(b'').addgroup(deltas, revmap, trp)
+        storage = repo.manifestlog.getstorage(b'')
+        storage.addgroup(deltas, revmap, trp, addrevisioncb=addrevisioncb)
         prog.complete()
         self.callback = None
 
@@ -269,6 +274,7 @@ class cg1unpacker(object):
         url,
         targetphase=phases.draft,
         expectedtotal=None,
+        sidedata_categories=None,
     ):
         """Add the changegroup returned by source.read() to this repo.
         srctype is a string like 'push', 'pull', or 'unbundle'.  url is
@@ -279,8 +285,22 @@ class cg1unpacker(object):
         - more heads than before: 1+added heads (2..n)
         - fewer heads than before: -1-removed heads (-2..-n)
         - number of heads stays the same: 1
+
+        `sidedata_categories` is an optional set of the remote's sidedata wanted
+        categories.
         """
         repo = repo.unfiltered()
+
+        # Only useful if we're adding sidedata categories. If both peers have
+        # the same categories, then we simply don't do anything.
+        if self.version == b'04' and srctype == b'pull':
+            sidedata_helpers = get_sidedata_helpers(
+                repo,
+                sidedata_categories or set(),
+                pull=True,
+            )
+        else:
+            sidedata_helpers = None
 
         def csmap(x):
             repo.ui.debug(b"add changeset %s\n" % short(x))
@@ -316,14 +336,16 @@ class cg1unpacker(object):
             self.callback = progress.increment
 
             efilesset = set()
-            cgnodes = []
+            duprevs = []
 
-            def ondupchangelog(cl, node):
-                if cl.rev(node) < clstart:
-                    cgnodes.append(node)
+            def ondupchangelog(cl, rev):
+                if rev < clstart:
+                    duprevs.append(rev)
 
-            def onchangelog(cl, node):
-                efilesset.update(cl.readfiles(node))
+            def onchangelog(cl, rev):
+                ctx = cl.changelogrevision(rev)
+                efilesset.update(ctx.files)
+                repo.register_changeset(rev, ctx)
 
             self.changelogheader()
             deltas = self.deltaiter()
@@ -331,6 +353,7 @@ class cg1unpacker(object):
                 deltas,
                 csmap,
                 trp,
+                alwayscache=True,
                 addrevisioncb=onchangelog,
                 duplicaterevisioncb=ondupchangelog,
             ):
@@ -348,6 +371,13 @@ class cg1unpacker(object):
             efilesset = None
             self.callback = None
 
+            # Keep track of the (non-changelog) revlogs we've updated and their
+            # range of new revisions for sidedata rewrite.
+            # TODO do something more efficient than keeping the reference to
+            # the revlogs, especially memory-wise.
+            touched_manifests = {}
+            touched_filelogs = {}
+
             # pull off the manifest group
             repo.ui.status(_(b"adding manifests\n"))
             # We know that we'll never have more manifests than we had
@@ -355,7 +385,24 @@ class cg1unpacker(object):
             progress = repo.ui.makeprogress(
                 _(b'manifests'), unit=_(b'chunks'), total=changesets
             )
-            self._unpackmanifests(repo, revmap, trp, progress)
+            on_manifest_rev = None
+            if sidedata_helpers and b'manifest' in sidedata_helpers[1]:
+
+                def on_manifest_rev(manifest, rev):
+                    range = touched_manifests.get(manifest)
+                    if not range:
+                        touched_manifests[manifest] = (rev, rev)
+                    else:
+                        assert rev == range[1] + 1
+                        touched_manifests[manifest] = (range[0], rev)
+
+            self._unpackmanifests(
+                repo,
+                revmap,
+                trp,
+                progress,
+                addrevisioncb=on_manifest_rev,
+            )
 
             needfiles = {}
             if repo.ui.configbool(b'server', b'validate'):
@@ -369,11 +416,36 @@ class cg1unpacker(object):
                     for f, n in pycompat.iteritems(mfest):
                         needfiles.setdefault(f, set()).add(n)
 
+            on_filelog_rev = None
+            if sidedata_helpers and b'filelog' in sidedata_helpers[1]:
+
+                def on_filelog_rev(filelog, rev):
+                    range = touched_filelogs.get(filelog)
+                    if not range:
+                        touched_filelogs[filelog] = (rev, rev)
+                    else:
+                        assert rev == range[1] + 1
+                        touched_filelogs[filelog] = (range[0], rev)
+
             # process the files
             repo.ui.status(_(b"adding file changes\n"))
             newrevs, newfiles = _addchangegroupfiles(
-                repo, self, revmap, trp, efiles, needfiles
+                repo,
+                self,
+                revmap,
+                trp,
+                efiles,
+                needfiles,
+                addrevisioncb=on_filelog_rev,
             )
+
+            if sidedata_helpers:
+                if b'changelog' in sidedata_helpers[1]:
+                    cl.rewrite_sidedata(sidedata_helpers, clstart, clend - 1)
+                for mf, (startrev, endrev) in touched_manifests.items():
+                    mf.rewrite_sidedata(sidedata_helpers, startrev, endrev)
+                for fl, (startrev, endrev) in touched_filelogs.items():
+                    fl.rewrite_sidedata(sidedata_helpers, startrev, endrev)
 
             # making sure the value exists
             tr.changes.setdefault(b'changegroup-count-changesets', 0)
@@ -445,8 +517,12 @@ class cg1unpacker(object):
             if added:
                 phases.registernew(repo, tr, targetphase, added)
             if phaseall is not None:
-                phases.advanceboundary(repo, tr, phaseall, cgnodes, revs=added)
-                cgnodes = []
+                if duprevs:
+                    duprevs.extend(added)
+                else:
+                    duprevs = added
+                phases.advanceboundary(repo, tr, phaseall, [], revs=duprevs)
+                duprevs = []
 
             if changesets > 0:
 
@@ -494,7 +570,7 @@ class cg1unpacker(object):
         """
         chain = None
         for chunkdata in iter(lambda: self.deltachunk(chain), {}):
-            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags)
+            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata)
             yield chunkdata
             chain = chunkdata[0]
 
@@ -534,15 +610,42 @@ class cg3unpacker(cg2unpacker):
         node, p1, p2, deltabase, cs, flags = headertuple
         return node, p1, p2, deltabase, cs, flags
 
-    def _unpackmanifests(self, repo, revmap, trp, prog):
-        super(cg3unpacker, self)._unpackmanifests(repo, revmap, trp, prog)
+    def _unpackmanifests(self, repo, revmap, trp, prog, addrevisioncb=None):
+        super(cg3unpacker, self)._unpackmanifests(
+            repo, revmap, trp, prog, addrevisioncb=addrevisioncb
+        )
         for chunkdata in iter(self.filelogheader, {}):
             # If we get here, there are directory manifests in the changegroup
             d = chunkdata[b"filename"]
             repo.ui.debug(b"adding %s revisions\n" % d)
             deltas = self.deltaiter()
-            if not repo.manifestlog.getstorage(d).addgroup(deltas, revmap, trp):
+            if not repo.manifestlog.getstorage(d).addgroup(
+                deltas, revmap, trp, addrevisioncb=addrevisioncb
+            ):
                 raise error.Abort(_(b"received dir revlog group is empty"))
+
+
+class cg4unpacker(cg3unpacker):
+    """Unpacker for cg4 streams.
+
+    cg4 streams add support for exchanging sidedata.
+    """
+
+    version = b'04'
+
+    def deltachunk(self, prevnode):
+        res = super(cg4unpacker, self).deltachunk(prevnode)
+        if not res:
+            return res
+
+        (node, p1, p2, cs, deltabase, delta, flags, _sidedata) = res
+
+        sidedata_raw = getchunk(self._stream)
+        sidedata = {}
+        if len(sidedata_raw) > 0:
+            sidedata = sidedatamod.deserialize_sidedata(sidedata_raw)
+
+        return node, p1, p2, cs, deltabase, delta, flags, sidedata
 
 
 class headerlessfixup(object):
@@ -559,7 +662,7 @@ class headerlessfixup(object):
         return readexactly(self._fh, n)
 
 
-def _revisiondeltatochunks(delta, headerfn):
+def _revisiondeltatochunks(repo, delta, headerfn):
     """Serialize a revisiondelta to changegroup chunks."""
 
     # The captured revision delta may be encoded as a delta against
@@ -584,6 +687,13 @@ def _revisiondeltatochunks(delta, headerfn):
     if prefix:
         yield prefix
     yield data
+
+    sidedata = delta.sidedata
+    if sidedata is not None:
+        # Need a separate chunk for sidedata to be able to differentiate
+        # "raw delta" length and sidedata length
+        yield chunkheader(len(sidedata))
+        yield sidedata
 
 
 def _sortnodesellipsis(store, nodes, cl, lookup):
@@ -678,7 +788,7 @@ def _resolvenarrowrevisioninfo(
                 # We failed to resolve a parent for this node, so
                 # we crash the changegroup construction.
                 raise error.Abort(
-                    b'unable to resolve parent while packing %r %r'
+                    b"unable to resolve parent while packing '%s' %r"
                     b' for changeset %r' % (store.indexfile, rev, clrev)
                 )
 
@@ -709,6 +819,7 @@ def deltagroup(
     clrevtolocalrev=None,
     fullclnodes=None,
     precomputedellipsis=None,
+    sidedata_helpers=None,
 ):
     """Calculate deltas for a set of revisions.
 
@@ -716,6 +827,8 @@ def deltagroup(
 
     If topic is not None, progress detail will be generated using this
     topic name (e.g. changesets, manifests, etc).
+
+    See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
     """
     if not nodes:
         return
@@ -814,6 +927,7 @@ def deltagroup(
         revisiondata=True,
         assumehaveparentrevisions=not ellipses,
         deltamode=deltamode,
+        sidedata_helpers=sidedata_helpers,
     )
 
     for i, revision in enumerate(revisions):
@@ -854,6 +968,7 @@ class cgpacker(object):
         shallow=False,
         ellipsisroots=None,
         fullnodes=None,
+        remote_sidedata=None,
     ):
         """Given a source repo, construct a bundler.
 
@@ -886,6 +1001,8 @@ class cgpacker(object):
         nodes. We store this rather than the set of nodes that should be
         ellipsis because for very large histories we expect this to be
         significantly smaller.
+
+        remote_sidedata is the set of sidedata categories wanted by the remote.
         """
         assert oldmatcher
         assert matcher
@@ -902,6 +1019,9 @@ class cgpacker(object):
         if bundlecaps is None:
             bundlecaps = set()
         self._bundlecaps = bundlecaps
+        if remote_sidedata is None:
+            remote_sidedata = set()
+        self._remote_sidedata = remote_sidedata
         self._isshallow = shallow
         self._fullclnodes = fullnodes
 
@@ -928,11 +1048,26 @@ class cgpacker(object):
         self._verbosenote(_(b'uncompressed size of bundle content:\n'))
         size = 0
 
+        sidedata_helpers = None
+        if self.version == b'04':
+            remote_sidedata = self._remote_sidedata
+            if source == b'strip':
+                # We're our own remote when stripping, get the no-op helpers
+                # TODO a better approach would be for the strip bundle to
+                # correctly advertise its sidedata categories directly.
+                remote_sidedata = repo._wanted_sidedata
+            sidedata_helpers = get_sidedata_helpers(repo, remote_sidedata)
+
         clstate, deltas = self._generatechangelog(
-            cl, clnodes, generate=changelog
+            cl,
+            clnodes,
+            generate=changelog,
+            sidedata_helpers=sidedata_helpers,
         )
         for delta in deltas:
-            for chunk in _revisiondeltatochunks(delta, self._builddeltaheader):
+            for chunk in _revisiondeltatochunks(
+                self._repo, delta, self._builddeltaheader
+            ):
                 size += len(chunk)
                 yield chunk
 
@@ -977,17 +1112,20 @@ class cgpacker(object):
             fnodes,
             source,
             clstate[b'clrevtomanifestrev'],
+            sidedata_helpers=sidedata_helpers,
         )
 
         for tree, deltas in it:
             if tree:
-                assert self.version == b'03'
+                assert self.version in (b'03', b'04')
                 chunk = _fileheader(tree)
                 size += len(chunk)
                 yield chunk
 
             for delta in deltas:
-                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                chunks = _revisiondeltatochunks(
+                    self._repo, delta, self._builddeltaheader
+                )
                 for chunk in chunks:
                     size += len(chunk)
                     yield chunk
@@ -1002,7 +1140,7 @@ class cgpacker(object):
         mfdicts = None
         if self._ellipses and self._isshallow:
             mfdicts = [
-                (self._repo.manifestlog[n].read(), lr)
+                (repo.manifestlog[n].read(), lr)
                 for (n, lr) in pycompat.iteritems(manifests)
             ]
 
@@ -1017,6 +1155,7 @@ class cgpacker(object):
             fastpathlinkrev,
             fnodes,
             clrevs,
+            sidedata_helpers=sidedata_helpers,
         )
 
         for path, deltas in it:
@@ -1025,7 +1164,9 @@ class cgpacker(object):
             yield h
 
             for delta in deltas:
-                chunks = _revisiondeltatochunks(delta, self._builddeltaheader)
+                chunks = _revisiondeltatochunks(
+                    self._repo, delta, self._builddeltaheader
+                )
                 for chunk in chunks:
                     size += len(chunk)
                     yield chunk
@@ -1041,7 +1182,9 @@ class cgpacker(object):
         if clnodes:
             repo.hook(b'outgoing', node=hex(clnodes[0]), source=source)
 
-    def _generatechangelog(self, cl, nodes, generate=True):
+    def _generatechangelog(
+        self, cl, nodes, generate=True, sidedata_helpers=None
+    ):
         """Generate data for changelog chunks.
 
         Returns a 2-tuple of a dict containing state and an iterable of
@@ -1050,6 +1193,8 @@ class cgpacker(object):
 
         if generate is False, the state will be fully populated and no chunk
         stream will be yielded
+
+        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
         """
         clrevorder = {}
         manifests = {}
@@ -1133,6 +1278,7 @@ class cgpacker(object):
             clrevtolocalrev={},
             fullclnodes=self._fullclnodes,
             precomputedellipsis=self._precomputedellipsis,
+            sidedata_helpers=sidedata_helpers,
         )
 
         return state, gen
@@ -1146,11 +1292,14 @@ class cgpacker(object):
         fnodes,
         source,
         clrevtolocalrev,
+        sidedata_helpers=None,
     ):
         """Returns an iterator of changegroup chunks containing manifests.
 
         `source` is unused here, but is used by extensions like remotefilelog to
         change what is sent based in pulls vs pushes, etc.
+
+        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
         """
         repo = self._repo
         mfl = repo.manifestlog
@@ -1240,6 +1389,7 @@ class cgpacker(object):
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis,
+                sidedata_helpers=sidedata_helpers,
             )
 
             if not self._oldmatcher.visitdir(store.tree[:-1]):
@@ -1278,6 +1428,7 @@ class cgpacker(object):
         fastpathlinkrev,
         fnodes,
         clrevs,
+        sidedata_helpers=None,
     ):
         changedfiles = [
             f
@@ -1372,6 +1523,7 @@ class cgpacker(object):
                 clrevtolocalrev=clrevtolocalrev,
                 fullclnodes=self._fullclnodes,
                 precomputedellipsis=self._precomputedellipsis,
+                sidedata_helpers=sidedata_helpers,
             )
 
             yield fname, deltas
@@ -1388,6 +1540,7 @@ def _makecg1packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV1_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.linknode
@@ -1418,6 +1571,7 @@ def _makecg2packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV2_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode
@@ -1447,6 +1601,7 @@ def _makecg3packer(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
         d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
@@ -1467,12 +1622,47 @@ def _makecg3packer(
     )
 
 
+def _makecg4packer(
+    repo,
+    oldmatcher,
+    matcher,
+    bundlecaps,
+    ellipses=False,
+    shallow=False,
+    ellipsisroots=None,
+    fullnodes=None,
+    remote_sidedata=None,
+):
+    # Same header func as cg3. Sidedata is in a separate chunk from the delta to
+    # differenciate "raw delta" and sidedata.
+    builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
+        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
+    )
+
+    return cgpacker(
+        repo,
+        oldmatcher,
+        matcher,
+        b'04',
+        builddeltaheader=builddeltaheader,
+        manifestsend=closechunk(),
+        bundlecaps=bundlecaps,
+        ellipses=ellipses,
+        shallow=shallow,
+        ellipsisroots=ellipsisroots,
+        fullnodes=fullnodes,
+        remote_sidedata=remote_sidedata,
+    )
+
+
 _packermap = {
     b'01': (_makecg1packer, cg1unpacker),
     # cg2 adds support for exchanging generaldelta
     b'02': (_makecg2packer, cg2unpacker),
     # cg3 adds support for exchanging revlog flags and treemanifests
     b'03': (_makecg3packer, cg3unpacker),
+    # ch4 adds support for exchanging sidedata
+    b'04': (_makecg4packer, cg4unpacker),
 }
 
 
@@ -1492,11 +1682,9 @@ def allsupportedversions(repo):
         #
         # (or even to push subset of history)
         needv03 = True
-    if b'exp-sidedata-flag' in repo.requirements:
-        needv03 = True
-        # don't attempt to use 01/02 until we do sidedata cleaning
-        versions.discard(b'01')
-        versions.discard(b'02')
+    has_revlogv2 = requirements.REVLOGV2_REQUIREMENT in repo.requirements
+    if not has_revlogv2:
+        versions.discard(b'04')
     if not needv03:
         versions.discard(b'03')
     return versions
@@ -1543,7 +1731,7 @@ def safeversion(repo):
     # will support. For example, all hg versions that support generaldelta also
     # support changegroup 02.
     versions = supportedoutgoingversions(repo)
-    if b'generaldelta' in repo.requirements:
+    if requirements.GENERALDELTA_REQUIREMENT in repo.requirements:
         versions.discard(b'01')
     assert versions
     return min(versions)
@@ -1559,6 +1747,7 @@ def getbundler(
     shallow=False,
     ellipsisroots=None,
     fullnodes=None,
+    remote_sidedata=None,
 ):
     assert version in supportedoutgoingversions(repo)
 
@@ -1595,6 +1784,7 @@ def getbundler(
         shallow=shallow,
         ellipsisroots=ellipsisroots,
         fullnodes=fullnodes,
+        remote_sidedata=remote_sidedata,
     )
 
 
@@ -1638,8 +1828,15 @@ def makestream(
     fastpath=False,
     bundlecaps=None,
     matcher=None,
+    remote_sidedata=None,
 ):
-    bundler = getbundler(version, repo, bundlecaps=bundlecaps, matcher=matcher)
+    bundler = getbundler(
+        version,
+        repo,
+        bundlecaps=bundlecaps,
+        matcher=matcher,
+        remote_sidedata=remote_sidedata,
+    )
 
     repo = repo.unfiltered()
     commonrevs = outgoing.common
@@ -1658,7 +1855,15 @@ def makestream(
     return bundler.generate(commonrevs, csets, fastpathlinkrev, source)
 
 
-def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
+def _addchangegroupfiles(
+    repo,
+    source,
+    revmap,
+    trp,
+    expectedfiles,
+    needfiles,
+    addrevisioncb=None,
+):
     revisions = 0
     files = 0
     progress = repo.ui.makeprogress(
@@ -1673,7 +1878,13 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
         o = len(fl)
         try:
             deltas = source.deltaiter()
-            if not fl.addgroup(deltas, revmap, trp):
+            added = fl.addgroup(
+                deltas,
+                revmap,
+                trp,
+                addrevisioncb=addrevisioncb,
+            )
+            if not added:
                 raise error.Abort(_(b"received file revlog group is empty"))
         except error.CensoredBaseError as e:
             raise error.Abort(_(b"received delta base is censored: %s") % e)
@@ -1702,3 +1913,25 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                 )
 
     return revisions, files
+
+
+def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
+    # Computers for computing sidedata on-the-fly
+    sd_computers = collections.defaultdict(list)
+    # Computers for categories to remove from sidedata
+    sd_removers = collections.defaultdict(list)
+
+    to_generate = remote_sd_categories - repo._wanted_sidedata
+    to_remove = repo._wanted_sidedata - remote_sd_categories
+    if pull:
+        to_generate, to_remove = to_remove, to_generate
+
+    for revlog_kind, computers in repo._sidedata_computers.items():
+        for category, computer in computers.items():
+            if category in to_generate:
+                sd_computers[revlog_kind].append(computer)
+            if category in to_remove:
+                sd_removers[revlog_kind].append(computer)
+
+    sidedata_helpers = (repo, sd_computers, sd_removers)
+    return sidedata_helpers

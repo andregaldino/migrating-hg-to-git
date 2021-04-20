@@ -1,6 +1,6 @@
 # localrepo.py - read/write repository class for mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -21,6 +21,7 @@ from .node import (
     hex,
     nullid,
     nullrev,
+    sha1nodeconstants,
     short,
 )
 from .pycompat import (
@@ -49,6 +50,7 @@ from . import (
     match as matchmod,
     mergestate as mergestatemod,
     mergeutil,
+    metadata as metadatamod,
     namespaces,
     narrowspec,
     obsolete,
@@ -71,6 +73,7 @@ from . import (
     txnutil,
     util,
     vfs as vfsmod,
+    wireprototypes,
 )
 
 from .interfaces import (
@@ -82,9 +85,13 @@ from .utils import (
     hashutil,
     procutil,
     stringutil,
+    urlutil,
 )
 
-from .revlogutils import constants as revlogconst
+from .revlogutils import (
+    concurrency_checker as revlogchecker,
+    constants as revlogconst,
+)
 
 release = lockmod.release
 urlerr = util.urlerr
@@ -270,6 +277,11 @@ class localpeer(repository.peer):
             caps = moderncaps.copy()
         self._repo = repo.filtered(b'served')
         self.ui = repo.ui
+
+        if repo._wanted_sidedata:
+            formatted = bundle2.format_remote_wanted_sidedata(repo)
+            caps.add(b'exp-wanted-sidedata=' + formatted)
+
         self._caps = repo._restrictcapabilities(caps)
 
     # Begin of _basepeer interface.
@@ -313,7 +325,13 @@ class localpeer(repository.peer):
         )
 
     def getbundle(
-        self, source, heads=None, common=None, bundlecaps=None, **kwargs
+        self,
+        source,
+        heads=None,
+        common=None,
+        bundlecaps=None,
+        remote_sidedata=None,
+        **kwargs
     ):
         chunks = exchange.getbundlechunks(
             self._repo,
@@ -321,6 +339,7 @@ class localpeer(repository.peer):
             heads=heads,
             common=common,
             bundlecaps=bundlecaps,
+            remote_sidedata=remote_sidedata,
             **kwargs
         )[1]
         cb = util.chunkbuffer(chunks)
@@ -452,7 +471,7 @@ def _getsharedvfs(hgvfs, requirements):
     # ``.hg/`` for ``relshared``.
     sharedpath = hgvfs.read(b'sharedpath').rstrip(b'\n')
     if requirementsmod.RELATIVE_SHARED_REQUIREMENT in requirements:
-        sharedpath = hgvfs.join(sharedpath)
+        sharedpath = util.normpath(hgvfs.join(sharedpath))
 
     sharedvfs = vfsmod.vfs(sharedpath, realpath=True)
 
@@ -939,11 +958,10 @@ def ensurerequirementscompatible(ui, requirements):
 
 def makestore(requirements, path, vfstype):
     """Construct a storage object for a repository."""
-    if b'store' in requirements:
-        if b'fncache' in requirements:
-            return storemod.fncachestore(
-                path, vfstype, b'dotencode' in requirements
-            )
+    if requirementsmod.STORE_REQUIREMENT in requirements:
+        if requirementsmod.FNCACHE_REQUIREMENT in requirements:
+            dotencode = requirementsmod.DOTENCODE_REQUIREMENT in requirements
+            return storemod.fncachestore(path, vfstype, dotencode)
 
         return storemod.encodedstore(path, vfstype)
 
@@ -971,7 +989,7 @@ def resolvestorevfsoptions(ui, requirements, features):
     # opener options for it because those options wouldn't do anything
     # meaningful on such old repos.
     if (
-        b'revlogv1' in requirements
+        requirementsmod.REVLOGV1_REQUIREMENT in requirements
         or requirementsmod.REVLOGV2_REQUIREMENT in requirements
     ):
         options.update(resolverevlogstorevfsoptions(ui, requirements, features))
@@ -995,12 +1013,12 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     options = {}
     options[b'flagprocessors'] = {}
 
-    if b'revlogv1' in requirements:
+    if requirementsmod.REVLOGV1_REQUIREMENT in requirements:
         options[b'revlogv1'] = True
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
 
-    if b'generaldelta' in requirements:
+    if requirementsmod.GENERALDELTA_REQUIREMENT in requirements:
         options[b'generaldelta'] = True
 
     # experimental config: format.chunkcachesize
@@ -1196,8 +1214,8 @@ class localrepository(object):
     #    being successful (repository sizes went up due to worse delta
     #    chains), and the code was deleted in 4.6.
     supportedformats = {
-        b'revlogv1',
-        b'generaldelta',
+        requirementsmod.REVLOGV1_REQUIREMENT,
+        requirementsmod.GENERALDELTA_REQUIREMENT,
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.REVLOGV2_REQUIREMENT,
@@ -1208,11 +1226,11 @@ class localrepository(object):
         requirementsmod.SHARESAFE_REQUIREMENT,
     }
     _basesupported = supportedformats | {
-        b'store',
-        b'fncache',
+        requirementsmod.STORE_REQUIREMENT,
+        requirementsmod.FNCACHE_REQUIREMENT,
         requirementsmod.SHARED_REQUIREMENT,
         requirementsmod.RELATIVE_SHARED_REQUIREMENT,
-        b'dotencode',
+        requirementsmod.DOTENCODE_REQUIREMENT,
         requirementsmod.SPARSE_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
     }
@@ -1315,6 +1333,8 @@ class localrepository(object):
         self.vfs = hgvfs
         self.path = hgvfs.base
         self.requirements = requirements
+        self.nodeconstants = sha1nodeconstants
+        self.nullid = self.nodeconstants.nullid
         self.supported = supportedrequirements
         self.sharedpath = sharedpath
         self.store = store
@@ -1385,6 +1405,10 @@ class localrepository(object):
         self.filecopiesmode = None
         if requirementsmod.COPIESSDC_REQUIREMENT in self.requirements:
             self.filecopiesmode = b'changeset-sidedata'
+
+        self._wanted_sidedata = set()
+        self._sidedata_computers = {}
+        metadatamod.set_sidedata_spec_for_repo(self)
 
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
@@ -1473,6 +1497,8 @@ class localrepository(object):
                 bundle2.getrepocaps(self, role=b'client')
             )
             caps.add(b'bundle2=' + urlreq.quote(capsblob))
+        if self.ui.configbool(b'experimental', b'narrow'):
+            caps.add(wireprototypes.NARROWCAP)
         return caps
 
     # Don't cache auditor/nofsauditor, or you'll end up with reference cycle:
@@ -1639,7 +1665,10 @@ class localrepository(object):
     def changelog(self):
         # load dirstate before changelog to avoid race see issue6303
         self.dirstate.prefetch_parents()
-        return self.store.changelog(txnutil.mayhavepending(self.root))
+        return self.store.changelog(
+            txnutil.mayhavepending(self.root),
+            concurrencychecker=revlogchecker.get_checker(self.ui, b'changelog'),
+        )
 
     @storecache(b'00manifest.i')
     def manifestlog(self):
@@ -1654,7 +1683,12 @@ class localrepository(object):
         sparsematchfn = lambda: sparse.matcher(self)
 
         return dirstate.dirstate(
-            self.vfs, self.ui, self.root, self._dirstatevalidate, sparsematchfn
+            self.vfs,
+            self.ui,
+            self.root,
+            self._dirstatevalidate,
+            sparsematchfn,
+            self.nodeconstants,
         )
 
     def _dirstatevalidate(self, node):
@@ -2058,6 +2092,9 @@ class localrepository(object):
         if not self._revbranchcache:
             self._revbranchcache = branchmap.revbranchcache(self.unfiltered())
         return self._revbranchcache
+
+    def register_changeset(self, rev, changelogrevision):
+        self.revbranchcache().setdata(rev, changelogrevision)
 
     def branchtip(self, branch, ignoremissing=False):
         """return the tip node for a given branch
@@ -3326,6 +3363,22 @@ class localrepository(object):
             fp.close()
         return self.pathto(fp.name[len(self.root) + 1 :])
 
+    def register_wanted_sidedata(self, category):
+        self._wanted_sidedata.add(pycompat.bytestr(category))
+
+    def register_sidedata_computer(self, kind, category, keys, computer):
+        if kind not in (b"changelog", b"manifest", b"filelog"):
+            msg = _(b"unexpected revlog kind '%s'.")
+            raise error.ProgrammingError(msg % kind)
+        category = pycompat.bytestr(category)
+        if category in self._sidedata_computers.get(kind, []):
+            msg = _(
+                b"cannot register a sidedata computer twice for category '%s'."
+            )
+            raise error.ProgrammingError(msg % category)
+        self._sidedata_computers.setdefault(kind, {})
+        self._sidedata_computers[kind][category] = (keys, computer)
+
 
 # used to avoid circular references so destructors work
 def aftertrans(files):
@@ -3352,7 +3405,7 @@ def undoname(fn):
 
 
 def instance(ui, path, create, intents=None, createopts=None):
-    localpath = util.urllocalpath(path)
+    localpath = urlutil.urllocalpath(path)
     if create:
         createrepository(ui, localpath, createopts=createopts)
 
@@ -3410,18 +3463,20 @@ def newreporequirements(ui, createopts):
             % createopts[b'backend']
         )
 
-    requirements = {b'revlogv1'}
+    requirements = {requirementsmod.REVLOGV1_REQUIREMENT}
     if ui.configbool(b'format', b'usestore'):
-        requirements.add(b'store')
+        requirements.add(requirementsmod.STORE_REQUIREMENT)
         if ui.configbool(b'format', b'usefncache'):
-            requirements.add(b'fncache')
+            requirements.add(requirementsmod.FNCACHE_REQUIREMENT)
             if ui.configbool(b'format', b'dotencode'):
-                requirements.add(b'dotencode')
+                requirements.add(requirementsmod.DOTENCODE_REQUIREMENT)
 
     compengines = ui.configlist(b'format', b'revlog-compression')
     for compengine in compengines:
         if compengine in util.compengines:
-            break
+            engine = util.compengines[compengine]
+            if engine.available() and engine.revlogheader():
+                break
     else:
         raise error.Abort(
             _(
@@ -3442,15 +3497,19 @@ def newreporequirements(ui, createopts):
         requirements.add(b'exp-compression-%s' % compengine)
 
     if scmutil.gdinitconfig(ui):
-        requirements.add(b'generaldelta')
+        requirements.add(requirementsmod.GENERALDELTA_REQUIREMENT)
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
     # experimental config: format.exp-use-side-data
     if ui.configbool(b'format', b'exp-use-side-data'):
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
+        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
         requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
+        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
         requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
@@ -3458,9 +3517,9 @@ def newreporequirements(ui, createopts):
 
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
-        requirements.remove(b'revlogv1')
+        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
         # generaldelta is implied by revlogv2.
-        requirements.discard(b'generaldelta')
+        requirements.discard(requirementsmod.GENERALDELTA_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
@@ -3494,7 +3553,7 @@ def checkrequirementscompat(ui, requirements):
 
     dropped = set()
 
-    if b'store' not in requirements:
+    if requirementsmod.STORE_REQUIREMENT not in requirements:
         if bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
             ui.warn(
                 _(
@@ -3617,6 +3676,7 @@ def createrepository(ui, path, createopts=None):
         if createopts.get(b'sharedrelative'):
             try:
                 sharedpath = os.path.relpath(sharedpath, hgvfs.base)
+                sharedpath = util.pconvert(sharedpath)
             except (IOError, ValueError) as e:
                 # ValueError is raised on Windows if the drive letters differ
                 # on each path.
@@ -3633,7 +3693,8 @@ def createrepository(ui, path, createopts=None):
         hgvfs.mkdir(b'cache')
     hgvfs.mkdir(b'wcache')
 
-    if b'store' in requirements and b'sharedrepo' not in createopts:
+    has_store = requirementsmod.STORE_REQUIREMENT in requirements
+    if has_store and b'sharedrepo' not in createopts:
         hgvfs.mkdir(b'store')
 
         # We create an invalid changelog outside the store so very old
@@ -3642,11 +3703,11 @@ def createrepository(ui, path, createopts=None):
         # effectively locks out old clients and prevents them from
         # mucking with a repo in an unknown format.
         #
-        # The revlog header has version 2, which won't be recognized by
+        # The revlog header has version 65535, which won't be recognized by
         # such old clients.
         hgvfs.append(
             b'00changelog.i',
-            b'\0\0\0\2 dummy changelog to prevent using the old repo '
+            b'\0\0\xFF\xFF dummy changelog to prevent using the old repo '
             b'layout',
         )
 

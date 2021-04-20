@@ -64,8 +64,10 @@ clone remote via stream
 
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
-  8 files to transfer, 827 bytes of data
-  transferred 827 bytes in * seconds (*) (glob)
+  8 files to transfer, 827 bytes of data (no-zstd !)
+  transferred 827 bytes in * seconds (*) (glob) (no-zstd !)
+  8 files to transfer, 846 bytes of data (zstd !)
+  transferred * bytes in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd local-stream
@@ -390,6 +392,7 @@ Test (non-)escaping of remote paths with spaces when cloning (issue3145):
   abort: destination 'a repo' is not empty
   [10]
 
+#if no-rhg
 Make sure hg is really paranoid in serve --stdio mode. It used to be
 possible to get a debugger REPL by specifying a repo named --debugger.
   $ hg -R --debugger serve --stdio
@@ -402,6 +405,27 @@ Abbreviations of 'serve' also don't work, to avoid shenanigans.
   $ hg -R narf serv --stdio
   abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio']
   [255]
+#else
+rhg aborts early on -R without a repository at that path
+  $ hg -R --debugger serve --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', '--debugger', 'serve', '--stdio'] (missing-correct-output !)
+  abort: repository --debugger not found (known-bad-output !)
+  [255]
+  $ hg -R --config=ui.debugger=yes serve --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', '--config=ui.debugger=yes', 'serve', '--stdio'] (missing-correct-output !)
+  abort: repository --config=ui.debugger=yes not found (known-bad-output !)
+  [255]
+  $ hg -R narf serv --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio'] (missing-correct-output !)
+  abort: repository narf not found (known-bad-output !)
+  [255]
+If the repo does exist, rhg finds an unsupported command and falls back to Python
+which still does the right thing
+  $ hg init narf
+  $ hg -R narf serv --stdio
+  abort: potentially unsafe serve --stdio invocation: ['-R', 'narf', 'serv', '--stdio']
+  [255]
+#endif
 
 Test hg-ssh using a helper script that will restore PYTHONPATH (which might
 have been cleared by a hg.exe wrapper) and invoke hg-ssh with the right
@@ -463,7 +487,7 @@ Test hg-ssh in read-only mode:
   remote: Permission denied
   remote: pretxnopen.hg-ssh hook failed
   abort: push failed on remote
-  [255]
+  [100]
 
   $ cd $TESTTMP
 
@@ -518,9 +542,11 @@ debug output
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 463 (sshv1 !)
+  remote: 444 (sshv1 no-rust !)
+  remote: 463 (sshv1 rust !)
   protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
   remote: 1 (sshv1 !)
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
@@ -537,7 +563,7 @@ debug output
   no changes found
   devel-peer-request: getbundle
   devel-peer-request:   bookmarks: 1 bytes
-  devel-peer-request:   bundlecaps: 289 bytes
+  devel-peer-request:   bundlecaps: 270 bytes
   devel-peer-request:   cg: 1 bytes
   devel-peer-request:   common: 122 bytes
   devel-peer-request:   heads: 122 bytes
@@ -655,7 +681,7 @@ remote hook failure is attributed to remote
   remote: rollback completed
   remote: pretxnchangegroup.fail hook failed
   abort: push failed on remote
-  [255]
+  [100]
 
 abort during pull is properly reported as such
 
@@ -670,7 +696,7 @@ abort during pull is properly reported as such
   searching for changes
   remote: abort: this is an exercise
   abort: pull failed on remote
-  [255]
+  [100]
 
 abort with no error hint when there is a ssh problem when pulling
 

@@ -14,6 +14,10 @@ these may expose other cycles.
 Known-bad files are excluded by -X as some of them would produce unstable
 outputs, which should be fixed later.
 
+NOTE: the `hg locate` command here only works on files that are known to
+Mercurial. If you add an import of a new file and haven't yet `hg add`ed it, you
+will likely receive warnings about a direct import.
+
   $ testrepohg locate 'set:**.py or grep(r"^#!.*?python")' \
   > 'tests/**.t' \
   > -X hgweb.cgi \

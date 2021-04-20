@@ -140,9 +140,22 @@ def matchoutput(cmd, regexp, ignorestatus=False):
     """Return the match object if cmd executes successfully and its output
     is matched by the supplied regular expression.
     """
+
+    # Tests on Windows have to fake USERPROFILE to point to the test area so
+    # that `~` is properly expanded on py3.8+.  However, some tools like black
+    # make calls that need the real USERPROFILE in order to run `foo --version`.
+    env = os.environ
+    if os.name == 'nt':
+        env = os.environ.copy()
+        env['USERPROFILE'] = env['REALUSERPROFILE']
+
     r = re.compile(regexp)
     p = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=env,
     )
     s = p.communicate()[0]
     ret = p.returncode
@@ -186,6 +199,11 @@ def has_bzr_range(v):
 @check("chg", "running with chg")
 def has_chg():
     return 'CHGHG' in os.environ
+
+
+@check("rhg", "running with rhg as 'hg'")
+def has_rhg():
+    return 'RHG_INSTALLED_AS_HG' in os.environ
 
 
 @check("cvs", "cvs client/server")
@@ -591,7 +609,7 @@ def has_pylint():
     return matchoutput("pylint --help", br"Usage:[ ]+pylint", True)
 
 
-@check("clang-format", "clang-format C code formatter")
+@check("clang-format", "clang-format C code formatter (>= 11)")
 def has_clang_format():
     m = matchoutput('clang-format --version', br'clang-format version (\d+)')
     # style changed somewhere between 10.x and 11.x
@@ -700,6 +718,12 @@ def has_setprocname():
 def has_test_repo():
     t = os.environ["TESTDIR"]
     return os.path.isdir(os.path.join(t, "..", ".hg"))
+
+
+@check("network-io", "whether tests are allowed to access 3rd party services")
+def has_test_repo():
+    t = os.environ.get("HGTESTS_ALLOW_NETIO")
+    return t == "1"
 
 
 @check("curses", "terminfo compiler and curses module")
@@ -1034,7 +1058,7 @@ def has_sqlite():
     return matchoutput('sqlite3 -version', br'^3\.\d+')
 
 
-@check('vcr', 'vcr http mocking library')
+@check('vcr', 'vcr http mocking library (pytest-vcr)')
 def has_vcr():
     try:
         import vcr
@@ -1054,7 +1078,7 @@ def has_emacs():
     return matchoutput('emacs --version', b'GNU Emacs 2(4.4|4.5|5|6|7|8|9)')
 
 
-@check('black', 'the black formatter for python')
+@check('black', 'the black formatter for python (>= 20.8b1)')
 def has_black():
     blackcmd = 'black --version'
     version_regex = b'black, version ([0-9a-b.]+)'

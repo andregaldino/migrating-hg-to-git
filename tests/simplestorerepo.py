@@ -106,7 +106,9 @@ class filestorage(object):
 
     _flagserrorclass = simplestoreerror
 
-    def __init__(self, svfs, path):
+    def __init__(self, repo, svfs, path):
+        self.nullid = repo.nullid
+        self._repo = repo
         self._svfs = svfs
         self._path = path
 
@@ -300,7 +302,7 @@ class filestorage(object):
             text = rawtext
         else:
             r = flagutil.processflagsread(self, rawtext, flags)
-            text, validatehash, sidedata = r
+            text, validatehash = r
         if validatehash:
             self.checkhash(text, node, rev=rev)
 
@@ -446,6 +448,7 @@ class filestorage(object):
         revisiondata=False,
         assumehaveparentrevisions=False,
         deltamode=repository.CG_DELTAMODE_STD,
+        sidedata_helpers=None,
     ):
         # TODO this will probably break on some ordering options.
         nodes = [n for n in nodes if n != nullid]
@@ -459,6 +462,7 @@ class filestorage(object):
             revisiondata=revisiondata,
             assumehaveparentrevisions=assumehaveparentrevisions,
             deltamode=deltamode,
+            sidedata_helpers=sidedata_helpers,
         ):
             yield delta
 
@@ -550,7 +554,7 @@ class filestorage(object):
 
             if node in self._indexbynode:
                 if duplicaterevisioncb:
-                    duplicaterevisioncb(self, node)
+                    duplicaterevisioncb(self, self.rev(node))
                 empty = False
                 continue
 
@@ -560,12 +564,12 @@ class filestorage(object):
             else:
                 text = mdiff.patch(self.revision(deltabase), delta)
 
-            self._addrawrevision(
+            rev = self._addrawrevision(
                 node, text, transaction, linkrev, p1, p2, flags
             )
 
             if addrevisioncb:
-                addrevisioncb(self, node)
+                addrevisioncb(self, rev)
             empty = False
         return not empty
 
@@ -687,7 +691,7 @@ def reposetup(ui, repo):
 
     class simplestorerepo(repo.__class__):
         def file(self, f):
-            return filestorage(self.svfs, f)
+            return filestorage(repo, self.svfs, f)
 
     repo.__class__ = simplestorerepo
 

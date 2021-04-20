@@ -17,7 +17,7 @@
 #endif
 
 #if no-windows git-server
-  $ lfs-test-server &> lfs-server.log &
+  $ lfs-test-server > lfs-server.log 2>&1 &
   $ echo $! >> $DAEMON_PIDS
 #endif
 
@@ -40,6 +40,8 @@
 #endif
 
   $ cat >> $HGRCPATH <<EOF
+  > [ui]
+  > paginate=no
   > [experimental]
   > lfs.worker-enable = False
   > [extensions]
@@ -113,7 +115,7 @@ store.
   Status: 200 (git-server !)
   Status: 201 (hg-server !)
   Content-Length: 0
-  Content-Type: text/plain; charset=utf-8
+  Content-Type: text/plain; charset=utf-8 (hg-server !)
   Date: $HTTP_DATE$
   Server: testing stub value (hg-server !)
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
@@ -277,7 +279,7 @@ actions property completely.
   Status: 200 (git-server !)
   Status: 201 (hg-server !)
   Content-Length: 0
-  Content-Type: text/plain; charset=utf-8
+  Content-Type: text/plain; charset=utf-8 (hg-server !)
   Date: $HTTP_DATE$
   Server: testing stub value (hg-server !)
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
@@ -285,7 +287,7 @@ actions property completely.
   Status: 200 (git-server !)
   Status: 201 (hg-server !)
   Content-Length: 0
-  Content-Type: text/plain; charset=utf-8
+  Content-Type: text/plain; charset=utf-8 (hg-server !)
   Date: $HTTP_DATE$
   Server: testing stub value (hg-server !)
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
@@ -888,7 +890,7 @@ Check error message when object does not exist:
   $ mkdir $TESTTMP/lfs-server2
   $ cd $TESTTMP/lfs-server2
 #if no-windows git-server
-  $ lfs-test-server &> lfs-server.log &
+  $ lfs-test-server > lfs-server.log 2>&1 &
   $ echo $! >> $DAEMON_PIDS
 #endif
 

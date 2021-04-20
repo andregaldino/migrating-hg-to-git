@@ -1,5 +1,5 @@
-CC = clang
-CXX = clang++
+CC ?= clang
+CXX ?= clang++
 
 # By default, use our own standalone_fuzz_target_runner.
 # This runner does no fuzzing, but simply executes the inputs
@@ -9,6 +9,15 @@ CXX = clang++
 #
 # OSS-Fuzz will define its own value for LIB_FUZZING_ENGINE.
 LIB_FUZZING_ENGINE ?= standalone_fuzz_target_runner.o
+
+# Default to Python 3.
+#
+# Windows ships Python 3 as `python.exe`, which may not be on PATH.  py.exe is.
+ifeq ($(OS),Windows_NT)
+PYTHON?=py -3
+else
+PYTHON?=python3
+endif
 
 PYTHON_CONFIG ?= $$OUT/sanpy/bin/python-config
 PYTHON_CONFIG_FLAGS ?= --ldflags --embed
@@ -20,7 +29,7 @@ all: standalone_fuzz_target_runner.o oss-fuzz
 standalone_fuzz_target_runner.o: standalone_fuzz_target_runner.cc
 
 $$OUT/%_fuzzer_seed_corpus.zip: %_corpus.py
-	python $< $@
+	$(PYTHON) $< $@
 
 pyutil.o: pyutil.cc pyutil.h
 	$(CXX) $(CXXFLAGS) -g -O1 \

@@ -1,6 +1,6 @@
 # wireprotov1peer.py - Client-side functionality for wire protocol version 1.
 #
-# Copyright 2005-2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -43,14 +43,14 @@ def batchable(f):
     @batchable
     def sample(self, one, two=None):
         # Build list of encoded arguments suitable for your wire protocol:
-        encargs = [('one', encode(one),), ('two', encode(two),)]
+        encoded_args = [('one', encode(one),), ('two', encode(two),)]
         # Create future for injection of encoded result:
-        encresref = future()
+        encoded_res_future = future()
         # Return encoded arguments and future:
-        yield encargs, encresref
+        yield encoded_args, encoded_res_future
         # Assuming the future to be filled with the result from the batched
         # request now. Decode it:
-        yield decode(encresref.value)
+        yield decode(encoded_res_future.value)
 
     The decorator returns a function which wraps this coroutine as a plain
     method, but adds the original method as an attribute called "batchable",
@@ -60,12 +60,12 @@ def batchable(f):
 
     def plain(*args, **opts):
         batchable = f(*args, **opts)
-        encargsorres, encresref = next(batchable)
-        if not encresref:
-            return encargsorres  # a local result in this case
+        encoded_args_or_res, encoded_res_future = next(batchable)
+        if not encoded_res_future:
+            return encoded_args_or_res  # a local result in this case
         self = args[0]
         cmd = pycompat.bytesurl(f.__name__)  # ensure cmd is ascii bytestr
-        encresref.set(self._submitone(cmd, encargsorres))
+        encoded_res_future.set(self._submitone(cmd, encoded_args_or_res))
         return next(batchable)
 
     setattr(plain, 'batchable', f)
@@ -257,15 +257,15 @@ class peerexecutor(object):
 
             # Encoded arguments and future holding remote result.
             try:
-                encargsorres, fremote = next(batchable)
+                encoded_args_or_res, fremote = next(batchable)
             except Exception:
                 pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
             if not fremote:
-                f.set_result(encargsorres)
+                f.set_result(encoded_args_or_res)
             else:
-                requests.append((command, encargsorres))
+                requests.append((command, encoded_args_or_res))
                 states.append((command, f, batchable, fremote))
 
         if not requests:
@@ -310,7 +310,7 @@ class peerexecutor(object):
                 if not f.done():
                     f.set_exception(
                         error.ResponseError(
-                            _(b'unfulfilled batch command response')
+                            _(b'unfulfilled batch command response'), None
                         )
                     )
 
@@ -322,16 +322,27 @@ class peerexecutor(object):
         for command, f, batchable, fremote in states:
             # Grab raw result off the wire and teach the internal future
             # about it.
-            remoteresult = next(wireresults)
-            fremote.set(remoteresult)
-
-            # And ask the coroutine to decode that value.
             try:
-                result = next(batchable)
-            except Exception:
-                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
+                remoteresult = next(wireresults)
+            except StopIteration:
+                # This can happen in particular because next(batchable)
+                # in the previous iteration can call peer._abort, which
+                # may close the peer.
+                f.set_exception(
+                    error.ResponseError(
+                        _(b'unfulfilled batch command response'), None
+                    )
+                )
             else:
-                f.set_result(result)
+                fremote.set(remoteresult)
+
+                # And ask the coroutine to decode that value.
+                try:
+                    result = next(batchable)
+                except Exception:
+                    pycompat.future_set_exception_info(f, sys.exc_info()[1:])
+                else:
+                    f.set_result(result)
 
 
 @interfaceutil.implementer(

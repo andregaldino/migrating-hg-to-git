@@ -211,3 +211,177 @@ unknown sub-options aren't displayed
   000000000000
 
   $ cd ..
+
+Testing path referencing other paths
+====================================
+
+basic setup
+-----------
+
+  $ ls -1
+  a
+  b
+  gpath1
+  suboptions
+  $ hg init chained_path
+  $ cd chained_path
+  $ cat << EOF > .hg/hgrc
+  > [paths]
+  > default=../a
+  > other_default=path://default
+  > path_with_branch=../branchy#foo
+  > other_branch=path://path_with_branch
+  > other_branched=path://path_with_branch#default
+  > pushdest=../push-dest
+  > pushdest:pushrev=default
+  > pushdest2=path://pushdest
+  > pushdest-overwrite=path://pushdest
+  > pushdest-overwrite:pushrev=foo
+  > EOF
+
+  $ hg init ../branchy
+  $ hg init ../push-dest
+  $ hg debugbuilddag -R ../branchy '.:base+3<base@foo+5'
+  $ hg log -G -T '{branch}\n' -R ../branchy
+  o  foo
+  |
+  o  foo
+  |
+  o  foo
+  |
+  o  foo
+  |
+  o  foo
+  |
+  | o  default
+  | |
+  | o  default
+  | |
+  | o  default
+  |/
+  o  default
+  
+
+  $ hg paths
+  default = $TESTTMP/a
+  gpath1 = http://hg.example.com/
+  other_branch = $TESTTMP/branchy#foo
+  other_branched = $TESTTMP/branchy#default
+  other_default = $TESTTMP/a
+  path_with_branch = $TESTTMP/branchy#foo
+  pushdest = $TESTTMP/push-dest
+  pushdest:pushrev = default
+  pushdest-overwrite = $TESTTMP/push-dest
+  pushdest-overwrite:pushrev = foo
+  pushdest2 = $TESTTMP/push-dest
+  pushdest2:pushrev = default
+
+test basic chaining
+-------------------
+
+  $ hg path other_default
+  $TESTTMP/a
+  $ hg pull default
+  pulling from $TESTTMP/a
+  no changes found
+  $ hg pull other_default
+  pulling from $TESTTMP/a
+  no changes found
+
+test inheritance of the #fragment part
+--------------------------------------
+
+  $ hg pull path_with_branch
+  pulling from $TESTTMP/branchy
+  adding changesets
+  adding manifests
+  adding file changes
+  added 6 changesets with 0 changes to 0 files
+  new changesets 1ea73414a91b:bcebb50b77de
+  (run 'hg update' to get a working copy)
+  $ hg pull other_branch
+  pulling from $TESTTMP/branchy
+  no changes found
+  $ hg pull other_branched
+  pulling from $TESTTMP/branchy
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 0 changes to 0 files (+1 heads)
+  new changesets 66f7d451a68b:2dc09a01254d
+  (run 'hg heads' to see heads)
+
+test inheritance of the suboptions
+----------------------------------
+
+  $ hg push pushdest
+  pushing to $TESTTMP/push-dest
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 0 changes to 0 files
+  $ hg push pushdest2
+  pushing to $TESTTMP/push-dest
+  searching for changes
+  no changes found
+  [1]
+  $ hg push pushdest-overwrite --new-branch
+  pushing to $TESTTMP/push-dest
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 5 changesets with 0 changes to 0 files (+1 heads)
+
+Test chaining path:// definition
+--------------------------------
+
+This is currently unsupported, but feel free to implement the necessary
+dependency detection.
+
+  $ cat << EOF >> .hg/hgrc
+  > chain_path=path://other_default
+  > EOF
+
+  $ hg id
+  000000000000
+  $ hg path
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
+  [255]
+  $ hg pull chain_path
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
+  [255]
+
+Doing an actual circle should always be an issue
+
+  $ cat << EOF >> .hg/hgrc
+  > rock=path://cissors
+  > cissors=path://paper
+  > paper=://rock
+  > EOF
+
+  $ hg id
+  000000000000
+  $ hg path
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
+  [255]
+  $ hg pull chain_path
+  abort: cannot use `path://other_default`, "other_default" is also defined as a `path://`
+  [255]
+
+Test basic error cases
+----------------------
+
+  $ cat << EOF > .hg/hgrc
+  > [paths]
+  > error-missing=path://unknown
+  > EOF
+  $ hg path
+  abort: cannot use `path://unknown`, "unknown" is not a known path
+  [255]
+  $ hg pull error-missing
+  abort: cannot use `path://unknown`, "unknown" is not a known path
+  [255]
+

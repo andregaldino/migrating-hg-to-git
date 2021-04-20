@@ -1,6 +1,6 @@
 # changelog.py - changelog class for mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -191,7 +191,7 @@ class _changelogrevision(object):
     # Extensions might modify _defaultextra, so let the constructor below pass
     # it in
     extra = attr.ib()
-    manifest = attr.ib(default=nullid)
+    manifest = attr.ib()
     user = attr.ib(default=b'')
     date = attr.ib(default=(0, 0))
     files = attr.ib(default=attr.Factory(list))
@@ -200,6 +200,7 @@ class _changelogrevision(object):
     p1copies = attr.ib(default=None)
     p2copies = attr.ib(default=None)
     description = attr.ib(default=b'')
+    branchinfo = attr.ib(default=(_defaultextra[b'branch'], False))
 
 
 class changelogrevision(object):
@@ -218,9 +219,9 @@ class changelogrevision(object):
         '_changes',
     )
 
-    def __new__(cls, text, sidedata, cpsd):
+    def __new__(cls, cl, text, sidedata, cpsd):
         if not text:
-            return _changelogrevision(extra=_defaultextra)
+            return _changelogrevision(extra=_defaultextra, manifest=nullid)
 
         self = super(changelogrevision, cls).__new__(cls)
         # We could return here and implement the following as an __init__.
@@ -372,9 +373,14 @@ class changelogrevision(object):
     def description(self):
         return encoding.tolocal(self._text[self._offsets[3] + 2 :])
 
+    @property
+    def branchinfo(self):
+        extra = self.extra
+        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
+
 
 class changelog(revlog.revlog):
-    def __init__(self, opener, trypending=False):
+    def __init__(self, opener, trypending=False, concurrencychecker=None):
         """Load a changelog revlog using an opener.
 
         If ``trypending`` is true, we attempt to load the index from a
@@ -383,6 +389,9 @@ class changelog(revlog.revlog):
         revision) data for a transaction that hasn't been finalized yet.
         It exists in a separate file to facilitate readers (such as
         hooks processes) accessing data before a transaction is finalized.
+
+        ``concurrencychecker`` will be passed to the revlog init function, see
+        the documentation there.
         """
         if trypending and opener.exists(b'00changelog.i.a'):
             indexfile = b'00changelog.i.a'
@@ -398,6 +407,7 @@ class changelog(revlog.revlog):
             checkambig=True,
             mmaplargeindex=True,
             persistentnodemap=opener.options.get(b'persistent-nodemap', False),
+            concurrencychecker=concurrencychecker,
         )
 
         if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
@@ -418,6 +428,7 @@ class changelog(revlog.revlog):
         self._filteredrevs = frozenset()
         self._filteredrevs_hashcache = {}
         self._copiesstorage = opener.options.get(b'copies-storage')
+        self.revlog_kind = b'changelog'
 
     @property
     def filteredrevs(self):
@@ -497,7 +508,7 @@ class changelog(revlog.revlog):
         if not self._delayed:
             revlog.revlog._enforceinlinesize(self, tr, fp)
 
-    def read(self, node):
+    def read(self, nodeorrev):
         """Obtain data from a parsed changelog revision.
 
         Returns a 6-tuple of:
@@ -513,9 +524,9 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        d, s = self._revisiondata(node)
+        d, s = self._revisiondata(nodeorrev)
         c = changelogrevision(
-            d, s, self._copiesstorage == b'changeset-sidedata'
+            self, d, s, self._copiesstorage == b'changeset-sidedata'
         )
         return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
@@ -523,14 +534,14 @@ class changelog(revlog.revlog):
         """Obtain a ``changelogrevision`` for a node or revision."""
         text, sidedata = self._revisiondata(nodeorrev)
         return changelogrevision(
-            text, sidedata, self._copiesstorage == b'changeset-sidedata'
+            self, text, sidedata, self._copiesstorage == b'changeset-sidedata'
         )
 
-    def readfiles(self, node):
+    def readfiles(self, nodeorrev):
         """
         short version of read that only returns the files modified by the cset
         """
-        text = self.revision(node)
+        text = self.revision(nodeorrev)
         if not text:
             return []
         last = text.index(b"\n\n")
@@ -592,21 +603,21 @@ class changelog(revlog.revlog):
             parseddate = b"%s %s" % (parseddate, extra)
         l = [hex(manifest), user, parseddate] + sortedfiles + [b"", desc]
         text = b"\n".join(l)
-        return self.addrevision(
+        rev = self.addrevision(
             text, transaction, len(self), p1, p2, sidedata=sidedata, flags=flags
         )
+        return self.node(rev)
 
     def branchinfo(self, rev):
         """return the branch name and open/close state of a revision
 
         This function exists because creating a changectx object
         just to access this is costly."""
-        extra = self.changelogrevision(rev).extra
-        return encoding.tolocal(extra.get(b"branch")), b'close' in extra
+        return self.changelogrevision(rev).branchinfo
 
-    def _nodeduplicatecallback(self, transaction, node):
+    def _nodeduplicatecallback(self, transaction, rev):
         # keep track of revisions that got "re-added", eg: unbunde of know rev.
         #
         # We track them in a list to preserve their order from the source bundle
         duplicates = transaction.changes.setdefault(b'revduplicates', [])
-        duplicates.append(self.rev(node))
+        duplicates.append(rev)

@@ -2190,6 +2190,10 @@ help/ shows help topics
         "topic": "phase"
       },
       {
+        "summary": "removes files not tracked by Mercurial",
+        "topic": "purge"
+      },
+      {
         "summary": "roll back an interrupted transaction",
         "topic": "recover"
       },

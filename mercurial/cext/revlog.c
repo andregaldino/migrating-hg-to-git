@@ -1,7 +1,7 @@
 /*
  parsers.c - efficient content parsing
 
- Copyright 2008 Matt Mackall <mpm@selenic.com> and others
+ Copyright 2008 Olivia Mackall <olivia@selenic.com> and others
 
  This software may be used and distributed according to the terms of
  the GNU General Public License, incorporated herein by reference.
@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <structmember.h>
 
 #include "bitmanipulation.h"
 #include "charencode.h"
@@ -98,6 +99,7 @@ struct indexObjectStruct {
 	int ntlookups;          /* # lookups */
 	int ntmisses;           /* # lookups that miss the cache */
 	int inlined;
+	long hdrsize; /* size of index headers. Differs in v1 v.s. v2 format */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -113,13 +115,18 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
+static const char *const v1_tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
+static const char *const v2_tuple_format = PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
 #else
-static const char *const tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
+static const char *const v1_tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
+static const char *const v2_tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
 static const long v1_hdrsize = 64;
+
+/* A Revlogv2 index entry is 96 bytes long. */
+static const long v2_hdrsize = 96;
 
 static void raise_revlog_error(void)
 {
@@ -157,7 +164,7 @@ cleanup:
 static const char *index_deref(indexObject *self, Py_ssize_t pos)
 {
 	if (pos >= self->length)
-		return self->added + (pos - self->length) * v1_hdrsize;
+		return self->added + (pos - self->length) * self->hdrsize;
 
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
@@ -174,7 +181,7 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 		return self->offsets[pos];
 	}
 
-	return (const char *)(self->buf.buf) + pos * v1_hdrsize;
+	return (const char *)(self->buf.buf) + pos * self->hdrsize;
 }
 
 /*
@@ -280,8 +287,9 @@ static inline int index_get_length(indexObject *self, Py_ssize_t rev)
  */
 static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 {
-	uint64_t offset_flags;
-	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
+	uint64_t offset_flags, sidedata_offset;
+	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2,
+	    sidedata_comp_len;
 	const char *c_node_id;
 	const char *data;
 	Py_ssize_t length = index_length(self);
@@ -320,9 +328,19 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
-	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
-	                     self->nodelen);
+	if (self->hdrsize == v1_hdrsize) {
+		return Py_BuildValue(v1_tuple_format, offset_flags, comp_len,
+		                     uncomp_len, base_rev, link_rev, parent_1,
+		                     parent_2, c_node_id, self->nodelen);
+	} else {
+		sidedata_offset = getbe64(data + 64);
+		sidedata_comp_len = getbe32(data + 72);
+
+		return Py_BuildValue(v2_tuple_format, offset_flags, comp_len,
+		                     uncomp_len, base_rev, link_rev, parent_1,
+		                     parent_2, c_node_id, self->nodelen,
+		                     sidedata_offset, sidedata_comp_len);
+	}
 }
 
 /*
@@ -373,18 +391,31 @@ static int node_check(Py_ssize_t nodelen, PyObject *obj, char **node)
 
 static PyObject *index_append(indexObject *self, PyObject *obj)
 {
-	uint64_t offset_flags;
+	uint64_t offset_flags, sidedata_offset;
 	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
-	Py_ssize_t c_node_id_len;
+	Py_ssize_t c_node_id_len, sidedata_comp_len;
 	const char *c_node_id;
 	char *data;
 
-	if (!PyArg_ParseTuple(obj, tuple_format, &offset_flags, &comp_len,
-	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
-	                      &parent_2, &c_node_id, &c_node_id_len)) {
-		PyErr_SetString(PyExc_TypeError, "8-tuple required");
-		return NULL;
+	if (self->hdrsize == v1_hdrsize) {
+		if (!PyArg_ParseTuple(obj, v1_tuple_format, &offset_flags,
+		                      &comp_len, &uncomp_len, &base_rev,
+		                      &link_rev, &parent_1, &parent_2,
+		                      &c_node_id, &c_node_id_len)) {
+			PyErr_SetString(PyExc_TypeError, "8-tuple required");
+			return NULL;
+		}
+	} else {
+		if (!PyArg_ParseTuple(obj, v2_tuple_format, &offset_flags,
+		                      &comp_len, &uncomp_len, &base_rev,
+		                      &link_rev, &parent_1, &parent_2,
+		                      &c_node_id, &c_node_id_len,
+		                      &sidedata_offset, &sidedata_comp_len)) {
+			PyErr_SetString(PyExc_TypeError, "10-tuple required");
+			return NULL;
+		}
 	}
+
 	if (c_node_id_len != self->nodelen) {
 		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
@@ -393,15 +424,15 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (self->new_length == self->added_length) {
 		size_t new_added_length =
 		    self->added_length ? self->added_length * 2 : 4096;
-		void *new_added =
-		    PyMem_Realloc(self->added, new_added_length * v1_hdrsize);
+		void *new_added = PyMem_Realloc(self->added, new_added_length *
+		                                                 self->hdrsize);
 		if (!new_added)
 			return PyErr_NoMemory();
 		self->added = new_added;
 		self->added_length = new_added_length;
 	}
 	rev = self->length + self->new_length;
-	data = self->added + v1_hdrsize * self->new_length++;
+	data = self->added + self->hdrsize * self->new_length++;
 	putbe32(offset_flags >> 32, data);
 	putbe32(offset_flags & 0xffffffffU, data + 4);
 	putbe32(comp_len, data + 8);
@@ -411,12 +442,69 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	putbe32(parent_1, data + 24);
 	putbe32(parent_2, data + 28);
 	memcpy(data + 32, c_node_id, c_node_id_len);
+	/* Padding since SHA-1 is only 20 bytes for now */
 	memset(data + 32 + c_node_id_len, 0, 32 - c_node_id_len);
+	if (self->hdrsize != v1_hdrsize) {
+		putbe64(sidedata_offset, data + 64);
+		putbe32(sidedata_comp_len, data + 72);
+		/* Padding for 96 bytes alignment */
+		memset(data + 76, 0, self->hdrsize - 76);
+	}
 
 	if (self->ntinitialized)
 		nt_insert(&self->nt, c_node_id, rev);
 
 	Py_CLEAR(self->headrevs);
+	Py_RETURN_NONE;
+}
+
+/* Replace an existing index entry's sidedata offset and length with new ones.
+   This cannot be used outside of the context of sidedata rewriting,
+   inside the transaction that creates the given revision. */
+static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
+{
+	uint64_t sidedata_offset;
+	int rev;
+	Py_ssize_t sidedata_comp_len;
+	char *data;
+#if LONG_MAX == 0x7fffffffL
+	const char *const sidedata_format = PY23("nKi", "nKi");
+#else
+	const char *const sidedata_format = PY23("nki", "nki");
+#endif
+
+	if (self->hdrsize == v1_hdrsize || self->inlined) {
+		/*
+		 There is a bug in the transaction handling when going from an
+	   inline revlog to a separate index and data file. Turn it off until
+	   it's fixed, since v2 revlogs sometimes get rewritten on exchange.
+	   See issue6485.
+	  */
+		raise_revlog_error();
+		return NULL;
+	}
+
+	if (!PyArg_ParseTuple(args, sidedata_format, &rev, &sidedata_offset,
+	                      &sidedata_comp_len))
+		return NULL;
+
+	if (rev < 0 || rev >= index_length(self)) {
+		PyErr_SetString(PyExc_IndexError, "revision outside index");
+		return NULL;
+	}
+	if (rev < self->length) {
+		PyErr_SetString(
+		    PyExc_IndexError,
+		    "cannot rewrite entries outside of this transaction");
+		return NULL;
+	}
+
+	/* Find the newly added node, offset from the "already on-disk" length
+	 */
+	data = self->added + self->hdrsize * (rev - self->length);
+	putbe64(sidedata_offset, data + 64);
+	putbe32(sidedata_comp_len, data + 72);
+
 	Py_RETURN_NONE;
 }
 
@@ -2563,14 +2651,17 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 	const char *data = (const char *)self->buf.buf;
 	Py_ssize_t pos = 0;
 	Py_ssize_t end = self->buf.len;
-	long incr = v1_hdrsize;
+	long incr = self->hdrsize;
 	Py_ssize_t len = 0;
 
-	while (pos + v1_hdrsize <= end && pos >= 0) {
-		uint32_t comp_len;
+	while (pos + self->hdrsize <= end && pos >= 0) {
+		uint32_t comp_len, sidedata_comp_len = 0;
 		/* 3rd element of header is length of compressed inline data */
 		comp_len = getbe32(data + pos + 8);
-		incr = v1_hdrsize + comp_len;
+		if (self->hdrsize == v2_hdrsize) {
+			sidedata_comp_len = getbe32(data + pos + 72);
+		}
+		incr = self->hdrsize + comp_len + sidedata_comp_len;
 		if (offsets)
 			offsets[len] = data + pos;
 		len++;
@@ -2586,10 +2677,12 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 	return len;
 }
 
-static int index_init(indexObject *self, PyObject *args)
+static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 {
-	PyObject *data_obj, *inlined_obj;
+	PyObject *data_obj, *inlined_obj, *revlogv2;
 	Py_ssize_t size;
+
+	static char *kwlist[] = {"data", "inlined", "revlogv2", NULL};
 
 	/* Initialize before argument-checking to avoid index_dealloc() crash.
 	 */
@@ -2606,7 +2699,9 @@ static int index_init(indexObject *self, PyObject *args)
 	self->nodelen = 20;
 	self->nullentry = NULL;
 
-	if (!PyArg_ParseTuple(args, "OO", &data_obj, &inlined_obj))
+	revlogv2 = NULL;
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", kwlist,
+	                                 &data_obj, &inlined_obj, &revlogv2))
 		return -1;
 	if (!PyObject_CheckBuffer(data_obj)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -2618,8 +2713,22 @@ static int index_init(indexObject *self, PyObject *args)
 		return -1;
 	}
 
-	self->nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
-	                                -1, -1, -1, -1, nullid, self->nodelen);
+	if (revlogv2 && PyObject_IsTrue(revlogv2)) {
+		self->hdrsize = v2_hdrsize;
+	} else {
+		self->hdrsize = v1_hdrsize;
+	}
+
+	if (self->hdrsize == v1_hdrsize) {
+		self->nullentry =
+		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
+		                  -1, -1, -1, nullid, self->nodelen);
+	} else {
+		self->nullentry =
+		    Py_BuildValue(PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0,
+		                  -1, -1, -1, -1, nullid, self->nodelen, 0, 0);
+	}
+
 	if (!self->nullentry)
 		return -1;
 	PyObject_GC_UnTrack(self->nullentry);
@@ -2641,11 +2750,11 @@ static int index_init(indexObject *self, PyObject *args)
 			goto bail;
 		self->length = len;
 	} else {
-		if (size % v1_hdrsize) {
+		if (size % self->hdrsize) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
-		self->length = size / v1_hdrsize;
+		self->length = size / self->hdrsize;
 	}
 
 	return 0;
@@ -2730,6 +2839,8 @@ static PyMethodDef index_methods[] = {
      "compute phases"},
     {"reachableroots2", (PyCFunction)reachableroots2, METH_VARARGS,
      "reachableroots"},
+    {"replace_sidedata_info", (PyCFunction)index_replace_sidedata_info,
+     METH_VARARGS, "replace an existing index entry with a new value"},
     {"headrevs", (PyCFunction)index_headrevs, METH_VARARGS,
      "get head revisions"}, /* Can do filtering since 3.2 */
     {"headrevsfiltered", (PyCFunction)index_headrevs, METH_VARARGS,
@@ -2753,6 +2864,12 @@ static PyMethodDef index_methods[] = {
 
 static PyGetSetDef index_getset[] = {
     {"nodemap", (getter)index_nodemap, NULL, "nodemap", NULL},
+    {NULL} /* Sentinel */
+};
+
+static PyMemberDef index_members[] = {
+    {"entry_size", T_LONG, offsetof(indexObject, hdrsize), 0,
+     "size of an index entry"},
     {NULL} /* Sentinel */
 };
 
@@ -2785,7 +2902,7 @@ PyTypeObject HgRevlogIndex_Type = {
     0,                             /* tp_iter */
     0,                             /* tp_iternext */
     index_methods,                 /* tp_methods */
-    0,                             /* tp_members */
+    index_members,                 /* tp_members */
     index_getset,                  /* tp_getset */
     0,                             /* tp_base */
     0,                             /* tp_dict */
@@ -2797,16 +2914,16 @@ PyTypeObject HgRevlogIndex_Type = {
 };
 
 /*
- * returns a tuple of the form (index, index, cache) with elements as
+ * returns a tuple of the form (index, cache) with elements as
  * follows:
  *
- * index: an index object that lazily parses RevlogNG records
+ * index: an index object that lazily parses Revlog (v1 or v2) records
  * cache: if data is inlined, a tuple (0, index_file_content), else None
  *        index_file_content could be a string, or a buffer
  *
  * added complications are for backwards compatibility
  */
-PyObject *parse_index2(PyObject *self, PyObject *args)
+PyObject *parse_index2(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	PyObject *cache = NULL;
 	indexObject *idx;
@@ -2816,7 +2933,7 @@ PyObject *parse_index2(PyObject *self, PyObject *args)
 	if (idx == NULL)
 		goto bail;
 
-	ret = index_init(idx, args);
+	ret = index_init(idx, args, kwargs);
 	if (ret == -1)
 		goto bail;
 

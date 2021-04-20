@@ -61,7 +61,7 @@ Error if '.' or '..' are in the directory to track.
   [255]
 
 Names with '.' in them are OK.
-  $ hg clone --narrow ssh://user@dummy/master should-work --include a/.b/c
+  $ hg clone --narrow ./master should-work --include a/.b/c
   requesting all changes
   adding changesets
   adding manifests
@@ -492,3 +492,33 @@ Test --auto-remove-includes
   searching for changes
   looking for unused includes to remove
   found no unused includes
+Test --no-backup
+  $ hg tracked --addinclude d0 --addinclude d2 -q
+  $ hg unbundle .hg/strip-backup/*-narrow.hg -q
+  $ rm .hg/strip-backup/*
+  $ hg tracked --auto-remove-includes --no-backup
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for unused includes to remove
+  path:d0
+  path:d2
+  remove these unused includes (yn)? y
+  looking for local changes to affected paths
+  deleting data/d0/f.i
+  deleting data/d2/f.i
+  deleting meta/d0/00manifest.i (tree !)
+  deleting meta/d2/00manifest.i (tree !)
+  $ ls .hg/strip-backup/
+
+
+Test removing include while concurrently modifying file in that path
+  $ hg clone --narrow ssh://user@dummy/master narrow-concurrent-modify -q \
+  > --include d0 --include d1
+  $ cd narrow-concurrent-modify
+  $ hg --config 'hooks.pretxnopen = echo modified >> d0/f' tracked --removeinclude d0
+  comparing with ssh://user@dummy/master
+  searching for changes
+  looking for local changes to affected paths
+  deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
+  not deleting possibly dirty file d0/f

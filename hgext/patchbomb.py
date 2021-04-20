@@ -1,6 +1,6 @@
 # patchbomb.py - sending Mercurial changesets as patch emails
 #
-#  Copyright 2005-2009 Matt Mackall <mpm@selenic.com> and others
+#  Copyright 2005-2009 Olivia Mackall <olivia@selenic.com> and others
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -99,7 +99,10 @@ from mercurial import (
     templater,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    urlutil,
+)
 
 stringio = util.stringio
 
@@ -379,7 +382,10 @@ def _getbundle(repo, dest, **opts):
     if btype:
         opts['type'] = btype
     try:
-        commands.bundle(ui, repo, tmpfn, dest, **opts)
+        dests = []
+        if dest:
+            dests = [dest]
+        commands.bundle(ui, repo, tmpfn, *dests, **opts)
         return util.readfile(tmpfn)
     finally:
         try:
@@ -527,9 +533,9 @@ def _getpatchmsgs(repo, sender, revs, patchnames=None, **opts):
 def _getoutgoing(repo, dest, revs):
     '''Return the revisions present locally but not in dest'''
     ui = repo.ui
-    url = ui.expandpath(dest or b'default-push', dest or b'default')
-    url = hg.parseurl(url)[0]
-    ui.status(_(b'comparing with %s\n') % util.hidepassword(url))
+    paths = urlutil.get_push_paths(repo, ui, [dest])
+    safe_paths = [urlutil.hidepassword(p.rawloc) for p in paths]
+    ui.status(_(b'comparing with %s\n') % b','.join(safe_paths))
 
     revs = [r for r in revs if r >= 0]
     if not revs:

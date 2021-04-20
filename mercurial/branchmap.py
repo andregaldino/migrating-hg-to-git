@@ -1,6 +1,6 @@
 # branchmap.py - logic to computes, maintain and stores branchmap for local repo
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -39,6 +39,7 @@ if pycompat.TYPE_CHECKING:
         Tuple,
         Union,
     )
+    from . import localrepo
 
     assert any(
         (
@@ -51,6 +52,7 @@ if pycompat.TYPE_CHECKING:
             Set,
             Tuple,
             Union,
+            localrepo,
         )
     )
 
@@ -97,7 +99,7 @@ class BranchMapCache(object):
                 revs.extend(r for r in extrarevs if r <= bcache.tiprev)
             else:
                 # nothing to fall back on, start empty.
-                bcache = branchcache()
+                bcache = branchcache(repo)
 
         revs.extend(cl.revs(start=bcache.tiprev + 1))
         if revs:
@@ -129,6 +131,7 @@ class BranchMapCache(object):
         if rbheads:
             rtiprev = max((int(clrev(node)) for node in rbheads))
             cache = branchcache(
+                repo,
                 remotebranchmap,
                 repo[rtiprev].node(),
                 rtiprev,
@@ -184,6 +187,7 @@ class branchcache(object):
 
     def __init__(
         self,
+        repo,
         entries=(),
         tipnode=nullid,
         tiprev=nullrev,
@@ -191,10 +195,11 @@ class branchcache(object):
         closednodes=None,
         hasnode=None,
     ):
-        # type: (Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
+        # type: (localrepo.localrepository, Union[Dict[bytes, List[bytes]], Iterable[Tuple[bytes, List[bytes]]]], bytes,  int, Optional[bytes], Optional[Set[bytes]], Optional[Callable[[bytes], bool]]) -> None
         """hasnode is a function which can be used to verify whether changelog
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog"""
+        self._repo = repo
         self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
@@ -280,6 +285,7 @@ class branchcache(object):
             if len(cachekey) > 2:
                 filteredhash = bin(cachekey[2])
             bcache = cls(
+                repo,
                 tipnode=last,
                 tiprev=lrev,
                 filteredhash=filteredhash,
@@ -386,6 +392,7 @@ class branchcache(object):
     def copy(self):
         """return an deep copy of the branchcache object"""
         return type(self)(
+            self._repo,
             self._entries,
             self.tipnode,
             self.tiprev,
@@ -564,6 +571,7 @@ _rbcrevs = b'rbc-revs' + _rbcversion
 # [4 byte hash prefix][4 byte branch name number with sign bit indicating open]
 _rbcrecfmt = b'>4sI'
 _rbcrecsize = calcsize(_rbcrecfmt)
+_rbcmininc = 64 * _rbcrecsize
 _rbcnodelen = 4
 _rbcbranchidxmask = 0x7FFFFFFF
 _rbccloseflag = 0x80000000
@@ -703,8 +711,10 @@ class revbranchcache(object):
         self._setcachedata(rev, reponode, branchidx)
         return b, close
 
-    def setdata(self, branch, rev, node, close):
+    def setdata(self, rev, changelogrevision):
         """add new data information to the cache"""
+        branch, close = changelogrevision.branchinfo
+
         if branch in self._namesreverse:
             branchidx = self._namesreverse[branch]
         else:
@@ -713,7 +723,7 @@ class revbranchcache(object):
             self._namesreverse[branch] = branchidx
         if close:
             branchidx |= _rbccloseflag
-        self._setcachedata(rev, node, branchidx)
+        self._setcachedata(rev, self._repo.changelog.node(rev), branchidx)
         # If no cache data were readable (non exists, bad permission, etc)
         # the cache was bypassing itself by setting:
         #
@@ -728,11 +738,15 @@ class revbranchcache(object):
         if rev == nullrev:
             return
         rbcrevidx = rev * _rbcrecsize
-        if len(self._rbcrevs) < rbcrevidx + _rbcrecsize:
-            self._rbcrevs.extend(
-                b'\0'
-                * (len(self._repo.changelog) * _rbcrecsize - len(self._rbcrevs))
-            )
+        requiredsize = rbcrevidx + _rbcrecsize
+        rbccur = len(self._rbcrevs)
+        if rbccur < requiredsize:
+            # bytearray doesn't allocate extra space at least in Python 3.7.
+            # When multiple changesets are added in a row, precise resize would
+            # result in quadratic complexity. Overallocate to compensate by
+            # use the classic doubling technique for dynamic arrays instead.
+            # If there was a gap in the map before, less space will be reserved.
+            self._rbcrevs.extend(b'\0' * max(_rbcmininc, requiredsize))
         pack_into(_rbcrecfmt, self._rbcrevs, rbcrevidx, node, branchidx)
         self._rbcrevslen = min(self._rbcrevslen, rev)
 

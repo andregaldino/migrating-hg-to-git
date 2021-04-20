@@ -757,7 +757,7 @@ repositories visible to an external hook.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ cp .hg/store/phaseroots.pending.saved .hg/store/phaseroots.pending
 
 (check (in)visibility of phaseroot while transaction running in repo)
@@ -780,7 +780,7 @@ repositories visible to an external hook.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
 
 Check that pretxnclose-phase hook can control phase movement
 
@@ -854,12 +854,12 @@ Try various actions. only the draft move should succeed
   transaction abort!
   rollback completed
   abort: pretxnclose-phase.nopublish_D hook exited with status 1
-  [255]
+  [40]
   $ hg phase --public a603bfb5a83e
   transaction abort!
   rollback completed
   abort: pretxnclose-phase.nopublish_D hook exited with status 1
-  [255]
+  [40]
   $ hg phase --draft 17a481b3bccb
   test-debug-phase: move rev 3: 2 -> 1
   test-debug-phase: move rev 4: 2 -> 1
@@ -871,7 +871,7 @@ Try various actions. only the draft move should succeed
   transaction abort!
   rollback completed
   abort: pretxnclose-phase.nopublish_D hook exited with status 1
-  [255]
+  [40]
 
   $ cd ..
 
@@ -886,6 +886,8 @@ Check we deny its usage on older repository
   dotencode
   fncache
   generaldelta
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -913,6 +915,8 @@ Check it works fine with repository that supports it.
   fncache
   generaldelta
   internal-phase
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

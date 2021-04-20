@@ -419,9 +419,9 @@ if os.path.isdir('.hg'):
         ltag = sysstr(hg.run(ltagcmd))
         changessincecmd = ['log', '-T', 'x\n', '-r', "only(.,'%s')" % ltag]
         changessince = len(hg.run(changessincecmd).splitlines())
-        version = '%s+%s-%s' % (ltag, changessince, hgid)
+        version = '%s+hg%s.%s' % (ltag, changessince, hgid)
     if version.endswith('+'):
-        version += time.strftime('%Y%m%d')
+        version = version[:-1] + 'local' + time.strftime('%Y%m%d')
 elif os.path.exists('.hg_archival.txt'):
     kw = dict(
         [[t.strip() for t in l.split(':', 1)] for l in open('.hg_archival.txt')]
@@ -430,11 +430,13 @@ elif os.path.exists('.hg_archival.txt'):
         version = kw['tag']
     elif 'latesttag' in kw:
         if 'changessincelatesttag' in kw:
-            version = '%(latesttag)s+%(changessincelatesttag)s-%(node).12s' % kw
+            version = (
+                '%(latesttag)s+hg%(changessincelatesttag)s.%(node).12s' % kw
+            )
         else:
-            version = '%(latesttag)s+%(latesttagdistance)s-%(node).12s' % kw
+            version = '%(latesttag)s+hg%(latesttagdistance)s.%(node).12s' % kw
     else:
-        version = kw.get('node', '')[:12]
+        version = '0+hg' + kw.get('node', '')[:12]
 
 if version:
     versionb = version
@@ -450,20 +452,6 @@ if version:
             ]
         ),
     )
-
-try:
-    oldpolicy = os.environ.get('HGMODULEPOLICY', None)
-    os.environ['HGMODULEPOLICY'] = 'py'
-    from mercurial import __version__
-
-    version = __version__.version
-except ImportError:
-    version = b'unknown'
-finally:
-    if oldpolicy is None:
-        del os.environ['HGMODULEPOLICY']
-    else:
-        os.environ['HGMODULEPOLICY'] = oldpolicy
 
 
 class hgbuild(build):
@@ -609,6 +597,12 @@ class hgbuildext(build_ext):
         # and its build is not explictely disabled (for external build
         # as Linux distributions would do)
         if self.distribution.rust and self.rust:
+            if not sys.platform.startswith('linux'):
+                self.warn(
+                    "rust extensions have only been tested on Linux "
+                    "and may not behave correctly on other platforms"
+                )
+
             for rustext in ruststandalones:
                 rustext.build('' if self.inplace else self.build_lib)
 
@@ -822,6 +816,22 @@ class buildhgexe(build_ext):
 
                 if not os.path.exists(dest):
                     shutil.copy(buf.value, dest)
+
+                # Also overwrite python3.dll so that hgext.git is usable.
+                # TODO: also handle the MSYS flavor
+                if sys.version_info[0] >= 3:
+                    python_x = os.path.join(
+                        os.path.dirname(fsdecode(buf.value)),
+                        "python3.dll",
+                    )
+
+                    if os.path.exists(python_x):
+                        dest = os.path.join(
+                            os.path.dirname(self.hgtarget),
+                            os.path.basename(python_x),
+                        )
+
+                        shutil.copy(python_x, dest)
 
         if not pythonlib:
             log.warn(
@@ -1677,8 +1687,8 @@ datafiles = []
 # unicode on Python 2 still works because it won't contain any
 # non-ascii bytes and will be implicitly converted back to bytes
 # when operated on.
-assert isinstance(version, bytes)
-setupversion = version.decode('ascii')
+assert isinstance(version, str)
+setupversion = version
 
 extra = {}
 
@@ -1706,7 +1716,7 @@ if py2exeloaded:
     extra['console'] = [
         {
             'script': 'hg',
-            'copyright': 'Copyright (C) 2005-2021 Matt Mackall and others',
+            'copyright': 'Copyright (C) 2005-2021 Olivia Mackall and others',
             'product_version': version,
         }
     ]
@@ -1782,7 +1792,7 @@ if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
 setup(
     name='mercurial',
     version=setupversion,
-    author='Matt Mackall and many others',
+    author='Olivia Mackall and many others',
     author_email='mercurial@mercurial-scm.org',
     url='https://mercurial-scm.org/',
     download_url='https://mercurial-scm.org/release/',

@@ -279,7 +279,8 @@ Stream clone bundles are supported
 
   $ hg -R server debugcreatestreamclonebundle packed.hg
   writing 613 bytes for 4 files
-  bundle requirements: generaldelta, revlogv1, sparserevlog
+  bundle requirements: generaldelta, revlogv1, sparserevlog (no-rust !)
+  bundle requirements: generaldelta, persistent-nodemap, revlogv1, sparserevlog (rust !)
 
 No bundle spec should work
 
@@ -589,9 +590,7 @@ on a 32MB system.
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
-  bundle2-input-part: total payload size 59
-  bundle2-input-bundle: 4 parts total
+  bundle2-input-bundle: 3 parts total
   checking for updated bookmarks
   updating the branch cache
   added 2 changesets with 2 changes to 2 files

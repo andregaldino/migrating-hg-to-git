@@ -13,9 +13,8 @@ important information related to a changesets.
 The current implementation is experimental and subject to changes. Do not rely
 on it in production.
 
-Sidedata are stored in the revlog itself, within the revision rawtext. They
-are inserted and removed from it using the flagprocessors mechanism. The following
-format is currently used::
+Sidedata are stored in the revlog itself, thanks to a new version of the
+revlog. The following format is currently used::
 
     initial header:
         <number of sidedata; 2 bytes>
@@ -60,48 +59,35 @@ SIDEDATA_HEADER = struct.Struct('>H')
 SIDEDATA_ENTRY = struct.Struct('>HL20s')
 
 
-def sidedatawriteprocessor(rl, text, sidedata):
+def serialize_sidedata(sidedata):
     sidedata = list(sidedata.items())
     sidedata.sort()
-    rawtext = [SIDEDATA_HEADER.pack(len(sidedata))]
+    buf = [SIDEDATA_HEADER.pack(len(sidedata))]
     for key, value in sidedata:
         digest = hashutil.sha1(value).digest()
-        rawtext.append(SIDEDATA_ENTRY.pack(key, len(value), digest))
+        buf.append(SIDEDATA_ENTRY.pack(key, len(value), digest))
     for key, value in sidedata:
-        rawtext.append(value)
-    rawtext.append(bytes(text))
-    return b''.join(rawtext), False
+        buf.append(value)
+    buf = b''.join(buf)
+    return buf
 
 
-def sidedatareadprocessor(rl, text):
+def deserialize_sidedata(blob):
     sidedata = {}
     offset = 0
-    (nbentry,) = SIDEDATA_HEADER.unpack(text[: SIDEDATA_HEADER.size])
+    (nbentry,) = SIDEDATA_HEADER.unpack(blob[: SIDEDATA_HEADER.size])
     offset += SIDEDATA_HEADER.size
     dataoffset = SIDEDATA_HEADER.size + (SIDEDATA_ENTRY.size * nbentry)
     for i in range(nbentry):
         nextoffset = offset + SIDEDATA_ENTRY.size
-        key, size, storeddigest = SIDEDATA_ENTRY.unpack(text[offset:nextoffset])
+        key, size, storeddigest = SIDEDATA_ENTRY.unpack(blob[offset:nextoffset])
         offset = nextoffset
         # read the data associated with that entry
         nextdataoffset = dataoffset + size
-        entrytext = text[dataoffset:nextdataoffset]
+        entrytext = bytes(blob[dataoffset:nextdataoffset])
         readdigest = hashutil.sha1(entrytext).digest()
         if storeddigest != readdigest:
             raise error.SidedataHashError(key, storeddigest, readdigest)
         sidedata[key] = entrytext
         dataoffset = nextdataoffset
-    text = text[dataoffset:]
-    return text, True, sidedata
-
-
-def sidedatarawprocessor(rl, text):
-    # side data modifies rawtext and prevent rawtext hash validation
-    return False
-
-
-processors = (
-    sidedatareadprocessor,
-    sidedatawriteprocessor,
-    sidedatarawprocessor,
-)
+    return sidedata

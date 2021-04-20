@@ -1,15 +1,10 @@
-use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
-use crate::ui::utf8_to_local;
+use crate::error::CommandError;
 use crate::ui::Ui;
-use hg::operations::{
-    list_rev_tracked_files, ListRevTrackedFilesError,
-    ListRevTrackedFilesErrorKind,
-};
-use hg::operations::{
-    Dirstate, ListDirstateTrackedFilesError, ListDirstateTrackedFilesErrorKind,
-};
+use clap::Arg;
+use hg::operations::list_rev_tracked_files;
+use hg::operations::Dirstate;
 use hg::repo::Repo;
+use hg::utils::current_dir;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
 use hg::utils::hg_path::{HgPath, HgPathBuf};
 
@@ -19,124 +14,78 @@ List tracked files.
 Returns 0 on success.
 ";
 
-pub struct FilesCommand<'a> {
-    rev: Option<&'a str>,
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("files")
+        .arg(
+            Arg::with_name("rev")
+                .help("search the repository as it is in REV")
+                .short("-r")
+                .long("--revision")
+                .value_name("REV")
+                .takes_value(true),
+        )
+        .about(HELP_TEXT)
 }
 
-impl<'a> FilesCommand<'a> {
-    pub fn new(rev: Option<&'a str>) -> Self {
-        FilesCommand { rev }
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let relative = invocation.config.get(b"ui", b"relative-paths");
+    if relative.is_some() {
+        return Err(CommandError::unsupported(
+            "non-default ui.relative-paths",
+        ));
     }
 
-    fn display_files(
-        &self,
-        ui: &Ui,
-        repo: &Repo,
-        files: impl IntoIterator<Item = &'a HgPath>,
-    ) -> Result<(), CommandError> {
-        let cwd = std::env::current_dir()
-            .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
-        let rooted_cwd = cwd
-            .strip_prefix(repo.working_directory_path())
-            .expect("cwd was already checked within the repository");
-        let rooted_cwd = HgPathBuf::from(get_bytes_from_path(rooted_cwd));
+    let rev = invocation.subcommand_args.value_of("rev");
 
-        let mut stdout = ui.stdout_buffer();
+    let repo = invocation.repo?;
+    if let Some(rev) = rev {
+        let files = list_rev_tracked_files(repo, rev).map_err(|e| (e, rev))?;
+        display_files(invocation.ui, repo, files.iter())
+    } else {
+        let distate = Dirstate::new(repo)?;
+        let files = distate.tracked_files()?;
+        display_files(invocation.ui, repo, files)
+    }
+}
 
+fn display_files<'a>(
+    ui: &Ui,
+    repo: &Repo,
+    files: impl IntoIterator<Item = &'a HgPath>,
+) -> Result<(), CommandError> {
+    let mut stdout = ui.stdout_buffer();
+
+    let cwd = current_dir()?;
+    let working_directory = repo.working_directory_path();
+    let working_directory = cwd.join(working_directory); // Make it absolute
+
+    let mut any = false;
+    if let Ok(cwd_relative_to_repo) = cwd.strip_prefix(&working_directory) {
+        // The current directory is inside the repo, so we can work with
+        // relative paths
+        let cwd = HgPathBuf::from(get_bytes_from_path(cwd_relative_to_repo));
         for file in files {
-            stdout.write_all(relativize_path(file, &rooted_cwd).as_ref())?;
+            any = true;
+            stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
             stdout.write_all(b"\n")?;
         }
-        stdout.flush()?;
-        Ok(())
-    }
-}
-
-impl<'a> Command for FilesCommand<'a> {
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
-        repo.check_requirements()?;
-        if let Some(rev) = self.rev {
-            let files = list_rev_tracked_files(&repo, rev)
-                .map_err(|e| map_rev_error(rev, e))?;
-            self.display_files(ui, &repo, files.iter())
-        } else {
-            let distate = Dirstate::new(&repo).map_err(map_dirstate_error)?;
-            let files = distate.tracked_files().map_err(map_dirstate_error)?;
-            self.display_files(ui, &repo, files)
+    } else {
+        let working_directory =
+            HgPathBuf::from(get_bytes_from_path(working_directory));
+        let cwd = HgPathBuf::from(get_bytes_from_path(cwd));
+        for file in files {
+            any = true;
+            // Absolute path in the filesystem
+            let file = working_directory.join(file);
+            stdout.write_all(relativize_path(&file, &cwd).as_ref())?;
+            stdout.write_all(b"\n")?;
         }
     }
-}
 
-/// Convert `ListRevTrackedFilesErrorKind` to `CommandError`
-fn map_rev_error(rev: &str, err: ListRevTrackedFilesError) -> CommandError {
-    CommandError {
-        kind: match err.kind {
-            ListRevTrackedFilesErrorKind::IoError(err) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!("abort: {}\n", err)).into(),
-                ))
-            }
-            ListRevTrackedFilesErrorKind::InvalidRevision => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: invalid revision identifier {}\n",
-                        rev
-                    ))
-                    .into(),
-                ))
-            }
-            ListRevTrackedFilesErrorKind::AmbiguousPrefix => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: ambiguous revision identifier {}\n",
-                        rev
-                    ))
-                    .into(),
-                ))
-            }
-            ListRevTrackedFilesErrorKind::UnsuportedRevlogVersion(version) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unsupported revlog version {}\n",
-                        version
-                    ))
-                    .into(),
-                ))
-            }
-            ListRevTrackedFilesErrorKind::CorruptedRevlog => {
-                CommandErrorKind::Abort(Some(
-                    "abort: corrupted revlog\n".into(),
-                ))
-            }
-            ListRevTrackedFilesErrorKind::UnknowRevlogDataFormat(format) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unknow revlog dataformat {:?}\n",
-                        format
-                    ))
-                    .into(),
-                ))
-            }
-        },
-    }
-}
-
-/// Convert `ListDirstateTrackedFilesError` to `CommandError`
-fn map_dirstate_error(err: ListDirstateTrackedFilesError) -> CommandError {
-    CommandError {
-        kind: match err.kind {
-            ListDirstateTrackedFilesErrorKind::IoError(err) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!("abort: {}\n", err)).into(),
-                ))
-            }
-            ListDirstateTrackedFilesErrorKind::ParseError(_) => {
-                CommandErrorKind::Abort(Some(
-                    // TODO find a better error message
-                    b"abort: parse error\n".to_vec(),
-                ))
-            }
-        },
+    stdout.flush()?;
+    if any {
+        Ok(())
+    } else {
+        Err(CommandError::Unsuccessful)
     }
 }

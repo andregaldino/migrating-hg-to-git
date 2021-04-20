@@ -1567,7 +1567,7 @@ def scmutiladdremove(orig, repo, matcher, prefix, uipathfn, opts=None):
 
 # Calling purge with --all will cause the largefiles to be deleted.
 # Override repo.status to prevent this from happening.
-@eh.wrapcommand(b'purge', extension=b'purge')
+@eh.wrapcommand(b'purge')
 def overridepurge(orig, ui, repo, *dirs, **opts):
     # XXX Monkey patching a repoview will not work. The assigned attribute will
     # be set on the unfiltered repo, but we will only lookup attributes in the

@@ -7,14 +7,12 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::utils::files::{
-    get_bytes_from_path, get_path_from_bytes, read_whole_file,
-};
-use format_bytes::format_bytes;
+use crate::errors::HgError;
+use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
+use format_bytes::{format_bytes, write_bytes, DisplayBytes};
 use lazy_static::lazy_static;
 use regex::bytes::Regex;
 use std::collections::HashMap;
-use std::io;
 use std::path::{Path, PathBuf};
 
 lazy_static! {
@@ -53,6 +51,51 @@ impl ConfigLayer {
         }
     }
 
+    /// Parse `--config` CLI arguments and return a layer if there’s any
+    pub(crate) fn parse_cli_args(
+        cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+    ) -> Result<Option<Self>, ConfigError> {
+        fn parse_one(arg: &[u8]) -> Option<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+            use crate::utils::SliceExt;
+
+            let (section_and_item, value) = arg.split_2(b'=')?;
+            let (section, item) = section_and_item.trim().split_2(b'.')?;
+            Some((
+                section.to_owned(),
+                item.to_owned(),
+                value.trim().to_owned(),
+            ))
+        }
+
+        let mut layer = Self::new(ConfigOrigin::CommandLine);
+        for arg in cli_config_args {
+            let arg = arg.as_ref();
+            if let Some((section, item, value)) = parse_one(arg) {
+                layer.add(section, item, value, None);
+            } else {
+                Err(HgError::abort(format!(
+                    "abort: malformed --config option: '{}' \
+                    (use --config section.name=value)",
+                    String::from_utf8_lossy(arg),
+                )))?
+            }
+        }
+        if layer.sections.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(layer))
+        }
+    }
+
+    /// Returns whether this layer comes from `--config` CLI arguments
+    pub(crate) fn is_from_command_line(&self) -> bool {
+        if let ConfigOrigin::CommandLine = self.origin {
+            true
+        } else {
+            false
+        }
+    }
+
     /// Add an entry to the config, overwriting the old one if already present.
     pub fn add(
         &mut self,
@@ -70,6 +113,14 @@ impl ConfigLayer {
     /// Returns the config value in `<section>.<item>` if it exists
     pub fn get(&self, section: &[u8], item: &[u8]) -> Option<&ConfigValue> {
         Some(self.sections.get(section)?.get(item)?)
+    }
+
+    /// Returns the keys defined in the given section
+    pub fn iter_keys(&self, section: &[u8]) -> impl Iterator<Item = &[u8]> {
+        self.sections
+            .get(section)
+            .into_iter()
+            .flat_map(|section| section.keys().map(|vec| &**vec))
     }
 
     pub fn is_empty(&self) -> bool {
@@ -96,21 +147,39 @@ impl ConfigLayer {
         let mut section = b"".to_vec();
 
         while let Some((index, bytes)) = lines_iter.next() {
+            let line = Some(index + 1);
             if let Some(m) = INCLUDE_RE.captures(&bytes) {
                 let filename_bytes = &m[1];
-                let filename_to_include = get_path_from_bytes(&filename_bytes);
-                match read_include(&src, &filename_to_include) {
-                    (include_src, Ok(data)) => {
+                let filename_bytes = crate::utils::expand_vars(filename_bytes);
+                // `Path::parent` only fails for the root directory,
+                // which `src` can’t be since we’ve managed to open it as a
+                // file.
+                let dir = src
+                    .parent()
+                    .expect("Path::parent fail on a file we’ve read");
+                // `Path::join` with an absolute argument correctly ignores the
+                // base path
+                let filename = dir.join(&get_path_from_bytes(&filename_bytes));
+                match std::fs::read(&filename) {
+                    Ok(data) => {
                         layers.push(current_layer);
-                        layers.extend(Self::parse(&include_src, &data)?);
+                        layers.extend(Self::parse(&filename, &data)?);
                         current_layer =
                             Self::new(ConfigOrigin::File(src.to_owned()));
                     }
-                    (_, Err(e)) => {
-                        return Err(ConfigError::IncludeError {
-                            path: filename_to_include.to_owned(),
-                            io_error: e,
-                        })
+                    Err(error) => {
+                        if error.kind() != std::io::ErrorKind::NotFound {
+                            return Err(ConfigParseError {
+                                origin: ConfigOrigin::File(src.to_owned()),
+                                line,
+                                message: format_bytes!(
+                                    b"cannot include {} ({})",
+                                    filename_bytes,
+                                    format_bytes::Utf8(error)
+                                ),
+                            }
+                            .into());
+                        }
                     }
                 }
             } else if let Some(_) = EMPTY_RE.captures(&bytes) {
@@ -134,22 +203,23 @@ impl ConfigLayer {
                     };
                     lines_iter.next();
                 }
-                current_layer.add(
-                    section.clone(),
-                    item,
-                    value,
-                    Some(index + 1),
-                );
+                current_layer.add(section.clone(), item, value, line);
             } else if let Some(m) = UNSET_RE.captures(&bytes) {
                 if let Some(map) = current_layer.sections.get_mut(&section) {
                     map.remove(&m[1]);
                 }
             } else {
-                return Err(ConfigError::Parse {
+                let message = if bytes.starts_with(b" ") {
+                    format_bytes!(b"unexpected leading whitespace: {}", bytes)
+                } else {
+                    bytes.to_owned()
+                };
+                return Err(ConfigParseError {
                     origin: ConfigOrigin::File(src.to_owned()),
-                    line: Some(index + 1),
-                    bytes: bytes.to_owned(),
-                });
+                    line,
+                    message,
+                }
+                .into());
             }
         }
         if !current_layer.is_empty() {
@@ -159,8 +229,11 @@ impl ConfigLayer {
     }
 }
 
-impl std::fmt::Debug for ConfigLayer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl DisplayBytes for ConfigLayer {
+    fn display_bytes(
+        &self,
+        out: &mut dyn std::io::Write,
+    ) -> std::io::Result<()> {
         let mut sections: Vec<_> = self.sections.iter().collect();
         sections.sort_by(|e0, e1| e0.0.cmp(e1.0));
 
@@ -169,16 +242,13 @@ impl std::fmt::Debug for ConfigLayer {
             items.sort_by(|e0, e1| e0.0.cmp(e1.0));
 
             for (item, config_entry) in items {
-                writeln!(
-                    f,
-                    "{}",
-                    String::from_utf8_lossy(&format_bytes!(
-                        b"{}.{}={} # {}",
-                        section,
-                        item,
-                        &config_entry.bytes,
-                        &self.origin.to_bytes(),
-                    ))
+                write_bytes!(
+                    out,
+                    b"{}.{}={} # {}\n",
+                    section,
+                    item,
+                    &config_entry.bytes,
+                    &self.origin,
                 )?
             }
         }
@@ -205,9 +275,11 @@ pub struct ConfigValue {
 
 #[derive(Clone, Debug)]
 pub enum ConfigOrigin {
-    /// The value comes from a configuration file
+    /// From a configuration file
     File(PathBuf),
-    /// The value comes from the environment like `$PAGER` or `$EDITOR`
+    /// From a `--config` CLI argument
+    CommandLine,
+    /// From environment variables like `$PAGER` or `$EDITOR`
     Environment(Vec<u8>),
     /* TODO cli
      * TODO defaults (configitems.py)
@@ -216,53 +288,32 @@ pub enum ConfigOrigin {
      * Others? */
 }
 
-impl ConfigOrigin {
-    /// TODO use some kind of dedicated trait?
-    pub fn to_bytes(&self) -> Vec<u8> {
+impl DisplayBytes for ConfigOrigin {
+    fn display_bytes(
+        &self,
+        out: &mut dyn std::io::Write,
+    ) -> std::io::Result<()> {
         match self {
-            ConfigOrigin::File(p) => get_bytes_from_path(p),
-            ConfigOrigin::Environment(e) => e.to_owned(),
+            ConfigOrigin::File(p) => out.write_all(&get_bytes_from_path(p)),
+            ConfigOrigin::CommandLine => out.write_all(b"--config"),
+            ConfigOrigin::Environment(e) => write_bytes!(out, b"${}", e),
         }
     }
 }
 
 #[derive(Debug)]
-pub enum ConfigError {
-    Parse {
-        origin: ConfigOrigin,
-        line: Option<usize>,
-        bytes: Vec<u8>,
-    },
-    /// Failed to include a sub config file
-    IncludeError {
-        path: PathBuf,
-        io_error: std::io::Error,
-    },
-    /// Any IO error that isn't expected
-    IO(std::io::Error),
+pub struct ConfigParseError {
+    pub origin: ConfigOrigin,
+    pub line: Option<usize>,
+    pub message: Vec<u8>,
 }
 
-impl From<std::io::Error> for ConfigError {
-    fn from(e: std::io::Error) -> Self {
-        Self::IO(e)
-    }
+#[derive(Debug, derive_more::From)]
+pub enum ConfigError {
+    Parse(ConfigParseError),
+    Other(HgError),
 }
 
 fn make_regex(pattern: &'static str) -> Regex {
     Regex::new(pattern).expect("expected a valid regex")
-}
-
-/// Includes are relative to the file they're defined in, unless they're
-/// absolute.
-fn read_include(
-    old_src: &Path,
-    new_src: &Path,
-) -> (PathBuf, io::Result<Vec<u8>>) {
-    if new_src.is_absolute() {
-        (new_src.to_path_buf(), read_whole_file(&new_src))
-    } else {
-        let dir = old_src.parent().unwrap();
-        let new_src = dir.join(&new_src);
-        (new_src.to_owned(), read_whole_file(&new_src))
-    }
 }

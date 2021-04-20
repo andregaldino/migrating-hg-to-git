@@ -1,6 +1,6 @@
 # tags.py - read tag info from local repository
 #
-# Copyright 2009 Matt Mackall <mpm@selenic.com>
+# Copyright 2009 Olivia Mackall <olivia@selenic.com>
 # Copyright 2009 Greg Ward <greg@gerg.ca>
 #
 # This software may be used and distributed according to the terms of the
@@ -494,10 +494,24 @@ def _getfnodes(ui, repo, nodes):
     starttime = util.timer()
     fnodescache = hgtagsfnodescache(repo.unfiltered())
     cachefnode = {}
+    validated_fnodes = set()
+    unknown_entries = set()
     for node in nodes:
         fnode = fnodescache.getfnode(node)
+        flog = repo.file(b'.hgtags')
         if fnode != nullid:
+            if fnode not in validated_fnodes:
+                if flog.hasnode(fnode):
+                    validated_fnodes.add(fnode)
+                else:
+                    unknown_entries.add(node)
             cachefnode[node] = fnode
+
+    if unknown_entries:
+        fixed_nodemap = fnodescache.refresh_invalid_nodes(unknown_entries)
+        for node, fnode in pycompat.iteritems(fixed_nodemap):
+            if fnode != nullid:
+                cachefnode[node] = fnode
 
     fnodescache.write()
 
@@ -733,6 +747,7 @@ class hgtagsfnodescache(object):
         if rawlen < wantedlen:
             if self._dirtyoffset is None:
                 self._dirtyoffset = rawlen
+            # TODO: zero fill entire record, because it's invalid not missing?
             self._raw.extend(b'\xff' * (wantedlen - rawlen))
 
     def getfnode(self, node, computemissing=True):
@@ -740,7 +755,8 @@ class hgtagsfnodescache(object):
 
         If the value is in the cache, the entry will be validated and returned.
         Otherwise, the filenode will be computed and returned unless
-        "computemissing" is False, in which case None will be returned without
+        "computemissing" is False.  In that case, None will be returned if
+        the entry is missing or False if the entry is invalid without
         any potentially expensive computation being performed.
 
         If an .hgtags does not exist at the specified revision, nullid is
@@ -771,8 +787,19 @@ class hgtagsfnodescache(object):
         # If we get here, the entry is either missing or invalid.
 
         if not computemissing:
+            if record != _fnodesmissingrec:
+                return False
             return None
 
+        fnode = self._computefnode(node)
+        self._writeentry(offset, properprefix, fnode)
+        return fnode
+
+    def _computefnode(self, node):
+        """Finds the tag filenode for a node which is missing or invalid
+        in cache"""
+        ctx = self._repo[node]
+        rev = ctx.rev()
         fnode = None
         cl = self._repo.changelog
         p1rev, p2rev = cl._uncheckedparentrevs(rev)
@@ -788,7 +815,7 @@ class hgtagsfnodescache(object):
                 # we cannot rely on readfast because we don't know against what
                 # parent the readfast delta is computed
                 p1fnode = None
-        if p1fnode is not None:
+        if p1fnode:
             mctx = ctx.manifestctx()
             fnode = mctx.readfast().get(b'.hgtags')
             if fnode is None:
@@ -800,8 +827,6 @@ class hgtagsfnodescache(object):
             except error.LookupError:
                 # No .hgtags file on this revision.
                 fnode = nullid
-
-        self._writeentry(offset, properprefix, fnode)
         return fnode
 
     def setfnode(self, node, fnode):
@@ -814,6 +839,21 @@ class hgtagsfnodescache(object):
             return
 
         self._writeentry(ctx.rev() * _fnodesrecsize, node[0:4], fnode)
+
+    def refresh_invalid_nodes(self, nodes):
+        """recomputes file nodes for a given set of nodes which has unknown
+        filenodes for them in the cache
+        Also updates the in-memory cache with the correct filenode.
+        Caller needs to take care about calling `.write()` so that updates are
+        persisted.
+        Returns a map {node: recomputed fnode}
+        """
+        fixed_nodemap = {}
+        for node in nodes:
+            fnode = self._computefnode(node)
+            fixed_nodemap[node] = fnode
+            self.setfnode(node, fnode)
+        return fixed_nodemap
 
     def _writeentry(self, offset, prefix, fnode):
         # Slices on array instances only accept other array.

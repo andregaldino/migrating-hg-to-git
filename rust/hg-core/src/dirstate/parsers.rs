@@ -3,15 +3,16 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
 use crate::{
-    dirstate::{CopyMap, EntryState, StateMap},
-    DirstateEntry, DirstatePackError, DirstateParents, DirstateParseError,
+    dirstate::{CopyMap, EntryState, RawEntry, StateMap},
+    DirstateEntry, DirstateParents,
 };
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{BigEndian, WriteBytesExt};
+use bytes_cast::BytesCast;
 use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
-use std::io::Cursor;
 use std::time::Duration;
 
 /// Parents are stored in the dirstate as byte hashes.
@@ -20,77 +21,64 @@ pub const PARENT_SIZE: usize = 20;
 const MIN_ENTRY_SIZE: usize = 17;
 
 type ParseResult<'a> = (
-    DirstateParents,
+    &'a DirstateParents,
     Vec<(&'a HgPath, DirstateEntry)>,
     Vec<(&'a HgPath, &'a HgPath)>,
 );
 
-#[timed]
-pub fn parse_dirstate(
+pub fn parse_dirstate_parents(
     contents: &[u8],
-) -> Result<ParseResult, DirstateParseError> {
-    if contents.len() < PARENT_SIZE * 2 {
-        return Err(DirstateParseError::TooLittleData);
-    }
-    let mut copies = vec![];
-    let mut entries = vec![];
+) -> Result<&DirstateParents, HgError> {
+    let (parents, _rest) = DirstateParents::from_bytes(contents)
+        .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
+    Ok(parents)
+}
 
-    let mut curr_pos = PARENT_SIZE * 2;
-    let parents = DirstateParents {
-        p1: contents[..PARENT_SIZE].try_into().unwrap(),
-        p2: contents[PARENT_SIZE..curr_pos].try_into().unwrap(),
-    };
+#[timed]
+pub fn parse_dirstate(mut contents: &[u8]) -> Result<ParseResult, HgError> {
+    let mut copies = Vec::new();
+    let mut entries = Vec::new();
 
-    while curr_pos < contents.len() {
-        if curr_pos + MIN_ENTRY_SIZE > contents.len() {
-            return Err(DirstateParseError::Overflow);
-        }
-        let entry_bytes = &contents[curr_pos..];
+    let (parents, rest) = DirstateParents::from_bytes(contents)
+        .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
+    contents = rest;
+    while !contents.is_empty() {
+        let (raw_entry, rest) = RawEntry::from_bytes(contents)
+            .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
 
-        let mut cursor = Cursor::new(entry_bytes);
-        let state = EntryState::try_from(cursor.read_u8()?)?;
-        let mode = cursor.read_i32::<BigEndian>()?;
-        let size = cursor.read_i32::<BigEndian>()?;
-        let mtime = cursor.read_i32::<BigEndian>()?;
-        let path_len = cursor.read_i32::<BigEndian>()? as usize;
-
-        if path_len > contents.len() - curr_pos {
-            return Err(DirstateParseError::Overflow);
-        }
-
-        // Slice instead of allocating a Vec needed for `read_exact`
-        let path = &entry_bytes[MIN_ENTRY_SIZE..MIN_ENTRY_SIZE + (path_len)];
-
-        let (path, copy) = match memchr::memchr(0, path) {
-            None => (path, None),
-            Some(i) => (&path[..i], Some(&path[(i + 1)..])),
+        let entry = DirstateEntry {
+            state: EntryState::try_from(raw_entry.state)?,
+            mode: raw_entry.mode.get(),
+            mtime: raw_entry.mtime.get(),
+            size: raw_entry.size.get(),
         };
+        let (paths, rest) =
+            u8::slice_from_bytes(rest, raw_entry.length.get() as usize)
+                .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
 
-        if let Some(copy_path) = copy {
-            copies.push((HgPath::new(path), HgPath::new(copy_path)));
-        };
-        entries.push((
-            HgPath::new(path),
-            DirstateEntry {
-                state,
-                mode,
-                size,
-                mtime,
-            },
-        ));
-        curr_pos = curr_pos + MIN_ENTRY_SIZE + (path_len);
+        // `paths` is either a single path, or two paths separated by a NULL
+        // byte
+        let mut iter = paths.splitn(2, |&byte| byte == b'\0');
+        let path = HgPath::new(
+            iter.next().expect("splitn always yields at least one item"),
+        );
+        if let Some(copy_source) = iter.next() {
+            copies.push((path, HgPath::new(copy_source)));
+        }
+
+        entries.push((path, entry));
+        contents = rest;
     }
     Ok((parents, entries, copies))
 }
 
 /// `now` is the duration in seconds since the Unix epoch
-#[cfg(not(feature = "dirstate-tree"))]
 pub fn pack_dirstate(
     state_map: &mut StateMap,
     copy_map: &CopyMap,
     parents: DirstateParents,
     now: Duration,
-) -> Result<Vec<u8>, DirstatePackError> {
+) -> Result<Vec<u8>, HgError> {
     // TODO move away from i32 before 2038.
     let now: i32 = now.as_secs().try_into().expect("time overflow");
 
@@ -108,8 +96,8 @@ pub fn pack_dirstate(
 
     let mut packed = Vec::with_capacity(expected_size);
 
-    packed.extend(&parents.p1);
-    packed.extend(&parents.p2);
+    packed.extend(parents.p1.as_bytes());
+    packed.extend(parents.p2.as_bytes());
 
     for (filename, entry) in state_map.iter_mut() {
         let new_filename = filename.to_owned();
@@ -136,90 +124,24 @@ pub fn pack_dirstate(
             new_filename.extend(copy.bytes());
         }
 
-        packed.write_u8(entry.state.into())?;
-        packed.write_i32::<BigEndian>(entry.mode)?;
-        packed.write_i32::<BigEndian>(entry.size)?;
-        packed.write_i32::<BigEndian>(new_mtime)?;
-        packed.write_i32::<BigEndian>(new_filename.len() as i32)?;
+        // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
+        packed.write_u8(entry.state.into()).unwrap();
+        packed.write_i32::<BigEndian>(entry.mode).unwrap();
+        packed.write_i32::<BigEndian>(entry.size).unwrap();
+        packed.write_i32::<BigEndian>(new_mtime).unwrap();
+        packed
+            .write_i32::<BigEndian>(new_filename.len() as i32)
+            .unwrap();
         packed.extend(new_filename)
     }
 
     if packed.len() != expected_size {
-        return Err(DirstatePackError::BadSize(expected_size, packed.len()));
+        return Err(HgError::CorruptedRepository(format!(
+            "bad dirstate size: {} != {}",
+            expected_size,
+            packed.len()
+        )));
     }
-
-    Ok(packed)
-}
-/// `now` is the duration in seconds since the Unix epoch
-#[cfg(feature = "dirstate-tree")]
-pub fn pack_dirstate(
-    state_map: &mut StateMap,
-    copy_map: &CopyMap,
-    parents: DirstateParents,
-    now: Duration,
-) -> Result<Vec<u8>, DirstatePackError> {
-    // TODO move away from i32 before 2038.
-    let now: i32 = now.as_secs().try_into().expect("time overflow");
-
-    let expected_size: usize = state_map
-        .iter()
-        .map(|(filename, _)| {
-            let mut length = MIN_ENTRY_SIZE + filename.len();
-            if let Some(copy) = copy_map.get(&filename) {
-                length += copy.len() + 1;
-            }
-            length
-        })
-        .sum();
-    let expected_size = expected_size + PARENT_SIZE * 2;
-
-    let mut packed = Vec::with_capacity(expected_size);
-    let mut new_state_map = vec![];
-
-    packed.extend(&parents.p1);
-    packed.extend(&parents.p2);
-
-    for (filename, entry) in state_map.iter() {
-        let new_filename = filename.to_owned();
-        let mut new_mtime: i32 = entry.mtime;
-        if entry.state == EntryState::Normal && entry.mtime == now {
-            // The file was last modified "simultaneously" with the current
-            // write to dirstate (i.e. within the same second for file-
-            // systems with a granularity of 1 sec). This commonly happens
-            // for at least a couple of files on 'update'.
-            // The user could change the file without changing its size
-            // within the same second. Invalidate the file's mtime in
-            // dirstate, forcing future 'status' calls to compare the
-            // contents of the file if the size is the same. This prevents
-            // mistakenly treating such files as clean.
-            new_mtime = -1;
-            new_state_map.push((
-                filename.to_owned(),
-                DirstateEntry {
-                    mtime: new_mtime,
-                    ..entry
-                },
-            ));
-        }
-        let mut new_filename = new_filename.into_vec();
-        if let Some(copy) = copy_map.get(&filename) {
-            new_filename.push(b'\0');
-            new_filename.extend(copy.bytes());
-        }
-
-        packed.write_u8(entry.state.into())?;
-        packed.write_i32::<BigEndian>(entry.mode)?;
-        packed.write_i32::<BigEndian>(entry.size)?;
-        packed.write_i32::<BigEndian>(new_mtime)?;
-        packed.write_i32::<BigEndian>(new_filename.len() as i32)?;
-        packed.extend(new_filename)
-    }
-
-    if packed.len() != expected_size {
-        return Err(DirstatePackError::BadSize(expected_size, packed.len()));
-    }
-
-    state_map.extend(new_state_map);
 
     Ok(packed)
 }
@@ -235,8 +157,8 @@ mod tests {
         let mut state_map = StateMap::default();
         let copymap = FastHashMap::default();
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = b"1234567891011121314100000000000000000000".to_vec();
@@ -266,8 +188,8 @@ mod tests {
 
         let copymap = FastHashMap::default();
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = [
@@ -306,8 +228,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let expected = [
@@ -346,8 +268,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =
@@ -366,7 +288,7 @@ mod tests {
             .collect();
 
         assert_eq!(
-            (parents, state_map, copymap),
+            (&parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
         )
     }
@@ -424,8 +346,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname2"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =
@@ -444,7 +366,7 @@ mod tests {
             .collect();
 
         assert_eq!(
-            (parents, state_map, copymap),
+            (&parents, state_map, copymap),
             (new_parents, new_state_map, new_copy_map)
         )
     }
@@ -470,8 +392,8 @@ mod tests {
             HgPathBuf::from_bytes(b"copyname"),
         );
         let parents = DirstateParents {
-            p1: *b"12345678910111213141",
-            p2: *b"00000000000000000000",
+            p1: b"12345678910111213141".into(),
+            p2: b"00000000000000000000".into(),
         };
         let now = Duration::new(15000000, 0);
         let result =
@@ -491,7 +413,7 @@ mod tests {
 
         assert_eq!(
             (
-                parents,
+                &parents,
                 [(
                     HgPathBuf::from_bytes(b"f1"),
                     DirstateEntry {

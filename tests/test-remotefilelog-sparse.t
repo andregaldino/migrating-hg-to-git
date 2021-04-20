@@ -22,8 +22,10 @@
 
   $ hgcloneshallow ssh://user@dummy/master shallow --noupdate
   streaming all changes
-  2 files to transfer, 527 bytes of data
-  transferred 527 bytes in 0.* seconds (*/sec) (glob)
+  2 files to transfer, 527 bytes of data (no-zstd !)
+  transferred 527 bytes in * seconds (* */sec) (glob) (no-zstd !)
+  2 files to transfer, 534 bytes of data (zstd !)
+  transferred 534 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   $ cd shallow
@@ -48,6 +50,7 @@
   $ printf "[remotefilelog]\npullprefetch=bookmark()\n" >> .hg/hgrc
   $ hg strip tip
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/876b1317060d-b2e91d8d-backup.hg (glob)
+  2 files fetched over 2 fetches - (2 misses, 0.00% hit ratio) over *s (glob)
 
   $ hg debugsparse --delete z
 
@@ -72,8 +75,10 @@
 
   $ hgcloneshallow ssh://user@dummy/master shallow2
   streaming all changes
-  2 files to transfer, 527 bytes of data
-  transferred 527 bytes in 0.* seconds (*) (glob)
+  2 files to transfer, 527 bytes of data (no-zstd !)
+  transferred 527 bytes in * seconds (*) (glob) (no-zstd !)
+  2 files to transfer, 534 bytes of data (zstd !)
+  transferred 534 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default

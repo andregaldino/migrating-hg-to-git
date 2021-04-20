@@ -20,7 +20,6 @@ substitutions = [
         br'phases%253Dheads%250A'
         br'pushkey%250A'
         br'remote-changegroup%253Dhttp%252Chttps%250A'
-        br'rev-branch-cache%250A'
         br'stream%253Dv2',
         # (the replacement patterns)
         br'$USUAL_BUNDLE_CAPS$',
@@ -53,7 +52,6 @@ substitutions = [
         br'phases%3Dheads%0A'
         br'pushkey%0A'
         br'remote-changegroup%3Dhttp%2Chttps%0A'
-        br'rev-branch-cache%0A'
         br'stream%3Dv2',
         # (replacement patterns)
         br'$USUAL_BUNDLE2_CAPS$',
@@ -70,8 +68,7 @@ substitutions = [
         br'listkeys%0A'
         br'phases%3Dheads%0A'
         br'pushkey%0A'
-        br'remote-changegroup%3Dhttp%2Chttps%0A'
-        br'rev-branch-cache',
+        br'remote-changegroup%3Dhttp%2Chttps',
         # (replacement patterns)
         br'$USUAL_BUNDLE2_CAPS_SERVER$',
     ),
@@ -85,7 +82,6 @@ substitutions = [
         br'listkeys%0A'
         br'pushkey%0A'
         br'remote-changegroup%3Dhttp%2Chttps%0A'
-        br'rev-branch-cache%0A'
         br'stream%3Dv2',
         # (replacement patterns)
         br'$USUAL_BUNDLE2_CAPS_NO_PHASES$',

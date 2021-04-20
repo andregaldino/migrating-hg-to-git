@@ -31,7 +31,10 @@ from mercurial import (
     worker,
 )
 
-from mercurial.utils import stringutil
+from mercurial.utils import (
+    stringutil,
+    urlutil,
+)
 
 from ..largefiles import lfutil
 
@@ -725,7 +728,7 @@ def remote(repo, remote=None):
     https://github.com/git-lfs/git-lfs/blob/master/docs/api/server-discovery.md
     """
     lfsurl = repo.ui.config(b'lfs', b'url')
-    url = util.url(lfsurl or b'')
+    url = urlutil.url(lfsurl or b'')
     if lfsurl is None:
         if remote:
             path = remote
@@ -739,7 +742,7 @@ def remote(repo, remote=None):
             # and fall back to inferring from 'paths.remote' if unspecified.
             path = repo.ui.config(b'paths', b'default') or b''
 
-        defaulturl = util.url(path)
+        defaulturl = urlutil.url(path)
 
         # TODO: support local paths as well.
         # TODO: consider the ssh -> https transformation that git applies
@@ -748,7 +751,7 @@ def remote(repo, remote=None):
                 defaulturl.path += b'/'
             defaulturl.path = (defaulturl.path or b'') + b'.git/info/lfs'
 
-            url = util.url(bytes(defaulturl))
+            url = urlutil.url(bytes(defaulturl))
             repo.ui.note(_(b'lfs: assuming remote store: %s\n') % url)
 
     scheme = url.scheme

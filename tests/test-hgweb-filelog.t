@@ -656,7 +656,7 @@ before addition - error
   An error occurred while processing your request:
   </p>
   <p>
-  a@6563da9dcf87: not found in manifest
+  a@6563da9dcf87b1949716e38ff3e3dfaa3198eb06: not found in manifest
   </p>
   </div>
   </div>

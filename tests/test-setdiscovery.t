@@ -1328,25 +1328,25 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   updating to branch b
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --config devel.discovery.randomize=false
+  $ hg -R a debugdiscovery b --debug --verbose --config progress.debug=true --config devel.discovery.randomize=false  --config devel.discovery.sample-size.initial=50
   comparing with b
   query 1; heads
   searching for changes
   taking quick initial sample
   searching: 2 queries
-  query 2; still undecided: 1080, sample size is: 100
+  query 2; still undecided: 1080, sample size is: 50
   sampling from both directions
   searching: 3 queries
-  query 3; still undecided: 980, sample size is: 200
+  query 3; still undecided: 1030, sample size is: 200
   sampling from both directions
   searching: 4 queries
-  query 4; still undecided: 497, sample size is: 210
+  query 4; still undecided: 547, sample size is: 210
   sampling from both directions
   searching: 5 queries
-  query 5; still undecided: 285, sample size is: 220
+  query 5; still undecided: 336, sample size is: 220
   sampling from both directions
   searching: 6 queries
-  query 6; still undecided: 63, sample size is: 63
+  query 6; still undecided: 114, sample size is: 114
   6 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   6
@@ -1412,22 +1412,30 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
       missing:                1040
   common heads: 3ee37d65064a
 
-  $ hg -R a debugdiscovery b --debug --config devel.discovery.exchange-heads=false --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.01
+  $ hg -R a debugdiscovery b --debug --config devel.discovery.exchange-heads=false --config devel.discovery.randomize=false --config devel.discovery.grow-sample.rate=1.20 --config devel.discovery.sample-size=50
   comparing with b
   searching for changes
   sampling from both directions
-  query 1; still undecided: 1340, sample size is: 200
+  query 1; still undecided: 1340, sample size is: 50
   sampling from both directions
-  query 2; still undecided: 795, sample size is: 202
+  query 2; still undecided: 995, sample size is: 60
   sampling from both directions
-  query 3; still undecided: 525, sample size is: 204
+  query 3; still undecided: 913, sample size is: 72
   sampling from both directions
-  query 4; still undecided: 252, sample size is: 206
+  query 4; still undecided: 816, sample size is: 204
   sampling from both directions
-  query 5; still undecided: 44, sample size is: 44
-  5 total queries in *s (glob)
-  elapsed time: * seconds (glob)
-  round-trips:                   5
+  query 5; still undecided: 612, sample size is: 153
+  sampling from both directions
+  query 6; still undecided: 456, sample size is: 123
+  sampling from both directions
+  query 7; still undecided: 332, sample size is: 147
+  sampling from both directions
+  query 8; still undecided: 184, sample size is: 176
+  sampling from both directions
+  query 9; still undecided: 8, sample size is: 8
+  9 total queries in *s (glob)
+  elapsed time:  * seconds (glob)
+  round-trips:                   9
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1580,3 +1588,175 @@ returned as common heads.
       common:                    0
       missing:                   1
   common heads: 66f7d451a68b
+
+  $ cd ..
+
+
+Test debuging discovery using different subset of the same repository
+=====================================================================
+
+remote is a local subset
+------------------------
+
+remote will be last 25 heads of the local graph
+
+  $ cd $TESTTMP/manyheads
+  $ hg -R a debugdiscovery \
+  > --debug \
+  > --remote-as-revs 'last(heads(all()), 25)' \
+  > --config devel.discovery.randomize=false
+  query 1; heads
+  searching for changes
+  all remote heads known locally
+  elapsed time:  * seconds (glob)
+  round-trips:                   1
+  heads summary:
+    total common heads:         25
+      also local heads:         25
+      also remote heads:        25
+      both:                     25
+    local heads:               260
+      common:                   25
+      missing:                 235
+    remote heads:               25
+      common:                   25
+      unknown:                   0
+  local changesets:           1340
+    common:                    400
+      heads:                    25
+      roots:                     1
+    missing:                   940
+      heads:                   235
+      roots:                   235
+    first undecided set:       940
+      heads:                   235
+      roots:                   235
+      common:                    0
+      missing:                 940
+  common heads: 0dfd965d91c6 0fe09b60448d 14a17233ce9d 175c0a3072cf 1c51e2c80832 1e51600e0698 24eb5f9bdbab 25ce09526613 36bd00abde57 426989fdefa0 596d87362679 5dd1039ea5c0 5ef24f022278 5f230dc19419 80b39998accb 88f40688ffb5 9e37ddf8c632 abf4d55b075e b2ce801fddfe b368b6ac3ce3 c959bf2e869c c9fba6ba4e2e d783207cf649 d9a51e256f21 e3717a4e3753
+
+local is a local subset
+------------------------
+
+remote will be last 25 heads of the local graph
+
+  $ cd $TESTTMP/manyheads
+  $ hg -R a debugdiscovery b \
+  > --debug \
+  > --local-as-revs 'first(heads(all()), 25)' \
+  > --config devel.discovery.randomize=false
+  comparing with b
+  query 1; heads
+  searching for changes
+  taking quick initial sample
+  query 2; still undecided: 375, sample size is: 81
+  sampling from both directions
+  query 3; still undecided: 3, sample size is: 3
+  3 total queries *s (glob)
+  elapsed time:  * seconds (glob)
+  round-trips:                   3
+  heads summary:
+    total common heads:          1
+      also local heads:          0
+      also remote heads:         0
+      both:                      0
+    local heads:                25
+      common:                    0
+      missing:                  25
+    remote heads:                1
+      common:                    0
+      unknown:                   1
+  local changesets:            400
+    common:                    300
+      heads:                     1
+      roots:                     1
+    missing:                   100
+      heads:                    25
+      roots:                    25
+    first undecided set:       400
+      heads:                    25
+      roots:                     1
+      common:                  300
+      missing:                 100
+  common heads: 3ee37d65064a
+
+both local and remove are subset
+------------------------
+
+remote will be last 25 heads of the local graph
+
+  $ cd $TESTTMP/manyheads
+  $ hg -R a debugdiscovery \
+  > --debug \
+  > --local-as-revs 'first(heads(all()), 25)' \
+  > --remote-as-revs 'last(heads(all()), 25)' \
+  > --config devel.discovery.randomize=false
+  query 1; heads
+  searching for changes
+  taking quick initial sample
+  query 2; still undecided: 375, sample size is: 81
+  sampling from both directions
+  query 3; still undecided: 3, sample size is: 3
+  3 total queries in *s (glob)
+  elapsed time:  * seconds (glob)
+  round-trips:                   3
+  heads summary:
+    total common heads:          1
+      also local heads:          0
+      also remote heads:         0
+      both:                      0
+    local heads:                25
+      common:                    0
+      missing:                  25
+    remote heads:               25
+      common:                    0
+      unknown:                  25
+  local changesets:            400
+    common:                    300
+      heads:                     1
+      roots:                     1
+    missing:                   100
+      heads:                    25
+      roots:                    25
+    first undecided set:       400
+      heads:                    25
+      roots:                     1
+      common:                  300
+      missing:                 100
+  common heads: 3ee37d65064a
+
+Test -T json output
+-------------------
+
+  $ hg -R a debugdiscovery \
+  > -T json \
+  > --debug \
+  > --local-as-revs 'first(heads(all()), 25)' \
+  > --remote-as-revs 'last(heads(all()), 25)' \
+  > --config devel.discovery.randomize=false
+  [
+   {
+    "elapsed": *, (glob)
+    "nb-common-heads": 1,
+    "nb-common-heads-both": 0,
+    "nb-common-heads-local": 0,
+    "nb-common-heads-remote": 0,
+    "nb-common-roots": 1,
+    "nb-head-local": 25,
+    "nb-head-local-missing": 25,
+    "nb-head-remote": 25,
+    "nb-head-remote-unknown": 25,
+    "nb-ini_und": 400,
+    "nb-ini_und-common": 300,
+    "nb-ini_und-heads": 25,
+    "nb-ini_und-missing": 100,
+    "nb-ini_und-roots": 1,
+    "nb-missing-heads": 25,
+    "nb-missing-roots": 25,
+    "nb-revs": 400,
+    "nb-revs-common": 300,
+    "nb-revs-missing": 100,
+    "output": "query 1; heads\nsearching for changes\ntaking quick initial sample\nquery 2; still undecided: 375, sample size is: 81\nsampling from both directions\nquery 3; still undecided: 3, sample size is: 3\n3 total queries in *s\n", (glob)
+    "total-roundtrips": 3
+   }
+  ]

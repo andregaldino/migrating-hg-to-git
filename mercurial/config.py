@@ -1,6 +1,6 @@
 # config.py - configuration parsing for Mercurial
 #
-#  Copyright 2009 Matt Mackall <mpm@selenic.com> and others
+#  Copyright 2009 Olivia Mackall <olivia@selenic.com> and others
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -22,14 +22,19 @@ from . import (
 
 class config(object):
     def __init__(self, data=None):
+        self._current_source_level = 0
         self._data = {}
         self._unset = []
         if data:
             for k in data._data:
                 self._data[k] = data[k].copy()
-            self._source = data._source.copy()
-        else:
-            self._source = util.cowdict()
+            self._current_source_level = data._current_source_level + 1
+
+    def new_source(self):
+        """increment the source counter
+
+        This is used to define source priority when reading"""
+        self._current_source_level += 1
 
     def copy(self):
         return config(self)
@@ -48,45 +53,66 @@ class config(object):
             yield d
 
     def update(self, src):
-        self._source = self._source.preparewrite()
+        current_level = self._current_source_level
+        current_level += 1
+        max_level = self._current_source_level
         for s, n in src._unset:
             ds = self._data.get(s, None)
             if ds is not None and n in ds:
                 self._data[s] = ds.preparewrite()
                 del self._data[s][n]
-                del self._source[(s, n)]
         for s in src:
             ds = self._data.get(s, None)
             if ds:
                 self._data[s] = ds.preparewrite()
             else:
                 self._data[s] = util.cowsortdict()
-            self._data[s].update(src._data[s])
-        self._source.update(src._source)
+            for k, v in src._data[s].items():
+                value, source, level = v
+                level += current_level
+                max_level = max(level, current_level)
+                self._data[s][k] = (value, source, level)
+        self._current_source_level = max_level
+
+    def _get(self, section, item):
+        return self._data.get(section, {}).get(item)
 
     def get(self, section, item, default=None):
-        return self._data.get(section, {}).get(item, default)
+        result = self._get(section, item)
+        if result is None:
+            return default
+        return result[0]
 
-    def backup(self, section, item):
+    def backup(self, section, key):
         """return a tuple allowing restore to reinstall a previous value
 
         The main reason we need it is because it handles the "no data" case.
         """
         try:
-            value = self._data[section][item]
-            source = self.source(section, item)
-            return (section, item, value, source)
+            item = self._data[section][key]
         except KeyError:
-            return (section, item)
+            return (section, key)
+        else:
+            return (section, key) + item
 
     def source(self, section, item):
-        return self._source.get((section, item), b"")
+        result = self._get(section, item)
+        if result is None:
+            return b""
+        return result[1]
+
+    def level(self, section, item):
+        result = self._get(section, item)
+        if result is None:
+            return None
+        return result[2]
 
     def sections(self):
         return sorted(self._data.keys())
 
     def items(self, section):
-        return list(pycompat.iteritems(self._data.get(section, {})))
+        items = pycompat.iteritems(self._data.get(section, {}))
+        return [(k, v[0]) for (k, v) in items]
 
     def set(self, section, item, value, source=b""):
         if pycompat.ispy3:
@@ -103,26 +129,31 @@ class config(object):
             self._data[section] = util.cowsortdict()
         else:
             self._data[section] = self._data[section].preparewrite()
-        self._data[section][item] = value
-        if source:
-            self._source = self._source.preparewrite()
-            self._source[(section, item)] = source
+        self._data[section][item] = (value, source, self._current_source_level)
+
+    def alter(self, section, key, new_value):
+        """alter a value without altering its source or level
+
+        This method is meant to be used by `ui.fixconfig` only."""
+        item = self._data[section][key]
+        size = len(item)
+        new_item = (new_value,) + item[1:]
+        assert len(new_item) == size
+        self._data[section][key] = new_item
 
     def restore(self, data):
         """restore data returned by self.backup"""
-        self._source = self._source.preparewrite()
-        if len(data) == 4:
+        if len(data) != 2:
             # restore old data
-            section, item, value, source = data
+            section, key = data[:2]
+            item = data[2:]
             self._data[section] = self._data[section].preparewrite()
-            self._data[section][item] = value
-            self._source[(section, item)] = source
+            self._data[section][key] = item
         else:
             # no data before, remove everything
             section, item = data
             if section in self._data:
                 self._data[section].pop(item, None)
-            self._source.pop((section, item), None)
 
     def parse(self, src, data, sections=None, remap=None, include=None):
         sectionre = util.re.compile(br'\[([^\[]+)\]')
@@ -206,6 +237,7 @@ class config(object):
             raise error.ConfigError(message, (b"%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
+        self.new_source()
         if not fp:
             fp = util.posixfile(path, b'rb')
         assert (
@@ -220,6 +252,8 @@ class config(object):
         def include(rel, remap, sections):
             abs = os.path.normpath(os.path.join(dir, rel))
             self.read(abs, remap=remap, sections=sections)
+            # anything after the include has a higher level
+            self.new_source()
 
         self.parse(
             path, fp.read(), sections=sections, remap=remap, include=include

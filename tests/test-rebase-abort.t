@@ -95,6 +95,7 @@ Insert unsupported advisory merge record:
     ancestor path: common (node de0a666fdd9c1a0b0698b90d85064d8bd34f74b6)
     other path: common (node 2f6411de53677f6f1048fef5bf888d67a342e0a5)
     extra: ancestorlinknode = 3163e20567cc93074fbb7a53c8b93312e59dbf2c
+    extra: merged = yes
   $ hg resolve -l
   U common
 

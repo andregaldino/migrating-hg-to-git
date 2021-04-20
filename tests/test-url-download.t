@@ -34,6 +34,8 @@ Check other kind of compatible url
   $ hg debugdownload ./null.txt
   1 0000000000000000000000000000000000000000
 
+  $ cat ../error.log
+
 Test largefile URL
 ------------------
 
@@ -66,3 +68,5 @@ from within a repository
   $ hg debugdownload "largefile://a57b57b39ee4dc3da1e03526596007f480ecdbe8"
   1 0000000000000000000000000000000000000000
   $ cd ..
+
+  $ cat error.log

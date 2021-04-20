@@ -18,7 +18,7 @@ Require a destination
   $ hg rebase
   abort: you must specify a destination
   (use: hg rebase -d REV)
-  [255]
+  [10]
   $ hg rebase -d 1
   rebasing 2:5db65b93a12b tip "cc"
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/5db65b93a12b-4fb789ec-rebase.hg
@@ -74,7 +74,7 @@ Check rebase.requiredest interaction with pull --rebase
   $ hg pull --rebase
   abort: rebase destination required by configuration
   (use hg pull followed by hg rebase -d DEST)
-  [255]
+  [10]
 
 Setup rebase with multiple destinations
 
@@ -152,7 +152,7 @@ Multiple destinations and --collapse are not compatible:
   > A D
   > EOS
   abort: --collapse does not work with multiple destinations
-  [255]
+  [10]
 
 Multiple destinations cannot be used with --base:
 
@@ -192,7 +192,7 @@ Destination resolves to multiple changesets:
   > Z
   > EOS
   abort: rebase destination for f0a671a46792 is not unique
-  [255]
+  [10]
 
 Destination is an ancestor of source:
 
@@ -204,7 +204,7 @@ Destination is an ancestor of source:
   > Z
   > EOS
   abort: source and destination form a cycle
-  [255]
+  [10]
 
 BUG: cycles aren't flagged correctly when --dry-run is set:
   $ rebasewithdag -s B -d 'SRC' --dry-run <<'EOS'
@@ -216,7 +216,7 @@ BUG: cycles aren't flagged correctly when --dry-run is set:
   > EOS
   abort: source and destination form a cycle
   starting dry-run rebase; repository will not be changed
-  [255]
+  [10]
 
 Switch roots:
 
@@ -329,7 +329,7 @@ Detect cycles early:
   >   Z
   > EOS
   abort: source and destination form a cycle
-  [255]
+  [10]
 
 Detect source is ancestor of dest in runtime:
 
@@ -341,7 +341,7 @@ Detect source is ancestor of dest in runtime:
   >   A
   > EOS
   abort: source is ancestor of destination
-  [255]
+  [10]
 
 "Already rebased" fast path still works:
 

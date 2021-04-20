@@ -241,7 +241,7 @@ class shelvedstate(object):
                 bin(h) for h in d[b'nodestoremove'].split(b' ')
             ]
         except (ValueError, TypeError, KeyError) as err:
-            raise error.CorruptedState(pycompat.bytestr(err))
+            raise error.CorruptedState(stringutil.forcebytestr(err))
 
     @classmethod
     def _getversion(cls, repo):
@@ -250,7 +250,7 @@ class shelvedstate(object):
         try:
             version = int(fp.readline().strip())
         except ValueError as err:
-            raise error.CorruptedState(pycompat.bytestr(err))
+            raise error.CorruptedState(stringutil.forcebytestr(err))
         finally:
             fp.close()
         return version
@@ -534,7 +534,7 @@ def _docreatecmd(ui, repo, pats, opts):
     parent = parents[0]
     origbranch = wctx.branch()
 
-    if parent.node() != nullid:
+    if parent.rev() != nullrev:
         desc = b"changes to: %s" % parent.description().split(b'\n', 1)[0]
     else:
         desc = b'(changes in empty repository)'
@@ -812,7 +812,7 @@ def unshelvecontinue(ui, repo, state, opts):
     with repo.lock():
         checkparents(repo, state)
         ms = mergestatemod.mergestate.read(repo)
-        if list(ms.unresolved()):
+        if ms.unresolvedcount():
             raise error.Abort(
                 _(b"unresolved conflicts, can't continue"),
                 hint=_(b"see 'hg resolve', then 'hg unshelve --continue'"),

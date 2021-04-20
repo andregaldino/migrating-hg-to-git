@@ -334,10 +334,10 @@ invalid arch type should give 404
   >     pass
   > if len(sys.argv) <= 3:
   >     node, archive = sys.argv[1:]
-  >     requeststr = 'cmd=archive;node=%s;type=%s' % (node, archive)
+  >     requeststr = 'cmd=archive&node=%s&type=%s' % (node, archive)
   > else:
   >     node, archive, file = sys.argv[1:]
-  >     requeststr = 'cmd=archive;node=%s;type=%s;file=%s' % (node, archive, file)
+  >     requeststr = 'cmd=archive&node=%s&type=%s&file=%s' % (node, archive, file)
   > try:
   >     stdout = sys.stdout.buffer
   > except AttributeError:

@@ -295,18 +295,29 @@ packed1 is produced properly
 #if reporevlogstore
 
   $ hg -R test debugcreatestreamclonebundle packed.hg
-  writing 2664 bytes for 6 files
-  bundle requirements: generaldelta, revlogv1, sparserevlog
+  writing 2664 bytes for 6 files (no-zstd !)
+  writing 2665 bytes for 6 files (zstd !)
+  bundle requirements: generaldelta, revlogv1, sparserevlog (no-rust !)
+  bundle requirements: generaldelta, persistent-nodemap, revlogv1, sparserevlog (rust !)
 
   $ f -B 64 --size --sha1 --hexdump packed.hg
-  packed.hg: size=2840, sha1=12bf3eee3eb8a04c503ce2d29b48f0135c7edff5
+  packed.hg: size=2840, sha1=12bf3eee3eb8a04c503ce2d29b48f0135c7edff5 (no-zstd !)
+  packed.hg: size=2841, sha1=8b645a65f49b0ae43042a9f3da56d4bfdf1c7f99 (zstd no-rust !)
+  packed.hg: size=2860, sha1=81d7a2e535892cda51e82c200f818de2cca828d3 (rust !)
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 06 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 0a 68 00 23 67 65 6e 65 72 61 6c 64 |.....h.#generald|
-  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 2c 73 70 |elta,revlogv1,sp|
-  0030: 61 72 73 65 72 65 76 6c 6f 67 00 64 61 74 61 2f |arserevlog.data/|
+  0010: 00 00 00 00 0a 68 00 23 67 65 6e 65 72 61 6c 64 |.....h.#generald| (no-zstd !)
+  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 2c 73 70 |elta,revlogv1,sp| (no-zstd !)
+  0030: 61 72 73 65 72 65 76 6c 6f 67 00 64 61 74 61 2f |arserevlog.data/| (no-zstd !)
+  0010: 00 00 00 00 0a 69 00 23 67 65 6e 65 72 61 6c 64 |.....i.#generald| (zstd no-rust !)
+  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 76 31 2c 73 70 |elta,revlogv1,sp| (zstd no-rust !)
+  0030: 61 72 73 65 72 65 76 6c 6f 67 00 64 61 74 61 2f |arserevlog.data/| (zstd no-rust !)
+  0010: 00 00 00 00 0a 69 00 36 67 65 6e 65 72 61 6c 64 |.....i.6generald| (rust !)
+  0020: 65 6c 74 61 2c 70 65 72 73 69 73 74 65 6e 74 2d |elta,persistent-| (rust !)
+  0030: 6e 6f 64 65 6d 61 70 2c 72 65 76 6c 6f 67 76 31 |nodemap,revlogv1| (rust !)
 
   $ hg debugbundle --spec packed.hg
-  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Csparserevlog
+  none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Csparserevlog (no-rust !)
+  none-packed1;requirements%3Dgeneraldelta%2Cpersistent-nodemap%2Crevlogv1%2Csparserevlog (rust !)
 
 generaldelta requirement is not listed in stream clone bundles unless used
 
@@ -317,17 +328,23 @@ generaldelta requirement is not listed in stream clone bundles unless used
   $ cd ..
   $ hg -R testnongd debugcreatestreamclonebundle packednongd.hg
   writing 301 bytes for 3 files
-  bundle requirements: revlogv1
+  bundle requirements: revlogv1 (no-rust !)
+  bundle requirements: persistent-nodemap, revlogv1 (rust !)
 
   $ f -B 64 --size --sha1 --hexdump packednongd.hg
-  packednongd.hg: size=383, sha1=1d9c230238edd5d38907100b729ba72b1831fe6f
+  packednongd.hg: size=383, sha1=1d9c230238edd5d38907100b729ba72b1831fe6f (no-rust !)
+  packednongd.hg: size=402, sha1=d3cc1417f0e8142cf9340aaaa520b660ad3ec3ea (rust !)
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 03 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 01 2d 00 09 72 65 76 6c 6f 67 76 31 |.....-..revlogv1|
-  0020: 00 64 61 74 61 2f 66 6f 6f 2e 69 00 36 34 0a 00 |.data/foo.i.64..|
-  0030: 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 |................|
+  0010: 00 00 00 00 01 2d 00 09 72 65 76 6c 6f 67 76 31 |.....-..revlogv1| (no-rust !)
+  0020: 00 64 61 74 61 2f 66 6f 6f 2e 69 00 36 34 0a 00 |.data/foo.i.64..| (no-rust !)
+  0030: 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 |................| (no-rust !)
+  0010: 00 00 00 00 01 2d 00 1c 70 65 72 73 69 73 74 65 |.....-..persiste| (rust !)
+  0020: 6e 74 2d 6e 6f 64 65 6d 61 70 2c 72 65 76 6c 6f |nt-nodemap,revlo| (rust !)
+  0030: 67 76 31 00 64 61 74 61 2f 66 6f 6f 2e 69 00 36 |gv1.data/foo.i.6| (rust !)
 
   $ hg debugbundle --spec packednongd.hg
-  none-packed1;requirements%3Drevlogv1
+  none-packed1;requirements%3Drevlogv1 (no-rust !)
+  none-packed1;requirements%3Dpersistent-nodemap%2Crevlogv1 (rust !)
 
 Warning emitted when packed bundles contain secret changesets
 
@@ -341,7 +358,8 @@ Warning emitted when packed bundles contain secret changesets
   $ hg -R testsecret debugcreatestreamclonebundle packedsecret.hg
   (warning: stream clone bundle will contain secret revisions)
   writing 301 bytes for 3 files
-  bundle requirements: generaldelta, revlogv1, sparserevlog
+  bundle requirements: generaldelta, revlogv1, sparserevlog (no-rust !)
+  bundle requirements: generaldelta, persistent-nodemap, revlogv1, sparserevlog (rust !)
 
 Unpacking packed1 bundles with "hg unbundle" isn't allowed
 
@@ -733,7 +751,7 @@ test that verify bundle does not traceback
 partial history bundle, fails w/ unknown parent
 
   $ hg -R bundle.hg verify
-  abort: 00changelog.i@bbd179dfa0a7: unknown parent
+  abort: 00changelog.i@bbd179dfa0a71671c253b3ae0aa1513b60d199fa: unknown parent
   [50]
 
 full history bundle, refuses to verify non-local repo

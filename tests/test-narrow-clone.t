@@ -42,6 +42,8 @@ narrow clone a file, f10
   dotencode
   fncache
   narrowhg-experimental
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store
@@ -62,15 +64,17 @@ narrow clone a file, f10
 
   $ cd ..
 
-BUG: local-to-local narrow clones should work, but don't.
+local-to-local narrow clones work
 
   $ hg clone --narrow master narrow-via-localpeer --noupdate --include "dir/src/f10"
   requesting all changes
-  abort: server does not support narrow clones
-  [255]
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 1 changes to 1 files
+  new changesets 5d21aaea77f8:26ce255d5b5d
   $ hg tracked -R narrow-via-localpeer
-  abort: repository narrow-via-localpeer not found
-  [255]
+  I path:dir/src/f10
   $ rm -Rf narrow-via-localpeer
 
 narrow clone with a newline should fail

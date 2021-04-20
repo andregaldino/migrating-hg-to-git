@@ -84,7 +84,7 @@ def insertflagprocessor(flag, processor, flagprocessors):
     flagprocessors[flag] = processor
 
 
-def processflagswrite(revlog, text, flags, sidedata):
+def processflagswrite(revlog, text, flags):
     """Inspect revision data flags and applies write transformations defined
     by registered flag processors.
 
@@ -100,9 +100,12 @@ def processflagswrite(revlog, text, flags, sidedata):
     processed text and ``validatehash`` is a bool indicating whether the
     returned text should be checked for hash integrity.
     """
-    return _processflagsfunc(revlog, text, flags, b'write', sidedata=sidedata)[
-        :2
-    ]
+    return _processflagsfunc(
+        revlog,
+        text,
+        flags,
+        b'write',
+    )[:2]
 
 
 def processflagsread(revlog, text, flags):
@@ -145,14 +148,14 @@ def processflagsraw(revlog, text, flags):
     return _processflagsfunc(revlog, text, flags, b'raw')[1]
 
 
-def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
+def _processflagsfunc(revlog, text, flags, operation):
     """internal function to process flag on a revlog
 
     This function is private to this module, code should never needs to call it
     directly."""
     # fast path: no flag processors will run
     if flags == 0:
-        return text, True, {}
+        return text, True
     if operation not in (b'read', b'write', b'raw'):
         raise error.ProgrammingError(_(b"invalid '%s' operation") % operation)
     # Check all flags are known.
@@ -168,7 +171,6 @@ def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
     if operation == b'write':
         orderedflags = reversed(orderedflags)
 
-    outsidedata = {}
     for flag in orderedflags:
         # If a flagprocessor has been registered for a known flag, apply the
         # related operation transform and update result tuple.
@@ -186,10 +188,9 @@ def _processflagsfunc(revlog, text, flags, operation, sidedata=None):
                 if operation == b'raw':
                     vhash = rawtransform(revlog, text)
                 elif operation == b'read':
-                    text, vhash, s = readtransform(revlog, text)
-                    outsidedata.update(s)
+                    text, vhash = readtransform(revlog, text)
                 else:  # write operation
-                    text, vhash = writetransform(revlog, text, sidedata)
+                    text, vhash = writetransform(revlog, text)
             validatehash = validatehash and vhash
 
-    return text, validatehash, outsidedata
+    return text, validatehash

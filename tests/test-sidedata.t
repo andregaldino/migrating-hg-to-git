@@ -56,11 +56,13 @@ Check that we can upgrade to sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no     no      no
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
+  revlog-v2:           no     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat -v -R up-no-side-data --config format.exp-use-side-data=yes
   format-variant     repo config default
@@ -69,11 +71,13 @@ Check that we can upgrade to sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:            no    yes      no
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
+  revlog-v2:           no    yes      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo -R up-no-side-data --config format.exp-use-side-data=yes > /dev/null
 
@@ -88,11 +92,13 @@ Check that we can downgrade from sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes     no      no
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
+  revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugformat -v -R up-side-data --config format.exp-use-side-data=no
   format-variant     repo config default
@@ -101,10 +107,12 @@ Check that we can downgrade from sidedata
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
   sparserevlog:       yes    yes     yes
-  sidedata:           yes     no      no
-  persistent-nodemap:  no     no      no
+  persistent-nodemap:  no     no      no (no-rust !)
+  persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
+  revlog-v2:          yes     no      no
   plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib
+  compression:        zlib   zlib    zlib (no-zstd !)
+  compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugupgraderepo -R up-side-data --config format.exp-use-side-data=no > /dev/null

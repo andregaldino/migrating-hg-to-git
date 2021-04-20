@@ -323,7 +323,7 @@ on clone empty subrepo into .hg, then pull (and update), which at least fails:
   new changesets 7a2f0e59146f
   .hgsubstate: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ cat main5/.hg/hgrc | grep pwned
   [1]
 
@@ -623,7 +623,7 @@ then pull (and update):
   new changesets * (glob)
   .hgsubstate: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ ls "$FAKEHOME"
   a
   $ test -d "$FAKEHOME/.hg"
@@ -652,7 +652,7 @@ then pull (and update):
   new changesets * (glob)
   .hgsubstate: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ ls -A "$FAKEHOME"
   .hg
   a

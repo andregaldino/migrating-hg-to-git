@@ -350,7 +350,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   M A
   rebasing 6:a0b2430ebfb8 tip "F"
   abort: precommit hook exited with status 1
-  [255]
+  [40]
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |
@@ -401,7 +401,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
-  [255]
+  [40]
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |
@@ -451,7 +451,7 @@ two dirstate parents. We should not get a merge commit when we continue.
   transaction abort!
   rollback completed
   abort: pretxnclose hook exited with status 1
-  [255]
+  [40]
   $ hg tglogp
   @  7: 401ccec5e39f secret 'C'
   |

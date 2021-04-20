@@ -522,7 +522,7 @@ changelog and manifest would have invalid node:
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
-   [255]
+   [40]
   *** runcommand verify
   checking changesets
   checking manifests
@@ -1013,7 +1013,7 @@ cases.
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
-   [255]
+   [40]
   *** runcommand log
   *** runcommand verify -q
 
@@ -1057,7 +1057,7 @@ cases.
   transaction abort!
   rollback completed
   abort: pretxncommit hook exited with status 1
-   [255]
+   [40]
   *** runcommand log
   0 bar (bar)
   *** runcommand verify -q

@@ -1,6 +1,6 @@
 # mail.py - mail sending bits for mercurial
 #
-# Copyright 2006 Matt Mackall <mpm@selenic.com>
+# Copyright 2006 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -34,6 +34,7 @@ from . import (
 from .utils import (
     procutil,
     stringutil,
+    urlutil,
 )
 
 if pycompat.TYPE_CHECKING:
@@ -139,7 +140,7 @@ def _smtp(ui):
         defaultport = 465
     else:
         defaultport = 25
-    mailport = util.getport(ui.config(b'smtp', b'port', defaultport))
+    mailport = urlutil.getport(ui.config(b'smtp', b'port', defaultport))
     ui.note(_(b'sending mail: smtp host %s, port %d\n') % (mailhost, mailport))
     s.connect(host=mailhost, port=mailport)
     if starttls:
@@ -150,6 +151,32 @@ def _smtp(ui):
     if starttls or smtps:
         ui.note(_(b'(verifying remote certificate)\n'))
         sslutil.validatesocket(s.sock)
+
+    try:
+        _smtp_login(ui, s, mailhost, mailport)
+    except smtplib.SMTPException as inst:
+        raise error.Abort(stringutil.forcebytestr(inst))
+
+    def send(sender, recipients, msg):
+        try:
+            return s.sendmail(sender, recipients, msg)
+        except smtplib.SMTPRecipientsRefused as inst:
+            recipients = [r[1] for r in inst.recipients.values()]
+            raise error.Abort(b'\n' + b'\n'.join(recipients))
+        except smtplib.SMTPException as inst:
+            raise error.Abort(stringutil.forcebytestr(inst))
+
+    return send
+
+
+def _smtp_login(ui, smtp, mailhost, mailport):
+    """A hook for the keyring extension to perform the actual SMTP login.
+
+    An already connected SMTP object of the proper type is provided, based on
+    the current configuration.  The host and port to which the connection was
+    established are provided for accessibility, since the SMTP object doesn't
+    provide an accessor.  ``smtplib.SMTPException`` is raised on error.
+    """
     username = ui.config(b'smtp', b'username')
     password = ui.config(b'smtp', b'password')
     if username:
@@ -162,21 +189,7 @@ def _smtp(ui):
     if username and password:
         ui.note(_(b'(authenticating to mail server as %s)\n') % username)
         username = encoding.strfromlocal(username)
-        try:
-            s.login(username, password)
-        except smtplib.SMTPException as inst:
-            raise error.Abort(stringutil.forcebytestr(inst))
-
-    def send(sender, recipients, msg):
-        try:
-            return s.sendmail(sender, recipients, msg)
-        except smtplib.SMTPRecipientsRefused as inst:
-            recipients = [r[1] for r in inst.recipients.values()]
-            raise error.Abort(b'\n' + b'\n'.join(recipients))
-        except smtplib.SMTPException as inst:
-            raise error.Abort(inst)
-
-    return send
+        smtp.login(username, password)
 
 
 def _sendmail(ui, sender, recipients, msg):
@@ -207,17 +220,16 @@ def _sendmail(ui, sender, recipients, msg):
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''
-    fp = open(mbox, b'ab+')
-    # Should be time.asctime(), but Windows prints 2-characters day
-    # of month instead of one. Make them print the same thing.
-    date = time.strftime('%a %b %d %H:%M:%S %Y', time.localtime())
-    fp.write(
-        b'From %s %s\n'
-        % (encoding.strtolocal(sender), encoding.strtolocal(date))
-    )
-    fp.write(msg)
-    fp.write(b'\n\n')
-    fp.close()
+    with open(mbox, b'ab+') as fp:
+        # Should be time.asctime(), but Windows prints 2-characters day
+        # of month instead of one. Make them print the same thing.
+        date = time.strftime('%a %b %d %H:%M:%S %Y', time.localtime())
+        fp.write(
+            b'From %s %s\n'
+            % (encoding.strtolocal(sender), encoding.strtolocal(date))
+        )
+        fp.write(msg)
+        fp.write(b'\n\n')
 
 
 def connect(ui, mbox=None):

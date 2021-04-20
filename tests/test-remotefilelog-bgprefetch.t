@@ -29,8 +29,10 @@
 
   $ hgcloneshallow ssh://user@dummy/master shallow --noupdate
   streaming all changes
-  2 files to transfer, 776 bytes of data
-  transferred 776 bytes in * seconds (*/sec) (glob)
+  2 files to transfer, 776 bytes of data (no-zstd !)
+  transferred 776 bytes in * seconds (*/sec) (glob) (no-zstd !)
+  2 files to transfer, 784 bytes of data (zstd !)
+  transferred 784 bytes in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 
@@ -63,6 +65,7 @@
   > EOF
   $ hg strip tip
   saved backup bundle to $TESTTMP/shallow/.hg/strip-backup/6b4b6f66ef8c-b4b8bdaf-backup.hg (glob)
+  1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
 
   $ clearcache
   $ hg pull

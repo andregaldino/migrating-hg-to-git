@@ -107,6 +107,7 @@ the extension is unknown.
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -235,6 +236,7 @@ the extension is unknown.
    addremove     add all new files, delete all missing files
    files         list tracked files
    forget        forget the specified files on the next commit
+   purge         removes files not tracked by Mercurial
    remove        remove the specified files on the next commit
    rename        rename files; equivalent of copy + remove
    resolve       redo merges or set/view the merge status of files
@@ -375,8 +377,6 @@ Test extension help:
        mq            manage a stack of patches
        notify        hooks for sending email push notifications
        patchbomb     command to send changesets as (a series of) patch emails
-       purge         command to delete untracked files from the working
-                     directory
        relink        recreates hardlinks between repository clones
        schemes       extend schemes with shortcuts to repository swarms
        share         share a common history between several working directories
@@ -575,7 +575,7 @@ Test help option with version option
   Mercurial Distributed SCM (version *) (glob)
   (see https://mercurial-scm.org for more information)
   
-  Copyright (C) 2005-* Matt Mackall and others (glob)
+  Copyright (C) 2005-* Olivia Mackall and others (glob)
   This is free software; see the source for copying conditions. There is NO
   warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
@@ -1069,6 +1069,7 @@ Test list of internal help commands
    debugsetparents
                  manually set the parents of the current working directory
                  (DANGEROUS)
+   debugshell    run an interactive Python interpreter
    debugsidedata
                  dump the side data for a cl/manifest/file revision
    debugssl      test a secure connection to a server
@@ -1832,7 +1833,7 @@ Test section lookup
   
       These symbolic names can be used from the command line. To pull from
       "my_server": 'hg pull my_server'. To push to "local_path": 'hg push
-      local_path'.
+      local_path'. You can check 'hg help urls' for details about valid URLs.
   
       Options containing colons (":") denote sub-options that can influence
       behavior for that specific path. Example:
@@ -1840,6 +1841,9 @@ Test section lookup
         [paths]
         my_server = https://example.com/my_path
         my_server:pushurl = ssh://example.com/my_path
+  
+      Paths using the 'path://otherpath' scheme will inherit the sub-options
+      value from the path they point to.
   
       The following sub-options can be defined:
   
@@ -2718,6 +2722,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   set or show the current phase name
+  </td></tr>
+  <tr><td>
+  <a href="/help/purge">
+  purge
+  </a>
+  </td><td>
+  removes files not tracked by Mercurial
   </td></tr>
   <tr><td>
   <a href="/help/recover">

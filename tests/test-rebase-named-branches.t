@@ -247,7 +247,7 @@ Rebasing descendant onto ancestor across different named branches
   
   $ hg rebase -s 5 -d 6
   abort: source and destination form a cycle
-  [255]
+  [10]
 
   $ hg rebase -s 6 -d 5
   rebasing 6:3944801ae4ea "dev-two named branch"

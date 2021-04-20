@@ -201,6 +201,15 @@ zstd-v1 always fails
   (see 'hg help bundlespec' for supported values for --type)
   [10]
 
+zstd supports threading
+
+  $ hg init test-compthreads
+  $ cd test-compthreads
+  $ hg debugbuilddag +3
+  $ hg --config experimental.bundlecompthreads=1 bundle -a -t zstd-v2 zstd-v2-threaded.hg
+  3 changesets found
+  $ cd ..
+
 #else
 
 zstd is a valid engine but isn't available

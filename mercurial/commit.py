@@ -96,6 +96,10 @@ def commitctx(repo, ctx, error=False, origctx=None):
             ctx.date(),
             extra,
         )
+        rev = repo[n].rev()
+        if oldtip != repo.changelog.tiprev():
+            repo.register_changeset(rev, repo.changelog.changelogrevision(rev))
+
         xp1, xp2 = p1.hex(), p2 and p2.hex() or b''
         repo.hook(
             b'pretxncommit',
@@ -108,7 +112,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
         targetphase = subrepoutil.newcommitphase(repo.ui, ctx)
 
         # prevent unmarking changesets as public on recommit
-        waspublic = oldtip == repo.changelog.tiprev() and not repo[n].phase()
+        waspublic = oldtip == repo.changelog.tiprev() and not repo[rev].phase()
 
         if targetphase and not waspublic:
             # retract boundary do not alter parent changeset.
@@ -116,7 +120,7 @@ def commitctx(repo, ctx, error=False, origctx=None):
             # be compliant anyway
             #
             # if minimal phase was 0 we don't need to retract anything
-            phases.registernew(repo, tr, targetphase, [repo[n].rev()])
+            phases.registernew(repo, tr, targetphase, [rev])
         return n
 
 
@@ -357,6 +361,8 @@ def _filecommit(
     elif fparent2 != nullid:
         if ms.active() and ms.extras(fname).get(b'filenode-source') == b'other':
             fparent1, fparent2 = fparent2, nullid
+        elif ms.active() and ms.extras(fname).get(b'merged') != b'yes':
+            fparent1, fparent2 = fparent1, nullid
         # is one parent an ancestor of the other?
         else:
             fparentancestors = flog.commonancestorsheads(fparent1, fparent2)

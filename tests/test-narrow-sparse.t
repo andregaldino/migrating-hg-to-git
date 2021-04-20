@@ -61,6 +61,8 @@ XXX: we should have a flag in `hg debugsparse` to list the sparse profile
   fncache
   generaldelta
   narrowhg-experimental
+  persistent-nodemap (rust !)
+  revlog-compression-zstd (zstd !)
   revlogv1
   sparserevlog
   store

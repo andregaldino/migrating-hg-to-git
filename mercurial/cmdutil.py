@@ -1,6 +1,6 @@
 # cmdutil.py - help for command processing in mercurial
 #
-# Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
+# Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -16,6 +16,7 @@ from .i18n import _
 from .node import (
     hex,
     nullid,
+    nullrev,
     short,
 )
 from .pycompat import (
@@ -1936,12 +1937,12 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
     ui.debug(b'message:\n%s\n' % (message or b''))
 
     if len(parents) == 1:
-        parents.append(repo[nullid])
+        parents.append(repo[nullrev])
     if opts.get(b'exact'):
         if not nodeid or not p1:
             raise error.InputError(_(b'not a Mercurial patch'))
         p1 = repo[p1]
-        p2 = repo[p2 or nullid]
+        p2 = repo[p2 or nullrev]
     elif p2:
         try:
             p1 = repo[p1]
@@ -1951,10 +1952,10 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
             # first parent.
             if p1 != parents[0]:
                 p1 = parents[0]
-                p2 = repo[nullid]
+                p2 = repo[nullrev]
         except error.RepoError:
             p1, p2 = parents
-        if p2.node() == nullid:
+        if p2.rev() == nullrev:
             ui.warn(
                 _(
                     b"warning: import the patch as a normal revision\n"
@@ -2967,20 +2968,6 @@ def amend(ui, repo, old, extra, pats, opts):
 
         # Reroute the working copy parent to the new changeset
         repo.setparents(newid, nullid)
-        mapping = {old.node(): (newid,)}
-        obsmetadata = None
-        if opts.get(b'note'):
-            obsmetadata = {b'note': encoding.fromlocal(opts[b'note'])}
-        backup = ui.configbool(b'rewrite', b'backup-bundle')
-        scmutil.cleanupnodes(
-            repo,
-            mapping,
-            b'amend',
-            metadata=obsmetadata,
-            fixphase=True,
-            targetphase=commitphase,
-            backup=backup,
-        )
 
         # Fixing the dirstate because localrepo.commitctx does not update
         # it. This is rather convenient because we did not need to update
@@ -3002,6 +2989,21 @@ def amend(ui, repo, old, extra, pats, opts):
         removedfiles = set(wctx.removed()) & filestoamend
         for f in removedfiles:
             dirstate.drop(f)
+
+        mapping = {old.node(): (newid,)}
+        obsmetadata = None
+        if opts.get(b'note'):
+            obsmetadata = {b'note': encoding.fromlocal(opts[b'note'])}
+        backup = ui.configbool(b'rewrite', b'backup-bundle')
+        scmutil.cleanupnodes(
+            repo,
+            mapping,
+            b'amend',
+            metadata=obsmetadata,
+            fixphase=True,
+            targetphase=commitphase,
+            backup=backup,
+        )
 
     return newid
 
@@ -3774,7 +3776,7 @@ def clearunfinished(repo):
             raise error.StateError(state.msg(), hint=state.hint())
 
     for s in statemod._unfinishedstates:
-        if s._opname == b'merge' or state._reportonly:
+        if s._opname == b'merge' or s._reportonly:
             continue
         if s._clearable and s.isunfinished(repo):
             util.unlink(repo.vfs.join(s._fname))

@@ -1,6 +1,6 @@
 # subrepo.py - sub-repository classes and factory
 #
-# Copyright 2009-2010 Matt Mackall <mpm@selenic.com>
+# Copyright 2009-2010 Olivia Mackall <olivia@selenic.com>
 #
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
@@ -44,6 +44,7 @@ from .utils import (
     dateutil,
     hashutil,
     procutil,
+    urlutil,
 )
 
 hg = None
@@ -57,8 +58,8 @@ def _expandedabspath(path):
     """
     get a path or url and if it is a path expand it and return an absolute path
     """
-    expandedpath = util.urllocalpath(util.expandpath(path))
-    u = util.url(expandedpath)
+    expandedpath = urlutil.urllocalpath(util.expandpath(path))
+    u = urlutil.url(expandedpath)
     if not u.scheme:
         path = util.normpath(os.path.abspath(u.path))
     return path
@@ -716,13 +717,17 @@ class hgsubrepo(abstractsubrepo):
                     _(b'sharing subrepo %s from %s\n')
                     % (subrelpath(self), srcurl)
                 )
-                shared = hg.share(
-                    self._repo._subparent.baseui,
-                    getpeer(),
-                    self._repo.root,
-                    update=False,
-                    bookmarks=False,
-                )
+                peer = getpeer()
+                try:
+                    shared = hg.share(
+                        self._repo._subparent.baseui,
+                        peer,
+                        self._repo.root,
+                        update=False,
+                        bookmarks=False,
+                    )
+                finally:
+                    peer.close()
                 self._repo = shared.local()
             else:
                 # TODO: find a common place for this and this code in the
@@ -741,26 +746,34 @@ class hgsubrepo(abstractsubrepo):
 
                 self.ui.status(
                     _(b'cloning subrepo %s from %s\n')
-                    % (subrelpath(self), util.hidepassword(srcurl))
+                    % (subrelpath(self), urlutil.hidepassword(srcurl))
                 )
-                other, cloned = hg.clone(
-                    self._repo._subparent.baseui,
-                    {},
-                    getpeer(),
-                    self._repo.root,
-                    update=False,
-                    shareopts=shareopts,
-                )
+                peer = getpeer()
+                try:
+                    other, cloned = hg.clone(
+                        self._repo._subparent.baseui,
+                        {},
+                        peer,
+                        self._repo.root,
+                        update=False,
+                        shareopts=shareopts,
+                    )
+                finally:
+                    peer.close()
                 self._repo = cloned.local()
             self._initrepo(parentrepo, source, create=True)
             self._cachestorehash(srcurl)
         else:
             self.ui.status(
                 _(b'pulling subrepo %s from %s\n')
-                % (subrelpath(self), util.hidepassword(srcurl))
+                % (subrelpath(self), urlutil.hidepassword(srcurl))
             )
             cleansub = self.storeclean(srcurl)
-            exchange.pull(self._repo, getpeer())
+            peer = getpeer()
+            try:
+                exchange.pull(self._repo, peer)
+            finally:
+                peer.close()
             if cleansub:
                 # keep the repo clean after pull
                 self._cachestorehash(srcurl)
@@ -837,15 +850,18 @@ class hgsubrepo(abstractsubrepo):
             if self.storeclean(dsturl):
                 self.ui.status(
                     _(b'no changes made to subrepo %s since last push to %s\n')
-                    % (subrelpath(self), util.hidepassword(dsturl))
+                    % (subrelpath(self), urlutil.hidepassword(dsturl))
                 )
                 return None
         self.ui.status(
             _(b'pushing subrepo %s to %s\n')
-            % (subrelpath(self), util.hidepassword(dsturl))
+            % (subrelpath(self), urlutil.hidepassword(dsturl))
         )
         other = hg.peer(self._repo, {b'ssh': ssh}, dsturl)
-        res = exchange.push(self._repo, other, force, newbranch=newbranch)
+        try:
+            res = exchange.push(self._repo, other, force, newbranch=newbranch)
+        finally:
+            other.close()
 
         # the repo is now clean
         self._cachestorehash(dsturl)
@@ -857,7 +873,8 @@ class hgsubrepo(abstractsubrepo):
             opts = copy.copy(opts)
             opts.pop(b'rev', None)
             opts.pop(b'branch', None)
-        return hg.outgoing(ui, self._repo, _abssource(self._repo, True), opts)
+        subpath = subrepoutil.repo_rel_or_abs_source(self._repo)
+        return hg.outgoing(ui, self._repo, dest, opts, subpath=subpath)
 
     @annotatesubrepoerror
     def incoming(self, ui, source, opts):
@@ -865,7 +882,8 @@ class hgsubrepo(abstractsubrepo):
             opts = copy.copy(opts)
             opts.pop(b'rev', None)
             opts.pop(b'branch', None)
-        return hg.incoming(ui, self._repo, _abssource(self._repo, False), opts)
+        subpath = subrepoutil.repo_rel_or_abs_source(self._repo)
+        return hg.incoming(ui, self._repo, source, opts, subpath=subpath)
 
     @annotatesubrepoerror
     def files(self):
@@ -1269,7 +1287,7 @@ class svnsubrepo(abstractsubrepo):
         args.append(b'%s@%s' % (state[0], state[1]))
 
         # SEC: check that the ssh url is safe
-        util.checksafessh(state[0])
+        urlutil.checksafessh(state[0])
 
         status, err = self._svncommand(args, failok=True)
         _sanitize(self.ui, self.wvfs, b'.svn')
@@ -1567,7 +1585,7 @@ class gitsubrepo(abstractsubrepo):
     def _fetch(self, source, revision):
         if self._gitmissing():
             # SEC: check for safe ssh url
-            util.checksafessh(source)
+            urlutil.checksafessh(source)
 
             source = self._abssource(source)
             self.ui.status(

@@ -1,9 +1,7 @@
-use crate::commands::Command;
-use crate::error::{CommandError, CommandErrorKind};
-use crate::ui::utf8_to_local;
-use crate::ui::Ui;
-use hg::operations::{cat, CatRevError, CatRevErrorKind};
-use hg::repo::Repo;
+use crate::error::CommandError;
+use clap::Arg;
+use format_bytes::format_bytes;
+use hg::operations::cat;
 use hg::utils::hg_path::HgPathBuf;
 use micro_timer::timed;
 use std::convert::TryFrom;
@@ -12,94 +10,75 @@ pub const HELP_TEXT: &str = "
 Output the current or given revision of files
 ";
 
-pub struct CatCommand<'a> {
-    rev: Option<&'a str>,
-    files: Vec<&'a str>,
+pub fn args() -> clap::App<'static, 'static> {
+    clap::SubCommand::with_name("cat")
+        .arg(
+            Arg::with_name("rev")
+                .help("search the repository as it is in REV")
+                .short("-r")
+                .long("--revision")
+                .value_name("REV")
+                .takes_value(true),
+        )
+        .arg(
+            clap::Arg::with_name("files")
+                .required(true)
+                .multiple(true)
+                .empty_values(false)
+                .value_name("FILE")
+                .help("Activity to start: activity@category"),
+        )
+        .about(HELP_TEXT)
 }
 
-impl<'a> CatCommand<'a> {
-    pub fn new(rev: Option<&'a str>, files: Vec<&'a str>) -> Self {
-        Self { rev, files }
+#[timed]
+pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let rev = invocation.subcommand_args.value_of("rev");
+    let file_args = match invocation.subcommand_args.values_of("files") {
+        Some(files) => files.collect(),
+        None => vec![],
+    };
+
+    let repo = invocation.repo?;
+    let cwd = hg::utils::current_dir()?;
+    let working_directory = repo.working_directory_path();
+    let working_directory = cwd.join(working_directory); // Make it absolute
+
+    let mut files = vec![];
+    for file in file_args.iter() {
+        // TODO: actually normalize `..` path segments etc?
+        let normalized = cwd.join(&file);
+        let stripped = normalized
+            .strip_prefix(&working_directory)
+            // TODO: error message for path arguments outside of the repo
+            .map_err(|_| CommandError::abort(""))?;
+        let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
+            .map_err(|e| CommandError::abort(e.to_string()))?;
+        files.push(hg_file);
     }
 
-    fn display(&self, ui: &Ui, data: &[u8]) -> Result<(), CommandError> {
-        ui.write_stdout(data)?;
-        Ok(())
-    }
-}
-
-impl<'a> Command for CatCommand<'a> {
-    #[timed]
-    fn run(&self, ui: &Ui) -> Result<(), CommandError> {
-        let repo = Repo::find()?;
-        repo.check_requirements()?;
-        let cwd = std::env::current_dir()
-            .or_else(|e| Err(CommandErrorKind::CurrentDirNotFound(e)))?;
-
-        let mut files = vec![];
-        for file in self.files.iter() {
-            let normalized = cwd.join(&file);
-            let stripped = normalized
-                .strip_prefix(&repo.working_directory_path())
-                .or(Err(CommandErrorKind::Abort(None)))?;
-            let hg_file = HgPathBuf::try_from(stripped.to_path_buf())
-                .or(Err(CommandErrorKind::Abort(None)))?;
-            files.push(hg_file);
+    match rev {
+        Some(rev) => {
+            let output = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
+            invocation.ui.write_stdout(&output.concatenated)?;
+            if !output.missing.is_empty() {
+                let short = format!("{:x}", output.node.short()).into_bytes();
+                for path in &output.missing {
+                    invocation.ui.write_stderr(&format_bytes!(
+                        b"{}: no such file in rev {}\n",
+                        path.as_bytes(),
+                        short
+                    ))?;
+                }
+            }
+            if output.found_any {
+                Ok(())
+            } else {
+                Err(CommandError::Unsuccessful)
+            }
         }
-
-        match self.rev {
-            Some(rev) => {
-                let data = cat(&repo, rev, &files)
-                    .map_err(|e| map_rev_error(rev, e))?;
-                self.display(ui, &data)
-            }
-            None => Err(CommandErrorKind::Unimplemented.into()),
-        }
-    }
-}
-
-/// Convert `CatRevErrorKind` to `CommandError`
-fn map_rev_error(rev: &str, err: CatRevError) -> CommandError {
-    CommandError {
-        kind: match err.kind {
-            CatRevErrorKind::IoError(err) => CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!("abort: {}\n", err)).into(),
-            )),
-            CatRevErrorKind::InvalidRevision => CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: invalid revision identifier {}\n",
-                    rev
-                ))
-                .into(),
-            )),
-            CatRevErrorKind::AmbiguousPrefix => CommandErrorKind::Abort(Some(
-                utf8_to_local(&format!(
-                    "abort: ambiguous revision identifier {}\n",
-                    rev
-                ))
-                .into(),
-            )),
-            CatRevErrorKind::UnsuportedRevlogVersion(version) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unsupported revlog version {}\n",
-                        version
-                    ))
-                    .into(),
-                ))
-            }
-            CatRevErrorKind::CorruptedRevlog => CommandErrorKind::Abort(Some(
-                "abort: corrupted revlog\n".into(),
-            )),
-            CatRevErrorKind::UnknowRevlogDataFormat(format) => {
-                CommandErrorKind::Abort(Some(
-                    utf8_to_local(&format!(
-                        "abort: unknow revlog dataformat {:?}\n",
-                        format
-                    ))
-                    .into(),
-                ))
-            }
-        },
+        None => Err(CommandError::unsupported(
+            "`rhg cat` without `--rev` / `-r`",
+        )),
     }
 }

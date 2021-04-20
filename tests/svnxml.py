@@ -15,6 +15,7 @@ def parseentry(entry):
     e['revision'] = entry.getAttribute('revision')
     e['author'] = xmltext(entry.getElementsByTagName('author')[0])
     e['msg'] = xmltext(entry.getElementsByTagName('msg')[0])
+    e['date'] = xmltext(entry.getElementsByTagName('date')[0])
     e['paths'] = []
     paths = entry.getElementsByTagName('paths')
     if paths:
@@ -42,7 +43,7 @@ def printentries(entries):
     except AttributeError:
         fp = sys.stdout
     for e in entries:
-        for k in ('revision', 'author', 'msg'):
+        for k in ('revision', 'author', 'date', 'msg'):
             fp.write(('%s: %s\n' % (k, e[k])).encode('utf-8'))
         for path, action, fpath, frev in sorted(e['paths']):
             frominfo = b''

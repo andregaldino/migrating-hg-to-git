@@ -95,7 +95,7 @@ Merge should not overwrite local file that is untracked after remove
   $ hg merge
   bar: untracked file differs
   abort: untracked files in working directory differ from files in requested revision
-  [255]
+  [20]
   $ cat bar
   memories of buried pirate treasure
 
