@@ -57,6 +57,7 @@ gracefully:
   comparing with http://localhost:$HGPORT1/
   searching for changes
   looking for local changes to affected paths
+  deleting unwanted files from working copy
 
   $ hg tracked --addinclude f1 http://localhost:$HGPORT1/
   nothing to widen or narrow

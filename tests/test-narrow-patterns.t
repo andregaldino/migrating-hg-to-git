@@ -193,6 +193,7 @@ widen narrow spec again, but exclude a file in previously included spec
   deleting data/dir1/dirA/bar.i (reporevlogstore !)
   deleting data/dir1/dirA/bar/0eca1d0cbdaea4651d1d04d71976a6d2d9bfaae5 (reposimplestore !)
   deleting data/dir1/dirA/bar/index (reposimplestore !)
+  deleting unwanted files from working copy
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
@@ -249,6 +250,7 @@ widen narrow spec yet again, excluding a directory in previous spec
   deleting data/dir1/dirA/foo.i (reporevlogstore !)
   deleting data/dir1/dirA/foo/162caeb3d55dceb1fee793aa631ac8c73fcb8b5e (reposimplestore !)
   deleting data/dir1/dirA/foo/index (reposimplestore !)
+  deleting unwanted files from working copy
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests

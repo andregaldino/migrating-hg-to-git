@@ -281,6 +281,10 @@ def _narrow(
                 )
                 hg.clean(repo, urev)
             overrides = {(b'devel', b'strip-obsmarkers'): False}
+            if backup:
+                ui.status(_(b'moving unwanted changesets to backup\n'))
+            else:
+                ui.status(_(b'deleting unwanted changesets\n'))
             with ui.configoverride(overrides, b'narrow'):
                 repair.strip(ui, unfi, tostrip, topic=b'narrow', backup=backup)
 
@@ -316,6 +320,7 @@ def _narrow(
                 util.unlinkpath(repo.svfs.join(f))
                 repo.store.markremoved(f)
 
+            ui.status(_(b'deleting unwanted files from working copy\n'))
             narrowspec.updateworkingcopy(repo, assumeclean=True)
             narrowspec.copytoworkingcopy(repo)
 

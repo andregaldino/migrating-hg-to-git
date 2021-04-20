@@ -150,6 +150,7 @@ Testing the --import-rules flag of `hg tracked` command
   looking for local changes to affected paths
   deleting data/inside/f.i
   deleting meta/inside/00manifest.i (tree !)
+  deleting unwanted files from working copy
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
@@ -191,6 +192,7 @@ Testing the --import-rules flag with --addinclude and --addexclude
   looking for local changes to affected paths
   deleting data/widest/f.i
   deleting meta/widest/00manifest.i (tree !)
+  deleting unwanted files from working copy
   $ hg tracked
   I path:outisde
   I path:wider
