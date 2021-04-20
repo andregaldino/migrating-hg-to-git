@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import errno
 import functools
 import os
+import re
 import stat
 
 from .i18n import _
@@ -395,6 +396,9 @@ REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
 # deleted.
 REVLOG_FILES_VOLATILE_EXT = (b'.n', b'.nd')
 
+# some exception to the above matching
+EXCLUDED = re.compile(b'.*undo\.[^/]+\.nd?$')
+
 
 def is_revlog(f, kind, st):
     if kind != stat.S_IFREG:
@@ -405,7 +409,7 @@ def is_revlog(f, kind, st):
 def revlog_type(f):
     if f.endswith(REVLOG_FILES_MAIN_EXT):
         return FILEFLAGS_REVLOG_MAIN
-    elif f.endswith(REVLOG_FILES_OTHER_EXT):
+    elif f.endswith(REVLOG_FILES_OTHER_EXT) and EXCLUDED.match(f) is None:
         t = FILETYPE_FILELOG_OTHER
         if f.endswith(REVLOG_FILES_VOLATILE_EXT):
             t |= FILEFLAGS_VOLATILE
