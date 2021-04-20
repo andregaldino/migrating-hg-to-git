@@ -227,10 +227,17 @@ def _narrow(
     unfi = repo.unfiltered()
     outgoing = discovery.findcommonoutgoing(unfi, remote, commoninc=commoninc)
     ui.status(_(b'looking for local changes to affected paths\n'))
+    progress = ui.makeprogress(
+        topic=_(b'changesets'),
+        unit=_(b'changesets'),
+        total=len(outgoing.missing) + len(outgoing.excluded),
+    )
     localnodes = []
-    for n in itertools.chain(outgoing.missing, outgoing.excluded):
-        if any(oldmatch(f) and not newmatch(f) for f in unfi[n].files()):
-            localnodes.append(n)
+    with progress:
+        for n in itertools.chain(outgoing.missing, outgoing.excluded):
+            progress.increment()
+            if any(oldmatch(f) and not newmatch(f) for f in unfi[n].files()):
+                localnodes.append(n)
     revstostrip = unfi.revs(b'descendants(%ln)', localnodes)
     hiddenrevs = repoview.filterrevs(repo, b'visible')
     visibletostrip = list(
