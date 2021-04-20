@@ -164,7 +164,7 @@ def _smtp(ui):
             recipients = [r[1] for r in inst.recipients.values()]
             raise error.Abort(b'\n' + b'\n'.join(recipients))
         except smtplib.SMTPException as inst:
-            raise error.Abort(inst)
+            raise error.Abort(stringutil.forcebytestr(inst))
 
     return send
 
