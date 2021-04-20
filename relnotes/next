@@ -11,6 +11,16 @@
    for compression. The default is single threaded operation. Currently
    only supported for zstd.
 
+== Default Format Change ==
+
+These changes affects newly created repositories (or new clone) done with
+Mercurial 5.8.
+
+  * The `ZSTD` compression will now be used by default for new repositories
+    when available. This compression format was introduced in Mercurial 5.0,
+    released in May 2019. See `hg help config.format.revlog-compression` for
+    details.
+
 == New Experimental Features ==
 
  * There's a new `diff.merge` config option to show the changes
