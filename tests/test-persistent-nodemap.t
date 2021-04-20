@@ -820,13 +820,13 @@ No race condition
 
   $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
   adding [s] 00manifest.n (70 bytes)
-  adding [s] 00manifest.d (452 KB) (no-zstd !)
-  adding [s] 00manifest.d (491 KB) (zstd !)
   adding [s] 00manifest-*.nd (118 KB) (glob)
   adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
+  adding [s] 00manifest.d (452 KB) (no-zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd !)
   adding [s] 00changelog.d (360 KB) (no-zstd !)
   adding [s] 00changelog.d (368 KB) (zstd !)
-  adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.i (313 KB)
   adding [s] 00changelog.i (313 KB)
   $ ls -1 stream-clone/.hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
@@ -889,77 +889,54 @@ Do a mix of clone and commit at the same time so that the file listed on disk di
   $ touch $HG_TEST_STREAM_WALKED_FILE_2
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
   $ cat clone-output
-  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-rust no-pure !)
-  abort: pull failed on remote (known-bad-output no-rust no-pure !)
   adding [s] 00manifest.n (70 bytes)
-  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00manifest-*.nd (118 KB) (glob)
+  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
-  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-rust no-pure !)
-  adding [s] 00manifest-*.nd (118 KB) (glob) (rust !)
-  adding [s] 00changelog.n (70 bytes) (rust !)
-  adding [s] 00changelog.d (368 KB) (zstd rust !)
-  adding [s] 00changelog-*.nd (118 KB) (glob) (rust !)
-  adding [s] 00manifest.i (313 KB) (rust !)
-  adding [s] 00changelog.i (313 KB) (rust !)
-  adding [s] 00manifest-*.nd (118 KB) (glob) (pure !)
-  adding [s] 00changelog.n (70 bytes) (pure !)
+  adding [s] 00manifest.d (491 KB) (zstd !)
   adding [s] 00changelog.d (360 KB) (no-zstd !)
-  adding [s] 00changelog-*.nd (118 KB) (glob) (pure !)
-  adding [s] 00manifest.i (313 KB) (pure !)
-  adding [s] 00changelog.i (313 KB) (pure !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
+  adding [s] 00manifest.i (313 KB)
+  adding [s] 00changelog.i (313 KB)
 
 Check the result state
 
   $ f --size stream-clone-race-1/.hg/store/00changelog*
-  stream-clone-race-1/.hg/store/00changelog*: file not found (known-bad-output no-rust no-pure !)
-  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob) (rust !)
-  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd rust !)
-  stream-clone-race-1/.hg/store/00changelog.i: size=320384 (rust !)
-  stream-clone-race-1/.hg/store/00changelog.n: size=70 (rust !)
-  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob) (pure !)
-  stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd pure !)
-  stream-clone-race-1/.hg/store/00changelog.i: size=320384 (pure !)
-  stream-clone-race-1/.hg/store/00changelog.n: size=70 (pure !)
+  stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob)
+  stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd !)
+  stream-clone-race-1/.hg/store/00changelog.i: size=320384
+  stream-clone-race-1/.hg/store/00changelog.n: size=70
 
   $ hg -R stream-clone-race-1 debugnodemap --metadata | tee client-metadata.txt
-  abort: repository stream-clone-race-1 not found (known-bad-output no-rust no-pure !)
-  uid: * (glob) (rust !)
-  tip-rev: 5005 (rust !)
-  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (rust !)
-  data-length: 121088 (rust !)
-  data-unused: 0 (rust !)
-  data-unused: 0.000% (rust !)
-  uid: * (glob) (pure !)
-  tip-rev: 5005 (pure !)
-  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (pure !)
-  data-length: 121088 (pure !)
-  data-unused: 0 (pure !)
-  data-unused: 0.000% (pure !)
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
 
 We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
 (ie: the following diff should be empty)
 
+This isn't the case for the `no-rust` `no-pure` implementation as it use a very minimal nodemap implementation that unconditionnaly rewrite the nodemap "all the time".
+
+#if no-rust no-pure
   $ diff -u server-metadata.txt client-metadata.txt
-  --- server-metadata.txt	* (glob) (known-bad-output !)
-  +++ client-metadata.txt	* (glob) (known-bad-output !)
-  @@ -1,4 +1,4 @@ (known-bad-output rust !)
-  @@ -1,4 +1,4 @@ (known-bad-output pure !)
-  @@ -1,6 +0,0 @@ (known-bad-output no-rust no-pure !)
-  -uid: * (glob) (known-bad-output !)
-  +uid: * (glob) (known-bad-output rust !)
-   tip-rev: 5005 (known-bad-output rust !)
-   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output rust !)
-   data-length: 121088 (known-bad-output rust !)
-  +uid: * (glob) (known-bad-output pure !)
-   tip-rev: 5005 (known-bad-output pure !)
-   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output pure !)
-   data-length: 121088 (known-bad-output pure !)
-  -tip-rev: 5005 (known-bad-output no-rust no-pure !)
-  -tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe (known-bad-output no-rust no-pure !)
-  -data-length: 121088 (known-bad-output no-rust no-pure !)
-  -data-unused: 0 (known-bad-output no-rust no-pure !)
-  -data-unused: 0.000% (known-bad-output no-rust no-pure !)
+  --- server-metadata.txt	* (glob)
+  +++ client-metadata.txt	* (glob)
+  @@ -1,4 +1,4 @@
+  -uid: * (glob)
+  +uid: * (glob)
+   tip-rev: 5005
+   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+   data-length: 121088
   [1]
+#else
+  $ diff -u server-metadata.txt client-metadata.txt
+#endif
+
 
 Clean up after the test.
 
@@ -991,14 +968,14 @@ Check the initial state
   tip-rev: 5006
   tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
   data-length: 121344 (rust !)
-  data-unused: 192 (rust !)
-  data-unused: 0.158% (rust !)
-  data-length: 121152 (no-rust no-pure !)
-  data-unused: 0 (no-rust no-pure !)
-  data-unused: 0.000% (no-rust no-pure !)
   data-length: 121344 (pure !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 192 (rust !)
   data-unused: 192 (pure !)
+  data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.158% (rust !)
   data-unused: 0.158% (pure !)
+  data-unused: 0.000% (no-rust no-pure !)
 
 Performe the mix of clone and full refresh of the nodemap, so that the files
 (and filenames) are different between listing time and actual transfer time.
@@ -1011,51 +988,63 @@ Performe the mix of clone and full refresh of the nodemap, so that the files
   $ touch $HG_TEST_STREAM_WALKED_FILE_2
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
   $ cat clone-output-2
-  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output rust !)
-  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output pure !)
-  remote: abort: unexpected error: [Errno 2] $ENOENT$: *'$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-pure no-rust !)
-  abort: pull failed on remote (known-bad-output !)
   adding [s] undo.backup.00manifest.n (70 bytes) (known-bad-output !)
   adding [s] undo.backup.00changelog.n (70 bytes) (known-bad-output !)
   adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest-*.nd (118 KB) (glob)
+  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (492 KB) (zstd !)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
-  adding [s] 00manifest-*.nd (118 KB) (glob) (rust !)
-  adding [s] 00manifest-*.nd (118 KB) (glob) (pure !)
-  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output rust !)
-  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00manifest-*.nd' (glob) (known-bad-output no-pure no-rust !)
-  adding [s] 00changelog.n (70 bytes) (pure !)
   adding [s] 00changelog.d (360 KB) (no-zstd !)
-  remote: abort: $ENOENT$: '$TESTTMP/test-repo/.hg/store/00changelog-*.nd' (glob) (known-bad-output pure !)
+  adding [s] 00changelog.d (368 KB) (zstd !)
+  adding [s] 00manifest.i (313 KB)
+  adding [s] 00changelog.i (313 KB)
 
 Check the result.
 
   $ f --size stream-clone-race-2/.hg/store/00changelog*
-  stream-clone-race-2/.hg/store/00changelog*: file not found (known-bad-output !)
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
+  stream-clone-race-2/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=376950 (zstd !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=368949 (no-zstd !)
+  stream-clone-race-2/.hg/store/00changelog.i: size=320448
+  stream-clone-race-2/.hg/store/00changelog.n: size=70
 
   $ hg -R stream-clone-race-2 debugnodemap --metadata | tee client-metadata-2.txt
-  abort: repository stream-clone-race-2 not found (known-bad-output !)
+  uid: * (glob)
+  tip-rev: 5006
+  tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+  data-length: 121344 (rust !)
+  data-unused: 192 (rust !)
+  data-unused: 0.158% (rust !)
+  data-length: 121152 (no-rust no-pure !)
+  data-unused: 0 (no-rust no-pure !)
+  data-unused: 0.000% (no-rust no-pure !)
+  data-length: 121344 (pure !)
+  data-unused: 192 (pure !)
+  data-unused: 0.158% (pure !)
 
 We get a usable nodemap, so no rewrite would be needed and the metadata should be identical
 (ie: the following diff should be empty)
 
+This isn't the case for the `no-rust` `no-pure` implementation as it use a very minimal nodemap implementation that unconditionnaly rewrite the nodemap "all the time".
+
+#if no-rust no-pure
   $ diff -u server-metadata-2.txt client-metadata-2.txt
-  --- server-metadata-2.txt	* (glob) (known-bad-output !)
-  +++ client-metadata-2.txt	* (glob) (known-bad-output !)
-  @@ -1,6 +0,0 @@ (known-bad-output !)
-  -uid: * (glob) (known-bad-output !)
-  -tip-rev: 5006 (known-bad-output !)
-  -tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b (known-bad-output !)
-  -data-length: 121344 (known-bad-output rust !)
-  -data-unused: 192 (known-bad-output rust !)
-  -data-unused: 0.158% (known-bad-output rust !)
-  -data-length: 121344 (known-bad-output pure !)
-  -data-unused: 192 (known-bad-output pure !)
-  -data-unused: 0.158% (known-bad-output pure !)
-  -data-length: 121152 (known-bad-output no-rust no-pure !)
-  -data-unused: 0 (known-bad-output no-rust no-pure !)
-  -data-unused: 0.000% (known-bad-output no-rust no-pure !)
+  --- server-metadata-2.txt	* (glob)
+  +++ client-metadata-2.txt	* (glob)
+  @@ -1,4 +1,4 @@
+  -uid: * (glob)
+  +uid: * (glob)
+   tip-rev: 5006
+   tip-node: ed2ec1eef9aa2a0ec5057c51483bc148d03e810b
+   data-length: 121152
   [1]
+#else
+  $ diff -u server-metadata-2.txt client-metadata-2.txt
+#endif
 
 Clean up after the test
 

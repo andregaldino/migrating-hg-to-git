@@ -389,6 +389,11 @@ _data = [
 
 REVLOG_FILES_MAIN_EXT = (b'.i', b'i.tmpcensored')
 REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
+# files that are "volatile" and might change between listing and streaming
+#
+# note: the ".nd" file are nodemap data and won't "change" but they might be
+# deleted.
+REVLOG_FILES_VOLATILE_EXT = (b'.n', b'.nd')
 
 
 def is_revlog(f, kind, st):
@@ -401,7 +406,10 @@ def revlog_type(f):
     if f.endswith(REVLOG_FILES_MAIN_EXT):
         return FILEFLAGS_REVLOG_MAIN
     elif f.endswith(REVLOG_FILES_OTHER_EXT):
-        return FILETYPE_FILELOG_OTHER
+        t = FILETYPE_FILELOG_OTHER
+        if f.endswith(REVLOG_FILES_VOLATILE_EXT):
+            t |= FILEFLAGS_VOLATILE
+        return t
 
 
 # the file is part of changelog data
@@ -417,6 +425,9 @@ FILEFLAGS_OTHER = 1 << 10
 FILEFLAGS_REVLOG_MAIN = 1 << 1
 # a secondary file for a revlog
 FILEFLAGS_REVLOG_OTHER = 1 << 0
+
+# files that are "volatile" and might change between listing and streaming
+FILEFLAGS_VOLATILE = 1 << 20
 
 FILETYPE_CHANGELOG_MAIN = FILEFLAGS_CHANGELOG | FILEFLAGS_REVLOG_MAIN
 FILETYPE_CHANGELOG_OTHER = FILEFLAGS_CHANGELOG | FILEFLAGS_REVLOG_OTHER

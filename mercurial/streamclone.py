@@ -628,7 +628,10 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
         repo.ui.debug(b'scanning\n')
         for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
             if size:
-                entries.append((_srcstore, name, _fileappend, size))
+                ft = _fileappend
+                if rl_type & store.FILEFLAGS_VOLATILE:
+                    ft = _filefull
+                entries.append((_srcstore, name, ft, size))
                 totalfilesize += size
         for name in _walkstreamfullstorefiles(repo):
             if repo.svfs.exists(name):
