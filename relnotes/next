@@ -31,7 +31,7 @@
    repositories violate this condition. The revlog code will now
    silentely swap the parents if this condition is tested. This can
    change the output of `hg log` when explicitly asking for first or
-   second parent.
+   second parent. The changesets "nodeid" are not affected.
 
 
 == Internal API Changes ==
