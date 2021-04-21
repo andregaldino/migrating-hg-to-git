@@ -29,7 +29,8 @@ except ImportError:
 stdout = getattr(sys.stdout, 'buffer', sys.stdout)
 stderr = getattr(sys.stderr, 'buffer', sys.stderr)
 
-if sys.version_info[0] >= 3:
+is_not_python2 = sys.version_info[0] >= 3
+if is_not_python2:
 
     def _sys2bytes(p):
         if p is None:
@@ -169,6 +170,8 @@ def has_baz():
 
 @check("bzr", "Canonical's Bazaar client")
 def has_bzr():
+    if not is_not_python2:
+        return False
     try:
         import bzrlib
         import bzrlib.bzrdir
