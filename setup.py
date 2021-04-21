@@ -438,7 +438,8 @@ elif os.path.exists('.hg_archival.txt'):
     else:
         version = '0+hg' + kw.get('node', '')[:12]
 elif os.path.exists('mercurial/__version__.py'):
-    data = open('mercurial/__version__.py').read()
+    with open('mercurial/__version__.py') as f:
+        data = f.read()
     version = re.search('version = b"(.*)"', data).group(1)
 
 if version:
