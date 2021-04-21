@@ -11,6 +11,24 @@
    for compression. The default is single threaded operation. Currently
    only supported for zstd.
 
+== Default Format Change ==
+
+These changes affects newly created repositories (or new clone) done with
+Mercurial 5.8.
+
+  * The `ZSTD` compression will now be used by default for new repositories
+    when available. This compression format was introduced in Mercurial 5.0,
+    released in May 2019. See `hg help config.format.revlog-compression` for
+    details.
+
+  * Mercurial installation built with the Rust parts will now use the
+    "persistent nodemap" feature by default. This feature was introduced in
+    Mercurial 5.4 (May 2020). However Mercurial instalation built without the
+    fast Rust implementation will refuse to interract with them by default.
+    This restriction can be lifted through configuration.
+
+    See `hg help config.format.use-persistent-nodemap` for details
+
 == New Experimental Features ==
 
  * There's a new `diff.merge` config option to show the changes
@@ -22,6 +40,7 @@
 
 == Bug Fixes ==
 
+ * gracefully recover from inconsistent persistent-nodemap data from disk.
 
 
 == Backwards Compatibility Changes ==
@@ -31,7 +50,7 @@
    repositories violate this condition. The revlog code will now
    silentely swap the parents if this condition is tested. This can
    change the output of `hg log` when explicitly asking for first or
-   second parent.
+   second parent. The changesets "nodeid" are not affected.
 
 
 == Internal API Changes ==
