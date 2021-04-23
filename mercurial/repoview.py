@@ -472,12 +472,15 @@ _filteredrepotypes = weakref.WeakKeyDictionary()
 
 def newtype(base):
     """Create a new type with the repoview mixin and the given base class"""
-    cls = _filteredrepotypes.get(base)
-    if cls is not None:
-        return cls
+    ref = _filteredrepotypes.get(base)
+    if ref is not None:
+        cls = ref()
+        if cls is not None:
+            return cls
 
     class filteredrepo(repoview, base):
         pass
 
-    _filteredrepotypes[base] = filteredrepo
+    _filteredrepotypes[base] = weakref.ref(filteredrepo)
+    # do not reread from weakref to be 100% sure not to return None
     return filteredrepo
