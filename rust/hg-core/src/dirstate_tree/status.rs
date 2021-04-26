@@ -6,6 +6,7 @@ use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
 use crate::utils::hg_path::HgPath;
+use crate::BadMatch;
 use crate::DirstateStatus;
 use crate::EntryState;
 use crate::HgPathBuf;
@@ -69,17 +70,37 @@ struct StatusCommon<'tree, 'a> {
 }
 
 impl<'tree, 'a> StatusCommon<'tree, 'a> {
+    fn read_dir(
+        &mut self,
+        hg_path: &HgPath,
+        fs_path: &Path,
+        is_at_repo_root: bool,
+    ) -> Result<Vec<DirEntry>, ()> {
+        DirEntry::read_dir(fs_path, is_at_repo_root).map_err(|error| {
+            let errno = error.raw_os_error().expect("expected real OS error");
+            self.outcome
+                .bad
+                .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
+        })
+    }
+
     fn traverse_fs_directory_and_dirstate(
         &mut self,
         has_ignored_ancestor: bool,
         dirstate_nodes: &'tree mut ChildNodes,
-        directory_hg_path: &HgPath,
-        fs_path: &Path,
+        directory_hg_path: &'tree HgPath,
+        directory_fs_path: &Path,
         is_at_repo_root: bool,
     ) {
-        // TODO: handle I/O errors
-        let mut fs_entries =
-            DirEntry::read_dir(fs_path, is_at_repo_root).unwrap();
+        let mut fs_entries = if let Ok(entries) = self.read_dir(
+            directory_hg_path,
+            directory_fs_path,
+            is_at_repo_root,
+        ) {
+            entries
+        } else {
+            return;
+        };
 
         // `merge_join_by` requires both its input iterators to be sorted:
 
@@ -295,16 +316,18 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             };
             if traverse_children {
                 let is_at_repo_root = false;
-                // TODO: handle I/O errors
-                let children_fs_entries =
-                    DirEntry::read_dir(&fs_entry.full_path, is_at_repo_root)
-                        .unwrap();
-                for child_fs_entry in children_fs_entries {
-                    self.traverse_fs_only(
-                        is_ignored,
-                        &hg_path,
-                        &child_fs_entry,
-                    )
+                if let Ok(children_fs_entries) = self.read_dir(
+                    &hg_path,
+                    &fs_entry.full_path,
+                    is_at_repo_root,
+                ) {
+                    for child_fs_entry in children_fs_entries {
+                        self.traverse_fs_only(
+                            is_ignored,
+                            &hg_path,
+                            &child_fs_entry,
+                        )
+                    }
                 }
             }
             if self.options.collect_traversed_dirs {
