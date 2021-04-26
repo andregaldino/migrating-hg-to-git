@@ -23,7 +23,7 @@ import testparseutil
 # Whitelist of modules that symbols can be directly imported from.
 allowsymbolimports = (
     '__future__',
-    'bzrlib',
+    'breezy',
     'hgclient',
     'mercurial',
     'mercurial.hgweb.common',

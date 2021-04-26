@@ -168,35 +168,25 @@ def has_baz():
     return matchoutput('baz --version 2>&1', br'baz Bazaar version')
 
 
-@check("bzr", "Canonical's Bazaar client")
+@check("bzr", "Breezy library and executable version >= 3.1")
 def has_bzr():
     if not is_not_python2:
         return False
     try:
-        import bzrlib
-        import bzrlib.bzrdir
-        import bzrlib.errors
-        import bzrlib.revision
-        import bzrlib.revisionspec
+        # Test the Breezy python lib
+        import breezy
+        import breezy.bzr.bzrdir
+        import breezy.errors
+        import breezy.revision
+        import breezy.revisionspec
 
-        bzrlib.revisionspec.RevisionSpec
-        return bzrlib.__doc__ is not None
+        breezy.revisionspec.RevisionSpec
+        if breezy.__doc__ is None or breezy.version_info[:2] < (3, 1):
+            return False
     except (AttributeError, ImportError):
         return False
-
-
-@checkvers("bzr", "Canonical's Bazaar client >= %s", (1.14,))
-def has_bzr_range(v):
-    major, minor = v.split('rc')[0].split('.')[0:2]
-    try:
-        import bzrlib
-
-        return bzrlib.__doc__ is not None and bzrlib.version_info[:2] >= (
-            int(major),
-            int(minor),
-        )
-    except ImportError:
-        return False
+    # Test the executable
+    return matchoutput('brz --version 2>&1', br'Breezy \(brz\) ')
 
 
 @check("chg", "running with chg")

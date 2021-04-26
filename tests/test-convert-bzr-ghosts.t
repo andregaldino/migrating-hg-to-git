@@ -3,11 +3,12 @@
   $ . "$TESTDIR/bzr-definitions"
   $ cat > ghostcreator.py <<EOF
   > import sys
-  > from bzrlib import workingtree
+  > from breezy import workingtree
+  > import breezy.bzr.bzrdir
   > wt = workingtree.WorkingTree.open('.')
   > 
   > message, ghostrev = sys.argv[1:]
-  > wt.set_parent_ids(wt.get_parent_ids() + [ghostrev])
+  > wt.set_parent_ids(wt.get_parent_ids() + [ghostrev.encode()])
   > wt.commit(message)
   > EOF
 
@@ -15,11 +16,11 @@ ghost revisions
 
   $ mkdir test-ghost-revisions
   $ cd test-ghost-revisions
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ echo content > somefile
-  $ bzr add -q somefile
-  $ bzr commit -q -m 'Initial layout setup'
+  $ brz add -q somefile
+  $ brz commit -q -m 'Initial layout setup'
   $ echo morecontent >> somefile
   $ "$PYTHON" ../../ghostcreator.py 'Commit with ghost revision' ghostrev
   $ cd ..
