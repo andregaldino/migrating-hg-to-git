@@ -126,17 +126,21 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         dirstate_node: &'tree mut Node,
         has_ignored_ancestor: bool,
     ) {
-        if fs_entry.metadata.is_dir() {
-            if self.options.collect_traversed_dirs {
-                self.outcome.traversed.push(hg_path.into())
-            }
+        let file_type = fs_entry.metadata.file_type();
+        let file_or_symlink = file_type.is_file() || file_type.is_symlink();
+        if !file_or_symlink {
             // If we previously had a file here, it was removed (with
             // `hg rm` or similar) or deleted before it could be
-            // replaced by a directory.
+            // replaced by a directory or something else.
             self.mark_removed_or_deleted_if_file(
                 hg_path,
                 dirstate_node.state(),
             );
+        }
+        if file_type.is_dir() {
+            if self.options.collect_traversed_dirs {
+                self.outcome.traversed.push(hg_path.into())
+            }
             let is_ignored = has_ignored_ancestor || (self.ignore_fn)(hg_path);
             let is_at_repo_root = false;
             self.traverse_fs_directory_and_dirstate(
@@ -147,7 +151,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                 is_at_repo_root,
             );
         } else {
-            if self.matcher.matches(hg_path) {
+            if file_or_symlink && self.matcher.matches(hg_path) {
                 let full_path = Cow::from(hg_path);
                 if let Some(entry) = &dirstate_node.entry {
                     match entry.state {
@@ -276,7 +280,9 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         fs_entry: &DirEntry,
     ) {
         let hg_path = directory_hg_path.join(&fs_entry.base_name);
-        if fs_entry.metadata.is_dir() {
+        let file_type = fs_entry.metadata.file_type();
+        let file_or_symlink = file_type.is_file() || file_type.is_symlink();
+        if file_type.is_dir() {
             let is_ignored =
                 has_ignored_ancestor || (self.ignore_fn)(&hg_path);
             let traverse_children = if is_ignored {
@@ -304,7 +310,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             if self.options.collect_traversed_dirs {
                 self.outcome.traversed.push(hg_path.into())
             }
-        } else if self.matcher.matches(&hg_path) {
+        } else if file_or_symlink && self.matcher.matches(&hg_path) {
             self.mark_unknown_or_ignored(has_ignored_ancestor, hg_path.into())
         }
     }
