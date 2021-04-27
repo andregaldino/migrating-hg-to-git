@@ -68,7 +68,8 @@ class baselog(object):  # revlog.revlog):
 
     def hasnode(self, n):
         t = self._db.execute(
-            'SELECT node FROM changelog WHERE node = ?', (n,)
+            'SELECT node FROM changelog WHERE node = ?',
+            (pycompat.sysstr(n),),
         ).fetchone()
         return t is not None
 
