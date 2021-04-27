@@ -13,10 +13,12 @@ use crate::HgPathBuf;
 use crate::PatternFileWarning;
 use crate::StatusError;
 use crate::StatusOptions;
+use rayon::prelude::*;
 use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::Mutex;
 
 /// Returns the status of the working directory compared to its parent
 /// changeset.
@@ -41,11 +43,11 @@ pub fn status<'tree>(
             (Box::new(|&_| true), vec![])
         };
 
-    let mut common = StatusCommon {
+    let common = StatusCommon {
         options,
         matcher,
         ignore_fn,
-        outcome: DirstateStatus::default(),
+        outcome: Mutex::new(DirstateStatus::default()),
     };
     let is_at_repo_root = true;
     let hg_path = HgPath::new("");
@@ -57,7 +59,7 @@ pub fn status<'tree>(
         &root_dir,
         is_at_repo_root,
     );
-    Ok((common.outcome, warnings))
+    Ok((common.outcome.into_inner().unwrap(), warnings))
 }
 
 /// Bag of random things needed by various parts of the algorithm. Reduces the
@@ -66,12 +68,12 @@ struct StatusCommon<'tree, 'a> {
     options: StatusOptions,
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
-    outcome: DirstateStatus<'tree>,
+    outcome: Mutex<DirstateStatus<'tree>>,
 }
 
 impl<'tree, 'a> StatusCommon<'tree, 'a> {
     fn read_dir(
-        &mut self,
+        &self,
         hg_path: &HgPath,
         fs_path: &Path,
         is_at_repo_root: bool,
@@ -79,13 +81,15 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         DirEntry::read_dir(fs_path, is_at_repo_root).map_err(|error| {
             let errno = error.raw_os_error().expect("expected real OS error");
             self.outcome
+                .lock()
+                .unwrap()
                 .bad
                 .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
         })
     }
 
     fn traverse_fs_directory_and_dirstate(
-        &mut self,
+        &self,
         has_ignored_ancestor: bool,
         dirstate_nodes: &'tree mut ChildNodes,
         directory_hg_path: &'tree HgPath,
@@ -104,19 +108,22 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
 
         // `merge_join_by` requires both its input iterators to be sorted:
 
+        //
         // * `BTreeMap` iterates according to keys’ ordering by definition
 
         // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
         // https://github.com/rust-lang/rust/issues/34162
         fs_entries.sort_unstable_by(|e1, e2| e1.base_name.cmp(&e2.base_name));
 
-        for pair in itertools::merge_join_by(
+        itertools::merge_join_by(
             dirstate_nodes,
             &fs_entries,
             |(full_path, _node), fs_entry| {
                 full_path.base_name().cmp(&fs_entry.base_name)
             },
-        ) {
+        )
+        .par_bridge()
+        .for_each(|pair| {
             use itertools::EitherOrBoth::*;
             match pair {
                 Both((hg_path, dirstate_node), fs_entry) => {
@@ -137,11 +144,11 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                     fs_entry,
                 ),
             }
-        }
+        })
     }
 
     fn traverse_fs_and_dirstate(
-        &mut self,
+        &self,
         fs_entry: &DirEntry,
         hg_path: &'tree HgPath,
         dirstate_node: &'tree mut Node,
@@ -160,7 +167,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         }
         if file_type.is_dir() {
             if self.options.collect_traversed_dirs {
-                self.outcome.traversed.push(hg_path.into())
+                self.outcome.lock().unwrap().traversed.push(hg_path.into())
             }
             let is_ignored = has_ignored_ancestor || (self.ignore_fn)(hg_path);
             let is_at_repo_root = false;
@@ -177,14 +184,20 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                 if let Some(entry) = &dirstate_node.entry {
                     match entry.state {
                         EntryState::Added => {
-                            self.outcome.added.push(full_path)
+                            self.outcome.lock().unwrap().added.push(full_path)
                         }
-                        EntryState::Removed => {
-                            self.outcome.removed.push(full_path)
-                        }
-                        EntryState::Merged => {
-                            self.outcome.modified.push(full_path)
-                        }
+                        EntryState::Removed => self
+                            .outcome
+                            .lock()
+                            .unwrap()
+                            .removed
+                            .push(full_path),
+                        EntryState::Merged => self
+                            .outcome
+                            .lock()
+                            .unwrap()
+                            .modified
+                            .push(full_path),
                         EntryState::Normal => {
                             self.handle_normal_file(
                                 full_path,
@@ -219,7 +232,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     /// A file with `EntryState::Normal` in the dirstate was found in the
     /// filesystem
     fn handle_normal_file(
-        &mut self,
+        &self,
         full_path: Cow<'tree, HgPath>,
         dirstate_node: &Node,
         entry: &crate::DirstateEntry,
@@ -243,34 +256,39 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
-            self.outcome.unsure.push(full_path)
+            self.outcome.lock().unwrap().unsure.push(full_path)
         } else if dirstate_node.copy_source.is_some()
             || entry.is_from_other_parent()
             || (entry.size >= 0 && (size_changed || mode_changed()))
         {
-            self.outcome.modified.push(full_path)
+            self.outcome.lock().unwrap().modified.push(full_path)
         } else {
             let mtime = mtime_seconds(&fs_entry.metadata);
             if truncate_i64(mtime) != entry.mtime
                 || mtime == self.options.last_normal_time
             {
-                self.outcome.unsure.push(full_path)
+                self.outcome.lock().unwrap().unsure.push(full_path)
             } else if self.options.list_clean {
-                self.outcome.clean.push(full_path)
+                self.outcome.lock().unwrap().clean.push(full_path)
             }
         }
     }
 
     /// A node in the dirstate tree has no corresponding filesystem entry
     fn traverse_dirstate_only(
-        &mut self,
+        &self,
         hg_path: &'tree HgPath,
         dirstate_node: &'tree mut Node,
     ) {
         self.mark_removed_or_deleted_if_file(hg_path, dirstate_node.state());
-        for (child_hg_path, child_node) in &mut dirstate_node.children {
-            self.traverse_dirstate_only(child_hg_path.full_path(), child_node)
-        }
+        dirstate_node.children.par_iter_mut().for_each(
+            |(child_hg_path, child_node)| {
+                self.traverse_dirstate_only(
+                    child_hg_path.full_path(),
+                    child_node,
+                )
+            },
+        )
     }
 
     /// A node in the dirstate tree has no corresponding *file* on the
@@ -278,16 +296,16 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     ///
     /// Does nothing on a "directory" node
     fn mark_removed_or_deleted_if_file(
-        &mut self,
+        &self,
         hg_path: &'tree HgPath,
         dirstate_node_state: Option<EntryState>,
     ) {
         if let Some(state) = dirstate_node_state {
             if self.matcher.matches(hg_path) {
                 if let EntryState::Removed = state {
-                    self.outcome.removed.push(hg_path.into())
+                    self.outcome.lock().unwrap().removed.push(hg_path.into())
                 } else {
-                    self.outcome.deleted.push(hg_path.into())
+                    self.outcome.lock().unwrap().deleted.push(hg_path.into())
                 }
             }
         }
@@ -295,7 +313,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
 
     /// Something in the filesystem has no corresponding dirstate node
     fn traverse_fs_only(
-        &mut self,
+        &self,
         has_ignored_ancestor: bool,
         directory_hg_path: &HgPath,
         fs_entry: &DirEntry,
@@ -321,17 +339,17 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                     &fs_entry.full_path,
                     is_at_repo_root,
                 ) {
-                    for child_fs_entry in children_fs_entries {
+                    children_fs_entries.par_iter().for_each(|child_fs_entry| {
                         self.traverse_fs_only(
                             is_ignored,
                             &hg_path,
-                            &child_fs_entry,
+                            child_fs_entry,
                         )
-                    }
+                    })
                 }
             }
             if self.options.collect_traversed_dirs {
-                self.outcome.traversed.push(hg_path.into())
+                self.outcome.lock().unwrap().traversed.push(hg_path.into())
             }
         } else if file_or_symlink && self.matcher.matches(&hg_path) {
             self.mark_unknown_or_ignored(has_ignored_ancestor, hg_path.into())
@@ -339,18 +357,18 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     }
 
     fn mark_unknown_or_ignored(
-        &mut self,
+        &self,
         has_ignored_ancestor: bool,
         hg_path: Cow<'tree, HgPath>,
     ) {
         let is_ignored = has_ignored_ancestor || (self.ignore_fn)(&hg_path);
         if is_ignored {
             if self.options.list_ignored {
-                self.outcome.ignored.push(hg_path)
+                self.outcome.lock().unwrap().ignored.push(hg_path)
             }
         } else {
             if self.options.list_unknown {
-                self.outcome.unknown.push(hg_path)
+                self.outcome.lock().unwrap().unknown.push(hg_path)
             }
         }
     }
