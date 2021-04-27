@@ -147,7 +147,7 @@ class changelog(baselog):
 
     def revs(self, start=0, stop=None):
         if stop is None:
-            stop = self.tip()
+            stop = self.tiprev()
         t = self._db.execute(
             'SELECT rev FROM changelog '
             'WHERE rev >= ? AND rev <= ? '
