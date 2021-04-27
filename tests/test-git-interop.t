@@ -407,4 +407,12 @@ This covers changelog.tiprev() (issue6510)
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     remove beta
   
+This covers changelog.headrevs() with a non-None arg
+
+TODO: Fix the user name.  The stray > char also break `hg ci --amend`.
+  $ hg log -r 'heads(.)' -Tcompact
+  7[tip][master]   116aee5ecdff   1970-01-01 00:00 +0000   test>
+    remove beta
+  
+
 
