@@ -168,7 +168,8 @@ class changelog(baselog):
         candidates = [
             bin(x[0])
             for x in self._db.execute(
-                'SELECT node FROM changelog WHERE node LIKE ?', (id + b'%',)
+                'SELECT node FROM changelog WHERE node LIKE ?',
+                (pycompat.sysstr(id + b'%'),),
             )
         ]
         if nullhex.startswith(id):

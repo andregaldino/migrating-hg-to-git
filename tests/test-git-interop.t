@@ -271,6 +271,20 @@ node|shortest works correctly
   $ hg log -r ae1ab744f95bfd5b07cf573baef98a778058537b --template "{shortest(node,1)}\n"
   ae
 
+This covers gitlog._partialmatch()
+  $ hg log -r a
+  abort: ambiguous revision identifier: a
+  [10]
+  $ hg log -r a1
+  changeset:   2:a1983dd7fb19
+  user:        test <test>
+  date:        Fri Mar 06 14:26:27 2020 -0500
+  summary:     more alpha
+  
+  $ hg log -r dead
+  abort: unknown revision 'dead'
+  [255]
+
 This coveres changelog.findmissing()
   $ hg merge --preview 3d9be8deba43
 
