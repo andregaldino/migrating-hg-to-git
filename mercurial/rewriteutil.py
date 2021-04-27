@@ -34,7 +34,7 @@ def precheck(repo, revs, action=b'rewrite'):
     Make sure this function is called after taking the lock.
     """
     if nullrev in revs:
-        msg = _(b"cannot %s null changeset") % action
+        msg = _(b"cannot %s the null revision") % action
         hint = _(b"no changeset checked out")
         raise error.InputError(msg, hint=hint)
 

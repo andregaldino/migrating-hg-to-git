@@ -51,7 +51,7 @@ Help for uncommit
 Uncommit with no commits should fail
 
   $ hg uncommit
-  abort: cannot uncommit null changeset
+  abort: cannot uncommit the null revision
   (no changeset checked out)
   [10]
 
