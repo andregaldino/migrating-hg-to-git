@@ -13,6 +13,7 @@ use crate::HgPathBuf;
 use crate::PatternFileWarning;
 use crate::StatusError;
 use crate::StatusOptions;
+use micro_timer::timed;
 use rayon::prelude::*;
 use std::borrow::Cow;
 use std::io;
@@ -29,6 +30,7 @@ use std::sync::Mutex;
 /// and its use of `itertools::merge_join_by`. When reaching a path that only
 /// exists in one of the two trees, depending on information requested by
 /// `options` we may need to traverse the remaining subtree.
+#[timed]
 pub fn status<'tree>(
     dmap: &'tree mut DirstateMap,
     matcher: &(dyn Matcher + Sync),

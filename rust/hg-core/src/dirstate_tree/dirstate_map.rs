@@ -1,4 +1,5 @@
 use bytes_cast::BytesCast;
+use micro_timer::timed;
 use std::path::PathBuf;
 use std::{collections::BTreeMap, convert::TryInto};
 
@@ -499,6 +500,7 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         self.dirty_parents = true;
     }
 
+    #[timed]
     fn read<'a>(
         &mut self,
         file_contents: &'a [u8],
