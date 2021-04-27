@@ -238,7 +238,7 @@ class changelog(baselog):
             for r in self._db.execute(
                 'SELECT filename FROM changedfiles '
                 'WHERE node = ? and filenode = ?',
-                (hn, nullhex),
+                (hn, gitutil.nullgit),
             )
         ]
         c = self.gitrepo[hn]
