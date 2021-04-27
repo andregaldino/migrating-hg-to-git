@@ -6,7 +6,6 @@ import sqlite3
 
 from mercurial.i18n import _
 from mercurial.node import (
-    nullhex,
     nullid,
 )
 
@@ -281,7 +280,7 @@ def _index_repo(
     for pos, commit in enumerate(walker):
         if prog is not None:
             prog.update(pos)
-        p1 = p2 = nullhex
+        p1 = p2 = gitutil.nullgit
         if len(commit.parents) > 2:
             raise error.ProgrammingError(
                 (
