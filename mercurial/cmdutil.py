@@ -997,11 +997,6 @@ def changebranch(ui, repo, revs, label, opts):
                 _(b"a branch of the same name already exists")
             )
 
-        if repo.revs(b'obsolete() and %ld', revs):
-            raise error.InputError(
-                _(b"cannot change branch of a obsolete changeset")
-            )
-
         # make sure only topological heads
         if repo.revs(b'heads(%ld) - head()', revs):
             raise error.InputError(
