@@ -169,17 +169,11 @@ impl DirstateMap {
             .next()
             .expect("expected at least one inclusive ancestor");
         loop {
-            // TODO: can we avoid double lookup in all cases without allocating
-            // an owned key in cases where the map already contains that key?
+            // TODO: can we avoid allocating an owned key in cases where the
+            // map already contains that key, without introducing double
+            // lookup?
             let child_node =
-                if child_nodes.contains_key(ancestor_path.base_name()) {
-                    child_nodes.get_mut(ancestor_path.base_name()).unwrap()
-                } else {
-                    // This is always a vacant entry, using `.entry()` lets us
-                    // return a `&mut Node` of the newly-inserted node without
-                    // yet another lookup. `BTreeMap::insert` doesn’t do this.
-                    child_nodes.entry(ancestor_path.to_owned()).or_default()
-                };
+                child_nodes.entry(ancestor_path.to_owned()).or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
                 ancestor_path = next;
                 child_nodes = &mut child_node.children;
