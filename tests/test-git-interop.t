@@ -49,6 +49,16 @@ Now globally enable extension for the rest of the test:
   > log-index-cache-miss = yes
   > EOF
 
+Test some edge cases around a commitless repo first
+  $ mkdir empty
+  $ cd empty
+  $ git init
+  Initialized empty Git repository in $TESTTMP/empty/.git/
+  $ hg init --git
+  $ hg heads
+  [1]
+  $ cd ..
+
 Make a new repo with git:
   $ mkdir foo
   $ cd foo
@@ -376,4 +386,25 @@ Deleting files should also work (this was issue6398)
   reverting beta
   $ hg rm beta
   $ hg ci -m 'remove beta'
+
+This covers changelog.tiprev() (issue6510)
+  $ hg log -r '(.^^):'
+  heads mismatch, rebuilding dagcache
+  changeset:   5:ae1ab744f95b
+  user:        test <test>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Introduce file a/mu
+  
+  changeset:   6:80adc61cf57e
+  user:        test <test>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     test interactive commit
+  
+  changeset:   7:116aee5ecdff
+  bookmark:    master
+  tag:         tip
+  user:        test <test>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     remove beta
+  
 

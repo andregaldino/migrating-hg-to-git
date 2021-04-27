@@ -159,8 +159,11 @@ class changelog(baselog):
     def tiprev(self):
         t = self._db.execute(
             'SELECT rev FROM changelog ' 'ORDER BY REV DESC ' 'LIMIT 1'
-        )
-        return next(t)
+        ).fetchone()
+
+        if t is not None:
+            return t[0]
+        return -1
 
     def _partialmatch(self, id):
         if wdirhex.startswith(id):
