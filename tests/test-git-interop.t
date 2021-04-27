@@ -67,6 +67,7 @@ Ignore the .hg directory within git:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
@@ -134,6 +135,7 @@ Revert works:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
@@ -153,7 +155,9 @@ Add shows sanely in both:
   $ git status
   On branch master
   Changes to be committed:
-    (use "git restore --staged <file>..." to unstage)
+    (use "git restore --staged <file>..." to unstage) (?)
+    (use "git reset HEAD <file>..." to unstage) (?)
+   (?)
   	new file:   gamma
   
 
@@ -165,6 +169,7 @@ forget does what it should as well:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
