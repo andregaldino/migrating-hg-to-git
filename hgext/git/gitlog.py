@@ -221,9 +221,10 @@ class changelog(baselog):
             n = self.node(nodeorrev)
         else:
             n = nodeorrev
+        extra = {b'branch': b'default'}
         # handle looking up nullid
         if n == nullid:
-            return hgchangelog._changelogrevision(extra={}, manifest=nullid)
+            return hgchangelog._changelogrevision(extra=extra, manifest=nullid)
         hn = gitutil.togitnode(n)
         # We've got a real commit!
         files = [
@@ -253,7 +254,7 @@ class changelog(baselog):
             filesremoved=filesremoved,
             description=c.message.encode('utf8'),
             # TODO do we want to handle extra? how?
-            extra={b'branch': b'default'},
+            extra=extra,
         )
 
     def ancestors(self, revs, stoprev=0, inclusive=False):

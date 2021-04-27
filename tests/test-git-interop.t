@@ -57,6 +57,12 @@ Test some edge cases around a commitless repo first
   $ hg init --git
   $ hg heads
   [1]
+  $ hg tip
+  changeset:   -1:000000000000
+  tag:         tip
+  user:        
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  
   $ cd ..
 
 Make a new repo with git:
