@@ -2272,6 +2272,10 @@ help/ shows help topics
         "topic": "environment"
       },
       {
+        "summary": "Safely rewriting history (EXPERIMENTAL)",
+        "topic": "evolution"
+      },
+      {
         "summary": "Using Additional Features",
         "topic": "extensions"
       },

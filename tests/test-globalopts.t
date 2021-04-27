@@ -419,6 +419,7 @@ Testing -h/--help:
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -552,6 +553,7 @@ Testing -h/--help:
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories

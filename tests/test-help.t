@@ -169,6 +169,7 @@ the extension is unknown.
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -298,6 +299,7 @@ the extension is unknown.
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -2272,6 +2274,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   Environment Variables
+  </td></tr>
+  <tr><td>
+  <a href="/help/evolution">
+  evolution
+  </a>
+  </td><td>
+  Safely rewriting history (EXPERIMENTAL)
   </td></tr>
   <tr><td>
   <a href="/help/extensions">
