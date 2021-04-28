@@ -63,7 +63,7 @@ if pygit2:
         pygit2.GIT_STATUS_WT_RENAMED: b'a',
         pygit2.GIT_STATUS_WT_TYPECHANGE: b'n',
         pygit2.GIT_STATUS_WT_UNREADABLE: b'?',
-        pygit2.GIT_STATUS_INDEX_MODIFIED | pygit2.GIT_STATUS_WT_MODIFIED: 'm',
+        pygit2.GIT_STATUS_INDEX_MODIFIED | pygit2.GIT_STATUS_WT_MODIFIED: b'm',
     }
 
 
