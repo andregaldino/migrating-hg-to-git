@@ -44,7 +44,7 @@ def precheck(repo, revs, action=b'rewrite'):
         revs = (r.rev() for r in revs)
 
     if len(repo[None].parents()) > 1:
-        raise error.StateError(_(b"cannot %s while merging") % action)
+        raise error.StateError(_(b"cannot %s changesets while merging") % action)
 
     publicrevs = repo.revs(b'%ld and public()', revs)
     if publicrevs:
