@@ -1,7 +1,7 @@
 use bytes_cast::BytesCast;
 use micro_timer::timed;
+use std::convert::TryInto;
 use std::path::PathBuf;
-use std::{collections::BTreeMap, convert::TryInto};
 
 use super::path_with_basename::WithBasename;
 use crate::dirstate::parsers::clear_ambiguous_mtime;
@@ -20,6 +20,7 @@ use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
+use crate::FastHashMap;
 use crate::PatternFileWarning;
 use crate::StateMapIter;
 use crate::StatusError;
@@ -43,7 +44,7 @@ pub struct DirstateMap {
 /// path, so comparing full paths gives the same result as comparing base
 /// names. However `BTreeMap` would waste time always re-comparing the same
 /// string prefix.
-pub(super) type ChildNodes = BTreeMap<WithBasename<HgPathBuf>, Node>;
+pub(super) type ChildNodes = FastHashMap<WithBasename<HgPathBuf>, Node>;
 
 /// Represents a file or a directory
 #[derive(Default)]
@@ -86,7 +87,7 @@ impl DirstateMap {
         Self {
             parents: None,
             dirty_parents: false,
-            root: ChildNodes::new(),
+            root: ChildNodes::default(),
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
         }

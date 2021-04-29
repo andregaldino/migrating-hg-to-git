@@ -110,11 +110,11 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
 
         // `merge_join_by` requires both its input iterators to be sorted:
 
-        //
-        // * `BTreeMap` iterates according to keys’ ordering by definition
-
+        let mut dirstate_nodes: Vec<_> = dirstate_nodes.iter_mut().collect();
         // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
         // https://github.com/rust-lang/rust/issues/34162
+        dirstate_nodes
+            .sort_unstable_by(|(path1, _), (path2, _)| path1.cmp(path2));
         fs_entries.sort_unstable_by(|e1, e2| e1.base_name.cmp(&e2.base_name));
 
         itertools::merge_join_by(

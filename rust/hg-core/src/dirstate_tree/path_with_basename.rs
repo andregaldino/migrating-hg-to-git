@@ -55,6 +55,12 @@ impl<T: AsRef<HgPath>> Borrow<HgPath> for WithBasename<T> {
     }
 }
 
+impl<T: AsRef<HgPath>> std::hash::Hash for WithBasename<T> {
+    fn hash<H: std::hash::Hasher>(&self, hasher: &mut H) {
+        self.base_name().hash(hasher)
+    }
+}
+
 impl<T: AsRef<HgPath> + PartialEq> PartialEq for WithBasename<T> {
     fn eq(&self, other: &Self) -> bool {
         self.base_name() == other.base_name()
