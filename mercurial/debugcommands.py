@@ -2909,7 +2909,7 @@ def debugrename(ui, repo, *pats, **opts):
 
 @command(b'debugrequires|debugrequirements', [], b'')
 def debugrequirements(ui, repo):
-    """ print the current repo requirements """
+    """print the current repo requirements"""
     for r in sorted(repo.requirements):
         ui.write(b"%s\n" % r)
 

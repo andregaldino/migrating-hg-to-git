@@ -629,7 +629,7 @@ class fncache(object):
         fp.close()
 
     def _checkentries(self, fp, warn):
-        """ make sure there is no empty string in entries """
+        """make sure there is no empty string in entries"""
         if b'' in self.entries:
             fp.seek(0)
             for n, line in enumerate(util.iterfile(fp)):

@@ -331,7 +331,7 @@ class uihunkline(patchnode):
 
 
 class uihunk(patchnode):
-    """ui patch hunk, wraps a hunk and keep track of ui behavior """
+    """ui patch hunk, wraps a hunk and keep track of ui behavior"""
 
     maxcontext = 3
 

@@ -326,7 +326,7 @@ def resolvecommitoptions(ui, opts):
 
 
 def checknotesize(ui, opts):
-    """ make sure note is of valid format """
+    """make sure note is of valid format"""
 
     note = opts.get(b'note')
     if not note:
@@ -972,7 +972,7 @@ def findcmd(cmd, table, strict=True):
 
 
 def changebranch(ui, repo, revs, label, opts):
-    """ Change the branch name of given revs to label """
+    """Change the branch name of given revs to label"""
 
     with repo.wlock(), repo.lock(), repo.transaction(b'branches'):
         # abort in case of uncommitted merge or dirty wdir
@@ -1108,7 +1108,7 @@ def bailifchanged(repo, merge=True, hint=None):
 
 
 def logmessage(ui, opts):
-    """ get the log message according to -m and -l option """
+    """get the log message according to -m and -l option"""
 
     check_at_most_one_arg(opts, b'message', b'logfile')
 
@@ -3920,7 +3920,7 @@ def readgraftstate(repo, graftstate):
 
 
 def hgabortgraft(ui, repo):
-    """ abort logic for aborting graft using 'hg abort'"""
+    """abort logic for aborting graft using 'hg abort'"""
     with repo.wlock():
         graftstate = statemod.cmdstate(repo, b'graftstate')
         return abortgraft(ui, repo, graftstate)

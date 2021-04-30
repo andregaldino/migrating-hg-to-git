@@ -1563,7 +1563,7 @@ def filterrequirements(requirements):
 
 
 def istreemanifest(repo):
-    """ returns whether the repository is using treemanifest or not """
+    """returns whether the repository is using treemanifest or not"""
     return requirementsmod.TREEMANIFEST_REQUIREMENT in repo.requirements
 
 

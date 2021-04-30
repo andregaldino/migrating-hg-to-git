@@ -143,7 +143,7 @@ username = platform.username
 
 def setumask(val):
     # type: (int) -> None
-    ''' updates the umask. used by chg server '''
+    '''updates the umask. used by chg server'''
     if pycompat.iswindows:
         return
     os.umask(val)

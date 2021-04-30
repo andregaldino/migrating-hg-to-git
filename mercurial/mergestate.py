@@ -307,11 +307,11 @@ class _mergestate_base(object):
                 yield f
 
     def allextras(self):
-        """ return all extras information stored with the mergestate """
+        """return all extras information stored with the mergestate"""
         return self._stateextras
 
     def extras(self, filename):
-        """ return extras stored with the mergestate for the given filename """
+        """return extras stored with the mergestate for the given filename"""
         return self._stateextras[filename]
 
     def _resolve(self, preresolve, dfile, wctx):

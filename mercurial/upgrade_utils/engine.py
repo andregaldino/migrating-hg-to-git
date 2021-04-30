@@ -134,7 +134,7 @@ def _perform_clone(
     sidedatacompanion,
     oncopiedrevision,
 ):
-    """ returns the new revlog object created"""
+    """returns the new revlog object created"""
     newrl = None
     if matchrevlog(upgrade_op.revlogs_to_process, rl_type):
         ui.note(

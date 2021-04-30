@@ -168,7 +168,7 @@ class Table(object):
 
 
 class Translator(nodes.NodeVisitor):
-    """"""
+    """ """
 
     words_and_spaces = re.compile(r'\S+| +|\n')
     document_start = """Man page generated from reStructuredText."""
