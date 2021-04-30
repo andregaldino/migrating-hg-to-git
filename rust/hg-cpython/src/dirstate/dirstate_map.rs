@@ -22,6 +22,7 @@ use crate::{
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
+    dirstate::owning::OwningDirstateMap,
     dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
     parsers::dirstate_parents_to_pytuple,
 };
@@ -58,12 +59,13 @@ py_class!(pub class DirstateMap |py| {
         let dirstate_error = |_: DirstateError| {
             PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string())
         };
-        let bytes = on_disk.data(py);
         let (inner, parents) = if use_dirstate_tree {
-            let mut map = hg::dirstate_tree::dirstate_map::DirstateMap::new();
-            let parents = map.read(bytes).map_err(dirstate_error)?;
+            let (map, parents) =
+                OwningDirstateMap::new(py, on_disk)
+                .map_err(dirstate_error)?;
             (Box::new(map) as _, parents)
         } else {
+            let bytes = on_disk.data(py);
             let mut map = RustDirstateMap::default();
             let parents = map.read(bytes).map_err(dirstate_error)?;
             (Box::new(map) as _, parents)

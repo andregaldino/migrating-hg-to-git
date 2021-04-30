@@ -284,10 +284,10 @@ impl DirstateMap {
     }
 
     #[timed]
-    pub fn read<'a>(
+    pub fn read(
         &mut self,
-        file_contents: &'a [u8],
-    ) -> Result<Option<&'a DirstateParents>, DirstateError> {
+        file_contents: &[u8],
+    ) -> Result<Option<DirstateParents>, DirstateError> {
         if file_contents.is_empty() {
             return Ok(None);
         }
@@ -303,7 +303,7 @@ impl DirstateMap {
                 .into_iter()
                 .map(|(path, copy)| (path.to_owned(), copy.to_owned())),
         );
-        Ok(Some(parents))
+        Ok(Some(parents.clone()))
     }
 
     pub fn pack(

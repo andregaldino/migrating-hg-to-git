@@ -24,7 +24,10 @@ use crate::StateMapIter;
 use crate::StatusError;
 use crate::StatusOptions;
 
-pub struct DirstateMap {
+pub struct DirstateMap<'on_disk> {
+    /// Contents of the `.hg/dirstate` file
+    on_disk: &'on_disk [u8],
+
     pub(super) root: ChildNodes,
 
     /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
@@ -69,13 +72,58 @@ type NodeDataMut<'a> = (
     &'a mut Option<HgPathBuf>,
 );
 
-impl DirstateMap {
-    pub fn new() -> Self {
-        Self {
+impl<'on_disk> DirstateMap<'on_disk> {
+    pub fn new(
+        on_disk: &'on_disk [u8],
+    ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
+        let mut map = Self {
+            on_disk,
             root: ChildNodes::default(),
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
+        };
+        let parents = map.read()?;
+        Ok((map, parents))
+    }
+
+    /// Should only be called in `new`
+    #[timed]
+    fn read(&mut self) -> Result<Option<DirstateParents>, DirstateError> {
+        if self.on_disk.is_empty() {
+            return Ok(None);
         }
+
+        let parents = parse_dirstate_entries(
+            self.on_disk,
+            |path, entry, copy_source| {
+                let tracked = entry.state.is_tracked();
+                let node = Self::get_or_insert_node_tracing_ancestors(
+                    &mut self.root,
+                    path,
+                    |ancestor| {
+                        if tracked {
+                            ancestor.tracked_descendants_count += 1
+                        }
+                    },
+                );
+                assert!(
+                    node.entry.is_none(),
+                    "duplicate dirstate entry in read"
+                );
+                assert!(
+                    node.copy_source.is_none(),
+                    "duplicate dirstate entry in read"
+                );
+                node.entry = Some(*entry);
+                node.copy_source = copy_source.map(HgPath::to_owned);
+                self.nodes_with_entry_count += 1;
+                if copy_source.is_some() {
+                    self.nodes_with_copy_source_count += 1
+                }
+            },
+        )?;
+
+        Ok(Some(parents.clone()))
     }
 
     fn get_node(&self, path: &HgPath) -> Option<&Node> {
@@ -280,7 +328,7 @@ impl DirstateMap {
     }
 }
 
-impl super::dispatch::DirstateMapMethods for DirstateMap {
+impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn clear(&mut self) {
         self.root.clear();
         self.nodes_with_entry_count = 0;
@@ -441,48 +489,6 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         } else {
             Ok(false)
         }
-    }
-
-    #[timed]
-    fn read<'a>(
-        &mut self,
-        file_contents: &'a [u8],
-    ) -> Result<Option<&'a DirstateParents>, DirstateError> {
-        if file_contents.is_empty() {
-            return Ok(None);
-        }
-
-        let parents = parse_dirstate_entries(
-            file_contents,
-            |path, entry, copy_source| {
-                let tracked = entry.state.is_tracked();
-                let node = Self::get_or_insert_node_tracing_ancestors(
-                    &mut self.root,
-                    path,
-                    |ancestor| {
-                        if tracked {
-                            ancestor.tracked_descendants_count += 1
-                        }
-                    },
-                );
-                assert!(
-                    node.entry.is_none(),
-                    "duplicate dirstate entry in read"
-                );
-                assert!(
-                    node.copy_source.is_none(),
-                    "duplicate dirstate entry in read"
-                );
-                node.entry = Some(*entry);
-                node.copy_source = copy_source.map(HgPath::to_owned);
-                self.nodes_with_entry_count += 1;
-                if copy_source.is_some() {
-                    self.nodes_with_copy_source_count += 1
-                }
-            },
-        )?;
-
-        Ok(Some(parents))
     }
 
     fn pack(
