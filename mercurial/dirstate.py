@@ -1750,6 +1750,7 @@ if rustmod is not None:
             self._opener = opener
             self._root = root
             self._filename = b'dirstate'
+            self._nodelen = 20
             self._parents = None
             self._dirtyparents = False
 
@@ -1778,25 +1779,15 @@ if rustmod is not None:
         def _rustmap(self):
             """
             Fills the Dirstatemap when called.
-            Use `self._inner_rustmap` if reading the dirstate is not necessary.
-            """
-            self._rustmap = self._inner_rustmap
-            self.read()
-            return self._rustmap
-
-        @propertycache
-        def _inner_rustmap(self):
-            """
-            Does not fill the Dirstatemap when called. This allows for
-            optimizations where only setting/getting the parents is needed.
             """
             use_dirstate_tree = self._ui.configbool(
                 b"experimental",
                 b"dirstate-tree.in-memory",
                 False,
             )
-            self._inner_rustmap = rustmod.DirstateMap(use_dirstate_tree)
-            return self._inner_rustmap
+            self._rustmap = rustmod.DirstateMap(use_dirstate_tree)
+            self.read()
+            return self._rustmap
 
         @property
         def copymap(self):
@@ -1807,7 +1798,6 @@ if rustmod is not None:
 
         def clear(self):
             self._rustmap.clear()
-            self._inner_rustmap.clear()
             self.setparents(
                 self._nodeconstants.nullid, self._nodeconstants.nullid
             )
@@ -1849,7 +1839,6 @@ if rustmod is not None:
             return fp
 
         def setparents(self, p1, p2):
-            self._rustmap.setparents(p1, p2)
             self._parents = (p1, p2)
             self._dirtyparents = True
 
@@ -1865,9 +1854,18 @@ if rustmod is not None:
                     # File doesn't exist, so the current state is empty
                     st = b''
 
-                try:
-                    self._parents = self._inner_rustmap.parents(st)
-                except ValueError:
+                l = len(st)
+                if l == self._nodelen * 2:
+                    self._parents = (
+                        st[: self._nodelen],
+                        st[self._nodelen : 2 * self._nodelen],
+                    )
+                elif l == 0:
+                    self._parents = (
+                        self._nodeconstants.nullid,
+                        self._nodeconstants.nullid,
+                    )
+                else:
                     raise error.Abort(
                         _(b'working directory state appears damaged!')
                     )

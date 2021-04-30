@@ -13,8 +13,8 @@ use std::convert::TryInto;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
-    PyObject, PyResult, PySet, PyString, PyTuple, Python, PythonObject,
-    ToPyObject, UnsafePyLeaked,
+    PyObject, PyResult, PySet, PyString, Python, PythonObject, ToPyObject,
+    UnsafePyLeaked,
 };
 
 use crate::{
@@ -269,27 +269,6 @@ py_class!(pub class DirstateMap |py| {
                 PyErr::new::<exc::ValueError, _>(py, e.to_string())
             })?
             .to_py_object(py))
-    }
-
-    def parents(&self, st: PyObject) -> PyResult<PyTuple> {
-        self.inner(py).borrow_mut()
-            .parents(st.extract::<PyBytes>(py)?.data(py))
-            .map(|parents| dirstate_parents_to_pytuple(py, parents))
-            .or_else(|_| {
-                Err(PyErr::new::<exc::OSError, _>(
-                    py,
-                    "Dirstate error".to_string(),
-                ))
-            })
-    }
-
-    def setparents(&self, p1: PyObject, p2: PyObject) -> PyResult<PyObject> {
-        let p1 = extract_node_id(py, &p1)?;
-        let p2 = extract_node_id(py, &p2)?;
-
-        self.inner(py).borrow_mut()
-            .set_parents(&DirstateParents { p1, p2 });
-        Ok(py.None())
     }
 
     def read(&self, st: PyObject) -> PyResult<Option<PyObject>> {

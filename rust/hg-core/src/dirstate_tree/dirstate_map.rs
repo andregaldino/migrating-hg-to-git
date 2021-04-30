@@ -8,10 +8,8 @@ use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
-use crate::dirstate::parsers::parse_dirstate_parents;
 use crate::dirstate::parsers::Timestamp;
 use crate::matchers::Matcher;
-use crate::revlog::node::NULL_NODE;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::CopyMapIter;
 use crate::DirstateEntry;
@@ -27,8 +25,6 @@ use crate::StatusError;
 use crate::StatusOptions;
 
 pub struct DirstateMap {
-    parents: Option<DirstateParents>,
-    dirty_parents: bool,
     pub(super) root: ChildNodes,
 
     /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
@@ -76,8 +72,6 @@ type NodeDataMut<'a> = (
 impl DirstateMap {
     pub fn new() -> Self {
         Self {
-            parents: None,
-            dirty_parents: false,
             root: ChildNodes::default(),
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
@@ -288,10 +282,6 @@ impl DirstateMap {
 
 impl super::dispatch::DirstateMapMethods for DirstateMap {
     fn clear(&mut self) {
-        self.set_parents(&DirstateParents {
-            p1: NULL_NODE,
-            p2: NULL_NODE,
-        });
         self.root.clear();
         self.nodes_with_entry_count = 0;
         self.nodes_with_copy_source_count = 0;
@@ -453,29 +443,6 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         }
     }
 
-    fn parents(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<&DirstateParents, DirstateError> {
-        if self.parents.is_none() {
-            let parents = if !file_contents.is_empty() {
-                parse_dirstate_parents(file_contents)?.clone()
-            } else {
-                DirstateParents {
-                    p1: NULL_NODE,
-                    p2: NULL_NODE,
-                }
-            };
-            self.parents = Some(parents);
-        }
-        Ok(self.parents.as_ref().unwrap())
-    }
-
-    fn set_parents(&mut self, parents: &DirstateParents) {
-        self.parents = Some(parents.clone());
-        self.dirty_parents = true;
-    }
-
     #[timed]
     fn read<'a>(
         &mut self,
@@ -515,10 +482,6 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
             },
         )?;
 
-        if !self.dirty_parents {
-            self.set_parents(parents);
-        }
-
         Ok(Some(parents))
     }
 
@@ -554,7 +517,6 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
                 );
             }
         }
-        self.dirty_parents = false;
         Ok(packed)
     }
 

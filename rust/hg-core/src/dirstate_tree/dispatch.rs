@@ -73,13 +73,6 @@ pub trait DirstateMapMethods {
         directory: &HgPath,
     ) -> Result<bool, DirstateMapError>;
 
-    fn parents(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<&DirstateParents, DirstateError>;
-
-    fn set_parents(&mut self, parents: &DirstateParents);
-
     fn read<'a>(
         &mut self,
         file_contents: &'a [u8],
@@ -221,17 +214,6 @@ impl DirstateMapMethods for DirstateMap {
         directory: &HgPath,
     ) -> Result<bool, DirstateMapError> {
         self.has_dir(directory)
-    }
-
-    fn parents(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<&DirstateParents, DirstateError> {
-        self.parents(file_contents)
-    }
-
-    fn set_parents(&mut self, parents: &DirstateParents) {
-        self.set_parents(parents)
     }
 
     fn read<'a>(

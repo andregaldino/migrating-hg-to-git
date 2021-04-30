@@ -7,10 +7,8 @@
 
 use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::Timestamp;
-use crate::errors::HgError;
-use crate::revlog::node::NULL_NODE;
 use crate::{
-    dirstate::{parsers::PARENT_SIZE, EntryState},
+    dirstate::EntryState,
     pack_dirstate, parse_dirstate,
     utils::hg_path::{HgPath, HgPathBuf},
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
@@ -18,7 +16,6 @@ use crate::{
 };
 use micro_timer::timed;
 use std::collections::HashSet;
-use std::convert::TryInto;
 use std::iter::FromIterator;
 use std::ops::Deref;
 
@@ -30,8 +27,6 @@ pub struct DirstateMap {
     pub all_dirs: Option<DirsMultiset>,
     non_normal_set: Option<HashSet<HgPathBuf>>,
     other_parent_set: Option<HashSet<HgPathBuf>>,
-    parents: Option<DirstateParents>,
-    dirty_parents: bool,
 }
 
 /// Should only really be used in python interface code, for clarity
@@ -64,10 +59,6 @@ impl DirstateMap {
         self.copy_map.clear();
         self.non_normal_set = None;
         self.other_parent_set = None;
-        self.set_parents(&DirstateParents {
-            p1: NULL_NODE,
-            p2: NULL_NODE,
-        })
     }
 
     /// Add a tracked file to the dirstate
@@ -292,41 +283,6 @@ impl DirstateMap {
         Ok(self.all_dirs.as_ref().unwrap().contains(directory))
     }
 
-    pub fn parents(
-        &mut self,
-        file_contents: &[u8],
-    ) -> Result<&DirstateParents, DirstateError> {
-        if let Some(ref parents) = self.parents {
-            return Ok(parents);
-        }
-        let parents;
-        if file_contents.len() == PARENT_SIZE * 2 {
-            parents = DirstateParents {
-                p1: file_contents[..PARENT_SIZE].try_into().unwrap(),
-                p2: file_contents[PARENT_SIZE..PARENT_SIZE * 2]
-                    .try_into()
-                    .unwrap(),
-            };
-        } else if file_contents.is_empty() {
-            parents = DirstateParents {
-                p1: NULL_NODE,
-                p2: NULL_NODE,
-            };
-        } else {
-            return Err(
-                HgError::corrupted("Dirstate appears to be damaged").into()
-            );
-        }
-
-        self.parents = Some(parents);
-        Ok(self.parents.as_ref().unwrap())
-    }
-
-    pub fn set_parents(&mut self, parents: &DirstateParents) {
-        self.parents = Some(parents.clone());
-        self.dirty_parents = true;
-    }
-
     #[timed]
     pub fn read<'a>(
         &mut self,
@@ -347,11 +303,6 @@ impl DirstateMap {
                 .into_iter()
                 .map(|(path, copy)| (path.to_owned(), copy.to_owned())),
         );
-
-        if !self.dirty_parents {
-            self.set_parents(&parents);
-        }
-
         Ok(Some(parents))
     }
 
@@ -362,8 +313,6 @@ impl DirstateMap {
     ) -> Result<Vec<u8>, DirstateError> {
         let packed =
             pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)?;
-
-        self.dirty_parents = false;
 
         self.set_non_normal_other_parent_entries(true);
         Ok(packed)
