@@ -32,8 +32,9 @@ use hg::{
     revlog::Node,
     utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
-    DirsMultiset, DirstateEntry, DirstateMap as RustDirstateMap,
-    DirstateMapError, DirstateParents, EntryState, StateMapIter,
+    DirsMultiset, DirstateEntry, DirstateError,
+    DirstateMap as RustDirstateMap, DirstateMapError, DirstateParents,
+    EntryState, StateMapIter,
 };
 
 // TODO
@@ -51,13 +52,25 @@ use hg::{
 py_class!(pub class DirstateMap |py| {
     @shared data inner: Box<dyn DirstateMapMethods + Send>;
 
-    def __new__(_cls, use_dirstate_tree: bool) -> PyResult<Self> {
-        let inner = if use_dirstate_tree {
-            Box::new(hg::dirstate_tree::dirstate_map::DirstateMap::new()) as _
-        } else {
-            Box::new(RustDirstateMap::default()) as _
+    /// Returns a `(dirstate_map, parents)` tuple
+    @staticmethod
+    def new(use_dirstate_tree: bool, on_disk: PyBytes) -> PyResult<PyObject> {
+        let dirstate_error = |_: DirstateError| {
+            PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string())
         };
-        Self::create_instance(py, inner)
+        let bytes = on_disk.data(py);
+        let (inner, parents) = if use_dirstate_tree {
+            let mut map = hg::dirstate_tree::dirstate_map::DirstateMap::new();
+            let parents = map.read(bytes).map_err(dirstate_error)?;
+            (Box::new(map) as _, parents)
+        } else {
+            let mut map = RustDirstateMap::default();
+            let parents = map.read(bytes).map_err(dirstate_error)?;
+            (Box::new(map) as _, parents)
+        };
+        let map = Self::create_instance(py, inner)?;
+        let parents = parents.map(|p| dirstate_parents_to_pytuple(py, &p));
+        Ok((map, parents).to_py_object(py).into_object())
     }
 
     def clear(&self) -> PyResult<PyObject> {
@@ -271,21 +284,6 @@ py_class!(pub class DirstateMap |py| {
             .to_py_object(py))
     }
 
-    def read(&self, st: PyObject) -> PyResult<Option<PyObject>> {
-        match self.inner(py).borrow_mut()
-            .read(st.extract::<PyBytes>(py)?.data(py))
-        {
-            Ok(Some(parents)) => Ok(Some(
-                dirstate_parents_to_pytuple(py, parents)
-                    .into_object()
-            )),
-            Ok(None) => Ok(Some(py.None())),
-            Err(_) => Err(PyErr::new::<exc::OSError, _>(
-                py,
-                "Dirstate error".to_string(),
-            )),
-        }
-    }
     def write(
         &self,
         p1: PyObject,

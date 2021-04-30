@@ -1775,20 +1775,6 @@ if rustmod is not None:
         def get(self, *args, **kwargs):
             return self._rustmap.get(*args, **kwargs)
 
-        @propertycache
-        def _rustmap(self):
-            """
-            Fills the Dirstatemap when called.
-            """
-            use_dirstate_tree = self._ui.configbool(
-                b"experimental",
-                b"dirstate-tree.in-memory",
-                False,
-            )
-            self._rustmap = rustmod.DirstateMap(use_dirstate_tree)
-            self.read()
-            return self._rustmap
-
         @property
         def copymap(self):
             return self._rustmap.copymap()
@@ -1872,7 +1858,11 @@ if rustmod is not None:
 
             return self._parents
 
-        def read(self):
+        @propertycache
+        def _rustmap(self):
+            """
+            Fills the Dirstatemap when called.
+            """
             # ignore HG_PENDING because identity is used only for writing
             self.identity = util.filestat.frompath(
                 self._opener.join(self._filename)
@@ -1887,18 +1877,24 @@ if rustmod is not None:
             except IOError as err:
                 if err.errno != errno.ENOENT:
                     raise
-                return
-            if not st:
-                return
+                st = b''
 
-            parse_dirstate = util.nogc(self._rustmap.read)
-            parents = parse_dirstate(st)
+            use_dirstate_tree = self._ui.configbool(
+                b"experimental",
+                b"dirstate-tree.in-memory",
+                False,
+            )
+            self._rustmap, parents = rustmod.DirstateMap.new(
+                use_dirstate_tree, st
+            )
+
             if parents and not self._dirtyparents:
                 self.setparents(*parents)
 
             self.__contains__ = self._rustmap.__contains__
             self.__getitem__ = self._rustmap.__getitem__
             self.get = self._rustmap.get
+            return self._rustmap
 
         def write(self, st, now):
             parents = self.parents()
