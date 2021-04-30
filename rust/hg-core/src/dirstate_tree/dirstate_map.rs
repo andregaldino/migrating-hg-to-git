@@ -1,5 +1,6 @@
 use bytes_cast::BytesCast;
 use micro_timer::timed;
+use std::borrow::Cow;
 use std::convert::TryInto;
 use std::path::PathBuf;
 
@@ -28,7 +29,7 @@ pub struct DirstateMap<'on_disk> {
     /// Contents of the `.hg/dirstate` file
     on_disk: &'on_disk [u8],
 
-    pub(super) root: ChildNodes,
+    pub(super) root: ChildNodes<'on_disk>,
 
     /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
     nodes_with_entry_count: usize,
@@ -43,33 +44,34 @@ pub struct DirstateMap<'on_disk> {
 /// path, so comparing full paths gives the same result as comparing base
 /// names. However `BTreeMap` would waste time always re-comparing the same
 /// string prefix.
-pub(super) type ChildNodes = FastHashMap<WithBasename<HgPathBuf>, Node>;
+pub(super) type ChildNodes<'on_disk> =
+    FastHashMap<WithBasename<HgPathBuf>, Node<'on_disk>>;
 
 /// Represents a file or a directory
 #[derive(Default)]
-pub(super) struct Node {
+pub(super) struct Node<'on_disk> {
     /// `None` for directories
     pub(super) entry: Option<DirstateEntry>,
 
-    pub(super) copy_source: Option<HgPathBuf>,
+    pub(super) copy_source: Option<Cow<'on_disk, HgPath>>,
 
-    pub(super) children: ChildNodes,
+    pub(super) children: ChildNodes<'on_disk>,
 
     /// How many (non-inclusive) descendants of this node are tracked files
     tracked_descendants_count: usize,
 }
 
-impl Node {
+impl Node<'_> {
     pub(super) fn state(&self) -> Option<EntryState> {
         self.entry.as_ref().map(|entry| entry.state)
     }
 }
 
 /// `(full_path, entry, copy_source)`
-type NodeDataMut<'a> = (
-    &'a HgPath,
-    &'a mut Option<DirstateEntry>,
-    &'a mut Option<HgPathBuf>,
+type NodeDataMut<'tree, 'on_disk> = (
+    &'tree HgPath,
+    &'tree mut Option<DirstateEntry>,
+    &'tree mut Option<Cow<'on_disk, HgPath>>,
 );
 
 impl<'on_disk> DirstateMap<'on_disk> {
@@ -115,7 +117,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                     "duplicate dirstate entry in read"
                 );
                 node.entry = Some(*entry);
-                node.copy_source = copy_source.map(HgPath::to_owned);
+                node.copy_source = copy_source.map(Cow::Borrowed);
                 self.nodes_with_entry_count += 1;
                 if copy_source.is_some() {
                     self.nodes_with_copy_source_count += 1
@@ -147,9 +149,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// This takes `root` instead of `&mut self` so that callers can mutate
     /// other fields while the returned borrow is still valid
     fn get_node_mut<'tree>(
-        root: &'tree mut ChildNodes,
+        root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
-    ) -> Option<&'tree mut Node> {
+    ) -> Option<&'tree mut Node<'on_disk>> {
         Self::get_node_mut_tracing_ancestors(root, path, |_| {})
     }
 
@@ -159,10 +161,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// Note that `each_ancestor` may be called (with what would be ancestors)
     /// even if it turns out there is no node at `path`.
     fn get_node_mut_tracing_ancestors<'tree>(
-        root: &'tree mut ChildNodes,
+        root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
         mut each_ancestor: impl FnMut(&mut Node),
-    ) -> Option<&'tree mut Node> {
+    ) -> Option<&'tree mut Node<'on_disk>> {
         let mut children = root;
         let mut components = path.components();
         let mut component =
@@ -180,17 +182,17 @@ impl<'on_disk> DirstateMap<'on_disk> {
     }
 
     fn get_or_insert_node<'tree>(
-        root: &'tree mut ChildNodes,
+        root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
-    ) -> &'tree mut Node {
+    ) -> &'tree mut Node<'on_disk> {
         Self::get_or_insert_node_tracing_ancestors(root, path, |_| {})
     }
 
     fn get_or_insert_node_tracing_ancestors<'tree>(
-        root: &'tree mut ChildNodes,
+        root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
         mut each_ancestor: impl FnMut(&mut Node),
-    ) -> &'tree mut Node {
+    ) -> &'tree mut Node<'on_disk> {
         let mut child_nodes = root;
         let mut inclusive_ancestor_paths =
             WithBasename::inclusive_ancestors_of(path);
@@ -298,9 +300,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// with `-> impl Iterator<Item = &mut Node>` since child nodes are
     /// reachable from their ancestor nodes, potentially creating multiple
     /// `&mut` references to a given node.
-    fn iter_node_data_mut<'a>(
-        &'a mut self,
-    ) -> impl Iterator<Item = NodeDataMut<'a>> + 'a {
+    fn iter_node_data_mut<'tree>(
+        &'tree mut self,
+    ) -> impl Iterator<Item = NodeDataMut<'tree, 'on_disk>> + 'tree {
         // Explict stack for pseudo-recursion, see `iter_nodes` above.
         let mut stack = Vec::new();
         let mut iter = self.root.iter_mut();
@@ -582,7 +584,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             if node.copy_source.is_some() {
                 *count -= 1
             }
-            node.copy_source.take()
+            node.copy_source.take().map(Cow::into_owned)
         })
     }
 
@@ -595,7 +597,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if node.copy_source.is_none() {
             self.nodes_with_copy_source_count += 1
         }
-        node.copy_source.replace(value)
+        node.copy_source.replace(value.into()).map(Cow::into_owned)
     }
 
     fn len(&self) -> usize {
