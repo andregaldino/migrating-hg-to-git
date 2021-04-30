@@ -1861,7 +1861,7 @@ class localrepository(object):
                     changeid = hex(changeid)  # for the error message
                     raise
 
-            elif len(changeid) == 40:
+            elif len(changeid) == 2 * self.nodeconstants.nodelen:
                 node = bin(changeid)
                 rev = self.changelog.rev(node)
             else:

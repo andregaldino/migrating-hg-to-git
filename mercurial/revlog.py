@@ -1320,7 +1320,7 @@ class revlog(object):
             return self.node(rev)
         except (ValueError, OverflowError):
             pass
-        if len(id) == 40:
+        if len(id) == 2 * self.nodeconstants.nodelen:
             try:
                 # a full hex nodeid?
                 node = bin(id)

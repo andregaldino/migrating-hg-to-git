@@ -764,9 +764,10 @@ def shortest(context, mapping, args):
         )
 
     repo = context.resource(mapping, b'repo')
-    if len(hexnode) > 40:
+    hexnodelen = 2 * repo.nodeconstants.nodelen
+    if len(hexnode) > hexnodelen:
         return hexnode
-    elif len(hexnode) == 40:
+    elif len(hexnode) == hexnodelen:
         try:
             node = bin(hexnode)
         except TypeError:

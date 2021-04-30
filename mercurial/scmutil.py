@@ -643,7 +643,7 @@ def revsymbol(repo, symbol):
         except (ValueError, OverflowError, IndexError):
             pass
 
-        if len(symbol) == 40:
+        if len(symbol) == 2 * repo.nodeconstants.nodelen:
             try:
                 node = bin(symbol)
                 rev = repo.changelog.rev(node)

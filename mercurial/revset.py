@@ -1724,7 +1724,7 @@ def named(repo, subset, x):
 def _node(repo, n):
     """process a node input"""
     rn = None
-    if len(n) == 40:
+    if len(n) == 2 * repo.nodeconstants.nodelen:
         try:
             rn = repo.changelog.rev(bin(n))
         except error.WdirUnsupported:
