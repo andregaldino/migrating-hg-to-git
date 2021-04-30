@@ -1299,7 +1299,7 @@ class revlog(object):
         if isinstance(id, int):
             # rev
             return self.node(id)
-        if len(id) == 20:
+        if len(id) == self.nodeconstants.nodelen:
             # possibly a binary node
             # odds of a binary node being all hex in ASCII are 1 in 10**25
             try:

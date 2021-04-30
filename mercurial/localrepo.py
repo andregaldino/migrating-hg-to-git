@@ -1840,7 +1840,7 @@ class localrepository(object):
                 # when we know that '.' won't be hidden
                 node = self.dirstate.p1()
                 rev = self.unfiltered().changelog.rev(node)
-            elif len(changeid) == 20:
+            elif len(changeid) == self.nodeconstants.nodelen:
                 try:
                     node = changeid
                     rev = self.changelog.rev(changeid)
