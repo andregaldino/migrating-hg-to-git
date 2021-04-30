@@ -4,7 +4,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::HgError;
-use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::utils::hg_path::HgPath;
 use crate::{
     dirstate::{CopyMap, EntryState, RawEntry, StateMap},
     DirstateEntry, DirstateParents,
@@ -83,8 +83,8 @@ pub fn parse_dirstate_entries<'a>(
 }
 
 fn packed_filename_and_copy_source_size(
-    filename: &HgPathBuf,
-    copy_source: Option<&HgPathBuf>,
+    filename: &HgPath,
+    copy_source: Option<&HgPath>,
 ) -> usize {
     filename.len()
         + if let Some(source) = copy_source {
@@ -95,17 +95,17 @@ fn packed_filename_and_copy_source_size(
 }
 
 pub fn packed_entry_size(
-    filename: &HgPathBuf,
-    copy_source: Option<&HgPathBuf>,
+    filename: &HgPath,
+    copy_source: Option<&HgPath>,
 ) -> usize {
     MIN_ENTRY_SIZE
         + packed_filename_and_copy_source_size(filename, copy_source)
 }
 
 pub fn pack_entry(
-    filename: &HgPathBuf,
+    filename: &HgPath,
     entry: &DirstateEntry,
-    copy_source: Option<&HgPathBuf>,
+    copy_source: Option<&HgPath>,
     packed: &mut Vec<u8>,
 ) {
     let length = packed_filename_and_copy_source_size(filename, copy_source);
@@ -159,7 +159,7 @@ pub fn pack_dirstate(
     let expected_size: usize = state_map
         .iter()
         .map(|(filename, _)| {
-            packed_entry_size(filename, copy_map.get(filename))
+            packed_entry_size(filename, copy_map.get(filename).map(|p| &**p))
         })
         .sum();
     let expected_size = expected_size + PARENT_SIZE * 2;
@@ -171,7 +171,12 @@ pub fn pack_dirstate(
 
     for (filename, entry) in state_map.iter_mut() {
         clear_ambiguous_mtime(entry, now);
-        pack_entry(filename, entry, copy_map.get(filename), &mut packed)
+        pack_entry(
+            filename,
+            entry,
+            copy_map.get(filename).map(|p| &**p),
+            &mut packed,
+        )
     }
 
     if packed.len() != expected_size {

@@ -12,7 +12,7 @@ use cpython::{
 };
 
 use crate::dirstate::DirstateMap;
-use hg::utils::hg_path::HgPathBuf;
+use hg::utils::hg_path::HgPath;
 use std::cell::RefCell;
 
 py_class!(pub class NonNormalEntries |py| {
@@ -54,16 +54,13 @@ impl NonNormalEntries {
         Ok(true)
     }
 
-    fn translate_key(
-        py: Python,
-        key: &HgPathBuf,
-    ) -> PyResult<Option<PyBytes>> {
+    fn translate_key(py: Python, key: &HgPath) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, key.as_bytes())))
     }
 }
 
 type NonNormalEntriesIter<'a> =
-    Box<dyn Iterator<Item = &'a HgPathBuf> + Send + 'a>;
+    Box<dyn Iterator<Item = &'a HgPath> + Send + 'a>;
 
 py_shared_iterator!(
     NonNormalEntriesIterator,

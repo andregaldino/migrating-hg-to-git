@@ -61,7 +61,7 @@ impl DirstateMapMethods for OwningDirstateMap {
 
     fn non_normal_or_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + '_> {
         self.get_mut().non_normal_or_other_parent_paths()
     }
 
@@ -71,19 +71,19 @@ impl DirstateMapMethods for OwningDirstateMap {
 
     fn iter_non_normal_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         self.get_mut().iter_non_normal_paths()
     }
 
     fn iter_non_normal_paths_panic(
         &self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         self.get().iter_non_normal_paths_panic()
     }
 
     fn iter_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         self.get_mut().iter_other_parent_paths()
     }
 
@@ -141,7 +141,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get().copy_map_contains_key(key)
     }
 
-    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPathBuf> {
+    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath> {
         self.get().copy_map_get(key)
     }
 

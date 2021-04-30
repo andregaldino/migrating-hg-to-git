@@ -67,7 +67,7 @@ impl Node {
 
 /// `(full_path, entry, copy_source)`
 type NodeDataMut<'a> = (
-    &'a WithBasename<HgPathBuf>,
+    &'a HgPath,
     &'a mut Option<DirstateEntry>,
     &'a mut Option<HgPathBuf>,
 );
@@ -248,8 +248,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
 
     fn iter_nodes<'a>(
         &'a self,
-    ) -> impl Iterator<Item = (&'a WithBasename<HgPathBuf>, &'a Node)> + 'a
-    {
+    ) -> impl Iterator<Item = (&'a HgPath, &'a Node)> + 'a {
         // Depth first tree traversal.
         //
         // If we could afford internal iteration and recursion,
@@ -276,6 +275,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 // Pseudo-recursion
                 let new_iter = child_node.children.iter();
                 let old_iter = std::mem::replace(&mut iter, new_iter);
+                let key = &**key.full_path();
                 stack.push((key, child_node, old_iter));
             }
             // Found the end of a `children.iter()` iterator.
@@ -307,8 +307,11 @@ impl<'on_disk> DirstateMap<'on_disk> {
         std::iter::from_fn(move || {
             while let Some((key, child_node)) = iter.next() {
                 // Pseudo-recursion
-                let data =
-                    (key, &mut child_node.entry, &mut child_node.copy_source);
+                let data = (
+                    &**key.full_path(),
+                    &mut child_node.entry,
+                    &mut child_node.copy_source,
+                );
                 let new_iter = child_node.children.iter_mut();
                 let old_iter = std::mem::replace(&mut iter, new_iter);
                 stack.push((data, old_iter));
@@ -421,14 +424,14 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn non_normal_or_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + '_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
             node.entry
                 .as_ref()
                 .filter(|entry| {
                     entry.is_non_normal() || entry.is_from_other_parent()
                 })
-                .map(|_| path.full_path())
+                .map(|_| path)
         }))
     }
 
@@ -439,29 +442,29 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn iter_non_normal_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         self.iter_non_normal_paths_panic()
     }
 
     fn iter_non_normal_paths_panic(
         &self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
             node.entry
                 .as_ref()
                 .filter(|entry| entry.is_non_normal())
-                .map(|_| path.full_path())
+                .map(|_| path)
         }))
     }
 
     fn iter_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
             node.entry
                 .as_ref()
                 .filter(|entry| entry.is_from_other_parent())
-                .map(|_| path.full_path())
+                .map(|_| path)
         }))
     }
 
@@ -502,8 +505,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         for (path, node) in self.iter_nodes() {
             if node.entry.is_some() {
                 size += packed_entry_size(
-                    path.full_path(),
-                    node.copy_source.as_ref(),
+                    path,
+                    node.copy_source.as_ref().map(|p| &**p),
                 )
             }
         }
@@ -516,9 +519,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             if let Some(entry) = opt_entry {
                 clear_ambiguous_mtime(entry, now);
                 pack_entry(
-                    path.full_path(),
+                    path,
                     entry,
-                    copy_source.as_ref(),
+                    copy_source.as_ref().map(|p| &**p),
                     &mut packed,
                 );
             }
@@ -557,7 +560,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
             node.copy_source
                 .as_ref()
-                .map(|copy_source| (path.full_path(), copy_source))
+                .map(|copy_source| (path, &**copy_source))
         }))
     }
 
@@ -569,8 +572,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         }
     }
 
-    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPathBuf> {
-        self.get_node(key)?.copy_source.as_ref()
+    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath> {
+        self.get_node(key)?.copy_source.as_ref().map(|p| &**p)
     }
 
     fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf> {
@@ -609,7 +612,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn iter(&self) -> StateMapIter<'_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry.as_ref().map(|entry| (path.full_path(), entry))
+            node.entry.as_ref().map(|entry| (path, entry))
         }))
     }
 }

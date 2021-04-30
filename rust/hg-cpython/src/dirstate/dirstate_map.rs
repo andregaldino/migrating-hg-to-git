@@ -514,13 +514,13 @@ impl DirstateMap {
     }
     fn translate_key(
         py: Python,
-        res: (&HgPathBuf, &DirstateEntry),
+        res: (&HgPath, &DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
-        res: (&HgPathBuf, &DirstateEntry),
+        res: (&HgPath, &DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
         Ok(Some((

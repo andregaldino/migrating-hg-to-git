@@ -47,21 +47,21 @@ pub trait DirstateMapMethods {
 
     fn non_normal_or_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_>;
+    ) -> Box<dyn Iterator<Item = &HgPath> + '_>;
 
     fn set_non_normal_other_parent_entries(&mut self, force: bool);
 
     fn iter_non_normal_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_>;
 
     fn iter_non_normal_paths_panic(
         &self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_>;
 
     fn iter_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_>;
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_>;
 
     fn has_tracked_dir(
         &mut self,
@@ -97,7 +97,7 @@ pub trait DirstateMapMethods {
 
     fn copy_map_contains_key(&self, key: &HgPath) -> bool;
 
-    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPathBuf>;
+    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath>;
 
     fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf>;
 
@@ -163,10 +163,10 @@ impl DirstateMapMethods for DirstateMap {
 
     fn non_normal_or_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + '_> {
         let (non_normal, other_parent) =
             self.get_non_normal_other_parent_entries();
-        Box::new(non_normal.union(other_parent))
+        Box::new(non_normal.union(other_parent).map(|p| &**p))
     }
 
     fn set_non_normal_other_parent_entries(&mut self, force: bool) {
@@ -175,26 +175,26 @@ impl DirstateMapMethods for DirstateMap {
 
     fn iter_non_normal_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         let (non_normal, _other_parent) =
             self.get_non_normal_other_parent_entries();
-        Box::new(non_normal.iter())
+        Box::new(non_normal.iter().map(|p| &**p))
     }
 
     fn iter_non_normal_paths_panic(
         &self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         let (non_normal, _other_parent) =
             self.get_non_normal_other_parent_entries_panic();
-        Box::new(non_normal.iter())
+        Box::new(non_normal.iter().map(|p| &**p))
     }
 
     fn iter_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPathBuf> + Send + '_> {
+    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
         let (_non_normal, other_parent) =
             self.get_non_normal_other_parent_entries();
-        Box::new(other_parent.iter())
+        Box::new(other_parent.iter().map(|p| &**p))
     }
 
     fn has_tracked_dir(
@@ -243,15 +243,15 @@ impl DirstateMapMethods for DirstateMap {
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
-        Box::new(self.copy_map.iter())
+        Box::new(self.copy_map.iter().map(|(key, value)| (&**key, &**value)))
     }
 
     fn copy_map_contains_key(&self, key: &HgPath) -> bool {
         self.copy_map.contains_key(key)
     }
 
-    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPathBuf> {
-        self.copy_map.get(key)
+    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath> {
+        self.copy_map.get(key).map(|p| &**p)
     }
 
     fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf> {
@@ -279,6 +279,6 @@ impl DirstateMapMethods for DirstateMap {
     }
 
     fn iter(&self) -> StateMapIter<'_> {
-        Box::new((&**self).iter())
+        Box::new((&**self).iter().map(|(key, value)| (&**key, value)))
     }
 }

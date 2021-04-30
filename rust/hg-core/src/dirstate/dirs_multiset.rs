@@ -30,17 +30,22 @@ impl DirsMultiset {
     /// Initializes the multiset from a dirstate.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
-    pub fn from_dirstate<'a>(
-        dirstate: impl IntoIterator<Item = (&'a HgPathBuf, &'a DirstateEntry)>,
+    pub fn from_dirstate<'a, I, P>(
+        dirstate: I,
         skip_state: Option<EntryState>,
-    ) -> Result<Self, DirstateMapError> {
+    ) -> Result<Self, DirstateMapError>
+    where
+        I: IntoIterator<Item = (P, &'a DirstateEntry)>,
+        P: AsRef<HgPath>,
+    {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
-        for (filename, DirstateEntry { state, .. }) in dirstate {
+        for (filename, entry) in dirstate {
+            let filename = filename.as_ref();
             // This `if` is optimized out of the loop
             if let Some(skip) = skip_state {
-                if skip != *state {
+                if skip != entry.state {
                     multiset.add_path(filename)?;
                 }
             } else {

@@ -14,7 +14,8 @@ use cpython::{
 use std::cell::RefCell;
 
 use crate::dirstate::dirstate_map::DirstateMap;
-use hg::{utils::hg_path::HgPathBuf, CopyMapIter};
+use hg::utils::hg_path::HgPath;
+use hg::CopyMapIter;
 
 py_class!(pub class CopyMap |py| {
     data dirstate_map: DirstateMap;
@@ -87,13 +88,13 @@ impl CopyMap {
     }
     fn translate_key(
         py: Python,
-        res: (&HgPathBuf, &HgPathBuf),
+        res: (&HgPath, &HgPath),
     ) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
-        res: (&HgPathBuf, &HgPathBuf),
+        res: (&HgPath, &HgPath),
     ) -> PyResult<Option<(PyBytes, PyBytes)>> {
         let (k, v) = res;
         Ok(Some((

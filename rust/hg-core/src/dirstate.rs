@@ -7,7 +7,8 @@
 
 use crate::errors::HgError;
 use crate::revlog::Node;
-use crate::{utils::hg_path::HgPathBuf, FastHashMap};
+use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::FastHashMap;
 use bytes_cast::{unaligned, BytesCast};
 use std::convert::TryFrom;
 
@@ -76,11 +77,11 @@ pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> =
-    Box<dyn Iterator<Item = (&'a HgPathBuf, &'a DirstateEntry)> + Send + 'a>;
+    Box<dyn Iterator<Item = (&'a HgPath, &'a DirstateEntry)> + Send + 'a>;
 
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> =
-    Box<dyn Iterator<Item = (&'a HgPathBuf, &'a HgPathBuf)> + Send + 'a>;
+    Box<dyn Iterator<Item = (&'a HgPath, &'a HgPath)> + Send + 'a>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {
