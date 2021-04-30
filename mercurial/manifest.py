@@ -42,7 +42,7 @@ propertycache = util.propertycache
 FASTDELTA_TEXTDIFF_THRESHOLD = 1000
 
 
-def _parse(data):
+def _parse(nodelen, data):
     # This method does a little bit of excessive-looking
     # precondition checking. This is so that the behavior of this
     # class exactly matches its C counterpart to try and help
@@ -63,7 +63,7 @@ def _parse(data):
             nl -= 1
         else:
             flags = b''
-        if nl not in (40, 64):
+        if nl != 2 * nodelen:
             raise ValueError(b'Invalid manifest line')
 
         yield f, bin(n), flags
@@ -131,7 +131,7 @@ class lazymanifestiterentries(object):
         else:
             hlen = nlpos - zeropos - 1
             flags = b''
-        if hlen not in (40, 64):
+        if hlen != 2 * self.lm._nodelen:
             raise error.StorageError(b'Invalid manifest line')
         hashval = unhexlify(
             data, self.lm.extrainfo[self.pos], zeropos + 1, hlen
@@ -176,12 +176,14 @@ class _lazymanifest(object):
 
     def __init__(
         self,
+        nodelen,
         data,
         positions=None,
         extrainfo=None,
         extradata=None,
         hasremovals=False,
     ):
+        self._nodelen = nodelen
         if positions is None:
             self.positions = self.findlines(data)
             self.extrainfo = [0] * len(self.positions)
@@ -288,7 +290,7 @@ class _lazymanifest(object):
             hlen -= 1
         else:
             flags = b''
-        if hlen not in (40, 64):
+        if hlen != 2 * self._nodelen:
             raise error.StorageError(b'Invalid manifest line')
         hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, hlen)
         return (hashval, flags)
@@ -344,6 +346,7 @@ class _lazymanifest(object):
     def copy(self):
         # XXX call _compact like in C?
         return _lazymanifest(
+            self._nodelen,
             self.data,
             self.positions,
             self.extrainfo,
@@ -454,7 +457,7 @@ class _lazymanifest(object):
 
     def filtercopy(self, filterfn):
         # XXX should be optimized
-        c = _lazymanifest(b'')
+        c = _lazymanifest(self._nodelen, b'')
         for f, n, fl in self.iterentries():
             if filterfn(f):
                 c[f] = n, fl
@@ -469,8 +472,9 @@ except AttributeError:
 
 @interfaceutil.implementer(repository.imanifestdict)
 class manifestdict(object):
-    def __init__(self, data=b''):
-        self._lm = _lazymanifest(data)
+    def __init__(self, nodelen, data=b''):
+        self._nodelen = nodelen
+        self._lm = _lazymanifest(nodelen, data)
 
     def __getitem__(self, key):
         return self._lm[key][0]
@@ -578,14 +582,14 @@ class manifestdict(object):
             return self.copy()
 
         if self._filesfastpath(match):
-            m = manifestdict()
+            m = manifestdict(self._nodelen)
             lm = self._lm
             for fn in match.files():
                 if fn in lm:
                     m._lm[fn] = lm[fn]
             return m
 
-        m = manifestdict()
+        m = manifestdict(self._nodelen)
         m._lm = self._lm.filtercopy(match)
         return m
 
@@ -628,7 +632,7 @@ class manifestdict(object):
             return b''
 
     def copy(self):
-        c = manifestdict()
+        c = manifestdict(self._nodelen)
         c._lm = self._lm.copy()
         return c
 
@@ -795,6 +799,7 @@ class treemanifest(object):
         self._dir = dir
         self.nodeconstants = nodeconstants
         self._node = self.nodeconstants.nullid
+        self._nodelen = self.nodeconstants.nodelen
         self._loadfunc = _noop
         self._copyfunc = _noop
         self._dirty = False
@@ -1322,7 +1327,7 @@ class treemanifest(object):
 
     def parse(self, text, readsubtree):
         selflazy = self._lazydirs
-        for f, n, fl in _parse(text):
+        for f, n, fl in _parse(self._nodelen, text):
             if fl == b't':
                 f = f + b'/'
                 # False below means "doesn't need to be copied" and can use the
@@ -2019,7 +2024,7 @@ class manifestlog(object):
 class memmanifestctx(object):
     def __init__(self, manifestlog):
         self._manifestlog = manifestlog
-        self._manifestdict = manifestdict()
+        self._manifestdict = manifestdict(manifestlog.nodeconstants.nodelen)
 
     def _storage(self):
         return self._manifestlog.getstorage(b'')
@@ -2081,8 +2086,9 @@ class manifestctx(object):
 
     def read(self):
         if self._data is None:
-            if self._node == self._manifestlog.nodeconstants.nullid:
-                self._data = manifestdict()
+            nc = self._manifestlog.nodeconstants
+            if self._node == nc.nullid:
+                self._data = manifestdict(nc.nodelen)
             else:
                 store = self._storage()
                 if self._node in store.fulltextcache:
@@ -2091,7 +2097,7 @@ class manifestctx(object):
                     text = store.revision(self._node)
                     arraytext = bytearray(text)
                     store.fulltextcache[self._node] = arraytext
-                self._data = manifestdict(text)
+                self._data = manifestdict(nc.nodelen, text)
         return self._data
 
     def readfast(self, shallow=False):
@@ -2118,7 +2124,7 @@ class manifestctx(object):
         store = self._storage()
         r = store.rev(self._node)
         d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
-        return manifestdict(d)
+        return manifestdict(store.nodeconstants.nodelen, d)
 
     def find(self, key):
         return self.read().find(key)
@@ -2244,7 +2250,7 @@ class treemanifestctx(object):
         if shallow:
             r = store.rev(self._node)
             d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
-            return manifestdict(d)
+            return manifestdict(store.nodeconstants.nodelen, d)
         else:
             # Need to perform a slow delta
             r0 = store.deltaparent(store.rev(self._node))
@@ -2273,7 +2279,9 @@ class treemanifestctx(object):
             return self.readdelta(shallow=shallow)
 
         if shallow:
-            return manifestdict(store.revision(self._node))
+            return manifestdict(
+                store.nodeconstants.nodelen, store.revision(self._node)
+            )
         else:
             return self.read()
 
