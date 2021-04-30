@@ -45,7 +45,7 @@ pub struct DirstateMap<'on_disk> {
 /// names. However `BTreeMap` would waste time always re-comparing the same
 /// string prefix.
 pub(super) type ChildNodes<'on_disk> =
-    FastHashMap<WithBasename<HgPathBuf>, Node<'on_disk>>;
+    FastHashMap<WithBasename<Cow<'on_disk, HgPath>>, Node<'on_disk>>;
 
 /// Represents a file or a directory
 #[derive(Default)]
@@ -99,9 +99,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
             self.on_disk,
             |path, entry, copy_source| {
                 let tracked = entry.state.is_tracked();
-                let node = Self::get_or_insert_node_tracing_ancestors(
+                let node = Self::get_or_insert_node(
                     &mut self.root,
                     path,
+                    WithBasename::to_cow_borrowed,
                     |ancestor| {
                         if tracked {
                             ancestor.tracked_descendants_count += 1
@@ -181,16 +182,12 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
-    fn get_or_insert_node<'tree>(
+    fn get_or_insert_node<'tree, 'path>(
         root: &'tree mut ChildNodes<'on_disk>,
-        path: &HgPath,
-    ) -> &'tree mut Node<'on_disk> {
-        Self::get_or_insert_node_tracing_ancestors(root, path, |_| {})
-    }
-
-    fn get_or_insert_node_tracing_ancestors<'tree>(
-        root: &'tree mut ChildNodes<'on_disk>,
-        path: &HgPath,
+        path: &'path HgPath,
+        to_cow: impl Fn(
+            WithBasename<&'path HgPath>,
+        ) -> WithBasename<Cow<'on_disk, HgPath>>,
         mut each_ancestor: impl FnMut(&mut Node),
     ) -> &'tree mut Node<'on_disk> {
         let mut child_nodes = root;
@@ -204,7 +201,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             // map already contains that key, without introducing double
             // lookup?
             let child_node =
-                child_nodes.entry(ancestor_path.to_owned()).or_default();
+                child_nodes.entry(to_cow(ancestor_path)).or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
                 each_ancestor(child_node);
                 ancestor_path = next;
@@ -228,9 +225,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 _ => 0,
             };
 
-        let node = Self::get_or_insert_node_tracing_ancestors(
+        let node = Self::get_or_insert_node(
             &mut self.root,
             path,
+            WithBasename::to_cow_owned,
             |ancestor| {
                 // We can’t use `+= increment` because the counter is unsigned,
                 // and we want debug builds to detect accidental underflow
@@ -593,7 +591,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         key: HgPathBuf,
         value: HgPathBuf,
     ) -> Option<HgPathBuf> {
-        let node = Self::get_or_insert_node(&mut self.root, &key);
+        let node = Self::get_or_insert_node(
+            &mut self.root,
+            &key,
+            WithBasename::to_cow_owned,
+            |_ancestor| {},
+        );
         if node.copy_source.is_none() {
             self.nodes_with_copy_source_count += 1
         }

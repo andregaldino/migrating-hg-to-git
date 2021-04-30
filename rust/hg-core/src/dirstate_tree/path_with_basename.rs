@@ -1,5 +1,5 @@
 use crate::utils::hg_path::HgPath;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 
 /// Wraps `HgPath` or `HgPathBuf` to make it behave "as" its last path
 /// component, a.k.a. its base name (as in Python’s `os.path.basename`), but
@@ -81,10 +81,17 @@ impl<T: AsRef<HgPath> + Ord> Ord for WithBasename<T> {
     }
 }
 
-impl<T: ?Sized + ToOwned> WithBasename<&'_ T> {
-    pub fn to_owned(&self) -> WithBasename<T::Owned> {
+impl<'a> WithBasename<&'a HgPath> {
+    pub fn to_cow_borrowed(self) -> WithBasename<Cow<'a, HgPath>> {
         WithBasename {
-            full_path: self.full_path.to_owned(),
+            full_path: Cow::Borrowed(self.full_path),
+            base_name_start: self.base_name_start,
+        }
+    }
+
+    pub fn to_cow_owned<'b>(self) -> WithBasename<Cow<'b, HgPath>> {
+        WithBasename {
+            full_path: Cow::Owned(self.full_path.to_owned()),
             base_name_start: self.base_name_start,
         }
     }
