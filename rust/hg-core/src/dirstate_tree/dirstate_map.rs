@@ -61,15 +61,6 @@ pub(super) struct Node {
 }
 
 impl Node {
-    /// Whether this node has a `DirstateEntry` with `.state.is_tracked()`
-    fn is_tracked_file(&self) -> bool {
-        if let Some(entry) = &self.entry {
-            entry.state.is_tracked()
-        } else {
-            false
-        }
-    }
-
     pub(super) fn state(&self) -> Option<EntryState> {
         self.entry.as_ref().map(|entry| entry.state)
     }
@@ -117,32 +108,18 @@ impl DirstateMap {
         root: &'tree mut ChildNodes,
         path: &HgPath,
     ) -> Option<&'tree mut Node> {
-        Self::each_and_get(root, path, |_| {})
+        Self::get_node_mut_tracing_ancestors(root, path, |_| {})
     }
 
-    /// Call `each` for each ancestor node of the one at `path` (not including
-    /// that node itself), starting from nearest the root.
+    /// Same as `get_node_mut`, and calls `each_ancestor` for each ancestor of
+    /// the node.
     ///
-    /// Panics (possibly after some calls to `each`) if there is no node at
-    /// `path`.
-    fn for_each_ancestor_node<'tree>(
-        &mut self,
-        path: &HgPath,
-        each: impl FnMut(&mut Node),
-    ) {
-        let parent = path.parent();
-        if !parent.is_empty() {
-            Self::each_and_get(&mut self.root, parent, each)
-                .expect("missing dirstate node");
-        }
-    }
-
-    /// Common implementation detail of `get_node_mut` and
-    /// `for_each_ancestor_node`
-    fn each_and_get<'tree>(
+    /// Note that `each_ancestor` may be called (with what would be ancestors)
+    /// even if it turns out there is no node at `path`.
+    fn get_node_mut_tracing_ancestors<'tree>(
         root: &'tree mut ChildNodes,
         path: &HgPath,
-        mut each: impl FnMut(&mut Node),
+        mut each_ancestor: impl FnMut(&mut Node),
     ) -> Option<&'tree mut Node> {
         let mut children = root;
         let mut components = path.components();
@@ -150,8 +127,8 @@ impl DirstateMap {
             components.next().expect("expected at least one components");
         loop {
             let child = children.get_mut(component)?;
-            each(child);
             if let Some(next_component) = components.next() {
+                each_ancestor(child);
                 component = next_component;
                 children = &mut child.children;
             } else {
@@ -163,6 +140,14 @@ impl DirstateMap {
     fn get_or_insert_node<'tree>(
         root: &'tree mut ChildNodes,
         path: &HgPath,
+    ) -> &'tree mut Node {
+        Self::get_or_insert_node_tracing_ancestors(root, path, |_| {})
+    }
+
+    fn get_or_insert_node_tracing_ancestors<'tree>(
+        root: &'tree mut ChildNodes,
+        path: &HgPath,
+        mut each_ancestor: impl FnMut(&mut Node),
     ) -> &'tree mut Node {
         let mut child_nodes = root;
         let mut inclusive_ancestor_paths =
@@ -177,6 +162,7 @@ impl DirstateMap {
             let child_node =
                 child_nodes.entry(ancestor_path.to_owned()).or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
+                each_ancestor(child_node);
                 ancestor_path = next;
                 child_nodes = &mut child_node.children;
             } else {
@@ -185,52 +171,37 @@ impl DirstateMap {
         }
     }
 
-    /// The meaning of `new_copy_source` is:
-    ///
-    /// * `Some(Some(x))`: set `Node::copy_source` to `Some(x)`
-    /// * `Some(None)`: set `Node::copy_source` to `None`
-    /// * `None`: leave `Node::copy_source` unchanged
-    fn add_file_node(
+    fn add_or_remove_file(
         &mut self,
         path: &HgPath,
+        old_state: EntryState,
         new_entry: DirstateEntry,
-        new_copy_source: Option<Option<HgPathBuf>>,
     ) {
-        let node = Self::get_or_insert_node(&mut self.root, path);
-        if node.entry.is_none() {
-            self.nodes_with_entry_count += 1
-        }
-        if let Some(source) = &new_copy_source {
-            if node.copy_source.is_none() && source.is_some() {
-                self.nodes_with_copy_source_count += 1
-            }
-            if node.copy_source.is_some() && source.is_none() {
-                self.nodes_with_copy_source_count -= 1
-            }
-        }
         let tracked_count_increment =
-            match (node.is_tracked_file(), new_entry.state.is_tracked()) {
+            match (old_state.is_tracked(), new_entry.state.is_tracked()) {
                 (false, true) => 1,
                 (true, false) => -1,
                 _ => 0,
             };
 
-        node.entry = Some(new_entry);
-        if let Some(source) = new_copy_source {
-            node.copy_source = source
+        let node = Self::get_or_insert_node_tracing_ancestors(
+            &mut self.root,
+            path,
+            |ancestor| {
+                // We can’t use `+= increment` because the counter is unsigned,
+                // and we want debug builds to detect accidental underflow
+                // through zero
+                match tracked_count_increment {
+                    1 => ancestor.tracked_descendants_count += 1,
+                    -1 => ancestor.tracked_descendants_count -= 1,
+                    _ => {}
+                }
+            },
+        );
+        if node.entry.is_none() {
+            self.nodes_with_entry_count += 1
         }
-        // Borrow of `self.root` through `node` ends here
-
-        match tracked_count_increment {
-            1 => self.for_each_ancestor_node(path, |node| {
-                node.tracked_descendants_count += 1
-            }),
-            // We can’t use `+= -1` because the counter is unsigned
-            -1 => self.for_each_ancestor_node(path, |node| {
-                node.tracked_descendants_count -= 1
-            }),
-            _ => {}
-        }
+        node.entry = Some(new_entry)
     }
 
     fn iter_nodes<'a>(
@@ -329,17 +300,17 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
     fn add_file(
         &mut self,
         filename: &HgPath,
-        _old_state: EntryState,
+        old_state: EntryState,
         entry: DirstateEntry,
     ) -> Result<(), DirstateMapError> {
-        self.add_file_node(filename, entry, None);
+        self.add_or_remove_file(filename, old_state, entry);
         Ok(())
     }
 
     fn remove_file(
         &mut self,
         filename: &HgPath,
-        _old_state: EntryState,
+        old_state: EntryState,
         size: i32,
     ) -> Result<(), DirstateMapError> {
         let entry = DirstateEntry {
@@ -348,17 +319,25 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
             size,
             mtime: 0,
         };
-        self.add_file_node(filename, entry, None);
+        self.add_or_remove_file(filename, old_state, entry);
         Ok(())
     }
 
     fn drop_file(
         &mut self,
         filename: &HgPath,
-        _old_state: EntryState,
+        old_state: EntryState,
     ) -> Result<bool, DirstateMapError> {
-        if let Some(node) = Self::get_node_mut(&mut self.root, filename) {
-            let was_tracked = node.is_tracked_file();
+        let was_tracked = old_state.is_tracked();
+        if let Some(node) = Self::get_node_mut_tracing_ancestors(
+            &mut self.root,
+            filename,
+            |ancestor| {
+                if was_tracked {
+                    ancestor.tracked_descendants_count -= 1
+                }
+            },
+        ) {
             let had_entry = node.entry.is_some();
             let had_copy_source = node.copy_source.is_some();
 
@@ -374,13 +353,9 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
             if had_copy_source {
                 self.nodes_with_copy_source_count -= 1
             }
-            if was_tracked {
-                self.for_each_ancestor_node(filename, |node| {
-                    node.tracked_descendants_count -= 1
-                })
-            }
             Ok(had_entry)
         } else {
+            assert!(!was_tracked);
             Ok(false)
         }
     }
@@ -513,11 +488,30 @@ impl super::dispatch::DirstateMapMethods for DirstateMap {
         let parents = parse_dirstate_entries(
             file_contents,
             |path, entry, copy_source| {
-                self.add_file_node(
+                let tracked = entry.state.is_tracked();
+                let node = Self::get_or_insert_node_tracing_ancestors(
+                    &mut self.root,
                     path,
-                    *entry,
-                    Some(copy_source.map(HgPath::to_owned)),
-                )
+                    |ancestor| {
+                        if tracked {
+                            ancestor.tracked_descendants_count += 1
+                        }
+                    },
+                );
+                assert!(
+                    node.entry.is_none(),
+                    "duplicate dirstate entry in read"
+                );
+                assert!(
+                    node.copy_source.is_none(),
+                    "duplicate dirstate entry in read"
+                );
+                node.entry = Some(*entry);
+                node.copy_source = copy_source.map(HgPath::to_owned);
+                self.nodes_with_entry_count += 1;
+                if copy_source.is_some() {
+                    self.nodes_with_copy_source_count += 1
+                }
             },
         )?;
 
