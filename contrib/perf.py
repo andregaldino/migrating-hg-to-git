@@ -2598,10 +2598,13 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     header = struct.unpack(b'>I', data[0:4])[0]
     version = header & 0xFFFF
     if version == 1:
-        revlogio = revlog.revlogio()
         inline = header & (1 << 16)
     else:
         raise error.Abort(b'unsupported revlog version: %d' % version)
+
+    parse_index_v1 = getattr(revlog, 'parse_index_v1', None)
+    if parse_index_v1 is None:
+        parse_index_v1 = revlog.revlogio().parseindex
 
     rllen = len(rl)
 
@@ -2624,26 +2627,24 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
             fh.read()
 
     def parseindex():
-        revlogio.parseindex(data, inline)
+        parse_index_v1(data, inline)
 
     def getentry(revornode):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         index[revornode]
 
     def getentries(revs, count=1):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
 
         for i in range(count):
             for rev in revs:
                 index[rev]
 
     def resolvenode(node):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         rev = getattr(index, 'rev', None)
         if rev is None:
-            nodemap = getattr(
-                revlogio.parseindex(data, inline)[0], 'nodemap', None
-            )
+            nodemap = getattr(parse_index_v1(data, inline)[0], 'nodemap', None)
             # This only works for the C code.
             if nodemap is None:
                 return
@@ -2655,12 +2656,10 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
             pass
 
     def resolvenodes(nodes, count=1):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         rev = getattr(index, 'rev', None)
         if rev is None:
-            nodemap = getattr(
-                revlogio.parseindex(data, inline)[0], 'nodemap', None
-            )
+            nodemap = getattr(parse_index_v1(data, inline)[0], 'nodemap', None)
             # This only works for the C code.
             if nodemap is None:
                 return

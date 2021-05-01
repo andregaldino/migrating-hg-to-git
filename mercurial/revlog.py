@@ -37,8 +37,6 @@ from .revlogutils.constants import (
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_ENTRY_V0,
-    INDEX_ENTRY_V1,
-    INDEX_ENTRY_V2,
     INDEX_HEADER,
     REVLOGV0,
     REVLOGV1,
@@ -287,73 +285,66 @@ class revlogoldindex(list):
         return INDEX_ENTRY_V0.pack(*e2)
 
 
-class revlogoldio(object):
-    def parseindex(self, data, inline):
-        s = INDEX_ENTRY_V0.size
-        index = []
-        nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
-        n = off = 0
-        l = len(data)
-        while off + s <= l:
-            cur = data[off : off + s]
-            off += s
-            e = INDEX_ENTRY_V0.unpack(cur)
-            # transform to revlogv1 format
-            e2 = (
-                offset_type(e[0], 0),
-                e[1],
-                -1,
-                e[2],
-                e[3],
-                nodemap.get(e[4], nullrev),
-                nodemap.get(e[5], nullrev),
-                e[6],
-            )
-            index.append(e2)
-            nodemap[e[6]] = n
-            n += 1
+def parse_index_v0(data, inline):
+    s = INDEX_ENTRY_V0.size
+    index = []
+    nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})
+    n = off = 0
+    l = len(data)
+    while off + s <= l:
+        cur = data[off : off + s]
+        off += s
+        e = INDEX_ENTRY_V0.unpack(cur)
+        # transform to revlogv1 format
+        e2 = (
+            offset_type(e[0], 0),
+            e[1],
+            -1,
+            e[2],
+            e[3],
+            nodemap.get(e[4], nullrev),
+            nodemap.get(e[5], nullrev),
+            e[6],
+        )
+        index.append(e2)
+        nodemap[e[6]] = n
+        n += 1
 
-        index = revlogoldindex(index)
-        return index, None
+    index = revlogoldindex(index)
+    return index, None
+
+
+def parse_index_v1(data, inline):
+    # call the C implementation to parse the index data
+    index, cache = parsers.parse_index2(data, inline)
+    return index, cache
+
+
+def parse_index_v2(data, inline):
+    # call the C implementation to parse the index data
+    index, cache = parsers.parse_index2(data, inline, revlogv2=True)
+    return index, cache
+
+
+if util.safehasattr(parsers, 'parse_index_devel_nodemap'):
+
+    def parse_index_v1_nodemap(data, inline):
+        index, cache = parsers.parse_index_devel_nodemap(data, inline)
+        return index, cache
+
+
+else:
+    parse_index_v1_nodemap = None
+
+
+def parse_index_v1_mixed(data, inline):
+    index, cache = parse_index_v1(data, inline)
+    return rustrevlog.MixedIndex(index), cache
 
 
 # corresponds to uncompressed length of indexformatng (2 gigs, 4-byte
 # signed integer)
 _maxentrysize = 0x7FFFFFFF
-
-
-class revlogio(object):
-    def parseindex(self, data, inline):
-        # call the C implementation to parse the index data
-        index, cache = parsers.parse_index2(data, inline)
-        return index, cache
-
-
-class revlogv2io(object):
-    def parseindex(self, data, inline):
-        index, cache = parsers.parse_index2(data, inline, revlogv2=True)
-        return index, cache
-
-
-NodemapRevlogIO = None
-
-if util.safehasattr(parsers, 'parse_index_devel_nodemap'):
-
-    class NodemapRevlogIO(revlogio):
-        """A debug oriented IO class that return a PersistentNodeMapIndexObject
-
-        The PersistentNodeMapIndexObject object is meant to test the persistent nodemap feature.
-        """
-
-        def parseindex(self, data, inline):
-            index, cache = parsers.parse_index_devel_nodemap(data, inline)
-            return index, cache
-
-
-class rustrevlogio(revlogio):
-    def parseindex(self, data, inline):
-        index, cache = super(rustrevlogio, self).parseindex(data, inline)
-        return rustrevlog.MixedIndex(index), cache
 
 
 class revlog(object):
@@ -614,7 +605,7 @@ class revlog(object):
         devel_nodemap = (
             self.nodemap_file
             and opts.get(b'devel-force-nodemap', False)
-            and NodemapRevlogIO is not None
+            and parse_index_v1_nodemap is not None
         )
 
         use_rust_index = False
@@ -624,17 +615,17 @@ class revlog(object):
             else:
                 use_rust_index = self.opener.options.get(b'rust.index')
 
-        self._io = revlogio()
+        self._parse_index = parse_index_v1
         if self.version == REVLOGV0:
-            self._io = revlogoldio()
+            self._parse_index = parse_index_v0
         elif fmt == REVLOGV2:
-            self._io = revlogv2io()
+            self._parse_index = parse_index_v2
         elif devel_nodemap:
-            self._io = NodemapRevlogIO()
+            self._parse_index = parse_index_v1_nodemap
         elif use_rust_index:
-            self._io = rustrevlogio()
+            self._parse_index = parse_index_v1_mixed
         try:
-            d = self._io.parseindex(indexdata, self._inline)
+            d = self._parse_index(indexdata, self._inline)
             index, _chunkcache = d
             use_nodemap = (
                 not self._inline
@@ -2049,7 +2040,6 @@ class revlog(object):
         with self._indexfp(b'w') as fp:
             self.version &= ~FLAG_INLINE_DATA
             self._inline = False
-            io = self._io
             for i in self:
                 e = self.index.entry_binary(i, self.version)
                 fp.write(e)
@@ -2984,7 +2974,7 @@ class revlog(object):
         newrl = revlog(self.opener, newindexfile, newdatafile, censorable=True)
         newrl.version = self.version
         newrl._generaldelta = self._generaldelta
-        newrl._io = self._io
+        newrl._parse_index = self._parse_index
 
         for rev in self.revs():
             node = self.node(rev)
