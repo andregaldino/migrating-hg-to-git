@@ -367,7 +367,7 @@ static PyObject *index_entry_binary(indexObject *self, PyObject *args)
 	if (data == NULL)
 		return NULL;
 	if (rev == 0) {
-		// put the header at the start of the first entry
+		/* put the header at the start of the first entry */
 		memcpy(entry, data, self->hdrsize);
 		putbe32(header, entry);
 		return PyBytes_FromStringAndSize(entry, self->hdrsize);
