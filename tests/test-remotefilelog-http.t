@@ -14,7 +14,7 @@
   $ hg serve -p $HGPORT -d --pid-file=../hg1.pid -E ../error.log -A ../access.log
 
 Build a query string for later use:
-  $ GET=`hg debugdata -m 0 | $PYTHON -c \
+  $ GET=`hg debugdata -m 0 | "$PYTHON" -c \
   > 'import sys ; print([("?cmd=x_rfl_getfile&file=%s&node=%s" % tuple(s.split("\0"))) for s in sys.stdin.read().splitlines()][0])'`
 
   $ cd ..
