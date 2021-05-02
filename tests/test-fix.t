@@ -7,19 +7,21 @@ approximates the behavior of code formatters well enough for our tests.
   > from mercurial.utils.procutil import setbinary
   > setbinary(sys.stdin)
   > setbinary(sys.stdout)
+  > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+  > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
   > lines = set()
   > for arg in sys.argv[1:]:
   >   if arg == 'all':
-  >     sys.stdout.write(sys.stdin.read().upper())
+  >     stdout.write(stdin.read().upper())
   >     sys.exit(0)
   >   else:
   >     first, last = arg.split('-')
   >     lines.update(range(int(first), int(last) + 1))
-  > for i, line in enumerate(sys.stdin.readlines()):
+  > for i, line in enumerate(stdin.readlines()):
   >   if i + 1 in lines:
-  >     sys.stdout.write(line.upper())
+  >     stdout.write(line.upper())
   >   else:
-  >     sys.stdout.write(line)
+  >     stdout.write(line)
   > EOF
   $ TESTLINES="foo\nbar\nbaz\nqux\n"
   $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY
