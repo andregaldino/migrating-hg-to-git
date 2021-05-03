@@ -99,7 +99,8 @@ struct indexObjectStruct {
 	int ntlookups;          /* # lookups */
 	int ntmisses;           /* # lookups that miss the cache */
 	int inlined;
-	long hdrsize; /* size of index headers. Differs in v1 v.s. v2 format */
+	long entry_size; /* size of index headers. Differs in v1 v.s. v2 format
+	                  */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -123,10 +124,10 @@ static const char *const v2_tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
-static const long v1_hdrsize = 64;
+static const long v1_entry_size = 64;
 
 /* A Revlogv2 index entry is 96 bytes long. */
-static const long v2_hdrsize = 96;
+static const long v2_entry_size = 96;
 
 static void raise_revlog_error(void)
 {
@@ -164,7 +165,7 @@ cleanup:
 static const char *index_deref(indexObject *self, Py_ssize_t pos)
 {
 	if (pos >= self->length)
-		return self->added + (pos - self->length) * self->hdrsize;
+		return self->added + (pos - self->length) * self->entry_size;
 
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
@@ -181,7 +182,7 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 		return self->offsets[pos];
 	}
 
-	return (const char *)(self->buf.buf) + pos * self->hdrsize;
+	return (const char *)(self->buf.buf) + pos * self->entry_size;
 }
 
 /*
@@ -328,7 +329,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	if (self->hdrsize == v1_hdrsize) {
+	if (self->entry_size == v1_entry_size) {
 		return Py_BuildValue(v1_tuple_format, offset_flags, comp_len,
 		                     uncomp_len, base_rev, link_rev, parent_1,
 		                     parent_2, c_node_id, self->nodelen);
@@ -378,9 +379,10 @@ static PyObject *index_entry_binary(indexObject *self, PyObject *value)
 		return NULL;
 	if (rev == 0) {
 		/* the header is eating the start of the first entry */
-		return PyBytes_FromStringAndSize(data + 4, self->hdrsize - 4);
+		return PyBytes_FromStringAndSize(data + 4,
+		                                 self->entry_size - 4);
 	}
-	return PyBytes_FromStringAndSize(data, self->hdrsize);
+	return PyBytes_FromStringAndSize(data, self->entry_size);
 }
 
 /*
@@ -437,7 +439,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	const char *c_node_id;
 	char *data;
 
-	if (self->hdrsize == v1_hdrsize) {
+	if (self->entry_size == v1_entry_size) {
 		if (!PyArg_ParseTuple(obj, v1_tuple_format, &offset_flags,
 		                      &comp_len, &uncomp_len, &base_rev,
 		                      &link_rev, &parent_1, &parent_2,
@@ -464,15 +466,15 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (self->new_length == self->added_length) {
 		size_t new_added_length =
 		    self->added_length ? self->added_length * 2 : 4096;
-		void *new_added = PyMem_Realloc(self->added, new_added_length *
-		                                                 self->hdrsize);
+		void *new_added = PyMem_Realloc(
+		    self->added, new_added_length * self->entry_size);
 		if (!new_added)
 			return PyErr_NoMemory();
 		self->added = new_added;
 		self->added_length = new_added_length;
 	}
 	rev = self->length + self->new_length;
-	data = self->added + self->hdrsize * self->new_length++;
+	data = self->added + self->entry_size * self->new_length++;
 	putbe32(offset_flags >> 32, data);
 	putbe32(offset_flags & 0xffffffffU, data + 4);
 	putbe32(comp_len, data + 8);
@@ -484,11 +486,11 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	memcpy(data + 32, c_node_id, c_node_id_len);
 	/* Padding since SHA-1 is only 20 bytes for now */
 	memset(data + 32 + c_node_id_len, 0, 32 - c_node_id_len);
-	if (self->hdrsize != v1_hdrsize) {
+	if (self->entry_size != v1_entry_size) {
 		putbe64(sidedata_offset, data + 64);
 		putbe32(sidedata_comp_len, data + 72);
 		/* Padding for 96 bytes alignment */
-		memset(data + 76, 0, self->hdrsize - 76);
+		memset(data + 76, 0, self->entry_size - 76);
 	}
 
 	if (self->ntinitialized)
@@ -513,7 +515,7 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	const char *const sidedata_format = PY23("nkik", "nkik");
 #endif
 
-	if (self->hdrsize == v1_hdrsize || self->inlined) {
+	if (self->entry_size == v1_entry_size || self->inlined) {
 		/*
 		 There is a bug in the transaction handling when going from an
 	   inline revlog to a separate index and data file. Turn it off until
@@ -541,7 +543,7 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 
 	/* Find the newly added node, offset from the "already on-disk" length
 	 */
-	data = self->added + self->hdrsize * (rev - self->length);
+	data = self->added + self->entry_size * (rev - self->length);
 	putbe64(offset_flags, data);
 	putbe64(sidedata_offset, data + 64);
 	putbe32(sidedata_comp_len, data + 72);
@@ -2692,17 +2694,17 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 	const char *data = (const char *)self->buf.buf;
 	Py_ssize_t pos = 0;
 	Py_ssize_t end = self->buf.len;
-	long incr = self->hdrsize;
+	long incr = self->entry_size;
 	Py_ssize_t len = 0;
 
-	while (pos + self->hdrsize <= end && pos >= 0) {
+	while (pos + self->entry_size <= end && pos >= 0) {
 		uint32_t comp_len, sidedata_comp_len = 0;
 		/* 3rd element of header is length of compressed inline data */
 		comp_len = getbe32(data + pos + 8);
-		if (self->hdrsize == v2_hdrsize) {
+		if (self->entry_size == v2_entry_size) {
 			sidedata_comp_len = getbe32(data + pos + 72);
 		}
-		incr = self->hdrsize + comp_len + sidedata_comp_len;
+		incr = self->entry_size + comp_len + sidedata_comp_len;
 		if (offsets)
 			offsets[len] = data + pos;
 		len++;
@@ -2755,12 +2757,12 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (revlogv2 && PyObject_IsTrue(revlogv2)) {
-		self->hdrsize = v2_hdrsize;
+		self->entry_size = v2_entry_size;
 	} else {
-		self->hdrsize = v1_hdrsize;
+		self->entry_size = v1_entry_size;
 	}
 
-	if (self->hdrsize == v1_hdrsize) {
+	if (self->entry_size == v1_entry_size) {
 		self->nullentry =
 		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
 		                  -1, -1, -1, nullid, self->nodelen);
@@ -2791,11 +2793,11 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 			goto bail;
 		self->length = len;
 	} else {
-		if (size % self->hdrsize) {
+		if (size % self->entry_size) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
-		self->length = size / self->hdrsize;
+		self->length = size / self->entry_size;
 	}
 
 	return 0;
@@ -2913,7 +2915,7 @@ static PyGetSetDef index_getset[] = {
 };
 
 static PyMemberDef index_members[] = {
-    {"entry_size", T_LONG, offsetof(indexObject, hdrsize), 0,
+    {"entry_size", T_LONG, offsetof(indexObject, entry_size), 0,
      "size of an index entry"},
     {NULL} /* Sentinel */
 };
