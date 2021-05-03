@@ -54,7 +54,18 @@ class unionrevlog(revlog.revlog):
         for rev2 in self.revlog2:
             rev = self.revlog2.index[rev2]
             # rev numbers - in revlog2, very different from self.rev
-            _start, _csize, rsize, base, linkrev, p1rev, p2rev, node = rev
+            (
+                _start,
+                _csize,
+                rsize,
+                base,
+                linkrev,
+                p1rev,
+                p2rev,
+                node,
+                _sdo,
+                _sds,
+            ) = rev
             flags = _start & 0xFFFF
 
             if linkmapper is None:  # link is to same revlog

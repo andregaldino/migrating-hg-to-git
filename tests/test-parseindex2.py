@@ -49,6 +49,7 @@ def py_parseindex(data, inline):
         cache = (0, data)
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
+            e = e + (0, 0)
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -58,6 +59,7 @@ def py_parseindex(data, inline):
     else:
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
+            e = e + (0, 0)
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -240,7 +242,7 @@ class parseindex2tests(unittest.TestCase):
                 break
 
     def testminusone(self):
-        want = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
+        want = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
         self.assertEqual(want, got)  # inline data

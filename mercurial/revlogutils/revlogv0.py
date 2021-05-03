@@ -135,6 +135,8 @@ def parse_index_v0(data, inline):
             nodemap.get(e[4], node.nullrev),
             nodemap.get(e[5], node.nullrev),
             e[6],
+            0,  # no side data support
+            0,  # no side data support
         )
         index.append(e2)
         nodemap[e[6]] = n

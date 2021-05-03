@@ -335,18 +335,17 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	c_node_id = data + 32;
 
 	if (self->entry_size == v1_entry_size) {
-		return Py_BuildValue(v1_tuple_format, offset_flags, comp_len,
-		                     uncomp_len, base_rev, link_rev, parent_1,
-		                     parent_2, c_node_id, self->nodelen);
+		sidedata_offset = 0;
+		sidedata_comp_len = 0;
 	} else {
 		sidedata_offset = getbe64(data + 64);
 		sidedata_comp_len = getbe32(data + 72);
-
-		return Py_BuildValue(v2_tuple_format, offset_flags, comp_len,
-		                     uncomp_len, base_rev, link_rev, parent_1,
-		                     parent_2, c_node_id, self->nodelen,
-		                     sidedata_offset, sidedata_comp_len);
 	}
+
+	return Py_BuildValue(v2_tuple_format, offset_flags, comp_len,
+	                     uncomp_len, base_rev, link_rev, parent_1, parent_2,
+	                     c_node_id, self->nodelen, sidedata_offset,
+	                     sidedata_comp_len);
 }
 /*
  * Pack header information in binary
@@ -2769,15 +2768,9 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		self->entry_size = v1_entry_size;
 	}
 
-	if (self->format_version == format_v1) {
-		self->nullentry =
-		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
-		                  -1, -1, -1, nullid, self->nodelen);
-	} else {
-		self->nullentry =
-		    Py_BuildValue(PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0,
-		                  -1, -1, -1, -1, nullid, self->nodelen, 0, 0);
-	}
+	self->nullentry =
+	    Py_BuildValue(PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0, -1, -1,
+	                  -1, -1, nullid, self->nodelen, 0, 0);
 
 	if (!self->nullentry)
 		return -1;

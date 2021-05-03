@@ -53,7 +53,7 @@ class BaseIndexObject(object):
     # Size of a C long int, platform independent
     int_size = struct.calcsize(b'>i')
     # An empty index entry, used as a default value to be overridden, or nullrev
-    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid)
+    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
 
     @util.propertycache
     def entry_size(self):
@@ -122,9 +122,14 @@ class BaseIndexObject(object):
         else:
             index = self._calculate_index(i)
             data = self._data[index : index + self.entry_size]
-        r = self.index_format.unpack(data)
+        r = self._unpack_entry(data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
+        return r
+
+    def _unpack_entry(self, data):
+        r = self.index_format.unpack(data)
+        r = r + (0, 0)
         return r
 
     def pack_header(self, header):
@@ -135,7 +140,7 @@ class BaseIndexObject(object):
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
         entry = self[rev]
-        p = revlog_constants.INDEX_ENTRY_V1.pack(*entry)
+        p = revlog_constants.INDEX_ENTRY_V1.pack(*entry[:8])
         if rev == 0:
             p = p[revlog_constants.INDEX_HEADER.size :]
         return p
@@ -266,7 +271,6 @@ def parse_index2(data, inline, revlogv2=False):
 
 class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
-    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
 
     def replace_sidedata_info(
         self, i, sidedata_offset, sidedata_length, offset_flags
@@ -291,6 +295,9 @@ class Index2Mixin(object):
         else:
             msg = b"cannot rewrite entries outside of this transaction"
             raise KeyError(msg)
+
+    def _unpack_entry(self, data):
+        return self.index_format.unpack(data)
 
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
