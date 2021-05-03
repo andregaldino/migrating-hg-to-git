@@ -180,6 +180,7 @@ from .utils import (
     stringutil,
     urlutil,
 )
+from .interfaces import repository
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -1729,8 +1730,8 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
             part.addparam(
                 b'targetphase', b'%d' % phases.secret, mandatory=False
             )
-        if b'exp-sidedata-flag' in repo.requirements:
-            part.addparam(b'exp-sidedata', b'1')
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
+        part.addparam(b'exp-sidedata', b'1')
 
     if opts.get(b'streamv2', False):
         addpartbundlestream2(bundler, repo, stream=True)
@@ -2579,9 +2580,9 @@ def widen_bundle(
         part.addparam(b'version', cgversion)
         if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
-        if b'exp-sidedata-flag' in repo.requirements:
-            part.addparam(b'exp-sidedata', b'1')
-            wanted = format_remote_wanted_sidedata(repo)
-            part.addparam(b'exp-wanted-sidedata', wanted)
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
+        part.addparam(b'exp-sidedata', b'1')
+        wanted = format_remote_wanted_sidedata(repo)
+        part.addparam(b'exp-wanted-sidedata', wanted)
 
     return bundler

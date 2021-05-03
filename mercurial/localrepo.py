@@ -737,6 +737,9 @@ def makelocalrepository(baseui, path, intents=None):
     storevfs = store.vfs
     storevfs.options = resolvestorevfsoptions(ui, requirements, features)
 
+    if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
+        features.add(repository.REPO_FEATURE_SIDE_DATA)
+
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
     cachevfs.createmode = store.createmode

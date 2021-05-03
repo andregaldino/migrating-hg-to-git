@@ -43,6 +43,7 @@ from .utils import (
     stringutil,
     urlutil,
 )
+from .interfaces import repository
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -893,7 +894,7 @@ def _pushb2ctx(pushop, bundler):
         cgpart.addparam(b'version', version)
     if scmutil.istreemanifest(pushop.repo):
         cgpart.addparam(b'treemanifest', b'1')
-    if b'exp-sidedata-flag' in pushop.repo.requirements:
+    if repository.REPO_FEATURE_SIDE_DATA in pushop.repo.features:
         cgpart.addparam(b'exp-sidedata', b'1')
 
     def handlereply(op):
@@ -2427,7 +2428,7 @@ def _getbundlechangegrouppart(
     if scmutil.istreemanifest(repo):
         part.addparam(b'treemanifest', b'1')
 
-    if b'exp-sidedata-flag' in repo.requirements:
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
         part.addparam(b'exp-sidedata', b'1')
         sidedata = bundle2.format_remote_wanted_sidedata(repo)
         part.addparam(b'exp-wanted-sidedata', sidedata)
