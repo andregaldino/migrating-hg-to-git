@@ -1148,6 +1148,16 @@ coreconfigitem(
     b'revisions.prefixhexnode',
     default=False,
 )
+# "out of experimental" todo list.
+#
+# * to grow a docket file to at least store the last offset of the data
+#   file when rewriting sidedata.
+# * need a way of dealing with garbage data if we allow rewriting
+#   *existing* sidedata.
+# * Exchange-wise, we will also need to do something more efficient than
+#   keeping references to the affected revlogs, especially memory-wise when
+#   rewriting sidedata.
+# * Also... compress the sidedata? (this should be coming very soon)
 coreconfigitem(
     b'experimental',
     b'revlogv2',
@@ -1351,20 +1361,6 @@ coreconfigitem(
     b'format',
     b'use-persistent-nodemap',
     default=_persistent_nodemap_default,
-)
-# TODO needs to grow a docket file to at least store the last offset of the data
-# file when rewriting sidedata.
-# Will also need a way of dealing with garbage data if we allow rewriting
-# *existing* sidedata.
-# Exchange-wise, we will also need to do something more efficient than keeping
-# references to the affected revlogs, especially memory-wise when rewriting
-# sidedata.
-# Also... compress the sidedata? (this should be coming very soon)
-coreconfigitem(
-    b'format',
-    b'exp-revlogv2.2',
-    default=False,
-    experimental=True,
 )
 coreconfigitem(
     b'format',
