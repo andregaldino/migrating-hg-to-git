@@ -3118,7 +3118,7 @@ class revlog(object):
                 current_offset += len(serialized_sidedata)
 
         # rewrite the new index entries
-        with self._indexfp(b'w+') as fp:
+        with self._indexfp(b'r+') as fp:
             fp.seek(startrev * self.index.entry_size)
             for i, e in enumerate(new_entries):
                 rev = startrev + i
