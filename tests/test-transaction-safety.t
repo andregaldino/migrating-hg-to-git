@@ -46,13 +46,13 @@ synchronisation+output script:
   $ cat << EOF > script/external.sh
   > #!/bin/sh
   > $RUNTESTDIR/testlib/wait-on-file 5 $HG_TEST_FILE_EXT_UNLOCK $HG_TEST_FILE_EXT_WAITING
-  > hg log --rev 'tip' -T 'external: {rev} {desc}\n' > $TESTTMP/output/external.out
+  > hg log --rev 'tip' -T 'external: {rev} {desc}\n' > $TESTTMP/output/external.out 2>/dev/null
   > touch $HG_TEST_FILE_EXT_DONE
   > EOF
   $ chmod +x script/external.sh
   $ cat << EOF > script/internal.sh
   > #!/bin/sh
-  > hg log --rev 'tip' -T 'internal: {rev} {desc}\n' > $TESTTMP/output/internal.out
+  > hg log --rev 'tip' -T 'internal: {rev} {desc}\n' > $TESTTMP/output/internal.out 2>/dev/null
   > $RUNTESTDIR/testlib/wait-on-file 5 $HG_TEST_FILE_EXT_DONE $HG_TEST_FILE_EXT_UNLOCK
   > EOF
   $ chmod +x script/internal.sh
@@ -123,9 +123,9 @@ the repository should still be inline (for relevant format)
 
   $ make_one_commit first
   pre-commit: -1 
-  external: -1  (revlogv1 !)
-  external: 0 first (revlogv2 known-bad-output !)
-  internal: 0 first
+  external: -1 
+  internal: 0 first (revlogv1 !)
+  internal: -1  (revlogv2 known-bad-output !)
   post-tr:  0 first
 
 #if revlogv1
@@ -149,9 +149,9 @@ the repository should still be inline (for relevant format)
 
   $ make_one_commit second
   pre-commit: 0 first
-  external: 0 first (revlogv1 !)
-  external: 1 second (revlogv2 known-bad-output !)
-  internal: 1 second
+  external: 0 first
+  internal: 1 second (revlogv1 !)
+  internal: 0 first (revlogv2 known-bad-output !)
   post-tr:  1 second
 
 #if revlogv1
@@ -176,9 +176,9 @@ the repository should still be inline (for relevant format)
   $ make_one_pull 3
   pre-commit: 1 second
   warning: repository is unrelated
-  external: 1 second (revlogv1 !)
-  external: 5 r3 (revlogv2 known-bad-output !)
-  internal: 5 r3
+  external: 1 second
+  internal: 5 r3 (revlogv1 !)
+  internal: 1 second (revlogv2 known-bad-output !)
   post-tr:  5 r3
 
 #if revlogv1
@@ -202,9 +202,9 @@ the repository should no longer be inline (for relevant format)
 
   $ make_one_pull 400
   pre-commit: 5 r3
-  external: 5 r3 (revlogv1 !)
-  external: 402 r400 (revlogv2 known-bad-output !)
-  internal: 402 r400
+  external: 5 r3
+  internal: 402 r400 (revlogv1 !)
+  internal: 5 r3 (revlogv2 known-bad-output !)
   post-tr:  402 r400
 
 #if revlogv1
@@ -228,9 +228,9 @@ the repository should no longer be inline (for relevant format)
 
   $ make_one_commit third
   pre-commit: 402 r400
-  external: 402 r400 (revlogv1 !)
-  external: 403 third (revlogv2 known-bad-output !)
-  internal: 403 third
+  external: 402 r400
+  internal: 403 third (revlogv1 !)
+  internal: 402 r400 (revlogv2 known-bad-output !)
   post-tr:  403 third
 
 #if revlogv1
@@ -255,9 +255,9 @@ the repository should no longer be inline (for relevant format)
 
   $ make_one_pull tip
   pre-commit: 403 third
-  external: 403 third (revlogv1 !)
-  external: 503 r500 (revlogv2 known-bad-output !)
-  internal: 503 r500
+  external: 403 third
+  internal: 503 r500 (revlogv1 !)
+  internal: 403 third (revlogv2 known-bad-output !)
   post-tr:  503 r500
 
 #if revlogv1

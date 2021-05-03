@@ -443,12 +443,13 @@ class changelog(revlog.revlog):
         self._filteredrevs = val
         self._filteredrevs_hashcache = {}
 
+    def _write_docket(self, tr):
+        if not self._delayed:
+            super(changelog, self)._write_docket(tr)
+
     def delayupdate(self, tr):
         """delay visibility of index updates to other readers"""
-        if self._docket is not None:
-            return
-
-        if not self._delayed:
+        if self._docket is None and not self._delayed:
             if len(self) == 0:
                 self._divert = True
                 if self._realopener.exists(self._indexfile + b'.a'):
@@ -468,7 +469,9 @@ class changelog(revlog.revlog):
         self._delayed = False
         self.opener = self._realopener
         # move redirected index data back into place
-        if self._divert:
+        if self._docket is not None:
+            self._write_docket(tr)
+        elif self._divert:
             assert not self._delaybuf
             tmpname = self._indexfile + b".a"
             nfile = self.opener.open(tmpname)

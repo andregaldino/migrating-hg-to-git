@@ -2096,7 +2096,7 @@ class revlog(object):
                     try:
                         yield
                         if self._docket is not None:
-                            self._docket.write(transaction)
+                            self._write_docket(transaction)
                     finally:
                         self._writinghandles = None
                 finally:
@@ -2104,6 +2104,15 @@ class revlog(object):
             finally:
                 if dfh is not None:
                     dfh.close()
+
+    def _write_docket(self, transaction):
+        """write the current docket on disk
+
+        Exist as a method to help changelog to implement transaction logic
+
+        We could also imagine using the same transaction logic for all revlog
+        since docket are cheap."""
+        self._docket.write(transaction)
 
     def addrevision(
         self,
@@ -3186,18 +3195,6 @@ class revlog(object):
         if not helpers[1] and not helpers[2]:
             # Nothing to generate or remove
             return
-
-        # changelog implement some "delayed" writing mechanism that assume that
-        # all index data is writen in append mode and is therefor incompatible
-        # with the seeked write done in this method. The use of such "delayed"
-        # writing will soon be removed for revlog version that support side
-        # data, so for now, we only keep this simple assert to highlight the
-        # situation.
-        delayed = getattr(self, '_delayed', False)
-        diverted = getattr(self, '_divert', False)
-        if delayed and not diverted:
-            msg = "cannot rewrite_sidedata of a delayed revlog"
-            raise error.ProgrammingError(msg)
 
         new_entries = []
         # append the new sidedata
