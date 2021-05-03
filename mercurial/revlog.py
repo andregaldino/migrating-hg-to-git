@@ -2537,6 +2537,22 @@ class revlog(object):
             sidedata_compression_mode = COMP_MODE_PLAIN
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
             sidedata_offset = offset + deltainfo.deltalen
+            h, comp_sidedata = self.compress(serialized_sidedata)
+            if (
+                h != b'u'
+                and comp_sidedata[0:1] != b'\0'
+                and len(comp_sidedata) < len(serialized_sidedata)
+            ):
+                assert not h
+                if (
+                    comp_sidedata[0:1]
+                    == self._docket.default_compression_header
+                ):
+                    sidedata_compression_mode = COMP_MODE_DEFAULT
+                    serialized_sidedata = comp_sidedata
+                else:
+                    sidedata_compression_mode = COMP_MODE_INLINE
+                    serialized_sidedata = comp_sidedata
         else:
             serialized_sidedata = b""
             # Don't store the offset if the sidedata is empty, that way
