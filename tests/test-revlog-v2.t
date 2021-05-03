@@ -37,7 +37,7 @@ Unknown flags to revlog are rejected
   ...     fh.write(b'\xff\x00\xde\xad') and None
 
   $ hg log
-  abort: unknown flags (0xff00) in version 57005 revlog 00changelog.i
+  abort: unknown flags (0xff00) in version 57005 revlog 00changelog
   [50]
 
   $ cd ..

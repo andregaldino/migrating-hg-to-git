@@ -490,7 +490,7 @@ class revlog(object):
             if flags:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self._indexfile)
+                    % (flags >> 16, fmt, self.display_id)
                 )
 
             self._inline = False
@@ -500,7 +500,7 @@ class revlog(object):
             if flags & ~REVLOGV1_FLAGS:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self._indexfile)
+                    % (flags >> 16, fmt, self.display_id)
                 )
 
             self._inline = versionflags & FLAG_INLINE_DATA
@@ -510,7 +510,7 @@ class revlog(object):
             if flags & ~REVLOGV2_FLAGS:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self._indexfile)
+                    % (flags >> 16, fmt, self.display_id)
                 )
 
             # There is a bug in the transaction handling when going from an
@@ -523,7 +523,7 @@ class revlog(object):
 
         else:
             raise error.RevlogError(
-                _(b'unknown version (%d) in revlog %s') % (fmt, self._indexfile)
+                _(b'unknown version (%d) in revlog %s') % (fmt, self.display_id)
             )
 
         self.nodeconstants = sha1nodeconstants
@@ -2990,7 +2990,7 @@ class revlog(object):
         if version != state[b'expectedversion']:
             yield revlogproblem(
                 warning=_(b"warning: '%s' uses revlog format %d; expected %d")
-                % (self._indexfile, version, state[b'expectedversion'])
+                % (self.display_id, version, state[b'expectedversion'])
             )
 
         state[b'skipread'] = set()
