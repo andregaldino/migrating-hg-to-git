@@ -411,7 +411,7 @@ Check perf.py for historical portability
    >     from mercurial import (
    import newer module separately in try clause for early Mercurial
   contrib/perf.py:\d+: (re)
-   >     origindexpath = orig.opener.join(orig.indexfile)
+   >     origindexpath = orig.opener.join(indexfile)
    use getvfs()/getsvfs() for early Mercurial
   contrib/perf.py:\d+: (re)
    >     origdatapath = orig.opener.join(orig.datafile)

@@ -452,13 +452,13 @@ class changelog(revlog.revlog):
         if not self._delayed:
             if len(self) == 0:
                 self._divert = True
-                if self._realopener.exists(self.indexfile + b'.a'):
-                    self._realopener.unlink(self.indexfile + b'.a')
-                self.opener = _divertopener(self._realopener, self.indexfile)
+                if self._realopener.exists(self._indexfile + b'.a'):
+                    self._realopener.unlink(self._indexfile + b'.a')
+                self.opener = _divertopener(self._realopener, self._indexfile)
             else:
                 self._delaybuf = []
                 self.opener = _delayopener(
-                    self._realopener, self.indexfile, self._delaybuf
+                    self._realopener, self._indexfile, self._delaybuf
                 )
         self._delayed = True
         tr.addpending(b'cl-%i' % id(self), self._writepending)
@@ -471,12 +471,12 @@ class changelog(revlog.revlog):
         # move redirected index data back into place
         if self._divert:
             assert not self._delaybuf
-            tmpname = self.indexfile + b".a"
+            tmpname = self._indexfile + b".a"
             nfile = self.opener.open(tmpname)
             nfile.close()
-            self.opener.rename(tmpname, self.indexfile, checkambig=True)
+            self.opener.rename(tmpname, self._indexfile, checkambig=True)
         elif self._delaybuf:
-            fp = self.opener(self.indexfile, b'a', checkambig=True)
+            fp = self.opener(self._indexfile, b'a', checkambig=True)
             fp.write(b"".join(self._delaybuf))
             fp.close()
             self._delaybuf = None
@@ -489,8 +489,8 @@ class changelog(revlog.revlog):
         pretxnchangegroup"""
         if self._delaybuf:
             # make a temporary copy of the index
-            fp1 = self._realopener(self.indexfile)
-            pendingfilename = self.indexfile + b".a"
+            fp1 = self._realopener(self._indexfile)
+            pendingfilename = self._indexfile + b".a"
             # register as a temp file to ensure cleanup on failure
             tr.registertmp(pendingfilename)
             # write existing data
@@ -502,7 +502,7 @@ class changelog(revlog.revlog):
             # switch modes so finalize can simply rename
             self._delaybuf = None
             self._divert = True
-            self.opener = _divertopener(self._realopener, self.indexfile)
+            self.opener = _divertopener(self._realopener, self._indexfile)
 
         if self._divert:
             return True

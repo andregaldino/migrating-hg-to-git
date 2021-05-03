@@ -149,7 +149,7 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
     if revlog.nodemap_file is None:
         if force:
             revlog.nodemap_file = get_nodemap_file(
-                revlog.opener, revlog.indexfile
+                revlog.opener, revlog._indexfile
             )
         else:
             msg = "calling persist nodemap on a revlog without the feature enabled"

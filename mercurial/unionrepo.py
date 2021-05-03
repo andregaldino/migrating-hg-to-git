@@ -165,7 +165,7 @@ class unionchangelog(unionrevlog, changelog.changelog):
         linkmapper = None
         changelog2 = changelog.changelog(opener2)
         unionrevlog.__init__(
-            self, opener, self.indexfile, changelog2, linkmapper
+            self, opener, self._indexfile, changelog2, linkmapper
         )
 
 
@@ -174,7 +174,7 @@ class unionmanifest(unionrevlog, manifest.manifestrevlog):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener)
         manifest2 = manifest.manifestrevlog(nodeconstants, opener2)
         unionrevlog.__init__(
-            self, opener, self._revlog.indexfile, manifest2, linkmapper
+            self, opener, self._revlog._indexfile, manifest2, linkmapper
         )
 
 
@@ -183,7 +183,7 @@ class unionfilelog(filelog.filelog):
         filelog.filelog.__init__(self, opener, path)
         filelog2 = filelog.filelog(opener2, path)
         self._revlog = unionrevlog(
-            opener, self._revlog.indexfile, filelog2._revlog, linkmapper
+            opener, self._revlog._indexfile, filelog2._revlog, linkmapper
         )
         self._repo = repo
         self.repotiprev = self._revlog.repotiprev

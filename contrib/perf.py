@@ -2609,7 +2609,11 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     rl = cmdutil.openrevlog(repo, b'perfrevlogindex', file_, opts)
 
     opener = getattr(rl, 'opener')  # trick linter
-    indexfile = rl.indexfile
+    # compat with hg <= 5.8
+    indexfile = getattr(rl, '_indexfile', None)
+    if indexfile is None:
+        # compatibility with <= hg-5.8
+        indexfile = getattr(rl, 'indexfile')
     data = opener.read(indexfile)
 
     header = struct.unpack(b'>I', data[0:4])[0]
@@ -3031,7 +3035,11 @@ def _temprevlog(ui, orig, truncaterev):
     if util.safehasattr(orig, k):
         revlogkwargs[k] = getattr(orig, k)
 
-    origindexpath = orig.opener.join(orig.indexfile)
+    indexfile = getattr(orig, '_indexfile', None)
+    if indexfile is None:
+        # compatibility with <= hg-5.8
+        indexfile = getattr(orig, 'indexfile')
+    origindexpath = orig.opener.join(indexfile)
     origdatapath = orig.opener.join(orig.datafile)
     indexname = 'revlog.i'
     dataname = 'revlog.d'
@@ -3127,7 +3135,11 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
 
     def rlfh(rl):
         if rl._inline:
-            return getsvfs(repo)(rl.indexfile)
+            indexfile = getattr(rl, '_indexfile', None)
+            if indexfile is None:
+                # compatibility with <= hg-5.8
+                indexfile = getattr(rl, 'indexfile')
+            return getsvfs(repo)(indexfile)
         else:
             return getsvfs(repo)(rl.datafile)
 

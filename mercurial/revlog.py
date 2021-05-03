@@ -323,13 +323,13 @@ class revlog(object):
                 datafile = b'%s.%s' % (datafile, postfix)
         if postfix is not None:
             indexfile = b'%s.%s' % (indexfile, postfix)
-        self.indexfile = indexfile
+        self._indexfile = indexfile
         self.datafile = datafile
         self.nodemap_file = None
         self.postfix = postfix
         if persistentnodemap:
             self.nodemap_file = nodemaputil.get_nodemap_file(
-                opener, self.indexfile
+                opener, self._indexfile
             )
 
         self.opener = opener
@@ -490,7 +490,7 @@ class revlog(object):
             if flags:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.indexfile)
+                    % (flags >> 16, fmt, self._indexfile)
                 )
 
             self._inline = False
@@ -500,7 +500,7 @@ class revlog(object):
             if flags & ~REVLOGV1_FLAGS:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.indexfile)
+                    % (flags >> 16, fmt, self._indexfile)
                 )
 
             self._inline = versionflags & FLAG_INLINE_DATA
@@ -510,7 +510,7 @@ class revlog(object):
             if flags & ~REVLOGV2_FLAGS:
                 raise error.RevlogError(
                     _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.indexfile)
+                    % (flags >> 16, fmt, self._indexfile)
                 )
 
             # There is a bug in the transaction handling when going from an
@@ -523,7 +523,7 @@ class revlog(object):
 
         else:
             raise error.RevlogError(
-                _(b'unknown version (%d) in revlog %s') % (fmt, self.indexfile)
+                _(b'unknown version (%d) in revlog %s') % (fmt, self._indexfile)
             )
 
         self.nodeconstants = sha1nodeconstants
@@ -578,7 +578,7 @@ class revlog(object):
                         index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
-                _(b"index %s is corrupted") % self.indexfile
+                _(b"index %s is corrupted") % self._indexfile
             )
         self.index, self._chunkcache = d
         if not self._chunkcache:
@@ -604,7 +604,7 @@ class revlog(object):
             args['checkambig'] = self._checkambig
         if mode == b'w':
             args['atomictemp'] = True
-        return self.opener(self.indexfile, **args)
+        return self.opener(self._indexfile, **args)
 
     def _datafp(self, mode=b'r'):
         """file object for the revlog's data file"""
@@ -729,7 +729,7 @@ class revlog(object):
                 or node in self.nodeconstants.wdirfilenodeids
             ):
                 raise error.WdirUnsupported
-            raise error.LookupError(node, self.indexfile, _(b'no node'))
+            raise error.LookupError(node, self._indexfile, _(b'no node'))
 
     # Accessors for index entries.
 
@@ -1393,7 +1393,7 @@ class revlog(object):
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
                 raise error.AmbiguousPrefixLookupError(
-                    id, self.indexfile, _(b'ambiguous identifier')
+                    id, self._indexfile, _(b'ambiguous identifier')
                 )
             # fall through to slow path that filters hidden revisions
         except (AttributeError, ValueError):
@@ -1419,7 +1419,7 @@ class revlog(object):
                         self._pcache[id] = nl[0]
                         return nl[0]
                     raise error.AmbiguousPrefixLookupError(
-                        id, self.indexfile, _(b'ambiguous identifier')
+                        id, self._indexfile, _(b'ambiguous identifier')
                     )
                 if maybewdir:
                     raise error.WdirUnsupported
@@ -1439,7 +1439,7 @@ class revlog(object):
         if n:
             return n
 
-        raise error.LookupError(id, self.indexfile, _(b'no match found'))
+        raise error.LookupError(id, self._indexfile, _(b'no match found'))
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
@@ -1453,7 +1453,7 @@ class revlog(object):
                 # single 'ff...' match
                 return True
             if matchednode is None:
-                raise error.LookupError(node, self.indexfile, _(b'no node'))
+                raise error.LookupError(node, self._indexfile, _(b'no node'))
             return True
 
         def maybewdir(prefix):
@@ -1474,7 +1474,9 @@ class revlog(object):
                 return disambiguate(hexnode, length)
             except error.RevlogError:
                 if node != self.nodeconstants.wdirid:
-                    raise error.LookupError(node, self.indexfile, _(b'no node'))
+                    raise error.LookupError(
+                        node, self._indexfile, _(b'no node')
+                    )
             except AttributeError:
                 # Fall through to pure code
                 pass
@@ -1545,7 +1547,7 @@ class revlog(object):
                         b'offset %d, got %d'
                     )
                     % (
-                        self.indexfile if self._inline else self.datafile,
+                        self._indexfile if self._inline else self.datafile,
                         length,
                         realoffset,
                         len(d) - startoffset,
@@ -1561,7 +1563,7 @@ class revlog(object):
                     b'%d, got %d'
                 )
                 % (
-                    self.indexfile if self._inline else self.datafile,
+                    self._indexfile if self._inline else self.datafile,
                     length,
                     offset,
                     len(d),
@@ -1932,11 +1934,11 @@ class revlog(object):
                     revornode = templatefilters.short(hex(node))
                 raise error.RevlogError(
                     _(b"integrity check failed on %s:%s")
-                    % (self.indexfile, pycompat.bytestr(revornode))
+                    % (self._indexfile, pycompat.bytestr(revornode))
                 )
         except error.RevlogError:
             if self._censorable and storageutil.iscensoredtext(text):
-                raise error.CensoredNodeError(self.indexfile, node, text)
+                raise error.CensoredNodeError(self._indexfile, node, text)
             raise
 
     def _enforceinlinesize(self, tr, fp=None):
@@ -1953,10 +1955,10 @@ class revlog(object):
         ):
             return
 
-        troffset = tr.findoffset(self.indexfile)
+        troffset = tr.findoffset(self._indexfile)
         if troffset is None:
             raise error.RevlogError(
-                _(b"%s not found in the transaction") % self.indexfile
+                _(b"%s not found in the transaction") % self._indexfile
             )
         trindex = 0
         tr.add(self.datafile, 0)
@@ -1988,7 +1990,7 @@ class revlog(object):
             # the temp file replace the real index when we exit the context
             # manager
 
-        tr.replace(self.indexfile, trindex * self.index.entry_size)
+        tr.replace(self._indexfile, trindex * self.index.entry_size)
         nodemaputil.setup_persistent_nodemap(tr, self)
         self._chunkclear()
 
@@ -2024,7 +2026,7 @@ class revlog(object):
         """
         if link == nullrev:
             raise error.RevlogError(
-                _(b"attempted to add linkrev -1 to %s") % self.indexfile
+                _(b"attempted to add linkrev -1 to %s") % self._indexfile
             )
 
         if sidedata is None:
@@ -2049,7 +2051,7 @@ class revlog(object):
                 _(
                     b"%s: size of %d bytes exceeds maximum revlog storage of 2GiB"
                 )
-                % (self.indexfile, len(rawtext))
+                % (self._indexfile, len(rawtext))
             )
 
         node = node or self.hash(rawtext, p1, p2)
@@ -2220,14 +2222,14 @@ class revlog(object):
         """
         if node == self.nullid:
             raise error.RevlogError(
-                _(b"%s: attempt to add null revision") % self.indexfile
+                _(b"%s: attempt to add null revision") % self._indexfile
             )
         if (
             node == self.nodeconstants.wdirid
             or node in self.nodeconstants.wdirfilenodeids
         ):
             raise error.RevlogError(
-                _(b"%s: attempt to add wdir revision") % self.indexfile
+                _(b"%s: attempt to add wdir revision") % self._indexfile
             )
 
         if self._inline:
@@ -2247,12 +2249,12 @@ class revlog(object):
                 # offset is "as if" it were in the .d file, so we need to add on
                 # the size of the entry metadata.
                 self._concurrencychecker(
-                    ifh, self.indexfile, offset + curr * self.index.entry_size
+                    ifh, self._indexfile, offset + curr * self.index.entry_size
                 )
             else:
                 # Entries in the .i are a consistent size.
                 self._concurrencychecker(
-                    ifh, self.indexfile, curr * self.index.entry_size
+                    ifh, self._indexfile, curr * self.index.entry_size
                 )
                 self._concurrencychecker(dfh, self.datafile, offset)
 
@@ -2369,7 +2371,7 @@ class revlog(object):
         curr = len(self) - 1
         if not self._inline:
             transaction.add(self.datafile, offset)
-            transaction.add(self.indexfile, curr * len(entry))
+            transaction.add(self._indexfile, curr * len(entry))
             if data[0]:
                 dfh.write(data[0])
             dfh.write(data[1])
@@ -2378,7 +2380,7 @@ class revlog(object):
             ifh.write(entry)
         else:
             offset += curr * self.index.entry_size
-            transaction.add(self.indexfile, offset)
+            transaction.add(self._indexfile, offset)
             ifh.write(entry)
             ifh.write(data[0])
             ifh.write(data[1])
@@ -2417,10 +2419,10 @@ class revlog(object):
         ifh = self._indexfp(b"a+")
         isize = r * self.index.entry_size
         if self._inline:
-            transaction.add(self.indexfile, end + isize)
+            transaction.add(self._indexfile, end + isize)
             dfh = None
         else:
-            transaction.add(self.indexfile, isize)
+            transaction.add(self._indexfile, isize)
             transaction.add(self.datafile, end)
             dfh = self._datafp(b"a+")
 
@@ -2452,12 +2454,12 @@ class revlog(object):
                 for p in (p1, p2):
                     if not self.index.has_node(p):
                         raise error.LookupError(
-                            p, self.indexfile, _(b'unknown parent')
+                            p, self._indexfile, _(b'unknown parent')
                         )
 
                 if not self.index.has_node(deltabase):
                     raise error.LookupError(
-                        deltabase, self.indexfile, _(b'unknown delta base')
+                        deltabase, self._indexfile, _(b'unknown delta base')
                     )
 
                 baserev = self.rev(deltabase)
@@ -2470,7 +2472,7 @@ class revlog(object):
                     newlen = len(delta) - hlen
                     if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
                         raise error.CensoredBaseError(
-                            self.indexfile, self.node(baserev)
+                            self._indexfile, self.node(baserev)
                         )
 
                 if not flags and self._peek_iscensored(baserev, delta, flush):
@@ -2575,7 +2577,7 @@ class revlog(object):
         else:
             end += rev * self.index.entry_size
 
-        transaction.add(self.indexfile, end)
+        transaction.add(self._indexfile, end)
 
         # then reset internal state in memory to forget those revisions
         self._revisioncache = None
@@ -2608,7 +2610,7 @@ class revlog(object):
             dd = 0
 
         try:
-            f = self.opener(self.indexfile)
+            f = self.opener(self._indexfile)
             f.seek(0, io.SEEK_END)
             actual = f.tell()
             f.close()
@@ -2629,7 +2631,7 @@ class revlog(object):
         return (dd, di)
 
     def files(self):
-        res = [self.indexfile]
+        res = [self._indexfile]
         if not self._inline:
             res.append(self.datafile)
         return res
@@ -2847,7 +2849,7 @@ class revlog(object):
                     flags = flags | new_flags[0] & ~new_flags[1]
 
                 ifh = destrevlog.opener(
-                    destrevlog.indexfile, b'a+', checkambig=False
+                    destrevlog._indexfile, b'a+', checkambig=False
                 )
                 dfh = None
                 if not destrevlog._inline:
@@ -2899,7 +2901,7 @@ class revlog(object):
             self.opener,
             target=self.target,
             postfix=b'tmpcensored',
-            indexfile=self.indexfile,
+            indexfile=self._indexfile,
             censorable=True,
         )
         newrl._format_version = self._format_version
@@ -2952,11 +2954,11 @@ class revlog(object):
                 rawtext, tr, self.linkrev(rev), p1, p2, node, self.flags(rev)
             )
 
-        tr.addbackup(self.indexfile, location=b'store')
+        tr.addbackup(self._indexfile, location=b'store')
         if not self._inline:
             tr.addbackup(self.datafile, location=b'store')
 
-        self.opener.rename(newrl.indexfile, self.indexfile)
+        self.opener.rename(newrl._indexfile, self._indexfile)
         if not self._inline:
             self.opener.rename(newrl.datafile, self.datafile)
 
@@ -2981,7 +2983,7 @@ class revlog(object):
         if version != state[b'expectedversion']:
             yield revlogproblem(
                 warning=_(b"warning: '%s' uses revlog format %d; expected %d")
-                % (self.indexfile, version, state[b'expectedversion'])
+                % (self._indexfile, version, state[b'expectedversion'])
             )
 
         state[b'skipread'] = set()
@@ -3079,7 +3081,7 @@ class revlog(object):
         d = {}
 
         if exclusivefiles:
-            d[b'exclusivefiles'] = [(self.opener, self.indexfile)]
+            d[b'exclusivefiles'] = [(self.opener, self._indexfile)]
             if not self._inline:
                 d[b'exclusivefiles'].append((self.opener, self.datafile))
 

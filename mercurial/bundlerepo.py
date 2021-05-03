@@ -84,12 +84,12 @@ class bundlerevlog(revlog.revlog):
             for p in (p1, p2):
                 if not self.index.has_node(p):
                     raise error.LookupError(
-                        p, self.indexfile, _(b"unknown parent")
+                        p, self._indexfile, _(b"unknown parent")
                     )
 
             if not self.index.has_node(deltabase):
                 raise LookupError(
-                    deltabase, self.indexfile, _(b'unknown delta base')
+                    deltabase, self._indexfile, _(b'unknown delta base')
                 )
 
             baserev = self.rev(deltabase)
@@ -180,7 +180,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
             self,
             opener,
             (revlog_constants.KIND_CHANGELOG, None),
-            self.indexfile,
+            self._indexfile,
             cgunpacker,
             linkmapper,
         )
@@ -201,7 +201,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
             self,
             opener,
             (revlog_constants.KIND_MANIFESTLOG, dir),
-            self._revlog.indexfile,
+            self._revlog._indexfile,
             cgunpacker,
             linkmapper,
         )
@@ -233,7 +233,7 @@ class bundlefilelog(filelog.filelog):
             opener,
             # XXX should use the unencoded path
             target=(revlog_constants.KIND_FILELOG, path),
-            indexfile=self._revlog.indexfile,
+            indexfile=self._revlog._indexfile,
             cgunpacker=cgunpacker,
             linkmapper=linkmapper,
         )
