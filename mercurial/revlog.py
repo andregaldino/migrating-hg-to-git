@@ -1810,7 +1810,8 @@ class revlog(object):
                 if inline:
                     chunkstart += (rev + 1) * iosize
                 chunklength = length(rev)
-                ladd(decomp(buffer(data, chunkstart - offset, chunklength)))
+                c = buffer(data, chunkstart - offset, chunklength)
+                ladd(decomp(c))
 
         return l
 
