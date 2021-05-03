@@ -1945,7 +1945,7 @@ class revlog(object):
                 )
         except error.RevlogError:
             if self._censorable and storageutil.iscensoredtext(text):
-                raise error.CensoredNodeError(self._indexfile, node, text)
+                raise error.CensoredNodeError(self.display_id, node, text)
             raise
 
     def _enforceinlinesize(self, tr, fp=None):
@@ -2479,7 +2479,7 @@ class revlog(object):
                     newlen = len(delta) - hlen
                     if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
                         raise error.CensoredBaseError(
-                            self._indexfile, self.node(baserev)
+                            self.display_id, self.node(baserev)
                         )
 
                 if not flags and self._peek_iscensored(baserev, delta, flush):
