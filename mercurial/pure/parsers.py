@@ -297,7 +297,12 @@ class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
 
     def replace_sidedata_info(
-        self, rev, sidedata_offset, sidedata_length, offset_flags
+        self,
+        rev,
+        sidedata_offset,
+        sidedata_length,
+        offset_flags,
+        compression_mode,
     ):
         """
         Replace an existing index entry's sidedata offset and length with new
@@ -316,6 +321,7 @@ class Index2Mixin(object):
             entry[0] = offset_flags
             entry[8] = sidedata_offset
             entry[9] = sidedata_length
+            entry[11] = compression_mode
             entry = tuple(entry)
             new = self._pack_entry(entry)
             self._extra[rev - self._lgt] = new

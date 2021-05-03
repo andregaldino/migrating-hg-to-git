@@ -3381,6 +3381,26 @@ class revlog(object):
                 serialized_sidedata = sidedatautil.serialize_sidedata(
                     new_sidedata
                 )
+
+                sidedata_compression_mode = COMP_MODE_INLINE
+                if serialized_sidedata and self.hassidedata:
+                    sidedata_compression_mode = COMP_MODE_PLAIN
+                    h, comp_sidedata = self.compress(serialized_sidedata)
+                    if (
+                        h != b'u'
+                        and comp_sidedata[0] != b'\0'
+                        and len(comp_sidedata) < len(serialized_sidedata)
+                    ):
+                        assert not h
+                        if (
+                            comp_sidedata[0]
+                            == self._docket.default_compression_header
+                        ):
+                            sidedata_compression_mode = COMP_MODE_DEFAULT
+                            serialized_sidedata = comp_sidedata
+                        else:
+                            sidedata_compression_mode = COMP_MODE_INLINE
+                            serialized_sidedata = comp_sidedata
                 if entry[8] != 0 or entry[9] != 0:
                     # rewriting entries that already have sidedata is not
                     # supported yet, because it introduces garbage data in the
@@ -3395,6 +3415,7 @@ class revlog(object):
                     current_offset,
                     len(serialized_sidedata),
                     new_offset_flags,
+                    sidedata_compression_mode,
                 )
 
                 # the sidedata computation might have move the file cursors around

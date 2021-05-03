@@ -533,12 +533,13 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 {
 	uint64_t offset_flags, sidedata_offset;
 	int rev;
+	char comp_mode;
 	Py_ssize_t sidedata_comp_len;
 	char *data;
 #if LONG_MAX == 0x7fffffffL
-	const char *const sidedata_format = PY23("nKiK", "nKiK");
+	const char *const sidedata_format = PY23("nKiKB", "nKiKB");
 #else
-	const char *const sidedata_format = PY23("nkik", "nkik");
+	const char *const sidedata_format = PY23("nkikB", "nkikB");
 #endif
 
 	if (self->entry_size == v1_entry_size || self->inlined) {
@@ -553,7 +554,7 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	}
 
 	if (!PyArg_ParseTuple(args, sidedata_format, &rev, &sidedata_offset,
-	                      &sidedata_comp_len, &offset_flags))
+	                      &sidedata_comp_len, &offset_flags, &comp_mode))
 		return NULL;
 
 	if (rev < 0 || rev >= index_length(self)) {
@@ -573,6 +574,7 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	putbe64(offset_flags, data);
 	putbe64(sidedata_offset, data + 64);
 	putbe32(sidedata_comp_len, data + 72);
+	data[76] = (data[76] & ~(3 << 2)) | ((comp_mode & 3) << 2);
 
 	Py_RETURN_NONE;
 }
