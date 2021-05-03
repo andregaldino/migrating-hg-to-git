@@ -1167,13 +1167,6 @@ class imanifeststorage(interfaceutil.Interface):
         """An ``ifilerevisionssequence`` instance."""
     )
 
-    indexfile = interfaceutil.Attribute(
-        """Path of revlog index file.
-
-        TODO this is revlog specific and should not be exposed.
-        """
-    )
-
     opener = interfaceutil.Attribute(
         """VFS opener to use to access underlying files used for storage.
 

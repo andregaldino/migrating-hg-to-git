@@ -201,7 +201,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
             self,
             opener,
             (revlog_constants.KIND_MANIFESTLOG, dir),
-            self.indexfile,
+            self._revlog.indexfile,
             cgunpacker,
             linkmapper,
         )

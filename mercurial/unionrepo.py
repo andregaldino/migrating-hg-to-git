@@ -174,7 +174,7 @@ class unionmanifest(unionrevlog, manifest.manifestrevlog):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener)
         manifest2 = manifest.manifestrevlog(nodeconstants, opener2)
         unionrevlog.__init__(
-            self, opener, self.indexfile, manifest2, linkmapper
+            self, opener, self._revlog.indexfile, manifest2, linkmapper
         )
 
 

@@ -1907,14 +1907,6 @@ class manifestrevlog(object):
         )
 
     @property
-    def indexfile(self):
-        return self._revlog.indexfile
-
-    @indexfile.setter
-    def indexfile(self, value):
-        self._revlog.indexfile = value
-
-    @property
     def opener(self):
         return self._revlog.opener
 
