@@ -82,14 +82,14 @@ def _copyrevlog(tr, destrepo, oldrl, rl_type, unencodedname):
     newvfs = newrl.opener
     oldindex = oldvfs.join(oldrl._indexfile)
     newindex = newvfs.join(newrl._indexfile)
-    olddata = oldvfs.join(oldrl.datafile)
-    newdata = newvfs.join(newrl.datafile)
+    olddata = oldvfs.join(oldrl._datafile)
+    newdata = newvfs.join(newrl._datafile)
 
     with newvfs(newrl._indexfile, b'w'):
         pass  # create all the directories
 
     util.copyfile(oldindex, newindex)
-    copydata = oldrl.opener.exists(oldrl.datafile)
+    copydata = oldrl.opener.exists(oldrl._datafile)
     if copydata:
         util.copyfile(olddata, newdata)
 

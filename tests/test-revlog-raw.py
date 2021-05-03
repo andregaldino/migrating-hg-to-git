@@ -206,7 +206,7 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
         try:
             ifh = dlog.opener(dlog._indexfile, b'a+')
             if not dlog._inline:
-                dfh = dlog.opener(dlog.datafile, b'a+')
+                dfh = dlog.opener(dlog._datafile, b'a+')
             dlog._addrevision(
                 rlog.node(r), text, tr, r, p1, p2, flags, cachedelta, ifh, dfh
             )

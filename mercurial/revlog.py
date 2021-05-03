@@ -324,7 +324,7 @@ class revlog(object):
         if postfix is not None:
             indexfile = b'%s.%s' % (indexfile, postfix)
         self._indexfile = indexfile
-        self.datafile = datafile
+        self._datafile = datafile
         self.nodemap_file = None
         self.postfix = postfix
         if persistentnodemap:
@@ -608,7 +608,7 @@ class revlog(object):
 
     def _datafp(self, mode=b'r'):
         """file object for the revlog's data file"""
-        return self.opener(self.datafile, mode=mode)
+        return self.opener(self._datafile, mode=mode)
 
     @contextlib.contextmanager
     def _datareadfp(self, existingfp=None):
@@ -1547,7 +1547,7 @@ class revlog(object):
                         b'offset %d, got %d'
                     )
                     % (
-                        self._indexfile if self._inline else self.datafile,
+                        self._indexfile if self._inline else self._datafile,
                         length,
                         realoffset,
                         len(d) - startoffset,
@@ -1563,7 +1563,7 @@ class revlog(object):
                     b'%d, got %d'
                 )
                 % (
-                    self._indexfile if self._inline else self.datafile,
+                    self._indexfile if self._inline else self._datafile,
                     length,
                     offset,
                     len(d),
@@ -1961,7 +1961,7 @@ class revlog(object):
                 _(b"%s not found in the transaction") % self._indexfile
             )
         trindex = 0
-        tr.add(self.datafile, 0)
+        tr.add(self._datafile, 0)
 
         if fp:
             fp.flush()
@@ -2256,7 +2256,7 @@ class revlog(object):
                 self._concurrencychecker(
                     ifh, self._indexfile, curr * self.index.entry_size
                 )
-                self._concurrencychecker(dfh, self.datafile, offset)
+                self._concurrencychecker(dfh, self._datafile, offset)
 
         p1r, p2r = self.rev(p1), self.rev(p2)
 
@@ -2370,7 +2370,7 @@ class revlog(object):
 
         curr = len(self) - 1
         if not self._inline:
-            transaction.add(self.datafile, offset)
+            transaction.add(self._datafile, offset)
             transaction.add(self._indexfile, curr * len(entry))
             if data[0]:
                 dfh.write(data[0])
@@ -2423,7 +2423,7 @@ class revlog(object):
             dfh = None
         else:
             transaction.add(self._indexfile, isize)
-            transaction.add(self.datafile, end)
+            transaction.add(self._datafile, end)
             dfh = self._datafp(b"a+")
 
         def flush():
@@ -2572,7 +2572,7 @@ class revlog(object):
         # first truncate the files on disk
         end = self.start(rev)
         if not self._inline:
-            transaction.add(self.datafile, end)
+            transaction.add(self._datafile, end)
             end = rev * self.index.entry_size
         else:
             end += rev * self.index.entry_size
@@ -2633,7 +2633,7 @@ class revlog(object):
     def files(self):
         res = [self._indexfile]
         if not self._inline:
-            res.append(self.datafile)
+            res.append(self._datafile)
         return res
 
     def emitrevisions(
@@ -2853,7 +2853,7 @@ class revlog(object):
                 )
                 dfh = None
                 if not destrevlog._inline:
-                    dfh = destrevlog.opener(destrevlog.datafile, b'a+')
+                    dfh = destrevlog.opener(destrevlog._datafile, b'a+')
                 try:
                     destrevlog._addrevision(
                         node,
@@ -2956,11 +2956,11 @@ class revlog(object):
 
         tr.addbackup(self._indexfile, location=b'store')
         if not self._inline:
-            tr.addbackup(self.datafile, location=b'store')
+            tr.addbackup(self._datafile, location=b'store')
 
         self.opener.rename(newrl._indexfile, self._indexfile)
         if not self._inline:
-            self.opener.rename(newrl.datafile, self.datafile)
+            self.opener.rename(newrl._datafile, self._datafile)
 
         self.clearcaches()
         self._loadindex()
@@ -3083,7 +3083,7 @@ class revlog(object):
         if exclusivefiles:
             d[b'exclusivefiles'] = [(self.opener, self._indexfile)]
             if not self._inline:
-                d[b'exclusivefiles'].append((self.opener, self.datafile))
+                d[b'exclusivefiles'].append((self.opener, self._datafile))
 
         if sharedfiles:
             d[b'sharedfiles'] = []

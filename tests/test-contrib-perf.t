@@ -414,7 +414,7 @@ Check perf.py for historical portability
    >     origindexpath = orig.opener.join(indexfile)
    use getvfs()/getsvfs() for early Mercurial
   contrib/perf.py:\d+: (re)
-   >     origdatapath = orig.opener.join(orig.datafile)
+   >     origdatapath = orig.opener.join(datafile)
    use getvfs()/getsvfs() for early Mercurial
   contrib/perf.py:\d+: (re)
    >         vfs = vfsmod.vfs(tmpdir)

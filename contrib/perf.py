@@ -3040,7 +3040,9 @@ def _temprevlog(ui, orig, truncaterev):
         # compatibility with <= hg-5.8
         indexfile = getattr(orig, 'indexfile')
     origindexpath = orig.opener.join(indexfile)
-    origdatapath = orig.opener.join(orig.datafile)
+
+    datafile = getattr(orig, '_datafile', getattr(orig, 'datafile'))
+    origdatapath = orig.opener.join(datafile)
     indexname = 'revlog.i'
     dataname = 'revlog.d'
 
@@ -3141,7 +3143,8 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
                 indexfile = getattr(rl, 'indexfile')
             return getsvfs(repo)(indexfile)
         else:
-            return getsvfs(repo)(rl.datafile)
+            datafile = getattr(rl, 'datafile', getattr(rl, 'datafile'))
+            return getsvfs(repo)(datafile)
 
     def doread():
         rl.clearcaches()
