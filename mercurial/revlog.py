@@ -3192,7 +3192,7 @@ class revlog(object):
                     # rewriting entries that already have sidedata is not
                     # supported yet, because it introduces garbage data in the
                     # revlog.
-                    msg = b"Rewriting existing sidedata is not supported yet"
+                    msg = b"rewriting existing sidedata is not supported yet"
                     raise error.Abort(msg)
 
                 # Apply (potential) flags to add and to remove after running
