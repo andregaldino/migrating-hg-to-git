@@ -233,7 +233,7 @@ class bundlefilelog(filelog.filelog):
             opener,
             # XXX should use the unencoded path
             target=(revlog_constants.KIND_FILELOG, path),
-            indexfile=self.indexfile,
+            indexfile=self._revlog.indexfile,
             cgunpacker=cgunpacker,
             linkmapper=linkmapper,
         )

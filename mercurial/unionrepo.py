@@ -183,7 +183,7 @@ class unionfilelog(filelog.filelog):
         filelog.filelog.__init__(self, opener, path)
         filelog2 = filelog.filelog(opener2, path)
         self._revlog = unionrevlog(
-            opener, self.indexfile, filelog2._revlog, linkmapper
+            opener, self._revlog.indexfile, filelog2._revlog, linkmapper
         )
         self._repo = repo
         self.repotiprev = self._revlog.repotiprev

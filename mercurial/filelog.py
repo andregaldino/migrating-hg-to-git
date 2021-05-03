@@ -228,18 +228,6 @@ class filelog(object):
             storedsize=storedsize,
         )
 
-    # TODO these aren't part of the interface and aren't internal methods.
-    # Callers should be fixed to not use them.
-
-    # Used by bundlefilelog, unionfilelog.
-    @property
-    def indexfile(self):
-        return self._revlog.indexfile
-
-    @indexfile.setter
-    def indexfile(self, value):
-        self._revlog.indexfile = value
-
     # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):
         if not isinstance(destrevlog, filelog):
