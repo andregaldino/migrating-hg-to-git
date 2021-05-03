@@ -290,17 +290,17 @@ class Index2Mixin(object):
         if rev < 0:
             raise KeyError
         self._check_index(rev)
-        sidedata_format = b">Qi"
-        packed_size = struct.calcsize(sidedata_format)
-        if rev >= self._lgt:
-            packed = _pack(sidedata_format, sidedata_offset, sidedata_length)
-            old = self._extra[rev - self._lgt]
-            offset_flags = struct.pack(b">Q", offset_flags)
-            new = offset_flags + old[8:64] + packed + old[64 + packed_size :]
-            self._extra[rev - self._lgt] = new
-        else:
+        if rev < self._lgt:
             msg = b"cannot rewrite entries outside of this transaction"
             raise KeyError(msg)
+        else:
+            entry = list(self[rev])
+            entry[0] = offset_flags
+            entry[8] = sidedata_offset
+            entry[9] = sidedata_length
+            entry = tuple(entry)
+            new = self._pack_entry(entry)
+            self._extra[rev - self._lgt] = new
 
     def _unpack_entry(self, data):
         return self.index_format.unpack(data)
