@@ -51,7 +51,6 @@ use git diff to see rename
 #if sidedata
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
@@ -59,7 +58,6 @@ use git diff to see rename
 #if pull
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
@@ -67,7 +65,6 @@ use git diff to see rename
 #if push
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > EOF
 #endif
@@ -75,7 +72,6 @@ use git diff to see rename
 #if pull-upgrade
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = no
   > exp-use-copies-side-data-changeset = no
   > [experimental]
   > changegroup4 = yes
@@ -85,7 +81,6 @@ use git diff to see rename
 #if push-upgrade
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = no
   > exp-use-copies-side-data-changeset = no
   > [experimental]
   > changegroup4 = yes
@@ -1652,7 +1647,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #if upgraded
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > EOF
   $ hg debugformat -v
@@ -1687,7 +1681,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #if upgraded-parallel
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > [experimental]
   > worker.repository-upgrade=yes
@@ -1743,7 +1736,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #if pull-upgrade
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > [experimental]
   > changegroup4 = yes
@@ -1781,7 +1773,6 @@ We upgrade a repository that is not using sidedata (the filelog case) and
 #if push-upgrade
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = yes
   > [experimental]
   > changegroup4 = yes

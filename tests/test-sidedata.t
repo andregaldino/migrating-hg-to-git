@@ -10,7 +10,7 @@ Check data can be written/read from sidedata
   > testsidedata=$TESTDIR/testlib/ext-sidedata.py
   > EOF
 
-  $ hg init test-sidedata --config format.exp-use-side-data=yes
+  $ hg init test-sidedata --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cd test-sidedata
   $ echo aaa > a
   $ hg add a
@@ -48,7 +48,7 @@ Right now, sidedata has not upgrade support
 Check that we can upgrade to sidedata
 -------------------------------------
 
-  $ hg init up-no-side-data --config format.exp-use-side-data=no
+  $ hg init up-no-side-data --config experimental.revlogv2=no
   $ hg debugformat -v -R up-no-side-data
   format-variant     repo config default
   fncache:            yes    yes     yes
@@ -64,7 +64,7 @@ Check that we can upgrade to sidedata
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugformat -v -R up-no-side-data --config format.exp-use-side-data=yes
+  $ hg debugformat -v -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   format-variant     repo config default
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
@@ -79,12 +79,12 @@ Check that we can upgrade to sidedata
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo -R up-no-side-data --config format.exp-use-side-data=yes > /dev/null
+  $ hg debugupgraderepo -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data > /dev/null
 
 Check that we can downgrade from sidedata
 -----------------------------------------
 
-  $ hg init up-side-data --config format.exp-use-side-data=yes
+  $ hg init up-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ hg debugformat -v -R up-side-data
   format-variant     repo config default
   fncache:            yes    yes     yes
@@ -100,7 +100,7 @@ Check that we can downgrade from sidedata
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugformat -v -R up-side-data --config format.exp-use-side-data=no
+  $ hg debugformat -v -R up-side-data --config experimental.revlogv2=no
   format-variant     repo config default
   fncache:            yes    yes     yes
   dotencode:          yes    yes     yes
@@ -115,4 +115,4 @@ Check that we can downgrade from sidedata
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo -R up-side-data --config format.exp-use-side-data=no > /dev/null
+  $ hg debugupgraderepo -R up-side-data --config experimental.revlogv2=no > /dev/null

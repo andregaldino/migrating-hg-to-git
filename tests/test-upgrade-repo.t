@@ -1448,13 +1448,13 @@ upgrade from hgrc
 
 #endif
 
-Check upgrading to a side-data revlog
--------------------------------------
+Check upgrading to a revlog format supporting sidedata
+------------------------------------------------------
 
 upgrade
 
   $ hg debugsidedata -c 0
-  $ hg --config format.exp-use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" --quiet
+  $ hg --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -1462,8 +1462,8 @@ upgrade
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
      removed: revlogv1
-     added: exp-revlogv2.2, exp-sidedata-flag (zstd !)
-     added: exp-revlogv2.2, exp-sidedata-flag, sparserevlog (no-zstd !)
+     added: exp-revlogv2.2 (zstd !)
+     added: exp-revlogv2.2, sparserevlog (no-zstd !)
   
   processed revlogs:
     - all-filelogs
@@ -1488,7 +1488,6 @@ upgrade
   $ cat .hg/requires
   dotencode
   exp-revlogv2.2
-  exp-sidedata-flag
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -1502,14 +1501,14 @@ upgrade
 
 downgrade
 
-  $ hg debugupgraderepo --config format.exp-use-side-data=no --run --no-backup --quiet
+  $ hg debugupgraderepo --config experimental.revlogv2=no --run --no-backup --quiet
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, fncache, generaldelta, sparserevlog, store (no-zstd !)
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
-     removed: exp-revlogv2.2, exp-sidedata-flag
+     removed: exp-revlogv2.2
      added: revlogv1
   
   processed revlogs:
@@ -1546,8 +1545,8 @@ downgrade
 upgrade from hgrc
 
   $ cat >> .hg/hgrc << EOF
-  > [format]
-  > exp-use-side-data=yes
+  > [experimental]
+  > revlogv2=enable-unstable-format-and-corrupt-my-data
   > EOF
   $ hg debugupgraderepo --run --no-backup --quiet
   upgrade will perform the following actions:
@@ -1557,7 +1556,7 @@ upgrade from hgrc
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, sparserevlog, store (zstd no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store (rust !)
      removed: revlogv1
-     added: exp-revlogv2.2, exp-sidedata-flag
+     added: exp-revlogv2.2
   
   processed revlogs:
     - all-filelogs
@@ -1582,7 +1581,6 @@ upgrade from hgrc
   $ cat .hg/requires
   dotencode
   exp-revlogv2.2
-  exp-sidedata-flag
   fncache
   generaldelta
   persistent-nodemap (rust !)

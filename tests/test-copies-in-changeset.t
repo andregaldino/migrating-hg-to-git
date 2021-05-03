@@ -445,8 +445,9 @@ downgrading
   $ hg debugsidedata -m -- 0
   $ cat << EOF > .hg/hgrc
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = no
+  > [experimental]
+  > revlogv2 = enable-unstable-format-and-corrupt-my-data
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
   $ hg debugformat -v
