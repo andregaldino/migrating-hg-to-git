@@ -449,11 +449,13 @@ class cg1unpacker(object):
 
             if sidedata_helpers:
                 if revlog_constants.KIND_CHANGELOG in sidedata_helpers[1]:
-                    cl.rewrite_sidedata(sidedata_helpers, clstart, clend - 1)
+                    cl.rewrite_sidedata(
+                        trp, sidedata_helpers, clstart, clend - 1
+                    )
                 for mf, (startrev, endrev) in touched_manifests.items():
-                    mf.rewrite_sidedata(sidedata_helpers, startrev, endrev)
+                    mf.rewrite_sidedata(trp, sidedata_helpers, startrev, endrev)
                 for fl, (startrev, endrev) in touched_filelogs.items():
-                    fl.rewrite_sidedata(sidedata_helpers, startrev, endrev)
+                    fl.rewrite_sidedata(trp, sidedata_helpers, startrev, endrev)
 
             # making sure the value exists
             tr.changes.setdefault(b'changegroup-count-changesets', 0)

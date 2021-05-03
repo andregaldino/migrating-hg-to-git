@@ -3120,7 +3120,7 @@ class revlog(object):
 
         return d
 
-    def rewrite_sidedata(self, helpers, startrev, endrev):
+    def rewrite_sidedata(self, transaction, helpers, startrev, endrev):
         if not self.hassidedata:
             return
         # inline are not yet supported because they suffer from an issue when
