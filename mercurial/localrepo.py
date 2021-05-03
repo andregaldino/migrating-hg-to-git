@@ -3531,8 +3531,6 @@ def newreporequirements(ui, createopts):
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
         requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        # generaldelta is implied by revlogv2.
-        requirements.discard(requirementsmod.GENERALDELTA_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
