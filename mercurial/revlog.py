@@ -2016,7 +2016,7 @@ class revlog(object):
 
             if existing_handles:
                 # switched from inline to conventional reopen the index
-                ifh = self._indexfp(b"a+")
+                ifh = self._indexfp(b"r+")
                 self._writinghandles = (ifh, new_dfh)
                 new_dfh = None
         finally:
@@ -2037,11 +2037,23 @@ class revlog(object):
                 dsize = self.end(r - 1)
             dfh = None
             if not self._inline:
-                dfh = self._datafp(b"a+")
+                try:
+                    dfh = self._datafp(b"r+")
+                    dfh.seek(0, os.SEEK_END)
+                except IOError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise
+                    dfh = self._datafp(b"w+")
                 transaction.add(self._datafile, dsize)
             try:
                 isize = r * self.index.entry_size
-                ifh = self._indexfp(b"a+")
+                try:
+                    ifh = self._indexfp(b"r+")
+                    ifh.seek(0, os.SEEK_END)
+                except IOError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise
+                    ifh = self._indexfp(b"w+")
                 if self._inline:
                     transaction.add(self._indexfile, dsize + isize)
                 else:
@@ -3174,6 +3186,8 @@ class revlog(object):
                 entry = (new_offset_flags,) + entry[1:8]
                 entry += (current_offset, len(serialized_sidedata))
 
+                # the sidedata computation might have move the file cursors around
+                dfh.seek(current_offset, os.SEEK_SET)
                 dfh.write(serialized_sidedata)
                 new_entries.append(entry)
                 current_offset += len(serialized_sidedata)
