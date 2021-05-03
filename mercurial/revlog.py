@@ -385,15 +385,15 @@ class revlog(object):
         opts = self.opener.options
 
         if b'revlogv2' in opts:
-            newversionflags = REVLOGV2 | FLAG_INLINE_DATA
+            new_header = REVLOGV2 | FLAG_INLINE_DATA
         elif b'revlogv1' in opts:
-            newversionflags = REVLOGV1 | FLAG_INLINE_DATA
+            new_header = REVLOGV1 | FLAG_INLINE_DATA
             if b'generaldelta' in opts:
-                newversionflags |= FLAG_GENERALDELTA
+                new_header |= FLAG_GENERALDELTA
         elif b'revlogv0' in self.opener.options:
-            newversionflags = REVLOGV0
+            new_header = REVLOGV0
         else:
-            newversionflags = REVLOG_DEFAULT_VERSION
+            new_header = REVLOG_DEFAULT_VERSION
 
         if b'chunkcachesize' in opts:
             self._chunkcachesize = opts[b'chunkcachesize']
@@ -444,7 +444,7 @@ class revlog(object):
                 % self._chunkcachesize
             )
         force_nodemap = opts.get(b'devel-force-nodemap', False)
-        return newversionflags, mmapindexthreshold, force_nodemap
+        return new_header, mmapindexthreshold, force_nodemap
 
     def _get_data(self, filepath, mmap_threshold):
         """return a file content with or without mmap
@@ -466,7 +466,7 @@ class revlog(object):
 
     def _loadindex(self):
 
-        newversionflags, mmapindexthreshold, force_nodemap = self._init_opts()
+        new_header, mmapindexthreshold, force_nodemap = self._init_opts()
 
         if self.postfix is None:
             index_file = b'%s.i' % self.radix
@@ -488,7 +488,7 @@ class revlog(object):
             header = INDEX_HEADER.unpack(indexdata[:4])[0]
             self._initempty = False
         else:
-            header = newversionflags
+            header = new_header
 
         flags = self._format_flags = header & ~0xFFFF
         fmt = self._format_version = header & 0xFFFF
