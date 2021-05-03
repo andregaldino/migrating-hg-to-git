@@ -36,10 +36,15 @@ def printb(data, end=b'\n'):
 
 
 for f in sys.argv[1:]:
+    localf = encoding.strtolocal(f)
+    if not localf.endswith(b'.i'):
+        print("file:", f, file=sys.stderr)
+        print("  invalida filename", file=sys.stderr)
+
     r = revlog.revlog(
         binopen,
         target=(revlog_constants.KIND_OTHER, b'dump-revlog'),
-        indexfile=encoding.strtolocal(f),
+        radix=localf[:-2],
     )
     print("file:", f)
     for i in r:

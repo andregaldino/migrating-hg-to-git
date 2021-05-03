@@ -79,12 +79,11 @@ def newtransaction():
     return transaction.transaction(report, tvfs, {'plain': tvfs}, b'journal')
 
 
-def newrevlog(name=b'_testrevlog.i', recreate=False):
+def newrevlog(name=b'_testrevlog', recreate=False):
     if recreate:
-        tvfs.tryunlink(name)
-    rlog = revlog.revlog(
-        tvfs, target=(constants.KIND_OTHER, b'test'), indexfile=name
-    )
+        tvfs.tryunlink(name + b'.i')
+    target = (constants.KIND_OTHER, b'test')
+    rlog = revlog.revlog(tvfs, target=target, radix=name)
     return rlog
 
 
@@ -112,7 +111,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
         rlog._storedeltachains = True
 
 
-def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
+def addgroupcopy(rlog, tr, destname=b'_destrevlog', optimaldelta=True):
     """Copy revlog to destname using revlog.addgroup. Return the copied revlog.
 
     This emulates push or pull. They use changegroup. Changegroup requires
@@ -177,7 +176,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     return dlog
 
 
-def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
+def lowlevelcopy(rlog, tr, destname=b'_destrevlog'):
     """Like addgroupcopy, but use the low level revlog._addrevision directly.
 
     It exercises some code paths that are hard to reach easily otherwise.
@@ -427,7 +426,7 @@ data = [
 
 
 def makesnapshot(tr):
-    rl = newrevlog(name=b'_snaprevlog3.i', recreate=True)
+    rl = newrevlog(name=b'_snaprevlog3', recreate=True)
     for i in data:
         appendrev(rl, i, tr)
     return rl
@@ -483,7 +482,7 @@ def maintest():
         checkrevlog(rl2, expected)
         print('addgroupcopy test passed')
         # Copy via revlog.clone
-        rl3 = newrevlog(name=b'_destrevlog3.i', recreate=True)
+        rl3 = newrevlog(name=b'_destrevlog3', recreate=True)
         rl.clone(tr, rl3)
         checkrevlog(rl3, expected)
         print('clone test passed')

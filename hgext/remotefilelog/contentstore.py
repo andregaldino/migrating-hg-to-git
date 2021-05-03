@@ -281,7 +281,7 @@ class manifestrevlogstore(object):
         self._store = repo.store
         self._svfs = repo.svfs
         self._revlogs = dict()
-        self._cl = revlog.revlog(self._svfs, indexfile=b'00changelog.i')
+        self._cl = revlog.revlog(self._svfs, radix=b'00changelog.i')
         self._repackstartlinkrev = 0
 
     def get(self, name, node):
@@ -341,10 +341,10 @@ class manifestrevlogstore(object):
     def _revlog(self, name):
         rl = self._revlogs.get(name)
         if rl is None:
-            revlogname = b'00manifesttree.i'
+            revlogname = b'00manifesttree'
             if name != b'':
-                revlogname = b'meta/%s/00manifest.i' % name
-            rl = revlog.revlog(self._svfs, indexfile=revlogname)
+                revlogname = b'meta/%s/00manifest' % name
+            rl = revlog.revlog(self._svfs, radix=revlogname)
             self._revlogs[name] = rl
         return rl
 
@@ -365,7 +365,7 @@ class manifestrevlogstore(object):
         if options and options.get(constants.OPTION_PACKSONLY):
             return
         treename = b''
-        rl = revlog.revlog(self._svfs, indexfile=b'00manifesttree.i')
+        rl = revlog.revlog(self._svfs, radix=b'00manifesttree')
         startlinkrev = self._repackstartlinkrev
         endlinkrev = self._repackendlinkrev
         for rev in pycompat.xrange(len(rl) - 1, -1, -1):
@@ -382,9 +382,9 @@ class manifestrevlogstore(object):
             if path[:5] != b'meta/' or path[-2:] != b'.i':
                 continue
 
-            treename = path[5 : -len(b'/00manifest.i')]
+            treename = path[5 : -len(b'/00manifest')]
 
-            rl = revlog.revlog(self._svfs, indexfile=path)
+            rl = revlog.revlog(self._svfs, indexfile=path[:-2])
             for rev in pycompat.xrange(len(rl) - 1, -1, -1):
                 linkrev = rl.linkrev(rev)
                 if linkrev < startlinkrev:

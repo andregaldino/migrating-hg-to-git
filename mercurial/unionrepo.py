@@ -33,7 +33,7 @@ from . import (
 
 
 class unionrevlog(revlog.revlog):
-    def __init__(self, opener, indexfile, revlog2, linkmapper):
+    def __init__(self, opener, radix, revlog2, linkmapper):
         # How it works:
         # To retrieve a revision, we just need to know the node id so we can
         # look it up in revlog2.
@@ -45,7 +45,7 @@ class unionrevlog(revlog.revlog):
         if target is None:
             # a revlog wrapper, eg: the manifestlog that is not an actual revlog
             target = revlog2._revlog.target
-        revlog.revlog.__init__(self, opener, target=target, indexfile=indexfile)
+        revlog.revlog.__init__(self, opener, target=target, radix=radix)
         self.revlog2 = revlog2
 
         n = len(self)
@@ -164,9 +164,7 @@ class unionchangelog(unionrevlog, changelog.changelog):
         changelog.changelog.__init__(self, opener)
         linkmapper = None
         changelog2 = changelog.changelog(opener2)
-        unionrevlog.__init__(
-            self, opener, self._indexfile, changelog2, linkmapper
-        )
+        unionrevlog.__init__(self, opener, self.radix, changelog2, linkmapper)
 
 
 class unionmanifest(unionrevlog, manifest.manifestrevlog):
@@ -174,7 +172,7 @@ class unionmanifest(unionrevlog, manifest.manifestrevlog):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener)
         manifest2 = manifest.manifestrevlog(nodeconstants, opener2)
         unionrevlog.__init__(
-            self, opener, self._revlog._indexfile, manifest2, linkmapper
+            self, opener, self._revlog.radix, manifest2, linkmapper
         )
 
 
@@ -183,7 +181,7 @@ class unionfilelog(filelog.filelog):
         filelog.filelog.__init__(self, opener, path)
         filelog2 = filelog.filelog(opener2, path)
         self._revlog = unionrevlog(
-            opener, self._revlog._indexfile, filelog2._revlog, linkmapper
+            opener, self._revlog.radix, filelog2._revlog, linkmapper
         )
         self._repo = repo
         self.repotiprev = self._revlog.repotiprev

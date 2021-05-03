@@ -289,9 +289,8 @@ class revlog(object):
         self,
         opener,
         target,
+        radix,
         postfix=None,
-        indexfile=None,
-        datafile=None,
         checkambig=False,
         mmaplargeindex=False,
         censorable=False,
@@ -313,16 +312,19 @@ class revlog(object):
         accurate value.
         """
         self.upperboundcomp = upperboundcomp
-        if not indexfile.endswith(b'.i'):
-            raise error.ProgrammingError(
-                b"revlog's indexfile should end with `.i`"
-            )
-        if datafile is None:
-            datafile = indexfile[:-2] + b".d"
-            if postfix is not None:
-                datafile = b'%s.%s' % (datafile, postfix)
-        if postfix is not None:
-            indexfile = b'%s.%s' % (indexfile, postfix)
+
+        self.radix = radix
+
+        if postfix is None:
+            indexfile = b'%s.i' % self.radix
+            datafile = b'%s.d' % self.radix
+        elif postfix == b'a':
+            indexfile = b'%s.i.a' % self.radix
+            datafile = b'%s.d' % self.radix
+        else:
+            indexfile = b'%s.i.%s' % (self.radix, postfix)
+            datafile = b'%s.d.%s' % (self.radix, postfix)
+
         self._indexfile = indexfile
         self._datafile = datafile
         self.nodemap_file = None
@@ -2900,8 +2902,8 @@ class revlog(object):
         newrl = revlog(
             self.opener,
             target=self.target,
+            radix=self.radix,
             postfix=b'tmpcensored',
-            indexfile=self._indexfile,
             censorable=True,
         )
         newrl._format_version = self._format_version

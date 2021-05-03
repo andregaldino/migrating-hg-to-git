@@ -52,7 +52,7 @@ from .revlogutils import (
 
 
 class bundlerevlog(revlog.revlog):
-    def __init__(self, opener, target, indexfile, cgunpacker, linkmapper):
+    def __init__(self, opener, target, radix, cgunpacker, linkmapper):
         # How it works:
         # To retrieve a revision, we need to know the offset of the revision in
         # the bundle (an unbundle object). We store this offset in the index
@@ -61,7 +61,7 @@ class bundlerevlog(revlog.revlog):
         # To differentiate a rev in the bundle from a rev in the revlog, we
         # check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
-        revlog.revlog.__init__(self, opener, target=target, indexfile=indexfile)
+        revlog.revlog.__init__(self, opener, target=target, radix=radix)
         self.bundle = cgunpacker
         n = len(self)
         self.repotiprev = n - 1
@@ -180,7 +180,7 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
             self,
             opener,
             (revlog_constants.KIND_CHANGELOG, None),
-            self._indexfile,
+            self.radix,
             cgunpacker,
             linkmapper,
         )
@@ -201,7 +201,7 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
             self,
             opener,
             (revlog_constants.KIND_MANIFESTLOG, dir),
-            self._revlog._indexfile,
+            self._revlog.radix,
             cgunpacker,
             linkmapper,
         )
@@ -233,7 +233,7 @@ class bundlefilelog(filelog.filelog):
             opener,
             # XXX should use the unencoded path
             target=(revlog_constants.KIND_FILELOG, path),
-            indexfile=self._revlog._indexfile,
+            radix=self._revlog.radix,
             cgunpacker=cgunpacker,
             linkmapper=linkmapper,
         )

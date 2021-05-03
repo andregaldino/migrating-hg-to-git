@@ -1826,7 +1826,10 @@ def perfnodelookup(ui, repo, rev, **opts):
     mercurial.revlog._prereadsize = 2 ** 24  # disable lazy parser in old hg
     n = scmutil.revsingle(repo, rev).node()
 
-    cl = revlog(getsvfs(repo), indexfile=b"00changelog.i")
+    try:
+        cl = revlog(getsvfs(repo), radix=b"00changelog")
+    except TypeError:
+        cl = revlog(getsvfs(repo), indexfile=b"00changelog.i")
 
     def d():
         cl.rev(n)
@@ -2610,6 +2613,7 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
 
     opener = getattr(rl, 'opener')  # trick linter
     # compat with hg <= 5.8
+    radix = getattr(rl, 'radix', None)
     indexfile = getattr(rl, '_indexfile', None)
     if indexfile is None:
         # compatibility with <= hg-5.8
@@ -2641,7 +2645,11 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     allnodesrev = list(reversed(allnodes))
 
     def constructor():
-        revlog(opener, indexfile=indexfile)
+        if radix is not None:
+            revlog(opener, radix=radix)
+        else:
+            # hg <= 5.8
+            revlog(opener, indexfile=indexfile)
 
     def read():
         with opener(indexfile) as fh:
@@ -3043,8 +3051,9 @@ def _temprevlog(ui, orig, truncaterev):
 
     datafile = getattr(orig, '_datafile', getattr(orig, 'datafile'))
     origdatapath = orig.opener.join(datafile)
-    indexname = 'revlog.i'
-    dataname = 'revlog.d'
+    radix = b'revlog'
+    indexname = b'revlog.i'
+    dataname = b'revlog.d'
 
     tmpdir = tempfile.mkdtemp(prefix='tmp-hgperf-')
     try:
@@ -3069,9 +3078,12 @@ def _temprevlog(ui, orig, truncaterev):
         vfs = vfsmod.vfs(tmpdir)
         vfs.options = getattr(orig.opener, 'options', None)
 
-        dest = revlog(
-            vfs, indexfile=indexname, datafile=dataname, **revlogkwargs
-        )
+        try:
+            dest = revlog(vfs, radix=radix, **revlogkwargs)
+        except TypeError:
+            dest = revlog(
+                vfs, indexfile=indexname, datafile=dataname, **revlogkwargs
+            )
         if dest._inline:
             raise error.Abort('not supporting inline revlog (yet)')
         # make sure internals are initialized

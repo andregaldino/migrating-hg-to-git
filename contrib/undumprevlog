@@ -32,10 +32,11 @@ while True:
         break
     if l.startswith("file:"):
         f = encoding.strtolocal(l[6:-1])
+        assert f.endswith(b'.i')
         r = revlog.revlog(
             opener,
             target=(revlog_constants.KIND_OTHER, b'undump-revlog'),
-            indexfile=f,
+            radix=f[:-2],
         )
         procutil.stdout.write(b'%s\n' % f)
     elif l.startswith("node:"):

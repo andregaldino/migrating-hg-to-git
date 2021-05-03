@@ -1437,7 +1437,7 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
         r = revlog.revlog(
             vfsmod.vfs(encoding.getcwd(), audit=False),
             target=target,
-            indexfile=file_[:-2] + b".i",
+            radix=file_[:-2],
         )
     return r
 

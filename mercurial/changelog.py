@@ -396,20 +396,17 @@ class changelog(revlog.revlog):
         the documentation there.
         """
 
-        indexfile = b'00changelog.i'
         if trypending and opener.exists(b'00changelog.i.a'):
             postfix = b'a'
         else:
             postfix = None
 
-        datafile = b'00changelog.d'
         revlog.revlog.__init__(
             self,
             opener,
             target=(revlog_constants.KIND_CHANGELOG, None),
+            radix=b'00changelog',
             postfix=postfix,
-            indexfile=indexfile,
-            datafile=datafile,
             checkambig=True,
             mmaplargeindex=True,
             persistentnodemap=opener.options.get(b'persistent-nodemap', False),

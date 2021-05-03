@@ -30,7 +30,7 @@ class filelog(object):
             opener,
             # XXX should use the unencoded path
             target=(revlog_constants.KIND_FILELOG, path),
-            indexfile=b'/'.join((b'data', path + b'.i')),
+            radix=b'/'.join((b'data', path)),
             censorable=True,
         )
         # Full name of the user visible file, relative to the repository root.

@@ -1567,7 +1567,6 @@ class manifestrevlog(object):
         opener,
         tree=b'',
         dirlogcache=None,
-        indexfile=None,
         treemanifest=False,
     ):
         """Constructs a new manifest revlog
@@ -1598,10 +1597,9 @@ class manifestrevlog(object):
         if tree:
             assert self._treeondisk, b'opts is %r' % opts
 
-        if indexfile is None:
-            indexfile = b'00manifest.i'
-            if tree:
-                indexfile = b"meta/" + tree + indexfile
+        radix = b'00manifest'
+        if tree:
+            radix = b"meta/" + tree + radix
 
         self.tree = tree
 
@@ -1614,7 +1612,7 @@ class manifestrevlog(object):
         self._revlog = revlog.revlog(
             opener,
             target=(revlog_constants.KIND_MANIFESTLOG, self.tree),
-            indexfile=indexfile,
+            radix=radix,
             # only root indexfile is cached
             checkambig=not bool(tree),
             mmaplargeindex=True,
