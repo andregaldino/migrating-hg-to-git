@@ -360,6 +360,8 @@ class revlog(object):
 
         # 2-tuple of file handles being used for active writing.
         self._writinghandles = None
+        # prevent nesting of addgroup
+        self._adding_group = None
 
         self._loadindex()
 
@@ -1955,7 +1957,7 @@ class revlog(object):
                 raise error.CensoredNodeError(self.display_id, node, text)
             raise
 
-    def _enforceinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr):
         """Check if the revlog is too big for inline and convert if so.
 
         This should be called after revisions are added to the revlog. If the
@@ -1975,21 +1977,27 @@ class revlog(object):
         trindex = 0
         tr.add(self._datafile, 0)
 
-        if fp:
+        existing_handles = False
+        if self._writinghandles is not None:
+            existing_handles = True
+            fp = self._writinghandles[0]
             fp.flush()
             fp.close()
             # We can't use the cached file handle after close(). So prevent
             # its usage.
             self._writinghandles = None
 
-        if True:
-            with self._indexfp(b'r') as ifh, self._datafp(b'w') as dfh:
+        new_dfh = self._datafp(b'w+')
+        new_dfh.truncate(0)  # drop any potentially existing data
+        try:
+            with self._indexfp(b'r') as read_ifh:
                 for r in self:
-                    dfh.write(self._getsegmentforrevs(r, r, df=ifh)[1])
+                    new_dfh.write(self._getsegmentforrevs(r, r, df=read_ifh)[1])
                     if troffset <= self.start(r):
                         trindex = r
+                new_dfh.flush()
 
-            with self._indexfp(b'w') as fp:
+            with self.opener(self._indexfile, mode=b'w', atomictemp=True) as fp:
                 self._format_flags &= ~FLAG_INLINE_DATA
                 self._inline = False
                 for i in self:
@@ -1999,7 +2007,6 @@ class revlog(object):
                         header = self.index.pack_header(header)
                         e = header + e
                     fp.write(e)
-
                 # the temp file replace the real index when we exit the context
                 # manager
 
@@ -2007,8 +2014,49 @@ class revlog(object):
             nodemaputil.setup_persistent_nodemap(tr, self)
             self._chunkclear()
 
+            if existing_handles:
+                # switched from inline to conventional reopen the index
+                ifh = self._indexfp(b"a+")
+                self._writinghandles = (ifh, new_dfh)
+                new_dfh = None
+        finally:
+            if new_dfh is not None:
+                new_dfh.close()
+
     def _nodeduplicatecallback(self, transaction, node):
         """called when trying to add a node already stored."""
+
+    @contextlib.contextmanager
+    def _writing(self, transaction):
+        if self._writinghandles is not None:
+            yield
+        else:
+            r = len(self)
+            dsize = 0
+            if r:
+                dsize = self.end(r - 1)
+            dfh = None
+            if not self._inline:
+                dfh = self._datafp(b"a+")
+                transaction.add(self._datafile, dsize)
+            try:
+                isize = r * self.index.entry_size
+                ifh = self._indexfp(b"a+")
+                if self._inline:
+                    transaction.add(self._indexfile, dsize + isize)
+                else:
+                    transaction.add(self._indexfile, isize)
+                try:
+                    self._writinghandles = (ifh, dfh)
+                    try:
+                        yield
+                    finally:
+                        self._writinghandles = None
+                finally:
+                    ifh.close()
+            finally:
+                if dfh is not None:
+                    dfh.close()
 
     def addrevision(
         self,
@@ -2105,11 +2153,7 @@ class revlog(object):
         useful when reusing a revision not stored in this revlog (ex: received
         over wire, or read from an external bundle).
         """
-        dfh = None
-        if not self._inline:
-            dfh = self._datafp(b"a+")
-        ifh = self._indexfp(b"a+")
-        try:
+        with self._writing(transaction):
             return self._addrevision(
                 node,
                 rawtext,
@@ -2119,15 +2163,9 @@ class revlog(object):
                 p2,
                 flags,
                 cachedelta,
-                ifh,
-                dfh,
                 deltacomputer=deltacomputer,
                 sidedata=sidedata,
             )
-        finally:
-            if dfh:
-                dfh.close()
-            ifh.close()
 
     def compress(self, data):
         """Generate a possibly-compressed representation of data."""
@@ -2214,8 +2252,6 @@ class revlog(object):
         p2,
         flags,
         cachedelta,
-        ifh,
-        dfh,
         alwayscache=False,
         deltacomputer=None,
         sidedata=None,
@@ -2244,11 +2280,14 @@ class revlog(object):
             raise error.RevlogError(
                 _(b"%s: attempt to add wdir revision") % self.display_id
             )
+        if self._writinghandles is None:
+            msg = b'adding revision outside `revlog._writing` context'
+            raise error.ProgrammingError(msg)
 
         if self._inline:
-            fh = ifh
+            fh = self._writinghandles[0]
         else:
-            fh = dfh
+            fh = self._writinghandles[1]
 
         btext = [rawtext]
 
@@ -2258,6 +2297,7 @@ class revlog(object):
         offset = self._get_data_offset(prev)
 
         if self._concurrencychecker:
+            ifh, dfh = self._writinghandles
             if self._inline:
                 # offset is "as if" it were in the .d file, so we need to add on
                 # the size of the entry metadata.
@@ -2323,8 +2363,6 @@ class revlog(object):
             entry = header + entry
         self._writeentry(
             transaction,
-            ifh,
-            dfh,
             entry,
             deltainfo.data,
             link,
@@ -2362,9 +2400,7 @@ class revlog(object):
             offset = max(self.end(rev), offset, sidedata_end)
         return offset
 
-    def _writeentry(
-        self, transaction, ifh, dfh, entry, data, link, offset, sidedata
-    ):
+    def _writeentry(self, transaction, entry, data, link, offset, sidedata):
         # Files opened in a+ mode have inconsistent behavior on various
         # platforms. Windows requires that a file positioning call be made
         # when the file handle transitions between reads and writes. See
@@ -2377,6 +2413,10 @@ class revlog(object):
         # Note: This is likely not necessary on Python 3. However, because
         # the file handle is reused for reads and may be seeked there, we need
         # to be careful before changing this.
+        if self._writinghandles is None:
+            msg = b'adding revision outside `revlog._writing` context'
+            raise error.ProgrammingError(msg)
+        ifh, dfh = self._writinghandles
         ifh.seek(0, os.SEEK_END)
         if dfh:
             dfh.seek(0, os.SEEK_END)
@@ -2399,7 +2439,7 @@ class revlog(object):
             ifh.write(data[1])
             if sidedata:
                 ifh.write(sidedata)
-            self._enforceinlinesize(transaction, ifh)
+            self._enforceinlinesize(transaction)
         nodemaputil.setup_persistent_nodemap(transaction, self)
 
     def addgroup(
@@ -2422,28 +2462,13 @@ class revlog(object):
         this revlog and the node that was added.
         """
 
-        if self._writinghandles:
+        if self._adding_group:
             raise error.ProgrammingError(b'cannot nest addgroup() calls')
 
-        r = len(self)
-        end = 0
-        if r:
-            end = self.end(r - 1)
-        ifh = self._indexfp(b"a+")
-        isize = r * self.index.entry_size
-        if self._inline:
-            transaction.add(self._indexfile, end + isize)
-            dfh = None
-        else:
-            transaction.add(self._indexfile, isize)
-            transaction.add(self._datafile, end)
-            dfh = self._datafp(b"a+")
-
-        self._writinghandles = (ifh, dfh)
+        self._adding_group = True
         empty = True
-
         try:
-            if True:
+            with self._writing(transaction):
                 deltacomputer = deltautil.deltacomputer(self)
                 # loop through our set of deltas
                 for data in deltas:
@@ -2514,8 +2539,6 @@ class revlog(object):
                         p2,
                         flags,
                         (baserev, delta),
-                        ifh,
-                        dfh,
                         alwayscache=alwayscache,
                         deltacomputer=deltacomputer,
                         sidedata=sidedata,
@@ -2524,20 +2547,8 @@ class revlog(object):
                     if addrevisioncb:
                         addrevisioncb(self, rev)
                     empty = False
-
-                    if not dfh and not self._inline:
-                        # addrevision switched from inline to conventional
-                        # reopen the index
-                        ifh.close()
-                        dfh = self._datafp(b"a+")
-                        ifh = self._indexfp(b"a+")
-                        self._writinghandles = (ifh, dfh)
         finally:
-            self._writinghandles = None
-
-            if dfh:
-                dfh.close()
-            ifh.close()
+            self._adding_group = False
         return not empty
 
     def iscensored(self, rev):
@@ -2868,13 +2879,7 @@ class revlog(object):
                     )
                     flags = flags | new_flags[0] & ~new_flags[1]
 
-                ifh = destrevlog.opener(
-                    destrevlog._indexfile, b'a+', checkambig=False
-                )
-                dfh = None
-                if not destrevlog._inline:
-                    dfh = destrevlog.opener(destrevlog._datafile, b'a+')
-                try:
+                with destrevlog._writing(tr):
                     destrevlog._addrevision(
                         node,
                         rawtext,
@@ -2884,15 +2889,9 @@ class revlog(object):
                         p2,
                         flags,
                         cachedelta,
-                        ifh,
-                        dfh,
                         deltacomputer=deltacomputer,
                         sidedata=sidedata,
                     )
-                finally:
-                    if dfh:
-                        dfh.close()
-                    ifh.close()
 
             if addrevisioncb:
                 addrevisioncb(self, rev, node)

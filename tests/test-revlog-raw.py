@@ -19,6 +19,32 @@ from mercurial.revlogutils import (
     flagutil,
 )
 
+
+class _NoTransaction(object):
+    """transaction like object to update the nodemap outside a transaction"""
+
+    def __init__(self):
+        self._postclose = {}
+
+    def addpostclose(self, callback_id, callback_func):
+        self._postclose[callback_id] = callback_func
+
+    def registertmp(self, *args, **kwargs):
+        pass
+
+    def addbackup(self, *args, **kwargs):
+        pass
+
+    def add(self, *args, **kwargs):
+        pass
+
+    def addabort(self, *args, **kwargs):
+        pass
+
+    def _report(self, *args):
+        pass
+
+
 # TESTTMP is optional. This makes it convenient to run without run-tests.py
 tvfs = vfs.vfs(encoding.environ.get(b'TESTTMP', b'/tmp'))
 
@@ -201,19 +227,17 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog'):
             text = None
             cachedelta = (deltaparent, rlog.revdiff(deltaparent, r))
         flags = rlog.flags(r)
-        ifh = dfh = None
-        try:
-            ifh = dlog.opener(dlog._indexfile, b'a+')
-            if not dlog._inline:
-                dfh = dlog.opener(dlog._datafile, b'a+')
+        with dlog._writing(_NoTransaction()):
             dlog._addrevision(
-                rlog.node(r), text, tr, r, p1, p2, flags, cachedelta, ifh, dfh
+                rlog.node(r),
+                text,
+                tr,
+                r,
+                p1,
+                p2,
+                flags,
+                cachedelta,
             )
-        finally:
-            if dfh is not None:
-                dfh.close()
-            if ifh is not None:
-                ifh.close()
     return dlog
 
 

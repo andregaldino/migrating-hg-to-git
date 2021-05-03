@@ -506,9 +506,9 @@ class changelog(revlog.revlog):
 
         return False
 
-    def _enforceinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr):
         if not self._delayed:
-            revlog.revlog._enforceinlinesize(self, tr, fp)
+            revlog.revlog._enforceinlinesize(self, tr)
 
     def read(self, nodeorrev):
         """Obtain data from a parsed changelog revision.

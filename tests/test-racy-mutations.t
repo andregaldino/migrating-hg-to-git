@@ -91,7 +91,7 @@ And no corruption in the changelog.
   $ hg debugrevlogindex -c
      rev linkrev nodeid       p1           p2
        0       0 222799e2f90b 000000000000 000000000000
-       1       1 6f124f6007a0 222799e2f90b 000000000000
+       1       1 6f124f6007a0 222799e2f90b 000000000000 (missing-correct-output !)
 And, because of transactions, there's none in the manifestlog either.
   $ hg debugrevlogindex -m
      rev linkrev nodeid       p1           p2
