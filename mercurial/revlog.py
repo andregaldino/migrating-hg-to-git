@@ -1956,10 +1956,8 @@ class revlog(object):
         to use multiple index and data files.
         """
         tiprev = len(self) - 1
-        if (
-            not self._inline
-            or (self.start(tiprev) + self.length(tiprev)) < _maxinline
-        ):
+        total_size = self.start(tiprev) + self.length(tiprev)
+        if not self._inline or total_size < _maxinline:
             return
 
         troffset = tr.findoffset(self._indexfile)
