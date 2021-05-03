@@ -35,6 +35,7 @@ from .i18n import _
 from .pycompat import getattr
 from .revlogutils.constants import (
     ALL_KINDS,
+    COMP_MODE_INLINE,
     FEATURES_BY_VERSION,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
@@ -336,6 +337,12 @@ class revlog(object):
 
     [9] sidedata chunk length:
             The size, in bytes, of the revision's side-data chunk.
+
+    [10] data compression mode:
+            two bits that detail the way the data chunk is compressed on disk.
+            (see "COMP_MODE_*" constants for details). For revlog version 0 and
+            1 this will always be COMP_MODE_INLINE.
+
     """
 
     _flagserrorclass = error.RevlogError
@@ -2474,6 +2481,7 @@ class revlog(object):
             node,
             sidedata_offset,
             len(serialized_sidedata),
+            COMP_MODE_INLINE,
         )
 
         self.index.append(e)

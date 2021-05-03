@@ -31,6 +31,10 @@ from . import (
     vfs as vfsmod,
 )
 
+from .revlogutils import (
+    constants as revlog_constants,
+)
+
 
 class unionrevlog(revlog.revlog):
     def __init__(self, opener, radix, revlog2, linkmapper):
@@ -65,6 +69,7 @@ class unionrevlog(revlog.revlog):
                 node,
                 _sdo,
                 _sds,
+                _dcm,
             ) = rev
             flags = _start & 0xFFFF
 
@@ -99,6 +104,7 @@ class unionrevlog(revlog.revlog):
                 node,
                 0,  # sidedata offset
                 0,  # sidedata size
+                revlog_constants.COMP_MODE_INLINE,
             )
             self.index.append(e)
             self.bundlerevs.add(n)

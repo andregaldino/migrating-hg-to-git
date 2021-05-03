@@ -54,7 +54,19 @@ class BaseIndexObject(object):
     # Size of a C long int, platform independent
     int_size = struct.calcsize(b'>i')
     # An empty index entry, used as a default value to be overridden, or nullrev
-    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
+    null_item = (
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        sha1nodeconstants.nullid,
+        0,
+        0,
+        revlog_constants.COMP_MODE_INLINE,
+    )
 
     @util.propertycache
     def entry_size(self):
@@ -135,7 +147,7 @@ class BaseIndexObject(object):
 
     def _unpack_entry(self, data):
         r = self.index_format.unpack(data)
-        r = r + (0, 0)
+        r = r + (0, 0, revlog_constants.COMP_MODE_INLINE)
         return r
 
     def pack_header(self, header):
@@ -303,16 +315,17 @@ class Index2Mixin(object):
             self._extra[rev - self._lgt] = new
 
     def _unpack_entry(self, data):
-        return self.index_format.unpack(data)
+        return self.index_format.unpack(data) + (
+            revlog_constants.COMP_MODE_INLINE,
+        )
 
     def _pack_entry(self, entry):
-        return self.index_format.pack(*entry)
+        return self.index_format.pack(*entry[:10])
 
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
         entry = self[rev]
-        p = revlog_constants.INDEX_ENTRY_V2.pack(*entry)
-        return p
+        return self._pack_entry(entry)
 
     def pack_header(self, header):
         """pack header information as binary"""

@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from ..node import sha1nodeconstants
 from .constants import (
+    COMP_MODE_INLINE,
     INDEX_ENTRY_V0,
 )
 from ..i18n import _
@@ -42,7 +43,19 @@ def offset_type(offset, type):
 
 class revlogoldindex(list):
     entry_size = INDEX_ENTRY_V0.size
-    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
+    null_item = (
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        sha1nodeconstants.nullid,
+        0,
+        0,
+        COMP_MODE_INLINE,
+    )
 
     @property
     def nodemap(self):
@@ -138,6 +151,7 @@ def parse_index_v0(data, inline):
             e[6],
             0,  # no side data support
             0,  # no side data support
+            COMP_MODE_INLINE,
         )
         index.append(e2)
         nodemap[e[6]] = n

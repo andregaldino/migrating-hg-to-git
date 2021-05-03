@@ -105,6 +105,7 @@ class bundlerevlog(revlog.revlog):
                 node,
                 0,
                 0,
+                revlog_constants.COMP_MODE_INLINE,
             )
             self.index.append(e)
             self.bundlerevs.add(n)

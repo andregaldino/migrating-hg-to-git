@@ -1,4 +1,4 @@
-# revlogdeltas.py - constant used for revlog logic
+# revlogdeltas.py - constant used for revlog logic.
 #
 # Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 # Copyright 2018 Octobus <contact@octobus.net>
@@ -114,6 +114,14 @@ REVIDX_FLAGS_ORDER = [
 # bitmark for flags that could cause rawdata content change
 REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 
+## chunk compression mode constants:
+# These constants are used in revlog version >=2 to denote the compression used
+# for a chunk.
+
+# Chunk use a compression mode stored "inline" at the start of the chunk
+# itself.  This is the mode always used for revlog version "0" and "1"
+COMP_MODE_INLINE = 2
+
 SUPPORTED_FLAGS = {
     REVLOGV0: REVLOGV0_FLAGS,
     REVLOGV1: REVLOGV1_FLAGS,
@@ -151,5 +159,6 @@ FEATURES_BY_VERSION = {
         b'docket': True,
     },
 }
+
 
 SPARSE_REVLOG_MAX_CHAIN_LENGTH = 1000

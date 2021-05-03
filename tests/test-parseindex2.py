@@ -21,6 +21,9 @@ from mercurial import (
     policy,
     pycompat,
 )
+from mercurial.revlogutils import (
+    constants,
+)
 
 parsers = policy.importmod('parsers')
 
@@ -49,7 +52,7 @@ def py_parseindex(data, inline):
         cache = (0, data)
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
-            e = e + (0, 0)
+            e = e + (0, 0, constants.COMP_MODE_INLINE)
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -59,7 +62,7 @@ def py_parseindex(data, inline):
     else:
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
-            e = e + (0, 0)
+            e = e + (0, 0, constants.COMP_MODE_INLINE)
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -242,7 +245,19 @@ class parseindex2tests(unittest.TestCase):
                 break
 
     def testminusone(self):
-        want = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
+        want = (
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            -1,
+            -1,
+            sha1nodeconstants.nullid,
+            0,
+            0,
+            constants.COMP_MODE_INLINE,
+        )
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
         self.assertEqual(want, got)  # inline data
@@ -264,7 +279,20 @@ class parseindex2tests(unittest.TestCase):
             # node won't matter for this test, let's just make sure
             # they don't collide. Other data don't matter either.
             node = hexrev(p1) + hexrev(p2) + b'.' * 12
-            index.append((0, 0, 12, 1, 34, p1, p2, node, 0, 0))
+            e = (
+                0,
+                0,
+                12,
+                1,
+                34,
+                p1,
+                p2,
+                node,
+                0,
+                0,
+                constants.COMP_MODE_INLINE,
+            )
+            index.append(e)
 
         appendrev(4)
         appendrev(5)
