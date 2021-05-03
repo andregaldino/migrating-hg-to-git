@@ -2058,7 +2058,7 @@ class revlog(object):
                 _(
                     b"%s: size of %d bytes exceeds maximum revlog storage of 2GiB"
                 )
-                % (self._indexfile, len(rawtext))
+                % (self.display_id, len(rawtext))
             )
 
         node = node or self.hash(rawtext, p1, p2)
