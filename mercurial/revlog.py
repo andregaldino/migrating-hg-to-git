@@ -490,31 +490,34 @@ class revlog(object):
         else:
             header = new_header
 
-        flags = self._format_flags = header & ~0xFFFF
+        self._format_flags = header & ~0xFFFF
         self._format_version = header & 0xFFFF
 
         if self._format_version == REVLOGV0:
-            if flags:
+            if self._format_flags:
                 msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                msg %= (flags >> 16, self._format_version, self.display_id)
+                display_flag = self._format_flags >> 16
+                msg %= (display_flag, self._format_version, self.display_id)
                 raise error.RevlogError(msg)
 
             self._inline = False
             self._generaldelta = False
 
         elif self._format_version == REVLOGV1:
-            if flags & ~REVLOGV1_FLAGS:
+            if self._format_flags & ~REVLOGV1_FLAGS:
                 msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                msg %= (flags >> 16, self._format_version, self.display_id)
+                display_flag = self._format_flags >> 16
+                msg %= (display_flag, self._format_version, self.display_id)
                 raise error.RevlogError(msg)
 
             self._inline = self._format_flags & FLAG_INLINE_DATA
             self._generaldelta = self._format_flags & FLAG_GENERALDELTA
 
         elif self._format_version == REVLOGV2:
-            if flags & ~REVLOGV2_FLAGS:
+            if self._format_flags & ~REVLOGV2_FLAGS:
                 msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                msg %= (flags >> 16, self._format_version, self.display_id)
+                display_flag = self._format_flags >> 16
+                msg %= (display_flag, self._format_version, self.display_id)
                 raise error.RevlogError(msg)
 
             # There is a bug in the transaction handling when going from an
