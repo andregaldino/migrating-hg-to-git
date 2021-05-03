@@ -395,16 +395,19 @@ class changelog(revlog.revlog):
         ``concurrencychecker`` will be passed to the revlog init function, see
         the documentation there.
         """
+
+        indexfile = b'00changelog.i'
         if trypending and opener.exists(b'00changelog.i.a'):
-            indexfile = b'00changelog.i.a'
+            postfix = b'a'
         else:
-            indexfile = b'00changelog.i'
+            postfix = None
 
         datafile = b'00changelog.d'
         revlog.revlog.__init__(
             self,
             opener,
             target=(revlog_constants.KIND_CHANGELOG, None),
+            postfix=postfix,
             indexfile=indexfile,
             datafile=datafile,
             checkambig=True,

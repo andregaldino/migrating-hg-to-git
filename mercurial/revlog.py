@@ -289,6 +289,7 @@ class revlog(object):
         self,
         opener,
         target,
+        postfix=None,
         indexfile=None,
         datafile=None,
         checkambig=False,
@@ -312,9 +313,20 @@ class revlog(object):
         accurate value.
         """
         self.upperboundcomp = upperboundcomp
+        if not indexfile.endswith(b'.i'):
+            raise error.ProgrammingError(
+                b"revlog's indexfile should end with `.i`"
+            )
+        if datafile is None:
+            datafile = indexfile[:-2] + b".d"
+            if postfix is not None:
+                datafile = b'%s.%s' % (datafile, postfix)
+        if postfix is not None:
+            indexfile = b'%s.%s' % (indexfile, postfix)
         self.indexfile = indexfile
-        self.datafile = datafile or (indexfile[:-2] + b".d")
+        self.datafile = datafile
         self.nodemap_file = None
+        self.postfix = postfix
         if persistentnodemap:
             self.nodemap_file = nodemaputil.get_nodemap_file(
                 opener, self.indexfile
@@ -2881,16 +2893,13 @@ class revlog(object):
         # Rewriting the revlog in place is hard. Our strategy for censoring is
         # to create a new revlog, copy all revisions to it, then replace the
         # revlogs on transaction close.
-
-        newindexfile = self.indexfile + b'.tmpcensored'
-        newdatafile = self.datafile + b'.tmpcensored'
-
+        #
         # This is a bit dangerous. We could easily have a mismatch of state.
         newrl = revlog(
             self.opener,
             target=self.target,
-            indexfile=newindexfile,
-            datafile=newdatafile,
+            postfix=b'tmpcensored',
+            indexfile=self.indexfile,
             censorable=True,
         )
         newrl._format_version = self._format_version
