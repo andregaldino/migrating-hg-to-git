@@ -326,7 +326,7 @@ class verifier(object):
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
-            self._checkrevlog(mf, label, 0)
+            self._checkrevlog(mf._revlog, label, 0)
         progress = ui.makeprogress(
             _(b'checking'), unit=_(b'manifests'), total=len(mf)
         )
