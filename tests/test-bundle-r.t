@@ -224,7 +224,7 @@ revision 2
   adding changesets
   transaction abort!
   rollback completed
-  abort: 00changelog.i@93ee6ab32777cd430e07da694794fb6a4f917712: unknown parent
+  abort: 00changelog@93ee6ab32777cd430e07da694794fb6a4f917712: unknown parent
   [50]
 
 revision 2

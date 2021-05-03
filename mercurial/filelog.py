@@ -71,7 +71,7 @@ class filelog(object):
 
     def lookup(self, node):
         return storageutil.fileidlookup(
-            self._revlog, node, self._revlog._indexfile
+            self._revlog, node, self._revlog.display_id
         )
 
     def linkrev(self, rev):

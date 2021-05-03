@@ -84,12 +84,12 @@ class bundlerevlog(revlog.revlog):
             for p in (p1, p2):
                 if not self.index.has_node(p):
                     raise error.LookupError(
-                        p, self._indexfile, _(b"unknown parent")
+                        p, self.display_id, _(b"unknown parent")
                     )
 
             if not self.index.has_node(deltabase):
                 raise LookupError(
-                    deltabase, self._indexfile, _(b'unknown delta base')
+                    deltabase, self.display_id, _(b'unknown delta base')
                 )
 
             baserev = self.rev(deltabase)

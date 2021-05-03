@@ -736,7 +736,7 @@ class revlog(object):
                 or node in self.nodeconstants.wdirfilenodeids
             ):
                 raise error.WdirUnsupported
-            raise error.LookupError(node, self._indexfile, _(b'no node'))
+            raise error.LookupError(node, self.display_id, _(b'no node'))
 
     # Accessors for index entries.
 
@@ -1446,7 +1446,7 @@ class revlog(object):
         if n:
             return n
 
-        raise error.LookupError(id, self._indexfile, _(b'no match found'))
+        raise error.LookupError(id, self.display_id, _(b'no match found'))
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
@@ -1460,7 +1460,7 @@ class revlog(object):
                 # single 'ff...' match
                 return True
             if matchednode is None:
-                raise error.LookupError(node, self._indexfile, _(b'no node'))
+                raise error.LookupError(node, self.display_id, _(b'no node'))
             return True
 
         def maybewdir(prefix):
@@ -1482,7 +1482,7 @@ class revlog(object):
             except error.RevlogError:
                 if node != self.nodeconstants.wdirid:
                     raise error.LookupError(
-                        node, self._indexfile, _(b'no node')
+                        node, self.display_id, _(b'no node')
                     )
             except AttributeError:
                 # Fall through to pure code
@@ -2461,12 +2461,12 @@ class revlog(object):
                 for p in (p1, p2):
                     if not self.index.has_node(p):
                         raise error.LookupError(
-                            p, self._indexfile, _(b'unknown parent')
+                            p, self.radix, _(b'unknown parent')
                         )
 
                 if not self.index.has_node(deltabase):
                     raise error.LookupError(
-                        deltabase, self._indexfile, _(b'unknown delta base')
+                        deltabase, self.display_id, _(b'unknown delta base')
                     )
 
                 baserev = self.rev(deltabase)
