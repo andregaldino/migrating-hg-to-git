@@ -649,7 +649,7 @@ def _find_node(block, node):
 
 
 def get_nodemap_file(revlog):
-    if revlog.postfix == b'a':
+    if revlog._trypending:
         pending_path = revlog.radix + b".n.a"
         if revlog.opener.exists(pending_path):
             return pending_path

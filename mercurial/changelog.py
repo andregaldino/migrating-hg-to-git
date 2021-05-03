@@ -396,21 +396,16 @@ class changelog(revlog.revlog):
         the documentation there.
         """
 
-        if trypending and opener.exists(b'00changelog.i.a'):
-            postfix = b'a'
-        else:
-            postfix = None
-
         revlog.revlog.__init__(
             self,
             opener,
             target=(revlog_constants.KIND_CHANGELOG, None),
             radix=b'00changelog',
-            postfix=postfix,
             checkambig=True,
             mmaplargeindex=True,
             persistentnodemap=opener.options.get(b'persistent-nodemap', False),
             concurrencychecker=concurrencychecker,
+            trypending=trypending,
         )
 
         if self._initempty and (self._format_version == revlog.REVLOGV1):

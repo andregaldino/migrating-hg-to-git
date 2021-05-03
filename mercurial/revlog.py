@@ -293,13 +293,14 @@ class revlog(object):
         opener,
         target,
         radix,
-        postfix=None,
+        postfix=None,  # only exist for `tmpcensored` now
         checkambig=False,
         mmaplargeindex=False,
         censorable=False,
         upperboundcomp=None,
         persistentnodemap=False,
         concurrencychecker=None,
+        trypending=False,
     ):
         """
         create a revlog object
@@ -323,6 +324,7 @@ class revlog(object):
         self._datafile = None
         self._nodemap_file = None
         self.postfix = postfix
+        self._trypending = trypending
         self.opener = opener
         if persistentnodemap:
             self._nodemap_file = nodemaputil.get_nodemap_file(self)
@@ -484,10 +486,12 @@ class revlog(object):
 
         new_header, mmapindexthreshold, force_nodemap = self._init_opts()
 
-        if self.postfix is None:
-            entry_point = b'%s.i' % self.radix
-        else:
+        if self.postfix is not None:
             entry_point = b'%s.i.%s' % (self.radix, self.postfix)
+        elif self._trypending and self.opener.exists(b'%s.i.a' % self.radix):
+            entry_point = b'%s.i.a' % self.radix
+        else:
+            entry_point = b'%s.i' % self.radix
 
         entry_data = b''
         self._initempty = True
@@ -545,7 +549,7 @@ class revlog(object):
             # main docket, so disable it for now.
             self._nodemap_file = None
 
-        if self.postfix is None or self.postfix == b'a':
+        if self.postfix is None:
             self._datafile = b'%s.d' % self.radix
         else:
             self._datafile = b'%s.d.%s' % (self.radix, self.postfix)
@@ -2067,6 +2071,10 @@ class revlog(object):
 
     @contextlib.contextmanager
     def _writing(self, transaction):
+        if self._trypending:
+            msg = b'try to write in a `trypending` revlog: %s'
+            msg %= self.display_id
+            raise error.ProgrammingError(msg)
         if self._writinghandles is not None:
             yield
         else:
