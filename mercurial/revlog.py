@@ -3082,6 +3082,18 @@ class revlog(object):
             # Nothing to generate or remove
             return
 
+        # changelog implement some "delayed" writing mechanism that assume that
+        # all index data is writen in append mode and is therefor incompatible
+        # with the seeked write done in this method. The use of such "delayed"
+        # writing will soon be removed for revlog version that support side
+        # data, so for now, we only keep this simple assert to highlight the
+        # situation.
+        delayed = getattr(self, '_delayed', False)
+        diverted = getattr(self, '_divert', False)
+        if delayed and not diverted:
+            msg = "cannot rewrite_sidedata of a delayed revlog"
+            raise error.ProgrammingError(msg)
+
         new_entries = []
         # append the new sidedata
         with self._datafp(b'a+') as fp:
