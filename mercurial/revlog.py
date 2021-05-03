@@ -1982,29 +1982,30 @@ class revlog(object):
             # its usage.
             self._writinghandles = None
 
-        with self._indexfp(b'r') as ifh, self._datafp(b'w') as dfh:
-            for r in self:
-                dfh.write(self._getsegmentforrevs(r, r, df=ifh)[1])
-                if troffset <= self.start(r):
-                    trindex = r
+        if True:
+            with self._indexfp(b'r') as ifh, self._datafp(b'w') as dfh:
+                for r in self:
+                    dfh.write(self._getsegmentforrevs(r, r, df=ifh)[1])
+                    if troffset <= self.start(r):
+                        trindex = r
 
-        with self._indexfp(b'w') as fp:
-            self._format_flags &= ~FLAG_INLINE_DATA
-            self._inline = False
-            for i in self:
-                e = self.index.entry_binary(i)
-                if i == 0:
-                    header = self._format_flags | self._format_version
-                    header = self.index.pack_header(header)
-                    e = header + e
-                fp.write(e)
+            with self._indexfp(b'w') as fp:
+                self._format_flags &= ~FLAG_INLINE_DATA
+                self._inline = False
+                for i in self:
+                    e = self.index.entry_binary(i)
+                    if i == 0:
+                        header = self._format_flags | self._format_version
+                        header = self.index.pack_header(header)
+                        e = header + e
+                    fp.write(e)
 
-            # the temp file replace the real index when we exit the context
-            # manager
+                # the temp file replace the real index when we exit the context
+                # manager
 
-        tr.replace(self._indexfile, trindex * self.index.entry_size)
-        nodemaputil.setup_persistent_nodemap(tr, self)
-        self._chunkclear()
+            tr.replace(self._indexfile, trindex * self.index.entry_size)
+            nodemaputil.setup_persistent_nodemap(tr, self)
+            self._chunkclear()
 
     def _nodeduplicatecallback(self, transaction, node):
         """called when trying to add a node already stored."""
