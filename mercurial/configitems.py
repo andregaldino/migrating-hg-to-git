@@ -1163,7 +1163,8 @@ coreconfigitem(
 # * sidedata compression
 # * introduce a proper solution to reduce the number of filelog related files.
 # * Improvement to consider
-#   - track compression mode in the index entris instead of the chunks
+#   - avoid compression header in chunk using the default compression?
+#   - forbid "inline" compression mode entirely?
 #   - split the data offset and flag field (the 2 bytes save are mostly trouble)
 #   - keep track of uncompressed -chunk- size (to preallocate memory better)
 #   - keep track of chain base or size (probably not that useful anymore)

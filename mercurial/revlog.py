@@ -689,6 +689,20 @@ class revlog(object):
         # revlog.target instead of using `self.radix`
         return self.radix
 
+    def _get_decompressor(self, t):
+        try:
+            compressor = self._decompressors[t]
+        except KeyError:
+            try:
+                engine = util.compengines.forrevlogheader(t)
+                compressor = engine.revlogcompressor(self._compengineopts)
+                self._decompressors[t] = compressor
+            except KeyError:
+                raise error.RevlogError(
+                    _(b'unknown compression type %s') % binascii.hexlify(t)
+                )
+        return compressor
+
     @util.propertycache
     def _compressor(self):
         engine = util.compengines[self._compengine]
@@ -2375,17 +2389,7 @@ class revlog(object):
         elif t == b'u':
             return util.buffer(data, 1)
 
-        try:
-            compressor = self._decompressors[t]
-        except KeyError:
-            try:
-                engine = util.compengines.forrevlogheader(t)
-                compressor = engine.revlogcompressor(self._compengineopts)
-                self._decompressors[t] = compressor
-            except KeyError:
-                raise error.RevlogError(
-                    _(b'unknown compression type %s') % binascii.hexlify(t)
-                )
+        compressor = self._get_decompressor(t)
 
         return compressor.decompress(data)
 
