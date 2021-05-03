@@ -55,6 +55,7 @@ class revlogoldindex(list):
         0,
         0,
         COMP_MODE_INLINE,
+        COMP_MODE_INLINE,
     )
 
     @property

@@ -66,6 +66,7 @@ class BaseIndexObject(object):
         0,
         0,
         revlog_constants.COMP_MODE_INLINE,
+        revlog_constants.COMP_MODE_INLINE,
     )
 
     @util.propertycache
@@ -147,7 +148,12 @@ class BaseIndexObject(object):
 
     def _unpack_entry(self, data):
         r = self.index_format.unpack(data)
-        r = r + (0, 0, revlog_constants.COMP_MODE_INLINE)
+        r = r + (
+            0,
+            0,
+            revlog_constants.COMP_MODE_INLINE,
+            revlog_constants.COMP_MODE_INLINE,
+        )
         return r
 
     def pack_header(self, header):
@@ -315,10 +321,19 @@ class Index2Mixin(object):
             self._extra[rev - self._lgt] = new
 
     def _unpack_entry(self, data):
-        return self.index_format.unpack(data)
+        data = self.index_format.unpack(data)
+        entry = data[:10]
+        data_comp = data[10] & 3
+        sidedata_comp = (data[10] & (3 << 2)) >> 2
+        return entry + (data_comp, sidedata_comp)
 
     def _pack_entry(self, entry):
-        return self.index_format.pack(*entry[:11])
+        data = entry[:10]
+        data_comp = entry[10] & 3
+        sidedata_comp = (entry[11] & 3) << 2
+        data += (data_comp | sidedata_comp,)
+
+        return self.index_format.pack(*data)
 
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""

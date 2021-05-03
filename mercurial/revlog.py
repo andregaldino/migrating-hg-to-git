@@ -345,6 +345,9 @@ class revlog(object):
             (see "COMP_MODE_*" constants for details). For revlog version 0 and
             1 this will always be COMP_MODE_INLINE.
 
+    [11] side-data compression mode:
+            two bits that detail the way the sidedata chunk is compressed on disk.
+            (see "COMP_MODE_*" constants for details)
     """
 
     _flagserrorclass = error.RevlogError
@@ -2517,7 +2520,9 @@ class revlog(object):
                 compression_mode = COMP_MODE_PLAIN
                 deltainfo = deltautil.drop_u_compression(deltainfo)
 
+        sidedata_compression_mode = COMP_MODE_INLINE
         if sidedata and self.hassidedata:
+            sidedata_compression_mode = COMP_MODE_PLAIN
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
             sidedata_offset = offset + deltainfo.deltalen
         else:
@@ -2539,6 +2544,7 @@ class revlog(object):
             sidedata_offset,
             len(serialized_sidedata),
             compression_mode,
+            sidedata_compression_mode,
         )
 
         self.index.append(e)

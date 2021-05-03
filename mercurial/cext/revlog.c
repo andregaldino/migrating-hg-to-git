@@ -118,9 +118,9 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const tuple_format = PY23("Kiiiiiis#KiB", "Kiiiiiiy#KiB");
+static const char *const tuple_format = PY23("Kiiiiiis#KiBB", "Kiiiiiiy#KiBB");
 #else
-static const char *const tuple_format = PY23("kiiiiiis#kiB", "kiiiiiiy#kiB");
+static const char *const tuple_format = PY23("kiiiiiis#kiBB", "kiiiiiiy#kiBB");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -296,7 +296,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	uint64_t offset_flags, sidedata_offset;
 	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2,
 	    sidedata_comp_len;
-	char data_comp_mode;
+	char data_comp_mode, sidedata_comp_mode;
 	const char *c_node_id;
 	const char *data;
 	Py_ssize_t length = index_length(self);
@@ -339,16 +339,18 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		sidedata_offset = 0;
 		sidedata_comp_len = 0;
 		data_comp_mode = comp_mode_inline;
+		sidedata_comp_mode = comp_mode_inline;
 	} else {
 		sidedata_offset = getbe64(data + 64);
 		sidedata_comp_len = getbe32(data + 72);
-		data_comp_mode = data[76];
+		data_comp_mode = data[76] & 3;
+		sidedata_comp_mode = ((data[76] >> 2) & 3);
 	}
 
 	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
 	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
 	                     self->nodelen, sidedata_offset, sidedata_comp_len,
-	                     data_comp_mode);
+	                     data_comp_mode, sidedata_comp_mode);
 }
 /*
  * Pack header information in binary
@@ -449,16 +451,17 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 {
 	uint64_t offset_flags, sidedata_offset;
 	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
-	char data_comp_mode;
+	char data_comp_mode, sidedata_comp_mode;
 	Py_ssize_t c_node_id_len, sidedata_comp_len;
 	const char *c_node_id;
+	char comp_field;
 	char *data;
 
 	if (!PyArg_ParseTuple(obj, tuple_format, &offset_flags, &comp_len,
 	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
 	                      &parent_2, &c_node_id, &c_node_id_len,
 	                      &sidedata_offset, &sidedata_comp_len,
-	                      &data_comp_mode)) {
+	                      &data_comp_mode, &sidedata_comp_mode)) {
 		PyErr_SetString(PyExc_TypeError, "11-tuple required");
 		return NULL;
 	}
@@ -467,12 +470,20 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
 	}
-	if (self->format_version == format_v1 &&
-	    data_comp_mode != comp_mode_inline) {
-		PyErr_Format(PyExc_ValueError,
-		             "invalid data compression mode: %i",
-		             data_comp_mode);
-		return NULL;
+	if (self->format_version == format_v1) {
+
+		if (data_comp_mode != comp_mode_inline) {
+			PyErr_Format(PyExc_ValueError,
+			             "invalid data compression mode: %i",
+			             data_comp_mode);
+			return NULL;
+		}
+		if (sidedata_comp_mode != comp_mode_inline) {
+			PyErr_Format(PyExc_ValueError,
+			             "invalid sidedata compression mode: %i",
+			             sidedata_comp_mode);
+			return NULL;
+		}
 	}
 
 	if (self->new_length == self->added_length) {
@@ -501,7 +512,9 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (self->format_version == format_v2) {
 		putbe64(sidedata_offset, data + 64);
 		putbe32(sidedata_comp_len, data + 72);
-		data[76] = (char)data_comp_mode;
+		comp_field = data_comp_mode & 3;
+		comp_field = comp_field | (sidedata_comp_mode & 3) << 2;
+		data[76] = comp_field;
 		/* Padding for 96 bytes alignment */
 		memset(data + 77, 0, self->entry_size - 77);
 	}
@@ -2777,9 +2790,9 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		self->entry_size = v1_entry_size;
 	}
 
-	self->nullentry = Py_BuildValue(PY23("iiiiiiis#iiB", "iiiiiiiy#iiB"), 0,
-	                                0, 0, -1, -1, -1, -1, nullid,
-	                                self->nodelen, 0, 0, comp_mode_inline);
+	self->nullentry = Py_BuildValue(
+	    PY23("iiiiiiis#iiBB", "iiiiiiiy#iiBB"), 0, 0, 0, -1, -1, -1, -1,
+	    nullid, self->nodelen, 0, 0, comp_mode_inline, comp_mode_inline);
 
 	if (!self->nullentry)
 		return -1;

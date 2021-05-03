@@ -70,6 +70,7 @@ class unionrevlog(revlog.revlog):
                 _sdo,
                 _sds,
                 _dcm,
+                _sdcm,
             ) = rev
             flags = _start & 0xFFFF
 
@@ -104,6 +105,7 @@ class unionrevlog(revlog.revlog):
                 node,
                 0,  # sidedata offset
                 0,  # sidedata size
+                revlog_constants.COMP_MODE_INLINE,
                 revlog_constants.COMP_MODE_INLINE,
             )
             self.index.append(e)

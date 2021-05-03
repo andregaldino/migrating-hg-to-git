@@ -52,7 +52,12 @@ def py_parseindex(data, inline):
         cache = (0, data)
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
-            e = e + (0, 0, constants.COMP_MODE_INLINE)
+            e = e + (
+                0,
+                0,
+                constants.COMP_MODE_INLINE,
+                constants.COMP_MODE_INLINE,
+            )
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -62,7 +67,12 @@ def py_parseindex(data, inline):
     else:
         while off <= l:
             e = struct.unpack(indexformatng, data[off : off + s])
-            e = e + (0, 0, constants.COMP_MODE_INLINE)
+            e = e + (
+                0,
+                0,
+                constants.COMP_MODE_INLINE,
+                constants.COMP_MODE_INLINE,
+            )
             nodemap[e[7]] = n
             append(e)
             n += 1
@@ -257,6 +267,7 @@ class parseindex2tests(unittest.TestCase):
             0,
             0,
             constants.COMP_MODE_INLINE,
+            constants.COMP_MODE_INLINE,
         )
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
@@ -290,6 +301,7 @@ class parseindex2tests(unittest.TestCase):
                 node,
                 0,
                 0,
+                constants.COMP_MODE_INLINE,
                 constants.COMP_MODE_INLINE,
             )
             index.append(e)
