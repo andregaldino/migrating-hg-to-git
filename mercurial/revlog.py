@@ -35,6 +35,7 @@ from .i18n import _
 from .pycompat import getattr
 from .revlogutils.constants import (
     ALL_KINDS,
+    FEATURES_BY_VERSION,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_HEADER,
@@ -499,24 +500,10 @@ class revlog(object):
             msg %= (display_flag, self._format_version, self.display_id)
             raise error.RevlogError(msg)
 
-        if self._format_version == REVLOGV0:
-            self._inline = False
-            self._generaldelta = False
-        elif self._format_version == REVLOGV1:
-            self._inline = self._format_flags & FLAG_INLINE_DATA
-            self._generaldelta = self._format_flags & FLAG_GENERALDELTA
-        elif self._format_version == REVLOGV2:
-            # There is a bug in the transaction handling when going from an
-            # inline revlog to a separate index and data file. Turn it off until
-            # it's fixed, since v2 revlogs sometimes get rewritten on exchange.
-            # See issue6485
-            self._inline = False
-            # generaldelta implied by version 2 revlogs.
-            self._generaldelta = True
-            # revlog-v2 has built in sidedata support
-            self.hassidedata = True
-        else:
-            assert False, 'unreachable'
+        features = FEATURES_BY_VERSION[self._format_version]
+        self._inline = features[b'inline'](self._format_flags)
+        self._generaldelta = features[b'generaldelta'](self._format_flags)
+        self.hassidedata = features[b'sidedata']
 
         index_data = entry_data
         self._indexfile = entry_point

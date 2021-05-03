@@ -120,4 +120,34 @@ SUPPORTED_FLAGS = {
     REVLOGV2: REVLOGV2_FLAGS,
 }
 
+_no = lambda flags: False
+_yes = lambda flags: True
+
+
+def _from_flag(flag):
+    return lambda flags: bool(flags & flag)
+
+
+FEATURES_BY_VERSION = {
+    REVLOGV0: {
+        b'inline': _no,
+        b'generaldelta': _no,
+        b'sidedata': False,
+    },
+    REVLOGV1: {
+        b'inline': _from_flag(FLAG_INLINE_DATA),
+        b'generaldelta': _from_flag(FLAG_GENERALDELTA),
+        b'sidedata': False,
+    },
+    REVLOGV2: {
+        # There is a bug in the transaction handling when going from an
+        # inline revlog to a separate index and data file. Turn it off until
+        # it's fixed, since v2 revlogs sometimes get rewritten on exchange.
+        # See issue6485
+        b'inline': _no,
+        b'generaldelta': _yes,
+        b'sidedata': True,
+    },
+}
+
 SPARSE_REVLOG_MAX_CHAIN_LENGTH = 1000
