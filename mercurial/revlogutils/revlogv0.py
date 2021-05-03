@@ -42,7 +42,7 @@ def offset_type(offset, type):
 
 class revlogoldindex(list):
     entry_size = INDEX_ENTRY_V0.size
-    null_item = (0, 0, 0, -1, -1, -1, -1, node.nullid)
+    null_item = (0, 0, 0, -1, -1, -1, -1, sha1nodeconstants.nullid, 0, 0)
 
     @property
     def nodemap(self):
