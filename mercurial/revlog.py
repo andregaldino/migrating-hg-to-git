@@ -3240,13 +3240,16 @@ class revlog(object):
                 # Apply (potential) flags to add and to remove after running
                 # the sidedata helpers
                 new_offset_flags = entry[0] | flags[0] & ~flags[1]
-                entry = (new_offset_flags,) + entry[1:8]
-                entry += (current_offset, len(serialized_sidedata))
+                entry_update = (
+                    current_offset,
+                    len(serialized_sidedata),
+                    new_offset_flags,
+                )
 
                 # the sidedata computation might have move the file cursors around
                 dfh.seek(current_offset, os.SEEK_SET)
                 dfh.write(serialized_sidedata)
-                new_entries.append(entry)
+                new_entries.append(entry_update)
                 current_offset += len(serialized_sidedata)
                 if self._docket is not None:
                     self._docket.data_end = dfh.tell()
@@ -3255,7 +3258,7 @@ class revlog(object):
             ifh.seek(startrev * self.index.entry_size)
             for i, e in enumerate(new_entries):
                 rev = startrev + i
-                self.index.replace_sidedata_info(rev, e[8], e[9], e[0])
+                self.index.replace_sidedata_info(rev, *e)
                 packed = self.index.entry_binary(rev)
                 if rev == 0 and self._docket is None:
                     header = self._format_flags | self._format_version
