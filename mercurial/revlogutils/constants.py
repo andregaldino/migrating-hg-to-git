@@ -85,9 +85,10 @@ assert INDEX_ENTRY_V1.size == 32 * 2
 # 32 bytes: nodeid
 #  8 bytes: sidedata offset
 #  4 bytes: sidedata compressed length
-#  20 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
-INDEX_ENTRY_V2 = struct.Struct(b">Qiiiiii20s12xQi20x")
-assert INDEX_ENTRY_V2.size == 32 * 3
+#  1 bytes: compression mode (2 lower bit are data_compression_mode)
+#  19 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
+INDEX_ENTRY_V2 = struct.Struct(b">Qiiiiii20s12xQiB19x")
+assert INDEX_ENTRY_V2.size == 32 * 3, INDEX_ENTRY_V2.size
 
 # revlog index flags
 

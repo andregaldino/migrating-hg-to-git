@@ -315,12 +315,10 @@ class Index2Mixin(object):
             self._extra[rev - self._lgt] = new
 
     def _unpack_entry(self, data):
-        return self.index_format.unpack(data) + (
-            revlog_constants.COMP_MODE_INLINE,
-        )
+        return self.index_format.unpack(data)
 
     def _pack_entry(self, entry):
-        return self.index_format.pack(*entry[:10])
+        return self.index_format.pack(*entry[:11])
 
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""

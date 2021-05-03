@@ -338,12 +338,13 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	if (self->format_version == format_v1) {
 		sidedata_offset = 0;
 		sidedata_comp_len = 0;
+		data_comp_mode = comp_mode_inline;
 	} else {
 		sidedata_offset = getbe64(data + 64);
 		sidedata_comp_len = getbe32(data + 72);
+		data_comp_mode = data[76];
 	}
 
-	data_comp_mode = comp_mode_inline;
 	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
 	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
 	                     self->nodelen, sidedata_offset, sidedata_comp_len,
@@ -466,7 +467,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
 	}
-	if (data_comp_mode != comp_mode_inline) {
+	if (self->format_version == format_v1 &&
+	    data_comp_mode != comp_mode_inline) {
 		PyErr_Format(PyExc_ValueError,
 		             "invalid data compression mode: %i",
 		             data_comp_mode);
@@ -499,8 +501,9 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (self->format_version == format_v2) {
 		putbe64(sidedata_offset, data + 64);
 		putbe32(sidedata_comp_len, data + 72);
+		data[76] = (char)data_comp_mode;
 		/* Padding for 96 bytes alignment */
-		memset(data + 76, 0, self->entry_size - 76);
+		memset(data + 77, 0, self->entry_size - 77);
 	}
 
 	if (self->ntinitialized)
