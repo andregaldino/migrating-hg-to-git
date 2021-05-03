@@ -351,6 +351,7 @@ class revlog(object):
         self._maxdeltachainspan = -1
         self._withsparseread = False
         self._sparserevlog = False
+        self.hassidedata = False
         self._srdensitythreshold = 0.50
         self._srmingapsize = 262144
 
@@ -417,7 +418,6 @@ class revlog(object):
             self._maxdeltachainspan = opts[b'maxdeltachainspan']
         if self._mmaplargeindex and b'mmapindexthreshold' in opts:
             mmapindexthreshold = opts[b'mmapindexthreshold']
-        self.hassidedata = bool(opts.get(b'side-data', False))
         self._sparserevlog = bool(opts.get(b'sparse-revlog', False))
         withsparseread = bool(opts.get(b'with-sparse-read', False))
         # sparse-revlog forces sparse-read
@@ -521,6 +521,8 @@ class revlog(object):
             self._inline = False
             # generaldelta implied by version 2 revlogs.
             self._generaldelta = True
+            # revlog-v2 has built in sidedata support
+            self.hassidedata = True
 
         else:
             msg = _(b'unknown version (%d) in revlog %s')
