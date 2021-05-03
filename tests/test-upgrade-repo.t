@@ -1453,6 +1453,7 @@ Check upgrading to a side-data revlog
 
 upgrade
 
+  $ hg debugsidedata -c 0
   $ hg --config format.exp-use-side-data=yes debugupgraderepo --run  --no-backup --config "extensions.sidedata=$TESTDIR/testlib/ext-sidedata.py" --quiet
   upgrade will perform the following actions:
   
