@@ -1556,7 +1556,7 @@ class revlog(object):
                     % (
                         self._indexfile if self._inline else self._datafile,
                         length,
-                        realoffset,
+                        offset,
                         len(d) - startoffset,
                     )
                 )
