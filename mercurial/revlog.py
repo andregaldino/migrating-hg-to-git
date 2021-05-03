@@ -510,8 +510,8 @@ class revlog(object):
                     % (flags >> 16, fmt, self.display_id)
                 )
 
-            self._inline = header & FLAG_INLINE_DATA
-            self._generaldelta = header & FLAG_GENERALDELTA
+            self._inline = self._format_flags & FLAG_INLINE_DATA
+            self._generaldelta = self._format_flags & FLAG_GENERALDELTA
 
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
