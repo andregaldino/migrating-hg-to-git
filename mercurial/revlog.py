@@ -473,11 +473,11 @@ class revlog(object):
         else:
             entry_point = b'%s.i.%s' % (self.radix, self.postfix)
 
-        indexdata = b''
+        entry_data = b''
         self._initempty = True
-        indexdata = self._get_data(entry_point, mmapindexthreshold)
-        if len(indexdata) > 0:
-            header = INDEX_HEADER.unpack(indexdata[:4])[0]
+        entry_data = self._get_data(entry_point, mmapindexthreshold)
+        if len(entry_data) > 0:
+            header = INDEX_HEADER.unpack(entry_data[:4])[0]
             self._initempty = False
         else:
             header = new_header
@@ -525,6 +525,7 @@ class revlog(object):
             msg %= (self._format_version, self.display_id)
             raise error.RevlogError(msg)
 
+        index_data = entry_data
         self._indexfile = entry_point
 
         if self.postfix is None or self.postfix == b'a':
@@ -564,7 +565,7 @@ class revlog(object):
         elif use_rust_index:
             self._parse_index = parse_index_v1_mixed
         try:
-            d = self._parse_index(indexdata, self._inline)
+            d = self._parse_index(index_data, self._inline)
             index, _chunkcache = d
             use_nodemap = (
                 not self._inline
