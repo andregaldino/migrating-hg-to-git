@@ -1400,7 +1400,7 @@ class revlog(object):
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
                 raise error.AmbiguousPrefixLookupError(
-                    id, self._indexfile, _(b'ambiguous identifier')
+                    id, self.display_id, _(b'ambiguous identifier')
                 )
             # fall through to slow path that filters hidden revisions
         except (AttributeError, ValueError):
@@ -1426,7 +1426,7 @@ class revlog(object):
                         self._pcache[id] = nl[0]
                         return nl[0]
                     raise error.AmbiguousPrefixLookupError(
-                        id, self._indexfile, _(b'ambiguous identifier')
+                        id, self.display_id, _(b'ambiguous identifier')
                     )
                 if maybewdir:
                     raise error.WdirUnsupported
