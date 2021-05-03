@@ -3145,10 +3145,10 @@ class revlog(object):
 
         new_entries = []
         # append the new sidedata
-        with self._datafp(b'a+') as fp:
+        with self._datafp(b'a+') as dfh:
             # Maybe this bug still exists, see revlog._writeentry
-            fp.seek(0, os.SEEK_END)
-            current_offset = fp.tell()
+            dfh.seek(0, os.SEEK_END)
+            current_offset = dfh.tell()
             for rev in range(startrev, endrev + 1):
                 entry = self.index[rev]
                 new_sidedata, flags = sidedatautil.run_sidedata_helpers(
@@ -3174,12 +3174,12 @@ class revlog(object):
                 entry = (new_offset_flags,) + entry[1:8]
                 entry += (current_offset, len(serialized_sidedata))
 
-                fp.write(serialized_sidedata)
+                dfh.write(serialized_sidedata)
                 new_entries.append(entry)
                 current_offset += len(serialized_sidedata)
 
         # rewrite the new index entries
-        with self._indexfp(b'r+') as fp:
+        with self._indexfp(b'r+') as ifh:
             fp.seek(startrev * self.index.entry_size)
             for i, e in enumerate(new_entries):
                 rev = startrev + i
@@ -3189,4 +3189,4 @@ class revlog(object):
                     header = self._format_flags | self._format_version
                     header = self.index.pack_header(header)
                     packed = header + packed
-                fp.write(packed)
+                ifh.write(packed)
