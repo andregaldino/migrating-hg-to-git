@@ -5,21 +5,26 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-# See https://github.com/google/pytype/issues/860
-# pytype: skip-file
-
 from __future__ import absolute_import
 
 from ..i18n import _
 from .. import (
     error,
     localrepo,
+    pycompat,
     requirements,
     revlog,
     util,
 )
 
 from ..utils import compression
+
+if pycompat.TYPE_CHECKING:
+    from typing import (
+        List,
+        Type,
+    )
+
 
 # list of requirements that request a clone of all revlog if added/removed
 RECLONES_REQUIREMENTS = {
@@ -110,7 +115,7 @@ class improvement(object):
         return hash(self.name)
 
 
-allformatvariant = []
+allformatvariant = []  # type: List[Type['formatvariant']]
 
 
 def registerformatvariant(cls):

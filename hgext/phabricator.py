@@ -403,7 +403,7 @@ def readurltoken(ui):
 def callconduit(ui, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
     host, token = readurltoken(ui)
-    url, authinfo = util.url(b'/'.join([host, b'api', name])).authinfo()
+    url, authinfo = urlutil.url(b'/'.join([host, b'api', name])).authinfo()
     ui.debug(b'Conduit Call: %s %s\n' % (url, pycompat.byterepr(params)))
     params = params.copy()
     params[b'__conduit__'] = {

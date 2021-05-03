@@ -464,18 +464,24 @@ class repoview(object):
         return delattr(self._unfilteredrepo, attr)
 
 
-# Python <3.4 easily leaks types via __mro__. See
-# https://bugs.python.org/issue17950. We cache dynamically created types
-# so they won't be leaked on every invocation of repo.filtered().
+# Dynamically created classes introduce memory cycles via __mro__. See
+# https://bugs.python.org/issue17950.
+# This need of the garbage collector can turn into memory leak in
+# Python <3.4, which is the first version released with PEP 442.
 _filteredrepotypes = weakref.WeakKeyDictionary()
 
 
 def newtype(base):
     """Create a new type with the repoview mixin and the given base class"""
-    if base not in _filteredrepotypes:
+    ref = _filteredrepotypes.get(base)
+    if ref is not None:
+        cls = ref()
+        if cls is not None:
+            return cls
 
-        class filteredrepo(repoview, base):
-            pass
+    class filteredrepo(repoview, base):
+        pass
 
-        _filteredrepotypes[base] = filteredrepo
-    return _filteredrepotypes[base]
+    _filteredrepotypes[base] = weakref.ref(filteredrepo)
+    # do not reread from weakref to be 100% sure not to return None
+    return filteredrepo

@@ -7,11 +7,13 @@
 
 from __future__ import absolute_import
 
+import os
 from .i18n import _
 
 from . import (
     error,
     narrowspec,
+    requirements,
     util,
 )
 
@@ -34,13 +36,22 @@ class dirstateguard(util.transactional):
         self._repo = repo
         self._active = False
         self._closed = False
-        self._backupname = b'dirstate.backup.%s.%d' % (name, id(self))
-        self._narrowspecbackupname = b'narrowspec.backup.%s.%d' % (
-            name,
-            id(self),
-        )
+
+        def getname(prefix):
+            fd, fname = repo.vfs.mkstemp(prefix=prefix)
+            os.close(fd)
+            return fname
+
+        self._backupname = getname(b'dirstate.backup.%s.' % name)
         repo.dirstate.savebackup(repo.currenttransaction(), self._backupname)
-        narrowspec.savewcbackup(repo, self._narrowspecbackupname)
+        # Don't make this the empty string, things may join it with stuff and
+        # blindly try to unlink it, which could be bad.
+        self._narrowspecbackupname = None
+        if requirements.NARROW_REQUIREMENT in repo.requirements:
+            self._narrowspecbackupname = getname(
+                b'narrowspec.backup.%s.' % name
+            )
+            narrowspec.savewcbackup(repo, self._narrowspecbackupname)
         self._active = True
 
     def __del__(self):
@@ -62,12 +73,14 @@ class dirstateguard(util.transactional):
         self._repo.dirstate.clearbackup(
             self._repo.currenttransaction(), self._backupname
         )
-        narrowspec.clearwcbackup(self._repo, self._narrowspecbackupname)
+        if self._narrowspecbackupname:
+            narrowspec.clearwcbackup(self._repo, self._narrowspecbackupname)
         self._active = False
         self._closed = True
 
     def _abort(self):
-        narrowspec.restorewcbackup(self._repo, self._narrowspecbackupname)
+        if self._narrowspecbackupname:
+            narrowspec.restorewcbackup(self._repo, self._narrowspecbackupname)
         self._repo.dirstate.restorebackup(
             self._repo.currenttransaction(), self._backupname
         )

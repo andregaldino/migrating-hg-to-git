@@ -220,6 +220,7 @@ def _sendmail(ui, sender, recipients, msg):
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''
+    # TODO: use python mbox library for proper locking
     with open(mbox, b'ab+') as fp:
         # Should be time.asctime(), but Windows prints 2-characters day
         # of month instead of one. Make them print the same thing.

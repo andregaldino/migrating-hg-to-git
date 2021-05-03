@@ -7,6 +7,7 @@ Setup:
   > GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"; export GIT_COMMITTER_NAME
   > GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"; export GIT_COMMITTER_EMAIL
   > GIT_COMMITTER_DATE="$GIT_AUTHOR_DATE"; export GIT_COMMITTER_DATE
+  > HGUSER="test <test@example.org>"; export HGUSER
   > count=10
   > gitcommit() {
   >    GIT_AUTHOR_DATE="2007-01-01 00:00:$count +0000";
@@ -49,6 +50,22 @@ Now globally enable extension for the rest of the test:
   > log-index-cache-miss = yes
   > EOF
 
+Test some edge cases around a commitless repo first
+  $ mkdir empty
+  $ cd empty
+  $ git init
+  Initialized empty Git repository in $TESTTMP/empty/.git/
+  $ hg init --git
+  $ hg heads
+  [1]
+  $ hg tip
+  changeset:   -1:000000000000
+  tag:         tip
+  user:        
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  
+  $ cd ..
+
 Make a new repo with git:
   $ mkdir foo
   $ cd foo
@@ -67,6 +84,7 @@ Ignore the .hg directory within git:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
@@ -134,6 +152,7 @@ Revert works:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
@@ -153,7 +172,9 @@ Add shows sanely in both:
   $ git status
   On branch master
   Changes to be committed:
-    (use "git restore --staged <file>..." to unstage)
+    (use "git restore --staged <file>..." to unstage) (?)
+    (use "git reset HEAD <file>..." to unstage) (?)
+   (?)
   	new file:   gamma
   
 
@@ -165,6 +186,7 @@ forget does what it should as well:
   On branch master
   Untracked files:
     (use "git add <file>..." to include in what will be committed)
+   (?)
   	gamma
   
   nothing added to commit but untracked files present (use "git add" to track)
@@ -175,7 +197,7 @@ clean up untracked file
 hg log FILE
 
   $ echo a >> alpha
-  $ hg ci -m 'more alpha' --traceback --date '1583522787 18000'
+  $ hg ci -m 'more alpha' --traceback --date '1583558723 18000'
   $ echo b >> beta
   $ hg ci -m 'more beta'
   heads mismatch, rebuilding dagcache
@@ -184,16 +206,16 @@ hg log FILE
   heads mismatch, rebuilding dagcache
   $ hg log -G alpha
   heads mismatch, rebuilding dagcache
-  @  changeset:   4:6626247b7dc8
+  @  changeset:   4:cf6ddf5d9b8a
   :  bookmark:    master
   :  tag:         tip
-  :  user:        test <test>
+  :  user:        test <test@example.org>
   :  date:        Thu Jan 01 00:00:00 1970 +0000
   :  summary:     even more alpha
   :
-  o  changeset:   2:a1983dd7fb19
-  :  user:        test <test>
-  :  date:        Fri Mar 06 14:26:27 2020 -0500
+  o  changeset:   2:5b2c80b027ce
+  :  user:        test <test@example.org>
+  :  date:        Sat Mar 07 00:25:23 2020 -0500
   :  summary:     more alpha
   :
   o  changeset:   0:c5864c9d16fb
@@ -202,8 +224,8 @@ hg log FILE
      summary:     Add alpha
   
   $ hg log -G beta
-  o  changeset:   3:d8ee22687733
-  :  user:        test <test>
+  o  changeset:   3:980d4f79a9c6
+  :  user:        test <test@example.org>
   :  date:        Thu Jan 01 00:00:00 1970 +0000
   :  summary:     more beta
   :
@@ -214,7 +236,7 @@ hg log FILE
   
 
   $ hg log -r "children(3d9be8deba43)" -T"{node|short} {children}\n"
-  a1983dd7fb19 3:d8ee22687733
+  5b2c80b027ce 3:980d4f79a9c6
 
 hg annotate
 
@@ -258,13 +280,29 @@ hg and git status both clean
 node|shortest works correctly
   $ hg log -T '{node}\n' | sort
   3d9be8deba43482be2c81a4cb4be1f10d85fa8bc
-  6626247b7dc8f231b183b8a4761c89139baca2ad
-  a1983dd7fb19cbd83ad5a1c2fc8bf3d775dea12f
-  ae1ab744f95bfd5b07cf573baef98a778058537b
+  5b2c80b027ce4250f88957326c199a2dc48dad60
+  980d4f79a9c617d60d0fe1fb383753c4a61bea8e
+  c1a41c49866ecc9c5411be932653e5b430961dd5
   c5864c9d16fb3431fe2c175ff84dc6accdbb2c18
-  d8ee22687733a1991813560b15128cd9734f4b48
-  $ hg log -r ae1ab744f95bfd5b07cf573baef98a778058537b --template "{shortest(node,1)}\n"
-  ae
+  cf6ddf5d9b8a120bf90020342bcf7a96d0167279
+  $ hg log -r c1a41c49866ecc9c5411be932653e5b430961dd5 --template "{shortest(node,1)}\n"
+  c1
+
+This covers gitlog._partialmatch()
+  $ hg log -r c
+  abort: ambiguous revision identifier: c
+  [10]
+  $ hg log -r c1
+  changeset:   5:c1a41c49866e
+  bookmark:    master
+  tag:         tip
+  user:        test <test@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Introduce file a/mu
+  
+  $ hg log -r dead
+  abort: unknown revision 'dead'
+  [255]
 
 This coveres changelog.findmissing()
   $ hg merge --preview 3d9be8deba43
@@ -320,14 +358,14 @@ Contents of each commit should be the same
 
   $ hg ex -r .
   # HG changeset patch
-  # User test <test>
+  # User test <test@example.org>
   # Date 0 0
   #      Thu Jan 01 00:00:00 1970 +0000
-  # Node ID 80adc61cf57e99f6a412d83fee6239d1556cefcf
-  # Parent  ae1ab744f95bfd5b07cf573baef98a778058537b
+  # Node ID 6024eda7986da123aa6797dd4603bd399d49bf5c
+  # Parent  c1a41c49866ecc9c5411be932653e5b430961dd5
   test interactive commit
   
-  diff -r ae1ab744f95b -r 80adc61cf57e alpha
+  diff -r c1a41c49866e -r 6024eda7986d alpha
   --- a/alpha	Thu Jan 01 00:00:00 1970 +0000
   +++ b/alpha	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,3 +1,4 @@
@@ -336,8 +374,8 @@ Contents of each commit should be the same
    a
   +bar
   $ git show
-  commit 80adc61cf57e99f6a412d83fee6239d1556cefcf
-  Author: test <test>
+  commit 6024eda7986da123aa6797dd4603bd399d49bf5c
+  Author: test <test@example.org>
   Date:   Thu Jan 1 00:00:00 1970 +0000
   
       test interactive commit
@@ -357,4 +395,31 @@ Deleting files should also work (this was issue6398)
   reverting beta
   $ hg rm beta
   $ hg ci -m 'remove beta'
+
+This covers changelog.tiprev() (issue6510)
+  $ hg log -r '(.^^):'
+  heads mismatch, rebuilding dagcache
+  changeset:   5:c1a41c49866e
+  user:        test <test@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Introduce file a/mu
+  
+  changeset:   6:6024eda7986d
+  user:        test <test@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     test interactive commit
+  
+  changeset:   7:1a0fee76bfc4
+  bookmark:    master
+  tag:         tip
+  user:        test <test@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     remove beta
+  
+This covers changelog.headrevs() with a non-None arg
+  $ hg log -r 'heads(.)' -Tcompact
+  7[tip][master]   1a0fee76bfc4   1970-01-01 00:00 +0000   test
+    remove beta
+  
+
 
