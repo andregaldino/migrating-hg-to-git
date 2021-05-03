@@ -793,7 +793,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     index = r.index
     start = r.start
     length = r.length
-    generaldelta = r.version & revlog.FLAG_GENERALDELTA
+    generaldelta = r._generaldelta
     withsparseread = getattr(r, '_withsparseread', False)
 
     def revinfo(rev):
