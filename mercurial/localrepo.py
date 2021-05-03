@@ -1066,9 +1066,6 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     if sparserevlog:
         options[b'generaldelta'] = True
 
-    sidedata = requirementsmod.SIDEDATA_REQUIREMENT in requirements
-    options[b'side-data'] = sidedata
-
     maxchainlen = None
     if sparserevlog:
         maxchainlen = revlogconst.SPARSE_REVLOG_MAX_CHAIN_LENGTH
@@ -1221,7 +1218,6 @@ class localrepository(object):
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.REVLOGV2_REQUIREMENT,
-        requirementsmod.SIDEDATA_REQUIREMENT,
         requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
@@ -3517,16 +3513,10 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
-    # experimental config: format.exp-use-side-data
-    if ui.configbool(b'format', b'exp-use-side-data'):
-        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
-        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
         requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
-        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)

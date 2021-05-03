@@ -935,7 +935,6 @@ def supportremovedrequirements(repo):
     """
     supported = {
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
@@ -966,7 +965,6 @@ def supporteddestrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,  # allowed in case of downgrade
         requirements.STORE_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
@@ -996,7 +994,6 @@ def allowednewrequirements(repo):
         requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,

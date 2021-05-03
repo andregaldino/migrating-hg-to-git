@@ -1370,12 +1370,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
-    b'exp-use-side-data',
-    default=False,
-    experimental=True,
-)
-coreconfigitem(
-    b'format',
     b'use-share-safe',
     default=False,
 )

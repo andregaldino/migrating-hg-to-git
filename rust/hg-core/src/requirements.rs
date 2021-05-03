@@ -124,11 +124,6 @@ pub(crate) const REVLOGV2_REQUIREMENT: &str = "exp-revlogv2.1";
 #[allow(unused)]
 pub(crate) const SPARSEREVLOG_REQUIREMENT: &str = "sparserevlog";
 
-/// A repository with the sidedataflag requirement will allow to store extra
-/// information for revision without altering their original hashes.
-#[allow(unused)]
-pub(crate) const SIDEDATA_REQUIREMENT: &str = "exp-sidedata-flag";
-
 /// A repository with the the copies-sidedata-changeset requirement will store
 /// copies related information in changeset's sidedata.
 #[allow(unused)]

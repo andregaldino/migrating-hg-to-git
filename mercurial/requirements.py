@@ -41,10 +41,6 @@ REVLOGV2_REQUIREMENT = b'exp-revlogv2.2'
 # This is why once a repository has enabled sparse-read, it becomes required.
 SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
 
-# A repository with the sidedataflag requirement will allow to store extra
-# information for revision without altering their original hashes.
-SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
-
 # A repository with the the copies-sidedata-changeset requirement will store
 # copies related information in changeset's sidedata.
 COPIESSDC_REQUIREMENT = b'exp-copies-sidedata-changeset'

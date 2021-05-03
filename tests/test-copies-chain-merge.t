@@ -1669,7 +1669,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   requirements
      preserved: * (glob)
      removed: revlogv1
-     added: exp-copies-sidedata-changeset, exp-revlogv2.2, exp-sidedata-flag
+     added: exp-copies-sidedata-changeset, exp-revlogv2.2
   
   processed revlogs:
     - all-filelogs
@@ -1708,7 +1708,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   requirements
      preserved: * (glob)
      removed: revlogv1
-     added: exp-copies-sidedata-changeset, exp-revlogv2.2, exp-sidedata-flag
+     added: exp-copies-sidedata-changeset, exp-revlogv2.2
   
   processed revlogs:
     - all-filelogs
