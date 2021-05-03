@@ -35,6 +35,7 @@ from .i18n import _
 from .pycompat import getattr
 from .revlogutils.constants import (
     ALL_KINDS,
+    COMP_MODE_DEFAULT,
     COMP_MODE_INLINE,
     COMP_MODE_PLAIN,
     FEATURES_BY_VERSION,
@@ -707,6 +708,15 @@ class revlog(object):
     def _compressor(self):
         engine = util.compengines[self._compengine]
         return engine.revlogcompressor(self._compengineopts)
+
+    @util.propertycache
+    def _decompressor(self):
+        """the default decompressor"""
+        if self._docket is None:
+            return None
+        t = self._docket.default_compression_header
+        c = self._get_decompressor(t)
+        return c.decompress
 
     def _indexfp(self):
         """file object for the revlog's index file"""
@@ -1776,6 +1786,8 @@ class revlog(object):
         data = self._getsegmentforrevs(rev, rev, df=df)[1]
         if compression_mode == COMP_MODE_PLAIN:
             return data
+        elif compression_mode == COMP_MODE_DEFAULT:
+            return self._decompressor(data)
         elif compression_mode == COMP_MODE_INLINE:
             return self.decompress(data)
         else:
@@ -1829,6 +1841,8 @@ class revlog(object):
                 return [self._chunk(rev, df=df) for rev in revschunk]
 
             decomp = self.decompress
+            # self._decompressor might be None, but will not be used in that case
+            def_decomp = self._decompressor
             for rev in revschunk:
                 chunkstart = start(rev)
                 if inline:
@@ -1840,6 +1854,8 @@ class revlog(object):
                     ladd(c)
                 elif comp_mode == COMP_MODE_INLINE:
                     ladd(decomp(c))
+                elif comp_mode == COMP_MODE_DEFAULT:
+                    ladd(def_decomp(c))
                 else:
                     msg = 'unknown compression mode %d'
                     msg %= comp_mode
@@ -2489,8 +2505,12 @@ class revlog(object):
             if not h and not d:
                 # not data to store at all... declare them uncompressed
                 compression_mode = COMP_MODE_PLAIN
-            elif not h and d[0:1] == b'\0':
-                compression_mode = COMP_MODE_PLAIN
+            elif not h:
+                t = d[0:1]
+                if t == b'\0':
+                    compression_mode = COMP_MODE_PLAIN
+                elif t == self._docket.default_compression_header:
+                    compression_mode = COMP_MODE_DEFAULT
             elif h == b'u':
                 # we have a more efficient way to declare uncompressed
                 h = b''

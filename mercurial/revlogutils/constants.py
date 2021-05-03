@@ -123,6 +123,16 @@ REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 # chunk value. Without any header information prefixed.
 COMP_MODE_PLAIN = 0
 
+# Chunk use the "default compression" for the revlog (usually defined in the
+# revlog docket). A header is still used.
+#
+# XXX: keeping a header is probably not useful and we should probably drop it.
+#
+# XXX: The value of allow mixed type of compression in the revlog is unclear
+#      and we should consider making PLAIN/DEFAULT the only available mode for
+#      revlog v2, disallowing INLINE mode.
+COMP_MODE_DEFAULT = 1
+
 # Chunk use a compression mode stored "inline" at the start of the chunk
 # itself.  This is the mode always used for revlog version "0" and "1"
 COMP_MODE_INLINE = 2

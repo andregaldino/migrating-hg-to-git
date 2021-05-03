@@ -21,6 +21,7 @@ import struct
 
 from .. import (
     error,
+    util,
 )
 
 from . import (
@@ -36,7 +37,8 @@ from . import (
 # * 8 bytes: pending size of index-data
 # * 8 bytes: size of data
 # * 8 bytes: pending size of data
-S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'LLLL')
+# * 1 bytes: default compression header
+S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'LLLLc')
 
 
 class RevlogDocket(object):
@@ -51,6 +53,7 @@ class RevlogDocket(object):
         pending_index_end=0,
         data_end=0,
         pending_data_end=0,
+        default_compression_header=None,
     ):
         self._version_header = version_header
         self._read_only = bool(use_pending)
@@ -71,6 +74,7 @@ class RevlogDocket(object):
         else:
             self._index_end = self._initial_index_end
             self._data_end = self._initial_data_end
+        self.default_compression_header = default_compression_header
 
     def index_filepath(self):
         """file path to the current index file associated to this docket"""
@@ -134,6 +138,7 @@ class RevlogDocket(object):
             self._index_end,
             official_data_end,
             self._data_end,
+            self.default_compression_header,
         )
         return S_HEADER.pack(*data)
 
@@ -142,7 +147,12 @@ def default_docket(revlog, version_header):
     """given a revlog version a new docket object for the given revlog"""
     if (version_header & 0xFFFF) != constants.REVLOGV2:
         return None
-    docket = RevlogDocket(revlog, version_header=version_header)
+    comp = util.compengines[revlog._compengine].revlogheader()
+    docket = RevlogDocket(
+        revlog,
+        version_header=version_header,
+        default_compression_header=comp,
+    )
     docket._dirty = True
     return docket
 
@@ -155,6 +165,7 @@ def parse_docket(revlog, data, use_pending=False):
     pending_index_size = header[2]
     data_size = header[3]
     pending_data_size = header[4]
+    default_compression_header = header[5]
     docket = RevlogDocket(
         revlog,
         use_pending=use_pending,
@@ -163,5 +174,6 @@ def parse_docket(revlog, data, use_pending=False):
         pending_index_end=pending_index_size,
         data_end=data_size,
         pending_data_end=pending_data_size,
+        default_compression_header=default_compression_header,
     )
     return docket
