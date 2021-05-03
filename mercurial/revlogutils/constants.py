@@ -119,6 +119,10 @@ REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 # These constants are used in revlog version >=2 to denote the compression used
 # for a chunk.
 
+# Chunk use no compression, the data stored on disk can be directly use as
+# chunk value. Without any header information prefixed.
+COMP_MODE_PLAIN = 0
+
 # Chunk use a compression mode stored "inline" at the start of the chunk
 # itself.  This is the mode always used for revlog version "0" and "1"
 COMP_MODE_INLINE = 2

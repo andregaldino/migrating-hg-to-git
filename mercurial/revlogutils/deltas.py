@@ -553,6 +553,24 @@ class _deltainfo(object):
     snapshotdepth = attr.ib()
 
 
+def drop_u_compression(delta):
+    """turn into a "u" (no-compression) into no-compression without header
+
+    This is useful for revlog format that has better compression method.
+    """
+    assert delta.data[0] == b'u', delta.data[0]
+    return _deltainfo(
+        delta.distance,
+        delta.deltalen - 1,
+        (b'', delta.data[1]),
+        delta.base,
+        delta.chainbase,
+        delta.chainlen,
+        delta.compresseddeltalen,
+        delta.snapshotdepth,
+    )
+
+
 def isgooddeltainfo(revlog, deltainfo, revinfo):
     """Returns True if the given delta is good. Good means that it is within
     the disk span, disk size, and chain length bounds that we know to be

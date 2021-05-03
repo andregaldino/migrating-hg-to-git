@@ -36,6 +36,7 @@ from .pycompat import getattr
 from .revlogutils.constants import (
     ALL_KINDS,
     COMP_MODE_INLINE,
+    COMP_MODE_PLAIN,
     FEATURES_BY_VERSION,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
@@ -1757,7 +1758,16 @@ class revlog(object):
 
         Returns a str holding uncompressed data for the requested revision.
         """
-        return self.decompress(self._getsegmentforrevs(rev, rev, df=df)[1])
+        compression_mode = self.index[rev][10]
+        data = self._getsegmentforrevs(rev, rev, df=df)[1]
+        if compression_mode == COMP_MODE_PLAIN:
+            return data
+        elif compression_mode == COMP_MODE_INLINE:
+            return self.decompress(data)
+        else:
+            msg = 'unknown compression mode %d'
+            msg %= compression_mode
+            raise error.RevlogError(msg)
 
     def _chunks(self, revs, df=None, targetsize=None):
         """Obtain decompressed chunks for the specified revisions.
@@ -1810,8 +1820,16 @@ class revlog(object):
                 if inline:
                     chunkstart += (rev + 1) * iosize
                 chunklength = length(rev)
+                comp_mode = self.index[rev][10]
                 c = buffer(data, chunkstart - offset, chunklength)
-                ladd(decomp(c))
+                if comp_mode == COMP_MODE_PLAIN:
+                    ladd(c)
+                elif comp_mode == COMP_MODE_INLINE:
+                    ladd(decomp(c))
+                else:
+                    msg = 'unknown compression mode %d'
+                    msg %= comp_mode
+                    raise error.RevlogError(msg)
 
         return l
 
@@ -2461,6 +2479,20 @@ class revlog(object):
 
         deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
+        compression_mode = COMP_MODE_INLINE
+        if self._docket is not None:
+            h, d = deltainfo.data
+            if not h and not d:
+                # not data to store at all... declare them uncompressed
+                compression_mode = COMP_MODE_PLAIN
+            elif not h and d[0:1] == b'\0':
+                compression_mode = COMP_MODE_PLAIN
+            elif h == b'u':
+                # we have a more efficient way to declare uncompressed
+                h = b''
+                compression_mode = COMP_MODE_PLAIN
+                deltainfo = deltautil.drop_u_compression(deltainfo)
+
         if sidedata and self.hassidedata:
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
             sidedata_offset = offset + deltainfo.deltalen
@@ -2482,7 +2514,7 @@ class revlog(object):
             node,
             sidedata_offset,
             len(serialized_sidedata),
-            COMP_MODE_INLINE,
+            compression_mode,
         )
 
         self.index.append(e)
