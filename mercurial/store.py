@@ -389,7 +389,7 @@ _data = [
 ]
 
 REVLOG_FILES_MAIN_EXT = (b'.i', b'i.tmpcensored')
-REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
+REVLOG_FILES_OTHER_EXT = (b'.idx', b'.d', b'.n', b'.nd', b'd.tmpcensored')
 # files that are "volatile" and might change between listing and streaming
 #
 # note: the ".nd" file are nodemap data and won't "change" but they might be
@@ -397,7 +397,7 @@ REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
 REVLOG_FILES_VOLATILE_EXT = (b'.n', b'.nd')
 
 # some exception to the above matching
-EXCLUDED = re.compile(b'.*undo\.[^/]+\.nd?$')
+EXCLUDED = re.compile(b'.*undo\.[^/]+\.(nd?|i)$')
 
 
 def is_revlog(f, kind, st):
@@ -407,7 +407,7 @@ def is_revlog(f, kind, st):
 
 
 def revlog_type(f):
-    if f.endswith(REVLOG_FILES_MAIN_EXT):
+    if f.endswith(REVLOG_FILES_MAIN_EXT) and EXCLUDED.match(f) is None:
         return FILEFLAGS_REVLOG_MAIN
     elif f.endswith(REVLOG_FILES_OTHER_EXT) and EXCLUDED.match(f) is None:
         t = FILETYPE_FILELOG_OTHER

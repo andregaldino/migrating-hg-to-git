@@ -75,6 +75,7 @@ from .interfaces import (
 )
 from .revlogutils import (
     deltas as deltautil,
+    docket as docketutil,
     flagutil,
     nodemap as nodemaputil,
     revlogv0,
@@ -317,6 +318,7 @@ class revlog(object):
 
         self.radix = radix
 
+        self._docket_file = None
         self._indexfile = None
         self._datafile = None
         self._nodemap_file = None
@@ -344,6 +346,7 @@ class revlog(object):
         self._maxchainlen = None
         self._deltabothparents = True
         self.index = None
+        self._docket = None
         self._nodemap_docket = None
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
@@ -505,8 +508,23 @@ class revlog(object):
         self._generaldelta = features[b'generaldelta'](self._format_flags)
         self.hassidedata = features[b'sidedata']
 
-        index_data = entry_data
-        self._indexfile = entry_point
+        if not features[b'docket']:
+            self._indexfile = entry_point
+            index_data = entry_data
+        else:
+            self._docket_file = entry_point
+            if self._initempty:
+                self._docket = docketutil.default_docket(self, header)
+            else:
+                self._docket = docketutil.parse_docket(self, entry_data)
+            self._indexfile = self._docket.index_filepath()
+            index_data = self._get_data(self._indexfile, mmapindexthreshold)
+            self._inline = False
+            # generaldelta implied by version 2 revlogs.
+            self._generaldelta = True
+            # the logic for persistent nodemap will be dealt with within the
+            # main docket, so disable it for now.
+            self._nodemap_file = None
 
         if self.postfix is None or self.postfix == b'a':
             self._datafile = b'%s.d' % self.radix
@@ -2053,6 +2071,8 @@ class revlog(object):
                     self._writinghandles = (ifh, dfh)
                     try:
                         yield
+                        if self._docket is not None:
+                            self._docket.write(transaction)
                     finally:
                         self._writinghandles = None
                 finally:
@@ -3126,9 +3146,7 @@ class revlog(object):
     def rewrite_sidedata(self, transaction, helpers, startrev, endrev):
         if not self.hassidedata:
             return
-        # inline are not yet supported because they suffer from an issue when
-        # rewriting them (since it's not an append-only operation).
-        # See issue6485.
+        # revlog formats with sidedata support does not support inline
         assert not self._inline
         if not helpers[1] and not helpers[2]:
             # Nothing to generate or remove

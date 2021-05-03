@@ -133,20 +133,22 @@ FEATURES_BY_VERSION = {
         b'inline': _no,
         b'generaldelta': _no,
         b'sidedata': False,
+        b'docket': False,
     },
     REVLOGV1: {
         b'inline': _from_flag(FLAG_INLINE_DATA),
         b'generaldelta': _from_flag(FLAG_GENERALDELTA),
         b'sidedata': False,
+        b'docket': False,
     },
     REVLOGV2: {
-        # There is a bug in the transaction handling when going from an
-        # inline revlog to a separate index and data file. Turn it off until
-        # it's fixed, since v2 revlogs sometimes get rewritten on exchange.
-        # See issue6485
+        # The point of inline-revlog is to reduce the number of files used in
+        # the store. Using a docket defeat this purpose. So we needs other
+        # means to reduce the number of files for revlogv2.
         b'inline': _no,
         b'generaldelta': _yes,
         b'sidedata': True,
+        b'docket': True,
     },
 }
 

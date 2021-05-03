@@ -1150,14 +1150,27 @@ coreconfigitem(
 )
 # "out of experimental" todo list.
 #
-# * to grow a docket file to at least store the last offset of the data
-#   file when rewriting sidedata.
-# * need a way of dealing with garbage data if we allow rewriting
-#   *existing* sidedata.
+# * stop storing version information in the index (it is already in the docket)
+# * properly hide uncommitted content to other process
+# * expose transaction content hooks during pre-commit validation
+# * include management of a persistent nodemap in the main docket
+# * enforce a "no-truncate" policy for mmap safety
+#      - for censoring operation
+#      - for stripping operation
+#      - for rollback operation
+# * store the data size in the docket to simplify sidedata rewrite.
+# * track garbage data to evemtually allow rewriting -existing- sidedata.
 # * Exchange-wise, we will also need to do something more efficient than
 #   keeping references to the affected revlogs, especially memory-wise when
 #   rewriting sidedata.
-# * Also... compress the sidedata? (this should be coming very soon)
+# * sidedata compression
+# * introduce a proper solution to reduce the number of filelog related files.
+# * Improvement to consider
+#   - track compression mode in the index entris instead of the chunks
+#   - split the data offset and flag field (the 2 bytes save are mostly trouble)
+#   - keep track of uncompressed -chunk- size (to preallocate memory better)
+#   - keep track of chain base or size (probably not that useful anymore)
+#   - store data and sidedata in different files
 coreconfigitem(
     b'experimental',
     b'revlogv2',

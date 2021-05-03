@@ -445,6 +445,8 @@ class changelog(revlog.revlog):
 
     def delayupdate(self, tr):
         """delay visibility of index updates to other readers"""
+        if self._docket is not None:
+            return
 
         if not self._delayed:
             if len(self) == 0:
