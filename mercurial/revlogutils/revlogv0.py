@@ -42,6 +42,7 @@ def offset_type(offset, type):
 
 class revlogoldindex(list):
     entry_size = INDEX_ENTRY_V0.size
+    null_item = (0, 0, 0, -1, -1, -1, -1, node.nullid)
 
     @property
     def nodemap(self):
@@ -89,7 +90,7 @@ class revlogoldindex(list):
 
     def __getitem__(self, i):
         if i == -1:
-            return (0, 0, 0, -1, -1, -1, -1, node.nullid)
+            return self.null_item
         return list.__getitem__(self, i)
 
     def pack_header(self, header):
