@@ -613,14 +613,33 @@ class revlog(object):
         engine = util.compengines[self._compengine]
         return engine.revlogcompressor(self._compengineopts)
 
-    def _indexfp(self, mode=b'r'):
+    def _indexfp(self):
         """file object for the revlog's index file"""
-        args = {'mode': mode}
-        if mode != b'r':
-            args['checkambig'] = self._checkambig
-        if mode == b'w':
-            args['atomictemp'] = True
-        return self.opener(self._indexfile, **args)
+        return self.opener(self._indexfile, mode=b"r")
+
+    def __index_write_fp(self):
+        # You should not use this directly and use `_writing` instead
+        try:
+            f = self.opener(
+                self._indexfile, mode=b"r+", checkambig=self._checkambig
+            )
+            f.seek(0, os.SEEK_END)
+            return f
+        except IOError as inst:
+            if inst.errno != errno.ENOENT:
+                raise
+            return self.opener(
+                self._indexfile, mode=b"w+", checkambig=self._checkambig
+            )
+
+    def __index_new_fp(self):
+        # You should not use this unless you are upgrading from inline revlog
+        return self.opener(
+            self._indexfile,
+            mode=b"w",
+            checkambig=self._checkambig,
+            atomictemp=True,
+        )
 
     def _datafp(self, mode=b'r'):
         """file object for the revlog's data file"""
@@ -1990,14 +2009,14 @@ class revlog(object):
         new_dfh = self._datafp(b'w+')
         new_dfh.truncate(0)  # drop any potentially existing data
         try:
-            with self._indexfp(b'r') as read_ifh:
+            with self._indexfp() as read_ifh:
                 for r in self:
                     new_dfh.write(self._getsegmentforrevs(r, r, df=read_ifh)[1])
                     if troffset <= self.start(r):
                         trindex = r
                 new_dfh.flush()
 
-            with self.opener(self._indexfile, mode=b'w', atomictemp=True) as fp:
+            with self.__index_new_fp() as fp:
                 self._format_flags &= ~FLAG_INLINE_DATA
                 self._inline = False
                 for i in self:
@@ -2016,7 +2035,7 @@ class revlog(object):
 
             if existing_handles:
                 # switched from inline to conventional reopen the index
-                ifh = self._indexfp(b"r+")
+                ifh = self.__index_write_fp()
                 self._writinghandles = (ifh, new_dfh)
                 new_dfh = None
         finally:
@@ -2047,13 +2066,7 @@ class revlog(object):
                 transaction.add(self._datafile, dsize)
             try:
                 isize = r * self.index.entry_size
-                try:
-                    ifh = self._indexfp(b"r+")
-                    ifh.seek(0, os.SEEK_END)
-                except IOError as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
-                    ifh = self._indexfp(b"w+")
+                ifh = self.__index_write_fp()
                 if self._inline:
                     transaction.add(self._indexfile, dsize + isize)
                 else:
