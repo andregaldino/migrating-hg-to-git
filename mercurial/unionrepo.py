@@ -97,6 +97,8 @@ class unionrevlog(revlog.revlog):
                 self.rev(p1node),
                 self.rev(p2node),
                 node,
+                0,  # sidedata offset
+                0,  # sidedata size
             )
             self.index.append(e)
             self.bundlerevs.add(n)

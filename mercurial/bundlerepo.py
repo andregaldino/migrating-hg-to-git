@@ -93,7 +93,7 @@ class bundlerevlog(revlog.revlog):
                 )
 
             baserev = self.rev(deltabase)
-            # start, size, full unc. size, base (unused), link, p1, p2, node
+            # start, size, full unc. size, base (unused), link, p1, p2, node, sidedata_offset (unused), sidedata_size (unused)
             e = (
                 revlog.offset_type(start, flags),
                 size,
@@ -103,6 +103,8 @@ class bundlerevlog(revlog.revlog):
                 self.rev(p1),
                 self.rev(p2),
                 node,
+                0,
+                0,
             )
             self.index.append(e)
             self.bundlerevs.add(n)

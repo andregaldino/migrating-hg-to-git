@@ -2268,9 +2268,6 @@ class revlog(object):
             len(serialized_sidedata),
         )
 
-        if self._format_version != REVLOGV2:
-            e = e[:8]
-
         self.index.append(e)
         entry = self.index.entry_binary(curr)
         if curr == 0:

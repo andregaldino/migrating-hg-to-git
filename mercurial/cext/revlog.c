@@ -118,11 +118,9 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const v1_tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
-static const char *const v2_tuple_format = PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
+static const char *const tuple_format = PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
 #else
-static const char *const v1_tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
-static const char *const v2_tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
+static const char *const tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -342,10 +340,9 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		sidedata_comp_len = getbe32(data + 72);
 	}
 
-	return Py_BuildValue(v2_tuple_format, offset_flags, comp_len,
-	                     uncomp_len, base_rev, link_rev, parent_1, parent_2,
-	                     c_node_id, self->nodelen, sidedata_offset,
-	                     sidedata_comp_len);
+	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
+	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
+	                     self->nodelen, sidedata_offset, sidedata_comp_len);
 }
 /*
  * Pack header information in binary
@@ -443,23 +440,12 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	const char *c_node_id;
 	char *data;
 
-	if (self->entry_size == v1_entry_size) {
-		if (!PyArg_ParseTuple(obj, v1_tuple_format, &offset_flags,
-		                      &comp_len, &uncomp_len, &base_rev,
-		                      &link_rev, &parent_1, &parent_2,
-		                      &c_node_id, &c_node_id_len)) {
-			PyErr_SetString(PyExc_TypeError, "8-tuple required");
-			return NULL;
-		}
-	} else {
-		if (!PyArg_ParseTuple(obj, v2_tuple_format, &offset_flags,
-		                      &comp_len, &uncomp_len, &base_rev,
-		                      &link_rev, &parent_1, &parent_2,
-		                      &c_node_id, &c_node_id_len,
-		                      &sidedata_offset, &sidedata_comp_len)) {
-			PyErr_SetString(PyExc_TypeError, "10-tuple required");
-			return NULL;
-		}
+	if (!PyArg_ParseTuple(obj, tuple_format, &offset_flags, &comp_len,
+	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
+	                      &parent_2, &c_node_id, &c_node_id_len,
+	                      &sidedata_offset, &sidedata_comp_len)) {
+		PyErr_SetString(PyExc_TypeError, "10-tuple required");
+		return NULL;
 	}
 
 	if (c_node_id_len != self->nodelen) {
@@ -490,7 +476,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	memcpy(data + 32, c_node_id, c_node_id_len);
 	/* Padding since SHA-1 is only 20 bytes for now */
 	memset(data + 32 + c_node_id_len, 0, 32 - c_node_id_len);
-	if (self->entry_size != v1_entry_size) {
+	if (self->format_version == format_v2) {
 		putbe64(sidedata_offset, data + 64);
 		putbe32(sidedata_comp_len, data + 72);
 		/* Padding for 96 bytes alignment */

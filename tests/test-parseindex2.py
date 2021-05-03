@@ -264,7 +264,7 @@ class parseindex2tests(unittest.TestCase):
             # node won't matter for this test, let's just make sure
             # they don't collide. Other data don't matter either.
             node = hexrev(p1) + hexrev(p2) + b'.' * 12
-            index.append((0, 0, 12, 1, 34, p1, p2, node))
+            index.append((0, 0, 12, 1, 34, p1, p2, node, 0, 0))
 
         appendrev(4)
         appendrev(5)

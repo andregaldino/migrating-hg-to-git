@@ -104,8 +104,13 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        data = self.index_format.pack(*tup)
+        data = self._pack_entry(tup)
         self._extra.append(data)
+
+    def _pack_entry(self, entry):
+        assert entry[8] == 0
+        assert entry[9] == 0
+        return self.index_format.pack(*entry[:8])
 
     def _check_index(self, i):
         if not isinstance(i, int):
@@ -298,6 +303,9 @@ class Index2Mixin(object):
 
     def _unpack_entry(self, data):
         return self.index_format.unpack(data)
+
+    def _pack_entry(self, entry):
+        return self.index_format.pack(*entry)
 
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
