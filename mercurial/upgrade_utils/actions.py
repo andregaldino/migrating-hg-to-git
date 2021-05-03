@@ -30,6 +30,7 @@ if pycompat.TYPE_CHECKING:
 RECLONES_REQUIREMENTS = {
     requirements.GENERALDELTA_REQUIREMENT,
     requirements.SPARSEREVLOG_REQUIREMENT,
+    requirements.REVLOGV2_REQUIREMENT,
 }
 
 
