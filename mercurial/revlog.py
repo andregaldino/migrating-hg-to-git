@@ -491,34 +491,31 @@ class revlog(object):
             header = new_header
 
         flags = self._format_flags = header & ~0xFFFF
-        fmt = self._format_version = header & 0xFFFF
+        self._format_version = header & 0xFFFF
 
-        if fmt == REVLOGV0:
+        if self._format_version == REVLOGV0:
             if flags:
-                raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.display_id)
-                )
+                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
+                msg %= (flags >> 16, self._format_version, self.display_id)
+                raise error.RevlogError(msg)
 
             self._inline = False
             self._generaldelta = False
 
-        elif fmt == REVLOGV1:
+        elif self._format_version == REVLOGV1:
             if flags & ~REVLOGV1_FLAGS:
-                raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.display_id)
-                )
+                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
+                msg %= (flags >> 16, self._format_version, self.display_id)
+                raise error.RevlogError(msg)
 
             self._inline = self._format_flags & FLAG_INLINE_DATA
             self._generaldelta = self._format_flags & FLAG_GENERALDELTA
 
-        elif fmt == REVLOGV2:
+        elif self._format_version == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
-                raise error.RevlogError(
-                    _(b'unknown flags (%#04x) in version %d revlog %s')
-                    % (flags >> 16, fmt, self.display_id)
-                )
+                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
+                msg %= (flags >> 16, self._format_version, self.display_id)
+                raise error.RevlogError(msg)
 
             # There is a bug in the transaction handling when going from an
             # inline revlog to a separate index and data file. Turn it off until
@@ -529,9 +526,9 @@ class revlog(object):
             self._generaldelta = True
 
         else:
-            raise error.RevlogError(
-                _(b'unknown version (%d) in revlog %s') % (fmt, self.display_id)
-            )
+            msg = _(b'unknown version (%d) in revlog %s')
+            msg %= (self._format_version, self.display_id)
+            raise error.RevlogError(msg)
 
         self.nodeconstants = sha1nodeconstants
         self.nullid = self.nodeconstants.nullid
@@ -558,7 +555,7 @@ class revlog(object):
         self._parse_index = parse_index_v1
         if self._format_version == REVLOGV0:
             self._parse_index = revlogv0.parse_index_v0
-        elif fmt == REVLOGV2:
+        elif self._format_version == REVLOGV2:
             self._parse_index = parse_index_v2
         elif devel_nodemap:
             self._parse_index = parse_index_v1_nodemap
