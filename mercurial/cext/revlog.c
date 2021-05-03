@@ -335,7 +335,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	if (self->entry_size == v1_entry_size) {
+	if (self->format_version == format_v1) {
 		sidedata_offset = 0;
 		sidedata_comp_len = 0;
 	} else {
