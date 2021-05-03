@@ -2442,83 +2442,95 @@ class revlog(object):
         empty = True
 
         try:
-            deltacomputer = deltautil.deltacomputer(self)
-            # loop through our set of deltas
-            for data in deltas:
-                node, p1, p2, linknode, deltabase, delta, flags, sidedata = data
-                link = linkmapper(linknode)
-                flags = flags or REVIDX_DEFAULT_FLAGS
+            if True:
+                deltacomputer = deltautil.deltacomputer(self)
+                # loop through our set of deltas
+                for data in deltas:
+                    (
+                        node,
+                        p1,
+                        p2,
+                        linknode,
+                        deltabase,
+                        delta,
+                        flags,
+                        sidedata,
+                    ) = data
+                    link = linkmapper(linknode)
+                    flags = flags or REVIDX_DEFAULT_FLAGS
 
-                rev = self.index.get_rev(node)
-                if rev is not None:
-                    # this can happen if two branches make the same change
-                    self._nodeduplicatecallback(transaction, rev)
-                    if duplicaterevisioncb:
-                        duplicaterevisioncb(self, rev)
-                    empty = False
-                    continue
+                    rev = self.index.get_rev(node)
+                    if rev is not None:
+                        # this can happen if two branches make the same change
+                        self._nodeduplicatecallback(transaction, rev)
+                        if duplicaterevisioncb:
+                            duplicaterevisioncb(self, rev)
+                        empty = False
+                        continue
 
-                for p in (p1, p2):
-                    if not self.index.has_node(p):
+                    for p in (p1, p2):
+                        if not self.index.has_node(p):
+                            raise error.LookupError(
+                                p, self.radix, _(b'unknown parent')
+                            )
+
+                    if not self.index.has_node(deltabase):
                         raise error.LookupError(
-                            p, self.radix, _(b'unknown parent')
+                            deltabase, self.display_id, _(b'unknown delta base')
                         )
 
-                if not self.index.has_node(deltabase):
-                    raise error.LookupError(
-                        deltabase, self.display_id, _(b'unknown delta base')
+                    baserev = self.rev(deltabase)
+
+                    if baserev != nullrev and self.iscensored(baserev):
+                        # if base is censored, delta must be full replacement in a
+                        # single patch operation
+                        hlen = struct.calcsize(b">lll")
+                        oldlen = self.rawsize(baserev)
+                        newlen = len(delta) - hlen
+                        if delta[:hlen] != mdiff.replacediffheader(
+                            oldlen, newlen
+                        ):
+                            raise error.CensoredBaseError(
+                                self.display_id, self.node(baserev)
+                            )
+
+                    if not flags and self._peek_iscensored(baserev, delta):
+                        flags |= REVIDX_ISCENSORED
+
+                    # We assume consumers of addrevisioncb will want to retrieve
+                    # the added revision, which will require a call to
+                    # revision(). revision() will fast path if there is a cache
+                    # hit. So, we tell _addrevision() to always cache in this case.
+                    # We're only using addgroup() in the context of changegroup
+                    # generation so the revision data can always be handled as raw
+                    # by the flagprocessor.
+                    rev = self._addrevision(
+                        node,
+                        None,
+                        transaction,
+                        link,
+                        p1,
+                        p2,
+                        flags,
+                        (baserev, delta),
+                        ifh,
+                        dfh,
+                        alwayscache=alwayscache,
+                        deltacomputer=deltacomputer,
+                        sidedata=sidedata,
                     )
 
-                baserev = self.rev(deltabase)
+                    if addrevisioncb:
+                        addrevisioncb(self, rev)
+                    empty = False
 
-                if baserev != nullrev and self.iscensored(baserev):
-                    # if base is censored, delta must be full replacement in a
-                    # single patch operation
-                    hlen = struct.calcsize(b">lll")
-                    oldlen = self.rawsize(baserev)
-                    newlen = len(delta) - hlen
-                    if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
-                        raise error.CensoredBaseError(
-                            self.display_id, self.node(baserev)
-                        )
-
-                if not flags and self._peek_iscensored(baserev, delta):
-                    flags |= REVIDX_ISCENSORED
-
-                # We assume consumers of addrevisioncb will want to retrieve
-                # the added revision, which will require a call to
-                # revision(). revision() will fast path if there is a cache
-                # hit. So, we tell _addrevision() to always cache in this case.
-                # We're only using addgroup() in the context of changegroup
-                # generation so the revision data can always be handled as raw
-                # by the flagprocessor.
-                rev = self._addrevision(
-                    node,
-                    None,
-                    transaction,
-                    link,
-                    p1,
-                    p2,
-                    flags,
-                    (baserev, delta),
-                    ifh,
-                    dfh,
-                    alwayscache=alwayscache,
-                    deltacomputer=deltacomputer,
-                    sidedata=sidedata,
-                )
-
-                if addrevisioncb:
-                    addrevisioncb(self, rev)
-                empty = False
-
-                if not dfh and not self._inline:
-                    # addrevision switched from inline to conventional
-                    # reopen the index
-                    ifh.close()
-                    dfh = self._datafp(b"a+")
-                    ifh = self._indexfp(b"a+")
-                    self._writinghandles = (ifh, dfh)
+                    if not dfh and not self._inline:
+                        # addrevision switched from inline to conventional
+                        # reopen the index
+                        ifh.close()
+                        dfh = self._datafp(b"a+")
+                        ifh = self._indexfp(b"a+")
+                        self._writinghandles = (ifh, dfh)
         finally:
             self._writinghandles = None
 
