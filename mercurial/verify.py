@@ -51,7 +51,7 @@ class verifier(object):
         self.warnings = 0
         self.havecl = len(repo.changelog) > 0
         self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
-        self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
+        self.revlogv1 = repo.changelog._format_version != revlog.REVLOGV0
         self.lrugetctx = util.lrucachefunc(repo.unfiltered().__getitem__)
         self.refersmf = False
         self.fncachewarned = False
@@ -102,7 +102,7 @@ class verifier(object):
         if d[1]:
             self._err(None, _(b"index contains %d extra bytes") % d[1], name)
 
-        if obj.version != revlog.REVLOGV0:
+        if obj._format_version != revlog.REVLOGV0:
             if not self.revlogv1:
                 self._warn(_(b"warning: `%s' uses revlog format 1") % name)
         elif self.revlogv1:
@@ -483,7 +483,7 @@ class verifier(object):
 
         state = {
             # TODO this assumes revlog storage for changelog.
-            b'expectedversion': self.repo.changelog.version & 0xFFFF,
+            b'expectedversion': self.repo.changelog._format_version,
             b'skipflags': self.skipflags,
             # experimental config: censor.policy
             b'erroroncensored': ui.config(b'censor', b'policy') == b'abort',

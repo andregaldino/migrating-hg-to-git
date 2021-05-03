@@ -1623,7 +1623,6 @@ class manifestrevlog(object):
         )
 
         self.index = self._revlog.index
-        self.version = self._revlog.version
         self._generaldelta = self._revlog._generaldelta
 
     def _setupmanifestcachehooks(self, repo):

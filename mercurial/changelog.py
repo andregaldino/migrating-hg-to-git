@@ -413,10 +413,10 @@ class changelog(revlog.revlog):
             concurrencychecker=concurrencychecker,
         )
 
-        if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
+        if self._initempty and (self._format_version == revlog.REVLOGV1):
             # changelogs don't benefit from generaldelta.
 
-            self.version &= ~revlog.FLAG_GENERALDELTA
+            self._format_flags &= ~revlog.FLAG_GENERALDELTA
             self._generaldelta = False
 
         # Delta chains for changelogs tend to be very small because entries

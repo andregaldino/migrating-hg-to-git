@@ -1181,13 +1181,6 @@ class imanifeststorage(interfaceutil.Interface):
         """
     )
 
-    version = interfaceutil.Attribute(
-        """Revlog version number.
-
-        TODO this is revlog specific and should not be exposed.
-        """
-    )
-
     _generaldelta = interfaceutil.Attribute(
         """Whether generaldelta storage is being used.
 

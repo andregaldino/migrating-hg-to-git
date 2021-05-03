@@ -2972,8 +2972,8 @@ def debugrevlog(ui, repo, file_=None, **opts):
             )
         return 0
 
-    v = r.version
-    format = v & 0xFFFF
+    format = r._format_version
+    v = r._format_flags
     flags = []
     gdelta = False
     if v & revlog.FLAG_INLINE_DATA:

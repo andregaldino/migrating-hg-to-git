@@ -451,10 +451,8 @@ class revlog(object):
 
             versionflags = newversionflags
 
-        self.version = versionflags
-
-        flags = versionflags & ~0xFFFF
-        fmt = versionflags & 0xFFFF
+        flags = self._format_flags = versionflags & ~0xFFFF
+        fmt = self._format_version = versionflags & 0xFFFF
 
         if fmt == REVLOGV0:
             if flags:
@@ -519,7 +517,7 @@ class revlog(object):
                 use_rust_index = self.opener.options.get(b'rust.index')
 
         self._parse_index = parse_index_v1
-        if self.version == REVLOGV0:
+        if self._format_version == REVLOGV0:
             self._parse_index = revlogv0.parse_index_v0
         elif fmt == REVLOGV2:
             self._parse_index = parse_index_v2
@@ -1945,12 +1943,13 @@ class revlog(object):
                     trindex = r
 
         with self._indexfp(b'w') as fp:
-            self.version &= ~FLAG_INLINE_DATA
+            self._format_flags &= ~FLAG_INLINE_DATA
             self._inline = False
             for i in self:
                 e = self.index.entry_binary(i)
                 if i == 0:
-                    header = self.index.pack_header(self.version)
+                    header = self._format_flags | self._format_version
+                    header = self.index.pack_header(header)
                     e = header + e
                 fp.write(e)
 
@@ -2269,13 +2268,14 @@ class revlog(object):
             len(serialized_sidedata),
         )
 
-        if self.version & 0xFFFF != REVLOGV2:
+        if self._format_version != REVLOGV2:
             e = e[:8]
 
         self.index.append(e)
         entry = self.index.entry_binary(curr)
         if curr == 0:
-            header = self.index.pack_header(self.version)
+            header = self._format_flags | self._format_version
+            header = self.index.pack_header(header)
             entry = header + entry
         self._writeentry(
             transaction,
@@ -2307,7 +2307,7 @@ class revlog(object):
         to `n - 1`'s sidedata being written after `n`'s data.
 
         TODO cache this in a docket file before getting out of experimental."""
-        if self.version & 0xFFFF != REVLOGV2:
+        if self._format_version != REVLOGV2:
             return self.end(prev)
 
         offset = 0
@@ -2847,9 +2847,10 @@ class revlog(object):
                 addrevisioncb(self, rev, node)
 
     def censorrevision(self, tr, censornode, tombstone=b''):
-        if (self.version & 0xFFFF) == REVLOGV0:
+        if self._format_version == REVLOGV0:
             raise error.RevlogError(
-                _(b'cannot censor with version %d revlogs') % self.version
+                _(b'cannot censor with version %d revlogs')
+                % self._format_version
             )
 
         censorrev = self.rev(censornode)
@@ -2875,7 +2876,8 @@ class revlog(object):
             datafile=newdatafile,
             censorable=True,
         )
-        newrl.version = self.version
+        newrl._format_version = self._format_version
+        newrl._format_flags = self._format_flags
         newrl._generaldelta = self._generaldelta
         newrl._parse_index = self._parse_index
 
@@ -2947,7 +2949,7 @@ class revlog(object):
         if di:
             yield revlogproblem(error=_(b'index contains %d extra bytes') % di)
 
-        version = self.version & 0xFFFF
+        version = self._format_version
 
         # The verifier tells us what version revlog we should be.
         if version != state[b'expectedversion']:
@@ -3137,6 +3139,7 @@ class revlog(object):
                 self.index.replace_sidedata_info(rev, e[8], e[9], e[0])
                 packed = self.index.entry_binary(rev)
                 if rev == 0:
-                    header = self.index.pack_header(self.version)
+                    header = self._format_flags | self._format_version
+                    header = self.index.pack_header(header)
                     packed = header + packed
                 fp.write(packed)
