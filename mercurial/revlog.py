@@ -2433,11 +2433,6 @@ class revlog(object):
             transaction.add(self._datafile, end)
             dfh = self._datafp(b"a+")
 
-        def flush():
-            if dfh:
-                dfh.flush()
-            ifh.flush()
-
         self._writinghandles = (ifh, dfh)
         empty = True
 
@@ -2482,7 +2477,7 @@ class revlog(object):
                             self.display_id, self.node(baserev)
                         )
 
-                if not flags and self._peek_iscensored(baserev, delta, flush):
+                if not flags and self._peek_iscensored(baserev, delta):
                     flags |= REVIDX_ISCENSORED
 
                 # We assume consumers of addrevisioncb will want to retrieve
@@ -2534,7 +2529,7 @@ class revlog(object):
 
         return self.flags(rev) & REVIDX_ISCENSORED
 
-    def _peek_iscensored(self, baserev, delta, flush):
+    def _peek_iscensored(self, baserev, delta):
         """Quickly check if a delta produces a censored revision."""
         if not self._censorable:
             return False
