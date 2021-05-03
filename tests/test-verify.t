@@ -297,7 +297,7 @@ test revlog corruption
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   a@1: broken revlog! (index data/a.i is corrupted)
+   a@1: broken revlog! (index data/a is corrupted)
   warning: orphan data file 'data/a.i'
   checked 2 changesets with 0 changes to 1 files
   1 warnings encountered!

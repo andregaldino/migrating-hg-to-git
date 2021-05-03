@@ -578,7 +578,7 @@ class revlog(object):
                         index.update_nodemap_data(*nodemap_data)
         except (ValueError, IndexError):
             raise error.RevlogError(
-                _(b"index %s is corrupted") % self._indexfile
+                _(b"index %s is corrupted") % self.display_id
             )
         self.index, self._chunkcache = d
         if not self._chunkcache:
