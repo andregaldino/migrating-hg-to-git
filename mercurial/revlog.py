@@ -453,7 +453,7 @@ class revlog(object):
         force_nodemap = opts.get(b'devel-force-nodemap', False)
         return new_header, mmapindexthreshold, force_nodemap
 
-    def _get_data(self, filepath, mmap_threshold):
+    def _get_data(self, filepath, mmap_threshold, size=None):
         """return a file content with or without mmap
 
         If the file is missing return the empty string"""
@@ -462,10 +462,19 @@ class revlog(object):
                 if mmap_threshold is not None:
                     file_size = self.opener.fstat(fp).st_size
                     if file_size >= mmap_threshold:
+                        if size is not None:
+                            # avoid potentiel mmap crash
+                            size = min(file_size, size)
                         # TODO: should .close() to release resources without
                         # relying on Python GC
-                        return util.buffer(util.mmapread(fp))
-                return fp.read()
+                        if size is None:
+                            return util.buffer(util.mmapread(fp))
+                        else:
+                            return util.buffer(util.mmapread(fp, size))
+                if size is None:
+                    return fp.read()
+                else:
+                    return fp.read(size)
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise
@@ -518,7 +527,17 @@ class revlog(object):
             else:
                 self._docket = docketutil.parse_docket(self, entry_data)
             self._indexfile = self._docket.index_filepath()
-            index_data = self._get_data(self._indexfile, mmapindexthreshold)
+            index_data = b''
+            index_size = self._docket.index_end
+            if index_size > 0:
+                index_data = self._get_data(
+                    self._indexfile, mmapindexthreshold, size=index_size
+                )
+                if len(index_data) < index_size:
+                    msg = _(b'too few index data for %s: got %d, expected %d')
+                    msg %= (self.display_id, len(index_data), index_size)
+                    raise error.RevlogError(msg)
+
             self._inline = False
             # generaldelta implied by version 2 revlogs.
             self._generaldelta = True
@@ -619,7 +638,10 @@ class revlog(object):
             f = self.opener(
                 self._indexfile, mode=b"r+", checkambig=self._checkambig
             )
-            f.seek(0, os.SEEK_END)
+            if self._docket is None:
+                f.seek(0, os.SEEK_END)
+            else:
+                f.seek(self._docket.index_end, os.SEEK_SET)
             return f
         except IOError as inst:
             if inst.errno != errno.ENOENT:
@@ -2022,6 +2044,8 @@ class revlog(object):
                         header = self.index.pack_header(header)
                         e = header + e
                     fp.write(e)
+                if self._docket is not None:
+                    self._docket.index_end = fp.tell()
                 # the temp file replace the real index when we exit the context
                 # manager
 
@@ -2440,7 +2464,10 @@ class revlog(object):
             msg = b'adding revision outside `revlog._writing` context'
             raise error.ProgrammingError(msg)
         ifh, dfh = self._writinghandles
-        ifh.seek(0, os.SEEK_END)
+        if self._docket is None:
+            ifh.seek(0, os.SEEK_END)
+        else:
+            ifh.seek(self._docket.index_end, os.SEEK_SET)
         if dfh:
             dfh.seek(0, os.SEEK_END)
 
@@ -2463,6 +2490,9 @@ class revlog(object):
             if sidedata:
                 ifh.write(sidedata)
             self._enforceinlinesize(transaction)
+        if self._docket is not None:
+            self._docket.index_end = self._writinghandles[0].tell()
+
         nodemaputil.setup_persistent_nodemap(transaction, self)
 
     def addgroup(
@@ -2632,6 +2662,11 @@ class revlog(object):
             end += rev * self.index.entry_size
 
         transaction.add(self._indexfile, end)
+        if self._docket is not None:
+            # XXX we could, leverage the docket while stripping. However it is
+            # not powerfull enough at the time of this comment
+            self._docket.index_end = end
+            self._docket.write(transaction, stripping=True)
 
         # then reset internal state in memory to forget those revisions
         self._revisioncache = None

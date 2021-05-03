@@ -739,6 +739,8 @@ def makelocalrepository(baseui, path, intents=None):
 
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         features.add(repository.REPO_FEATURE_SIDE_DATA)
+        # the revlogv2 docket introduced race condition that we need to fix
+        features.discard(repository.REPO_FEATURE_STREAM_CLONE)
 
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)

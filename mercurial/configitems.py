@@ -1157,6 +1157,7 @@ coreconfigitem(
 #      - for censoring operation
 #      - for stripping operation
 #      - for rollback operation
+# * proper streaming (race free) of the docket file
 # * store the data size in the docket to simplify sidedata rewrite.
 # * track garbage data to evemtually allow rewriting -existing- sidedata.
 # * Exchange-wise, we will also need to do something more efficient than
