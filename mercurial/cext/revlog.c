@@ -354,6 +354,13 @@ static PyObject *index_pack_header(indexObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "I", &header)) {
 		return NULL;
 	}
+	if (self->format_version != format_v1) {
+		PyErr_Format(PyExc_RuntimeError,
+		             "version header should go in the docket, not the "
+		             "index: %lu",
+		             header);
+		return NULL;
+	}
 	putbe32(header, out);
 	return PyBytes_FromStringAndSize(out, 4);
 }
@@ -378,7 +385,7 @@ static PyObject *index_entry_binary(indexObject *self, PyObject *value)
 	data = index_deref(self, rev);
 	if (data == NULL)
 		return NULL;
-	if (rev == 0) {
+	if (rev == 0 && self->format_version == format_v1) {
 		/* the header is eating the start of the first entry */
 		return PyBytes_FromStringAndSize(data + 4,
 		                                 self->entry_size - 4);

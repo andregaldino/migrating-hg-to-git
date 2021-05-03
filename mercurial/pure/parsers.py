@@ -15,6 +15,7 @@ from ..node import (
     sha1nodeconstants,
 )
 from .. import (
+    error,
     pycompat,
     util,
 )
@@ -311,9 +312,13 @@ class Index2Mixin(object):
         """return the raw binary string representing a revision"""
         entry = self[rev]
         p = revlog_constants.INDEX_ENTRY_V2.pack(*entry)
-        if rev == 0:
-            p = p[revlog_constants.INDEX_HEADER.size :]
         return p
+
+    def pack_header(self, header):
+        """pack header information as binary"""
+        msg = 'version header should go in the docket, not the index: %d'
+        msg %= header
+        raise error.ProgrammingError(msg)
 
 
 class IndexObject2(Index2Mixin, IndexObject):

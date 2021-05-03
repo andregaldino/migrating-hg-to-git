@@ -1150,7 +1150,6 @@ coreconfigitem(
 )
 # "out of experimental" todo list.
 #
-# * stop storing version information in the index (it is already in the docket)
 # * properly hide uncommitted content to other process
 # * expose transaction content hooks during pre-commit validation
 # * include management of a persistent nodemap in the main docket

@@ -2017,7 +2017,7 @@ class revlog(object):
                 self._inline = False
                 for i in self:
                     e = self.index.entry_binary(i)
-                    if i == 0:
+                    if i == 0 and self._docket is None:
                         header = self._format_flags | self._format_version
                         header = self.index.pack_header(header)
                         e = header + e
@@ -2380,7 +2380,7 @@ class revlog(object):
 
         self.index.append(e)
         entry = self.index.entry_binary(curr)
-        if curr == 0:
+        if curr == 0 and self._docket is None:
             header = self._format_flags | self._format_version
             header = self.index.pack_header(header)
             entry = header + entry
@@ -3207,7 +3207,7 @@ class revlog(object):
                 rev = startrev + i
                 self.index.replace_sidedata_info(rev, e[8], e[9], e[0])
                 packed = self.index.entry_binary(rev)
-                if rev == 0:
+                if rev == 0 and self._docket is None:
                     header = self._format_flags | self._format_version
                     header = self.index.pack_header(header)
                     packed = header + packed
