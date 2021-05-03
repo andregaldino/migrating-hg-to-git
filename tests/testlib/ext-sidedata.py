@@ -60,7 +60,7 @@ def wrapget_sidedata_helpers(orig, srcrepo, dstrepo):
     assert not computers and not removers  # deal with composition later
     addedreqs = dstrepo.requirements - srcrepo.requirements
 
-    if requirements.SIDEDATA_REQUIREMENT in addedreqs:
+    if requirements.REVLOGV2_REQUIREMENT in addedreqs:
 
         def computer(repo, revlog, rev, old_sidedata):
             assert not old_sidedata  # not supported yet
