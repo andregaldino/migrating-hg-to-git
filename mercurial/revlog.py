@@ -446,6 +446,24 @@ class revlog(object):
         force_nodemap = opts.get(b'devel-force-nodemap', False)
         return newversionflags, mmapindexthreshold, force_nodemap
 
+    def _get_data(self, filepath, mmap_threshold):
+        """return a file content with or without mmap
+
+        If the file is missing return the empty string"""
+        try:
+            with self.opener(filepath) as fp:
+                if mmap_threshold is not None:
+                    file_size = self.opener.fstat(fp).st_size
+                    if file_size >= mmap_threshold:
+                        # TODO: should .close() to release resources without
+                        # relying on Python GC
+                        return util.buffer(util.mmapread(fp))
+                return fp.read()
+        except IOError as inst:
+            if inst.errno != errno.ENOENT:
+                raise
+            return b''
+
     def _loadindex(self):
 
         newversionflags, mmapindexthreshold, force_nodemap = self._init_opts()
@@ -465,26 +483,11 @@ class revlog(object):
 
         indexdata = b''
         self._initempty = True
-        try:
-            with self._indexfp() as f:
-                if (
-                    mmapindexthreshold is not None
-                    and self.opener.fstat(f).st_size >= mmapindexthreshold
-                ):
-                    # TODO: should .close() to release resources without
-                    # relying on Python GC
-                    indexdata = util.buffer(util.mmapread(f))
-                else:
-                    indexdata = f.read()
-            if len(indexdata) > 0:
-                versionflags = INDEX_HEADER.unpack(indexdata[:4])[0]
-                self._initempty = False
-            else:
-                versionflags = newversionflags
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
-
+        indexdata = self._get_data(self._indexfile, mmapindexthreshold)
+        if len(indexdata) > 0:
+            versionflags = INDEX_HEADER.unpack(indexdata[:4])[0]
+            self._initempty = False
+        else:
             versionflags = newversionflags
 
         flags = self._format_flags = versionflags & ~0xFFFF
