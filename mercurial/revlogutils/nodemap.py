@@ -363,15 +363,12 @@ class NodeMapDocket(object):
 
 def _rawdata_filepath(revlog, docket):
     """The (vfs relative) nodemap's rawdata file for a given uid"""
-    if revlog.nodemap_file.endswith(b'.n.a'):
-        prefix = revlog.nodemap_file[:-4]
-    else:
-        prefix = revlog.nodemap_file[:-2]
+    prefix = revlog.radix
     return b"%s-%s.nd" % (prefix, docket.uid)
 
 
 def _other_rawdata_filepath(revlog, docket):
-    prefix = revlog.nodemap_file[:-2]
+    prefix = revlog.radix
     pattern = re.compile(br"(^|/)%s-[0-9a-f]+\.nd$" % prefix)
     new_file_path = _rawdata_filepath(revlog, docket)
     new_file_name = revlog.opener.basename(new_file_path)
