@@ -46,6 +46,7 @@ from .revlogutils.constants import (
     REVLOG_DEFAULT_FLAGS,
     REVLOG_DEFAULT_FORMAT,
     REVLOG_DEFAULT_VERSION,
+    SUPPORTED_FLAGS,
 )
 from .revlogutils.flagutil import (
     REVIDX_DEFAULT_FLAGS,
@@ -487,33 +488,24 @@ class revlog(object):
         self._format_flags = header & ~0xFFFF
         self._format_version = header & 0xFFFF
 
-        if self._format_version == REVLOGV0:
-            if self._format_flags:
-                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                display_flag = self._format_flags >> 16
-                msg %= (display_flag, self._format_version, self.display_id)
-                raise error.RevlogError(msg)
+        supported_flags = SUPPORTED_FLAGS.get(self._format_version)
+        if supported_flags is None:
+            msg = _(b'unknown version (%d) in revlog %s')
+            msg %= (self._format_version, self.display_id)
+            raise error.RevlogError(msg)
+        elif self._format_flags & ~supported_flags:
+            msg = _(b'unknown flags (%#04x) in version %d revlog %s')
+            display_flag = self._format_flags >> 16
+            msg %= (display_flag, self._format_version, self.display_id)
+            raise error.RevlogError(msg)
 
+        if self._format_version == REVLOGV0:
             self._inline = False
             self._generaldelta = False
-
         elif self._format_version == REVLOGV1:
-            if self._format_flags & ~REVLOGV1_FLAGS:
-                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                display_flag = self._format_flags >> 16
-                msg %= (display_flag, self._format_version, self.display_id)
-                raise error.RevlogError(msg)
-
             self._inline = self._format_flags & FLAG_INLINE_DATA
             self._generaldelta = self._format_flags & FLAG_GENERALDELTA
-
         elif self._format_version == REVLOGV2:
-            if self._format_flags & ~REVLOGV2_FLAGS:
-                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-                display_flag = self._format_flags >> 16
-                msg %= (display_flag, self._format_version, self.display_id)
-                raise error.RevlogError(msg)
-
             # There is a bug in the transaction handling when going from an
             # inline revlog to a separate index and data file. Turn it off until
             # it's fixed, since v2 revlogs sometimes get rewritten on exchange.
@@ -523,11 +515,8 @@ class revlog(object):
             self._generaldelta = True
             # revlog-v2 has built in sidedata support
             self.hassidedata = True
-
         else:
-            msg = _(b'unknown version (%d) in revlog %s')
-            msg %= (self._format_version, self.display_id)
-            raise error.RevlogError(msg)
+            assert False, 'unreachable'
 
         index_data = entry_data
         self._indexfile = entry_point
