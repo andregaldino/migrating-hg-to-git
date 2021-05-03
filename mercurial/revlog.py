@@ -327,11 +327,11 @@ class revlog(object):
 
         self._indexfile = indexfile
         self._datafile = datafile
-        self.nodemap_file = None
+        self._nodemap_file = None
         self.postfix = postfix
         self.opener = opener
         if persistentnodemap:
-            self.nodemap_file = nodemaputil.get_nodemap_file(self)
+            self._nodemap_file = nodemaputil.get_nodemap_file(self)
 
         assert target[0] in ALL_KINDS
         assert len(target) == 2
@@ -536,14 +536,14 @@ class revlog(object):
         self._storedeltachains = True
 
         devel_nodemap = (
-            self.nodemap_file
+            self._nodemap_file
             and force_nodemap
             and parse_index_v1_nodemap is not None
         )
 
         use_rust_index = False
         if rustrevlog is not None:
-            if self.nodemap_file is not None:
+            if self._nodemap_file is not None:
                 use_rust_index = True
             else:
                 use_rust_index = self.opener.options.get(b'rust.index')
@@ -562,7 +562,7 @@ class revlog(object):
             index, _chunkcache = d
             use_nodemap = (
                 not self._inline
-                and self.nodemap_file is not None
+                and self._nodemap_file is not None
                 and util.safehasattr(index, 'update_nodemap_data')
             )
             if use_nodemap:
@@ -698,7 +698,7 @@ class revlog(object):
         return True
 
     def update_caches(self, transaction):
-        if self.nodemap_file is not None:
+        if self._nodemap_file is not None:
             if transaction is None:
                 nodemaputil.update_persistent_nodemap(self)
             else:
@@ -715,7 +715,7 @@ class revlog(object):
         # end up having to refresh it here.
         use_nodemap = (
             not self._inline
-            and self.nodemap_file is not None
+            and self._nodemap_file is not None
             and util.safehasattr(self.index, 'update_nodemap_data')
         )
         if use_nodemap:

@@ -28,9 +28,9 @@ class NodeMap(dict):
 
 def persisted_data(revlog):
     """read the nodemap for a revlog from disk"""
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return None
-    pdata = revlog.opener.tryread(revlog.nodemap_file)
+    pdata = revlog.opener.tryread(revlog._nodemap_file)
     if not pdata:
         return None
     offset = 0
@@ -77,11 +77,11 @@ def setup_persistent_nodemap(tr, revlog):
     """
     if revlog._inline:
         return  # inlined revlog are too small for this to be relevant
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return  # we do not use persistent_nodemap on this revlog
 
     # we need to happen after the changelog finalization, in that use "cl-"
-    callback_id = b"nm-revlog-persistent-nodemap-%s" % revlog.nodemap_file
+    callback_id = b"nm-revlog-persistent-nodemap-%s" % revlog._nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
     tr.addpending(
@@ -123,7 +123,7 @@ def update_persistent_nodemap(revlog):
     """
     if revlog._inline:
         return  # inlined revlog are too small for this to be relevant
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return  # we do not use persistent_nodemap on this revlog
 
     notr = _NoTransaction()
@@ -133,11 +133,11 @@ def update_persistent_nodemap(revlog):
 
 
 def delete_nodemap(tr, repo, revlog):
-    """Delete nodemap data on disk for a given revlog"""
-    if revlog.nodemap_file is None:
+    """ Delete nodemap data on disk for a given revlog"""
+    if revlog._nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enabled"
         raise error.ProgrammingError(msg)
-    repo.svfs.unlink(revlog.nodemap_file)
+    repo.svfs.unlink(revlog._nodemap_file)
 
 
 def persist_nodemap(tr, revlog, pending=False, force=False):
@@ -146,9 +146,9 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
         raise error.ProgrammingError(
             "cannot persist nodemap of a filtered changelog"
         )
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         if force:
-            revlog.nodemap_file = get_nodemap_file(revlog)
+            revlog._nodemap_file = get_nodemap_file(revlog)
         else:
             msg = "calling persist nodemap on a revlog without the feature enabled"
             raise error.ProgrammingError(msg)
@@ -225,7 +225,7 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
     target_docket.tip_node = revlog.node(target_docket.tip_rev)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
-    file_path = revlog.nodemap_file
+    file_path = revlog._nodemap_file
     if pending:
         file_path += b'.a'
         tr.registertmp(file_path)
@@ -248,7 +248,7 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
             for oldfile in olds:
                 realvfs.tryunlink(oldfile)
 
-        callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
+        callback_id = b"revlog-cleanup-nodemap-%s" % revlog._nodemap_file
         tr.addpostclose(callback_id, cleanup)
 
 
