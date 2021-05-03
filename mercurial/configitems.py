@@ -1150,7 +1150,6 @@ coreconfigitem(
 )
 # "out of experimental" todo list.
 #
-# * expose transaction content hooks during pre-commit validation
 # * include management of a persistent nodemap in the main docket
 # * enforce a "no-truncate" policy for mmap safety
 #      - for censoring operation

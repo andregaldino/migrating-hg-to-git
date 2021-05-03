@@ -529,7 +529,9 @@ class revlog(object):
             if self._initempty:
                 self._docket = docketutil.default_docket(self, header)
             else:
-                self._docket = docketutil.parse_docket(self, entry_data)
+                self._docket = docketutil.parse_docket(
+                    self, entry_data, use_pending=self._trypending
+                )
             self._indexfile = self._docket.index_filepath()
             index_data = b''
             index_size = self._docket.index_end

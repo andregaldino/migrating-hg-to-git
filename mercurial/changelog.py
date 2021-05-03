@@ -395,7 +395,6 @@ class changelog(revlog.revlog):
         ``concurrencychecker`` will be passed to the revlog init function, see
         the documentation there.
         """
-
         revlog.revlog.__init__(
             self,
             opener,
@@ -484,6 +483,8 @@ class changelog(revlog.revlog):
     def _writepending(self, tr):
         """create a file containing the unfinalized state for
         pretxnchangegroup"""
+        if self._docket:
+            return self._docket.write(tr, pending=True)
         if self._delaybuf:
             # make a temporary copy of the index
             fp1 = self._realopener(self._indexfile)
