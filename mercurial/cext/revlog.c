@@ -101,6 +101,8 @@ struct indexObjectStruct {
 	int inlined;
 	long entry_size; /* size of index headers. Differs in v1 v.s. v2 format
 	                  */
+	char format_version; /* size of index headers. Differs in v1 v.s. v2
+	                        format */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -128,6 +130,9 @@ static const long v1_entry_size = 64;
 
 /* A Revlogv2 index entry is 96 bytes long. */
 static const long v2_entry_size = 96;
+
+static const long format_v1 = 1; /* Internal only, could be any number */
+static const long format_v2 = 2; /* Internal only, could be any number */
 
 static void raise_revlog_error(void)
 {
@@ -2757,12 +2762,14 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (revlogv2 && PyObject_IsTrue(revlogv2)) {
+		self->format_version = format_v2;
 		self->entry_size = v2_entry_size;
 	} else {
+		self->format_version = format_v1;
 		self->entry_size = v1_entry_size;
 	}
 
-	if (self->entry_size == v1_entry_size) {
+	if (self->format_version == format_v1) {
 		self->nullentry =
 		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
 		                  -1, -1, -1, nullid, self->nodelen);
