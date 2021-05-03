@@ -2061,7 +2061,19 @@ class revlog(object):
         if sidedata_size == 0:
             return {}
 
-        segment = self._getsegment(sidedata_offset, sidedata_size)
+        comp_segment = self._getsegment(sidedata_offset, sidedata_size)
+        comp = self.index[rev][11]
+        if comp == COMP_MODE_PLAIN:
+            segment = comp_segment
+        elif comp == COMP_MODE_DEFAULT:
+            segment = self._decompressor(comp_segment)
+        elif comp == COMP_MODE_INLINE:
+            segment = self.decompress(comp_segment)
+        else:
+            msg = 'unknown compression mode %d'
+            msg %= comp
+            raise error.RevlogError(msg)
+
         sidedata = sidedatautil.deserialize_sidedata(segment)
         return sidedata
 
