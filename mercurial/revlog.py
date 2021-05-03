@@ -593,6 +593,13 @@ class revlog(object):
         return self.target[0]
 
     @util.propertycache
+    def display_id(self):
+        """The public facing "ID" of the revlog that we use in message"""
+        # Maybe we should build a user facing representation of
+        # revlog.target instead of using `self.radix`
+        return self.radix
+
+    @util.propertycache
     def _compressor(self):
         engine = util.compengines[self._compengine]
         return engine.revlogcompressor(self._compengineopts)
