@@ -804,10 +804,10 @@ def _resolvenarrowrevisioninfo(
                 # We failed to resolve a parent for this node, so
                 # we crash the changegroup construction.
                 if util.safehasattr(store, 'target'):
-                    target = store._indexfile
+                    target = store.display_id
                 else:
                     # some revlog not actually a revlog
-                    target = store._revlog._indexfile
+                    target = store._revlog.display_id
 
                 raise error.Abort(
                     b"unable to resolve parent while packing '%s' %r"
