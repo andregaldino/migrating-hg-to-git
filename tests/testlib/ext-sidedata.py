@@ -42,7 +42,7 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
     text, sd = orig(self, nodeorrev, *args, **kwargs)
     if getattr(self, 'sidedatanocheck', False):
         return text, sd
-    if self.version & 0xFFFF != 2:
+    if self.hassidedata:
         return text, sd
     if nodeorrev != nullrev and nodeorrev != self.nullid:
         cat1 = sd.get(sidedata.SD_TEST1)

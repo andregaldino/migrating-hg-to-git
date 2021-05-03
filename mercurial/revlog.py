@@ -715,7 +715,7 @@ class revlog(object):
         return self.index[rev][1]
 
     def sidedata_length(self, rev):
-        if self.version & 0xFFFF != REVLOGV2:
+        if not self.hassidedata:
             return 0
         return self.index[rev][9]
 
@@ -1771,7 +1771,7 @@ class revlog(object):
         # revision or might need to be processed to retrieve the revision.
         rev, rawtext, validated = self._rawtext(node, rev, _df=_df)
 
-        if self.version & 0xFFFF == REVLOGV2:
+        if self.hassidedata:
             if rev is None:
                 rev = self.rev(node)
             sidedata = self._sidedata(rev)
@@ -2246,7 +2246,7 @@ class revlog(object):
 
         deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
-        if sidedata and self.version & 0xFFFF == REVLOGV2:
+        if sidedata and self.hassidedata:
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
             sidedata_offset = offset + deltainfo.deltalen
         else:
@@ -3072,7 +3072,7 @@ class revlog(object):
         return d
 
     def rewrite_sidedata(self, helpers, startrev, endrev):
-        if self.version & 0xFFFF != REVLOGV2:
+        if not self.hassidedata:
             return
         # inline are not yet supported because they suffer from an issue when
         # rewriting them (since it's not an append-only operation).
