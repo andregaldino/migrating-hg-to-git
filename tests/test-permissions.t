@@ -1,5 +1,13 @@
 #require unix-permissions no-root reporevlogstore
 
+#testcases dirstate-v1 dirstate-v1-tree
+
+#if dirstate-v1-tree
+#require rust
+  $ echo '[experimental]' >> $HGRCPATH
+  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
+#endif
+
   $ hg init t
   $ cd t
 

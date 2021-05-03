@@ -1,3 +1,11 @@
+#testcases dirstate-v1 dirstate-v1-tree
+
+#if dirstate-v1-tree
+#require rust
+  $ echo '[experimental]' >> $HGRCPATH
+  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
+#endif
+
 ------ Test dirstate._dirs refcounting
 
   $ hg init t

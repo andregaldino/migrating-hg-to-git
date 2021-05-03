@@ -1,3 +1,11 @@
+#testcases dirstate-v1 dirstate-v1-tree
+
+#if dirstate-v1-tree
+#require rust
+  $ echo '[experimental]' >> $HGRCPATH
+  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
+#endif
+
   $ hg init repo1
   $ cd repo1
   $ mkdir a b a/1 b/1 b/2
