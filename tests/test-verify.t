@@ -351,7 +351,7 @@ test flag processor and skipflags
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   base64@0: unpacking 794cee7777cb: integrity check failed on data/base64.i:0
+   base64@0: unpacking 794cee7777cb: integrity check failed on data/base64:0
   checked 1 changesets with 1 changes to 1 files
   1 integrity errors encountered!
   (first damaged changeset appears to be 0)

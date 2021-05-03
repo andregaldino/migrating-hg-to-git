@@ -1941,7 +1941,7 @@ class revlog(object):
                     revornode = templatefilters.short(hex(node))
                 raise error.RevlogError(
                     _(b"integrity check failed on %s:%s")
-                    % (self._indexfile, pycompat.bytestr(revornode))
+                    % (self.display_id, pycompat.bytestr(revornode))
                 )
         except error.RevlogError:
             if self._censorable and storageutil.iscensoredtext(text):
