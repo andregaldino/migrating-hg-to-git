@@ -32,9 +32,11 @@ from . import (
 # * 4 bytes: revlog version
 #          |   This is mandatory as docket must be compatible with the previous
 #          |   revlog index header.
-# * 8 bytes: size of index data
-# * 8 bytes: pending size of index data
-S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'LL')
+# * 8 bytes: size of index-data
+# * 8 bytes: pending size of index-data
+# * 8 bytes: size of data
+# * 8 bytes: pending size of data
+S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'LLLL')
 
 
 class RevlogDocket(object):
@@ -47,6 +49,8 @@ class RevlogDocket(object):
         version_header=None,
         index_end=0,
         pending_index_end=0,
+        data_end=0,
+        pending_data_end=0,
     ):
         self._version_header = version_header
         self._read_only = bool(use_pending)
@@ -54,14 +58,19 @@ class RevlogDocket(object):
         self._radix = revlog.radix
         self._path = revlog._docket_file
         self._opener = revlog.opener
-        # this assert should be True as long as we have a single index filename
+        # thes asserts should be True as long as we have a single index filename
         assert index_end <= pending_index_end
+        assert data_end <= pending_data_end
         self._initial_index_end = index_end
         self._pending_index_end = pending_index_end
+        self._initial_data_end = data_end
+        self._pending_data_end = pending_data_end
         if use_pending:
             self._index_end = self._pending_index_end
+            self._data_end = self._pending_data_end
         else:
             self._index_end = self._initial_index_end
+            self._data_end = self._initial_data_end
 
     def index_filepath(self):
         """file path to the current index file associated to this docket"""
@@ -76,6 +85,16 @@ class RevlogDocket(object):
     def index_end(self, new_size):
         if new_size != self._index_end:
             self._index_end = new_size
+            self._dirty = True
+
+    @property
+    def data_end(self):
+        return self._data_end
+
+    @data_end.setter
+    def data_end(self, new_size):
+        if new_size != self._data_end:
+            self._data_end = new_size
             self._dirty = True
 
     def write(self, transaction, pending=False, stripping=False):
@@ -102,15 +121,19 @@ class RevlogDocket(object):
     def _serialize(self, pending=False):
         if pending:
             official_index_end = self._initial_index_end
+            official_data_end = self._initial_data_end
         else:
             official_index_end = self._index_end
+            official_data_end = self._data_end
 
         # this assert should be True as long as we have a single index filename
-        assert official_index_end <= self._index_end
+        assert official_data_end <= self._data_end
         data = (
             self._version_header,
             official_index_end,
             self._index_end,
+            official_data_end,
+            self._data_end,
         )
         return S_HEADER.pack(*data)
 
@@ -127,12 +150,18 @@ def default_docket(revlog, version_header):
 def parse_docket(revlog, data, use_pending=False):
     """given some docket data return a docket object for the given revlog"""
     header = S_HEADER.unpack(data[: S_HEADER.size])
-    version_header, index_size, pending_index_size = header
+    version_header = header[0]
+    index_size = header[1]
+    pending_index_size = header[2]
+    data_size = header[3]
+    pending_data_size = header[4]
     docket = RevlogDocket(
         revlog,
         use_pending=use_pending,
         version_header=version_header,
         index_end=index_size,
         pending_index_end=pending_index_size,
+        data_end=data_size,
+        pending_data_end=pending_data_size,
     )
     return docket

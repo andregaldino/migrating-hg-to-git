@@ -2088,7 +2088,10 @@ class revlog(object):
             if not self._inline:
                 try:
                     dfh = self._datafp(b"r+")
-                    dfh.seek(0, os.SEEK_END)
+                    if self._docket is None:
+                        dfh.seek(0, os.SEEK_END)
+                    else:
+                        dfh.seek(self._docket.data_end, os.SEEK_SET)
                 except IOError as inst:
                     if inst.errno != errno.ENOENT:
                         raise
@@ -2455,16 +2458,10 @@ class revlog(object):
         to `n - 1`'s sidedata being written after `n`'s data.
 
         TODO cache this in a docket file before getting out of experimental."""
-        if self._format_version != REVLOGV2:
+        if self._docket is None:
             return self.end(prev)
-
-        offset = 0
-        for rev, entry in enumerate(self.index):
-            sidedata_end = entry[8] + entry[9]
-            # Sidedata for a previous rev has potentially been written after
-            # this rev's end, so take the max.
-            offset = max(self.end(rev), offset, sidedata_end)
-        return offset
+        else:
+            return self._docket.data_end
 
     def _writeentry(self, transaction, entry, data, link, offset, sidedata):
         # Files opened in a+ mode have inconsistent behavior on various
@@ -2488,7 +2485,10 @@ class revlog(object):
         else:
             ifh.seek(self._docket.index_end, os.SEEK_SET)
         if dfh:
-            dfh.seek(0, os.SEEK_END)
+            if self._docket is None:
+                dfh.seek(0, os.SEEK_END)
+            else:
+                dfh.seek(self._docket.data_end, os.SEEK_SET)
 
         curr = len(self) - 1
         if not self._inline:
@@ -2511,6 +2511,7 @@ class revlog(object):
             self._enforceinlinesize(transaction)
         if self._docket is not None:
             self._docket.index_end = self._writinghandles[0].tell()
+            self._docket.data_end = self._writinghandles[1].tell()
 
         nodemaputil.setup_persistent_nodemap(transaction, self)
 
@@ -2673,18 +2674,19 @@ class revlog(object):
             return
 
         # first truncate the files on disk
-        end = self.start(rev)
+        data_end = self.start(rev)
         if not self._inline:
-            transaction.add(self._datafile, end)
+            transaction.add(self._datafile, data_end)
             end = rev * self.index.entry_size
         else:
-            end += rev * self.index.entry_size
+            end = data_end + (rev * self.index.entry_size)
 
         transaction.add(self._indexfile, end)
         if self._docket is not None:
             # XXX we could, leverage the docket while stripping. However it is
             # not powerfull enough at the time of this comment
             self._docket.index_end = end
+            self._docket.data_end = data_end
             self._docket.write(transaction, stripping=True)
 
         # then reset internal state in memory to forget those revisions
@@ -3210,7 +3212,11 @@ class revlog(object):
         # append the new sidedata
         with self._writing(transaction):
             ifh, dfh = self._writinghandles
-            dfh.seek(0, os.SEEK_END)
+            if self._docket is not None:
+                dfh.seek(self._docket.data_end, os.SEEK_SET)
+            else:
+                dfh.seek(0, os.SEEK_END)
+
             current_offset = dfh.tell()
             for rev in range(startrev, endrev + 1):
                 entry = self.index[rev]
@@ -3242,6 +3248,8 @@ class revlog(object):
                 dfh.write(serialized_sidedata)
                 new_entries.append(entry)
                 current_offset += len(serialized_sidedata)
+                if self._docket is not None:
+                    self._docket.data_end = dfh.tell()
 
             # rewrite the new index entries
             ifh.seek(startrev * self.index.entry_size)
