@@ -469,21 +469,13 @@ class revlog(object):
         new_header, mmapindexthreshold, force_nodemap = self._init_opts()
 
         if self.postfix is None:
-            index_file = b'%s.i' % self.radix
-            data_file = b'%s.d' % self.radix
-        elif self.postfix == b'a':
-            index_file = b'%s.i.a' % self.radix
-            data_file = b'%s.d' % self.radix
+            entry_point = b'%s.i' % self.radix
         else:
-            index_file = b'%s.i.%s' % (self.radix, self.postfix)
-            data_file = b'%s.d.%s' % (self.radix, self.postfix)
-
-        self._indexfile = index_file
-        self._datafile = data_file
+            entry_point = b'%s.i.%s' % (self.radix, self.postfix)
 
         indexdata = b''
         self._initempty = True
-        indexdata = self._get_data(self._indexfile, mmapindexthreshold)
+        indexdata = self._get_data(entry_point, mmapindexthreshold)
         if len(indexdata) > 0:
             header = INDEX_HEADER.unpack(indexdata[:4])[0]
             self._initempty = False
@@ -532,6 +524,13 @@ class revlog(object):
             msg = _(b'unknown version (%d) in revlog %s')
             msg %= (self._format_version, self.display_id)
             raise error.RevlogError(msg)
+
+        self._indexfile = entry_point
+
+        if self.postfix is None or self.postfix == b'a':
+            self._datafile = b'%s.d' % self.radix
+        else:
+            self._datafile = b'%s.d.%s' % (self.radix, self.postfix)
 
         self.nodeconstants = sha1nodeconstants
         self.nullid = self.nodeconstants.nullid
