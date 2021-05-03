@@ -2033,7 +2033,7 @@ class revlog(object):
         """
         if link == nullrev:
             raise error.RevlogError(
-                _(b"attempted to add linkrev -1 to %s") % self._indexfile
+                _(b"attempted to add linkrev -1 to %s") % self.display_id
             )
 
         if sidedata is None:
@@ -2229,14 +2229,14 @@ class revlog(object):
         """
         if node == self.nullid:
             raise error.RevlogError(
-                _(b"%s: attempt to add null revision") % self._indexfile
+                _(b"%s: attempt to add null revision") % self.display_id
             )
         if (
             node == self.nodeconstants.wdirid
             or node in self.nodeconstants.wdirfilenodeids
         ):
             raise error.RevlogError(
-                _(b"%s: attempt to add wdir revision") % self._indexfile
+                _(b"%s: attempt to add wdir revision") % self.display_id
             )
 
         if self._inline:
