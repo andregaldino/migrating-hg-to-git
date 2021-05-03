@@ -315,18 +315,8 @@ class revlog(object):
 
         self.radix = radix
 
-        if postfix is None:
-            indexfile = b'%s.i' % self.radix
-            datafile = b'%s.d' % self.radix
-        elif postfix == b'a':
-            indexfile = b'%s.i.a' % self.radix
-            datafile = b'%s.d' % self.radix
-        else:
-            indexfile = b'%s.i.%s' % (self.radix, postfix)
-            datafile = b'%s.d.%s' % (self.radix, postfix)
-
-        self._indexfile = indexfile
-        self._datafile = datafile
+        self._indexfile = None
+        self._datafile = None
         self._nodemap_file = None
         self.postfix = postfix
         self.opener = opener
@@ -459,6 +449,20 @@ class revlog(object):
     def _loadindex(self):
 
         newversionflags, mmapindexthreshold, force_nodemap = self._init_opts()
+
+        if self.postfix is None:
+            index_file = b'%s.i' % self.radix
+            data_file = b'%s.d' % self.radix
+        elif self.postfix == b'a':
+            index_file = b'%s.i.a' % self.radix
+            data_file = b'%s.d' % self.radix
+        else:
+            index_file = b'%s.i.%s' % (self.radix, self.postfix)
+            data_file = b'%s.d.%s' % (self.radix, self.postfix)
+
+        self._indexfile = index_file
+        self._datafile = data_file
+
         indexdata = b''
         self._initempty = True
         try:
