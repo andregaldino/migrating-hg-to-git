@@ -329,12 +329,10 @@ class revlog(object):
         self._datafile = datafile
         self.nodemap_file = None
         self.postfix = postfix
-        if persistentnodemap:
-            self.nodemap_file = nodemaputil.get_nodemap_file(
-                opener, self._indexfile
-            )
-
         self.opener = opener
+        if persistentnodemap:
+            self.nodemap_file = nodemaputil.get_nodemap_file(self)
+
         assert target[0] in ALL_KINDS
         assert len(target) == 2
         self.target = target
