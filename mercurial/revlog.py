@@ -363,7 +363,22 @@ class revlog(object):
 
         self._concurrencychecker = concurrencychecker
 
-    def _loadindex(self):
+    def _init_opts(self):
+        """process options (from above/config) to setup associated default revlog mode
+
+        These values might be affected when actually reading on disk information.
+
+        The relevant values are returned for use in _loadindex().
+
+        * newversionflags:
+            version header to use if we need to create a new revlog
+
+        * mmapindexthreshold:
+            minimal index size for start to use mmap
+
+        * force_nodemap:
+            force the usage of a "development" version of the nodemap code
+        """
         mmapindexthreshold = None
         opts = self.opener.options
 
@@ -426,7 +441,12 @@ class revlog(object):
                 _(b'revlog chunk cache size %r is not a power of 2')
                 % self._chunkcachesize
             )
+        force_nodemap = opts.get(b'devel-force-nodemap', False)
+        return newversionflags, mmapindexthreshold, force_nodemap
 
+    def _loadindex(self):
+
+        newversionflags, mmapindexthreshold, force_nodemap = self._init_opts()
         indexdata = b''
         self._initempty = True
         try:
@@ -505,7 +525,7 @@ class revlog(object):
 
         devel_nodemap = (
             self.nodemap_file
-            and opts.get(b'devel-force-nodemap', False)
+            and force_nodemap
             and parse_index_v1_nodemap is not None
         )
 
