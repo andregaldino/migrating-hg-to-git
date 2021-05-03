@@ -485,13 +485,13 @@ class revlog(object):
         self._initempty = True
         indexdata = self._get_data(self._indexfile, mmapindexthreshold)
         if len(indexdata) > 0:
-            versionflags = INDEX_HEADER.unpack(indexdata[:4])[0]
+            header = INDEX_HEADER.unpack(indexdata[:4])[0]
             self._initempty = False
         else:
-            versionflags = newversionflags
+            header = newversionflags
 
-        flags = self._format_flags = versionflags & ~0xFFFF
-        fmt = self._format_version = versionflags & 0xFFFF
+        flags = self._format_flags = header & ~0xFFFF
+        fmt = self._format_version = header & 0xFFFF
 
         if fmt == REVLOGV0:
             if flags:
@@ -510,8 +510,8 @@ class revlog(object):
                     % (flags >> 16, fmt, self.display_id)
                 )
 
-            self._inline = versionflags & FLAG_INLINE_DATA
-            self._generaldelta = versionflags & FLAG_GENERALDELTA
+            self._inline = header & FLAG_INLINE_DATA
+            self._generaldelta = header & FLAG_GENERALDELTA
 
         elif fmt == REVLOGV2:
             if flags & ~REVLOGV2_FLAGS:
