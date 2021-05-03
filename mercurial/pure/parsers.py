@@ -279,25 +279,25 @@ class Index2Mixin(object):
     index_format = revlog_constants.INDEX_ENTRY_V2
 
     def replace_sidedata_info(
-        self, i, sidedata_offset, sidedata_length, offset_flags
+        self, rev, sidedata_offset, sidedata_length, offset_flags
     ):
         """
         Replace an existing index entry's sidedata offset and length with new
         ones.
         This cannot be used outside of the context of sidedata rewriting,
-        inside the transaction that creates the revision `i`.
+        inside the transaction that creates the revision `rev`.
         """
-        if i < 0:
+        if rev < 0:
             raise KeyError
-        self._check_index(i)
+        self._check_index(rev)
         sidedata_format = b">Qi"
         packed_size = struct.calcsize(sidedata_format)
-        if i >= self._lgt:
+        if rev >= self._lgt:
             packed = _pack(sidedata_format, sidedata_offset, sidedata_length)
-            old = self._extra[i - self._lgt]
+            old = self._extra[rev - self._lgt]
             offset_flags = struct.pack(b">Q", offset_flags)
             new = offset_flags + old[8:64] + packed + old[64 + packed_size :]
-            self._extra[i - self._lgt] = new
+            self._extra[rev - self._lgt] = new
         else:
             msg = b"cannot rewrite entries outside of this transaction"
             raise KeyError(msg)
