@@ -691,3 +691,21 @@ the working directory (issue6483)
   $ hg add a.py b.rs
   $ hg st -aI "*.py"
   A a.py
+
+Check using include flag while listing ignored composes correctly (issue6514)
+
+  $ cd ..
+  $ hg init issue6514
+  $ cd issue6514
+  $ mkdir ignored-folder
+  $ touch A.hs B.hs C.hs ignored-folder/other.txt ignored-folder/ctest.hs
+  $ cat >.hgignore <<EOF
+  > A.hs
+  > B.hs
+  > ignored-folder/
+  > EOF
+  $ hg st -i -I 're:.*\.hs$'
+  I A.hs
+  I B.hs
+  I ignored-folder/ctest.hs
+  I ignored-folder/other.txt (known-bad-output rust !)
