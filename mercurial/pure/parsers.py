@@ -289,11 +289,11 @@ def parse_index2(data, inline, revlogv2=False):
     if not inline:
         cls = IndexObject2 if revlogv2 else IndexObject
         return cls(data), None
-    cls = InlinedIndexObject2 if revlogv2 else InlinedIndexObject
+    cls = InlinedIndexObject
     return cls(data, inline), (0, data)
 
 
-class Index2Mixin(object):
+class IndexObject2(IndexObject):
     index_format = revlog_constants.INDEX_ENTRY_V2
 
     def replace_sidedata_info(
@@ -351,36 +351,6 @@ class Index2Mixin(object):
         msg = 'version header should go in the docket, not the index: %d'
         msg %= header
         raise error.ProgrammingError(msg)
-
-
-class IndexObject2(Index2Mixin, IndexObject):
-    pass
-
-
-class InlinedIndexObject2(Index2Mixin, InlinedIndexObject):
-    def _inline_scan(self, lgt):
-        sidedata_length_pos = 72
-        off = 0
-        if lgt is not None:
-            self._offsets = [0] * lgt
-        count = 0
-        while off <= len(self._data) - self.entry_size:
-            start = off + self.big_int_size
-            (data_size,) = struct.unpack(
-                b'>i',
-                self._data[start : start + self.int_size],
-            )
-            start = off + sidedata_length_pos
-            (side_data_size,) = struct.unpack(
-                b'>i', self._data[start : start + self.int_size]
-            )
-            if lgt is not None:
-                self._offsets[count] = off
-            count += 1
-            off += self.entry_size + data_size + side_data_size
-        if off != len(self._data):
-            raise ValueError(b"corrupted data")
-        return count
 
 
 def parse_index_devel_nodemap(data, inline):
