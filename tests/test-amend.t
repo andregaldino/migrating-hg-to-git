@@ -196,7 +196,7 @@ Amend in the middle of a stack
   $ hg update -q B
   $ echo 2 >> B
   $ hg amend
-  abort: cannot amend changeset with children
+  abort: cannot amend changeset, as that will orphan 1 descendants
   (see 'hg help evolution.instability')
   [10]
 

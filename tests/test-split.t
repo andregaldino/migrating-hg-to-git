@@ -466,7 +466,7 @@ Split a non-head without rebase
   $ cd $TESTTMP/d
 #if obsstore-off
   $ runsplit -r 1 --no-rebase
-  abort: cannot split changeset with children
+  abort: cannot split changeset, as that will orphan 3 descendants
   (see 'hg help evolution.instability')
   [10]
 #else
@@ -518,7 +518,7 @@ Split a non-head with obsoleted descendants
   $ eval `hg tags -T '{tag}={node}\n'`
   $ rm .hg/localtags
   $ hg split $B --config experimental.evolution=createmarkers
-  abort: cannot split changeset with children
+  abort: cannot split changeset, as that will orphan 4 descendants
   (see 'hg help evolution.instability')
   [10]
   $ cat > $TESTTMP/messages <<EOF

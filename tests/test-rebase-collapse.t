@@ -549,7 +549,7 @@ Test collapsing a middle revision in-place
   o  0: f447d5abf5ea 'add'
   
   $ hg rebase --collapse -r 1 -d 0
-  abort: cannot rebase changeset with children
+  abort: cannot rebase changeset, as that will orphan 1 descendants
   (see 'hg help evolution.instability')
   [10]
 

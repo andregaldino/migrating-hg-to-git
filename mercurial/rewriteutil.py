@@ -80,7 +80,9 @@ def precheck(repo, revs, action=b'rewrite'):
     if newunstable:
         hint = _(b"see 'hg help evolution.instability'")
         raise error.InputError(
-            _(b"cannot %s changeset with children") % action, hint=hint
+            _(b"cannot %s changeset, as that will orphan %d descendants")
+            % (action, len(newunstable)),
+            hint=hint,
         )
 
     if not obsolete.isenabled(repo, obsolete.allowdivergenceopt):

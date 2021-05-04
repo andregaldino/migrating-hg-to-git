@@ -284,7 +284,7 @@ Unamending in middle of a stack
   
 
   $ hg --config experimental.evolution=createmarkers unamend
-  abort: cannot unamend changeset with children
+  abort: cannot unamend changeset, as that will orphan 3 descendants
   (see 'hg help evolution.instability')
   [10]
 

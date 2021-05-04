@@ -452,7 +452,7 @@ Source on have two descendant heads but ask for one
   $ hg clone -q -u . ah ah1
   $ cd ah1
   $ hg rebase -r '2::8' -d 1
-  abort: cannot rebase changeset with children
+  abort: cannot rebase changeset, as that will orphan 2 descendants
   (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '2::8' -d 1 -k
@@ -498,7 +498,7 @@ Base on have one descendant heads we ask for but common ancestor have two
   $ hg clone -q -u . ah ah2
   $ cd ah2
   $ hg rebase -r '3::8' -d 1
-  abort: cannot rebase changeset with children
+  abort: cannot rebase changeset, as that will orphan 2 descendants
   (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::8' -d 1 --keep
@@ -541,7 +541,7 @@ rebase subset
   $ hg clone -q -u . ah ah3
   $ cd ah3
   $ hg rebase -r '3::7' -d 1
-  abort: cannot rebase changeset with children
+  abort: cannot rebase changeset, as that will orphan 3 descendants
   (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::7' -d 1 --keep
@@ -581,7 +581,7 @@ rebase subset with multiple head
   $ hg clone -q -u . ah ah4
   $ cd ah4
   $ hg rebase -r '3::(7+5)' -d 1
-  abort: cannot rebase changeset with children
+  abort: cannot rebase changeset, as that will orphan 1 descendants
   (see 'hg help evolution.instability')
   [10]
   $ hg rebase -r '3::(7+5)' -d 1 --keep

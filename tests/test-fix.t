@@ -1172,7 +1172,7 @@ an orphan. We must respect experimental.evolution.allowunstable.
   $ printf "two\n" > foo.whole
   $ hg commit -m "second"
   $ hg --config experimental.evolution.allowunstable=False fix -r '.^'
-  abort: cannot fix changeset with children
+  abort: cannot fix changeset, as that will orphan 1 descendants
   (see 'hg help evolution.instability')
   [10]
   $ hg fix -r '.^'
