@@ -1659,8 +1659,8 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   persistent-nodemap:  no     no      no (no-rust !)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no    yes      no
-  revlog-v2:           no    yes      no
-  changelog-v2:        no     no      no
+  revlog-v2:           no     no      no
+  changelog-v2:        no    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        * (glob)
   compression-level:  default default default
@@ -1669,8 +1669,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   
   requirements
      preserved: * (glob)
-     removed: revlogv1
-     added: exp-copies-sidedata-changeset, exp-revlogv2.2
+     added: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
     - all-filelogs
@@ -1699,8 +1698,8 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   persistent-nodemap:  no     no      no (no-rust !)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no    yes      no
-  revlog-v2:           no    yes      no
-  changelog-v2:        no     no      no
+  revlog-v2:           no     no      no
+  changelog-v2:        no    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        * (glob)
   compression-level:  default default default
@@ -1709,8 +1708,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   
   requirements
      preserved: * (glob)
-     removed: revlogv1
-     added: exp-copies-sidedata-changeset, exp-revlogv2.2
+     added: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
     - all-filelogs

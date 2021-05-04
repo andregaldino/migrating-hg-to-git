@@ -3529,8 +3529,7 @@ def newreporequirements(ui, createopts):
 
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
-        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
+        requirements.add(requirementsmod.CHANGELOGV2_REQUIREMENT)
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)
