@@ -557,9 +557,11 @@ where
                         .unwrap();
                 }
             } else if self.is_ignored(&filename) && self.options.list_ignored {
-                files_sender
-                    .send((filename.to_owned(), Dispatch::Ignored))
-                    .unwrap();
+                if self.matcher.matches(&filename) {
+                    files_sender
+                        .send((filename.to_owned(), Dispatch::Ignored))
+                        .unwrap();
+                }
             }
         } else if let Some(entry) = entry_option {
             // Used to be a file or a folder, now something else.

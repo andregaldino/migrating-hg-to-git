@@ -708,4 +708,3 @@ Check using include flag while listing ignored composes correctly (issue6514)
   I A.hs
   I B.hs
   I ignored-folder/ctest.hs
-  I ignored-folder/other.txt (known-bad-output rust !)
