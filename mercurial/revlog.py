@@ -1063,7 +1063,7 @@ class revlog(object):
             checkrev(r)
         # and we're sure ancestors aren't filtered as well
 
-        if rustancestor is not None:
+        if rustancestor is not None and self.index.rust_ext_compat:
             lazyancestors = rustancestor.LazyAncestors
             arg = self.index
         else:
@@ -1150,7 +1150,7 @@ class revlog(object):
         if common is None:
             common = [nullrev]
 
-        if rustancestor is not None:
+        if rustancestor is not None and self.index.rust_ext_compat:
             return rustancestor.MissingAncestors(self.index, common)
         return ancestor.incrementalmissingancestors(self.parentrevs, common)
 
@@ -1370,7 +1370,7 @@ class revlog(object):
                 return self.index.headrevs()
             except AttributeError:
                 return self._headrevs()
-        if rustdagop is not None:
+        if rustdagop is not None and self.index.rust_ext_compat:
             return rustdagop.headrevs(self.index, revs)
         return dagop.headrevs(revs, self._uncheckedparentrevs)
 

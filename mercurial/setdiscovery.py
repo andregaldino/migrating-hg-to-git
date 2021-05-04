@@ -274,6 +274,8 @@ class partialdiscovery(object):
         return sample
 
 
+pure_partialdiscovery = partialdiscovery
+
 partialdiscovery = policy.importrust(
     'discovery', member='PartialDiscovery', default=partialdiscovery
 )
@@ -434,9 +436,11 @@ def findcommonheads(
     hard_limit_sample = not (dynamic_sample or remote.limitedarguments)
 
     randomize = ui.configbool(b'devel', b'discovery.randomize')
-    disco = partialdiscovery(
-        local, ownheads, hard_limit_sample, randomize=randomize
-    )
+    if cl.index.rust_ext_compat:
+        pd = partialdiscovery
+    else:
+        pd = pure_partialdiscovery
+    disco = pd(local, ownheads, hard_limit_sample, randomize=randomize)
     if initial_head_exchange:
         # treat remote heads (and maybe own heads) as a first implicit sample
         # response
