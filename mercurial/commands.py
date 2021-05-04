@@ -2202,6 +2202,7 @@ def _docommit(ui, repo, *pats, **opts):
         (b'u', b'untrusted', None, _(b'show untrusted configuration options')),
         (b'e', b'edit', None, _(b'edit user config')),
         (b'l', b'local', None, _(b'edit repository config')),
+        (b'', b'source', None, _(b'show source of configuration value')),
         (
             b'',
             b'shared',
@@ -2232,7 +2233,7 @@ def config(ui, repo, *values, **opts):
     --global, edit the system-wide config file. With --local, edit the
     repository-level config file.
 
-    With --debug, the source (filename and line number) is printed
+    With --source, the source (filename and line number) is printed
     for each config item.
 
     See :hg:`help config` for more information about config files.
@@ -2335,6 +2336,7 @@ def config(ui, repo, *values, **opts):
     selentries = set(selentries)
 
     matched = False
+    show_source = ui.debugflag or opts.get(b'source')
     for section, name, value in ui.walkconfig(untrusted=untrusted):
         source = ui.configsource(section, name, untrusted)
         value = pycompat.bytestr(value)
@@ -2346,7 +2348,7 @@ def config(ui, repo, *values, **opts):
         if values and not (section in selsections or entryname in selentries):
             continue
         fm.startitem()
-        fm.condwrite(ui.debugflag, b'source', b'%s: ', source)
+        fm.condwrite(show_source, b'source', b'%s: ', source)
         if uniquesel:
             fm.data(name=entryname)
             fm.write(b'value', b'%s\n', value)

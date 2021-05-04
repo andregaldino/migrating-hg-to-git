@@ -277,8 +277,7 @@ Test empty config source:
   > emptysource = `pwd`/emptysource.py
   > EOF
 
-  $ hg config --debug empty.source
-  read config from: * (glob)
+  $ hg config --source empty.source
   none: value
   $ hg config empty.source -Tjson
   [
@@ -349,16 +348,16 @@ edit failure
 
 config affected by environment variables
 
-  $ EDITOR=e1 VISUAL=e2 hg config --debug | grep 'ui\.editor'
+  $ EDITOR=e1 VISUAL=e2 hg config --source | grep 'ui\.editor'
   $VISUAL: ui.editor=e2
 
-  $ VISUAL=e2 hg config --debug --config ui.editor=e3 | grep 'ui\.editor'
+  $ VISUAL=e2 hg config --source --config ui.editor=e3 | grep 'ui\.editor'
   --config: ui.editor=e3
 
-  $ PAGER=p1 hg config --debug | grep 'pager\.pager'
+  $ PAGER=p1 hg config --source | grep 'pager\.pager'
   $PAGER: pager.pager=p1
 
-  $ PAGER=p1 hg config --debug --config pager.pager=p2 | grep 'pager\.pager'
+  $ PAGER=p1 hg config --source --config pager.pager=p2 | grep 'pager\.pager'
   --config: pager.pager=p2
 
 verify that aliases are evaluated as well

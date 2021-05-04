@@ -253,9 +253,8 @@ source of paths is not mangled
   > [paths]
   > foo = bar
   > EOF
-  $ hg showconfig --debug paths
+  $ hg showconfig --source paths
   plain: True
-  read config from: $TESTTMP/hgrc
   $TESTTMP/hgrc:17: paths.foo=$TESTTMP/bar
 
 Test we can skip the user configuration

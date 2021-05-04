@@ -5,7 +5,7 @@ Troubleshooting
 ===============
 
 If you're having problems with your configuration,
-:hg:`config --debug` can help you understand what is introducing
+:hg:`config --source` can help you understand what is introducing
 a setting into your environment.
 
 See :hg:`help config.syntax` and :hg:`help config.files`

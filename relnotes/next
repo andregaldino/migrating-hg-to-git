@@ -1,5 +1,8 @@
 == New Features ==
- 
+
+ * `hg config` now has a `--source` option to show where each
+   configuration value comes from.
+
 
 == Default Format Change ==
 
