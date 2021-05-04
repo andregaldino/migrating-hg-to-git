@@ -31,6 +31,7 @@ RECLONES_REQUIREMENTS = {
     requirements.GENERALDELTA_REQUIREMENT,
     requirements.SPARSEREVLOG_REQUIREMENT,
     requirements.REVLOGV2_REQUIREMENT,
+    requirements.CHANGELOGV2_REQUIREMENT,
 }
 
 
@@ -949,6 +950,7 @@ def supportremovedrequirements(repo):
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
     }
     for name in compression.compengines:
@@ -979,6 +981,7 @@ def supporteddestrequirements(repo):
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -1009,6 +1012,7 @@ def allowednewrequirements(repo):
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
