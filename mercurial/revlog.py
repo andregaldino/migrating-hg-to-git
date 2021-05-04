@@ -459,7 +459,7 @@ class revlog(object):
         opts = self.opener.options
 
         if b'revlogv2' in opts:
-            new_header = REVLOGV2 | FLAG_INLINE_DATA
+            new_header = REVLOGV2
         elif b'revlogv1' in opts:
             new_header = REVLOGV1 | FLAG_INLINE_DATA
             if b'generaldelta' in opts:

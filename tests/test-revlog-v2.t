@@ -61,8 +61,8 @@ Header written as expected
 
   $ f --hexdump --bytes 4 .hg/store/00changelog.i
   .hg/store/00changelog.i:
-  0000: 00 01 de ad                                     |....|
+  0000: 00 00 de ad                                     |....|
 
   $ f --hexdump --bytes 4 .hg/store/data/foo.i
   .hg/store/data/foo.i:
-  0000: 00 01 de ad                                     |....|
+  0000: 00 00 de ad                                     |....|
