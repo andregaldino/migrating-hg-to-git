@@ -264,11 +264,11 @@ nothing happens, even to the working directory.
   $ hg commit -Aqm "hello"
   $ hg phase -r 0 --public
   $ hg fix -r 0
-  abort: cannot fix public changesets
+  abort: cannot fix public changesets: 6470986d2e7b
   (see 'hg help phases' for details)
   [10]
   $ hg fix -r 0 --working-dir
-  abort: cannot fix public changesets
+  abort: cannot fix public changesets: 6470986d2e7b
   (see 'hg help phases' for details)
   [10]
   $ hg cat -r tip hello.whole

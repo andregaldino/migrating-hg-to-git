@@ -77,7 +77,7 @@ Cannot split a public changeset
 
   $ hg phase --public -r 'all()'
   $ hg split .
-  abort: cannot split public changesets
+  abort: cannot split public changesets: 1df0d5c5a3ab
   (see 'hg help phases' for details)
   [10]
 

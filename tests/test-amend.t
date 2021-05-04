@@ -250,7 +250,7 @@ Cannot amend public changeset
   $ hg phase -r A --public
   $ hg update -C -q A
   $ hg amend -m AMEND
-  abort: cannot amend public changesets
+  abort: cannot amend public changesets: 426bada5c675
   (see 'hg help phases' for details)
   [10]
 

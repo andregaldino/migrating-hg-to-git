@@ -17,6 +17,7 @@ from .node import (
 
 from . import (
     error,
+    node,
     obsolete,
     obsutil,
     revset,
@@ -26,6 +27,26 @@ from . import (
 
 
 NODE_RE = re.compile(br'\b[0-9a-f]{6,64}\b')
+
+
+def _formatrevs(repo, revs, maxrevs=4):
+    """returns a string summarizing revisions in a decent size
+
+    If there are few enough revisions, we list them all. Otherwise we display a
+    summary of the form:
+
+        1ea73414a91b and 5 others
+    """
+    tonode = repo.changelog.node
+    numrevs = len(revs)
+    if numrevs < maxrevs:
+        shorts = [node.short(tonode(r)) for r in revs]
+        summary = b', '.join(shorts)
+    else:
+        first = revs.first()
+        summary = _(b'%s and %d others')
+        summary %= (node.short(tonode(first)), numrevs - 1)
+    return summary
 
 
 def precheck(repo, revs, action=b'rewrite'):
@@ -50,7 +71,8 @@ def precheck(repo, revs, action=b'rewrite'):
 
     publicrevs = repo.revs(b'%ld and public()', revs)
     if publicrevs:
-        msg = _(b"cannot %s public changesets") % action
+        summary = _formatrevs(repo, publicrevs)
+        msg = _(b"cannot %s public changesets: %s") % (action, summary)
         hint = _(b"see 'hg help phases' for details")
         raise error.InputError(msg, hint=hint)
 

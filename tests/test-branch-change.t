@@ -369,7 +369,7 @@ Changing branch on public changeset
 
   $ hg phase -r . -p
   $ hg branch -r . def
-  abort: cannot change branch of public changesets
+  abort: cannot change branch of public changesets: d1c2addda4a2
   (see 'hg help phases' for details)
   [10]
 

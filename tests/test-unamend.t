@@ -298,7 +298,7 @@ Trying to unamend a public changeset
   $ hg phase -r . -p
   1 new phase-divergent changesets
   $ hg unamend
-  abort: cannot unamend public changesets
+  abort: cannot unamend public changesets: 03ddd6fc5af1
   (see 'hg help phases' for details)
   [10]
 
