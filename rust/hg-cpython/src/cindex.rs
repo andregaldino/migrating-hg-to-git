@@ -11,8 +11,8 @@
 //! but this will take some time to get there.
 
 use cpython::{
-    exc::ImportError, ObjectProtocol, PyClone, PyErr, PyObject, PyResult,
-    PyTuple, Python, PythonObject,
+    exc::ImportError, exc::TypeError, ObjectProtocol, PyClone, PyErr,
+    PyObject, PyResult, PyTuple, Python, PythonObject,
 };
 use hg::revlog::{Node, RevlogIndex};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
@@ -88,6 +88,13 @@ impl Index {
                      does not match the {} expected by Rust hg-cpython",
                     capi.abi_version, REVLOG_CABI_VERSION
                 ),
+            ));
+        }
+        let compat: u64 = index.getattr(py, "rust_ext_compat")?.extract(py)?;
+        if compat == 0 {
+            return Err(PyErr::new::<TypeError, _>(
+                py,
+                "index object not compatible with Rust",
             ));
         }
         Ok(Index { index, capi })

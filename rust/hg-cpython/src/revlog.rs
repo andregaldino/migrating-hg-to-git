@@ -300,6 +300,11 @@ py_class!(pub class MixedIndex |py| {
         self.cindex(py).borrow().inner().getattr(py, "entry_size")?.extract::<PyInt>(py)
     }
 
+    @property
+    def rust_ext_compat(&self) -> PyResult<PyInt> {
+        self.cindex(py).borrow().inner().getattr(py, "rust_ext_compat")?.extract::<PyInt>(py)
+    }
+
 });
 
 impl MixedIndex {

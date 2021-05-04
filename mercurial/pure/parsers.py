@@ -47,6 +47,8 @@ def offset_type(offset, type):
 
 
 class BaseIndexObject(object):
+    # Can I be passed to an algorithme implemented in Rust ?
+    rust_ext_compat = 0
     # Format of an index entry according to Python's `struct` language
     index_format = revlog_constants.INDEX_ENTRY_V1
     # Size of a C unsigned long long int, platform independent

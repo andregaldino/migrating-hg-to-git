@@ -101,8 +101,10 @@ struct indexObjectStruct {
 	int inlined;
 	long entry_size; /* size of index headers. Differs in v1 v.s. v2 format
 	                  */
-	char format_version; /* size of index headers. Differs in v1 v.s. v2
-	                        format */
+	long rust_ext_compat; /* compatibility with being used in rust
+	                         extensions */
+	char format_version;  /* size of index headers. Differs in v1 v.s. v2
+	                         format */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -2769,6 +2771,7 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	self->offsets = NULL;
 	self->nodelen = 20;
 	self->nullentry = NULL;
+	self->rust_ext_compat = 1;
 
 	revlogv2 = NULL;
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", kwlist,
@@ -2940,6 +2943,8 @@ static PyGetSetDef index_getset[] = {
 
 static PyMemberDef index_members[] = {
     {"entry_size", T_LONG, offsetof(indexObject, entry_size), 0,
+     "size of an index entry"},
+    {"rust_ext_compat", T_LONG, offsetof(indexObject, rust_ext_compat), 0,
      "size of an index entry"},
     {NULL} /* Sentinel */
 };

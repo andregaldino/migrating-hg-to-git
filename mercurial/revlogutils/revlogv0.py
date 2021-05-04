@@ -42,6 +42,7 @@ def offset_type(offset, type):
 
 
 class revlogoldindex(list):
+    rust_ext_compat = 0
     entry_size = INDEX_ENTRY_V0.size
     null_item = (
         0,
