@@ -118,10 +118,10 @@ class BaseIndexObject(object):
     def append(self, tup):
         if '_nodemap' in vars(self):
             self._nodemap[tup[7]] = len(self)
-        data = self._pack_entry(tup)
+        data = self._pack_entry(len(self), tup)
         self._extra.append(data)
 
-    def _pack_entry(self, entry):
+    def _pack_entry(self, rev, entry):
         assert entry[8] == 0
         assert entry[9] == 0
         return self.index_format.pack(*entry[:8])
@@ -141,12 +141,12 @@ class BaseIndexObject(object):
         else:
             index = self._calculate_index(i)
             data = self._data[index : index + self.entry_size]
-        r = self._unpack_entry(data)
+        r = self._unpack_entry(i, data)
         if self._lgt and i == 0:
             r = (offset_type(0, gettype(r[0])),) + r[1:]
         return r
 
-    def _unpack_entry(self, data):
+    def _unpack_entry(self, rev, data):
         r = self.index_format.unpack(data)
         r = r + (
             0,
@@ -323,17 +323,17 @@ class IndexObject2(IndexObject):
             entry[9] = sidedata_length
             entry[11] = compression_mode
             entry = tuple(entry)
-            new = self._pack_entry(entry)
+            new = self._pack_entry(rev, entry)
             self._extra[rev - self._lgt] = new
 
-    def _unpack_entry(self, data):
+    def _unpack_entry(self, rev, data):
         data = self.index_format.unpack(data)
         entry = data[:10]
         data_comp = data[10] & 3
         sidedata_comp = (data[10] & (3 << 2)) >> 2
         return entry + (data_comp, sidedata_comp)
 
-    def _pack_entry(self, entry):
+    def _pack_entry(self, rev, entry):
         data = entry[:10]
         data_comp = entry[10] & 3
         sidedata_comp = (entry[11] & 3) << 2
@@ -344,7 +344,7 @@ class IndexObject2(IndexObject):
     def entry_binary(self, rev):
         """return the raw binary string representing a revision"""
         entry = self[rev]
-        return self._pack_entry(entry)
+        return self._pack_entry(rev, entry)
 
     def pack_header(self, header):
         """pack header information as binary"""
