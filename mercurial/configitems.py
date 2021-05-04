@@ -1344,7 +1344,6 @@ coreconfigitem(
 # Experimental TODOs:
 #
 # * Same as for evlogv2 (but for the reduction of the number of files)
-# * drop the storage of the base
 # * Improvement to investigate
 #   - storing .hgtags fnode
 #   - storing `rank` of changesets

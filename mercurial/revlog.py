@@ -227,6 +227,15 @@ def parse_index_v2(data, inline):
     return index, cache
 
 
+def parse_index_cl_v2(data, inline):
+    # call the C implementation to parse the index data
+    assert not inline
+    from .pure.parsers import parse_index_cl_v2
+
+    index, cache = parse_index_cl_v2(data)
+    return index, cache
+
+
 if util.safehasattr(parsers, 'parse_index_devel_nodemap'):
 
     def parse_index_v1_nodemap(data, inline):
@@ -652,7 +661,7 @@ class revlog(object):
         elif self._format_version == REVLOGV2:
             self._parse_index = parse_index_v2
         elif self._format_version == CHANGELOGV2:
-            self._parse_index = parse_index_v2
+            self._parse_index = parse_index_cl_v2
         elif devel_nodemap:
             self._parse_index = parse_index_v1_nodemap
         elif use_rust_index:

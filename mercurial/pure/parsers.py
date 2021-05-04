@@ -295,6 +295,10 @@ def parse_index2(data, inline, revlogv2=False):
     return cls(data, inline), (0, data)
 
 
+def parse_index_cl_v2(data):
+    return IndexChangelogV2(data), None
+
+
 class IndexObject2(IndexObject):
     index_format = revlog_constants.INDEX_ENTRY_V2
 
@@ -353,6 +357,26 @@ class IndexObject2(IndexObject):
         msg = 'version header should go in the docket, not the index: %d'
         msg %= header
         raise error.ProgrammingError(msg)
+
+
+class IndexChangelogV2(IndexObject2):
+    index_format = revlog_constants.INDEX_ENTRY_CL_V2
+
+    def _unpack_entry(self, rev, data, r=True):
+        items = self.index_format.unpack(data)
+        entry = items[:3] + (rev, rev) + items[3:8]
+        data_comp = items[8] & 3
+        sidedata_comp = (items[8] >> 2) & 3
+        return entry + (data_comp, sidedata_comp)
+
+    def _pack_entry(self, rev, entry):
+        assert entry[3] == rev, entry[3]
+        assert entry[4] == rev, entry[4]
+        data = entry[:3] + entry[5:10]
+        data_comp = entry[10] & 3
+        sidedata_comp = (entry[11] & 3) << 2
+        data += (data_comp | sidedata_comp,)
+        return self.index_format.pack(*data)
 
 
 def parse_index_devel_nodemap(data, inline):
