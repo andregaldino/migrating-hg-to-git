@@ -272,7 +272,7 @@ def _getfiles_optimistic(
 def _getfiles_threaded(
     remote, receivemissing, progresstick, missed, idmap, step
 ):
-    remote._callstream(b"getfiles")
+    remote._callstream(b"x_rfl_getfiles")
     pipeo = remote._pipeo
     pipei = remote._pipei
 
