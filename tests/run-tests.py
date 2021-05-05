@@ -361,7 +361,8 @@ def parselistfiles(files, listtype, warn=True):
         for line in f.readlines():
             line = line.split(b'#', 1)[0].strip()
             if line:
-                entries[line] = filename
+                # Ensure path entries are compatible with os.path.relpath()
+                entries[os.path.normpath(line)] = filename
 
         f.close()
     return entries
