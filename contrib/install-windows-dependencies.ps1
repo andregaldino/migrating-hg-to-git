@@ -62,6 +62,9 @@ $MERCURIAL_WHEEL_SHA256 = "1d18c7f6ca1456f0f62ee65c9a50c14cbba48ce6e924930cdb105
 $RUSTUP_INIT_URL = "https://static.rust-lang.org/rustup/archive/1.21.1/x86_64-pc-windows-gnu/rustup-init.exe"
 $RUSTUP_INIT_SHA256 = "d17df34ba974b9b19cf5c75883a95475aa22ddc364591d75d174090d55711c72"
 
+$PYOXIDIZER_URL = "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.16.0/PyOxidizer-0.16.0-x64.msi"
+$PYOXIDIZER_SHA256 = "2a9c58add9161c272c418d5e6dec13fbe648f624b5d26770190357e4d664f24e"
+
 # Writing progress slows down downloads substantially. So disable it.
 $progressPreference = 'silentlyContinue'
 
@@ -123,9 +126,6 @@ function Install-Rust($prefix) {
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "target add i686-pc-windows-msvc"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.52.0"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
-
-    # Install PyOxidizer for packaging.
-    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --version 0.10.3 pyoxidizer"
 }
 
 function Install-Dependencies($prefix) {
@@ -151,6 +151,7 @@ function Install-Dependencies($prefix) {
     Secure-Download $MINGW_BIN_URL ${prefix}\assets\mingw-get-bin.zip $MINGW_BIN_SHA256
     Secure-Download $MERCURIAL_WHEEL_URL ${prefix}\assets\${MERCURIAL_WHEEL_FILENAME} $MERCURIAL_WHEEL_SHA256
     Secure-Download $RUSTUP_INIT_URL ${prefix}\assets\rustup-init.exe $RUSTUP_INIT_SHA256
+    Secure-Download $PYOXIDIZER_URL ${prefix}\assets\PyOxidizer.msi $PYOXIDIZER_SHA256
 
     Write-Output "installing Python 2.7 32-bit"
     Invoke-Process msiexec.exe "/i ${prefix}\assets\python27-x86.msi /l* ${prefix}\assets\python27-x86.log /q TARGETDIR=${prefix}\python27-x86 ALLUSERS="
@@ -171,6 +172,9 @@ function Install-Dependencies($prefix) {
 
     Write-Output "installing Visual Studio 2017 Build Tools and SDKs"
     Invoke-Process ${prefix}\assets\vs_buildtools.exe "--quiet --wait --norestart --nocache --channelUri https://aka.ms/vs/15/release/channel --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.Windows10SDK.17763 --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows10SDK --add Microsoft.VisualStudio.Component.VC.140"
+
+    Write-Output "installing PyOxidizer"
+    Invoke-Process msiexec.exe "/i ${prefix}\assets\PyOxidizer.msi /l* ${prefix}\assets\PyOxidizer.log /quiet"
 
     Install-Rust ${prefix}
 

@@ -77,6 +77,18 @@ pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
     '\r\n', '\n'
 )
 
+INSTALL_PYOXIDIZER = r'''
+PYOXIDIZER_VERSION=0.16.0
+PYOXIDIZER_SHA256=8875471c270312fbb934007fd30f65f1904cc0f5da6188d61c90ed2129b9f9c1
+PYOXIDIZER_URL=https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F${PYOXIDIZER_VERSION}/pyoxidizer-${PYOXIDIZER_VERSION}-linux_x86_64.zip
+
+wget -O pyoxidizer.zip --progress dot:mega ${PYOXIDIZER_URL}
+echo "${PYOXIDIZER_SHA256} pyoxidizer.zip" | sha256sum --check -
+
+unzip pyoxidizer.zip
+chmod +x pyoxidizer
+sudo mv pyoxidizer /usr/local/bin/pyoxidizer
+'''
 
 INSTALL_RUST = r'''
 RUSTUP_INIT_SHA256=a46fe67199b7bcbbde2dcbc23ae08db6f29883e260e23899a88b9073effc9076
@@ -87,8 +99,6 @@ chmod +x rustup-init
 sudo -H -u hg -g hg ./rustup-init -y
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.41.1 1.52.0
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
-
-sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --version 0.10.3 pyoxidizer
 '''
 
 
@@ -319,6 +329,7 @@ sudo mkdir /hgdev
 sudo chown `whoami` /hgdev
 
 {install_rust}
+{install_pyoxidizer}
 
 cp requirements-*.txt /hgdev/
 
@@ -344,6 +355,7 @@ sudo chown -R hg:hg /hgdev
 '''.lstrip()
     .format(
         install_rust=INSTALL_RUST,
+        install_pyoxidizer=INSTALL_PYOXIDIZER,
         install_pythons=INSTALL_PYTHONS,
         bootstrap_virtualenv=BOOTSTRAP_VIRTUALENV,
     )
