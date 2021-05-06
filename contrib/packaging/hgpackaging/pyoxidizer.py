@@ -53,6 +53,21 @@ STAGING_EXCLUDES_WINDOWS = [
 ]
 
 
+def build_docs_html(source_dir: pathlib.Path):
+    """Ensures HTML documentation is built.
+
+    This will fail if docutils isn't available.
+
+    (The HTML docs aren't built as part of `pip install` so we need to build them
+    out of band.)
+    """
+    subprocess.run(
+        [sys.executable, str(source_dir / "setup.py"), "build_doc", "--html"],
+        cwd=str(source_dir),
+        check=True,
+    )
+
+
 def run_pyoxidizer(
     source_dir: pathlib.Path,
     build_dir: pathlib.Path,
@@ -113,14 +128,7 @@ def run_pyoxidizer(
     # is taught to use the importlib APIs for reading resources.
     process_install_rules(STAGING_RULES_APP, build_dir, out_dir)
 
-    # We also need to run setup.py build_doc to produce html files,
-    # as they aren't built as part of ``pip install``.
-    # This will fail if docutils isn't installed.
-    subprocess.run(
-        [sys.executable, str(source_dir / "setup.py"), "build_doc", "--html"],
-        cwd=str(source_dir),
-        check=True,
-    )
+    build_docs_html(source_dir)
 
     if "windows" in target_triple:
         process_install_rules(STAGING_RULES_WINDOWS, source_dir, out_dir)
