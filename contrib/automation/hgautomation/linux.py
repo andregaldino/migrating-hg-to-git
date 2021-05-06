@@ -85,7 +85,7 @@ echo "${RUSTUP_INIT_SHA256} rustup-init" | sha256sum --check -
 
 chmod +x rustup-init
 sudo -H -u hg -g hg ./rustup-init -y
-sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.31.1 1.46.0
+sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup install 1.41.1 1.52.0
 sudo -H -u hg -g hg /home/hg/.cargo/bin/rustup component add clippy
 
 sudo -H -u hg -g hg /home/hg/.cargo/bin/cargo install --version 0.10.3 pyoxidizer
