@@ -8,7 +8,7 @@ RUN_CODE = "import hgdemandimport; hgdemandimport.enable(); from mercurial impor
 set_build_path(ROOT + "/build/pyoxidizer")
 
 def make_distribution():
-    return default_python_distribution()
+    return default_python_distribution(python_version = "3.8")
 
 def make_distribution_windows():
     return default_python_distribution(flavor = "standalone_dynamic")
