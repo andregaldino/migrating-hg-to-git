@@ -12,6 +12,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import typing
 
 from .downloads import download_entry
 from .util import (
@@ -69,7 +70,11 @@ def build_docs_html(source_dir: pathlib.Path):
 
 
 def run_pyoxidizer(
-    source_dir: pathlib.Path, build_dir: pathlib.Path, target_triple: str,
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    target_triple: str,
+    build_vars: typing.Optional[typing.Dict[str, str]] = None,
+    target: typing.Optional[str] = None,
 ) -> pathlib.Path:
     """Run `pyoxidizer` in an environment with access to build dependencies.
 
@@ -77,6 +82,8 @@ def run_pyoxidizer(
     artifacts. Actual build artifacts are likely in a sub-directory with the
     name of the pyoxidizer build target that was built.
     """
+    build_vars = build_vars or {}
+
     # We need to make gettext binaries available for compiling i18n files.
     gettext_pkg, gettext_entry = download_entry('gettext', build_dir)
     gettext_dep_pkg = download_entry('gettext-dep', build_dir)[0]
@@ -103,6 +110,12 @@ def run_pyoxidizer(
         "--target-triple",
         target_triple,
     ]
+
+    for k, v in sorted(build_vars.items()):
+        args.extend(["--var", k, v])
+
+    if target:
+        args.append(target)
 
     subprocess.run(args, env=env, check=True)
 
