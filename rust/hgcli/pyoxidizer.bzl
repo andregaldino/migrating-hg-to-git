@@ -8,12 +8,29 @@
 #
 # EXTRA_MSI_FEATURES
 #   ; delimited string of extra features to advertise in the built MSA.
+#
+# SIGNING_PFX_PATH
+#   Path to code signing certificate to use.
+#
+# SIGNING_PFX_PASSWORD
+#   Password to code signing PFX file defined by SIGNING_PFX_PATH.
+#
+# SIGNING_SUBJECT_NAME
+#   String fragment in code signing certificate subject name used to find
+#   code signing certificate in Windows certificate store.
+#
+# TIME_STAMP_SERVER_URL
+#   URL of time-stamp token authority (RFC 3161) servers to stamp code signatures.
 
 ROOT = CWD + "/../.."
 
 VERSION = VARS.get("VERSION", "5.8")
 MSI_NAME = VARS.get("MSI_NAME", "mercurial")
 EXTRA_MSI_FEATURES = VARS.get("EXTRA_MSI_FEATURES")
+SIGNING_PFX_PATH = VARS.get("SIGNING_PFX_PATH")
+SIGNING_PFX_PASSWORD = VARS.get("SIGNING_PFX_PASSWORD", "")
+SIGNING_SUBJECT_NAME = VARS.get("SIGNING_SUBJECT_NAME")
+TIME_STAMP_SERVER_URL = VARS.get("TIME_STAMP_SERVER_URL", "http://timestamp.digicert.com")
 
 IS_WINDOWS = "windows" in BUILD_TARGET_TRIPLE
 
@@ -229,6 +246,24 @@ def make_msi(manifest):
 
     return wix
 
+
+def register_code_signers():
+    if not IS_WINDOWS:
+        return
+
+    if SIGNING_PFX_PATH:
+        signer = code_signer_from_pfx_file(SIGNING_PFX_PATH, SIGNING_PFX_PASSWORD)
+    elif SIGNING_SUBJECT_NAME:
+        signer = code_signer_from_windows_store_subject(SIGNING_SUBJECT_NAME)
+    else:
+        signer = None
+
+    if signer:
+        signer.set_time_stamp_server(TIME_STAMP_SERVER_URL)
+        signer.activate()
+
+
+register_code_signers()
 
 register_target("distribution", make_distribution)
 register_target("exe", make_exe, depends = ["distribution"])
