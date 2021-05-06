@@ -2211,7 +2211,13 @@ class TestResult(unittest._TextTestResult):
         self.faildata = {}
 
         if options.color == 'auto':
-            self.color = pygmentspresent and self.stream.isatty()
+            isatty = self.stream.isatty()
+            # For some reason, redirecting stdout on Windows disables the ANSI
+            # color processing of stderr, which is what is used to print the
+            # output.  Therefore, both must be tty on Windows to enable color.
+            if os.name == 'nt':
+                isatty = isatty and sys.stdout.isatty()
+            self.color = pygmentspresent and isatty
         elif options.color == 'never':
             self.color = False
         else:  # 'always', for testing purposes
