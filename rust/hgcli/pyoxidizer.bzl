@@ -40,7 +40,7 @@ RUN_CODE = "import hgdemandimport; hgdemandimport.enable(); from mercurial impor
 set_build_path(ROOT + "/build/pyoxidizer")
 
 def make_distribution():
-    return default_python_distribution(python_version = "3.8")
+    return default_python_distribution(python_version = "3.9")
 
 def resource_callback(policy, resource):
     if not IS_WINDOWS:
