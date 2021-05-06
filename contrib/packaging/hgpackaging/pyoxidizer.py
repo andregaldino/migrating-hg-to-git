@@ -68,16 +68,14 @@ def build_docs_html(source_dir: pathlib.Path):
     )
 
 
-def create_pyoxidizer_install_layout(
-    source_dir: pathlib.Path,
-    build_dir: pathlib.Path,
-    out_dir: pathlib.Path,
-    target_triple: str,
-):
-    """Build Mercurial with PyOxidizer and copy additional files into place.
+def run_pyoxidizer(
+    source_dir: pathlib.Path, build_dir: pathlib.Path, target_triple: str,
+) -> pathlib.Path:
+    """Run `pyoxidizer` in an environment with access to build dependencies.
 
-    After successful completion, ``out_dir`` contains files constituting a
-    Mercurial install.
+    Returns the output directory that pyoxidizer would have used for build
+    artifacts. Actual build artifacts are likely in a sub-directory with the
+    name of the pyoxidizer build target that was built.
     """
     # We need to make gettext binaries available for compiling i18n files.
     gettext_pkg, gettext_entry = download_entry('gettext', build_dir)
@@ -107,6 +105,23 @@ def create_pyoxidizer_install_layout(
     ]
 
     subprocess.run(args, env=env, check=True)
+
+    return source_dir / "build" / "pyoxidizer" / target_triple / "release"
+
+
+def create_pyoxidizer_install_layout(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    out_dir: pathlib.Path,
+    target_triple: str,
+):
+    """Build Mercurial with PyOxidizer and copy additional files into place.
+
+    After successful completion, ``out_dir`` contains files constituting a
+    Mercurial install.
+    """
+
+    run_pyoxidizer(source_dir, build_dir, target_triple)
 
     if "windows" in target_triple:
         target = "app_windows"
