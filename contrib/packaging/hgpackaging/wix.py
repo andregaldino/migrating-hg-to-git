@@ -22,7 +22,7 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
-from .pyoxidizer import run_pyoxidizer
+from .pyoxidizer import create_pyoxidizer_install_layout
 from .util import (
     extract_zip_to_directory,
     normalize_windows_version,
@@ -391,7 +391,9 @@ def build_installer_pyoxidizer(
     arch = "x64" if "x86_64" in target_triple else "x86"
 
     build_dir.mkdir(parents=True, exist_ok=True)
-    run_pyoxidizer(source_dir, build_dir, staging_dir, target_triple)
+    create_pyoxidizer_install_layout(
+        source_dir, build_dir, staging_dir, target_triple
+    )
 
     # We also install some extra files.
     process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)

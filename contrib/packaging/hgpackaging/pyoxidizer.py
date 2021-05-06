@@ -68,7 +68,7 @@ def build_docs_html(source_dir: pathlib.Path):
     )
 
 
-def run_pyoxidizer(
+def create_pyoxidizer_install_layout(
     source_dir: pathlib.Path,
     build_dir: pathlib.Path,
     out_dir: pathlib.Path,
