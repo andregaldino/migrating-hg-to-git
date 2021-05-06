@@ -863,7 +863,10 @@ def has_py3():
 
 @check("py3exe", "a Python 3.x interpreter is available")
 def has_python3exe():
-    return matchoutput('python3 -V', br'^Python 3.(5|6|7|8|9)')
+    py = 'python3'
+    if os.name == 'nt':
+        py = 'py -3'
+    return matchoutput('%s -V' % py, br'^Python 3.(5|6|7|8|9)')
 
 
 @check("pure", "running with pure Python code")
