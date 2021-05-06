@@ -106,11 +106,3 @@ register_target(
 )
 
 resolve_targets()
-
-# END OF COMMON USER-ADJUSTED SETTINGS.
-#
-# Everything below this is typically managed by PyOxidizer and doesn't need
-# to be updated by people.
-
-PYOXIDIZER_VERSION = "0.9.0"
-PYOXIDIZER_COMMIT = "1fbc264cc004226cd76ee452e0a386ffca6ccfb1"
