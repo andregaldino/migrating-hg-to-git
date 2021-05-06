@@ -87,21 +87,31 @@ except (ImportError, AttributeError):
 processlock = threading.Lock()
 
 pygmentspresent = False
-# ANSI color is unsupported prior to Windows 10
-if os.name != 'nt':
-    try:  # is pygments installed
-        import pygments
-        import pygments.lexers as lexers
-        import pygments.lexer as lexer
-        import pygments.formatters as formatters
-        import pygments.token as token
-        import pygments.style as style
+try:  # is pygments installed
+    import pygments
+    import pygments.lexers as lexers
+    import pygments.lexer as lexer
+    import pygments.formatters as formatters
+    import pygments.token as token
+    import pygments.style as style
 
-        pygmentspresent = True
-        difflexer = lexers.DiffLexer()
-        terminal256formatter = formatters.Terminal256Formatter()
-    except ImportError:
-        pass
+    if os.name == 'nt':
+        hgpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.append(hgpath)
+        try:
+            from mercurial import win32  # pytype: disable=import-error
+
+            # Don't check the result code because it fails on heptapod, but
+            # something is able to convert to color anyway.
+            win32.enablevtmode()
+        finally:
+            sys.path = sys.path[:-1]
+
+    pygmentspresent = True
+    difflexer = lexers.DiffLexer()
+    terminal256formatter = formatters.Terminal256Formatter()
+except ImportError:
+    pass
 
 if pygmentspresent:
 
