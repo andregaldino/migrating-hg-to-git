@@ -47,7 +47,7 @@ def make_exe(dist):
     packaging_policy.register_resource_callback(resource_callback)
 
     config = dist.make_python_interpreter_config()
-    config.raw_allocator = "system"
+    config.allocator_backend = "default"
     config.run_command = RUN_CODE
 
     # We want to let the user load extensions from the file system
