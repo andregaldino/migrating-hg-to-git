@@ -10,9 +10,6 @@ set_build_path(ROOT + "/build/pyoxidizer")
 def make_distribution():
     return default_python_distribution(python_version = "3.8")
 
-def make_distribution_windows():
-    return default_python_distribution(flavor = "standalone_dynamic")
-
 def resource_callback(policy, resource):
     if not IS_WINDOWS:
         resource.add_location = "in-memory"
@@ -83,26 +80,8 @@ def make_manifest(dist, exe):
 
     return m
 
-def make_embedded_resources(exe):
-    return exe.to_embedded_resources()
-
-register_target("distribution_posix", make_distribution)
-register_target("distribution_windows", make_distribution_windows)
-
-register_target("exe_posix", make_exe, depends = ["distribution_posix"])
-register_target("exe_windows", make_exe, depends = ["distribution_windows"])
-
-register_target(
-    "app_posix",
-    make_manifest,
-    depends = ["distribution_posix", "exe_posix"],
-    default = "windows" not in BUILD_TARGET_TRIPLE,
-)
-register_target(
-    "app_windows",
-    make_manifest,
-    depends = ["distribution_windows", "exe_windows"],
-    default = "windows" in BUILD_TARGET_TRIPLE,
-)
+register_target("distribution", make_distribution)
+register_target("exe", make_exe, depends = ["distribution"])
+register_target("app", make_manifest, depends = ["distribution", "exe"], default = True)
 
 resolve_targets()
