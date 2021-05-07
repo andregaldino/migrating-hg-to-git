@@ -1851,7 +1851,10 @@ def copy(ui, repo, pats, opts, rename=False):
             continue
         copylist.append((tfn(pat, dest, srcs), srcs))
     if not copylist:
-        raise error.InputError(_(b'no files to copy'))
+        hint = None
+        if rename:
+            hint = _(b'maybe you meant to use --after --at-rev=.')
+        raise error.InputError(_(b'no files to copy'), hint=hint)
 
     errors = 0
     for targetpath, srcs in copylist:

@@ -237,6 +237,7 @@
   $ hg mv z2 z3
   z2: not copying - file is not managed
   abort: no files to copy
+  (maybe you meant to use --after --at-rev=.)
   [10]
   $ find $CACHEDIR -type f | sort
 .. The following output line about files fetches is globed because it is
