@@ -201,7 +201,6 @@ Basic clone
   branch2-served.hidden
   branch2-visible
   branch2-visible-hidden
-  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
   tags2

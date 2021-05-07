@@ -1053,7 +1053,7 @@ def clone(
             # as the only "bad" outcome would be some slowness. That potential
             # slowness already affect reader.
             with destrepo.lock():
-                destrepo.updatecaches(full=True)
+                destrepo.updatecaches(full=b"post-clone")
     finally:
         release(srclock, destlock)
         if cleandir is not None:

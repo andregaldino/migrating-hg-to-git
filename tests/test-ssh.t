@@ -86,7 +86,7 @@ clone bookmarks via stream
   $ hg -R local-stream book mybook
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/local-stream stream2
   streaming all changes
-  16 files to transfer, * of data (glob)
+  15 files to transfer, * of data (glob)
   transferred * in * seconds (*) (glob)
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
