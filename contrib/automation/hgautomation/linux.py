@@ -56,7 +56,20 @@ done
 for v in ${PYENV3_VERSIONS}; do
     pyenv install -v ${v}
     ${PYENV_ROOT}/versions/${v}/bin/python get-pip.py
-    ${PYENV_ROOT}/versions/${v}/bin/pip install -r /hgdev/requirements-py3.txt
+
+    case ${v} in
+        3.5.*)
+            REQUIREMENTS=requirements-py3.5.txt
+            ;;
+        pypy3.5*)
+            REQUIREMENTS=requirements-py3.5.txt
+            ;;
+        *)
+            REQUIREMENTS=requirements-py3.txt
+            ;;
+    esac
+
+    ${PYENV_ROOT}/versions/${v}/bin/pip install -r /hgdev/${REQUIREMENTS}
 done
 
 pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
@@ -307,8 +320,7 @@ sudo chown `whoami` /hgdev
 
 {install_rust}
 
-cp requirements-py2.txt /hgdev/requirements-py2.txt
-cp requirements-py3.txt /hgdev/requirements-py3.txt
+cp requirements-*.txt /hgdev/
 
 # Disable the pip version check because it uses the network and can
 # be annoying.
