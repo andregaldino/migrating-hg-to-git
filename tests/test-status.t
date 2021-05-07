@@ -700,6 +700,11 @@ the working directory (issue6483)
   $ hg st -aI "*.py"
   A a.py
 
+Also check exclude pattern
+
+  $ hg st -aX "*.rs"
+  A a.py
+
 issue6335
 When a directory containing a tracked file gets symlinked, as of 5.8
 `hg st` only gives the correct answer about clean (or deleted) files
