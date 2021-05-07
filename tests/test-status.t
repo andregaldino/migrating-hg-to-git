@@ -689,6 +689,29 @@ Make sure .hg doesn't show up even as a symlink
   $ ln -s ../repo0/.hg
   $ hg status
 
+If the size hasn’t changed but mtime has, status needs to read the contents
+of the file to check whether it has changed
+
+  $ echo 1 > a
+  $ echo 1 > b
+  $ touch -t 200102030000 a b
+  $ hg commit -Aqm '#0'
+  $ echo 2 > a
+  $ touch -t 200102040000 a b
+  $ hg status
+  M a
+
+Asking specifically for the status of a deleted/removed file
+
+  $ rm a
+  $ rm b
+  $ hg status a
+  ! a
+  $ hg rm a
+  $ hg rm b
+  $ hg status a
+  R a
+
 Check using include flag with pattern when status does not need to traverse
 the working directory (issue6483)
 
