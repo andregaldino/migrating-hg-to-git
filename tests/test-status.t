@@ -699,3 +699,38 @@ the working directory (issue6483)
   $ hg add a.py b.rs
   $ hg st -aI "*.py"
   A a.py
+
+issue6335
+When a directory containing a tracked file gets symlinked, as of 5.8
+`hg st` only gives the correct answer about clean (or deleted) files
+if also listing unknowns.
+The tree-based dirstate and status algorithm fix this:
+
+#if symlink no-dirstate-v1
+
+  $ cd ..
+  $ hg init issue6335
+  $ cd issue6335
+  $ mkdir foo
+  $ touch foo/a
+  $ hg ci -Ama
+  adding foo/a
+  $ mv foo bar
+  $ ln -s bar foo
+  $ hg status
+  ! foo/a
+  ? bar/a
+  ? foo
+
+  $ hg status -c  # incorrect output with `dirstate-v1`
+  $ hg status -cu
+  ? bar/a
+  ? foo
+  $ hg status -d  # incorrect output with `dirstate-v1`
+  ! foo/a
+  $ hg status -du
+  ! foo/a
+  ? bar/a
+  ? foo
+
+#endif
