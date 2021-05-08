@@ -354,7 +354,7 @@ class verifyingstatemachine(RuleBasedStateMachine):
             o.write(content)
         self.log.append(
             (
-                "$ $PYTHON -c 'import binascii; "
+                "$ \"$PYTHON\" -c 'import binascii; "
                 "print(binascii.unhexlify(\"%s\"))' > %s"
             )
             % (

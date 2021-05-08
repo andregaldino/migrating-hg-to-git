@@ -25,7 +25,6 @@ use git diff to see rename
   >         l = "%s       *%s" % (line[:6], line[14:].rstrip())
   >         print(l)
   > EOF
-  $ chmod +x no-linkrev
 
   $ cat << EOF >> $HGRCPATH
   > [diff]
@@ -516,7 +515,7 @@ Merge:
   created new head
   $ hg mv --force i d
   $ hg commit -m "f-2: rename i -> d"
-  $ hg debugindex d | ../no-linkrev
+  $ hg debugindex d | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
        0       * ae258f702dfe 000000000000 000000000000 (changeset !)
@@ -572,7 +571,7 @@ Merge:
   created new head
   $ hg mv --force x t
   $ hg commit -m "r-2: rename t -> x"
-  $ hg debugindex t | ../no-linkrev
+  $ hg debugindex t | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * d74efbf65309 000000000000 000000000000 (no-changeset !)
        1       * 02a930b9d7ad 000000000000 000000000000 (no-changeset !)
@@ -939,7 +938,7 @@ Merge:
   $ hg up 'desc("f-2")'
   2 files updated, 0 files merged, 2 files removed, 0 files unresolved
 #if no-changeset
-  $ hg debugindex d | ../no-linkrev
+  $ hg debugindex d | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * d8252ab2e760 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
@@ -950,7 +949,7 @@ Merge:
        6       * 89c873a01d97 7b79e2fe0c89 17ec97e60577
        7       * d55cb4e9ef57 000000000000 000000000000
 #else
-  $ hg debugindex d | ../no-linkrev
+  $ hg debugindex d | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * ae258f702dfe 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
@@ -984,7 +983,7 @@ Merge:
   1c334238bd42ec85c6a0d83fd1b2a898a6a3215d 644   d (no-changeset !)
   cea2d99c0fde64672ef61953786fdff34f16e230 644   d (changeset !)
 #if no-changeset
-  $ hg debugindex d | ../no-linkrev
+  $ hg debugindex d | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * d8252ab2e760 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
@@ -996,7 +995,7 @@ Merge:
        7       * d55cb4e9ef57 000000000000 000000000000
        8       * 1c334238bd42 7b79e2fe0c89 000000000000
 #else
-  $ hg debugindex d | ../no-linkrev
+  $ hg debugindex d | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * ae258f702dfe 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
@@ -2437,7 +2436,7 @@ The bugs makes recorded copy is different depending of where we started the merg
   $ hg manifest --debug --rev 'desc("b-1")' | grep '644   d'
   d8252ab2e760b0d4e5288fd44cbd15a0fa567e16 644   d (no-changeset !)
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   d (changeset !)
-  $ hg debugindex d | head -n 4 | ../no-linkrev
+  $ hg debugindex d | head -n 4 | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
        0       * ae258f702dfe 000000000000 000000000000 (changeset !)
@@ -2510,7 +2509,7 @@ Subcase: new copy information on both side
   b76eb76580df486c3d51d63c5c210d4dd43a8ac7 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   e8825b386367b29fec957283a80bb47b47483fe1 644   f
-  $ hg debugindex f | ../no-linkrev
+  $ hg debugindex f | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * b76eb76580df 000000000000 000000000000
        1       * e8825b386367 000000000000 000000000000
@@ -2526,7 +2525,7 @@ Subcase: new copy information on both side
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
-  $ hg debugindex f | ../no-linkrev
+  $ hg debugindex f | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * ae258f702dfe 000000000000 000000000000
        1       * d3613c1ec831 ae258f702dfe 000000000000
@@ -3098,7 +3097,7 @@ Subcase: new copy information on both side with an actual merge happening
   3f91841cd75cadc9a1f1b4e7c1aa6d411f76032e 644   v
   $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
   c43c088b811fd27983c0a9aadf44f3343cd4cd7e 644   v
-  $ hg debugindex v | ../no-linkrev
+  $ hg debugindex v | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * 3f91841cd75c 000000000000 000000000000
        1       * c43c088b811f 000000000000 000000000000
@@ -3113,7 +3112,7 @@ Subcase: new copy information on both side with an actual merge happening
   5aed6a8dbff0301328c08360d24354d3d064cf0d 644   v
   $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
   a38b2fa170219750dac9bc7d19df831f213ba708 644   v
-  $ hg debugindex v | ../no-linkrev
+  $ hg debugindex v | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * 5aed6a8dbff0 000000000000 000000000000
        1       * a38b2fa17021 000000000000 000000000000
@@ -3396,7 +3395,7 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   b76eb76580df486c3d51d63c5c210d4dd43a8ac7 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   e8825b386367b29fec957283a80bb47b47483fe1 644   f
-  $ hg debugindex f | ../no-linkrev
+  $ hg debugindex f | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * b76eb76580df 000000000000 000000000000
        1       * e8825b386367 000000000000 000000000000
@@ -3412,7 +3411,7 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
-  $ hg debugindex f | ../no-linkrev
+  $ hg debugindex f | "$PYTHON" ../no-linkrev
      rev linkrev nodeid       p1           p2
        0       * ae258f702dfe 000000000000 000000000000
        1       * d3613c1ec831 ae258f702dfe 000000000000

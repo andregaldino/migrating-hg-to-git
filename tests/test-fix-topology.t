@@ -6,7 +6,9 @@ A script that implements uppercasing all letters in a file.
   > from mercurial.utils.procutil import setbinary
   > setbinary(sys.stdin)
   > setbinary(sys.stdout)
-  > sys.stdout.write(sys.stdin.read().upper())
+  > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+  > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+  > stdout.write(stdin.read().upper())
   > EOF
   $ TESTLINES="foo\nbar\nbaz\n"
   $ printf $TESTLINES | "$PYTHON" $UPPERCASEPY

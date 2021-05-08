@@ -29,7 +29,7 @@ up without a valid executable, so we don't need to check $? here.
 Try to find a python3-config that's next to our sys.executable. If
 that doesn't work, fall back to looking for a global python3-config
 and hope that works out for the best.
-  $ PYBIN=`$PYTHON -c 'import sys, os; print(os.path.dirname(sys.executable))'`
+  $ PYBIN=`"$PYTHON" -c 'import sys, os; print(os.path.dirname(sys.executable))'`
   $ if [ -x "$PYBIN/python3-config" ] ; then
   >   PYTHON_CONFIG="$PYBIN/python3-config"
   > else

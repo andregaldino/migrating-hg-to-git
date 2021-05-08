@@ -847,11 +847,11 @@ class UpgradeOperation(object):
             self.ui.status(_(b'%s\n   %s\n\n') % (i.name, i.description))
 
     def has_upgrade_action(self, name):
-        """ Check whether the upgrade operation will perform this action """
+        """Check whether the upgrade operation will perform this action"""
         return name in self._upgrade_actions_names
 
     def print_post_op_messages(self):
-        """ print post upgrade operation warning messages """
+        """print post upgrade operation warning messages"""
         for a in self.upgrade_actions:
             if a.postupgrademessage is not None:
                 self.ui.warn(b'%s\n' % a.postupgrademessage)

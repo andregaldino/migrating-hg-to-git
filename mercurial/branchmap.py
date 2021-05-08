@@ -222,7 +222,7 @@ class branchcache(object):
             self._hasnode = lambda x: True
 
     def _verifyclosed(self):
-        """ verify the closed nodes we have """
+        """verify the closed nodes we have"""
         if self._closedverified:
             return
         for node in self._closednodes:
@@ -232,7 +232,7 @@ class branchcache(object):
         self._closedverified = True
 
     def _verifybranch(self, branch):
-        """ verify head nodes for the given branch. """
+        """verify head nodes for the given branch."""
         if branch not in self._entries or branch in self._verifiedbranches:
             return
         for n in self._entries[branch]:
@@ -242,7 +242,7 @@ class branchcache(object):
         self._verifiedbranches.add(branch)
 
     def _verifyall(self):
-        """ verifies nodes of all the branches """
+        """verifies nodes of all the branches"""
         needverification = set(self._entries.keys()) - self._verifiedbranches
         for b in needverification:
             self._verifybranch(b)
@@ -269,7 +269,7 @@ class branchcache(object):
     items = iteritems
 
     def hasbranch(self, label):
-        """ checks whether a branch of this name exists or not """
+        """checks whether a branch of this name exists or not"""
         self._verifybranch(label)
         return label in self._entries
 
@@ -387,7 +387,7 @@ class branchcache(object):
             yield (bn, heads) + self._branchtip(heads)
 
     def iterheads(self):
-        """ returns all the heads """
+        """returns all the heads"""
         self._verifyall()
         return pycompat.itervalues(self._entries)
 
@@ -786,7 +786,7 @@ class revbranchcache(object):
                 wlock.release()
 
     def _writenames(self, repo):
-        """ write the new branch names to revbranchcache """
+        """write the new branch names to revbranchcache"""
         if self._rbcnamescount != 0:
             f = repo.cachevfs.open(_rbcnames, b'ab')
             if f.tell() == self._rbcsnameslen:
@@ -811,7 +811,7 @@ class revbranchcache(object):
         self._rbcnamescount = len(self._names)
 
     def _writerevs(self, repo, start):
-        """ write the new revs to revbranchcache """
+        """write the new revs to revbranchcache"""
         revs = min(len(repo.changelog), len(self._rbcrevs) // _rbcrecsize)
         with repo.cachevfs.open(_rbcrevs, b'ab') as f:
             if f.tell() != start:

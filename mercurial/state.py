@@ -188,7 +188,7 @@ class _statecheck(object):
         return self._cmdmsg
 
     def continuemsg(self):
-        """ returns appropriate continue message corresponding to command"""
+        """returns appropriate continue message corresponding to command"""
         return _(b'hg %s --continue') % (self._opname)
 
     def isunfinished(self, repo):

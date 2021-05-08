@@ -77,12 +77,12 @@ Windows: \r\n is handled like \n and can be escaped:
 
 Escapes:
 
-  $ $PYTHON -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")'
+  $ "$PYTHON" -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")'
   \xff (no-eol) (esc)
 
 Escapes with conditions:
 
-  $ $PYTHON -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")'
+  $ "$PYTHON" -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")'
   \xff (no-eol) (esc) (true !)
 
 Combining esc with other markups - and handling lines ending with \r instead of \n:

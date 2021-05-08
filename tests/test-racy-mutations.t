@@ -26,7 +26,6 @@ while we're running
   >         cat "\$@"
   >     fi
   > EOF
-  $ chmod +x "$TESTTMP/waitlock_editor.sh"
 
 Things behave differently if we don't already have a 00changelog.i file when
 this all starts, so let's make one.
@@ -49,11 +48,11 @@ Start an hg commit that will take a while
   $ echo foo > foo
   $ (WAITLOCK_ANNOUNCE="${EDITOR_STARTED}" \
   >      WAITLOCK_FILE="${MISCHIEF_MANAGED}" \
-  >           HGEDITOR="$TESTTMP/waitlock_editor.sh" \
+  >           HGEDITOR="sh $TESTTMP/waitlock_editor.sh" \
   >           hg commit -qAm 'r1 (foo)' --edit foo > .foo_commit_out 2>&1 ; touch "${JOBS_FINISHED}") &
 
 Wait for the "editor" to actually start
-  $ WAITLOCK_FILE="${EDITOR_STARTED}" "$TESTTMP/waitlock_editor.sh"
+  $ WAITLOCK_FILE="${EDITOR_STARTED}" sh "$TESTTMP/waitlock_editor.sh"
 
 Break the locks, and make another commit.
   $ hg debuglocks -LW
@@ -67,7 +66,7 @@ Break the locks, and make another commit.
 Awaken the editor from that first commit
   $ touch "${MISCHIEF_MANAGED}"
 And wait for it to finish
-  $ WAITLOCK_FILE="${JOBS_FINISHED}" "$TESTTMP/waitlock_editor.sh"
+  $ WAITLOCK_FILE="${JOBS_FINISHED}" sh "$TESTTMP/waitlock_editor.sh"
 
 #if skip-detection
 (Ensure there was no output)

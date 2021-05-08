@@ -102,7 +102,7 @@ class lazyremotenamedict(mutablemapping):
         self.loaded = False
 
     def _load(self):
-        """ Read the remotenames file, store entries matching selected kind """
+        """Read the remotenames file, store entries matching selected kind"""
         self.loaded = True
         repo = self._repo
         for node, rpath, rname in logexchange.readremotenamefile(
@@ -112,7 +112,7 @@ class lazyremotenamedict(mutablemapping):
             self.potentialentries[name] = (node, rpath, name)
 
     def _resolvedata(self, potentialentry):
-        """ Check that the node for potentialentry exists and return it """
+        """Check that the node for potentialentry exists and return it"""
         if not potentialentry in self.potentialentries:
             return None
         node, remote, name = self.potentialentries[potentialentry]
@@ -160,13 +160,13 @@ class lazyremotenamedict(mutablemapping):
             return None
 
     def keys(self):
-        """ Get a list of bookmark or branch names """
+        """Get a list of bookmark or branch names"""
         if not self.loaded:
             self._load()
         return self.potentialentries.keys()
 
     def iteritems(self):
-        """ Iterate over (name, node) tuples """
+        """Iterate over (name, node) tuples"""
 
         if not self.loaded:
             self._load()
@@ -190,7 +190,7 @@ class remotenames(object):
         self.clearnames()
 
     def clearnames(self):
-        """ Clear all remote names state """
+        """Clear all remote names state"""
         self.bookmarks = lazyremotenamedict(b"bookmarks", self._repo)
         self.branches = lazyremotenamedict(b"branches", self._repo)
         self._invalidatecache()

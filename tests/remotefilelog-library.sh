@@ -8,7 +8,7 @@ remotefilelog=
 rebase=
 strip=
 [ui]
-ssh=$PYTHON "$TESTDIR/dummyssh"
+ssh="$PYTHON" "$TESTDIR/dummyssh"
 [server]
 preferuncompressed=True
 [experimental]
@@ -67,7 +67,7 @@ mkcommit() {
 }
 
 ls_l() {
-  $PYTHON $TESTDIR/ls-l.py "$@"
+  "$PYTHON" $TESTDIR/ls-l.py "$@"
 }
 
 identifyrflcaps() {

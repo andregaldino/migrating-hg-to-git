@@ -366,7 +366,7 @@ class server(object):
                 os.chdir(self.cwd)
 
     def getencoding(self):
-        """ writes the current encoding to the result channel """
+        """writes the current encoding to the result channel"""
         self.cresult.write(encoding.encoding)
 
     def serveone(self):

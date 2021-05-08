@@ -155,7 +155,7 @@ Check tags are in UTF-8
 
 Subversion sources don't support non-ASCII characters in HTTP(S) URLs.
 
-  $ XFF=$($PYTHON -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")')
+  $ XFF=$("$PYTHON" -c 'from mercurial.utils.procutil import stdout; stdout.write(b"\xff")')
   $ hg convert --source-type=svn http://localhost:$HGPORT/$XFF test
   initializing destination test repository
   Subversion sources don't support non-ASCII characters in HTTP(S) URLs. Please percent-encode them.

@@ -40,7 +40,7 @@
 
 # gc client cache
 
-  $ lastweek=`$PYTHON -c 'import datetime,time; print(datetime.datetime.fromtimestamp(time.time() - (86400 * 7)).strftime("%y%m%d%H%M"))'`
+  $ lastweek=`"$PYTHON" -c 'import datetime,time; print(datetime.datetime.fromtimestamp(time.time() - (86400 * 7)).strftime("%y%m%d%H%M"))'`
   $ find $CACHEDIR -type f -exec touch -t $lastweek {} \;
 
   $ find $CACHEDIR -type f | sort

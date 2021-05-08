@@ -474,17 +474,16 @@ An up to date nodemap should be available to shell hooks,
 
 Another process does not see the pending nodemap content during run.
 
-  $ PATH=$RUNTESTDIR/testlib/:$PATH
   $ echo qpoasp > a
   $ hg ci -m a2 \
-  > --config "hooks.pretxnclose=wait-on-file 20 sync-repo-read sync-txn-pending" \
+  > --config "hooks.pretxnclose=sh \"$RUNTESTDIR/testlib/wait-on-file\" 20 sync-repo-read sync-txn-pending" \
   > --config "hooks.txnclose=touch sync-txn-close" > output.txt 2>&1 &
 
 (read the repository while the commit transaction is pending)
 
-  $ wait-on-file 20 sync-txn-pending && \
+  $ sh "$RUNTESTDIR/testlib/wait-on-file" 20 sync-txn-pending && \
   > hg debugnodemap --metadata && \
-  > wait-on-file 20 sync-txn-close sync-repo-read
+  > sh "$RUNTESTDIR/testlib/wait-on-file" 20 sync-txn-close sync-repo-read
   uid: ???????????????? (glob)
   tip-rev: 5004
   tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
@@ -792,7 +791,9 @@ truncate the file
   $ datafilepath=`ls corruption-test-repo/.hg/store/00changelog*.nd`
   $ f -s $datafilepath
   corruption-test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
-  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp status=none
+  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp status=noxfer
+  10+0 records in
+  10+0 records out
   $ mv $datafilepath-tmp $datafilepath
   $ f -s $datafilepath
   corruption-test-repo/.hg/store/00changelog-*.nd: size=10000 (glob)

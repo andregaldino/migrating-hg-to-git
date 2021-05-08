@@ -2908,7 +2908,7 @@ def debugrename(ui, repo, *pats, **opts):
 
 @command(b'debugrequires|debugrequirements', [], b'')
 def debugrequirements(ui, repo):
-    """ print the current repo requirements """
+    """print the current repo requirements"""
     for r in sorted(repo.requirements):
         ui.write(b"%s\n" % r)
 
@@ -4086,7 +4086,7 @@ def debugupgraderepo(ui, repo, run=False, optimize=None, backup=True, **opts):
     should complete almost instantaneously and the chances of a consumer being
     unable to access the repository should be low.
 
-    By default, all revlog will be upgraded. You can restrict this using flag
+    By default, all revlogs will be upgraded. You can restrict this using flags
     such as `--manifest`:
 
       * `--manifest`: only optimize the manifest
