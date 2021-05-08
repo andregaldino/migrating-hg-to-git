@@ -3537,7 +3537,7 @@ class TestRunner(object):
             if os.getenv('MSYSTEM'):
                 with open(osenvironb[b'RUNTESTDIR'] + b'/python3', 'wb') as f:
                     f.write(b'#!/bin/sh\n')
-                    f.write(b'py -3 "$@"\n')
+                    f.write(b'py -3.%d "$@"\n' % sys.version_info[1])
 
             exedir, exename = os.path.split(sysexecutable)
             vlog(
