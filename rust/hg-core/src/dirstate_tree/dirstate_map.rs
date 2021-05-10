@@ -153,19 +153,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
     ) -> Option<&'tree mut Node<'on_disk>> {
-        Self::get_node_mut_tracing_ancestors(root, path, |_| {})
-    }
-
-    /// Same as `get_node_mut`, and calls `each_ancestor` for each ancestor of
-    /// the node.
-    ///
-    /// Note that `each_ancestor` may be called (with what would be ancestors)
-    /// even if it turns out there is no node at `path`.
-    fn get_node_mut_tracing_ancestors<'tree>(
-        root: &'tree mut ChildNodes<'on_disk>,
-        path: &HgPath,
-        mut each_ancestor: impl FnMut(&mut Node),
-    ) -> Option<&'tree mut Node<'on_disk>> {
         let mut children = root;
         let mut components = path.components();
         let mut component =
@@ -173,7 +160,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         loop {
             let child = children.get_mut(component)?;
             if let Some(next_component) = components.next() {
-                each_ancestor(child);
                 component = next_component;
                 children = &mut child.children;
             } else {
@@ -369,34 +355,47 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         filename: &HgPath,
         old_state: EntryState,
     ) -> Result<bool, DirstateMapError> {
-        let was_tracked = old_state.is_tracked();
-        if let Some(node) = Self::get_node_mut_tracing_ancestors(
-            &mut self.root,
-            filename,
-            |ancestor| {
-                if was_tracked {
-                    ancestor.tracked_descendants_count -= 1
+        struct Dropped {
+            was_tracked: bool,
+            had_entry: bool,
+            had_copy_source: bool,
+        }
+        fn recur(nodes: &mut ChildNodes, path: &HgPath) -> Option<Dropped> {
+            let (first_path_component, rest_of_path) =
+                path.split_first_component();
+            let node = nodes.get_mut(first_path_component)?;
+            let dropped;
+            if let Some(rest) = rest_of_path {
+                dropped = recur(&mut node.children, rest)?;
+                if dropped.was_tracked {
+                    node.tracked_descendants_count -= 1;
                 }
-            },
-        ) {
-            let had_entry = node.entry.is_some();
-            let had_copy_source = node.copy_source.is_some();
+            } else {
+                dropped = Dropped {
+                    was_tracked: node
+                        .entry
+                        .as_ref()
+                        .map_or(false, |entry| entry.state.is_tracked()),
+                    had_entry: node.entry.take().is_some(),
+                    had_copy_source: node.copy_source.take().is_some(),
+                };
+                // TODO: this leaves in the tree a "non-file" node. Should we
+                // remove the node instead, together with ancestor nodes for
+                // directories that become empty?
+            }
+            Some(dropped)
+        }
 
-            // TODO: this leaves in the tree a "non-file" node. Should we
-            // remove the node instead, together with ancestor nodes for
-            // directories that become empty?
-            node.entry = None;
-            node.copy_source = None;
-
-            if had_entry {
+        if let Some(dropped) = recur(&mut self.root, filename) {
+            if dropped.had_entry {
                 self.nodes_with_entry_count -= 1
             }
-            if had_copy_source {
+            if dropped.had_copy_source {
                 self.nodes_with_copy_source_count -= 1
             }
-            Ok(had_entry)
+            Ok(dropped.had_entry)
         } else {
-            assert!(!was_tracked);
+            debug_assert!(!old_state.is_tracked());
             Ok(false)
         }
     }

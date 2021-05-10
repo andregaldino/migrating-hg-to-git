@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::utils::SliceExt;
 use std::borrow::Borrow;
 use std::borrow::Cow;
 use std::convert::TryFrom;
@@ -230,6 +231,15 @@ impl HgPath {
 
     pub fn components(&self) -> impl Iterator<Item = &HgPath> {
         self.inner.split(|&byte| byte == b'/').map(HgPath::new)
+    }
+
+    /// Returns the first (that is "root-most") slash-separated component of
+    /// the path, and the rest after the first slash if there is one.
+    pub fn split_first_component(&self) -> (&HgPath, Option<&HgPath>) {
+        match self.inner.split_2(b'/') {
+            Some((a, b)) => (HgPath::new(a), Some(HgPath::new(b))),
+            None => (self, None),
+        }
     }
 
     pub fn parent(&self) -> &Self {
