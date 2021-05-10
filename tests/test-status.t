@@ -711,6 +711,9 @@ Asking specifically for the status of a deleted/removed file
   $ hg rm b
   $ hg status a
   R a
+  $ hg commit -qm '#1'
+  $ hg status a
+  a: $ENOENT$
 
 Check using include flag with pattern when status does not need to traverse
 the working directory (issue6483)

@@ -379,9 +379,14 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                     had_entry: node.entry.take().is_some(),
                     had_copy_source: node.copy_source.take().is_some(),
                 };
-                // TODO: this leaves in the tree a "non-file" node. Should we
-                // remove the node instead, together with ancestor nodes for
-                // directories that become empty?
+            }
+            // After recursion, for both leaf (rest_of_path is None) nodes and
+            // parent nodes, remove a node if it just became empty.
+            if node.entry.is_none()
+                && node.copy_source.is_none()
+                && node.children.is_empty()
+            {
+                nodes.remove(first_path_component);
             }
             Some(dropped)
         }
