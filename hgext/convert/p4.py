@@ -151,12 +151,10 @@ class p4_source(common.converter_source):
                     views[sview] = cview
 
         # list of changes that affect our source files
-        p4changes = p4changes.keys()
-        p4changes.sort(key=int)
+        p4changes = sorted(p4changes.keys(), key=int)
 
         # list with depot pathnames, longest first
-        vieworder = views.keys()
-        vieworder.sort(key=len, reverse=True)
+        vieworder = sorted(views.keys(), key=len, reverse=True)
 
         # handle revision limiting
         startrev = self.ui.config(b'convert', b'p4.startrev')
@@ -188,7 +186,7 @@ class p4_source(common.converter_source):
             else:
                 shortdesc = b'**empty changelist description**'
 
-            t = b'%s %s' % (c.rev, repr(shortdesc)[1:-1])
+            t = b'%s %s' % (c.rev, shortdesc)
             ui.status(stringutil.ellipsis(t, 80) + b'\n')
 
             files = []
