@@ -762,3 +762,107 @@ The tree-based dirstate and status algorithm fix this:
   ? foo
 
 #endif
+
+
+Create a repo with files in each possible status
+
+  $ cd ..
+  $ hg init repo7
+  $ cd repo7
+  $ mkdir subdir
+  $ touch clean modified deleted removed
+  $ touch subdir/clean subdir/modified subdir/deleted subdir/removed
+  $ echo ignored > .hgignore
+  $ hg ci -Aqm '#0'
+  $ echo 1 > modified
+  $ echo 1 > subdir/modified
+  $ rm deleted
+  $ rm subdir/deleted
+  $ hg rm removed
+  $ hg rm subdir/removed
+  $ touch unknown ignored
+  $ touch subdir/unknown subdir/ignored
+
+Check the output
+
+  $ hg status
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+  ? subdir/unknown
+  ? unknown
+
+  $ hg status -mard
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+
+  $ hg status -A
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+  ? subdir/unknown
+  ? unknown
+  I ignored
+  I subdir/ignored
+  C .hgignore
+  C clean
+  C subdir/clean
+
+Note: `hg status some-name` creates a patternmatcher which is not supported
+yet by the Rust implementation of status, but includematcher is supported.
+--include is used below for that reason
+
+Remove a directory that contains tracked files
+
+  $ rm -r subdir
+  $ hg status --include subdir
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+
+… and replace it by a file
+
+  $ touch subdir
+  $ hg status --include subdir
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+  ? subdir
+
+Replaced a deleted or removed file with a directory
+
+  $ mkdir deleted removed
+  $ touch deleted/1 removed/1
+  $ hg status --include deleted --include removed
+  R removed
+  ! deleted
+  ? deleted/1
+  ? removed/1
+  $ hg add removed/1
+  $ hg status --include deleted --include removed
+  A removed/1
+  R removed
+  ! deleted
+  ? deleted/1
+
+Deeply nested files in an ignored directory are still listed on request
+
+  $ echo ignored-dir >> .hgignore
+  $ mkdir ignored-dir
+  $ mkdir ignored-dir/subdir
+  $ touch ignored-dir/subdir/1
+  $ hg status --ignored
+  I ignored
+  I ignored-dir/subdir/1
