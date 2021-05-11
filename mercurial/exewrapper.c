@@ -48,7 +48,7 @@ int _tmain(int argc, TCHAR *argv[])
 	int(__cdecl * Py_Main)(int argc, TCHAR *argv[]);
 
 #if PY_MAJOR_VERSION >= 3
-	Py_LegacyWindowsStdioFlag = 1;
+	_wputenv(L"PYTHONLEGACYWINDOWSSTDIO=1");
 #endif
 
 	if (GetModuleFileName(NULL, pyscript, _countof(pyscript)) == 0) {
