@@ -39,7 +39,7 @@ for f in sys.argv[1:]:
     localf = encoding.strtolocal(f)
     if not localf.endswith(b'.i'):
         print("file:", f, file=sys.stderr)
-        print("  invalida filename", file=sys.stderr)
+        print("  invalid filename", file=sys.stderr)
 
     r = revlog.revlog(
         binopen,
