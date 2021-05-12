@@ -11,7 +11,6 @@ import collections
 import contextlib
 import datetime
 import errno
-import getpass
 import inspect
 import os
 import re
@@ -1779,7 +1778,7 @@ class ui(object):
                         raise EOFError
                     return l.rstrip(b'\n')
                 else:
-                    return encoding.strtolocal(getpass.getpass(''))
+                    return util.get_password()
         except EOFError:
             raise error.ResponseExpected()
 
