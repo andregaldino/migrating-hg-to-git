@@ -720,9 +720,8 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     entries = []
     backupentries = []
 
-    fp = opener.open(file)
-    lines = fp.readlines()
-    fp.close()
+    with opener.open(file) as fp:
+        lines = fp.readlines()
     for l in lines:
         try:
             f, o = l.split(b'\0')
