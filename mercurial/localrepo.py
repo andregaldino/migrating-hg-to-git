@@ -2752,40 +2752,56 @@ class localrepository(object):
             # later call to `destroyed` will refresh them.
             return
 
-        if tr is None or tr.changes[b'origrepolen'] < len(self):
-            # accessing the 'served' branchmap should refresh all the others,
-            self.ui.debug(b'updating the branch cache\n')
-            self.filtered(b'served').branchmap()
-            self.filtered(b'served.hidden').branchmap()
+        unfi = self.unfiltered()
 
         if full:
-            unfi = self.unfiltered()
+            caches = repository.CACHES_ALL
+            if full == b"post-clone":
+                caches = caches.copy()
+                caches.discard(repository.CACHE_FILE_NODE_TAGS)
+        else:
+            caches = repository.CACHES_DEFAULT
 
+        if repository.CACHE_BRANCHMAP_SERVED in caches:
+            if tr is None or tr.changes[b'origrepolen'] < len(self):
+                # accessing the 'served' branchmap should refresh all the others,
+                self.ui.debug(b'updating the branch cache\n')
+                self.filtered(b'served').branchmap()
+                self.filtered(b'served.hidden').branchmap()
+
+        if repository.CACHE_CHANGELOG_CACHE in caches:
             self.changelog.update_caches(transaction=tr)
+
+        if repository.CACHE_MANIFESTLOG_CACHE in caches:
             self.manifestlog.update_caches(transaction=tr)
 
+        if repository.CACHE_REV_BRANCH in caches:
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:
                 rbc.branchinfo(r)
             rbc.write()
 
+        if repository.CACHE_FULL_MANIFEST in caches:
             # ensure the working copy parents are in the manifestfulltextcache
             for ctx in self[b'.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
-            if not full == b"post-clone":
-                # accessing fnode cache warms the cache
-                tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
+        if repository.CACHE_FILE_NODE_TAGS in caches:
+            # accessing fnode cache warms the cache
+            tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
+
+        if repository.CACHE_TAGS_DEFAULT in caches:
             # accessing tags warm the cache
             self.tags()
+        if repository.CACHE_TAGS_SERVED in caches:
             self.filtered(b'served').tags()
 
-            # The `full` arg is documented as updating even the lazily-loaded
-            # caches immediately, so we're forcing a write to cause these caches
-            # to be warmed up even if they haven't explicitly been requested
-            # yet (if they've never been used by hg, they won't ever have been
-            # written, even if they're a subset of another kind of cache that
-            # *has* been used).
+        if repository.CACHE_BRANCHMAP_ALL in caches:
+            # The CACHE_BRANCHMAP_ALL updates lazily-loaded caches immediately,
+            # so we're forcing a write to cause these caches to be warmed up
+            # even if they haven't explicitly been requested yet (if they've
+            # never been used by hg, they won't ever have been written, even if
+            # they're a subset of another kind of cache that *has* been used).
             for filt in repoview.filtertable.keys():
                 filtered = self.filtered(filt)
                 filtered.branchmap().write(filtered)

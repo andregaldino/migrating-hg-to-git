@@ -1,4 +1,5 @@
 # repository.py - Interfaces and base classes for repositories and peers.
+# coding: utf-8
 #
 # Copyright 2017 Gregory Szorc <gregory.szorc@gmail.com>
 #
@@ -42,6 +43,49 @@ CG_DELTAMODE_STD = b'default'
 CG_DELTAMODE_PREV = b'previous'
 CG_DELTAMODE_FULL = b'fulltext'
 CG_DELTAMODE_P1 = b'p1'
+
+
+## Cache related constants:
+#
+# Used to control which cache should be warmed in a repo.updatecaches(…) call.
+
+# Warm branchmaps of all known repoview's filter-level
+CACHE_BRANCHMAP_ALL = b"branchmap-all"
+# Warm branchmaps of repoview's filter-level used by server
+CACHE_BRANCHMAP_SERVED = b"branchmap-served"
+# Warm internal changelog cache (eg: persistent nodemap)
+CACHE_CHANGELOG_CACHE = b"changelog-cache"
+# Warm full manifest cache
+CACHE_FULL_MANIFEST = b"full-manifest"
+# Warm file-node-tags cache
+CACHE_FILE_NODE_TAGS = b"file-node-tags"
+# Warm internal manifestlog cache (eg: persistent nodemap)
+CACHE_MANIFESTLOG_CACHE = b"manifestlog-cache"
+# Warn rev branch cache
+CACHE_REV_BRANCH = b"rev-branch-cache"
+# Warm tags' cache for default repoview'
+CACHE_TAGS_DEFAULT = b"tags-default"
+# Warm tags' cache for  repoview's filter-level used by server
+CACHE_TAGS_SERVED = b"tags-served"
+
+# the cache to warm by default after a simple transaction
+# (this is a mutable set to let extension update it)
+CACHES_DEFAULT = {
+    CACHE_BRANCHMAP_SERVED,
+}
+
+# the caches to warm when warming all of them
+# (this is a mutable set to let extension update it)
+CACHES_ALL = {
+    CACHE_BRANCHMAP_SERVED,
+    CACHE_BRANCHMAP_ALL,
+    CACHE_CHANGELOG_CACHE,
+    CACHE_FILE_NODE_TAGS,
+    CACHE_FULL_MANIFEST,
+    CACHE_MANIFESTLOG_CACHE,
+    CACHE_TAGS_DEFAULT,
+    CACHE_TAGS_SERVED,
+}
 
 
 class ipeerconnection(interfaceutil.Interface):
