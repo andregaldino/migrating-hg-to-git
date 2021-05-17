@@ -91,6 +91,7 @@ from . import (
     wireprotoserver,
     wireprotov2peer,
 )
+from .interfaces import repository
 from .utils import (
     cborutil,
     compression,
@@ -4047,7 +4048,7 @@ def debuguiprompt(ui, prompt=b''):
 def debugupdatecaches(ui, repo, *pats, **opts):
     """warm all known caches in the repository"""
     with repo.wlock(), repo.lock():
-        repo.updatecaches(full=True)
+        repo.updatecaches(caches=repository.CACHES_ALL)
 
 
 @command(
