@@ -2732,7 +2732,7 @@ class localrepository(object):
         return updater
 
     @unfilteredmethod
-    def updatecaches(self, tr=None, full=False):
+    def updatecaches(self, tr=None, full=False, caches=None):
         """warm appropriate caches
 
         If this function is called after a transaction closed. The transaction
@@ -2754,13 +2754,14 @@ class localrepository(object):
 
         unfi = self.unfiltered()
 
-        if full:
-            caches = repository.CACHES_ALL
-            if full == b"post-clone":
-                caches = caches.copy()
-                caches.discard(repository.CACHE_FILE_NODE_TAGS)
-        else:
-            caches = repository.CACHES_DEFAULT
+        if caches is None:
+            if full:
+                caches = repository.CACHES_ALL
+                if full == b"post-clone":
+                    caches = caches.copy()
+                    caches.discard(repository.CACHE_FILE_NODE_TAGS)
+            else:
+                caches = repository.CACHES_DEFAULT
 
         if repository.CACHE_BRANCHMAP_SERVED in caches:
             if tr is None or tr.changes[b'origrepolen'] < len(self):
