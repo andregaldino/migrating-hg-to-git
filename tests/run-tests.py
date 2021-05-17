@@ -262,7 +262,13 @@ def checkportisavailable(port):
     except socket.error as exc:
         if os.name == 'nt' and exc.errno == errno.WSAEACCES:
             return False
-        elif exc.errno not in (
+        elif PYTHON3:
+            # TODO: make a proper exception handler after dropping py2.  This
+            #       works because socket.error is an alias for OSError on py3,
+            #       which is also the baseclass of PermissionError.
+            if isinstance(exc, PermissionError):
+                return False
+        if exc.errno not in (
             errno.EADDRINUSE,
             errno.EADDRNOTAVAIL,
             errno.EPROTONOSUPPORT,
@@ -355,7 +361,8 @@ def parselistfiles(files, listtype, warn=True):
         for line in f.readlines():
             line = line.split(b'#', 1)[0].strip()
             if line:
-                entries[line] = filename
+                # Ensure path entries are compatible with os.path.relpath()
+                entries[os.path.normpath(line)] = filename
 
         f.close()
     return entries

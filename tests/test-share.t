@@ -68,7 +68,6 @@ Cloning a shared repo should pick up the full cache dir on the other hand.
   branch2-served.hidden
   branch2-visible
   branch2-visible-hidden
-  hgtagsfnodes1
   rbc-names-v1
   rbc-revs-v1
   tags2

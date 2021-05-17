@@ -381,6 +381,10 @@ def getfstype(dirpath):
     return getattr(osutil, 'getfstype', lambda x: None)(dirpath)
 
 
+def get_password():
+    return encoding.strtolocal(getpass.getpass(''))
+
+
 def setbinary(fd):
     pass
 

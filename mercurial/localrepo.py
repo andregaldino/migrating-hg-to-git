@@ -2727,6 +2727,11 @@ class localrepository(object):
 
         If 'full' is set, make sure all caches the function knows about have
         up-to-date data. Even the ones usually loaded more lazily.
+
+        The `full` argument can take a special "post-clone" value. In this case
+        the cache warming is made after a clone and of the slower cache might
+        be skipped, namely the `.fnodetags` one. This argument is 5.8 specific
+        as we plan for a cleaner way to deal with this for 5.9.
         """
         if tr is not None and tr.hookargs.get(b'source') == b'strip':
             # During strip, many caches are invalid but
@@ -2754,8 +2759,9 @@ class localrepository(object):
             for ctx in self[b'.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
-            # accessing fnode cache warms the cache
-            tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
+            if not full == b"post-clone":
+                # accessing fnode cache warms the cache
+                tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
             # accessing tags warm the cache
             self.tags()
             self.filtered(b'served').tags()

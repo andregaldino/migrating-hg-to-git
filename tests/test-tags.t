@@ -807,11 +807,11 @@ Cache should contain the head only, even though other nodes have tags data
 
   $ f --size --hexdump tagsclient/.hg/cache/hgtagsfnodes1
   tagsclient/.hg/cache/hgtagsfnodes1: size=96
-  0000: 96 ee 1d 73 00 00 00 00 00 00 00 00 00 00 00 00 |...s............|
-  0010: 00 00 00 00 00 00 00 00 c4 da b0 c2 94 65 e1 c6 |.............e..|
-  0020: 0d f7 f0 dd 32 04 ea 57 78 c8 97 97 79 fc d5 95 |....2..Wx...y...|
-  0030: f6 3c c8 fe 94 65 e1 c6 0d f7 f0 dd 32 04 ea 57 |.<...e......2..W|
-  0040: 78 c8 97 97 79 fc d5 95 40 f0 35 8c 19 e0 a7 d3 |x...y...@.5.....|
+  0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0030: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0040: ff ff ff ff ff ff ff ff 40 f0 35 8c 19 e0 a7 d3 |........@.5.....|
   0050: 8a 5c 6a 82 4d cf fb a5 87 d0 2f a3 1e 4f 2f 8a |.\j.M...../..O/.|
 
 Running hg tags should produce tags2* file and not change cache
@@ -837,11 +837,11 @@ Running hg tags should produce tags2* file and not change cache
 
   $ f --size --hexdump tagsclient/.hg/cache/hgtagsfnodes1
   tagsclient/.hg/cache/hgtagsfnodes1: size=96
-  0000: 96 ee 1d 73 00 00 00 00 00 00 00 00 00 00 00 00 |...s............|
-  0010: 00 00 00 00 00 00 00 00 c4 da b0 c2 94 65 e1 c6 |.............e..|
-  0020: 0d f7 f0 dd 32 04 ea 57 78 c8 97 97 79 fc d5 95 |....2..Wx...y...|
-  0030: f6 3c c8 fe 94 65 e1 c6 0d f7 f0 dd 32 04 ea 57 |.<...e......2..W|
-  0040: 78 c8 97 97 79 fc d5 95 40 f0 35 8c 19 e0 a7 d3 |x...y...@.5.....|
+  0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0030: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
+  0040: ff ff ff ff ff ff ff ff 40 f0 35 8c 19 e0 a7 d3 |........@.5.....|
   0050: 8a 5c 6a 82 4d cf fb a5 87 d0 2f a3 1e 4f 2f 8a |.\j.M...../..O/.|
 
 Check that the bundle includes cache data

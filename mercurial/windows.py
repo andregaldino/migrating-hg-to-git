@@ -194,6 +194,28 @@ def _isatty(fp):
         return False
 
 
+def get_password():
+    """Prompt for password with echo off, using Windows getch().
+
+    This shouldn't be called directly- use ``ui.getpass()`` instead, which
+    checks if the session is interactive first.
+    """
+    pw = ""
+    while True:
+        c = msvcrt.getwch()
+        if c == '\r' or c == '\n':
+            break
+        if c == '\003':
+            raise KeyboardInterrupt
+        if c == '\b':
+            pw = pw[:-1]
+        else:
+            pw = pw + c
+    msvcrt.putwch('\r')
+    msvcrt.putwch('\n')
+    return encoding.strtolocal(pw)
+
+
 class winstdout(object):
     """Some files on Windows misbehave.
 

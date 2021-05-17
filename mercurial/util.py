@@ -107,6 +107,7 @@ copymode = platform.copymode
 expandglobs = platform.expandglobs
 getfsmountpoint = platform.getfsmountpoint
 getfstype = platform.getfstype
+get_password = platform.get_password
 groupmembers = platform.groupmembers
 groupname = platform.groupname
 isexec = platform.isexec

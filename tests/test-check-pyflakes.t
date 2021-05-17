@@ -23,4 +23,5 @@ run pyflakes on all tracked files ending in .py or without a file ending
   mercurial/hgweb/server.py:*:* undefined name 'reload' (glob) (?)
   mercurial/util.py:*:* undefined name 'file' (glob) (?)
   mercurial/encoding.py:*:* undefined name 'localstr' (glob) (?)
+  tests/run-tests.py:*:* undefined name 'PermissionError' (glob) (?)
   

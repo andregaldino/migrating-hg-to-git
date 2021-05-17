@@ -1116,15 +1116,17 @@ Skips with xml
   </testsuite>
 
 Missing skips or blacklisted skips don't count as executed:
-  $ echo test-failure.t > blacklist
+  $ mkdir tests
+  $ echo tests/test-failure.t > blacklist
+  $ cp test-failure.t tests
   $ rt --blacklist=blacklist --json\
-  >   test-failure.t test-bogus.t
+  >   tests/test-failure.t tests/test-bogus.t
   running 2 tests using 1 parallel processes 
   ss
   Skipped test-bogus.t: Doesn't exist
   Skipped test-failure.t: blacklisted
   # Ran 0 tests, 2 skipped, 0 failed.
-  $ cat report.json
+  $ cat tests/report.json
   testreport ={
       "test-bogus.t": {
           "result": "skip"
@@ -1133,6 +1135,8 @@ Missing skips or blacklisted skips don't count as executed:
           "result": "skip"
       }
   } (no-eol)
+  $ rm -r tests
+  $ echo test-failure.t > blacklist
 
 Whitelist trumps blacklist
   $ echo test-failure.t > whitelist
