@@ -239,7 +239,7 @@ Cannot cause divergence by default
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg amend -m divergent
   abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
-  (add --verbose for details)
+  (add --verbose for details or see 'hg help evolution.instability')
   [10]
   $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
   2 new content-divergent changesets

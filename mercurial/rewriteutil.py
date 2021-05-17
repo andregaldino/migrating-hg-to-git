@@ -114,7 +114,11 @@ def precheck(repo, revs, action=b'rewrite'):
                 raise error.InputError(msg)
             else:
                 raise error.InputError(
-                    msg, hint=_(b"add --verbose for details")
+                    msg,
+                    hint=_(
+                        b"add --verbose for details or see "
+                        b"'hg help evolution.instability'"
+                    ),
                 )
 
 
