@@ -2758,8 +2758,7 @@ class localrepository(object):
             if full:
                 caches = repository.CACHES_ALL
                 if full == b"post-clone":
-                    caches = caches.copy()
-                    caches.discard(repository.CACHE_FILE_NODE_TAGS)
+                    caches = repository.CACHES_POST_CLONE
             else:
                 caches = repository.CACHES_DEFAULT
 

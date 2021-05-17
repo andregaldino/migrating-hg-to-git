@@ -87,6 +87,11 @@ CACHES_ALL = {
     CACHE_TAGS_SERVED,
 }
 
+# the cache to warm by default on simple call
+# (this is a mutable set to let extension update it)
+CACHES_POST_CLONE = CACHES_ALL.copy()
+CACHES_POST_CLONE.discard(CACHE_FILE_NODE_TAGS)
+
 
 class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.

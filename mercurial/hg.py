@@ -52,6 +52,7 @@ from . import (
     verify as verifymod,
     vfs as vfsmod,
 )
+from .interfaces import repository as repositorymod
 from .utils import (
     hashutil,
     stringutil,
@@ -1054,7 +1055,7 @@ def clone(
             # as the only "bad" outcome would be some slowness. That potential
             # slowness already affect reader.
             with destrepo.lock():
-                destrepo.updatecaches(full=b"post-clone")
+                destrepo.updatecaches(caches=repositorymod.CACHES_POST_CLONE)
     finally:
         release(srclock, destlock)
         if cleandir is not None:
