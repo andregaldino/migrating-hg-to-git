@@ -2754,13 +2754,18 @@ class localrepository(object):
 
         unfi = self.unfiltered()
 
-        if caches is None:
-            if full:
-                caches = repository.CACHES_ALL
-                if full == b"post-clone":
-                    caches = repository.CACHES_POST_CLONE
-            else:
-                caches = repository.CACHES_DEFAULT
+        if full:
+            msg = (
+                "`full` argument for `repo.updatecaches` is deprecated\n"
+                "(use `caches=repository.CACHE_ALL` instead)"
+            )
+            self.ui.deprecwarn(msg, "5.9")
+            caches = repository.CACHES_ALL
+            if full == b"post-clone":
+                caches = repository.CACHES_POST_CLONE
+            caches = repository.CACHES_ALL
+        elif caches is None:
+            caches = repository.CACHES_DEFAULT
 
         if repository.CACHE_BRANCHMAP_SERVED in caches:
             if tr is None or tr.changes[b'origrepolen'] < len(self):
