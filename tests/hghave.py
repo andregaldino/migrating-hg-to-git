@@ -1129,3 +1129,8 @@ def has_lzma():
         return True
     except ImportError:
         return False
+
+
+@check("bash", "bash shell")
+def has_bash():
+    return matchoutput("bash -c 'echo hi'", b'^hi$')

@@ -1,3 +1,4 @@
+#require bash
 Test that, when an hg push is interrupted and the remote side recieves SIGPIPE,
 the remote hg is able to successfully roll back the transaction.
 
