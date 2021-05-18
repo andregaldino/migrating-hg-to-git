@@ -346,6 +346,9 @@ def updateworkingcopy(repo, assumeclean=False):
         ds.drop(f)
 
     pctx = repo[b'.']
+
+    # only update added files that are in the sparse checkout
+    addedmatch = matchmod.intersectmatchers(addedmatch, sparse.matcher(repo))
     newfiles = [f for f in pctx.manifest().walk(addedmatch) if f not in ds]
     for f in newfiles:
         ds.normallookup(f)
