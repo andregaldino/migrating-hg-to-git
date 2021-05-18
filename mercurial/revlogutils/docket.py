@@ -88,12 +88,13 @@ if stable_docket_file:
 # * 4 bytes: revlog version
 #          |   This is mandatory as docket must be compatible with the previous
 #          |   revlog index header.
+# * 1 bytes: size of index uuid
 # * 8 bytes: size of index-data
 # * 8 bytes: pending size of index-data
 # * 8 bytes: size of data
 # * 8 bytes: pending size of data
 # * 1 bytes: default compression header
-S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'LLLLc')
+S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'BLLLLc')
 
 
 class RevlogDocket(object):
@@ -104,6 +105,7 @@ class RevlogDocket(object):
         revlog,
         use_pending=False,
         version_header=None,
+        index_uuid=None,
         index_end=0,
         pending_index_end=0,
         data_end=0,
@@ -116,6 +118,7 @@ class RevlogDocket(object):
         self._radix = revlog.radix
         self._path = revlog._docket_file
         self._opener = revlog.opener
+        self._index_uuid = index_uuid
         # thes asserts should be True as long as we have a single index filename
         assert index_end <= pending_index_end
         assert data_end <= pending_data_end
@@ -134,7 +137,9 @@ class RevlogDocket(object):
     def index_filepath(self):
         """file path to the current index file associated to this docket"""
         # very simplistic version at first
-        return b"%s.idx" % self._radix
+        if self._index_uuid is None:
+            self._index_uuid = make_uid()
+        return b"%s-%s.idx" % (self._radix, self._index_uuid)
 
     @property
     def index_end(self):
@@ -189,13 +194,17 @@ class RevlogDocket(object):
         assert official_data_end <= self._data_end
         data = (
             self._version_header,
+            len(self._index_uuid),
             official_index_end,
             self._index_end,
             official_data_end,
             self._data_end,
             self.default_compression_header,
         )
-        return S_HEADER.pack(*data)
+        s = []
+        s.append(S_HEADER.pack(*data))
+        s.append(self._index_uuid)
+        return b''.join(s)
 
 
 def default_docket(revlog, version_header):
@@ -216,16 +225,21 @@ def default_docket(revlog, version_header):
 def parse_docket(revlog, data, use_pending=False):
     """given some docket data return a docket object for the given revlog"""
     header = S_HEADER.unpack(data[: S_HEADER.size])
+    offset = S_HEADER.size
     version_header = header[0]
-    index_size = header[1]
-    pending_index_size = header[2]
-    data_size = header[3]
-    pending_data_size = header[4]
-    default_compression_header = header[5]
+    index_uuid_size = header[1]
+    index_uuid = data[offset : offset + index_uuid_size]
+    offset += index_uuid_size
+    index_size = header[2]
+    pending_index_size = header[3]
+    data_size = header[4]
+    pending_data_size = header[5]
+    default_compression_header = header[6]
     docket = RevlogDocket(
         revlog,
         use_pending=use_pending,
         version_header=version_header,
+        index_uuid=index_uuid,
         index_end=index_size,
         pending_index_end=pending_index_size,
         data_end=data_size,

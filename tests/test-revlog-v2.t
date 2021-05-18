@@ -67,3 +67,19 @@ Header written as expected
   $ f --hexdump --bytes 4 .hg/store/data/foo.i
   .hg/store/data/foo.i:
   0000: 00 00 de ad                                     |....|
+
+The expected files are generated
+--------------------------------
+
+We should have have:
+- a docket
+- a index file with a unique name
+- a data file
+
+  $ ls .hg/store/00changelog* .hg/store/00manifest*
+  .hg/store/00changelog-b870a51b.idx
+  .hg/store/00changelog.d
+  .hg/store/00changelog.i
+  .hg/store/00manifest-88698448.idx
+  .hg/store/00manifest.d
+  .hg/store/00manifest.i
