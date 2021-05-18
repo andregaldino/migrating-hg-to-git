@@ -104,8 +104,8 @@ def checkfeatures(features):
         check, desc = checks[feature]
         try:
             available = check()
-        except Exception:
-            result['error'].append('hghave check failed: %s' % feature)
+        except Exception as e:
+            result['error'].append('hghave check %s failed: %r' % (feature, e))
             continue
 
         if not negate and not available:
