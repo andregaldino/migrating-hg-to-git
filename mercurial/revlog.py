@@ -2174,7 +2174,7 @@ class revlog(object):
             with self._indexfp() as read_ifh:
                 for r in self:
                     new_dfh.write(self._getsegmentforrevs(r, r, df=read_ifh)[1])
-                    if troffset <= self.start(r):
+                    if troffset <= self.start(r) + r * self.index.entry_size:
                         trindex = r
                 new_dfh.flush()
 
