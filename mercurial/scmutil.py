@@ -205,7 +205,7 @@ def callcatch(ui, func):
         detailed_exit_code = 50
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
-    except error.Abort as inst:
+    except error.Error as inst:
         if inst.detailed_exit_code is not None:
             detailed_exit_code = inst.detailed_exit_code
         if inst.coarse_exit_code is not None:

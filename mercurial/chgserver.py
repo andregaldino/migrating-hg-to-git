@@ -515,7 +515,7 @@ class chgcmdserver(commandserver.server):
             if inst.hint:
                 self.ui.error(_(b"(%s)\n") % inst.hint)
             errorraised = True
-        except error.Abort as inst:
+        except error.Error as inst:
             if inst.detailed_exit_code is not None:
                 detailed_exit_code = inst.detailed_exit_code
             self.ui.error(inst.format())
