@@ -43,13 +43,18 @@ pub fn parse_dirstate(contents: &[u8]) -> Result<ParseResult, HgError> {
                 copies.push((path, source));
             }
             entries.push((path, *entry));
+            Ok(())
         })?;
     Ok((parents, entries, copies))
 }
 
 pub fn parse_dirstate_entries<'a>(
     mut contents: &'a [u8],
-    mut each_entry: impl FnMut(&'a HgPath, &DirstateEntry, Option<&'a HgPath>),
+    mut each_entry: impl FnMut(
+        &'a HgPath,
+        &DirstateEntry,
+        Option<&'a HgPath>,
+    ) -> Result<(), HgError>,
 ) -> Result<&'a DirstateParents, HgError> {
     let (parents, rest) = DirstateParents::from_bytes(contents)
         .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
@@ -75,7 +80,7 @@ pub fn parse_dirstate_entries<'a>(
             iter.next().expect("splitn always yields at least one item"),
         );
         let copy_source = iter.next().map(HgPath::new);
-        each_entry(path, &entry, copy_source);
+        each_entry(path, &entry, copy_source)?;
 
         contents = rest;
     }

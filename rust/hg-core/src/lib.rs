@@ -83,6 +83,15 @@ pub enum DirstateError {
     Common(errors::HgError),
 }
 
+impl fmt::Display for DirstateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DirstateError::Map(error) => error.fmt(f),
+            DirstateError::Common(error) => error.fmt(f),
+        }
+    }
+}
+
 #[derive(Debug, derive_more::From)]
 pub enum PatternError {
     #[from]

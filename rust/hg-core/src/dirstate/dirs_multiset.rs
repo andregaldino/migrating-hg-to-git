@@ -8,13 +8,14 @@
 //! A multiset of directory names.
 //!
 //! Used to counts the references to directories in a manifest or dirstate.
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::{
     dirstate::EntryState,
     utils::{
         files,
         hg_path::{HgPath, HgPathBuf, HgPathError},
     },
-    DirstateEntry, DirstateMapError, FastHashMap,
+    DirstateEntry, DirstateError, DirstateMapError, FastHashMap,
 };
 use std::collections::{hash_map, hash_map::Entry, HashMap, HashSet};
 
@@ -33,15 +34,18 @@ impl DirsMultiset {
     pub fn from_dirstate<I, P>(
         dirstate: I,
         skip_state: Option<EntryState>,
-    ) -> Result<Self, DirstateMapError>
+    ) -> Result<Self, DirstateError>
     where
-        I: IntoIterator<Item = (P, DirstateEntry)>,
+        I: IntoIterator<
+            Item = Result<(P, DirstateEntry), DirstateV2ParseError>,
+        >,
         P: AsRef<HgPath>,
     {
         let mut multiset = DirsMultiset {
             inner: FastHashMap::default(),
         };
-        for (filename, entry) in dirstate {
+        for item in dirstate {
+            let (filename, entry) = item?;
             let filename = filename.as_ref();
             // This `if` is optimized out of the loop
             if let Some(skip) = skip_state {
@@ -337,8 +341,11 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let new =
-            DirsMultiset::from_dirstate(StateMap::default(), None).unwrap();
+        let new = DirsMultiset::from_dirstate(
+            StateMap::default().into_iter().map(Ok),
+            None,
+        )
+        .unwrap();
         let expected = DirsMultiset {
             inner: FastHashMap::default(),
         };
@@ -362,20 +369,17 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let input_map: HashMap<_, _> = ["b/x", "a/c", "a/d/x"]
-            .iter()
-            .map(|f| {
-                (
-                    HgPathBuf::from_bytes(f.as_bytes()),
-                    DirstateEntry {
-                        state: EntryState::Normal,
-                        mode: 0,
-                        mtime: 0,
-                        size: 0,
-                    },
-                )
-            })
-            .collect();
+        let input_map = ["b/x", "a/c", "a/d/x"].iter().map(|f| {
+            Ok((
+                HgPathBuf::from_bytes(f.as_bytes()),
+                DirstateEntry {
+                    state: EntryState::Normal,
+                    mode: 0,
+                    mtime: 0,
+                    size: 0,
+                },
+            ))
+        });
         let expected_inner = [("", 2), ("a", 2), ("b", 1), ("a/d", 1)]
             .iter()
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
@@ -390,7 +394,7 @@ mod tests {
 
     #[test]
     fn test_dirsmultiset_new_skip() {
-        let input_map: HashMap<_, _> = [
+        let input_map = [
             ("a/", EntryState::Normal),
             ("a/b", EntryState::Normal),
             ("a/c", EntryState::Removed),
@@ -398,7 +402,7 @@ mod tests {
         ]
         .iter()
         .map(|(f, state)| {
-            (
+            Ok((
                 HgPathBuf::from_bytes(f.as_bytes()),
                 DirstateEntry {
                     state: *state,
@@ -406,9 +410,8 @@ mod tests {
                     mtime: 0,
                     size: 0,
                 },
-            )
-        })
-        .collect();
+            ))
+        });
 
         // "a" incremented with "a/c" and "a/d/"
         let expected_inner = [("", 1), ("a", 2)]

@@ -109,7 +109,10 @@ fn _static_assert_size_of() {
 }
 
 /// Unexpected file format found in `.hg/dirstate` with the "v2" format.
-pub(crate) struct DirstateV2ParseError;
+///
+/// This should only happen if Mercurial is buggy or a repository is corrupted.
+#[derive(Debug)]
+pub struct DirstateV2ParseError;
 
 impl From<DirstateV2ParseError> for HgError {
     fn from(_: DirstateV2ParseError) -> Self {
@@ -295,9 +298,9 @@ fn write_nodes(
     // First accumulate serialized nodes in a `Vec`
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
     for node in nodes {
-        let children = write_nodes(node.children(), out)?;
-        let full_path = write_slice::<u8>(node.full_path().as_bytes(), out);
-        let copy_source = if let Some(source) = node.copy_source() {
+        let children = write_nodes(node.children()?, out)?;
+        let full_path = write_slice::<u8>(node.full_path()?.as_bytes(), out);
+        let copy_source = if let Some(source) = node.copy_source()? {
             write_slice::<u8>(source.as_bytes(), out)
         } else {
             Slice {

@@ -9,6 +9,7 @@
 //! It is currently missing a lot of functionality compared to the Python one
 //! and will only be triggered in narrow cases.
 
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::utils::path_auditor::PathAuditor;
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
@@ -302,6 +303,8 @@ pub enum StatusError {
     Path(HgPathError),
     /// An invalid "ignore" pattern was found
     Pattern(PatternError),
+    /// Corrupted dirstate
+    DirstateV2ParseError(DirstateV2ParseError),
 }
 
 pub type StatusResult<T> = Result<T, StatusError>;
@@ -312,6 +315,9 @@ impl fmt::Display for StatusError {
             StatusError::IO(error) => error.fmt(f),
             StatusError::Path(error) => error.fmt(f),
             StatusError::Pattern(error) => error.fmt(f),
+            StatusError::DirstateV2ParseError(_) => {
+                f.write_str("dirstate-v2 parse error")
+            }
         }
     }
 }

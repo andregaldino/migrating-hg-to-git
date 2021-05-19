@@ -1,12 +1,12 @@
 use crate::dirstate::owning::OwningDirstateMap;
 use hg::dirstate::parsers::Timestamp;
 use hg::dirstate_tree::dispatch::DirstateMapMethods;
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
 use hg::matchers::Matcher;
 use hg::utils::hg_path::{HgPath, HgPathBuf};
 use hg::CopyMapIter;
 use hg::DirstateEntry;
 use hg::DirstateError;
-use hg::DirstateMapError;
 use hg::DirstateParents;
 use hg::DirstateStatus;
 use hg::EntryState;
@@ -26,7 +26,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
-    ) -> Result<(), DirstateMapError> {
+    ) -> Result<(), DirstateError> {
         self.get_mut().add_file(filename, old_state, entry)
     }
 
@@ -35,7 +35,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         size: i32,
-    ) -> Result<(), DirstateMapError> {
+    ) -> Result<(), DirstateError> {
         self.get_mut().remove_file(filename, old_state, size)
     }
 
@@ -43,15 +43,22 @@ impl DirstateMapMethods for OwningDirstateMap {
         &mut self,
         filename: &HgPath,
         old_state: EntryState,
-    ) -> Result<bool, DirstateMapError> {
+    ) -> Result<bool, DirstateError> {
         self.get_mut().drop_file(filename, old_state)
     }
 
-    fn clear_ambiguous_times(&mut self, filenames: Vec<HgPathBuf>, now: i32) {
+    fn clear_ambiguous_times(
+        &mut self,
+        filenames: Vec<HgPathBuf>,
+        now: i32,
+    ) -> Result<(), DirstateV2ParseError> {
         self.get_mut().clear_ambiguous_times(filenames, now)
     }
 
-    fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool {
+    fn non_normal_entries_contains(
+        &mut self,
+        key: &HgPath,
+    ) -> Result<bool, DirstateV2ParseError> {
         self.get_mut().non_normal_entries_contains(key)
     }
 
@@ -61,7 +68,8 @@ impl DirstateMapMethods for OwningDirstateMap {
 
     fn non_normal_or_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPath> + '_> {
+    ) -> Box<dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + '_>
+    {
         self.get_mut().non_normal_or_other_parent_paths()
     }
 
@@ -71,33 +79,36 @@ impl DirstateMapMethods for OwningDirstateMap {
 
     fn iter_non_normal_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
+    ) -> Box<
+        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
+    > {
         self.get_mut().iter_non_normal_paths()
     }
 
     fn iter_non_normal_paths_panic(
         &self,
-    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
+    ) -> Box<
+        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
+    > {
         self.get().iter_non_normal_paths_panic()
     }
 
     fn iter_other_parent_paths(
         &mut self,
-    ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
+    ) -> Box<
+        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
+    > {
         self.get_mut().iter_other_parent_paths()
     }
 
     fn has_tracked_dir(
         &mut self,
         directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    ) -> Result<bool, DirstateError> {
         self.get_mut().has_tracked_dir(directory)
     }
 
-    fn has_dir(
-        &mut self,
-        directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    fn has_dir(&mut self, directory: &HgPath) -> Result<bool, DirstateError> {
         self.get_mut().has_dir(directory)
     }
 
@@ -117,11 +128,11 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().pack_v2(parents, now)
     }
 
-    fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
+    fn set_all_dirs(&mut self) -> Result<(), DirstateError> {
         self.get_mut().set_all_dirs()
     }
 
-    fn set_dirs(&mut self) -> Result<(), DirstateMapError> {
+    fn set_dirs(&mut self) -> Result<(), DirstateError> {
         self.get_mut().set_dirs()
     }
 
@@ -145,15 +156,24 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get().copy_map_iter()
     }
 
-    fn copy_map_contains_key(&self, key: &HgPath) -> bool {
+    fn copy_map_contains_key(
+        &self,
+        key: &HgPath,
+    ) -> Result<bool, DirstateV2ParseError> {
         self.get().copy_map_contains_key(key)
     }
 
-    fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath> {
+    fn copy_map_get(
+        &self,
+        key: &HgPath,
+    ) -> Result<Option<&HgPath>, DirstateV2ParseError> {
         self.get().copy_map_get(key)
     }
 
-    fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf> {
+    fn copy_map_remove(
+        &mut self,
+        key: &HgPath,
+    ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         self.get_mut().copy_map_remove(key)
     }
 
@@ -161,7 +181,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         &mut self,
         key: HgPathBuf,
         value: HgPathBuf,
-    ) -> Option<HgPathBuf> {
+    ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         self.get_mut().copy_map_insert(key, value)
     }
 
@@ -169,11 +189,17 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get().len()
     }
 
-    fn contains_key(&self, key: &HgPath) -> bool {
+    fn contains_key(
+        &self,
+        key: &HgPath,
+    ) -> Result<bool, DirstateV2ParseError> {
         self.get().contains_key(key)
     }
 
-    fn get(&self, key: &HgPath) -> Option<DirstateEntry> {
+    fn get(
+        &self,
+        key: &HgPath,
+    ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
         self.get().get(key)
     }
 

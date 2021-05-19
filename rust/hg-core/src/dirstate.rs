@@ -5,6 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::errors::HgError;
 use crate::revlog::Node;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
@@ -76,12 +77,19 @@ const MTIME_UNSET: i32 = -1;
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
-pub type StateMapIter<'a> =
-    Box<dyn Iterator<Item = (&'a HgPath, DirstateEntry)> + Send + 'a>;
+pub type StateMapIter<'a> = Box<
+    dyn Iterator<
+            Item = Result<(&'a HgPath, DirstateEntry), DirstateV2ParseError>,
+        > + Send
+        + 'a,
+>;
 
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
-pub type CopyMapIter<'a> =
-    Box<dyn Iterator<Item = (&'a HgPath, &'a HgPath)> + Send + 'a>;
+pub type CopyMapIter<'a> = Box<
+    dyn Iterator<Item = Result<(&'a HgPath, &'a HgPath), DirstateV2ParseError>>
+        + Send
+        + 'a,
+>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {

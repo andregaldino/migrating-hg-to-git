@@ -10,8 +10,8 @@ use crate::{
     dirstate::EntryState,
     pack_dirstate, parse_dirstate,
     utils::hg_path::{HgPath, HgPathBuf},
-    CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateMapError,
-    DirstateParents, StateMap,
+    CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateParents,
+    StateMap,
 };
 use micro_timer::timed;
 use std::collections::HashSet;
@@ -66,7 +66,7 @@ impl DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
-    ) -> Result<(), DirstateMapError> {
+    ) -> Result<(), DirstateError> {
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
@@ -104,7 +104,7 @@ impl DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         size: i32,
-    ) -> Result<(), DirstateMapError> {
+    ) -> Result<(), DirstateError> {
         if old_state != EntryState::Unknown && old_state != EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
@@ -138,7 +138,7 @@ impl DirstateMap {
         &mut self,
         filename: &HgPath,
         old_state: EntryState,
-    ) -> Result<bool, DirstateMapError> {
+    ) -> Result<bool, DirstateError> {
         let exists = self.state_map.remove(filename).is_some();
 
         if exists {
@@ -246,20 +246,20 @@ impl DirstateMap {
     /// emulate a Python lazy property, but it is ugly and unidiomatic.
     /// TODO One day, rewriting this struct using the typestate might be a
     /// good idea.
-    pub fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
+    pub fn set_all_dirs(&mut self) -> Result<(), DirstateError> {
         if self.all_dirs.is_none() {
             self.all_dirs = Some(DirsMultiset::from_dirstate(
-                self.state_map.iter().map(|(k, v)| (k, *v)),
+                self.state_map.iter().map(|(k, v)| Ok((k, *v))),
                 None,
             )?);
         }
         Ok(())
     }
 
-    pub fn set_dirs(&mut self) -> Result<(), DirstateMapError> {
+    pub fn set_dirs(&mut self) -> Result<(), DirstateError> {
         if self.dirs.is_none() {
             self.dirs = Some(DirsMultiset::from_dirstate(
-                self.state_map.iter().map(|(k, v)| (k, *v)),
+                self.state_map.iter().map(|(k, v)| Ok((k, *v))),
                 Some(EntryState::Removed),
             )?);
         }
@@ -269,7 +269,7 @@ impl DirstateMap {
     pub fn has_tracked_dir(
         &mut self,
         directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    ) -> Result<bool, DirstateError> {
         self.set_dirs()?;
         Ok(self.dirs.as_ref().unwrap().contains(directory))
     }
@@ -277,7 +277,7 @@ impl DirstateMap {
     pub fn has_dir(
         &mut self,
         directory: &HgPath,
-    ) -> Result<bool, DirstateMapError> {
+    ) -> Result<bool, DirstateError> {
         self.set_all_dirs()?;
         Ok(self.all_dirs.as_ref().unwrap().contains(directory))
     }

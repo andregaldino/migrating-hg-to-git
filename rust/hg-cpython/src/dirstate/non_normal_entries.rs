@@ -11,7 +11,9 @@ use cpython::{
     UnsafePyLeaked,
 };
 
+use crate::dirstate::dirstate_map::v2_error;
 use crate::dirstate::DirstateMap;
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
 use hg::utils::hg_path::HgPath;
 use std::cell::RefCell;
 
@@ -54,13 +56,18 @@ impl NonNormalEntries {
         Ok(true)
     }
 
-    fn translate_key(py: Python, key: &HgPath) -> PyResult<Option<PyBytes>> {
+    fn translate_key(
+        py: Python,
+        key: Result<&HgPath, DirstateV2ParseError>,
+    ) -> PyResult<Option<PyBytes>> {
+        let key = key.map_err(|e| v2_error(py, e))?;
         Ok(Some(PyBytes::new(py, key.as_bytes())))
     }
 }
 
-type NonNormalEntriesIter<'a> =
-    Box<dyn Iterator<Item = &'a HgPath> + Send + 'a>;
+type NonNormalEntriesIter<'a> = Box<
+    dyn Iterator<Item = Result<&'a HgPath, DirstateV2ParseError>> + Send + 'a,
+>;
 
 py_shared_iterator!(
     NonNormalEntriesIterator,
