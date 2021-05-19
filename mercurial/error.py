@@ -54,10 +54,13 @@ class Hint(object):
 class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 
-    def __init__(self, message, hint=None, detailed_exit_code=None):
+    def __init__(
+        self, message, hint=None, coarse_exit_code=None, detailed_exit_code=None
+    ):
         # type: (bytes, Optional[bytes]) -> None
         self.message = message
         self.hint = hint
+        self.coarse_exit_code = coarse_exit_code
         self.detailed_exit_code = detailed_exit_code
         # Pass the message into the Exception constructor to help extensions
         # that look for exc.args[0].
@@ -192,10 +195,22 @@ class WorkerError(Exception):
     __bytes__ = _tobytes
 
 
-class InterventionRequired(Hint, Exception):
+class InterventionRequired(Abort):
     """Exception raised when a command requires human intervention."""
 
-    __bytes__ = _tobytes
+    def __init__(self, message, hint=None):
+        super(InterventionRequired, self).__init__(
+            message, hint=hint, coarse_exit_code=1, detailed_exit_code=240
+        )
+
+    def format(self):
+        # type: () -> bytes
+        from .i18n import _
+
+        message = _(b"%s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
 
 
 class ConflictResolutionRequired(InterventionRequired):
