@@ -272,7 +272,8 @@ pub(super) fn write(
     // actual offset for the root nodes.
     out.resize(header_len, 0_u8);
 
-    let root = write_nodes(dirstate_map.root.as_ref(), &mut out)?;
+    let root =
+        write_nodes(dirstate_map, dirstate_map.root.as_ref(), &mut out)?;
 
     let header = Header {
         marker: *V2_FORMAT_MARKER,
@@ -288,6 +289,7 @@ pub(super) fn write(
 }
 
 fn write_nodes(
+    dirstate_map: &DirstateMap,
     nodes: dirstate_map::ChildNodesRef,
     out: &mut Vec<u8>,
 ) -> Result<ChildNodes, DirstateError> {
@@ -298,16 +300,19 @@ fn write_nodes(
     // First accumulate serialized nodes in a `Vec`
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
     for node in nodes {
-        let children = write_nodes(node.children()?, out)?;
-        let full_path = write_slice::<u8>(node.full_path()?.as_bytes(), out);
-        let copy_source = if let Some(source) = node.copy_source()? {
-            write_slice::<u8>(source.as_bytes(), out)
-        } else {
-            Slice {
-                start: 0.into(),
-                len: 0.into(),
-            }
-        };
+        let children = node.children(dirstate_map.on_disk)?;
+        let children = write_nodes(dirstate_map, children, out)?;
+        let full_path = node.full_path(dirstate_map.on_disk)?;
+        let full_path = write_slice::<u8>(full_path.as_bytes(), out);
+        let copy_source =
+            if let Some(source) = node.copy_source(dirstate_map.on_disk)? {
+                write_slice::<u8>(source.as_bytes(), out)
+            } else {
+                Slice {
+                    start: 0.into(),
+                    len: 0.into(),
+                }
+            };
         on_disk_nodes.push(match node {
             NodeRef::InMemory(path, node) => Node {
                 children,

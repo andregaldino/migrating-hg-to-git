@@ -81,6 +81,7 @@ impl<'on_disk> ChildNodes<'on_disk> {
 
     pub(super) fn make_mut(
         &mut self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<
         &mut FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>,
         DirstateV2ParseError,
@@ -95,6 +96,7 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
     pub(super) fn get(
         &self,
         base_name: &HgPath,
+        _on_disk: &'on_disk [u8],
     ) -> Result<Option<NodeRef<'tree, 'on_disk>>, DirstateV2ParseError> {
         match self {
             ChildNodesRef::InMemory(nodes) => Ok(nodes
@@ -151,6 +153,7 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
 impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     pub(super) fn full_path(
         &self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<&'tree HgPath, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.full_path()),
@@ -160,6 +163,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     /// Returns a `Cow` that can borrow 'on_disk but is detached from 'tree
     pub(super) fn full_path_cow(
         &self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<Cow<'on_disk, HgPath>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.full_path().clone()),
@@ -168,6 +172,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn base_name(
         &self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<&'tree HgPath, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.base_name()),
@@ -176,6 +181,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn children(
         &self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<ChildNodesRef<'tree, 'on_disk>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => Ok(node.children.as_ref()),
@@ -190,6 +196,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn copy_source(
         &self,
+        _on_disk: &'on_disk [u8],
     ) -> Result<Option<&'tree HgPath>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => {
@@ -274,6 +281,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             |path, entry, copy_source| {
                 let tracked = entry.state.is_tracked();
                 let node = Self::get_or_insert_node(
+                    map.on_disk,
                     &mut map.root,
                     path,
                     WithBasename::to_cow_borrowed,
@@ -314,10 +322,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let mut component =
             components.next().expect("expected at least one components");
         loop {
-            if let Some(child) = children.get(component)? {
+            if let Some(child) = children.get(component, self.on_disk)? {
                 if let Some(next_component) = components.next() {
                     component = next_component;
-                    children = child.children()?;
+                    children = child.children(self.on_disk)?;
                 } else {
                     return Ok(Some(child));
                 }
@@ -332,6 +340,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// This takes `root` instead of `&mut self` so that callers can mutate
     /// other fields while the returned borrow is still valid
     fn get_node_mut<'tree>(
+        on_disk: &'on_disk [u8],
         root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
     ) -> Result<Option<&'tree mut Node<'on_disk>>, DirstateV2ParseError> {
@@ -340,7 +349,8 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let mut component =
             components.next().expect("expected at least one components");
         loop {
-            if let Some(child) = children.make_mut()?.get_mut(component) {
+            if let Some(child) = children.make_mut(on_disk)?.get_mut(component)
+            {
                 if let Some(next_component) = components.next() {
                     component = next_component;
                     children = &mut child.children;
@@ -354,6 +364,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     }
 
     fn get_or_insert_node<'tree, 'path>(
+        on_disk: &'on_disk [u8],
         root: &'tree mut ChildNodes<'on_disk>,
         path: &'path HgPath,
         to_cow: impl Fn(
@@ -372,7 +383,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             // map already contains that key, without introducing double
             // lookup?
             let child_node = child_nodes
-                .make_mut()?
+                .make_mut(on_disk)?
                 .entry(to_cow(ancestor_path))
                 .or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
@@ -399,6 +410,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             };
 
         let node = Self::get_or_insert_node(
+            self.on_disk,
             &mut self.root,
             path,
             WithBasename::to_cow_owned,
@@ -448,7 +460,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let mut iter = self.root.as_ref().iter();
         std::iter::from_fn(move || {
             while let Some(child_node) = iter.next() {
-                let children = match child_node.children() {
+                let children = match child_node.children(self.on_disk) {
                     Ok(children) => children,
                     Err(error) => return Some(Err(error)),
                 };
@@ -476,9 +488,11 @@ impl<'on_disk> DirstateMap<'on_disk> {
         paths: &[impl AsRef<HgPath>],
     ) -> Result<(), DirstateV2ParseError> {
         for path in paths {
-            if let Some(node) =
-                Self::get_node_mut(&mut self.root, path.as_ref())?
-            {
+            if let Some(node) = Self::get_node_mut(
+                self.on_disk,
+                &mut self.root,
+                path.as_ref(),
+            )? {
                 if let Some(entry) = node.entry.as_mut() {
                     entry.clear_mtime();
                 }
@@ -501,7 +515,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         filter_map_results(self.iter_nodes(), move |node| {
             if let Some(entry) = node.entry()? {
                 if predicate(&entry) {
-                    return Ok(Some(node.full_path()?));
+                    return Ok(Some(node.full_path(self.on_disk)?));
                 }
             }
             Ok(None)
@@ -570,14 +584,15 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             had_entry: bool,
             had_copy_source: bool,
         }
-        fn recur(
-            nodes: &mut ChildNodes,
+        fn recur<'on_disk>(
+            on_disk: &'on_disk [u8],
+            nodes: &mut ChildNodes<'on_disk>,
             path: &HgPath,
         ) -> Result<Option<Dropped>, DirstateV2ParseError> {
             let (first_path_component, rest_of_path) =
                 path.split_first_component();
             let node = if let Some(node) =
-                nodes.make_mut()?.get_mut(first_path_component)
+                nodes.make_mut(on_disk)?.get_mut(first_path_component)
             {
                 node
             } else {
@@ -585,7 +600,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             };
             let dropped;
             if let Some(rest) = rest_of_path {
-                if let Some(d) = recur(&mut node.children, rest)? {
+                if let Some(d) = recur(on_disk, &mut node.children, rest)? {
                     dropped = d;
                     if dropped.was_tracked {
                         node.tracked_descendants_count -= 1;
@@ -609,12 +624,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                 && node.copy_source.is_none()
                 && node.children.is_empty()
             {
-                nodes.make_mut()?.remove(first_path_component);
+                nodes.make_mut(on_disk)?.remove(first_path_component);
             }
             Ok(Some(dropped))
         }
 
-        if let Some(dropped) = recur(&mut self.root, filename)? {
+        if let Some(dropped) = recur(self.on_disk, &mut self.root, filename)? {
             if dropped.had_entry {
                 self.nodes_with_entry_count -= 1
             }
@@ -634,7 +649,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         now: i32,
     ) -> Result<(), DirstateV2ParseError> {
         for filename in filenames {
-            if let Some(node) = Self::get_node_mut(&mut self.root, &filename)?
+            if let Some(node) =
+                Self::get_node_mut(self.on_disk, &mut self.root, &filename)?
             {
                 if let Some(entry) = node.entry.as_mut() {
                     entry.clear_ambiguous_mtime(now);
@@ -735,10 +751,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         for node in self.iter_nodes() {
             let node = node?;
             if let Some(entry) = node.entry()? {
-                size +=
-                    packed_entry_size(node.full_path()?, node.copy_source()?);
+                size += packed_entry_size(
+                    node.full_path(self.on_disk)?,
+                    node.copy_source(self.on_disk)?,
+                );
                 if entry.mtime_is_ambiguous(now) {
-                    ambiguous_mtimes.push(node.full_path_cow()?)
+                    ambiguous_mtimes.push(node.full_path_cow(self.on_disk)?)
                 }
             }
         }
@@ -751,9 +769,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             let node = node?;
             if let Some(entry) = node.entry()? {
                 pack_entry(
-                    node.full_path()?,
+                    node.full_path(self.on_disk)?,
                     &entry,
-                    node.copy_source()?,
+                    node.copy_source(self.on_disk)?,
                     &mut packed,
                 );
             }
@@ -774,7 +792,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             let node = node?;
             if let Some(entry) = node.entry()? {
                 if entry.mtime_is_ambiguous(now) {
-                    paths.push(node.full_path_cow()?)
+                    paths.push(node.full_path_cow(self.on_disk)?)
                 }
             }
         }
@@ -813,9 +831,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
-        Box::new(filter_map_results(self.iter_nodes(), |node| {
-            Ok(if let Some(source) = node.copy_source()? {
-                Some((node.full_path()?, source))
+        Box::new(filter_map_results(self.iter_nodes(), move |node| {
+            Ok(if let Some(source) = node.copy_source(self.on_disk)? {
+                Some((node.full_path(self.on_disk)?, source))
             } else {
                 None
             })
@@ -838,7 +856,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         key: &HgPath,
     ) -> Result<Option<&HgPath>, DirstateV2ParseError> {
         if let Some(node) = self.get_node(key)? {
-            if let Some(source) = node.copy_source()? {
+            if let Some(source) = node.copy_source(self.on_disk)? {
                 return Ok(Some(source));
             }
         }
@@ -850,12 +868,16 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         key: &HgPath,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         let count = &mut self.nodes_with_copy_source_count;
-        Ok(Self::get_node_mut(&mut self.root, key)?.and_then(|node| {
-            if node.copy_source.is_some() {
-                *count -= 1
-            }
-            node.copy_source.take().map(Cow::into_owned)
-        }))
+        Ok(
+            Self::get_node_mut(self.on_disk, &mut self.root, key)?.and_then(
+                |node| {
+                    if node.copy_source.is_some() {
+                        *count -= 1
+                    }
+                    node.copy_source.take().map(Cow::into_owned)
+                },
+            ),
+        )
     }
 
     fn copy_map_insert(
@@ -864,6 +886,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         value: HgPathBuf,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         let node = Self::get_or_insert_node(
+            self.on_disk,
             &mut self.root,
             &key,
             WithBasename::to_cow_owned,
@@ -898,9 +921,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn iter(&self) -> StateMapIter<'_> {
-        Box::new(filter_map_results(self.iter_nodes(), |node| {
+        Box::new(filter_map_results(self.iter_nodes(), move |node| {
             Ok(if let Some(entry) = node.entry()? {
-                Some((node.full_path()?, entry))
+                Some((node.full_path(self.on_disk)?, entry))
             } else {
                 None
             })

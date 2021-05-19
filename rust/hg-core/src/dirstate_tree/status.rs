@@ -32,8 +32,8 @@ use std::sync::Mutex;
 /// exists in one of the two trees, depending on information requested by
 /// `options` we may need to traverse the remaining subtree.
 #[timed]
-pub fn status<'tree>(
-    dmap: &'tree mut DirstateMap,
+pub fn status<'tree, 'on_disk: 'tree>(
+    dmap: &'tree mut DirstateMap<'on_disk>,
     matcher: &(dyn Matcher + Sync),
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
@@ -47,6 +47,7 @@ pub fn status<'tree>(
         };
 
     let common = StatusCommon {
+        dmap,
         options,
         matcher,
         ignore_fn,
@@ -67,14 +68,15 @@ pub fn status<'tree>(
 
 /// Bag of random things needed by various parts of the algorithm. Reduces the
 /// number of parameters passed to functions.
-struct StatusCommon<'tree, 'a> {
+struct StatusCommon<'tree, 'a, 'on_disk: 'tree> {
+    dmap: &'tree DirstateMap<'on_disk>,
     options: StatusOptions,
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
     outcome: Mutex<DirstateStatus<'tree>>,
 }
 
-impl<'tree, 'a> StatusCommon<'tree, 'a> {
+impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     fn read_dir(
         &self,
         hg_path: &HgPath,
@@ -119,7 +121,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         // Propagate here any error that would happen inside the comparison
         // callback below
         for dirstate_node in &dirstate_nodes {
-            dirstate_node.base_name()?;
+            dirstate_node.base_name(self.dmap.on_disk)?;
         }
         itertools::merge_join_by(
             dirstate_nodes,
@@ -127,7 +129,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             |dirstate_node, fs_entry| {
                 // This `unwrap` never panics because we already propagated
                 // those errors above
-                dirstate_node.base_name().unwrap().cmp(&fs_entry.base_name)
+                dirstate_node
+                    .base_name(self.dmap.on_disk)
+                    .unwrap()
+                    .cmp(&fs_entry.base_name)
             },
         )
         .par_bridge()
@@ -159,7 +164,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         dirstate_node: NodeRef<'tree, '_>,
         has_ignored_ancestor: bool,
     ) -> Result<(), DirstateV2ParseError> {
-        let hg_path = dirstate_node.full_path()?;
+        let hg_path = dirstate_node.full_path(self.dmap.on_disk)?;
         let file_type = fs_entry.metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
         if !file_or_symlink {
@@ -179,7 +184,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             let is_at_repo_root = false;
             self.traverse_fs_directory_and_dirstate(
                 is_ignored,
-                dirstate_node.children()?,
+                dirstate_node.children(self.dmap.on_disk)?,
                 hg_path,
                 &fs_entry.full_path,
                 is_at_repo_root,
@@ -221,7 +226,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                 }
             }
 
-            for child_node in dirstate_node.children()?.iter() {
+            for child_node in dirstate_node.children(self.dmap.on_disk)?.iter()
+            {
                 self.traverse_dirstate_only(child_node)?
             }
         }
@@ -246,7 +252,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         let entry = dirstate_node
             .entry()?
             .expect("handle_normal_file called with entry-less node");
-        let full_path = Cow::from(dirstate_node.full_path()?);
+        let full_path = Cow::from(dirstate_node.full_path(self.dmap.on_disk)?);
         let mode_changed = || {
             self.options.check_exec && entry.mode_changed(&fs_entry.metadata)
         };
@@ -282,11 +288,11 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         dirstate_node: NodeRef<'tree, '_>,
     ) -> Result<(), DirstateV2ParseError> {
         self.mark_removed_or_deleted_if_file(
-            dirstate_node.full_path()?,
+            dirstate_node.full_path(self.dmap.on_disk)?,
             dirstate_node.state()?,
         );
         dirstate_node
-            .children()?
+            .children(self.dmap.on_disk)?
             .par_iter()
             .map(|child_node| self.traverse_dirstate_only(child_node))
             .collect()
