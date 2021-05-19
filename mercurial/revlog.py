@@ -628,7 +628,9 @@ class revlog(object):
             # main docket, so disable it for now.
             self._nodemap_file = None
 
-        if self.postfix is None:
+        if self._docket is not None:
+            self._datafile = self._docket.data_filepath()
+        elif self.postfix is None:
             self._datafile = b'%s.d' % self.radix
         else:
             self._datafile = b'%s.d.%s' % (self.radix, self.postfix)

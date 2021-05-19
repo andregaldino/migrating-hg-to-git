@@ -389,7 +389,14 @@ _data = [
 ]
 
 REVLOG_FILES_MAIN_EXT = (b'.i', b'i.tmpcensored')
-REVLOG_FILES_OTHER_EXT = (b'.idx', b'.d', b'.n', b'.nd', b'd.tmpcensored')
+REVLOG_FILES_OTHER_EXT = (
+    b'.idx',
+    b'.d',
+    b'.dat',
+    b'.n',
+    b'.nd',
+    b'd.tmpcensored',
+)
 # files that are "volatile" and might change between listing and streaming
 #
 # note: the ".nd" file are nodemap data and won't "change" but they might be
@@ -414,6 +421,7 @@ def revlog_type(f):
         if f.endswith(REVLOG_FILES_VOLATILE_EXT):
             t |= FILEFLAGS_VOLATILE
         return t
+    return None
 
 
 # the file is part of changelog data
@@ -753,6 +761,7 @@ class fncachestore(basicstore):
             ef = self.encode(f)
             try:
                 t = revlog_type(f)
+                assert t is not None, f
                 t |= FILEFLAGS_FILELOG
                 yield t, f, ef, self.getsize(ef)
             except OSError as err:

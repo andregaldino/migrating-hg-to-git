@@ -58,6 +58,7 @@ Writing a simple revlog v2 works
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     initial
   
+
 Header written as expected
 
   $ f --hexdump --bytes 4 .hg/store/00changelog.i
@@ -77,9 +78,9 @@ We should have have:
 - a data file
 
   $ ls .hg/store/00changelog* .hg/store/00manifest*
-  .hg/store/00changelog-b870a51b.idx
-  .hg/store/00changelog.d
+  .hg/store/00changelog-6b8ab34b.dat
+  .hg/store/00changelog-88698448.idx
   .hg/store/00changelog.i
-  .hg/store/00manifest-88698448.idx
-  .hg/store/00manifest.d
+  .hg/store/00manifest-1335303a.dat
+  .hg/store/00manifest-b875dfc5.idx
   .hg/store/00manifest.i
