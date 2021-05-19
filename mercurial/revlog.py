@@ -1538,28 +1538,33 @@ class revlog(object):
     def _partialmatch(self, id):
         # we don't care wdirfilenodeids as they should be always full hash
         maybewdir = self.nodeconstants.wdirhex.startswith(id)
+        ambiguous = False
         try:
             partial = self.index.partialmatch(id)
             if partial and self.hasnode(partial):
                 if maybewdir:
                     # single 'ff...' match in radix tree, ambiguous with wdir
-                    raise error.RevlogError
-                return partial
-            if maybewdir:
+                    ambiguous = True
+                else:
+                    return partial
+            elif maybewdir:
                 # no 'ff...' match in radix tree, wdir identified
                 raise error.WdirUnsupported
-            return None
+            else:
+                return None
         except error.RevlogError:
             # parsers.c radix tree lookup gave multiple matches
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
-                raise error.AmbiguousPrefixLookupError(
-                    id, self.display_id, _(b'ambiguous identifier')
-                )
+                ambiguous = True
             # fall through to slow path that filters hidden revisions
         except (AttributeError, ValueError):
             # we are pure python, or key was too short to search radix tree
             pass
+        if ambiguous:
+            raise error.AmbiguousPrefixLookupError(
+                id, self.display_id, _(b'ambiguous identifier')
+            )
 
         if id in self._pcache:
             return self._pcache[id]
