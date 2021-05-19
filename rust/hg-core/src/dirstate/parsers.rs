@@ -126,25 +126,31 @@ pub fn pack_entry(
 /// Seconds since the Unix epoch
 pub struct Timestamp(pub u64);
 
-pub fn clear_ambiguous_mtime(
-    entry: &mut DirstateEntry,
-    mtime_now: i32,
-) -> bool {
-    let ambiguous =
-        entry.state == EntryState::Normal && entry.mtime == mtime_now;
-    if ambiguous {
-        // The file was last modified "simultaneously" with the current
-        // write to dirstate (i.e. within the same second for file-
-        // systems with a granularity of 1 sec). This commonly happens
-        // for at least a couple of files on 'update'.
-        // The user could change the file without changing its size
-        // within the same second. Invalidate the file's mtime in
-        // dirstate, forcing future 'status' calls to compare the
-        // contents of the file if the size is the same. This prevents
-        // mistakenly treating such files as clean.
-        entry.mtime = -1;
+impl DirstateEntry {
+    pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
+        self.state == EntryState::Normal && self.mtime == now
     }
-    ambiguous
+
+    pub fn clear_ambiguous_mtime(&mut self, now: i32) -> bool {
+        let ambiguous = self.mtime_is_ambiguous(now);
+        if ambiguous {
+            // The file was last modified "simultaneously" with the current
+            // write to dirstate (i.e. within the same second for file-
+            // systems with a granularity of 1 sec). This commonly happens
+            // for at least a couple of files on 'update'.
+            // The user could change the file without changing its size
+            // within the same second. Invalidate the file's mtime in
+            // dirstate, forcing future 'status' calls to compare the
+            // contents of the file if the size is the same. This prevents
+            // mistakenly treating such files as clean.
+            self.clear_mtime()
+        }
+        ambiguous
+    }
+
+    pub fn clear_mtime(&mut self) {
+        self.mtime = -1;
+    }
 }
 
 pub fn pack_dirstate(
@@ -170,7 +176,7 @@ pub fn pack_dirstate(
     packed.extend(parents.p2.as_bytes());
 
     for (filename, entry) in state_map.iter_mut() {
-        clear_ambiguous_mtime(entry, now);
+        entry.clear_ambiguous_mtime(now);
         pack_entry(
             filename,
             entry,

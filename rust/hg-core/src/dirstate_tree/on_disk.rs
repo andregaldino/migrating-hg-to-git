@@ -9,8 +9,6 @@
 //! Nodes in turn contain slices to variable-size paths, and to their own child
 //! nodes (if any) for nested files and directories.
 
-use crate::dirstate::parsers::clear_ambiguous_mtime;
-use crate::dirstate::parsers::Timestamp;
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
@@ -230,11 +228,7 @@ where
 pub(super) fn write(
     dirstate_map: &mut DirstateMap,
     parents: DirstateParents,
-    now: Timestamp,
 ) -> Result<Vec<u8>, DirstateError> {
-    // TODO: how do we want to handle this in 2038?
-    let now: i32 = now.0.try_into().expect("time overflow");
-
     let header_len = std::mem::size_of::<Header>();
 
     // This ignores the space for paths, and for nodes without an entry.
@@ -248,7 +242,7 @@ pub(super) fn write(
     // actual offset for the root nodes.
     out.resize(header_len, 0_u8);
 
-    let root = write_nodes(&mut dirstate_map.root, now, &mut out)?;
+    let root = write_nodes(&mut dirstate_map.root, &mut out)?;
 
     let header = Header {
         marker: *V2_FORMAT_MARKER,
@@ -263,10 +257,8 @@ pub(super) fn write(
     Ok(out)
 }
 
-/// Serialize the dirstate to the `v2` format after clearing ambigous `mtime`s.
 fn write_nodes(
     nodes: &mut dirstate_map::ChildNodes,
-    now: i32,
     out: &mut Vec<u8>,
 ) -> Result<ChildNodes, DirstateError> {
     // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
@@ -277,7 +269,7 @@ fn write_nodes(
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
     for (full_path, node) in nodes {
         on_disk_nodes.push(Node {
-            children: write_nodes(&mut node.children, now, out)?,
+            children: write_nodes(&mut node.children, out)?,
             tracked_descendants_count: node.tracked_descendants_count.into(),
             full_path: write_slice::<u8>(
                 full_path.full_path().as_bytes(),
@@ -296,7 +288,6 @@ fn write_nodes(
                 }
             },
             entry: if let Some(entry) = &mut node.entry {
-                clear_ambiguous_mtime(entry, now);
                 OptEntry {
                     state: entry.state.into(),
                     mode: entry.mode.into(),

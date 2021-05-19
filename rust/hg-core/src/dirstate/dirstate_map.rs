@@ -5,7 +5,6 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::Timestamp;
 use crate::{
     dirstate::EntryState,
@@ -166,7 +165,7 @@ impl DirstateMap {
     ) {
         for filename in filenames {
             if let Some(entry) = self.state_map.get_mut(&filename) {
-                if clear_ambiguous_mtime(entry, now) {
+                if entry.clear_ambiguous_mtime(now) {
                     self.get_non_normal_other_parent_entries()
                         .0
                         .insert(filename.to_owned());

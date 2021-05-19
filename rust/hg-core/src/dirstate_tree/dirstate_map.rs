@@ -6,7 +6,6 @@ use std::path::PathBuf;
 
 use super::on_disk;
 use super::path_with_basename::WithBasename;
-use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
@@ -78,13 +77,6 @@ impl<'on_disk> Node<'on_disk> {
         vec
     }
 }
-
-/// `(full_path, entry, copy_source)`
-type NodeDataMut<'tree, 'on_disk> = (
-    &'tree HgPath,
-    &'tree mut Option<DirstateEntry>,
-    &'tree mut Option<Cow<'on_disk, HgPath>>,
-);
 
 impl<'on_disk> DirstateMap<'on_disk> {
     pub(super) fn empty(on_disk: &'on_disk [u8]) -> Self {
@@ -252,7 +244,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
 
     fn iter_nodes<'a>(
         &'a self,
-    ) -> impl Iterator<Item = (&'a HgPath, &'a Node)> + 'a {
+    ) -> impl Iterator<Item = (&'a Cow<'on_disk, HgPath>, &'a Node)> + 'a {
         // Depth first tree traversal.
         //
         // If we could afford internal iteration and recursion,
@@ -279,7 +271,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 // Pseudo-recursion
                 let new_iter = child_node.children.iter();
                 let old_iter = std::mem::replace(&mut iter, new_iter);
-                let key = &**key.full_path();
+                let key = key.full_path();
                 stack.push((key, child_node, old_iter));
             }
             // Found the end of a `children.iter()` iterator.
@@ -296,42 +288,16 @@ impl<'on_disk> DirstateMap<'on_disk> {
         })
     }
 
-    /// Mutable iterator for the `(entry, copy source)` of each node.
-    ///
-    /// It would not be safe to yield mutable references to nodes themeselves
-    /// with `-> impl Iterator<Item = &mut Node>` since child nodes are
-    /// reachable from their ancestor nodes, potentially creating multiple
-    /// `&mut` references to a given node.
-    fn iter_node_data_mut<'tree>(
-        &'tree mut self,
-    ) -> impl Iterator<Item = NodeDataMut<'tree, 'on_disk>> + 'tree {
-        // Explict stack for pseudo-recursion, see `iter_nodes` above.
-        let mut stack = Vec::new();
-        let mut iter = self.root.iter_mut();
-        std::iter::from_fn(move || {
-            while let Some((key, child_node)) = iter.next() {
-                // Pseudo-recursion
-                let data = (
-                    &**key.full_path(),
-                    &mut child_node.entry,
-                    &mut child_node.copy_source,
-                );
-                let new_iter = child_node.children.iter_mut();
-                let old_iter = std::mem::replace(&mut iter, new_iter);
-                stack.push((data, old_iter));
+    fn clear_known_ambiguous_mtimes(&mut self, paths: &[impl AsRef<HgPath>]) {
+        for path in paths {
+            if let Some(node) =
+                Self::get_node_mut(&mut self.root, path.as_ref())
+            {
+                if let Some(entry) = node.entry.as_mut() {
+                    entry.clear_mtime();
+                }
             }
-            // Found the end of a `children.values_mut()` iterator.
-            if let Some((data, next_iter)) = stack.pop() {
-                // "Return" from pseudo-recursion by restoring state from the
-                // explicit stack
-                iter = next_iter;
-
-                Some(data)
-            } else {
-                // Reached the bottom of the stack, we’re done
-                None
-            }
-        })
+        }
     }
 }
 
@@ -427,7 +393,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         for filename in filenames {
             if let Some(node) = Self::get_node_mut(&mut self.root, &filename) {
                 if let Some(entry) = node.entry.as_mut() {
-                    clear_ambiguous_mtime(entry, now);
+                    entry.clear_ambiguous_mtime(now);
                 }
             }
         }
@@ -453,7 +419,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                 .filter(|entry| {
                     entry.is_non_normal() || entry.is_from_other_parent()
                 })
-                .map(|_| path)
+                .map(|_| &**path)
         }))
     }
 
@@ -475,7 +441,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             node.entry
                 .as_ref()
                 .filter(|entry| entry.is_non_normal())
-                .map(|_| path)
+                .map(|_| &**path)
         }))
     }
 
@@ -486,7 +452,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             node.entry
                 .as_ref()
                 .filter(|entry| entry.is_from_other_parent())
-                .map(|_| path)
+                .map(|_| &**path)
         }))
     }
 
@@ -522,29 +488,33 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
+        let now: i32 = now.0.try_into().expect("time overflow");
+        let mut ambiguous_mtimes = Vec::new();
         // Optizimation (to be measured?): pre-compute size to avoid `Vec`
         // reallocations
         let mut size = parents.as_bytes().len();
         for (path, node) in self.iter_nodes() {
-            if node.entry.is_some() {
+            if let Some(entry) = &node.entry {
                 size += packed_entry_size(
                     path,
                     node.copy_source.as_ref().map(|p| &**p),
-                )
+                );
+                if entry.mtime_is_ambiguous(now) {
+                    ambiguous_mtimes.push(path.clone())
+                }
             }
         }
+        self.clear_known_ambiguous_mtimes(&ambiguous_mtimes);
 
         let mut packed = Vec::with_capacity(size);
         packed.extend(parents.as_bytes());
 
-        let now: i32 = now.0.try_into().expect("time overflow");
-        for (path, opt_entry, copy_source) in self.iter_node_data_mut() {
-            if let Some(entry) = opt_entry {
-                clear_ambiguous_mtime(entry, now);
+        for (path, node) in self.iter_nodes() {
+            if let Some(entry) = &node.entry {
                 pack_entry(
                     path,
                     entry,
-                    copy_source.as_ref().map(|p| &**p),
+                    node.copy_source.as_ref().map(|p| &**p),
                     &mut packed,
                 );
             }
@@ -558,7 +528,21 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
-        on_disk::write(self, parents, now)
+        // TODO: how do we want to handle this in 2038?
+        let now: i32 = now.0.try_into().expect("time overflow");
+        let mut paths = Vec::new();
+        for (path, node) in self.iter_nodes() {
+            if let Some(entry) = &node.entry {
+                if entry.mtime_is_ambiguous(now) {
+                    paths.push(path.clone())
+                }
+            }
+        }
+        // Borrow of `self` ends here since we collect cloned paths
+
+        self.clear_known_ambiguous_mtimes(&paths);
+
+        on_disk::write(self, parents)
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
@@ -592,7 +576,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
             node.copy_source
                 .as_ref()
-                .map(|copy_source| (path, &**copy_source))
+                .map(|copy_source| (&**path, &**copy_source))
         }))
     }
 
@@ -649,7 +633,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn iter(&self) -> StateMapIter<'_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry.as_ref().map(|entry| (path, entry))
+            node.entry.as_ref().map(|entry| (&**path, entry))
         }))
     }
 }
