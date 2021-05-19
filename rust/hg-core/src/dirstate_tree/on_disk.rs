@@ -16,6 +16,7 @@ use crate::utils::hg_path::HgPath;
 use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
+use crate::EntryState;
 use bytes_cast::unaligned::{I32Be, U32Be, U64Be};
 use bytes_cast::BytesCast;
 use std::borrow::Cow;
@@ -42,7 +43,7 @@ struct Header {
 
 #[derive(BytesCast)]
 #[repr(C)]
-struct Node {
+pub(super) struct Node {
     full_path: PathSlice,
 
     /// In bytes from `self.full_path.start`
@@ -51,12 +52,12 @@ struct Node {
     copy_source: OptPathSlice,
     entry: OptEntry,
     children: ChildNodes,
-    tracked_descendants_count: Size,
+    pub(super) tracked_descendants_count: Size,
 }
 
 /// Either nothing if `state == b'\0'`, or a dirstate entry like in the v1
 /// format
-#[derive(BytesCast)]
+#[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
 struct OptEntry {
     state: u8,
@@ -149,7 +150,9 @@ pub(super) fn read<'on_disk>(
     }
     let dirstate_map = DirstateMap {
         on_disk,
-        root: read_nodes(on_disk, *root)?,
+        root: dirstate_map::ChildNodes::OnDisk(read_slice::<Node>(
+            on_disk, *root,
+        )?),
         nodes_with_entry_count: nodes_with_entry_count.get(),
         nodes_with_copy_source_count: nodes_with_copy_source_count.get(),
     };
@@ -158,27 +161,75 @@ pub(super) fn read<'on_disk>(
 }
 
 impl Node {
-    pub(super) fn path<'on_disk>(
+    pub(super) fn full_path<'on_disk>(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<dirstate_map::NodeKey<'on_disk>, DirstateV2ParseError> {
-        let full_path = read_hg_path(on_disk, self.full_path)?;
-        let base_name_start = usize::try_from(self.base_name_start.get())
-            // u32 -> usize, could only panic on a 16-bit CPU
-            .expect("dirstate-v2 base_name_start out of bounds");
-        if base_name_start < full_path.len() {
-            Ok(WithBasename::from_raw_parts(full_path, base_name_start))
+    ) -> Result<&'on_disk HgPath, DirstateV2ParseError> {
+        read_hg_path(on_disk, self.full_path)
+    }
+
+    pub(super) fn base_name_start<'on_disk>(
+        &self,
+    ) -> Result<usize, DirstateV2ParseError> {
+        let start = self.base_name_start.get();
+        if start < self.full_path.len.get() {
+            let start = usize::try_from(start)
+                // u32 -> usize, could only panic on a 16-bit CPU
+                .expect("dirstate-v2 base_name_start out of bounds");
+            Ok(start)
         } else {
             Err(DirstateV2ParseError)
         }
     }
 
+    pub(super) fn base_name<'on_disk>(
+        &self,
+        on_disk: &'on_disk [u8],
+    ) -> Result<&'on_disk HgPath, DirstateV2ParseError> {
+        let full_path = self.full_path(on_disk)?;
+        let base_name_start = self.base_name_start()?;
+        Ok(HgPath::new(&full_path.as_bytes()[base_name_start..]))
+    }
+
+    pub(super) fn path<'on_disk>(
+        &self,
+        on_disk: &'on_disk [u8],
+    ) -> Result<dirstate_map::NodeKey<'on_disk>, DirstateV2ParseError> {
+        Ok(WithBasename::from_raw_parts(
+            Cow::Borrowed(self.full_path(on_disk)?),
+            self.base_name_start()?,
+        ))
+    }
+
+    pub(super) fn has_copy_source<'on_disk>(&self) -> bool {
+        self.copy_source.start.get() != 0
+    }
+
     pub(super) fn copy_source<'on_disk>(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<Option<Cow<'on_disk, HgPath>>, DirstateV2ParseError> {
-        Ok(if self.copy_source.start.get() != 0 {
+    ) -> Result<Option<&'on_disk HgPath>, DirstateV2ParseError> {
+        Ok(if self.has_copy_source() {
             Some(read_hg_path(on_disk, self.copy_source)?)
+        } else {
+            None
+        })
+    }
+
+    pub(super) fn has_entry(&self) -> bool {
+        self.entry.state != b'\0'
+    }
+
+    pub(super) fn state(
+        &self,
+    ) -> Result<Option<EntryState>, DirstateV2ParseError> {
+        Ok(if self.has_entry() {
+            Some(
+                self.entry
+                    .state
+                    .try_into()
+                    .map_err(|_| DirstateV2ParseError)?,
+            )
         } else {
             None
         })
@@ -187,20 +238,19 @@ impl Node {
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
-        Ok(if self.entry.state != b'\0' {
-            Some(DirstateEntry {
-                state: self
-                    .entry
-                    .state
-                    .try_into()
-                    .map_err(|_| DirstateV2ParseError)?,
-                mode: self.entry.mode.get(),
-                mtime: self.entry.mtime.get(),
-                size: self.entry.size.get(),
-            })
-        } else {
-            None
-        })
+        Ok(self.state()?.map(|state| DirstateEntry {
+            state,
+            mode: self.entry.mode.get(),
+            mtime: self.entry.mtime.get(),
+            size: self.entry.size.get(),
+        }))
+    }
+
+    pub(super) fn children<'on_disk>(
+        &self,
+        on_disk: &'on_disk [u8],
+    ) -> Result<&'on_disk [Node], DirstateV2ParseError> {
+        read_slice::<Node>(on_disk, self.children)
     }
 
     pub(super) fn to_in_memory_node<'on_disk>(
@@ -208,33 +258,22 @@ impl Node {
         on_disk: &'on_disk [u8],
     ) -> Result<dirstate_map::Node<'on_disk>, DirstateV2ParseError> {
         Ok(dirstate_map::Node {
-            children: read_nodes(on_disk, self.children)?,
-            copy_source: self.copy_source(on_disk)?,
+            children: dirstate_map::ChildNodes::OnDisk(
+                self.children(on_disk)?,
+            ),
+            copy_source: self.copy_source(on_disk)?.map(Cow::Borrowed),
             entry: self.entry()?,
             tracked_descendants_count: self.tracked_descendants_count.get(),
         })
     }
 }
 
-fn read_nodes(
-    on_disk: &[u8],
-    slice: ChildNodes,
-) -> Result<dirstate_map::ChildNodes, DirstateV2ParseError> {
-    read_slice::<Node>(on_disk, slice)?
-        .iter()
-        .map(|node| {
-            Ok((node.path(on_disk)?, node.to_in_memory_node(on_disk)?))
-        })
-        .collect::<Result<_, _>>()
-        .map(dirstate_map::ChildNodes::InMemory)
-}
-
 fn read_hg_path(
     on_disk: &[u8],
     slice: Slice,
-) -> Result<Cow<HgPath>, DirstateV2ParseError> {
+) -> Result<&HgPath, DirstateV2ParseError> {
     let bytes = read_slice::<u8>(on_disk, slice)?;
-    Ok(Cow::Borrowed(HgPath::new(bytes)))
+    Ok(HgPath::new(bytes))
 }
 
 fn read_slice<T>(
@@ -300,8 +339,11 @@ fn write_nodes(
     // First accumulate serialized nodes in a `Vec`
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
     for node in nodes {
-        let children = node.children(dirstate_map.on_disk)?;
-        let children = write_nodes(dirstate_map, children, out)?;
+        let children = write_nodes(
+            dirstate_map,
+            node.children(dirstate_map.on_disk)?,
+            out,
+        )?;
         let full_path = node.full_path(dirstate_map.on_disk)?;
         let full_path = write_slice::<u8>(full_path.as_bytes(), out);
         let copy_source =
@@ -340,6 +382,12 @@ fn write_nodes(
                         size: 0.into(),
                     }
                 },
+            },
+            NodeRef::OnDisk(node) => Node {
+                children,
+                copy_source,
+                full_path,
+                ..*node
             },
         })
     }

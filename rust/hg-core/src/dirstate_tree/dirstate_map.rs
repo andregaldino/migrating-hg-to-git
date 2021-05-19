@@ -48,14 +48,17 @@ pub(super) type NodeKey<'on_disk> = WithBasename<Cow<'on_disk, HgPath>>;
 
 pub(super) enum ChildNodes<'on_disk> {
     InMemory(FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
+    OnDisk(&'on_disk [on_disk::Node]),
 }
 
 pub(super) enum ChildNodesRef<'tree, 'on_disk> {
     InMemory(&'tree FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
+    OnDisk(&'on_disk [on_disk::Node]),
 }
 
 pub(super) enum NodeRef<'tree, 'on_disk> {
     InMemory(&'tree NodeKey<'on_disk>, &'tree Node<'on_disk>),
+    OnDisk(&'on_disk on_disk::Node),
 }
 
 impl Default for ChildNodes<'_> {
@@ -70,24 +73,42 @@ impl<'on_disk> ChildNodes<'on_disk> {
     ) -> ChildNodesRef<'tree, 'on_disk> {
         match self {
             ChildNodes::InMemory(nodes) => ChildNodesRef::InMemory(nodes),
+            ChildNodes::OnDisk(nodes) => ChildNodesRef::OnDisk(nodes),
         }
     }
 
     pub(super) fn is_empty(&self) -> bool {
         match self {
             ChildNodes::InMemory(nodes) => nodes.is_empty(),
+            ChildNodes::OnDisk(nodes) => nodes.is_empty(),
         }
     }
 
     pub(super) fn make_mut(
         &mut self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<
         &mut FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>,
         DirstateV2ParseError,
     > {
         match self {
             ChildNodes::InMemory(nodes) => Ok(nodes),
+            ChildNodes::OnDisk(nodes) => {
+                let nodes = nodes
+                    .iter()
+                    .map(|node| {
+                        Ok((
+                            node.path(on_disk)?,
+                            node.to_in_memory_node(on_disk)?,
+                        ))
+                    })
+                    .collect::<Result<_, _>>()?;
+                *self = ChildNodes::InMemory(nodes);
+                match self {
+                    ChildNodes::InMemory(nodes) => Ok(nodes),
+                    ChildNodes::OnDisk(_) => unreachable!(),
+                }
+            }
         }
     }
 }
@@ -96,12 +117,29 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
     pub(super) fn get(
         &self,
         base_name: &HgPath,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<Option<NodeRef<'tree, 'on_disk>>, DirstateV2ParseError> {
         match self {
             ChildNodesRef::InMemory(nodes) => Ok(nodes
                 .get_key_value(base_name)
                 .map(|(k, v)| NodeRef::InMemory(k, v))),
+            ChildNodesRef::OnDisk(nodes) => {
+                let mut parse_result = Ok(());
+                let search_result = nodes.binary_search_by(|node| {
+                    match node.base_name(on_disk) {
+                        Ok(node_base_name) => node_base_name.cmp(base_name),
+                        Err(e) => {
+                            parse_result = Err(e);
+                            // Dummy comparison result, `search_result` won’t
+                            // be used since `parse_result` is an error
+                            std::cmp::Ordering::Equal
+                        }
+                    }
+                });
+                parse_result.map(|()| {
+                    search_result.ok().map(|i| NodeRef::OnDisk(&nodes[i]))
+                })
+            }
         }
     }
 
@@ -110,8 +148,11 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
         &self,
     ) -> impl Iterator<Item = NodeRef<'tree, 'on_disk>> {
         match self {
-            ChildNodesRef::InMemory(nodes) => {
-                nodes.iter().map(|(k, v)| NodeRef::InMemory(k, v))
+            ChildNodesRef::InMemory(nodes) => itertools::Either::Left(
+                nodes.iter().map(|(k, v)| NodeRef::InMemory(k, v)),
+            ),
+            ChildNodesRef::OnDisk(nodes) => {
+                itertools::Either::Right(nodes.iter().map(NodeRef::OnDisk))
             }
         }
     }
@@ -123,9 +164,12 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
     {
         use rayon::prelude::*;
         match self {
-            ChildNodesRef::InMemory(nodes) => {
-                nodes.par_iter().map(|(k, v)| NodeRef::InMemory(k, v))
-            }
+            ChildNodesRef::InMemory(nodes) => rayon::iter::Either::Left(
+                nodes.par_iter().map(|(k, v)| NodeRef::InMemory(k, v)),
+            ),
+            ChildNodesRef::OnDisk(nodes) => rayon::iter::Either::Right(
+                nodes.par_iter().map(NodeRef::OnDisk),
+            ),
         }
     }
 
@@ -139,12 +183,17 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
                 fn sort_key<'a>(node: &'a NodeRef) -> &'a HgPath {
                     match node {
                         NodeRef::InMemory(path, _node) => path.base_name(),
+                        NodeRef::OnDisk(_) => unreachable!(),
                     }
                 }
                 // `sort_unstable_by_key` doesn’t allow keys borrowing from the
                 // value: https://github.com/rust-lang/rust/issues/34162
                 vec.sort_unstable_by(|a, b| sort_key(a).cmp(sort_key(b)));
                 vec
+            }
+            ChildNodesRef::OnDisk(nodes) => {
+                // Nodes on disk are already sorted
+                nodes.iter().map(NodeRef::OnDisk).collect()
             }
         }
     }
@@ -153,61 +202,72 @@ impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
 impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     pub(super) fn full_path(
         &self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<&'tree HgPath, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.full_path()),
+            NodeRef::OnDisk(node) => node.full_path(on_disk),
         }
     }
 
     /// Returns a `Cow` that can borrow 'on_disk but is detached from 'tree
     pub(super) fn full_path_cow(
         &self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<Cow<'on_disk, HgPath>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.full_path().clone()),
+            NodeRef::OnDisk(node) => {
+                Ok(Cow::Borrowed(node.full_path(on_disk)?))
+            }
         }
     }
 
     pub(super) fn base_name(
         &self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<&'tree HgPath, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(path, _node) => Ok(path.base_name()),
+            NodeRef::OnDisk(node) => node.base_name(on_disk),
         }
     }
 
     pub(super) fn children(
         &self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<ChildNodesRef<'tree, 'on_disk>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => Ok(node.children.as_ref()),
+            NodeRef::OnDisk(node) => {
+                Ok(ChildNodesRef::OnDisk(node.children(on_disk)?))
+            }
         }
     }
 
     pub(super) fn has_copy_source(&self) -> bool {
         match self {
             NodeRef::InMemory(_path, node) => node.copy_source.is_some(),
+            NodeRef::OnDisk(node) => node.has_copy_source(),
         }
     }
 
     pub(super) fn copy_source(
         &self,
-        _on_disk: &'on_disk [u8],
+        on_disk: &'on_disk [u8],
     ) -> Result<Option<&'tree HgPath>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => {
                 Ok(node.copy_source.as_ref().map(|s| &**s))
             }
+            NodeRef::OnDisk(node) => node.copy_source(on_disk),
         }
     }
 
     pub(super) fn has_entry(&self) -> bool {
         match self {
             NodeRef::InMemory(_path, node) => node.entry.is_some(),
+            NodeRef::OnDisk(node) => node.has_entry(),
         }
     }
 
@@ -216,6 +276,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => Ok(node.entry),
+            NodeRef::OnDisk(node) => node.entry(),
         }
     }
 
@@ -226,12 +287,14 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
             NodeRef::InMemory(_path, node) => {
                 Ok(node.entry.as_ref().map(|entry| entry.state))
             }
+            NodeRef::OnDisk(node) => node.state(),
         }
     }
 
     pub(super) fn tracked_descendants_count(&self) -> u32 {
         match self {
             NodeRef::InMemory(_path, node) => node.tracked_descendants_count,
+            NodeRef::OnDisk(node) => node.tracked_descendants_count.get(),
         }
     }
 }
