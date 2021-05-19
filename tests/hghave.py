@@ -1045,6 +1045,14 @@ def has_repofncache():
     return 'fncache' in getrepofeatures()
 
 
+@check('dirstate-v2', 'using the v2 format of .hg/dirstate')
+def has_dirstate_v2():
+    # Keep this logic in sync with `newreporequirements()` in `mercurial/localrepo.py`
+    return has_rust() and matchoutput(
+        'hg config format.exp-dirstate-v2', b'(?i)1|yes|true|on|always'
+    )
+
+
 @check('sqlite', 'sqlite3 module and matching cli is available')
 def has_sqlite():
     try:

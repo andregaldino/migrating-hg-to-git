@@ -3531,6 +3531,7 @@ def newreporequirements(ui, createopts):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
     # experimental config: format.exp-dirstate-v2
+    # Keep this logic in sync with `has_dirstate_v2()` in `tests/hghave.py`
     if ui.configbool(b'format', b'exp-dirstate-v2'):
         if dirstate.SUPPORTS_DIRSTATE_V2:
             requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)

@@ -19,6 +19,7 @@ creating 'local'
   store created
   00changelog.i created
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -60,6 +61,7 @@ creating repo with format.usestore=false
 
   $ hg --config format.usestore=false init old
   $ checknewrepo old
+  exp-dirstate-v2 (dirstate-v2 !)
   generaldelta
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -73,6 +75,7 @@ creating repo with format.usefncache=false
   $ checknewrepo old2
   store created
   00changelog.i created
+  exp-dirstate-v2 (dirstate-v2 !)
   generaldelta
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -87,6 +90,7 @@ creating repo with format.dotencode=false
   $ checknewrepo old3
   store created
   00changelog.i created
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -103,6 +107,7 @@ creating repo with format.dotencode=false
   store created
   00changelog.i created
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -221,6 +226,7 @@ creating 'local/sub/repo'
   store created
   00changelog.i created
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -243,6 +249,7 @@ init should (for consistency with clone) expand the url
   store created
   00changelog.i created
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -261,6 +268,7 @@ verify that clone also expand urls
   store created
   00changelog.i created
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)

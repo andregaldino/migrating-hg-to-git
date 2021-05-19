@@ -159,7 +159,7 @@ Test config default of various types:
 
  true
 
-  $ hg config --config format.dotencode= format -Tjson
+  $ hg config --config format.dotencode= format.dotencode -Tjson
   [
    {
     "defaultvalue": true,
@@ -168,11 +168,11 @@ Test config default of various types:
     "value": ""
    }
   ]
-  $ hg config --config format.dotencode= format -T'json(defaultvalue)'
+  $ hg config --config format.dotencode= format.dotencode -T'json(defaultvalue)'
   [
    {"defaultvalue": true}
   ]
-  $ hg config --config format.dotencode= format -T'{defaultvalue}\n'
+  $ hg config --config format.dotencode= format.dotencode -T'{defaultvalue}\n'
   True
 
  bytes

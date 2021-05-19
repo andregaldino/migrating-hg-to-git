@@ -884,6 +884,7 @@ Check we deny its usage on older repository
   $ cd no-internal-phase
   $ cat .hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -912,6 +913,7 @@ Check it works fine with repository that supports it.
   $ cd internal-phase
   $ cat .hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   internal-phase

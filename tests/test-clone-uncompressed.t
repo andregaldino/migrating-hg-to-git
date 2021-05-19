@@ -255,7 +255,7 @@ getbundle requests with stream=1 are uncompressed
   00e0: 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 |....Vg.g,i..9...|
   00f0: 00 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 |.........u0s.Bda|
 #endif
-#if zstd rust
+#if zstd rust no-dirstate-v2
   $ f --size --hex --bytes 256 body
   body: size=109431
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
@@ -274,6 +274,26 @@ getbundle requests with stream=1 are uncompressed
   00d0: 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 00 |................|
   00e0: 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 29 |...............)|
   00f0: 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 d1 |c.I.#....Vg.g,i.|
+#endif
+#if zstd dirstate-v2
+  $ f --size --hex --bytes 256 body
+  body: size=109449
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: c0 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
+  0020: 05 09 04 0c 85 62 79 74 65 63 6f 75 6e 74 39 35 |.....bytecount95|
+  0030: 38 39 37 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |897filecount1030|
+  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
+  0050: 6e 63 6f 64 65 25 32 43 65 78 70 2d 64 69 72 73 |ncode%2Cexp-dirs|
+  0060: 74 61 74 65 2d 76 32 25 32 43 66 6e 63 61 63 68 |tate-v2%2Cfncach|
+  0070: 65 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 |e%2Cgeneraldelta|
+  0080: 25 32 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f |%2Cpersistent-no|
+  0090: 64 65 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 |demap%2Crevlog-c|
+  00a0: 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 |ompression-zstd%|
+  00b0: 32 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 |2Crevlogv1%2Cspa|
+  00c0: 72 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 |rserevlog%2Cstor|
+  00d0: 65 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 |e....s.Bdata/0.i|
+  00e0: 00 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 |................|
+  00f0: 00 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff |................|
 #endif
 
 --uncompressed is an alias to --stream

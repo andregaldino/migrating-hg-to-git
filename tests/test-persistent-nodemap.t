@@ -593,8 +593,9 @@ downgrading
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
      removed: persistent-nodemap
   
   processed revlogs:
@@ -641,8 +642,9 @@ upgrading
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
      added: persistent-nodemap
   
   persistent-nodemap
@@ -681,8 +683,9 @@ Running unrelated upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (no-zstd !)
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
   
   optimisations: re-delta-all
   
