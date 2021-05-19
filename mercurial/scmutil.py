@@ -212,20 +212,8 @@ def callcatch(ui, func):
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
-        if isinstance(inst, (error.InputError, error.ParseError)):
-            detailed_exit_code = 10
-        elif isinstance(inst, error.StateError):
-            detailed_exit_code = 20
-        elif isinstance(inst, error.ConfigError):
-            detailed_exit_code = 30
-        elif isinstance(inst, error.HookAbort):
-            detailed_exit_code = 40
-        elif isinstance(inst, error.RemoteError):
-            detailed_exit_code = 100
-        elif isinstance(inst, error.SecurityError):
-            detailed_exit_code = 150
-        elif isinstance(inst, error.CanceledError):
-            detailed_exit_code = 250
+        if inst.detailed_exit_code is not None:
+            detailed_exit_code = inst.detailed_exit_code
         ui.error(inst.format())
     except error.WorkerError as inst:
         # Don't print a message -- the worker already should have

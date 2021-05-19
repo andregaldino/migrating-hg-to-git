@@ -185,10 +185,11 @@ class ConflictResolutionRequired(InterventionRequired):
 class Abort(Hint, Exception):
     """Raised if a command needs to print an error and exit."""
 
-    def __init__(self, message, hint=None):
+    def __init__(self, message, hint=None, detailed_exit_code=None):
         # type: (bytes, Optional[bytes]) -> None
         self.message = message
         self.hint = hint
+        self.detailed_exit_code = detailed_exit_code
         # Pass the message into the Exception constructor to help extensions
         # that look for exc.args[0].
         Exception.__init__(self, message)
@@ -220,12 +221,22 @@ class InputError(Abort):
     Examples: Invalid command, invalid flags, invalid revision.
     """
 
+    def __init__(self, message, hint=None):
+        super(InputError, self).__init__(
+            message, hint=hint, detailed_exit_code=10
+        )
+
 
 class StateError(Abort):
     """Indicates that the operation might work if retried in a different state.
 
     Examples: Unresolved merge conflicts, unfinished operations.
     """
+
+    def __init__(self, message, hint=None):
+        super(StateError, self).__init__(
+            message, hint=hint, detailed_exit_code=20
+        )
 
 
 class CanceledError(Abort):
@@ -234,6 +245,11 @@ class CanceledError(Abort):
     Examples: Close commit editor with error status, quit chistedit.
     """
 
+    def __init__(self, message, hint=None):
+        super(CanceledError, self).__init__(
+            message, hint=hint, detailed_exit_code=250
+        )
+
 
 class SecurityError(Abort):
     """Indicates that some aspect of security failed.
@@ -241,6 +257,11 @@ class SecurityError(Abort):
     Examples: Bad server credentials, expired local credentials for network
     filesystem, mismatched GPG signature, DoS protection.
     """
+
+    def __init__(self, message, hint=None):
+        super(SecurityError, self).__init__(
+            message, hint=hint, detailed_exit_code=150
+        )
 
 
 class HookLoadError(Abort):
@@ -254,13 +275,20 @@ class HookAbort(Abort):
 
     Exists to allow more specialized catching."""
 
+    def __init__(self, message, hint=None):
+        super(HookAbort, self).__init__(
+            message, hint=hint, detailed_exit_code=40
+        )
+
 
 class ConfigError(Abort):
     """Exception raised when parsing config files"""
 
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[bytes], Optional[bytes]) -> None
-        super(ConfigError, self).__init__(message, hint=hint)
+        super(ConfigError, self).__init__(
+            message, hint=hint, detailed_exit_code=30
+        )
         self.location = location
 
     def format(self):
@@ -307,6 +335,11 @@ class ResponseExpected(Abort):
 class RemoteError(Abort):
     """Exception raised when interacting with a remote repo fails"""
 
+    def __init__(self, message, hint=None):
+        super(RemoteError, self).__init__(
+            message, hint=hint, detailed_exit_code=100
+        )
+
 
 class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
@@ -327,7 +360,9 @@ class ParseError(Abort):
 
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[Union[bytes, int]], Optional[bytes]) -> None
-        super(ParseError, self).__init__(message, hint=hint)
+        super(ParseError, self).__init__(
+            message, hint=hint, detailed_exit_code=10
+        )
         self.location = location
 
     def format(self):

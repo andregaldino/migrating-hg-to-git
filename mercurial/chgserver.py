@@ -516,10 +516,8 @@ class chgcmdserver(commandserver.server):
                 self.ui.error(_(b"(%s)\n") % inst.hint)
             errorraised = True
         except error.Abort as inst:
-            if isinstance(inst, error.InputError):
-                detailed_exit_code = 10
-            elif isinstance(inst, error.ConfigError):
-                detailed_exit_code = 30
+            if inst.detailed_exit_code is not None:
+                detailed_exit_code = inst.detailed_exit_code
             self.ui.error(inst.format())
             errorraised = True
 
