@@ -1,13 +1,9 @@
 #require bash
-Test that, when an hg push is interrupted and the remote side recieves SIGPIPE,
+Test that, when an hg push is interrupted and the remote side receives SIGPIPE,
 the remote hg is able to successfully roll back the transaction.
 
   $ hg init -q remote
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -q ssh://user@dummy/`pwd`/remote local
-
-  $ check_for_abandoned_transaction() {
-  >     [ -f $TESTTMP/remote/.hg/store/journal ] && echo "Abandoned transaction!"
-  > }
 
   $ pidfile=`pwd`/pidfile
   $ >$pidfile
@@ -59,5 +55,7 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
   $ hg push -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd $remotecmd 2>&1 | grep -v $killable_pipe
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
 
-  $ check_for_abandoned_transaction
+The remote should be left in a good state
+  $ hg --cwd ../remote recover
+  no interrupted transaction available
   [1]
