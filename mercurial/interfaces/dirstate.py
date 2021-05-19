@@ -6,7 +6,15 @@ from . import util as interfaceutil
 
 
 class idirstate(interfaceutil.Interface):
-    def __init__(opener, ui, root, validate, sparsematchfn, nodeconstants):
+    def __init__(
+        opener,
+        ui,
+        root,
+        validate,
+        sparsematchfn,
+        nodeconstants,
+        use_dirstate_v2,
+    ):
         """Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the

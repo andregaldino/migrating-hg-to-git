@@ -1690,6 +1690,8 @@ class localrepository(object):
     def _makedirstate(self):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
+        v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
+        use_dirstate_v2 = v2_req in self.requirements
 
         return dirstate.dirstate(
             self.vfs,
@@ -1698,6 +1700,7 @@ class localrepository(object):
             self._dirstatevalidate,
             sparsematchfn,
             self.nodeconstants,
+            use_dirstate_v2,
         )
 
     def _dirstatevalidate(self, node):

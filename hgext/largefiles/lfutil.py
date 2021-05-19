@@ -25,6 +25,7 @@ from mercurial import (
     httpconnection,
     match as matchmod,
     pycompat,
+    requirements,
     scmutil,
     sparse,
     util,
@@ -197,6 +198,7 @@ def openlfdirstate(ui, repo, create=True):
     vfs = repo.vfs
     lfstoredir = longname
     opener = vfsmod.vfs(vfs.join(lfstoredir))
+    use_dirstate_v2 = requirements.DIRSTATE_V2_REQUIREMENT in repo.requirements
     lfdirstate = largefilesdirstate(
         opener,
         ui,
@@ -204,6 +206,7 @@ def openlfdirstate(ui, repo, create=True):
         repo.dirstate._validate,
         lambda: sparse.matcher(repo),
         repo.nodeconstants,
+        use_dirstate_v2,
     )
 
     # If the largefiles dirstate does not exist, populate and create

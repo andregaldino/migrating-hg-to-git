@@ -73,7 +73,13 @@ pub trait DirstateMapMethods {
         directory: &HgPath,
     ) -> Result<bool, DirstateMapError>;
 
-    fn pack(
+    fn pack_v1(
+        &mut self,
+        parents: DirstateParents,
+        now: Timestamp,
+    ) -> Result<Vec<u8>, DirstateError>;
+
+    fn pack_v2(
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
@@ -211,12 +217,22 @@ impl DirstateMapMethods for DirstateMap {
         self.has_dir(directory)
     }
 
-    fn pack(
+    fn pack_v1(
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         self.pack(parents, now)
+    }
+
+    fn pack_v2(
+        &mut self,
+        _parents: DirstateParents,
+        _now: Timestamp,
+    ) -> Result<Vec<u8>, DirstateError> {
+        panic!(
+            "should have used dirstate_tree::DirstateMap to use the v2 format"
+        )
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {

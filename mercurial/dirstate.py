@@ -75,7 +75,14 @@ def _getfsnow(vfs):
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
     def __init__(
-        self, opener, ui, root, validate, sparsematchfn, nodeconstants
+        self,
+        opener,
+        ui,
+        root,
+        validate,
+        sparsematchfn,
+        nodeconstants,
+        use_dirstate_v2,
     ):
         """Create a new dirstate object.
 
@@ -83,6 +90,7 @@ class dirstate(object):
         dirstate file; root is the root of the directory tracked by
         the dirstate.
         """
+        self._use_dirstate_v2 = use_dirstate_v2
         self._nodeconstants = nodeconstants
         self._opener = opener
         self._validate = validate
@@ -141,7 +149,11 @@ class dirstate(object):
     def _map(self):
         """Return the dirstate contents (see documentation for dirstatemap)."""
         self._map = self._mapcls(
-            self._ui, self._opener, self._root, self._nodeconstants
+            self._ui,
+            self._opener,
+            self._root,
+            self._nodeconstants,
+            self._use_dirstate_v2,
         )
         return self._map
 
@@ -1435,13 +1447,16 @@ class dirstatemap(object):
       denormalized form that they appear as in the dirstate.
     """
 
-    def __init__(self, ui, opener, root, nodeconstants):
+    def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
         self._ui = ui
         self._opener = opener
         self._root = root
         self._filename = b'dirstate'
         self._nodelen = 20
         self._nodeconstants = nodeconstants
+        assert (
+            not use_dirstate_v2
+        ), "should have detected unsupported requirement"
 
         self._parents = None
         self._dirtyparents = False
@@ -1746,13 +1761,14 @@ class dirstatemap(object):
 if rustmod is not None:
 
     class dirstatemap(object):
-        def __init__(self, ui, opener, root, nodeconstants):
+        def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
+            self._use_dirstate_v2 = use_dirstate_v2
             self._nodeconstants = nodeconstants
             self._ui = ui
             self._opener = opener
             self._root = root
             self._filename = b'dirstate'
-            self._nodelen = 20
+            self._nodelen = 20  # Also update Rust code when changing this!
             self._parents = None
             self._dirtyparents = False
 
@@ -1832,9 +1848,14 @@ if rustmod is not None:
 
         def parents(self):
             if not self._parents:
+                if self._use_dirstate_v2:
+                    offset = len(rustmod.V2_FORMAT_MARKER)
+                else:
+                    offset = 0
+                read_len = offset + self._nodelen * 2
                 try:
                     fp = self._opendirstatefile()
-                    st = fp.read(40)
+                    st = fp.read(read_len)
                     fp.close()
                 except IOError as err:
                     if err.errno != errno.ENOENT:
@@ -1843,7 +1864,8 @@ if rustmod is not None:
                     st = b''
 
                 l = len(st)
-                if l == self._nodelen * 2:
+                if l == read_len:
+                    st = st[offset:]
                     self._parents = (
                         st[: self._nodelen],
                         st[self._nodelen : 2 * self._nodelen],
@@ -1887,7 +1909,7 @@ if rustmod is not None:
                 False,
             )
             self._rustmap, parents = rustmod.DirstateMap.new(
-                use_dirstate_tree, st
+                use_dirstate_tree, self._use_dirstate_v2, st
             )
 
             if parents and not self._dirtyparents:
@@ -1900,7 +1922,10 @@ if rustmod is not None:
 
         def write(self, st, now):
             parents = self.parents()
-            st.write(self._rustmap.write(parents[0], parents[1], now))
+            packed = self._rustmap.write(
+                self._use_dirstate_v2, parents[0], parents[1], now
+            )
+            st.write(packed)
             st.close()
             self._dirtyparents = False
 

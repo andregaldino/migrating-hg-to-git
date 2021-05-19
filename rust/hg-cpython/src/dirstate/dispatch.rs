@@ -101,12 +101,20 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().has_dir(directory)
     }
 
-    fn pack(
+    fn pack_v1(
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
-        self.get_mut().pack(parents, now)
+        self.get_mut().pack_v1(parents, now)
+    }
+
+    fn pack_v2(
+        &mut self,
+        parents: DirstateParents,
+        now: Timestamp,
+    ) -> Result<Vec<u8>, DirstateError> {
+        self.get_mut().pack_v2(parents, now)
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {

@@ -4,14 +4,17 @@ use std::borrow::Cow;
 use std::convert::TryInto;
 use std::path::PathBuf;
 
+use super::on_disk::V2_FORMAT_MARKER;
 use super::path_with_basename::WithBasename;
 use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::Timestamp;
+use crate::errors::HgError;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::utils::SliceExt;
 use crate::CopyMapIter;
 use crate::DirstateEntry;
 use crate::DirstateError;
@@ -75,7 +78,24 @@ type NodeDataMut<'tree, 'on_disk> = (
 );
 
 impl<'on_disk> DirstateMap<'on_disk> {
-    pub fn new(
+    #[timed]
+    pub fn new_v2(
+        on_disk: &'on_disk [u8],
+    ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
+        if let Some(rest) = on_disk.drop_prefix(V2_FORMAT_MARKER) {
+            Self::new_v1(rest)
+        } else if on_disk.is_empty() {
+            Self::new_v1(on_disk)
+        } else {
+            return Err(HgError::corrupted(
+                "missing dirstate-v2 magic number",
+            )
+            .into());
+        }
+    }
+
+    #[timed]
+    pub fn new_v1(
         on_disk: &'on_disk [u8],
     ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
         let mut map = Self {
@@ -84,23 +104,16 @@ impl<'on_disk> DirstateMap<'on_disk> {
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
         };
-        let parents = map.read()?;
-        Ok((map, parents))
-    }
-
-    /// Should only be called in `new`
-    #[timed]
-    fn read(&mut self) -> Result<Option<DirstateParents>, DirstateError> {
-        if self.on_disk.is_empty() {
-            return Ok(None);
+        if map.on_disk.is_empty() {
+            return Ok((map, None));
         }
 
         let parents = parse_dirstate_entries(
-            self.on_disk,
+            map.on_disk,
             |path, entry, copy_source| {
                 let tracked = entry.state.is_tracked();
                 let node = Self::get_or_insert_node(
-                    &mut self.root,
+                    &mut map.root,
                     path,
                     WithBasename::to_cow_borrowed,
                     |ancestor| {
@@ -119,14 +132,15 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 );
                 node.entry = Some(*entry);
                 node.copy_source = copy_source.map(Cow::Borrowed);
-                self.nodes_with_entry_count += 1;
+                map.nodes_with_entry_count += 1;
                 if copy_source.is_some() {
-                    self.nodes_with_copy_source_count += 1
+                    map.nodes_with_copy_source_count += 1
                 }
             },
         )?;
+        let parents = Some(parents.clone());
 
-        Ok(Some(parents.clone()))
+        Ok((map, parents))
     }
 
     fn get_node(&self, path: &HgPath) -> Option<&Node> {
@@ -498,7 +512,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         }
     }
 
-    fn pack(
+    #[timed]
+    fn pack_v1(
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
@@ -531,6 +546,18 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             }
         }
         Ok(packed)
+    }
+
+    #[timed]
+    fn pack_v2(
+        &mut self,
+        parents: DirstateParents,
+        now: Timestamp,
+    ) -> Result<Vec<u8>, DirstateError> {
+        // Inefficient but temporary
+        let mut v2 = V2_FORMAT_MARKER.to_vec();
+        v2.append(&mut self.pack_v1(parents, now)?);
+        Ok(v2)
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {

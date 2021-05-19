@@ -26,6 +26,7 @@ use cpython::{
     exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
     PySequence, Python,
 };
+use hg::dirstate_tree::on_disk::V2_FORMAT_MARKER;
 use hg::{utils::hg_path::HgPathBuf, DirstateEntry, EntryState, StateMap};
 use libc::{c_char, c_int};
 use std::convert::TryFrom;
@@ -117,6 +118,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     )?;
     m.add_class::<Dirs>(py)?;
     m.add_class::<DirstateMap>(py)?;
+    m.add(py, "V2_FORMAT_MARKER", PyBytes::new(py, V2_FORMAT_MARKER))?;
     m.add(
         py,
         "status",
