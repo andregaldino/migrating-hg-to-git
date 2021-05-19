@@ -982,6 +982,7 @@ def supporteddestrequirements(repo):
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]

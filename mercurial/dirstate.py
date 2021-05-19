@@ -39,6 +39,8 @@ from .interfaces import (
 parsers = policy.importmod('parsers')
 rustmod = policy.importrust('dirstate')
 
+SUPPORTS_DIRSTATE_V2 = rustmod is not None
+
 propertycache = util.propertycache
 filecache = scmutil.filecache
 _rangemask = 0x7FFFFFFF

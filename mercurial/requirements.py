@@ -12,6 +12,8 @@ DOTENCODE_REQUIREMENT = b'dotencode'
 STORE_REQUIREMENT = b'store'
 FNCACHE_REQUIREMENT = b'fncache'
 
+DIRSTATE_V2_REQUIREMENT = b'exp-dirstate-v2'
+
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = b'narrowhg-experimental'
@@ -74,9 +76,12 @@ SHARESAFE_REQUIREMENT = b'share-safe'
 #   repo. Hence both of them should be stored in working copy
 # * SHARESAFE_REQUIREMENT needs to be stored in working dir to mark that rest of
 #   the requirements are stored in store's requires
+# * DIRSTATE_V2_REQUIREMENT affects .hg/dirstate, of which there is one per
+#   working directory.
 WORKING_DIR_REQUIREMENTS = {
     SPARSE_REQUIREMENT,
     SHARED_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
     SHARESAFE_REQUIREMENT,
+    DIRSTATE_V2_REQUIREMENT,
 }

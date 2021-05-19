@@ -887,6 +887,9 @@ def gathersupportedrequirements(ui):
     # Start with all requirements supported by this file.
     supported = set(localrepository._basesupported)
 
+    if dirstate.SUPPORTS_DIRSTATE_V2:
+        supported.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+
     # Execute ``featuresetupfuncs`` entries if they belong to an extension
     # relevant to this ui instance.
     modules = {m.__name__ for n, m in extensions.extensions(ui)}
@@ -3526,6 +3529,18 @@ def newreporequirements(ui, createopts):
         requirements.add(requirementsmod.GENERALDELTA_REQUIREMENT)
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
+
+    # experimental config: format.exp-dirstate-v2
+    if ui.configbool(b'format', b'exp-dirstate-v2'):
+        if dirstate.SUPPORTS_DIRSTATE_V2:
+            requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+        else:
+            raise error.Abort(
+                _(
+                    b"dirstate v2 format requested by config "
+                    b"but not supported (requires Rust extensions)"
+                )
+            )
 
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):

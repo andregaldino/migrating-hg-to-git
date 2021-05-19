@@ -1303,6 +1303,14 @@ coreconfigitem(
     experimental=True,
 )
 coreconfigitem(
+    # Enable this dirstate format *when creating a new repository*.
+    # Which format to use for existing repos is controlled by .hg/requires
+    b'format',
+    b'exp-dirstate-v2',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
     b'format',
     b'dotencode',
     default=True,
