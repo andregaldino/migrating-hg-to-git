@@ -2190,6 +2190,13 @@ class revlog(object):
                     fp.write(e)
                 if self._docket is not None:
                     self._docket.index_end = fp.tell()
+
+                # There is a small transactional race here. If the rename of
+                # the index fails, we should remove the datafile. It is more
+                # important to ensure that the data file is not truncated
+                # when the index is replaced as otherwise data is lost.
+                tr.replace(self._datafile, self.start(trindex))
+
                 # the temp file replace the real index when we exit the context
                 # manager
 
