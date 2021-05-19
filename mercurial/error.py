@@ -51,6 +51,39 @@ class Hint(object):
         super(Hint, self).__init__(*args, **kw)
 
 
+class Abort(Hint, Exception):
+    """Raised if a command needs to print an error and exit."""
+
+    def __init__(self, message, hint=None, detailed_exit_code=None):
+        # type: (bytes, Optional[bytes]) -> None
+        self.message = message
+        self.hint = hint
+        self.detailed_exit_code = detailed_exit_code
+        # Pass the message into the Exception constructor to help extensions
+        # that look for exc.args[0].
+        Exception.__init__(self, message)
+
+    def __bytes__(self):
+        return self.message
+
+    if pycompat.ispy3:
+
+        def __str__(self):
+            # the output would be unreadable if the message was translated,
+            # but do not replace it with encoding.strfromlocal(), which
+            # may raise another exception.
+            return pycompat.sysstr(self.__bytes__())
+
+    def format(self):
+        # type: () -> bytes
+        from .i18n import _
+
+        message = _(b"abort: %s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
+
+
 class StorageError(Hint, Exception):
     """Raised when an error occurs in a storage layer.
 
@@ -180,39 +213,6 @@ class ConflictResolutionRequired(InterventionRequired):
             )
             % opname,
         )
-
-
-class Abort(Hint, Exception):
-    """Raised if a command needs to print an error and exit."""
-
-    def __init__(self, message, hint=None, detailed_exit_code=None):
-        # type: (bytes, Optional[bytes]) -> None
-        self.message = message
-        self.hint = hint
-        self.detailed_exit_code = detailed_exit_code
-        # Pass the message into the Exception constructor to help extensions
-        # that look for exc.args[0].
-        Exception.__init__(self, message)
-
-    def __bytes__(self):
-        return self.message
-
-    if pycompat.ispy3:
-
-        def __str__(self):
-            # the output would be unreadable if the message was translated,
-            # but do not replace it with encoding.strfromlocal(), which
-            # may raise another exception.
-            return pycompat.sysstr(self.__bytes__())
-
-    def format(self):
-        # type: () -> bytes
-        from .i18n import _
-
-        message = _(b"abort: %s\n") % self.message
-        if self.hint:
-            message += _(b"(%s)\n") % self.hint
-        return message
 
 
 class InputError(Abort):
