@@ -45,10 +45,11 @@ pub struct DirstateMap<'on_disk> {
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
 /// map key would also work: all paths in a given map have the same parent
 /// path, so comparing full paths gives the same result as comparing base
-/// names. However `BTreeMap` would waste time always re-comparing the same
+/// names. However `HashMap` would waste time always re-hashing the same
 /// string prefix.
+pub(super) type NodeKey<'on_disk> = WithBasename<Cow<'on_disk, HgPath>>;
 pub(super) type ChildNodes<'on_disk> =
-    FastHashMap<WithBasename<Cow<'on_disk, HgPath>>, Node<'on_disk>>;
+    FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>;
 
 /// Represents a file or a directory
 #[derive(Default)]
@@ -64,9 +65,19 @@ pub(super) struct Node<'on_disk> {
     tracked_descendants_count: usize,
 }
 
-impl Node<'_> {
+impl<'on_disk> Node<'on_disk> {
     pub(super) fn state(&self) -> Option<EntryState> {
         self.entry.as_ref().map(|entry| entry.state)
+    }
+
+    pub(super) fn sorted<'tree>(
+        nodes: &'tree mut ChildNodes<'on_disk>,
+    ) -> Vec<(&'tree NodeKey<'on_disk>, &'tree mut Self)> {
+        let mut vec: Vec<_> = nodes.iter_mut().collect();
+        // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
+        // https://github.com/rust-lang/rust/issues/34162
+        vec.sort_unstable_by(|(path1, _), (path2, _)| path1.cmp(path2));
+        vec
     }
 }
 
