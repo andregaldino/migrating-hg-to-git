@@ -45,8 +45,160 @@ pub struct DirstateMap<'on_disk> {
 /// names. However `HashMap` would waste time always re-hashing the same
 /// string prefix.
 pub(super) type NodeKey<'on_disk> = WithBasename<Cow<'on_disk, HgPath>>;
-pub(super) type ChildNodes<'on_disk> =
-    FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>;
+
+pub(super) enum ChildNodes<'on_disk> {
+    InMemory(FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
+}
+
+pub(super) enum ChildNodesRef<'tree, 'on_disk> {
+    InMemory(&'tree FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
+}
+
+pub(super) enum NodeRef<'tree, 'on_disk> {
+    InMemory(&'tree NodeKey<'on_disk>, &'tree Node<'on_disk>),
+}
+
+impl Default for ChildNodes<'_> {
+    fn default() -> Self {
+        ChildNodes::InMemory(Default::default())
+    }
+}
+
+impl<'on_disk> ChildNodes<'on_disk> {
+    pub(super) fn as_ref<'tree>(
+        &'tree self,
+    ) -> ChildNodesRef<'tree, 'on_disk> {
+        match self {
+            ChildNodes::InMemory(nodes) => ChildNodesRef::InMemory(nodes),
+        }
+    }
+
+    pub(super) fn is_empty(&self) -> bool {
+        match self {
+            ChildNodes::InMemory(nodes) => nodes.is_empty(),
+        }
+    }
+
+    pub(super) fn make_mut(
+        &mut self,
+    ) -> &mut FastHashMap<NodeKey<'on_disk>, Node<'on_disk>> {
+        match self {
+            ChildNodes::InMemory(nodes) => nodes,
+        }
+    }
+}
+
+impl<'tree, 'on_disk> ChildNodesRef<'tree, 'on_disk> {
+    pub(super) fn get(
+        &self,
+        base_name: &HgPath,
+    ) -> Option<NodeRef<'tree, 'on_disk>> {
+        match self {
+            ChildNodesRef::InMemory(nodes) => nodes
+                .get_key_value(base_name)
+                .map(|(k, v)| NodeRef::InMemory(k, v)),
+        }
+    }
+
+    /// Iterate in undefined order
+    pub(super) fn iter(
+        &self,
+    ) -> impl Iterator<Item = NodeRef<'tree, 'on_disk>> {
+        match self {
+            ChildNodesRef::InMemory(nodes) => {
+                nodes.iter().map(|(k, v)| NodeRef::InMemory(k, v))
+            }
+        }
+    }
+
+    /// Iterate in parallel in undefined order
+    pub(super) fn par_iter(
+        &self,
+    ) -> impl rayon::iter::ParallelIterator<Item = NodeRef<'tree, 'on_disk>>
+    {
+        use rayon::prelude::*;
+        match self {
+            ChildNodesRef::InMemory(nodes) => {
+                nodes.par_iter().map(|(k, v)| NodeRef::InMemory(k, v))
+            }
+        }
+    }
+
+    pub(super) fn sorted(&self) -> Vec<NodeRef<'tree, 'on_disk>> {
+        match self {
+            ChildNodesRef::InMemory(nodes) => {
+                let mut vec: Vec<_> = nodes
+                    .iter()
+                    .map(|(k, v)| NodeRef::InMemory(k, v))
+                    .collect();
+                // `sort_unstable_by_key` doesn’t allow keys borrowing from the
+                // value: https://github.com/rust-lang/rust/issues/34162
+                vec.sort_unstable_by(|a, b| a.base_name().cmp(b.base_name()));
+                vec
+            }
+        }
+    }
+}
+
+impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
+    pub(super) fn full_path(&self) -> &'tree HgPath {
+        match self {
+            NodeRef::InMemory(path, _node) => path.full_path(),
+        }
+    }
+
+    /// Returns a `Cow` that can borrow 'on_disk but is detached from 'tree
+    pub(super) fn full_path_cow(&self) -> Cow<'on_disk, HgPath> {
+        match self {
+            NodeRef::InMemory(path, _node) => path.full_path().clone(),
+        }
+    }
+
+    pub(super) fn base_name(&self) -> &'tree HgPath {
+        match self {
+            NodeRef::InMemory(path, _node) => path.base_name(),
+        }
+    }
+
+    pub(super) fn children(&self) -> ChildNodesRef<'tree, 'on_disk> {
+        match self {
+            NodeRef::InMemory(_path, node) => node.children.as_ref(),
+        }
+    }
+
+    pub(super) fn copy_source(&self) -> Option<&'tree HgPath> {
+        match self {
+            NodeRef::InMemory(_path, node) => {
+                node.copy_source.as_ref().map(|s| &**s)
+            }
+        }
+    }
+
+    pub(super) fn has_entry(&self) -> bool {
+        match self {
+            NodeRef::InMemory(_path, node) => node.entry.is_some(),
+        }
+    }
+
+    pub(super) fn entry(&self) -> Option<DirstateEntry> {
+        match self {
+            NodeRef::InMemory(_path, node) => node.entry,
+        }
+    }
+    pub(super) fn state(&self) -> Option<EntryState> {
+        match self {
+            NodeRef::InMemory(_path, node) => {
+                node.entry.as_ref().map(|entry| entry.state)
+            }
+        }
+    }
+
+    pub(super) fn tracked_descendants_count(&self) -> u32 {
+        match self {
+            NodeRef::InMemory(_path, node) => node.tracked_descendants_count,
+        }
+    }
+}
 
 /// Represents a file or a directory
 #[derive(Default)]
@@ -60,22 +212,6 @@ pub(super) struct Node<'on_disk> {
 
     /// How many (non-inclusive) descendants of this node are tracked files
     pub(super) tracked_descendants_count: u32,
-}
-
-impl<'on_disk> Node<'on_disk> {
-    pub(super) fn state(&self) -> Option<EntryState> {
-        self.entry.as_ref().map(|entry| entry.state)
-    }
-
-    pub(super) fn sorted<'tree>(
-        nodes: &'tree ChildNodes<'on_disk>,
-    ) -> Vec<(&'tree NodeKey<'on_disk>, &'tree Self)> {
-        let mut vec: Vec<_> = nodes.iter().collect();
-        // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
-        // https://github.com/rust-lang/rust/issues/34162
-        vec.sort_unstable_by(|(path1, _), (path2, _)| path1.cmp(path2));
-        vec
-    }
 }
 
 impl<'on_disk> DirstateMap<'on_disk> {
@@ -139,8 +275,11 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok((map, parents))
     }
 
-    fn get_node(&self, path: &HgPath) -> Option<&Node> {
-        let mut children = &self.root;
+    fn get_node<'tree>(
+        &'tree self,
+        path: &HgPath,
+    ) -> Option<NodeRef<'tree, 'on_disk>> {
+        let mut children = self.root.as_ref();
         let mut components = path.components();
         let mut component =
             components.next().expect("expected at least one components");
@@ -148,7 +287,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             let child = children.get(component)?;
             if let Some(next_component) = components.next() {
                 component = next_component;
-                children = &child.children;
+                children = child.children();
             } else {
                 return Some(child);
             }
@@ -168,7 +307,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let mut component =
             components.next().expect("expected at least one components");
         loop {
-            let child = children.get_mut(component)?;
+            let child = children.make_mut().get_mut(component)?;
             if let Some(next_component) = components.next() {
                 component = next_component;
                 children = &mut child.children;
@@ -196,8 +335,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
             // TODO: can we avoid allocating an owned key in cases where the
             // map already contains that key, without introducing double
             // lookup?
-            let child_node =
-                child_nodes.entry(to_cow(ancestor_path)).or_default();
+            let child_node = child_nodes
+                .make_mut()
+                .entry(to_cow(ancestor_path))
+                .or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
                 each_ancestor(child_node);
                 ancestor_path = next;
@@ -242,9 +383,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
         node.entry = Some(new_entry)
     }
 
-    fn iter_nodes<'a>(
-        &'a self,
-    ) -> impl Iterator<Item = (&'a Cow<'on_disk, HgPath>, &'a Node)> + 'a {
+    fn iter_nodes<'tree>(
+        &'tree self,
+    ) -> impl Iterator<Item = NodeRef<'tree, 'on_disk>> + 'tree {
         // Depth first tree traversal.
         //
         // If we could afford internal iteration and recursion,
@@ -265,22 +406,21 @@ impl<'on_disk> DirstateMap<'on_disk> {
         // However we want an external iterator and therefore can’t use the
         // call stack. Use an explicit stack instead:
         let mut stack = Vec::new();
-        let mut iter = self.root.iter();
+        let mut iter = self.root.as_ref().iter();
         std::iter::from_fn(move || {
-            while let Some((key, child_node)) = iter.next() {
+            while let Some(child_node) = iter.next() {
                 // Pseudo-recursion
-                let new_iter = child_node.children.iter();
+                let new_iter = child_node.children().iter();
                 let old_iter = std::mem::replace(&mut iter, new_iter);
-                let key = key.full_path();
-                stack.push((key, child_node, old_iter));
+                stack.push((child_node, old_iter));
             }
             // Found the end of a `children.iter()` iterator.
-            if let Some((key, child_node, next_iter)) = stack.pop() {
+            if let Some((child_node, next_iter)) = stack.pop() {
                 // "Return" from pseudo-recursion by restoring state from the
                 // explicit stack
                 iter = next_iter;
 
-                Some((key, child_node))
+                Some(child_node)
             } else {
                 // Reached the bottom of the stack, we’re done
                 None
@@ -303,7 +443,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
 
 impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn clear(&mut self) {
-        self.root.clear();
+        self.root = Default::default();
         self.nodes_with_entry_count = 0;
         self.nodes_with_copy_source_count = 0;
     }
@@ -347,7 +487,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         fn recur(nodes: &mut ChildNodes, path: &HgPath) -> Option<Dropped> {
             let (first_path_component, rest_of_path) =
                 path.split_first_component();
-            let node = nodes.get_mut(first_path_component)?;
+            let node = nodes.make_mut().get_mut(first_path_component)?;
             let dropped;
             if let Some(rest) = rest_of_path {
                 dropped = recur(&mut node.children, rest)?;
@@ -370,7 +510,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                 && node.copy_source.is_none()
                 && node.children.is_empty()
             {
-                nodes.remove(first_path_component);
+                nodes.make_mut().remove(first_path_component);
             }
             Some(dropped)
         }
@@ -401,8 +541,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn non_normal_entries_contains(&mut self, key: &HgPath) -> bool {
         self.get_node(key)
-            .and_then(|node| node.entry.as_ref())
-            .map_or(false, DirstateEntry::is_non_normal)
+            .and_then(|node| node.entry())
+            .map_or(false, |entry| entry.is_non_normal())
     }
 
     fn non_normal_entries_remove(&mut self, _key: &HgPath) {
@@ -413,13 +553,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn non_normal_or_other_parent_paths(
         &mut self,
     ) -> Box<dyn Iterator<Item = &HgPath> + '_> {
-        Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry
-                .as_ref()
+        Box::new(self.iter_nodes().filter_map(|node| {
+            node.entry()
                 .filter(|entry| {
                     entry.is_non_normal() || entry.is_from_other_parent()
                 })
-                .map(|_| &**path)
+                .map(|_| node.full_path())
         }))
     }
 
@@ -437,22 +576,20 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn iter_non_normal_paths_panic(
         &self,
     ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
-        Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry
-                .as_ref()
+        Box::new(self.iter_nodes().filter_map(|node| {
+            node.entry()
                 .filter(|entry| entry.is_non_normal())
-                .map(|_| &**path)
+                .map(|_| node.full_path())
         }))
     }
 
     fn iter_other_parent_paths(
         &mut self,
     ) -> Box<dyn Iterator<Item = &HgPath> + Send + '_> {
-        Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry
-                .as_ref()
+        Box::new(self.iter_nodes().filter_map(|node| {
+            node.entry()
                 .filter(|entry| entry.is_from_other_parent())
-                .map(|_| &**path)
+                .map(|_| node.full_path())
         }))
     }
 
@@ -463,7 +600,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if let Some(node) = self.get_node(directory) {
             // A node without a `DirstateEntry` was created to hold child
             // nodes, and is therefore a directory.
-            Ok(node.entry.is_none() && node.tracked_descendants_count > 0)
+            Ok(!node.has_entry() && node.tracked_descendants_count() > 0)
         } else {
             Ok(false)
         }
@@ -476,7 +613,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if let Some(node) = self.get_node(directory) {
             // A node without a `DirstateEntry` was created to hold child
             // nodes, and is therefore a directory.
-            Ok(node.entry.is_none())
+            Ok(!node.has_entry())
         } else {
             Ok(false)
         }
@@ -493,14 +630,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         // Optizimation (to be measured?): pre-compute size to avoid `Vec`
         // reallocations
         let mut size = parents.as_bytes().len();
-        for (path, node) in self.iter_nodes() {
-            if let Some(entry) = &node.entry {
-                size += packed_entry_size(
-                    path,
-                    node.copy_source.as_ref().map(|p| &**p),
-                );
+        for node in self.iter_nodes() {
+            if let Some(entry) = node.entry() {
+                size +=
+                    packed_entry_size(node.full_path(), node.copy_source());
                 if entry.mtime_is_ambiguous(now) {
-                    ambiguous_mtimes.push(path.clone())
+                    ambiguous_mtimes.push(node.full_path_cow())
                 }
             }
         }
@@ -509,12 +644,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         let mut packed = Vec::with_capacity(size);
         packed.extend(parents.as_bytes());
 
-        for (path, node) in self.iter_nodes() {
-            if let Some(entry) = &node.entry {
+        for node in self.iter_nodes() {
+            if let Some(entry) = node.entry() {
                 pack_entry(
-                    path,
-                    entry,
-                    node.copy_source.as_ref().map(|p| &**p),
+                    node.full_path(),
+                    &entry,
+                    node.copy_source(),
                     &mut packed,
                 );
             }
@@ -531,10 +666,10 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         // TODO: how do we want to handle this in 2038?
         let now: i32 = now.0.try_into().expect("time overflow");
         let mut paths = Vec::new();
-        for (path, node) in self.iter_nodes() {
-            if let Some(entry) = &node.entry {
+        for node in self.iter_nodes() {
+            if let Some(entry) = node.entry() {
                 if entry.mtime_is_ambiguous(now) {
-                    paths.push(path.clone())
+                    paths.push(node.full_path_cow())
                 }
             }
         }
@@ -573,23 +708,22 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
-        Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.copy_source
-                .as_ref()
-                .map(|copy_source| (&**path, &**copy_source))
+        Box::new(self.iter_nodes().filter_map(|node| {
+            node.copy_source()
+                .map(|copy_source| (node.full_path(), copy_source))
         }))
     }
 
     fn copy_map_contains_key(&self, key: &HgPath) -> bool {
         if let Some(node) = self.get_node(key) {
-            node.copy_source.is_some()
+            node.copy_source().is_some()
         } else {
             false
         }
     }
 
     fn copy_map_get(&self, key: &HgPath) -> Option<&HgPath> {
-        self.get_node(key)?.copy_source.as_ref().map(|p| &**p)
+        self.get_node(key)?.copy_source()
     }
 
     fn copy_map_remove(&mut self, key: &HgPath) -> Option<HgPathBuf> {
@@ -628,12 +762,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn get(&self, key: &HgPath) -> Option<DirstateEntry> {
-        self.get_node(key)?.entry
+        self.get_node(key)?.entry()
     }
 
     fn iter(&self) -> StateMapIter<'_> {
-        Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry.map(|entry| (&**path, entry))
+        Box::new(self.iter_nodes().filter_map(|node| {
+            node.entry().map(|entry| (node.full_path(), entry))
         }))
     }
 }

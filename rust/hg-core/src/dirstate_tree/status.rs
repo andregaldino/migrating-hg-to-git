@@ -1,7 +1,7 @@
 use crate::dirstate::status::IgnoreFnType;
-use crate::dirstate_tree::dirstate_map::ChildNodes;
+use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
-use crate::dirstate_tree::dirstate_map::Node;
+use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
@@ -56,7 +56,7 @@ pub fn status<'tree>(
     let has_ignored_ancestor = false;
     common.traverse_fs_directory_and_dirstate(
         has_ignored_ancestor,
-        &dmap.root,
+        dmap.root.as_ref(),
         hg_path,
         &root_dir,
         is_at_repo_root,
@@ -93,7 +93,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     fn traverse_fs_directory_and_dirstate(
         &self,
         has_ignored_ancestor: bool,
-        dirstate_nodes: &'tree ChildNodes,
+        dirstate_nodes: ChildNodesRef<'tree, '_>,
         directory_hg_path: &'tree HgPath,
         directory_fs_path: &Path,
         is_at_repo_root: bool,
@@ -110,7 +110,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
 
         // `merge_join_by` requires both its input iterators to be sorted:
 
-        let dirstate_nodes = Node::sorted(dirstate_nodes);
+        let dirstate_nodes = dirstate_nodes.sorted();
         // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
         // https://github.com/rust-lang/rust/issues/34162
         fs_entries.sort_unstable_by(|e1, e2| e1.base_name.cmp(&e2.base_name));
@@ -118,26 +118,24 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         itertools::merge_join_by(
             dirstate_nodes,
             &fs_entries,
-            |(full_path, _node), fs_entry| {
-                full_path.base_name().cmp(&fs_entry.base_name)
+            |dirstate_node, fs_entry| {
+                dirstate_node.base_name().cmp(&fs_entry.base_name)
             },
         )
         .par_bridge()
         .for_each(|pair| {
             use itertools::EitherOrBoth::*;
             match pair {
-                Both((hg_path, dirstate_node), fs_entry) => {
+                Both(dirstate_node, fs_entry) => {
                     self.traverse_fs_and_dirstate(
                         fs_entry,
-                        hg_path.full_path(),
                         dirstate_node,
                         has_ignored_ancestor,
                     );
                 }
-                Left((hg_path, dirstate_node)) => self.traverse_dirstate_only(
-                    hg_path.full_path(),
-                    dirstate_node,
-                ),
+                Left(dirstate_node) => {
+                    self.traverse_dirstate_only(dirstate_node)
+                }
                 Right(fs_entry) => self.traverse_fs_only(
                     has_ignored_ancestor,
                     directory_hg_path,
@@ -150,10 +148,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     fn traverse_fs_and_dirstate(
         &self,
         fs_entry: &DirEntry,
-        hg_path: &'tree HgPath,
-        dirstate_node: &'tree Node,
+        dirstate_node: NodeRef<'tree, '_>,
         has_ignored_ancestor: bool,
     ) {
+        let hg_path = dirstate_node.full_path();
         let file_type = fs_entry.metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
         if !file_or_symlink {
@@ -161,7 +159,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             // `hg rm` or similar) or deleted before it could be
             // replaced by a directory or something else.
             self.mark_removed_or_deleted_if_file(
-                hg_path,
+                dirstate_node.full_path(),
                 dirstate_node.state(),
             );
         }
@@ -173,7 +171,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             let is_at_repo_root = false;
             self.traverse_fs_directory_and_dirstate(
                 is_ignored,
-                &dirstate_node.children,
+                dirstate_node.children(),
                 hg_path,
                 &fs_entry.full_path,
                 is_at_repo_root,
@@ -181,8 +179,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         } else {
             if file_or_symlink && self.matcher.matches(hg_path) {
                 let full_path = Cow::from(hg_path);
-                if let Some(entry) = &dirstate_node.entry {
-                    match entry.state {
+                if let Some(state) = dirstate_node.state() {
+                    match state {
                         EntryState::Added => {
                             self.outcome.lock().unwrap().added.push(full_path)
                         }
@@ -199,12 +197,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                             .modified
                             .push(full_path),
                         EntryState::Normal => {
-                            self.handle_normal_file(
-                                full_path,
-                                dirstate_node,
-                                entry,
-                                fs_entry,
-                            );
+                            self.handle_normal_file(&dirstate_node, fs_entry);
                         }
                         // This variant is not used in DirstateMap
                         // nodes
@@ -220,11 +213,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                 }
             }
 
-            for (child_hg_path, child_node) in &dirstate_node.children {
-                self.traverse_dirstate_only(
-                    child_hg_path.full_path(),
-                    child_node,
-                )
+            for child_node in dirstate_node.children().iter() {
+                self.traverse_dirstate_only(child_node)
             }
         }
     }
@@ -233,9 +223,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     /// filesystem
     fn handle_normal_file(
         &self,
-        full_path: Cow<'tree, HgPath>,
-        dirstate_node: &Node,
-        entry: &crate::DirstateEntry,
+        dirstate_node: &NodeRef<'tree, '_>,
         fs_entry: &DirEntry,
     ) {
         // Keep the low 31 bits
@@ -246,6 +234,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             (value & 0x7FFF_FFFF) as i32
         }
 
+        let entry = dirstate_node
+            .entry()
+            .expect("handle_normal_file called with entry-less node");
+        let full_path = Cow::from(dirstate_node.full_path());
         let mode_changed = || {
             self.options.check_exec && entry.mode_changed(&fs_entry.metadata)
         };
@@ -257,7 +249,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
             self.outcome.lock().unwrap().unsure.push(full_path)
-        } else if dirstate_node.copy_source.is_some()
+        } else if dirstate_node.copy_source().is_some()
             || entry.is_from_other_parent()
             || (entry.size >= 0 && (size_changed || mode_changed()))
         {
@@ -275,20 +267,15 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     }
 
     /// A node in the dirstate tree has no corresponding filesystem entry
-    fn traverse_dirstate_only(
-        &self,
-        hg_path: &'tree HgPath,
-        dirstate_node: &'tree Node,
-    ) {
-        self.mark_removed_or_deleted_if_file(hg_path, dirstate_node.state());
-        dirstate_node.children.par_iter().for_each(
-            |(child_hg_path, child_node)| {
-                self.traverse_dirstate_only(
-                    child_hg_path.full_path(),
-                    child_node,
-                )
-            },
-        )
+    fn traverse_dirstate_only(&self, dirstate_node: NodeRef<'tree, '_>) {
+        self.mark_removed_or_deleted_if_file(
+            dirstate_node.full_path(),
+            dirstate_node.state(),
+        );
+        dirstate_node
+            .children()
+            .par_iter()
+            .for_each(|child_node| self.traverse_dirstate_only(child_node))
     }
 
     /// A node in the dirstate tree has no corresponding *file* on the

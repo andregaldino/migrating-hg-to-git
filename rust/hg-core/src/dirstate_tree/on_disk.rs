@@ -9,7 +9,7 @@
 //! Nodes in turn contain slices to variable-size paths, and to their own child
 //! nodes (if any) for nested files and directories.
 
-use crate::dirstate_tree::dirstate_map::{self, DirstateMap};
+use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
@@ -200,7 +200,8 @@ fn read_nodes(
         .map(|node| {
             Ok((node.path(on_disk)?, node.to_in_memory_node(on_disk)?))
         })
-        .collect()
+        .collect::<Result<_, _>>()
+        .map(dirstate_map::ChildNodes::InMemory)
 }
 
 fn read_hg_path(on_disk: &[u8], slice: Slice) -> Result<Cow<HgPath>, HgError> {
@@ -242,7 +243,7 @@ pub(super) fn write(
     // actual offset for the root nodes.
     out.resize(header_len, 0_u8);
 
-    let root = write_nodes(&mut dirstate_map.root, &mut out)?;
+    let root = write_nodes(dirstate_map.root.as_ref(), &mut out)?;
 
     let header = Header {
         marker: *V2_FORMAT_MARKER,
@@ -258,49 +259,53 @@ pub(super) fn write(
 }
 
 fn write_nodes(
-    nodes: &dirstate_map::ChildNodes,
+    nodes: dirstate_map::ChildNodesRef,
     out: &mut Vec<u8>,
 ) -> Result<ChildNodes, DirstateError> {
     // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
     // order. Sort to enable binary search in the written file.
-    let nodes = dirstate_map::Node::sorted(nodes);
+    let nodes = nodes.sorted();
 
     // First accumulate serialized nodes in a `Vec`
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
-    for (full_path, node) in nodes {
-        on_disk_nodes.push(Node {
-            children: write_nodes(&node.children, out)?,
-            tracked_descendants_count: node.tracked_descendants_count.into(),
-            full_path: write_slice::<u8>(
-                full_path.full_path().as_bytes(),
-                out,
-            ),
-            base_name_start: u32::try_from(full_path.base_name_start())
-                // Could only panic for paths over 4 GiB
-                .expect("dirstate-v2 offset overflow")
-                .into(),
-            copy_source: if let Some(source) = &node.copy_source {
-                write_slice::<u8>(source.as_bytes(), out)
-            } else {
-                Slice {
-                    start: 0.into(),
-                    len: 0.into(),
-                }
-            },
-            entry: if let Some(entry) = &node.entry {
-                OptEntry {
-                    state: entry.state.into(),
-                    mode: entry.mode.into(),
-                    mtime: entry.mtime.into(),
-                    size: entry.size.into(),
-                }
-            } else {
-                OptEntry {
-                    state: b'\0',
-                    mode: 0.into(),
-                    mtime: 0.into(),
-                    size: 0.into(),
-                }
+    for node in nodes {
+        let children = write_nodes(node.children(), out)?;
+        let full_path = write_slice::<u8>(node.full_path().as_bytes(), out);
+        let copy_source = if let Some(source) = node.copy_source() {
+            write_slice::<u8>(source.as_bytes(), out)
+        } else {
+            Slice {
+                start: 0.into(),
+                len: 0.into(),
+            }
+        };
+        on_disk_nodes.push(match node {
+            NodeRef::InMemory(path, node) => Node {
+                children,
+                copy_source,
+                full_path,
+                base_name_start: u32::try_from(path.base_name_start())
+                    // Could only panic for paths over 4 GiB
+                    .expect("dirstate-v2 offset overflow")
+                    .into(),
+                tracked_descendants_count: node
+                    .tracked_descendants_count
+                    .into(),
+                entry: if let Some(entry) = &node.entry {
+                    OptEntry {
+                        state: entry.state.into(),
+                        mode: entry.mode.into(),
+                        mtime: entry.mtime.into(),
+                        size: entry.size.into(),
+                    }
+                } else {
+                    OptEntry {
+                        state: b'\0',
+                        mode: 0.into(),
+                        mtime: 0.into(),
+                        size: 0.into(),
+                    }
+                },
             },
         })
     }
