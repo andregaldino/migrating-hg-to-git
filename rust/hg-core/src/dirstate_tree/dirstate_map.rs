@@ -68,9 +68,9 @@ impl<'on_disk> Node<'on_disk> {
     }
 
     pub(super) fn sorted<'tree>(
-        nodes: &'tree mut ChildNodes<'on_disk>,
-    ) -> Vec<(&'tree NodeKey<'on_disk>, &'tree mut Self)> {
-        let mut vec: Vec<_> = nodes.iter_mut().collect();
+        nodes: &'tree ChildNodes<'on_disk>,
+    ) -> Vec<(&'tree NodeKey<'on_disk>, &'tree Self)> {
+        let mut vec: Vec<_> = nodes.iter().collect();
         // `sort_unstable_by_key` doesn’t allow keys borrowing from the value:
         // https://github.com/rust-lang/rust/issues/34162
         vec.sort_unstable_by(|(path1, _), (path2, _)| path1.cmp(path2));

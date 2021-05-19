@@ -56,7 +56,7 @@ pub fn status<'tree>(
     let has_ignored_ancestor = false;
     common.traverse_fs_directory_and_dirstate(
         has_ignored_ancestor,
-        &mut dmap.root,
+        &dmap.root,
         hg_path,
         &root_dir,
         is_at_repo_root,
@@ -93,7 +93,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     fn traverse_fs_directory_and_dirstate(
         &self,
         has_ignored_ancestor: bool,
-        dirstate_nodes: &'tree mut ChildNodes,
+        dirstate_nodes: &'tree ChildNodes,
         directory_hg_path: &'tree HgPath,
         directory_fs_path: &Path,
         is_at_repo_root: bool,
@@ -151,7 +151,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
         &self,
         fs_entry: &DirEntry,
         hg_path: &'tree HgPath,
-        dirstate_node: &'tree mut Node,
+        dirstate_node: &'tree Node,
         has_ignored_ancestor: bool,
     ) {
         let file_type = fs_entry.metadata.file_type();
@@ -173,7 +173,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
             let is_at_repo_root = false;
             self.traverse_fs_directory_and_dirstate(
                 is_ignored,
-                &mut dirstate_node.children,
+                &dirstate_node.children,
                 hg_path,
                 &fs_entry.full_path,
                 is_at_repo_root,
@@ -220,7 +220,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
                 }
             }
 
-            for (child_hg_path, child_node) in &mut dirstate_node.children {
+            for (child_hg_path, child_node) in &dirstate_node.children {
                 self.traverse_dirstate_only(
                     child_hg_path.full_path(),
                     child_node,
@@ -278,10 +278,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a> {
     fn traverse_dirstate_only(
         &self,
         hg_path: &'tree HgPath,
-        dirstate_node: &'tree mut Node,
+        dirstate_node: &'tree Node,
     ) {
         self.mark_removed_or_deleted_if_file(hg_path, dirstate_node.state());
-        dirstate_node.children.par_iter_mut().for_each(
+        dirstate_node.children.par_iter().for_each(
             |(child_hg_path, child_node)| {
                 self.traverse_dirstate_only(
                     child_hg_path.full_path(),

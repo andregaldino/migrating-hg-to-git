@@ -258,7 +258,7 @@ pub(super) fn write(
 }
 
 fn write_nodes(
-    nodes: &mut dirstate_map::ChildNodes,
+    nodes: &dirstate_map::ChildNodes,
     out: &mut Vec<u8>,
 ) -> Result<ChildNodes, DirstateError> {
     // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
@@ -269,7 +269,7 @@ fn write_nodes(
     let mut on_disk_nodes = Vec::with_capacity(nodes.len());
     for (full_path, node) in nodes {
         on_disk_nodes.push(Node {
-            children: write_nodes(&mut node.children, out)?,
+            children: write_nodes(&node.children, out)?,
             tracked_descendants_count: node.tracked_descendants_count.into(),
             full_path: write_slice::<u8>(
                 full_path.full_path().as_bytes(),
@@ -287,7 +287,7 @@ fn write_nodes(
                     len: 0.into(),
                 }
             },
-            entry: if let Some(entry) = &mut node.entry {
+            entry: if let Some(entry) = &node.entry {
                 OptEntry {
                     state: entry.state.into(),
                     mode: entry.mode.into(),
