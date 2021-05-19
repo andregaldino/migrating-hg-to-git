@@ -228,7 +228,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     pub fn new_v2(
         on_disk: &'on_disk [u8],
     ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
-        on_disk::read(on_disk)
+        Ok(on_disk::read(on_disk)?)
     }
 
     #[timed]

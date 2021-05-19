@@ -108,14 +108,32 @@ fn _static_assert_size_of() {
     let _ = std::mem::transmute::<Node, [u8; 57]>;
 }
 
+/// Unexpected file format found in `.hg/dirstate` with the "v2" format.
+pub(crate) struct DirstateV2ParseError;
+
+impl From<DirstateV2ParseError> for HgError {
+    fn from(_: DirstateV2ParseError) -> Self {
+        HgError::corrupted("dirstate-v2 parse error")
+    }
+}
+
+impl From<DirstateV2ParseError> for crate::DirstateError {
+    fn from(error: DirstateV2ParseError) -> Self {
+        HgError::from(error).into()
+    }
+}
+
 pub(super) fn read<'on_disk>(
     on_disk: &'on_disk [u8],
-) -> Result<(DirstateMap<'on_disk>, Option<DirstateParents>), DirstateError> {
+) -> Result<
+    (DirstateMap<'on_disk>, Option<DirstateParents>),
+    DirstateV2ParseError,
+> {
     if on_disk.is_empty() {
         return Ok((DirstateMap::empty(on_disk), None));
     }
-    let (header, _) = Header::from_bytes(on_disk)
-        .map_err(|_| HgError::corrupted("truncated dirstate-v2"))?;
+    let (header, _) =
+        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
     let Header {
         marker,
         parents,
@@ -124,7 +142,7 @@ pub(super) fn read<'on_disk>(
         nodes_with_copy_source_count,
     } = header;
     if marker != V2_FORMAT_MARKER {
-        return Err(HgError::corrupted("missing dirstated-v2 marker").into());
+        return Err(DirstateV2ParseError);
     }
     let dirstate_map = DirstateMap {
         on_disk,
@@ -140,7 +158,7 @@ impl Node {
     pub(super) fn path<'on_disk>(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<dirstate_map::NodeKey<'on_disk>, HgError> {
+    ) -> Result<dirstate_map::NodeKey<'on_disk>, DirstateV2ParseError> {
         let full_path = read_hg_path(on_disk, self.full_path)?;
         let base_name_start = usize::try_from(self.base_name_start.get())
             // u32 -> usize, could only panic on a 16-bit CPU
@@ -148,16 +166,14 @@ impl Node {
         if base_name_start < full_path.len() {
             Ok(WithBasename::from_raw_parts(full_path, base_name_start))
         } else {
-            Err(HgError::corrupted(
-                "dirstate-v2 base_name_start out of bounds",
-            ))
+            Err(DirstateV2ParseError)
         }
     }
 
     pub(super) fn copy_source<'on_disk>(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<Option<Cow<'on_disk, HgPath>>, HgError> {
+    ) -> Result<Option<Cow<'on_disk, HgPath>>, DirstateV2ParseError> {
         Ok(if self.copy_source.start.get() != 0 {
             Some(read_hg_path(on_disk, self.copy_source)?)
         } else {
@@ -165,10 +181,16 @@ impl Node {
         })
     }
 
-    pub(super) fn entry(&self) -> Result<Option<DirstateEntry>, HgError> {
+    pub(super) fn entry(
+        &self,
+    ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
         Ok(if self.entry.state != b'\0' {
             Some(DirstateEntry {
-                state: self.entry.state.try_into()?,
+                state: self
+                    .entry
+                    .state
+                    .try_into()
+                    .map_err(|_| DirstateV2ParseError)?,
                 mode: self.entry.mode.get(),
                 mtime: self.entry.mtime.get(),
                 size: self.entry.size.get(),
@@ -181,7 +203,7 @@ impl Node {
     pub(super) fn to_in_memory_node<'on_disk>(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<dirstate_map::Node<'on_disk>, HgError> {
+    ) -> Result<dirstate_map::Node<'on_disk>, DirstateV2ParseError> {
         Ok(dirstate_map::Node {
             children: read_nodes(on_disk, self.children)?,
             copy_source: self.copy_source(on_disk)?,
@@ -194,7 +216,7 @@ impl Node {
 fn read_nodes(
     on_disk: &[u8],
     slice: ChildNodes,
-) -> Result<dirstate_map::ChildNodes, HgError> {
+) -> Result<dirstate_map::ChildNodes, DirstateV2ParseError> {
     read_slice::<Node>(on_disk, slice)?
         .iter()
         .map(|node| {
@@ -204,12 +226,18 @@ fn read_nodes(
         .map(dirstate_map::ChildNodes::InMemory)
 }
 
-fn read_hg_path(on_disk: &[u8], slice: Slice) -> Result<Cow<HgPath>, HgError> {
+fn read_hg_path(
+    on_disk: &[u8],
+    slice: Slice,
+) -> Result<Cow<HgPath>, DirstateV2ParseError> {
     let bytes = read_slice::<u8>(on_disk, slice)?;
     Ok(Cow::Borrowed(HgPath::new(bytes)))
 }
 
-fn read_slice<T>(on_disk: &[u8], slice: Slice) -> Result<&[T], HgError>
+fn read_slice<T>(
+    on_disk: &[u8],
+    slice: Slice,
+) -> Result<&[T], DirstateV2ParseError>
 where
     T: BytesCast,
 {
@@ -221,9 +249,7 @@ where
         .get(start..)
         .and_then(|bytes| T::slice_from_bytes(bytes, len).ok())
         .map(|(slice, _rest)| slice)
-        .ok_or_else(|| {
-            HgError::corrupted("dirstate v2 slice is out of bounds")
-        })
+        .ok_or_else(|| DirstateV2ParseError)
 }
 
 pub(super) fn write(
