@@ -57,6 +57,7 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   $ hg debugformat
   format-variant     repo
   fncache:            yes
+  dirstate-v2:         no
   dotencode:          yes
   generaldelta:       yes
   share-safe:          no
@@ -577,6 +578,7 @@ downgrading
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -626,6 +628,7 @@ upgrading
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no

@@ -1652,6 +1652,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1691,6 +1692,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no

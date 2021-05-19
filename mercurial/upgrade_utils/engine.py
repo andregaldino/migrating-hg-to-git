@@ -30,6 +30,7 @@ from ..revlogutils import (
     nodemap,
     sidedata as sidedatamod,
 )
+from . import actions as upgrade_actions
 
 
 def get_sidedata_helpers(srcrepo, dstrepo):
@@ -458,6 +459,19 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
+    if upgrade_actions.dirstatev2 in upgrade_op.upgrade_actions:
+        ui.status(_(b'upgrading to dirstate-v2 from v1\n'))
+        upgrade_dirstate(ui, srcrepo, upgrade_op, b'v1', b'v2')
+        upgrade_op.upgrade_actions.remove(upgrade_actions.dirstatev2)
+
+    if upgrade_actions.dirstatev2 in upgrade_op.removed_actions:
+        ui.status(_(b'downgrading from dirstate-v2 to v1\n'))
+        upgrade_dirstate(ui, srcrepo, upgrade_op, b'v2', b'v1')
+        upgrade_op.removed_actions.remove(upgrade_actions.dirstatev2)
+
+    if not (upgrade_op.upgrade_actions or upgrade_op.removed_actions):
+        return
+
     if upgrade_op.requirements_only:
         ui.status(_(b'upgrading repository requirements\n'))
         scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
@@ -466,7 +480,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     # through the whole cloning process
     elif (
         len(upgrade_op.upgrade_actions) == 1
-        and b'persistent-nodemap' in upgrade_op._upgrade_actions_names
+        and b'persistent-nodemap' in upgrade_op.upgrade_actions_names
         and not upgrade_op.removed_actions
     ):
         ui.status(
@@ -591,3 +605,28 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             backupvfs.unlink(b'store/lock')
 
     return backuppath
+
+
+def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
+    if upgrade_op.backup_store:
+        backuppath = pycompat.mkdtemp(
+            prefix=b'upgradebackup.', dir=srcrepo.path
+        )
+        ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
+        backupvfs = vfsmod.vfs(backuppath)
+        util.copyfile(
+            srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
+        )
+        util.copyfile(
+            srcrepo.vfs.join(b'dirstate'), backupvfs.join(b'dirstate')
+        )
+
+    assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
+    srcrepo.dirstate._map._use_dirstate_tree = True
+    srcrepo.dirstate._map.preload()
+    srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
+    srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2
+    srcrepo.dirstate._dirty = True
+    srcrepo.dirstate.write(None)
+
+    scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)

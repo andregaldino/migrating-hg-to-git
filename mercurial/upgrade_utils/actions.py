@@ -80,7 +80,7 @@ class improvement(object):
     # operation in which this improvement was removed
     postdowngrademessage = None
 
-    # By default for now, we assume every improvement touches all the things
+    # By default we assume that every improvement touches requirements and all revlogs
 
     # Whether this improvement touches filelogs
     touches_filelogs = True
@@ -93,6 +93,9 @@ class improvement(object):
 
     # Whether this improvement changes repository requirements
     touches_requirements = True
+
+    # Whether this improvement touches the dirstate
+    touches_dirstate = False
 
 
 allformatvariant = []  # type: List[Type['formatvariant']]
@@ -164,6 +167,27 @@ class fncache(requirementformatvariant):
         b'certain paths and performance of certain '
         b'operations should be improved'
     )
+
+
+@registerformatvariant
+class dirstatev2(requirementformatvariant):
+    name = b'dirstate-v2'
+    _requirement = requirements.DIRSTATE_V2_REQUIREMENT
+
+    default = False
+
+    description = _(
+        b'version 1 of the dirstate file format requires '
+        b'reading and parsing it all at once.'
+    )
+
+    upgrademessage = _(b'"hg status" will be faster')
+
+    touches_filelogs = False
+    touches_manifests = False
+    touches_changelog = False
+    touches_requirements = True
+    touches_dirstate = True
 
 
 @registerformatvariant
@@ -644,7 +668,6 @@ class UpgradeOperation(object):
         self.current_requirements = current_requirements
         # list of upgrade actions the operation will perform
         self.upgrade_actions = upgrade_actions
-        self._upgrade_actions_names = set([a.name for a in upgrade_actions])
         self.removed_actions = removed_actions
         self.revlogs_to_process = revlogs_to_process
         # requirements which will be added by the operation
@@ -667,41 +690,42 @@ class UpgradeOperation(object):
         ]
 
         # delta reuse mode of this upgrade operation
+        upgrade_actions_names = self.upgrade_actions_names
         self.delta_reuse_mode = revlog.revlog.DELTAREUSEALWAYS
-        if b're-delta-all' in self._upgrade_actions_names:
+        if b're-delta-all' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSENEVER
-        elif b're-delta-parent' in self._upgrade_actions_names:
+        elif b're-delta-parent' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
-        elif b're-delta-multibase' in self._upgrade_actions_names:
+        elif b're-delta-multibase' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
-        elif b're-delta-fulladd' in self._upgrade_actions_names:
+        elif b're-delta-fulladd' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSEFULLADD
 
         # should this operation force re-delta of both parents
         self.force_re_delta_both_parents = (
-            b're-delta-multibase' in self._upgrade_actions_names
+            b're-delta-multibase' in upgrade_actions_names
         )
 
         # should this operation create a backup of the store
         self.backup_store = backup_store
 
-        # whether the operation touches different revlogs at all or not
-        self.touches_filelogs = self._touches_filelogs()
-        self.touches_manifests = self._touches_manifests()
-        self.touches_changelog = self._touches_changelog()
-        # whether the operation touches requirements file or not
-        self.touches_requirements = self._touches_requirements()
-        self.touches_store = (
-            self.touches_filelogs
-            or self.touches_manifests
-            or self.touches_changelog
-        )
+    @property
+    def upgrade_actions_names(self):
+        return set([a.name for a in self.upgrade_actions])
+
+    @property
+    def requirements_only(self):
         # does the operation only touches repository requirement
-        self.requirements_only = (
-            self.touches_requirements and not self.touches_store
+        return (
+            self.touches_requirements
+            and not self.touches_filelogs
+            and not self.touches_manifests
+            and not self.touches_changelog
+            and not self.touches_dirstate
         )
 
-    def _touches_filelogs(self):
+    @property
+    def touches_filelogs(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -713,7 +737,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_manifests(self):
+    @property
+    def touches_manifests(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -725,7 +750,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_changelog(self):
+    @property
+    def touches_changelog(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -737,7 +763,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_requirements(self):
+    @property
+    def touches_requirements(self):
         for a in self.upgrade_actions:
             # optimisations are used to re-process revlogs and does not result
             # in a requirement being added or removed
@@ -747,6 +774,18 @@ class UpgradeOperation(object):
                 return True
         for a in self.removed_actions:
             if a.touches_requirements:
+                return True
+
+    @property
+    def touches_dirstate(self):
+        for a in self.upgrade_actions:
+            # revlog optimisations do not affect the dirstate
+            if a.type == OPTIMISATION:
+                pass
+            elif a.touches_dirstate:
+                return True
+        for a in self.removed_actions:
+            if a.touches_dirstate:
                 return True
 
         return False
@@ -908,6 +947,7 @@ def supportremovedrequirements(repo):
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -970,6 +1010,7 @@ def allowednewrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]

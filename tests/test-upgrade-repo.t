@@ -57,6 +57,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg debugformat
   format-variant     repo
   fncache:            yes
+  dirstate-v2:         no
   dotencode:          yes
   generaldelta:       yes
   share-safe:          no
@@ -72,6 +73,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg debugformat --verbose
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -88,6 +90,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg debugformat --verbose --config format.usefncache=no
   format-variant     repo config default
   fncache:            yes     no     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes     no     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -104,6 +107,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   $ hg debugformat --verbose --config format.usefncache=no --color=debug
   format-variant     repo config default
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|dirstate-v2:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -124,6 +128,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "default": true,
     "name": "fncache",
     "repo": true
+   },
+   {
+    "config": false,
+    "default": false,
+    "name": "dirstate-v2",
+    "repo": false
    },
    {
     "config": true,
@@ -327,6 +337,7 @@ Various sub-optimal detections work
   $ hg debugformat
   format-variant     repo
   fncache:             no
+  dirstate-v2:         no
   dotencode:           no
   generaldelta:        no
   share-safe:          no
@@ -341,6 +352,7 @@ Various sub-optimal detections work
   $ hg debugformat --verbose
   format-variant     repo config default
   fncache:             no    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:           no    yes     yes
   generaldelta:        no    yes     yes
   share-safe:          no     no      no
@@ -357,6 +369,7 @@ Various sub-optimal detections work
   $ hg debugformat --verbose --config format.usegeneraldelta=no
   format-variant     repo config default
   fncache:             no    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:           no    yes     yes
   generaldelta:        no     no     yes
   share-safe:          no     no      no
@@ -373,6 +386,7 @@ Various sub-optimal detections work
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
   format-variant     repo config default
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|dirstate-v2:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
@@ -1355,6 +1369,7 @@ upgrade
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1396,6 +1411,7 @@ downgrade
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1440,6 +1456,7 @@ upgrade from hgrc
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1490,6 +1507,7 @@ upgrade
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1537,6 +1555,7 @@ downgrade
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1585,6 +1604,7 @@ upgrade from hgrc
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -1613,3 +1633,105 @@ Demonstrate that nothing to perform upgrade will still run all the way through
 
   $ hg debugupgraderepo --run
   nothing to do
+
+#if rust
+
+Upgrade to dirstate-v2
+
+  $ hg debugformat -v --config format.exp-dirstate-v2=1
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dirstate-v2:         no    yes      no
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  share-safe:          no     no      no
+  sparserevlog:       yes    yes     yes
+  persistent-nodemap: yes    yes      no
+  copies-sdc:          no     no      no
+  revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zstd   zstd    zstd
+  compression-level:  default default default
+  $ hg debugupgraderepo --config format.exp-dirstate-v2=1 --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
+     added: exp-dirstate-v2
+  
+  dirstate-v2
+     "hg status" will be faster
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  upgrading to dirstate-v2 from v1
+  replaced files will be backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  $ ls .hg/upgradebackup.*/dirstate
+  .hg/upgradebackup.*/dirstate (glob)
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dirstate-v2:        yes     no      no
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  share-safe:          no     no      no
+  sparserevlog:       yes    yes     yes
+  persistent-nodemap: yes    yes      no
+  copies-sdc:          no     no      no
+  revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zstd   zstd    zstd
+  compression-level:  default default default
+  $ hg status
+  $ dd status=none bs=12 count=1 if=.hg/dirstate
+  dirstate-v2
+
+Downgrade from dirstate-v2
+
+  $ hg debugupgraderepo --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
+     removed: exp-dirstate-v2
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  downgrading from dirstate-v2 to v1
+  replaced files will be backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
+  $ hg debugformat -v
+  format-variant     repo config default
+  fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
+  dotencode:          yes    yes     yes
+  generaldelta:       yes    yes     yes
+  share-safe:          no     no      no
+  sparserevlog:       yes    yes     yes
+  persistent-nodemap: yes    yes      no
+  copies-sdc:          no     no      no
+  revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
+  plain-cl-delta:     yes    yes     yes
+  compression:        zstd   zstd    zstd
+  compression-level:  default default default
+  $ hg status
+
+#endif

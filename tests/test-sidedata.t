@@ -52,6 +52,7 @@ Check that we can upgrade to sidedata
   $ hg debugformat -v -R up-no-side-data
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -68,6 +69,7 @@ Check that we can upgrade to sidedata
   $ hg debugformat -v -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -90,6 +92,7 @@ Check that we can downgrade from sidedata
   $ hg debugformat -v -R up-side-data
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -106,6 +109,7 @@ Check that we can downgrade from sidedata
   $ hg debugformat -v -R up-side-data --config experimental.revlogv2=no
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
