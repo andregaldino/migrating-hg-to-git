@@ -10,13 +10,16 @@ from __future__ import absolute_import
 
 import errno
 import os
+import random
 import re
 import struct
 
 from ..node import hex
 
 from .. import (
+    encoding,
     error,
+    pycompat,
     util,
 )
 
@@ -286,6 +289,45 @@ def _make_uid():
 
     The identifier is random and composed of ascii characters."""
     return hex(os.urandom(ID_SIZE))
+
+
+# some special test logic to avoid anoying random output in the test
+stable_docket_file = encoding.environ.get(b'HGTEST_DOCKETIDFILE')
+
+if stable_docket_file:
+
+    def _make_uid():
+        try:
+            with open(stable_docket_file, mode='rb') as f:
+                seed = f.read().strip()
+        except IOError as inst:
+            if inst.errno != errno.ENOENT:
+                raise
+            seed = b'4'  # chosen by a fair dice roll. garanteed to be random
+        if pycompat.ispy3:
+            iter_seed = iter(seed)
+        else:
+            iter_seed = (ord(c) for c in seed)
+        # some basic circular sum hashing on 64 bits
+        int_seed = 0
+        low_mask = int('1' * 35, 2)
+        for i in iter_seed:
+            high_part = int_seed >> 35
+            low_part = (int_seed & low_mask) << 28
+            int_seed = high_part + low_part + i
+        r = random.Random()
+        if pycompat.ispy3:
+            r.seed(int_seed, version=1)
+        else:
+            r.seed(int_seed)
+        # once we drop python 3.8 support we can simply use r.randbytes
+        raw = r.getrandbits(ID_SIZE * 8)
+        assert ID_SIZE == 8
+        p = struct.pack('>Q', raw)
+        new = hex(p)
+        with open(stable_docket_file, 'wb') as f:
+            f.write(new)
+        return new
 
 
 class NodeMapDocket(object):
