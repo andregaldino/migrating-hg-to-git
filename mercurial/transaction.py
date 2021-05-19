@@ -56,7 +56,7 @@ def _playback(
     unlink=True,
     checkambigfiles=None,
 ):
-    for f, o in entries:
+    for f, o in sorted(dict(entries).items()):
         if o or not unlink:
             checkambig = checkambigfiles and (f, b'') in checkambigfiles
             try:

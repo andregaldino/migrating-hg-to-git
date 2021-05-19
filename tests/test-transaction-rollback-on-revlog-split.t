@@ -70,9 +70,32 @@ and the second file.i entry should match the first file.i entry.
   data/file.d 0
   data/file.d 1046
   data/file.i 128
+  $ hg recover
+  rolling back interrupted transaction
+  (verify step skipped, run `hg verify` to check your repository content)
+  $ f -s .hg/store/data/file*
+  .hg/store/data/file.d: size=1046
+  .hg/store/data/file.i: size=128
+  $ hg tip
+  changeset:   1:3ce491143aec
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     _
+  
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+   warning: revlog 'data/file.d' not in fncache!
+  checked 2 changesets with 2 changes to 1 files
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
   $ cd ..
 
-Now retry the same but intercept the rename of the index and check that
+
+Now retry the procedure but intercept the rename of the index and check that
 the journal does not contain the new index size. This demonstrates the edge case
 where the data file is left as garbage.
 
@@ -97,4 +120,65 @@ where the data file is left as garbage.
   data/file.i 1174
   data/file.d 0
   data/file.d 1046
+
+  $ hg recover
+  rolling back interrupted transaction
+  (verify step skipped, run `hg verify` to check your repository content)
+  $ f -s .hg/store/data/file*
+  .hg/store/data/file.d: size=1046
+  .hg/store/data/file.i: size=1174
+  $ hg tip
+  changeset:   1:3ce491143aec
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     _
+  
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 2 changesets with 2 changes to 1 files
   $ cd ..
+
+
+Repeat the original test but let hg rollback the transaction.
+
+  $ hg clone -r 1 troffset-computation troffset-computation-copy-rb --config format.revlog-compression=none -q
+  $ cd troffset-computation-copy-rb
+  $ cat > .hg/hgrc <<EOF
+  > [hooks]
+  > pretxnchangegroup = false
+  > EOF
+  $ hg pull ../troffset-computation
+  pulling from ../troffset-computation
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  transaction abort!
+  rollback completed
+  abort: pretxnchangegroup hook exited with status 1
+  [40]
+  $ f -s .hg/store/data/file*
+  .hg/store/data/file.d: size=1046
+  .hg/store/data/file.i: size=128
+  $ hg tip
+  changeset:   1:3ce491143aec
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     _
+  
+  $ hg verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+   warning: revlog 'data/file.d' not in fncache!
+  checked 2 changesets with 2 changes to 1 files
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
+  $ cd ..
+
