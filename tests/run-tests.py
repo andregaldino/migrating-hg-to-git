@@ -1386,8 +1386,8 @@ class Test(unittest.TestCase):
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = _bytes2sys(self._testtmp)
-        docket_id_file = os.path.join(_bytes2sys(self._testtmp), 'DOCKETID')
-        env['HGTEST_DOCKETIDFILE'] = docket_id_file
+        uid_file = os.path.join(_bytes2sys(self._testtmp), 'UID')
+        env['HGTEST_UUIDFILE'] = uid_file
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
         if os.name == 'nt':

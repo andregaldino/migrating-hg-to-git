@@ -17,16 +17,71 @@
 
 from __future__ import absolute_import
 
+import errno
+import os
+import random
 import struct
 
 from .. import (
+    encoding,
     error,
+    node,
+    pycompat,
     util,
 )
 
 from . import (
     constants,
 )
+
+
+def make_uid(id_size=8):
+    """return a new unique identifier.
+
+    The identifier is random and composed of ascii characters."""
+    # size we "hex" the result we need half the number of bits to have a final
+    # uuid of size ID_SIZE
+    return node.hex(os.urandom(id_size // 2))
+
+
+# some special test logic to avoid anoying random output in the test
+stable_docket_file = encoding.environ.get(b'HGTEST_UUIDFILE')
+
+if stable_docket_file:
+
+    def make_uid(id_size=8):
+        try:
+            with open(stable_docket_file, mode='rb') as f:
+                seed = f.read().strip()
+        except IOError as inst:
+            if inst.errno != errno.ENOENT:
+                raise
+            seed = b'04'  # chosen by a fair dice roll. garanteed to be random
+        if pycompat.ispy3:
+            iter_seed = iter(seed)
+        else:
+            iter_seed = (ord(c) for c in seed)
+        # some basic circular sum hashing on 64 bits
+        int_seed = 0
+        low_mask = int('1' * 35, 2)
+        for i in iter_seed:
+            high_part = int_seed >> 35
+            low_part = (int_seed & low_mask) << 28
+            int_seed = high_part + low_part + i
+        r = random.Random()
+        if pycompat.ispy3:
+            r.seed(int_seed, version=1)
+        else:
+            r.seed(int_seed)
+        # once we drop python 3.8 support we can simply use r.randbytes
+        raw = r.getrandbits(id_size * 4)
+        assert id_size == 8
+        p = struct.pack('>L', raw)
+        new = node.hex(p)
+        with open(stable_docket_file, 'wb') as f:
+            f.write(new)
+        return new
+
 
 # Docket format
 #
