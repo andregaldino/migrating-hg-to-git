@@ -51,8 +51,8 @@ class Hint(object):
         super(Hint, self).__init__(*args, **kw)
 
 
-class Abort(Hint, Exception):
-    """Raised if a command needs to print an error and exit."""
+class Error(Hint, Exception):
+    """Base class for Mercurial errors."""
 
     def __init__(
         self, message, hint=None, coarse_exit_code=None, detailed_exit_code=None
@@ -85,6 +85,10 @@ class Abort(Hint, Exception):
         if self.hint:
             message += _(b"(%s)\n") % self.hint
         return message
+
+
+class Abort(Error):
+    """Raised if a command needs to print an error and exit."""
 
 
 class StorageError(Hint, Exception):
