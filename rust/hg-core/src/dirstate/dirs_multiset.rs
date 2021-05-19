@@ -30,12 +30,12 @@ impl DirsMultiset {
     /// Initializes the multiset from a dirstate.
     ///
     /// If `skip_state` is provided, skips dirstate entries with equal state.
-    pub fn from_dirstate<'a, I, P>(
+    pub fn from_dirstate<I, P>(
         dirstate: I,
         skip_state: Option<EntryState>,
     ) -> Result<Self, DirstateMapError>
     where
-        I: IntoIterator<Item = (P, &'a DirstateEntry)>,
+        I: IntoIterator<Item = (P, DirstateEntry)>,
         P: AsRef<HgPath>,
     {
         let mut multiset = DirsMultiset {
@@ -338,7 +338,7 @@ mod tests {
         assert_eq!(expected, new);
 
         let new =
-            DirsMultiset::from_dirstate(&StateMap::default(), None).unwrap();
+            DirsMultiset::from_dirstate(StateMap::default(), None).unwrap();
         let expected = DirsMultiset {
             inner: FastHashMap::default(),
         };
@@ -381,7 +381,7 @@ mod tests {
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
             .collect();
 
-        let new = DirsMultiset::from_dirstate(&input_map, None).unwrap();
+        let new = DirsMultiset::from_dirstate(input_map, None).unwrap();
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -417,7 +417,7 @@ mod tests {
             .collect();
 
         let new =
-            DirsMultiset::from_dirstate(&input_map, Some(EntryState::Normal))
+            DirsMultiset::from_dirstate(input_map, Some(EntryState::Normal))
                 .unwrap();
         let expected = DirsMultiset {
             inner: expected_inner,

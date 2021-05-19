@@ -117,7 +117,7 @@ pub trait DirstateMapMethods {
 
     fn contains_key(&self, key: &HgPath) -> bool;
 
-    fn get(&self, key: &HgPath) -> Option<&DirstateEntry>;
+    fn get(&self, key: &HgPath) -> Option<DirstateEntry>;
 
     fn iter(&self) -> StateMapIter<'_>;
 }
@@ -290,11 +290,11 @@ impl DirstateMapMethods for DirstateMap {
         (&**self).contains_key(key)
     }
 
-    fn get(&self, key: &HgPath) -> Option<&DirstateEntry> {
-        (&**self).get(key)
+    fn get(&self, key: &HgPath) -> Option<DirstateEntry> {
+        (&**self).get(key).cloned()
     }
 
     fn iter(&self) -> StateMapIter<'_> {
-        Box::new((&**self).iter().map(|(key, value)| (&**key, value)))
+        Box::new((&**self).iter().map(|(key, value)| (&**key, *value)))
     }
 }

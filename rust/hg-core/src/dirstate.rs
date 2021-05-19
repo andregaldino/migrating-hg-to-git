@@ -77,7 +77,7 @@ pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> =
-    Box<dyn Iterator<Item = (&'a HgPath, &'a DirstateEntry)> + Send + 'a>;
+    Box<dyn Iterator<Item = (&'a HgPath, DirstateEntry)> + Send + 'a>;
 
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> =

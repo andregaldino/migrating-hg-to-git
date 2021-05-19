@@ -627,13 +627,13 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         self.get(key).is_some()
     }
 
-    fn get(&self, key: &HgPath) -> Option<&DirstateEntry> {
-        self.get_node(key)?.entry.as_ref()
+    fn get(&self, key: &HgPath) -> Option<DirstateEntry> {
+        self.get_node(key)?.entry
     }
 
     fn iter(&self) -> StateMapIter<'_> {
         Box::new(self.iter_nodes().filter_map(|(path, node)| {
-            node.entry.as_ref().map(|entry| (&**path, entry))
+            node.entry.map(|entry| (&**path, entry))
         }))
     }
 }

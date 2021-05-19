@@ -92,7 +92,7 @@ py_class!(pub class DirstateMap |py| {
         let key = key.extract::<PyBytes>(py)?;
         match self.inner(py).borrow().get(HgPath::new(key.data(py))) {
             Some(entry) => {
-                Ok(Some(make_dirstate_tuple(py, entry)?))
+                Ok(Some(make_dirstate_tuple(py, &entry)?))
             },
             None => Ok(default)
         }
@@ -348,7 +348,7 @@ py_class!(pub class DirstateMap |py| {
         let key = HgPath::new(key.data(py));
         match self.inner(py).borrow().get(key) {
             Some(entry) => {
-                Ok(make_dirstate_tuple(py, entry)?)
+                Ok(make_dirstate_tuple(py, &entry)?)
             },
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
@@ -525,13 +525,13 @@ impl DirstateMap {
     }
     fn translate_key(
         py: Python,
-        res: (&HgPath, &DirstateEntry),
+        res: (&HgPath, DirstateEntry),
     ) -> PyResult<Option<PyBytes>> {
         Ok(Some(PyBytes::new(py, res.0.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
-        res: (&HgPath, &DirstateEntry),
+        res: (&HgPath, DirstateEntry),
     ) -> PyResult<Option<(PyBytes, PyObject)>> {
         let (f, entry) = res;
         Ok(Some((

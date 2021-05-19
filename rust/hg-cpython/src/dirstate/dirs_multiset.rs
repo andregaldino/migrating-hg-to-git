@@ -45,7 +45,8 @@ py_class!(pub class Dirs |py| {
         }
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
-            DirsMultiset::from_dirstate(&dirstate, skip_state)
+            let dirstate = dirstate.iter().map(|(k, v)| (k, *v));
+            DirsMultiset::from_dirstate(dirstate, skip_state)
                 .map_err(|e: DirstateMapError| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
                 })?

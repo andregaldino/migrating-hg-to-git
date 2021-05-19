@@ -173,7 +173,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get().contains_key(key)
     }
 
-    fn get(&self, key: &HgPath) -> Option<&DirstateEntry> {
+    fn get(&self, key: &HgPath) -> Option<DirstateEntry> {
         self.get().get(key)
     }
 
