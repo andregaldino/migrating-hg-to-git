@@ -6,6 +6,7 @@ use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
+use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::HgPath;
 use crate::BadMatch;
 use crate::DirstateStatus;
@@ -83,14 +84,17 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         fs_path: &Path,
         is_at_repo_root: bool,
     ) -> Result<Vec<DirEntry>, ()> {
-        DirEntry::read_dir(fs_path, is_at_repo_root).map_err(|error| {
-            let errno = error.raw_os_error().expect("expected real OS error");
-            self.outcome
-                .lock()
-                .unwrap()
-                .bad
-                .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
-        })
+        DirEntry::read_dir(fs_path, is_at_repo_root)
+            .map_err(|error| self.io_error(error, hg_path))
+    }
+
+    fn io_error(&self, error: std::io::Error, hg_path: &HgPath) {
+        let errno = error.raw_os_error().expect("expected real OS error");
+        self.outcome
+            .lock()
+            .unwrap()
+            .bad
+            .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
     }
 
     fn traverse_fs_directory_and_dirstate(
@@ -101,6 +105,35 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         directory_fs_path: &Path,
         is_at_repo_root: bool,
     ) -> Result<(), DirstateV2ParseError> {
+        if !self.options.list_unknown && !self.options.list_ignored {
+            // We only care about files in the dirstate, so we can skip listing
+            // filesystem directories entirely.
+            return dirstate_nodes
+                .par_iter()
+                .map(|dirstate_node| {
+                    let fs_path = directory_fs_path.join(get_path_from_bytes(
+                        dirstate_node.base_name(self.dmap.on_disk)?.as_bytes(),
+                    ));
+                    match std::fs::symlink_metadata(&fs_path) {
+                        Ok(fs_metadata) => self.traverse_fs_and_dirstate(
+                            &fs_path,
+                            &fs_metadata,
+                            dirstate_node,
+                            has_ignored_ancestor,
+                        ),
+                        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                            self.traverse_dirstate_only(dirstate_node)
+                        }
+                        Err(error) => {
+                            let hg_path =
+                                dirstate_node.full_path(self.dmap.on_disk)?;
+                            Ok(self.io_error(error, hg_path))
+                        }
+                    }
+                })
+                .collect();
+        }
+
         let mut fs_entries = if let Ok(entries) = self.read_dir(
             directory_hg_path,
             directory_fs_path,
@@ -141,7 +174,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
             match pair {
                 Both(dirstate_node, fs_entry) => self
                     .traverse_fs_and_dirstate(
-                        fs_entry,
+                        &fs_entry.full_path,
+                        &fs_entry.metadata,
                         dirstate_node,
                         has_ignored_ancestor,
                     ),
@@ -160,12 +194,13 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
 
     fn traverse_fs_and_dirstate(
         &self,
-        fs_entry: &DirEntry,
+        fs_path: &Path,
+        fs_metadata: &std::fs::Metadata,
         dirstate_node: NodeRef<'tree, '_>,
         has_ignored_ancestor: bool,
     ) -> Result<(), DirstateV2ParseError> {
         let hg_path = dirstate_node.full_path(self.dmap.on_disk)?;
-        let file_type = fs_entry.metadata.file_type();
+        let file_type = fs_metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
         if !file_or_symlink {
             // If we previously had a file here, it was removed (with
@@ -186,7 +221,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
                 is_ignored,
                 dirstate_node.children(self.dmap.on_disk)?,
                 hg_path,
-                &fs_entry.full_path,
+                fs_path,
                 is_at_repo_root,
             )?
         } else {
@@ -209,9 +244,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
                             .unwrap()
                             .modified
                             .push(full_path),
-                        EntryState::Normal => {
-                            self.handle_normal_file(&dirstate_node, fs_entry)?
-                        }
+                        EntryState::Normal => self
+                            .handle_normal_file(&dirstate_node, fs_metadata)?,
                         // This variant is not used in DirstateMap
                         // nodes
                         EntryState::Unknown => unreachable!(),
@@ -239,7 +273,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     fn handle_normal_file(
         &self,
         dirstate_node: &NodeRef<'tree, '_>,
-        fs_entry: &DirEntry,
+        fs_metadata: &std::fs::Metadata,
     ) -> Result<(), DirstateV2ParseError> {
         // Keep the low 31 bits
         fn truncate_u64(value: u64) -> i32 {
@@ -253,13 +287,12 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
             .entry()?
             .expect("handle_normal_file called with entry-less node");
         let full_path = Cow::from(dirstate_node.full_path(self.dmap.on_disk)?);
-        let mode_changed = || {
-            self.options.check_exec && entry.mode_changed(&fs_entry.metadata)
-        };
-        let size_changed = entry.size != truncate_u64(fs_entry.metadata.len());
+        let mode_changed =
+            || self.options.check_exec && entry.mode_changed(fs_metadata);
+        let size_changed = entry.size != truncate_u64(fs_metadata.len());
         if entry.size >= 0
             && size_changed
-            && fs_entry.metadata.file_type().is_symlink()
+            && fs_metadata.file_type().is_symlink()
         {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
@@ -270,7 +303,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         {
             self.outcome.lock().unwrap().modified.push(full_path)
         } else {
-            let mtime = mtime_seconds(&fs_entry.metadata);
+            let mtime = mtime_seconds(fs_metadata);
             if truncate_i64(mtime) != entry.mtime
                 || mtime == self.options.last_normal_time
             {
