@@ -24,18 +24,29 @@ impl<T> WithBasename<T> {
     }
 }
 
+fn find_base_name_start(full_path: &HgPath) -> usize {
+    if let Some(last_slash_position) =
+        full_path.as_bytes().iter().rposition(|&byte| byte == b'/')
+    {
+        last_slash_position + 1
+    } else {
+        0
+    }
+}
+
 impl<T: AsRef<HgPath>> WithBasename<T> {
     pub fn new(full_path: T) -> Self {
-        let base_name_start = if let Some(last_slash_position) = full_path
-            .as_ref()
-            .as_bytes()
-            .iter()
-            .rposition(|&byte| byte == b'/')
-        {
-            last_slash_position + 1
-        } else {
-            0
-        };
+        Self {
+            base_name_start: find_base_name_start(full_path.as_ref()),
+            full_path,
+        }
+    }
+
+    pub fn from_raw_parts(full_path: T, base_name_start: usize) -> Self {
+        debug_assert_eq!(
+            base_name_start,
+            find_base_name_start(full_path.as_ref())
+        );
         Self {
             base_name_start,
             full_path,
@@ -46,6 +57,10 @@ impl<T: AsRef<HgPath>> WithBasename<T> {
         HgPath::new(
             &self.full_path.as_ref().as_bytes()[self.base_name_start..],
         )
+    }
+
+    pub fn base_name_start(&self) -> usize {
+        self.base_name_start
     }
 }
 

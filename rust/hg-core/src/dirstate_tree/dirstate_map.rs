@@ -4,17 +4,15 @@ use std::borrow::Cow;
 use std::convert::TryInto;
 use std::path::PathBuf;
 
-use super::on_disk::V2_FORMAT_MARKER;
+use super::on_disk;
 use super::path_with_basename::WithBasename;
 use crate::dirstate::parsers::clear_ambiguous_mtime;
 use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::Timestamp;
-use crate::errors::HgError;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
-use crate::utils::SliceExt;
 use crate::CopyMapIter;
 use crate::DirstateEntry;
 use crate::DirstateError;
@@ -30,16 +28,16 @@ use crate::StatusOptions;
 
 pub struct DirstateMap<'on_disk> {
     /// Contents of the `.hg/dirstate` file
-    on_disk: &'on_disk [u8],
+    pub(super) on_disk: &'on_disk [u8],
 
     pub(super) root: ChildNodes<'on_disk>,
 
     /// Number of nodes anywhere in the tree that have `.entry.is_some()`.
-    nodes_with_entry_count: usize,
+    pub(super) nodes_with_entry_count: u32,
 
     /// Number of nodes anywhere in the tree that have
     /// `.copy_source.is_some()`.
-    nodes_with_copy_source_count: usize,
+    pub(super) nodes_with_copy_source_count: u32,
 }
 
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
@@ -62,7 +60,7 @@ pub(super) struct Node<'on_disk> {
     pub(super) children: ChildNodes<'on_disk>,
 
     /// How many (non-inclusive) descendants of this node are tracked files
-    tracked_descendants_count: usize,
+    pub(super) tracked_descendants_count: u32,
 }
 
 impl<'on_disk> Node<'on_disk> {
@@ -89,32 +87,27 @@ type NodeDataMut<'tree, 'on_disk> = (
 );
 
 impl<'on_disk> DirstateMap<'on_disk> {
+    pub(super) fn empty(on_disk: &'on_disk [u8]) -> Self {
+        Self {
+            on_disk,
+            root: ChildNodes::default(),
+            nodes_with_entry_count: 0,
+            nodes_with_copy_source_count: 0,
+        }
+    }
+
     #[timed]
     pub fn new_v2(
         on_disk: &'on_disk [u8],
     ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
-        if let Some(rest) = on_disk.drop_prefix(V2_FORMAT_MARKER) {
-            Self::new_v1(rest)
-        } else if on_disk.is_empty() {
-            Self::new_v1(on_disk)
-        } else {
-            return Err(HgError::corrupted(
-                "missing dirstate-v2 magic number",
-            )
-            .into());
-        }
+        on_disk::read(on_disk)
     }
 
     #[timed]
     pub fn new_v1(
         on_disk: &'on_disk [u8],
     ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
-        let mut map = Self {
-            on_disk,
-            root: ChildNodes::default(),
-            nodes_with_entry_count: 0,
-            nodes_with_copy_source_count: 0,
-        };
+        let mut map = Self::empty(on_disk);
         if map.on_disk.is_empty() {
             return Ok((map, None));
         }
@@ -565,10 +558,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
-        // Inefficient but temporary
-        let mut v2 = V2_FORMAT_MARKER.to_vec();
-        v2.append(&mut self.pack_v1(parents, now)?);
-        Ok(v2)
+        on_disk::write(self, parents, now)
     }
 
     fn set_all_dirs(&mut self) -> Result<(), DirstateMapError> {
@@ -595,7 +585,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn copy_map_len(&self) -> usize {
-        self.nodes_with_copy_source_count
+        self.nodes_with_copy_source_count as usize
     }
 
     fn copy_map_iter(&self) -> CopyMapIter<'_> {
@@ -646,7 +636,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn len(&self) -> usize {
-        self.nodes_with_entry_count
+        self.nodes_with_entry_count as usize
     }
 
     fn contains_key(&self, key: &HgPath) -> bool {
