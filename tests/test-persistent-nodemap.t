@@ -72,14 +72,14 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   $ hg debugbuilddag .+5000 --new-file
 
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5000
   tip-node: 6b02b8c7b96654c25e86ba69eda198d7e6ad8b3c
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=70
+  .hg/store/00changelog.n: size=62
 
 Simple lookup works
 
@@ -91,10 +91,10 @@ Simple lookup works
 #if rust
 
   $ f --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd (glob)
+  .hg/store/00changelog-????????.nd: sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd (glob)
 
   $ f --sha256 .hg/store/00manifest-*.nd
-  .hg/store/00manifest-????????????????.nd: sha256=97117b1c064ea2f86664a124589e47db0e254e8d34739b5c5cc5bf31c9da2b51 (glob)
+  .hg/store/00manifest-????????.nd: sha256=97117b1c064ea2f86664a124589e47db0e254e8d34739b5c5cc5bf31c9da2b51 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
   size=121088, sha256=2e029d3200bd1a986b32784fc2ef1a3bd60dc331f025718bcf5ff44d93f026fd
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
@@ -120,7 +120,7 @@ Simple lookup works
 #else
 
   $ f --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79 (glob)
+  .hg/store/00changelog-????????.nd: sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79 (glob)
   $ hg debugnodemap --dump-new | f --sha256 --size
   size=121088, sha256=f544f5462ff46097432caf6d764091f6d8c46d6121be315ead8576d548c9dd79
   $ hg debugnodemap --dump-disk | f --sha256 --bytes=256 --hexdump --size
@@ -195,7 +195,7 @@ Check slow-path config value handling
 
 #if no-pure no-rust
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5001
   tip-node: 16395c3cf7e231394735e6b1717823ada303fb0c
   data-length: 121088
@@ -203,7 +203,7 @@ Check slow-path config value handling
   data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5001
   tip-node: 16395c3cf7e231394735e6b1717823ada303fb0c
   data-length: 121344
@@ -212,23 +212,23 @@ Check slow-path config value handling
 #endif
 
   $ f --size .hg/store/00changelog.n
-  .hg/store/00changelog.n: size=70
+  .hg/store/00changelog.n: size=62
 
 (The pure code use the debug code that perform incremental update, the C code reencode from scratch)
 
 #if pure
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121344, sha256=cce54c5da5bde3ad72a4938673ed4064c86231b9c64376b082b163fdb20f8f66 (glob)
+  .hg/store/00changelog-????????.nd: size=121344, sha256=cce54c5da5bde3ad72a4938673ed4064c86231b9c64376b082b163fdb20f8f66 (glob)
 #endif
 
 #if rust
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121344, sha256=952b042fcf614ceb37b542b1b723e04f18f83efe99bee4e0f5ccd232ef470e58 (glob)
+  .hg/store/00changelog-????????.nd: size=121344, sha256=952b042fcf614ceb37b542b1b723e04f18f83efe99bee4e0f5ccd232ef470e58 (glob)
 #endif
 
 #if no-pure no-rust
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121088, sha256=df7c06a035b96cb28c7287d349d603baef43240be7736fe34eea419a49702e17 (glob)
+  .hg/store/00changelog-????????.nd: size=121088, sha256=df7c06a035b96cb28c7287d349d603baef43240be7736fe34eea419a49702e17 (glob)
 #endif
 
   $ hg debugnodemap --check
@@ -252,36 +252,36 @@ Test code path without mmap
 
 #if pure
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121600
   data-unused: 512
   data-unused: 0.421%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121600, sha256=def52503d049ccb823974af313a98a935319ba61f40f3aa06a8be4d35c215054 (glob)
+  .hg/store/00changelog-????????.nd: size=121600, sha256=def52503d049ccb823974af313a98a935319ba61f40f3aa06a8be4d35c215054 (glob)
 #endif
 #if rust
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121600
   data-unused: 512
   data-unused: 0.421%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121600, sha256=dacf5b5f1d4585fee7527d0e67cad5b1ba0930e6a0928f650f779aefb04ce3fb (glob)
+  .hg/store/00changelog-????????.nd: size=121600, sha256=dacf5b5f1d4585fee7527d0e67cad5b1ba0930e6a0928f650f779aefb04ce3fb (glob)
 #endif
 #if no-pure no-rust
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
   $ f --sha256 .hg/store/00changelog-*.nd --size
-  .hg/store/00changelog-????????????????.nd: size=121088, sha256=59fcede3e3cc587755916ceed29e3c33748cd1aa7d2f91828ac83e7979d935e8 (glob)
+  .hg/store/00changelog-????????.nd: size=121088, sha256=59fcede3e3cc587755916ceed29e3c33748cd1aa7d2f91828ac83e7979d935e8 (glob)
 #endif
 
 Test force warming the cache
@@ -291,7 +291,7 @@ Test force warming the cache
   $ hg debugupdatecache
 #if pure
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121088
@@ -299,7 +299,7 @@ Test force warming the cache
   data-unused: 0.000%
 #else
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121088
@@ -313,7 +313,7 @@ Check out of sync nodemap
 First copy old data on the side.
 
   $ mkdir ../tmp-copies
-  $ cp .hg/store/00changelog-????????????????.nd .hg/store/00changelog.n ../tmp-copies
+  $ cp .hg/store/00changelog-????????.nd .hg/store/00changelog.n ../tmp-copies
 
 Nodemap lagging behind
 ----------------------
@@ -329,7 +329,7 @@ make a new commit
 If the nodemap is lagging behind, it can catch up fine
 
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5003
   tip-node: c9329770f979ade2d16912267c38ba5f82fd37b3
   data-length: 121344 (pure !)
@@ -343,7 +343,7 @@ If the nodemap is lagging behind, it can catch up fine
   data-unused: 0.000% (no-rust no-pure !)
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121088
@@ -374,7 +374,7 @@ compatible with the persistent nodemap. We need to detect that.
 the nodemap should detect the changelog have been tampered with and recover.
 
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: b355ef8adce0949b8bdf6afc72ca853740d65944
   data-length: 121536 (pure !)
@@ -389,7 +389,7 @@ the nodemap should detect the changelog have been tampered with and recover.
 
   $ cp -f ../tmp-copies/* .hg/store/
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5002
   tip-node: 880b18d239dfa9f632413a2071bfdbcc4806a4fd
   data-length: 121088
@@ -439,7 +439,7 @@ An up to date nodemap should be available to shell hooks,
   $ hg add a
   $ hg ci -m a
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5003
   tip-node: a52c5079765b5865d97b993b303a18740113bbb2
   data-length: 121088
@@ -447,7 +447,7 @@ An up to date nodemap should be available to shell hooks,
   data-unused: 0.000%
   $ echo babar2 > babar
   $ hg ci -m 'babar2' --config "hooks.pretxnclose.nodemap-test=hg debugnodemap --metadata"
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5004
   tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
   data-length: 121280 (pure !)
@@ -460,7 +460,7 @@ An up to date nodemap should be available to shell hooks,
   data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5004
   tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
   data-length: 121280 (pure !)
@@ -485,7 +485,7 @@ Another process does not see the pending nodemap content during run.
   $ sh "$RUNTESTDIR/testlib/wait-on-file" 20 sync-txn-pending && \
   > hg debugnodemap --metadata && \
   > sh "$RUNTESTDIR/testlib/wait-on-file" 20 sync-txn-close sync-repo-read
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5004
   tip-node: 2f5fb1c06a16834c5679d672e90da7c5f3b1a984
   data-length: 121280 (pure !)
@@ -498,7 +498,7 @@ Another process does not see the pending nodemap content during run.
   data-unused: 0.158% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5005
   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
   data-length: 121536 (pure !)
@@ -517,16 +517,16 @@ Check that a failing transaction will properly revert the data
 
   $ echo plakfe > a
   $ f --size --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
-  .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
-  .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
+  .hg/store/00changelog-????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
+  .hg/store/00changelog-????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
+  .hg/store/00changelog-????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
   $ hg ci -m a3 --config "extensions.abort=$RUNTESTDIR/testlib/crash_transaction_late.py"
   transaction abort!
   rollback completed
   abort: This is a late abort
   [255]
   $ hg debugnodemap --metadata
-  uid: ???????????????? (glob)
+  uid: ???????? (glob)
   tip-rev: 5005
   tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
   data-length: 121536 (pure !)
@@ -539,9 +539,9 @@ Check that a failing transaction will properly revert the data
   data-unused: 0.369% (rust !)
   data-unused: 0.000% (no-pure no-rust !)
   $ f --size --sha256 .hg/store/00changelog-*.nd
-  .hg/store/00changelog-????????????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
-  .hg/store/00changelog-????????????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
-  .hg/store/00changelog-????????????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
+  .hg/store/00changelog-????????.nd: size=121536, sha256=bb414468d225cf52d69132e1237afba34d4346ee2eb81b505027e6197b107f03 (glob) (pure !)
+  .hg/store/00changelog-????????.nd: size=121536, sha256=909ac727bc4d1c0fda5f7bff3c620c98bd4a2967c143405a1503439e33b377da (glob) (rust !)
+  .hg/store/00changelog-????????.nd: size=121088, sha256=342d36d30d86dde67d3cb6c002606c4a75bcad665595d941493845066d9c8ee0 (glob) (no-pure no-rust !)
 
 Check that removing content does not confuse the nodemap
 --------------------------------------------------------
@@ -826,9 +826,9 @@ Simple case
 No race condition
 
   $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
-  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest.n (62 bytes)
   adding [s] 00manifest-*.nd (118 KB) (glob)
-  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog.n (62 bytes)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
   adding [s] 00manifest.d (491 KB) (zstd !)
@@ -874,7 +874,7 @@ Check and record file state beforehand
   test-repo/.hg/store/00changelog.d: size=376891 (zstd !)
   test-repo/.hg/store/00changelog.d: size=368890 (no-zstd !)
   test-repo/.hg/store/00changelog.i: size=320384
-  test-repo/.hg/store/00changelog.n: size=70
+  test-repo/.hg/store/00changelog.n: size=62
   $ hg -R test-repo debugnodemap --metadata | tee server-metadata.txt
   uid: * (glob)
   tip-rev: 5005
@@ -896,9 +896,9 @@ Do a mix of clone and commit at the same time so that the file listed on disk di
   $ touch $HG_TEST_STREAM_WALKED_FILE_2
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
   $ cat clone-output
-  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest.n (62 bytes)
   adding [s] 00manifest-*.nd (118 KB) (glob)
-  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog.n (62 bytes)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
   adding [s] 00manifest.d (491 KB) (zstd !)
@@ -914,7 +914,7 @@ Check the result state
   stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd !)
   stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd !)
   stream-clone-race-1/.hg/store/00changelog.i: size=320384
-  stream-clone-race-1/.hg/store/00changelog.n: size=70
+  stream-clone-race-1/.hg/store/00changelog.n: size=62
 
   $ hg -R stream-clone-race-1 debugnodemap --metadata | tee client-metadata.txt
   uid: * (glob)
@@ -969,7 +969,7 @@ Check the initial state
   test-repo/.hg/store/00changelog.d: size=376950 (zstd !)
   test-repo/.hg/store/00changelog.d: size=368949 (no-zstd !)
   test-repo/.hg/store/00changelog.i: size=320448
-  test-repo/.hg/store/00changelog.n: size=70
+  test-repo/.hg/store/00changelog.n: size=62
   $ hg -R test-repo debugnodemap --metadata | tee server-metadata-2.txt
   uid: * (glob)
   tip-rev: 5006
@@ -995,9 +995,9 @@ Performe the mix of clone and full refresh of the nodemap, so that the files
   $ touch $HG_TEST_STREAM_WALKED_FILE_2
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_3
   $ cat clone-output-2
-  adding [s] 00manifest.n (70 bytes)
+  adding [s] 00manifest.n (62 bytes)
   adding [s] 00manifest-*.nd (118 KB) (glob)
-  adding [s] 00changelog.n (70 bytes)
+  adding [s] 00changelog.n (62 bytes)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (492 KB) (zstd !)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
@@ -1015,7 +1015,7 @@ Check the result.
   stream-clone-race-2/.hg/store/00changelog.d: size=376950 (zstd !)
   stream-clone-race-2/.hg/store/00changelog.d: size=368949 (no-zstd !)
   stream-clone-race-2/.hg/store/00changelog.i: size=320448
-  stream-clone-race-2/.hg/store/00changelog.n: size=70
+  stream-clone-race-2/.hg/store/00changelog.n: size=62
 
   $ hg -R stream-clone-race-2 debugnodemap --metadata | tee client-metadata-2.txt
   uid: * (glob)

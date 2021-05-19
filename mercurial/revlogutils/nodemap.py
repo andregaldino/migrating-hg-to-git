@@ -288,7 +288,9 @@ def _make_uid():
     """return a new unique identifier.
 
     The identifier is random and composed of ascii characters."""
-    return hex(os.urandom(ID_SIZE))
+    # size we "hex" the result we need half the number of bits to have a final
+    # uuid of size ID_SIZE
+    return hex(os.urandom(ID_SIZE // 2))
 
 
 # some special test logic to avoid anoying random output in the test
@@ -321,9 +323,9 @@ if stable_docket_file:
         else:
             r.seed(int_seed)
         # once we drop python 3.8 support we can simply use r.randbytes
-        raw = r.getrandbits(ID_SIZE * 8)
+        raw = r.getrandbits(ID_SIZE * 4)
         assert ID_SIZE == 8
-        p = struct.pack('>Q', raw)
+        p = struct.pack('>L', raw)
         new = hex(p)
         with open(stable_docket_file, 'wb') as f:
             f.write(new)
