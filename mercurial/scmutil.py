@@ -198,11 +198,6 @@ def callcatch(ui, func):
             ui.error(b"\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
         ui.error(_(b"abort: file censored %s\n") % inst)
-    except error.StorageError as inst:
-        ui.error(_(b"abort: %s\n") % inst)
-        if inst.hint:
-            ui.error(_(b"(%s)\n") % inst.hint)
-        detailed_exit_code = 50
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
     except error.Error as inst:

@@ -91,13 +91,16 @@ class Abort(Error):
     """Raised if a command needs to print an error and exit."""
 
 
-class StorageError(Hint, Exception):
+class StorageError(Error):
     """Raised when an error occurs in a storage layer.
 
     Usually subclassed by a storage-specific exception.
     """
 
-    __bytes__ = _tobytes
+    def __init__(self, message, hint=None):
+        super(StorageError, self).__init__(
+            message, hint=hint, detailed_exit_code=50
+        )
 
 
 class RevlogError(StorageError):
