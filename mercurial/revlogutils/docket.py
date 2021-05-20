@@ -91,8 +91,11 @@ if stable_docket_file:
 #          |   This is mandatory as docket must be compatible with the previous
 #          |   revlog index header.
 # * 1 bytes: size of index uuid
+# * 1 bytes: number of outdated index uuid
 # * 1 bytes: size of data uuid
+# * 1 bytes: number of outdated data uuid
 # * 1 bytes: size of sizedata uuid
+# * 1 bytes: number of outdated data uuid
 # * 8 bytes: size of index-data
 # * 8 bytes: pending size of index-data
 # * 8 bytes: size of data
@@ -100,7 +103,10 @@ if stable_docket_file:
 # * 8 bytes: pending size of data
 # * 8 bytes: pending size of sidedata
 # * 1 bytes: default compression header
-S_HEADER = struct.Struct(constants.INDEX_HEADER_FMT + b'BBBLLLLLLc')
+S_HEADER = struct.Struct(constants.INDEX_HEADER_FMT + b'BBBBBBLLLLLLc')
+# * 1 bytes: size of index uuid
+# * 8 bytes: size of file
+S_OLD_UID = struct.Struct('>BL')
 
 
 class RevlogDocket(object):
@@ -112,8 +118,11 @@ class RevlogDocket(object):
         use_pending=False,
         version_header=None,
         index_uuid=None,
+        older_index_uuids=(),
         data_uuid=None,
+        older_data_uuids=(),
         sidedata_uuid=None,
+        older_sidedata_uuids=(),
         index_end=0,
         pending_index_end=0,
         data_end=0,
@@ -129,8 +138,14 @@ class RevlogDocket(object):
         self._path = revlog._docket_file
         self._opener = revlog.opener
         self._index_uuid = index_uuid
+        self._older_index_uuids = older_index_uuids
         self._data_uuid = data_uuid
+        self._older_data_uuids = older_data_uuids
         self._sidedata_uuid = sidedata_uuid
+        self._older_sidedata_uuids = older_sidedata_uuids
+        assert not set(older_index_uuids) & set(older_data_uuids)
+        assert not set(older_data_uuids) & set(older_sidedata_uuids)
+        assert not set(older_index_uuids) & set(older_sidedata_uuids)
         # thes asserts should be True as long as we have a single index filename
         assert index_end <= pending_index_end
         assert data_end <= pending_data_end
@@ -239,8 +254,11 @@ class RevlogDocket(object):
         data = (
             self._version_header,
             len(self._index_uuid),
+            len(self._older_index_uuids),
             len(self._data_uuid),
+            len(self._older_data_uuids),
             len(self._sidedata_uuid),
+            len(self._older_sidedata_uuids),
             official_index_end,
             self._index_end,
             official_data_end,
@@ -251,9 +269,24 @@ class RevlogDocket(object):
         )
         s = []
         s.append(S_HEADER.pack(*data))
+
         s.append(self._index_uuid)
+        for u, size in self._older_index_uuids:
+            s.append(S_OLD_UID.pack(len(u), size))
+        for u, size in self._older_index_uuids:
+            s.append(u)
+
         s.append(self._data_uuid)
+        for u, size in self._older_data_uuids:
+            s.append(S_OLD_UID.pack(len(u), size))
+        for u, size in self._older_data_uuids:
+            s.append(u)
+
         s.append(self._sidedata_uuid)
+        for u, size in self._older_sidedata_uuids:
+            s.append(S_OLD_UID.pack(len(u), size))
+        for u, size in self._older_sidedata_uuids:
+            s.append(u)
         return b''.join(s)
 
 
@@ -270,6 +303,19 @@ def default_docket(revlog, version_header):
     )
     docket._dirty = True
     return docket
+
+
+def _parse_old_uids(get_data, count):
+    all_sizes = []
+    all_uids = []
+    for i in range(0, count):
+        raw = get_data(S_OLD_UID.size)
+        all_sizes.append(S_OLD_UID.unpack(raw))
+
+    for uid_size, file_size in all_sizes:
+        uid = get_data(uid_size)
+        all_uids.append((uid, file_size))
+    return all_uids
 
 
 def parse_docket(revlog, data, use_pending=False):
@@ -297,11 +343,20 @@ def parse_docket(revlog, data, use_pending=False):
     index_uuid_size = next(iheader)
     index_uuid = get_data(index_uuid_size)
 
+    older_index_uuid_count = next(iheader)
+    older_index_uuids = _parse_old_uids(get_data, older_index_uuid_count)
+
     data_uuid_size = next(iheader)
     data_uuid = get_data(data_uuid_size)
 
+    older_data_uuid_count = next(iheader)
+    older_data_uuids = _parse_old_uids(get_data, older_data_uuid_count)
+
     sidedata_uuid_size = next(iheader)
     sidedata_uuid = get_data(sidedata_uuid_size)
+
+    older_sidedata_uuid_count = next(iheader)
+    older_sidedata_uuids = _parse_old_uids(get_data, older_sidedata_uuid_count)
 
     index_size = next(iheader)
 
@@ -322,8 +377,11 @@ def parse_docket(revlog, data, use_pending=False):
         use_pending=use_pending,
         version_header=version_header,
         index_uuid=index_uuid,
+        older_index_uuids=older_index_uuids,
         data_uuid=data_uuid,
+        older_data_uuids=older_data_uuids,
         sidedata_uuid=sidedata_uuid,
+        older_sidedata_uuids=older_sidedata_uuids,
         index_end=index_size,
         pending_index_end=pending_index_size,
         data_end=data_size,
