@@ -181,10 +181,10 @@ test http authentication
   $ cat pid >> $DAEMON_PIDS
 
   $ cat << EOF > get_pass.py
-  > import getpass
-  > def newgetpass(arg):
+  > from mercurial import util
+  > def newgetpass():
   >   return "pass"
-  > getpass.getpass = newgetpass
+  > util.get_password = newgetpass
   > EOF
 
   $ hg id http://localhost:$HGPORT2/
