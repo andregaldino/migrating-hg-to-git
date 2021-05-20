@@ -238,18 +238,29 @@ def parse_docket(revlog, data, use_pending=False):
     """given some docket data return a docket object for the given revlog"""
     header = S_HEADER.unpack(data[: S_HEADER.size])
     offset = S_HEADER.size
-    version_header = header[0]
-    index_uuid_size = header[1]
+
+    iheader = iter(header)
+
+    version_header = next(iheader)
+
+    index_uuid_size = next(iheader)
     index_uuid = data[offset : offset + index_uuid_size]
     offset += index_uuid_size
-    data_uuid_size = header[2]
+
+    data_uuid_size = next(iheader)
     data_uuid = data[offset : offset + data_uuid_size]
     offset += data_uuid_size
-    index_size = header[3]
-    pending_index_size = header[4]
-    data_size = header[5]
-    pending_data_size = header[6]
-    default_compression_header = header[7]
+
+    index_size = next(iheader)
+
+    pending_index_size = next(iheader)
+
+    data_size = next(iheader)
+
+    pending_data_size = next(iheader)
+
+    default_compression_header = next(iheader)
+
     docket = RevlogDocket(
         revlog,
         use_pending=use_pending,
