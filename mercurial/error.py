@@ -54,14 +54,13 @@ class Hint(object):
 class Error(Hint, Exception):
     """Base class for Mercurial errors."""
 
-    def __init__(
-        self, message, hint=None, coarse_exit_code=None, detailed_exit_code=None
-    ):
+    coarse_exit_code = None
+    detailed_exit_code = None
+
+    def __init__(self, message, hint=None):
         # type: (bytes, Optional[bytes]) -> None
         self.message = message
         self.hint = hint
-        self.coarse_exit_code = coarse_exit_code
-        self.detailed_exit_code = detailed_exit_code
         # Pass the message into the Exception constructor to help extensions
         # that look for exc.args[0].
         Exception.__init__(self, message)
@@ -97,10 +96,7 @@ class StorageError(Error):
     Usually subclassed by a storage-specific exception.
     """
 
-    def __init__(self, message, hint=None):
-        super(StorageError, self).__init__(
-            message, hint=hint, detailed_exit_code=50
-        )
+    detailed_exit_code = 50
 
 
 class RevlogError(StorageError):
@@ -205,10 +201,8 @@ class WorkerError(Exception):
 class InterventionRequired(Abort):
     """Exception raised when a command requires human intervention."""
 
-    def __init__(self, message, hint=None):
-        super(InterventionRequired, self).__init__(
-            message, hint=hint, coarse_exit_code=1, detailed_exit_code=240
-        )
+    coarse_exit_code = 1
+    detailed_exit_code = 240
 
     def format(self):
         # type: () -> bytes
@@ -243,10 +237,7 @@ class InputError(Abort):
     Examples: Invalid command, invalid flags, invalid revision.
     """
 
-    def __init__(self, message, hint=None):
-        super(InputError, self).__init__(
-            message, hint=hint, detailed_exit_code=10
-        )
+    detailed_exit_code = 10
 
 
 class StateError(Abort):
@@ -255,10 +246,7 @@ class StateError(Abort):
     Examples: Unresolved merge conflicts, unfinished operations.
     """
 
-    def __init__(self, message, hint=None):
-        super(StateError, self).__init__(
-            message, hint=hint, detailed_exit_code=20
-        )
+    detailed_exit_code = 20
 
 
 class CanceledError(Abort):
@@ -267,10 +255,7 @@ class CanceledError(Abort):
     Examples: Close commit editor with error status, quit chistedit.
     """
 
-    def __init__(self, message, hint=None):
-        super(CanceledError, self).__init__(
-            message, hint=hint, detailed_exit_code=250
-        )
+    detailed_exit_code = 250
 
 
 class SecurityError(Abort):
@@ -280,10 +265,7 @@ class SecurityError(Abort):
     filesystem, mismatched GPG signature, DoS protection.
     """
 
-    def __init__(self, message, hint=None):
-        super(SecurityError, self).__init__(
-            message, hint=hint, detailed_exit_code=150
-        )
+    detailed_exit_code = 150
 
 
 class HookLoadError(Abort):
@@ -297,20 +279,17 @@ class HookAbort(Abort):
 
     Exists to allow more specialized catching."""
 
-    def __init__(self, message, hint=None):
-        super(HookAbort, self).__init__(
-            message, hint=hint, detailed_exit_code=40
-        )
+    detailed_exit_code = 40
 
 
 class ConfigError(Abort):
     """Exception raised when parsing config files"""
 
+    detailed_exit_code = 30
+
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[bytes], Optional[bytes]) -> None
-        super(ConfigError, self).__init__(
-            message, hint=hint, detailed_exit_code=30
-        )
+        super(ConfigError, self).__init__(message, hint=hint)
         self.location = location
 
     def format(self):
@@ -357,10 +336,7 @@ class ResponseExpected(Abort):
 class RemoteError(Abort):
     """Exception raised when interacting with a remote repo fails"""
 
-    def __init__(self, message, hint=None):
-        super(RemoteError, self).__init__(
-            message, hint=hint, detailed_exit_code=100
-        )
+    detailed_exit_code = 100
 
 
 class OutOfBandError(RemoteError):
@@ -380,11 +356,11 @@ class OutOfBandError(RemoteError):
 class ParseError(Abort):
     """Raised when parsing config files and {rev,file}sets (msg[, pos])"""
 
+    detailed_exit_code = 10
+
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[Union[bytes, int]], Optional[bytes]) -> None
-        super(ParseError, self).__init__(
-            message, hint=hint, detailed_exit_code=10
-        )
+        super(ParseError, self).__init__(message, hint=hint)
         self.location = location
 
     def format(self):
