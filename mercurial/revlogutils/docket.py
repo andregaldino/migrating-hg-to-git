@@ -237,19 +237,30 @@ def default_docket(revlog, version_header):
 def parse_docket(revlog, data, use_pending=False):
     """given some docket data return a docket object for the given revlog"""
     header = S_HEADER.unpack(data[: S_HEADER.size])
-    offset = S_HEADER.size
+
+    # this is a mutable closure capture used in `get_data`
+    offset = [S_HEADER.size]
+
+    def get_data(size):
+        """utility closure to access the `size` next bytes"""
+        if offset[0] + size > len(data):
+            # XXX better class
+            msg = b"docket is too short, expected %d got %d"
+            msg %= (offset[0] + size, len(data))
+            raise error.Abort(msg)
+        raw = data[offset[0] : offset[0] + size]
+        offset[0] += size
+        return raw
 
     iheader = iter(header)
 
     version_header = next(iheader)
 
     index_uuid_size = next(iheader)
-    index_uuid = data[offset : offset + index_uuid_size]
-    offset += index_uuid_size
+    index_uuid = get_data(index_uuid_size)
 
     data_uuid_size = next(iheader)
-    data_uuid = data[offset : offset + data_uuid_size]
-    offset += data_uuid_size
+    data_uuid = get_data(data_uuid_size)
 
     index_size = next(iheader)
 
