@@ -54,17 +54,15 @@ synchronisation+output script:
   $ export HG_TEST_FILE_EXT_DONE
   $ cat << EOF > script/external.sh
   > #!/bin/sh
-  > $RUNTESTDIR/testlib/wait-on-file 5 $HG_TEST_FILE_EXT_UNLOCK $HG_TEST_FILE_EXT_WAITING
-  > hg log --rev 'tip' -T 'external: {rev} {desc}\n' > $TESTTMP/output/external.out
-  > touch $HG_TEST_FILE_EXT_DONE
+  > "$RUNTESTDIR/testlib/wait-on-file" 5 "$HG_TEST_FILE_EXT_UNLOCK" "$HG_TEST_FILE_EXT_WAITING"
+  > hg log --rev 'tip' -T 'external: {rev} {desc}\n' > "$TESTTMP/output/external.out"
+  > touch "$HG_TEST_FILE_EXT_DONE"
   > EOF
-  $ chmod +x script/external.sh
   $ cat << EOF > script/internal.sh
   > #!/bin/sh
-  > hg log --rev 'tip' -T 'internal: {rev} {desc}\n' > $TESTTMP/output/internal.out
-  > $RUNTESTDIR/testlib/wait-on-file 5 $HG_TEST_FILE_EXT_DONE $HG_TEST_FILE_EXT_UNLOCK
+  > hg log --rev 'tip' -T 'internal: {rev} {desc}\n' > "$TESTTMP/output/internal.out"
+  > "$RUNTESTDIR/testlib/wait-on-file" 5 "$HG_TEST_FILE_EXT_DONE" "$HG_TEST_FILE_EXT_UNLOCK"
   > EOF
-  $ chmod +x script/internal.sh
 
 
 Automated commands:
@@ -74,7 +72,7 @@ Automated commands:
   > rm -f $TESTTMP/output/*
   > hg log --rev 'tip' -T 'pre-commit: {rev} {desc}\n'
   > echo x >> a
-  > $TESTTMP/script/external.sh & hg commit -m "$1"
+  > sh $TESTTMP/script/external.sh & hg commit -m "$1"
   > cat $TESTTMP/output/external.out
   > cat $TESTTMP/output/internal.out
   > hg log --rev 'tip' -T 'post-tr:  {rev} {desc}\n'
@@ -86,7 +84,7 @@ Automated commands:
   > rm -f $TESTTMP/output/*
   > hg log --rev 'tip' -T 'pre-commit: {rev} {desc}\n'
   > echo x >> a
-  > $TESTTMP/script/external.sh & hg pull ../other-repo/ --rev "$1" --force --quiet
+  > sh $TESTTMP/script/external.sh & hg pull ../other-repo/ --rev "$1" --force --quiet
   > cat $TESTTMP/output/external.out
   > cat $TESTTMP/output/internal.out
   > hg log --rev 'tip' -T 'post-tr:  {rev} {desc}\n'
@@ -122,7 +120,7 @@ prepare a small extension to controll inline size
   > [extensions]
   > small_inline=$TESTTMP/ext/small_inline.py
   > [hooks]
-  > pretxnclose = $TESTTMP/script/internal.sh
+  > pretxnclose = sh $TESTTMP/script/internal.sh
   > EOF
 
 check this is true for the initial commit (inline → inline)
