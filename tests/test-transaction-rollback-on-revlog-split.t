@@ -28,9 +28,9 @@ adding the big change.
 
   $ hg init troffset-computation --config format.revlog-compression=none
   $ cd troffset-computation
-  $ printf '% 20d' '1' > file
+  $ printf '%20d' '1' > file
   $ hg commit -Aqm_
-  $ printf '% 1024d' '1' > file
+  $ printf '%1024d' '1' > file
   $ hg commit -Aqm_
   $ dd if=/dev/zero of=file bs=1k count=128 > /dev/null 2>&1
   $ hg commit -Aqm_
