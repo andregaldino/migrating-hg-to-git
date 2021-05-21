@@ -44,92 +44,16 @@ OPTIMISATION = b'optimization'
 
 
 class improvement(object):
-    """Represents an improvement that can be made as part of an upgrade.
+    """Represents an improvement that can be made as part of an upgrade."""
 
-    The following attributes are defined on each instance:
+    ### The following attributes should be defined for each subclass:
 
-    name
-       Machine-readable string uniquely identifying this improvement. It
-       will be mapped to an action later in the upgrade process.
-
-    type
-       Either ``FORMAT_VARIANT`` or ``OPTIMISATION``.
-       A format variant is where we change the storage format. Not all format
-       variant changes are an obvious problem.
-       An optimization is an action (sometimes optional) that
-       can be taken to further improve the state of the repository.
-
-    description
-       Message intended for humans explaining the improvement in more detail,
-       including the implications of it. For ``FORMAT_VARIANT`` types, should be
-       worded in the present tense. For ``OPTIMISATION`` types, should be
-       worded in the future tense.
-
-    upgrademessage
-       Message intended for humans explaining what an upgrade addressing this
-       issue will do. Should be worded in the future tense.
-
-    postupgrademessage
-       Message intended for humans which will be shown post an upgrade
-       operation when the improvement will be added
-
-    postdowngrademessage
-       Message intended for humans which will be shown post an upgrade
-       operation in which this improvement was removed
-
-    touches_filelogs (bool)
-        Whether this improvement touches filelogs
-
-    touches_manifests (bool)
-        Whether this improvement touches manifests
-
-    touches_changelog (bool)
-        Whether this improvement touches changelog
-
-    touches_requirements (bool)
-        Whether this improvement changes repository requirements
-    """
-
-    def __init__(self, name, type, description, upgrademessage):
-        self.name = name
-        self.type = type
-        self.description = description
-        self.upgrademessage = upgrademessage
-        self.postupgrademessage = None
-        self.postdowngrademessage = None
-        # By default for now, we assume every improvement touches
-        # all the things
-        self.touches_filelogs = True
-        self.touches_manifests = True
-        self.touches_changelog = True
-        self.touches_requirements = True
-
-    def __eq__(self, other):
-        if not isinstance(other, improvement):
-            # This is what python tell use to do
-            return NotImplemented
-        return self.name == other.name
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __hash__(self):
-        return hash(self.name)
-
-
-allformatvariant = []  # type: List[Type['formatvariant']]
-
-
-def registerformatvariant(cls):
-    allformatvariant.append(cls)
-    return cls
-
-
-class formatvariant(improvement):
-    """an improvement subclass dedicated to repository format"""
-
-    type = FORMAT_VARIANT
-    ### The following attributes should be defined for each class:
+    # Either ``FORMAT_VARIANT`` or ``OPTIMISATION``.
+    # A format variant is where we change the storage format. Not all format
+    # variant changes are an obvious problem.
+    # An optimization is an action (sometimes optional) that
+    # can be taken to further improve the state of the repository.
+    type = None
 
     # machine-readable string uniquely identifying this improvement. it will be
     # mapped to an action later in the upgrade process.
@@ -157,13 +81,32 @@ class formatvariant(improvement):
     postdowngrademessage = None
 
     # By default for now, we assume every improvement touches all the things
+
+    # Whether this improvement touches filelogs
     touches_filelogs = True
+
+    # Whether this improvement touches manifests
     touches_manifests = True
+
+    # Whether this improvement touches changelog
     touches_changelog = True
+
+    # Whether this improvement changes repository requirements
     touches_requirements = True
 
-    def __init__(self):
-        raise NotImplementedError()
+
+allformatvariant = []  # type: List[Type['formatvariant']]
+
+
+def registerformatvariant(cls):
+    allformatvariant.append(cls)
+    return cls
+
+
+class formatvariant(improvement):
+    """an improvement subclass dedicated to repository format"""
+
+    type = FORMAT_VARIANT
 
     @staticmethod
     def fromrepo(repo):
@@ -545,87 +488,100 @@ def register_optimization(obj):
     return obj
 
 
-register_optimization(
-    improvement(
-        name=b're-delta-parent',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will be recalculated to '
-            b'choose an optimal base revision where this was not '
-            b'already done; the size of the repository may shrink and '
-            b'various operations may become faster; the first time '
-            b'this optimization is performed could slow down upgrade '
-            b'execution considerably; subsequent invocations should '
-            b'not run noticeably slower'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will choose a new '
-            b'base revision if needed'
-        ),
-    )
-)
+class optimization(improvement):
+    """an improvement subclass dedicated to optimizations"""
 
-register_optimization(
-    improvement(
-        name=b're-delta-multibase',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will be recalculated '
-            b'against multiple base revision and the smallest '
-            b'difference will be used; the size of the repository may '
-            b'shrink significantly when there are many merges; this '
-            b'optimization will slow down execution in proportion to '
-            b'the number of merges in the repository and the amount '
-            b'of files in the repository; this slow down should not '
-            b'be significant unless there are tens of thousands of '
-            b'files and thousands of merges'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will choose an '
-            b'optimal delta by computing deltas against multiple '
-            b'parents; may slow down execution time '
-            b'significantly'
-        ),
-    )
-)
+    type = OPTIMISATION
 
-register_optimization(
-    improvement(
-        name=b're-delta-all',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will always be '
-            b'recalculated without reusing prior deltas; this will '
-            b'likely make execution run several times slower; this '
-            b'optimization is typically not needed'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will be fully '
-            b'recomputed; this will likely drastically slow down '
-            b'execution time'
-        ),
-    )
-)
 
-register_optimization(
-    improvement(
-        name=b're-delta-fulladd',
-        type=OPTIMISATION,
-        description=_(
-            b'every revision will be re-added as if it was new '
-            b'content. It will go through the full storage '
-            b'mechanism giving extensions a chance to process it '
-            b'(eg. lfs). This is similar to "re-delta-all" but even '
-            b'slower since more logic is involved.'
-        ),
-        upgrademessage=_(
-            b'each revision will be added as new content to the '
-            b'internal storage; this will likely drastically slow '
-            b'down execution time, but some extensions might need '
-            b'it'
-        ),
+@register_optimization
+class redeltaparents(optimization):
+    name = b're-delta-parent'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will be recalculated to '
+        b'choose an optimal base revision where this was not '
+        b'already done; the size of the repository may shrink and '
+        b'various operations may become faster; the first time '
+        b'this optimization is performed could slow down upgrade '
+        b'execution considerably; subsequent invocations should '
+        b'not run noticeably slower'
     )
-)
+
+    upgrademessage = _(
+        b'deltas within internal storage will choose a new '
+        b'base revision if needed'
+    )
+
+
+@register_optimization
+class redeltamultibase(optimization):
+    name = b're-delta-multibase'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will be recalculated '
+        b'against multiple base revision and the smallest '
+        b'difference will be used; the size of the repository may '
+        b'shrink significantly when there are many merges; this '
+        b'optimization will slow down execution in proportion to '
+        b'the number of merges in the repository and the amount '
+        b'of files in the repository; this slow down should not '
+        b'be significant unless there are tens of thousands of '
+        b'files and thousands of merges'
+    )
+
+    upgrademessage = _(
+        b'deltas within internal storage will choose an '
+        b'optimal delta by computing deltas against multiple '
+        b'parents; may slow down execution time '
+        b'significantly'
+    )
+
+
+@register_optimization
+class redeltaall(optimization):
+    name = b're-delta-all'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will always be '
+        b'recalculated without reusing prior deltas; this will '
+        b'likely make execution run several times slower; this '
+        b'optimization is typically not needed'
+    )
+
+    upgrademessage = _(
+        b'deltas within internal storage will be fully '
+        b'recomputed; this will likely drastically slow down '
+        b'execution time'
+    )
+
+
+@register_optimization
+class redeltafulladd(optimization):
+    name = b're-delta-fulladd'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'every revision will be re-added as if it was new '
+        b'content. It will go through the full storage '
+        b'mechanism giving extensions a chance to process it '
+        b'(eg. lfs). This is similar to "re-delta-all" but even '
+        b'slower since more logic is involved.'
+    )
+
+    upgrademessage = _(
+        b'each revision will be added as new content to the '
+        b'internal storage; this will likely drastically slow '
+        b'down execution time, but some extensions might need '
+        b'it'
+    )
 
 
 def findoptimizations(repo):
