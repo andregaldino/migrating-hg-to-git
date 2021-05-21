@@ -310,66 +310,8 @@ class revlog(object):
     the current position in the file handle is valid, and log/warn/fail (by
     raising).
 
-
-    Internal details
-    ----------------
-
-    A large part of the revlog logic deals with revisions' "index entries", tuple
-    objects that contains the same "items" whatever the revlog version.
-    Different versions will have different ways of storing these items (sometimes
-    not having them at all), but the tuple will always be the same. New fields
-    are usually added at the end to avoid breaking existing code that relies
-    on the existing order. The field are defined as follows:
-
-    [0] offset:
-            The byte index of the start of revision data chunk.
-            That value is shifted up by 16 bits. use "offset = field >> 16" to
-            retrieve it.
-
-        flags:
-            A flag field that carries special information or changes the behavior
-            of the revision. (see `REVIDX_*` constants for details)
-            The flag field only occupies the first 16 bits of this field,
-            use "flags = field & 0xFFFF" to retrieve the value.
-
-    [1] compressed length:
-            The size, in bytes, of the chunk on disk
-
-    [2] uncompressed length:
-            The size, in bytes, of the full revision once reconstructed.
-
-    [3] base rev:
-            Either the base of the revision delta chain (without general
-            delta), or the base of the delta (stored in the data chunk)
-            with general delta.
-
-    [4] link rev:
-            Changelog revision number of the changeset introducing this
-            revision.
-
-    [5] parent 1 rev:
-            Revision number of the first parent
-
-    [6] parent 2 rev:
-            Revision number of the second parent
-
-    [7] node id:
-            The node id of the current revision
-
-    [8] sidedata offset:
-            The byte index of the start of the revision's side-data chunk.
-
-    [9] sidedata chunk length:
-            The size, in bytes, of the revision's side-data chunk.
-
-    [10] data compression mode:
-            two bits that detail the way the data chunk is compressed on disk.
-            (see "COMP_MODE_*" constants for details). For revlog version 0 and
-            1 this will always be COMP_MODE_INLINE.
-
-    [11] side-data compression mode:
-            two bits that detail the way the sidedata chunk is compressed on disk.
-            (see "COMP_MODE_*" constants for details)
+    See mercurial/revlogutils/contants.py for details about the content of an
+    index entry.
     """
 
     _flagserrorclass = error.RevlogError
