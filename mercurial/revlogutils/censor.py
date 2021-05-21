@@ -29,11 +29,6 @@ def v1_censor(rl, tr, censornode, tombstone=b''):
     censorrev = rl.rev(censornode)
     tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
 
-    if len(tombstone) > rl.rawsize(censorrev):
-        raise error.Abort(
-            _(b'censor tombstone must be no longer than censored data')
-        )
-
     # Rewriting the revlog in place is hard. Our strategy for censoring is
     # to create a new revlog, copy all revisions to it, then replace the
     # revlogs on transaction close.

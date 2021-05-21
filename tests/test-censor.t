@@ -66,12 +66,6 @@ Verify target contents before censorship at each revision
   $ hg cat -r 0 target | head -n 10
   Initially untainted file
 
-Try to censor revision with too large of a tombstone message
-
-  $ hg censor -r $C1 -t 'blah blah blah blah blah blah blah blah bla' target
-  abort: censor tombstone must be no longer than censored data
-  [255]
-
 Censor revision with 2 offenses
 
 (this also tests file pattern matching: path relative to cwd case)
