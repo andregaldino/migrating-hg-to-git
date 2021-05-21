@@ -469,7 +469,10 @@ fn revlog_error(py: Python) -> PyErr {
         .and_then(|m| m.get(py, "RevlogError"))
     {
         Err(e) => e,
-        Ok(cls) => PyErr::from_instance(py, cls),
+        Ok(cls) => PyErr::from_instance(
+            py,
+            cls.call(py, (py.None(),), None).ok().into_py_object(py),
+        ),
     }
 }
 
