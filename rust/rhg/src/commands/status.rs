@@ -9,6 +9,7 @@ use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
+use hg::errors::HgResultExt;
 use hg::errors::IoResultExt;
 use hg::matchers::AlwaysMatcher;
 use hg::operations::cat;
@@ -164,8 +165,13 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 
     let repo = invocation.repo?;
     let mut dmap = DirstateMap::new();
-    let dirstate_data = repo.hg_vfs().mmap_open("dirstate")?;
-    let parents = dmap.read(&dirstate_data)?;
+    let dirstate_data =
+        repo.hg_vfs().mmap_open("dirstate").io_not_found_as_none()?;
+    let dirstate_data = match &dirstate_data {
+        Some(mmap) => &**mmap,
+        None => b"",
+    };
+    let parents = dmap.read(dirstate_data)?;
     let options = StatusOptions {
         // TODO should be provided by the dirstate parsing and
         // hence be stored on dmap. Using a value that assumes we aren't
