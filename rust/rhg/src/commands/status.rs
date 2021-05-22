@@ -181,7 +181,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         collect_traversed_dirs: false,
     };
     let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
-    let (ds_status, pattern_warnings) = hg::status(
+    let (mut ds_status, pattern_warnings) = hg::status(
         &dmap,
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
@@ -201,53 +201,49 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             &ds_status.unsure
         );
     }
-    // TODO check ordering to match `hg status` output.
-    // (this is as in `hg help status`)
-    if display_states.modified {
-        display_status_paths(ui, &(ds_status.modified), b"M")?;
-    }
-    if !ds_status.unsure.is_empty() {
+    if !ds_status.unsure.is_empty()
+        && (display_states.modified || display_states.clean)
+    {
         let p1: Node = parents
             .expect(
                 "Dirstate with no parents should not list any file to
-                 be rechecked for modifications",
+            be rechecked for modifications",
             )
             .p1
             .into();
         let p1_hex = format!("{:x}", p1);
-        let mut rechecked_modified: Vec<HgPathCow> = Vec::new();
-        let mut rechecked_clean: Vec<HgPathCow> = Vec::new();
         for to_check in ds_status.unsure {
             if cat_file_is_modified(repo, &to_check, &p1_hex)? {
-                rechecked_modified.push(to_check);
+                if display_states.modified {
+                    ds_status.modified.push(to_check);
+                }
             } else {
-                rechecked_clean.push(to_check);
+                if display_states.clean {
+                    ds_status.clean.push(to_check);
+                }
             }
         }
-        if display_states.modified {
-            display_status_paths(ui, &rechecked_modified, b"M")?;
-        }
-        if display_states.clean {
-            display_status_paths(ui, &rechecked_clean, b"C")?;
-        }
+    }
+    if display_states.modified {
+        display_status_paths(ui, &mut ds_status.modified, b"M")?;
     }
     if display_states.added {
-        display_status_paths(ui, &(ds_status.added), b"A")?;
-    }
-    if display_states.clean {
-        display_status_paths(ui, &(ds_status.clean), b"C")?;
+        display_status_paths(ui, &mut ds_status.added, b"A")?;
     }
     if display_states.removed {
-        display_status_paths(ui, &(ds_status.removed), b"R")?;
+        display_status_paths(ui, &mut ds_status.removed, b"R")?;
     }
     if display_states.deleted {
-        display_status_paths(ui, &(ds_status.deleted), b"!")?;
+        display_status_paths(ui, &mut ds_status.deleted, b"!")?;
     }
     if display_states.unknown {
-        display_status_paths(ui, &(ds_status.unknown), b"?")?;
+        display_status_paths(ui, &mut ds_status.unknown, b"?")?;
     }
     if display_states.ignored {
-        display_status_paths(ui, &(ds_status.ignored), b"I")?;
+        display_status_paths(ui, &mut ds_status.ignored, b"I")?;
+    }
+    if display_states.clean {
+        display_status_paths(ui, &mut ds_status.clean, b"C")?;
     }
     Ok(())
 }
@@ -256,9 +252,10 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 // harcode HgPathBuf, but probably not really useful at this point
 fn display_status_paths(
     ui: &Ui,
-    paths: &[HgPathCow],
+    paths: &mut [HgPathCow],
     status_prefix: &[u8],
 ) -> Result<(), CommandError> {
+    paths.sort_unstable();
     for path in paths {
         // Same TODO as in commands::root
         let bytes: &[u8] = path.as_bytes();
