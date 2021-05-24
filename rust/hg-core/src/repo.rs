@@ -43,6 +43,22 @@ pub struct Vfs<'a> {
 }
 
 impl Repo {
+    /// tries to find nearest repository root in current working directory or
+    /// its ancestors
+    pub fn find_repo_root() -> Result<PathBuf, RepoError> {
+        let current_directory = crate::utils::current_dir()?;
+        // ancestors() is inclusive: it first yields `current_directory`
+        // as-is.
+        for ancestor in current_directory.ancestors() {
+            if ancestor.join(".hg").is_dir() {
+                return Ok(ancestor.to_path_buf());
+            }
+        }
+        return Err(RepoError::NotFound {
+            at: current_directory,
+        });
+    }
+
     /// Find a repository, either at the given path (which must contain a `.hg`
     /// sub-directory) or by searching the current directory and its
     /// ancestors.
@@ -66,17 +82,8 @@ impl Repo {
                 })
             }
         } else {
-            let current_directory = crate::utils::current_dir()?;
-            // ancestors() is inclusive: it first yields `current_directory`
-            // as-is.
-            for ancestor in current_directory.ancestors() {
-                if ancestor.join(".hg").is_dir() {
-                    return Self::new_at_path(ancestor.to_owned(), config);
-                }
-            }
-            Err(RepoError::NotFound {
-                at: current_directory,
-            })
+            let root = Self::find_repo_root()?;
+            Self::new_at_path(root, config)
         }
     }
 

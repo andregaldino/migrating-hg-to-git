@@ -174,9 +174,8 @@ fn main() {
         } else {
             let local_config = {
                 if std::env::var_os("HGRCSKIPREPO").is_none() {
-                    let current_dir = hg::utils::current_dir();
-                    // TODO: handle errors from current_dir
-                    if let Ok(current_dir_path) = current_dir {
+                    // TODO: handle errors from find_repo_root
+                    if let Ok(current_dir_path) = Repo::find_repo_root() {
                         let config_files = vec![
                             ConfigSource::AbsPath(
                                 current_dir_path.join(".hg/hgrc"),
