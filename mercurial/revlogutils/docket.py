@@ -95,7 +95,9 @@ if stable_docket_file:
 # * 8 bytes: size of data
 # * 8 bytes: pending size of data
 # * 1 bytes: default compression header
-S_HEADER = struct.Struct(constants.INDEX_HEADER.format + 'BBLLLLc')
+S_HEADER = struct.Struct(
+    pycompat.sysstr(constants.INDEX_HEADER.format) + 'BBLLLLc'
+)
 
 
 class RevlogDocket(object):
