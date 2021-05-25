@@ -82,6 +82,7 @@ const SUPPORTED: &[&str] = &[
     SPARSEREVLOG_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
     REVLOG_COMPRESSION_ZSTD,
+    DIRSTATE_V2_REQUIREMENT,
     // As of this writing everything rhg does is read-only.
     // When it starts writing to the repository, it’ll need to either keep the
     // persistent nodemap up to date or remove this entry:
@@ -89,6 +90,8 @@ const SUPPORTED: &[&str] = &[
 ];
 
 // Copied from mercurial/requirements.py:
+
+pub(crate) const DIRSTATE_V2_REQUIREMENT: &str = "exp-dirstate-v2";
 
 /// When narrowing is finalized and no longer subject to format changes,
 /// we should move this to just "narrow" or similar.

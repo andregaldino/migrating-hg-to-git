@@ -167,6 +167,16 @@ impl From<DirstateV2ParseError> for crate::DirstateError {
     }
 }
 
+fn read_header(on_disk: &[u8]) -> Result<&Header, DirstateV2ParseError> {
+    let (header, _) =
+        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
+    if header.marker == *V2_FORMAT_MARKER {
+        Ok(header)
+    } else {
+        Err(DirstateV2ParseError)
+    }
+}
+
 pub(super) fn read<'on_disk>(
     on_disk: &'on_disk [u8],
 ) -> Result<
@@ -176,27 +186,19 @@ pub(super) fn read<'on_disk>(
     if on_disk.is_empty() {
         return Ok((DirstateMap::empty(on_disk), None));
     }
-    let (header, _) =
-        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
-    let Header {
-        marker,
-        parents,
-        root,
-        nodes_with_entry_count,
-        nodes_with_copy_source_count,
-    } = header;
-    if marker != V2_FORMAT_MARKER {
-        return Err(DirstateV2ParseError);
-    }
+    let header = read_header(on_disk)?;
     let dirstate_map = DirstateMap {
         on_disk,
         root: dirstate_map::ChildNodes::OnDisk(read_slice::<Node>(
-            on_disk, *root,
+            on_disk,
+            header.root,
         )?),
-        nodes_with_entry_count: nodes_with_entry_count.get(),
-        nodes_with_copy_source_count: nodes_with_copy_source_count.get(),
+        nodes_with_entry_count: header.nodes_with_entry_count.get(),
+        nodes_with_copy_source_count: header
+            .nodes_with_copy_source_count
+            .get(),
     };
-    let parents = Some(parents.clone());
+    let parents = Some(header.parents.clone());
     Ok((dirstate_map, parents))
 }
 
@@ -412,6 +414,35 @@ where
         .and_then(|bytes| T::slice_from_bytes(bytes, len).ok())
         .map(|(slice, _rest)| slice)
         .ok_or_else(|| DirstateV2ParseError)
+}
+
+pub(crate) fn parse_dirstate_parents(
+    on_disk: &[u8],
+) -> Result<&DirstateParents, HgError> {
+    Ok(&read_header(on_disk)?.parents)
+}
+
+pub(crate) fn for_each_tracked_path<'on_disk>(
+    on_disk: &'on_disk [u8],
+    mut f: impl FnMut(&'on_disk HgPath),
+) -> Result<(), DirstateV2ParseError> {
+    let header = read_header(on_disk)?;
+    fn recur<'on_disk>(
+        on_disk: &'on_disk [u8],
+        nodes: Slice,
+        f: &mut impl FnMut(&'on_disk HgPath),
+    ) -> Result<(), DirstateV2ParseError> {
+        for node in read_slice::<Node>(on_disk, nodes)? {
+            if let Some(state) = node.state()? {
+                if state.is_tracked() {
+                    f(node.full_path(on_disk)?)
+                }
+            }
+            recur(on_disk, node.children, f)?
+        }
+        Ok(())
+    }
+    recur(on_disk, header.root, &mut f)
 }
 
 pub(super) fn write(

@@ -7,6 +7,7 @@
 
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::errors::HgError;
+use crate::revlog::node::NULL_NODE;
 use crate::revlog::Node;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::FastHashMap;
@@ -23,6 +24,13 @@ pub mod status;
 pub struct DirstateParents {
     pub p1: Node,
     pub p2: Node,
+}
+
+impl DirstateParents {
+    pub const NULL: Self = Self {
+        p1: NULL_NODE,
+        p2: NULL_NODE,
+    };
 }
 
 /// The C implementation uses all signed types. This will be an issue

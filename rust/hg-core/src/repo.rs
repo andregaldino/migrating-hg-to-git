@@ -218,12 +218,23 @@ impl Repo {
         }
     }
 
+    pub fn has_dirstate_v2(&self) -> bool {
+        self.requirements
+            .contains(requirements::DIRSTATE_V2_REQUIREMENT)
+    }
+
     pub fn dirstate_parents(
         &self,
     ) -> Result<crate::dirstate::DirstateParents, HgError> {
         let dirstate = self.hg_vfs().mmap_open("dirstate")?;
-        let parents =
-            crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?;
+        if dirstate.is_empty() {
+            return Ok(crate::dirstate::DirstateParents::NULL);
+        }
+        let parents = if self.has_dirstate_v2() {
+            crate::dirstate_tree::on_disk::parse_dirstate_parents(&dirstate)?
+        } else {
+            crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
+        };
         Ok(parents.clone())
     }
 }

@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::parse_dirstate_entries;
+use crate::dirstate_tree::on_disk::for_each_tracked_path;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
@@ -13,6 +14,7 @@ use crate::revlog::manifest::{Manifest, ManifestEntry};
 use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::hg_path::HgPath;
+use crate::DirstateError;
 use rayon::prelude::*;
 
 /// List files under Mercurial control in the working directory
@@ -20,25 +22,34 @@ use rayon::prelude::*;
 pub struct Dirstate {
     /// The `dirstate` content.
     content: Vec<u8>,
+    dirstate_v2: bool,
 }
 
 impl Dirstate {
     pub fn new(repo: &Repo) -> Result<Self, HgError> {
-        let content = repo.hg_vfs().read("dirstate")?;
-        Ok(Self { content })
+        Ok(Self {
+            content: repo.hg_vfs().read("dirstate")?,
+            dirstate_v2: repo.has_dirstate_v2(),
+        })
     }
 
-    pub fn tracked_files(&self) -> Result<Vec<&HgPath>, HgError> {
+    pub fn tracked_files(&self) -> Result<Vec<&HgPath>, DirstateError> {
         let mut files = Vec::new();
-        let _parents = parse_dirstate_entries(
-            &self.content,
-            |path, entry, _copy_source| {
-                if entry.state.is_tracked() {
-                    files.push(path)
-                }
-                Ok(())
-            },
-        )?;
+        if !self.content.is_empty() {
+            if self.dirstate_v2 {
+                for_each_tracked_path(&self.content, |path| files.push(path))?
+            } else {
+                let _parents = parse_dirstate_entries(
+                    &self.content,
+                    |path, entry, _copy_source| {
+                        if entry.state.is_tracked() {
+                            files.push(path)
+                        }
+                        Ok(())
+                    },
+                )?;
+            }
+        }
         files.par_sort_unstable();
         Ok(files)
     }

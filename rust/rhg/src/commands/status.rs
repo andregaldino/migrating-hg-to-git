@@ -9,6 +9,7 @@ use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
+use hg::dirstate_tree::dirstate_map::DirstateMap;
 use hg::errors::HgResultExt;
 use hg::errors::IoResultExt;
 use hg::matchers::AlwaysMatcher;
@@ -16,7 +17,7 @@ use hg::operations::cat;
 use hg::repo::Repo;
 use hg::revlog::node::Node;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
-use hg::{DirstateMap, StatusError};
+use hg::StatusError;
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
 use std::convert::TryInto;
@@ -164,14 +165,17 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     };
 
     let repo = invocation.repo?;
-    let mut dmap = DirstateMap::new();
     let dirstate_data =
         repo.hg_vfs().mmap_open("dirstate").io_not_found_as_none()?;
     let dirstate_data = match &dirstate_data {
         Some(mmap) => &**mmap,
         None => b"",
     };
-    let parents = dmap.read(dirstate_data)?;
+    let (mut dmap, parents) = if repo.has_dirstate_v2() {
+        DirstateMap::new_v2(dirstate_data)?
+    } else {
+        DirstateMap::new_v1(dirstate_data)?
+    };
     let options = StatusOptions {
         // TODO should be provided by the dirstate parsing and
         // hence be stored on dmap. Using a value that assumes we aren't
@@ -187,8 +191,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         collect_traversed_dirs: false,
     };
     let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
-    let (mut ds_status, pattern_warnings) = hg::status(
-        &dmap,
+    let (mut ds_status, pattern_warnings) = hg::dirstate_tree::status::status(
+        &mut dmap,
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
         vec![ignore_file],
