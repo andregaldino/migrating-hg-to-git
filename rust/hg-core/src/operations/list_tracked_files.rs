@@ -5,7 +5,7 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::dirstate::parsers::parse_dirstate;
+use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
@@ -13,7 +13,6 @@ use crate::revlog::manifest::{Manifest, ManifestEntry};
 use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::hg_path::HgPath;
-use crate::EntryState;
 use rayon::prelude::*;
 
 /// List files under Mercurial control in the working directory
@@ -30,14 +29,16 @@ impl Dirstate {
     }
 
     pub fn tracked_files(&self) -> Result<Vec<&HgPath>, HgError> {
-        let (_, entries, _) = parse_dirstate(&self.content)?;
-        let mut files: Vec<&HgPath> = entries
-            .into_iter()
-            .filter_map(|(path, entry)| match entry.state {
-                EntryState::Removed => None,
-                _ => Some(path),
-            })
-            .collect();
+        let mut files = Vec::new();
+        let _parents = parse_dirstate_entries(
+            &self.content,
+            |path, entry, _copy_source| {
+                if entry.state.is_tracked() {
+                    files.push(path)
+                }
+                Ok(())
+            },
+        )?;
         files.par_sort_unstable();
         Ok(files)
     }
