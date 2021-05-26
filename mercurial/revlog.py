@@ -2267,10 +2267,12 @@ class revlog(object):
                     self._write_docket(transaction)
             finally:
                 self._writinghandles = None
-                if ifh is not None:
-                    ifh.close()
                 if dfh is not None:
                     dfh.close()
+                # closing the index file last to avoid exposing referent to
+                # potential unflushed data content.
+                if ifh is not None:
+                    ifh.close()
 
     def _write_docket(self, transaction):
         """write the current docket on disk
