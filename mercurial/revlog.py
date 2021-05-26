@@ -2232,41 +2232,43 @@ class revlog(object):
         if self._writinghandles is not None:
             yield
         else:
-            r = len(self)
-            dsize = 0
-            if r:
-                dsize = self.end(r - 1)
-            dfh = None
-            if not self._inline:
-                try:
-                    dfh = self._datafp(b"r+")
-                    if self._docket is None:
-                        dfh.seek(0, os.SEEK_END)
-                    else:
-                        dfh.seek(self._docket.data_end, os.SEEK_SET)
-                except IOError as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
-                    dfh = self._datafp(b"w+")
-                transaction.add(self._datafile, dsize)
+            ifh = dfh = None
             try:
+                r = len(self)
+                # opening the data file.
+                dsize = 0
+                if r:
+                    dsize = self.end(r - 1)
+                dfh = None
+                if not self._inline:
+                    try:
+                        dfh = self._datafp(b"r+")
+                        if self._docket is None:
+                            dfh.seek(0, os.SEEK_END)
+                        else:
+                            dfh.seek(self._docket.data_end, os.SEEK_SET)
+                    except IOError as inst:
+                        if inst.errno != errno.ENOENT:
+                            raise
+                        dfh = self._datafp(b"w+")
+                    transaction.add(self._datafile, dsize)
+
+                # opening the index file.
                 isize = r * self.index.entry_size
                 ifh = self.__index_write_fp()
                 if self._inline:
                     transaction.add(self._indexfile, dsize + isize)
                 else:
                     transaction.add(self._indexfile, isize)
-                try:
-                    self._writinghandles = (ifh, dfh)
-                    try:
-                        yield
-                        if self._docket is not None:
-                            self._write_docket(transaction)
-                    finally:
-                        self._writinghandles = None
-                finally:
-                    ifh.close()
+                # exposing all file handle for writing.
+                self._writinghandles = (ifh, dfh)
+                yield
+                if self._docket is not None:
+                    self._write_docket(transaction)
             finally:
+                self._writinghandles = None
+                if ifh is not None:
+                    ifh.close()
                 if dfh is not None:
                     dfh.close()
 
