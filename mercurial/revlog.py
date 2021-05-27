@@ -803,6 +803,10 @@ class revlog(object):
             with func() as fp:
                 yield fp
 
+    def _sidedatareadfp(self):
+        """file object suitable to read sidedata"""
+        return self._datareadfp()
+
     def tiprev(self):
         return len(self.index) - 1
 
@@ -2068,7 +2072,19 @@ class revlog(object):
         if sidedata_size == 0:
             return {}
 
-        comp_segment = self._getsegment(sidedata_offset, sidedata_size)
+        # XXX this need caching, as we do for data
+        with self._sidedatareadfp() as sdf:
+            sdf.seek(sidedata_offset)
+            comp_segment = sdf.read(sidedata_size)
+
+            if len(comp_segment) < sidedata_size:
+                filename = self._datafile
+                length = sidedata_size
+                offset = sidedata_offset
+                got = len(comp_segment)
+                m = PARTIAL_READ_MSG % (filename, length, offset, got)
+                raise error.RevlogError(m)
+
         comp = self.index[rev][11]
         if comp == COMP_MODE_PLAIN:
             segment = comp_segment

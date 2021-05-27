@@ -1161,6 +1161,7 @@ coreconfigitem(
 #   keeping references to the affected revlogs, especially memory-wise when
 #   rewriting sidedata.
 # * introduce a proper solution to reduce the number of filelog related files.
+# * use caching for reading sidedata (similar to what we do for data).
 # * Improvement to consider
 #   - avoid compression header in chunk using the default compression?
 #   - forbid "inline" compression mode entirely?
