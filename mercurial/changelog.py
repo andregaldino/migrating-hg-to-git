@@ -527,7 +527,7 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        d = self._revisiondata(nodeorrev)[0]
+        d = self._revisiondata(nodeorrev)
         sidedata = self.sidedata(nodeorrev)
         copy_sd = self._copiesstorage == b'changeset-sidedata'
         c = changelogrevision(self, d, sidedata, copy_sd)
@@ -535,7 +535,7 @@ class changelog(revlog.revlog):
 
     def changelogrevision(self, nodeorrev):
         """Obtain a ``changelogrevision`` for a node or revision."""
-        text = self._revisiondata(nodeorrev)[0]
+        text = self._revisiondata(nodeorrev)
         sidedata = self.sidedata(nodeorrev)
         return changelogrevision(
             self, text, sidedata, self._copiesstorage == b'changeset-sidedata'

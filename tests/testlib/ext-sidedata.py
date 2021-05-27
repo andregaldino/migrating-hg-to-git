@@ -39,11 +39,12 @@ def wrapaddrevision(
 
 
 def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
-    text, sd = orig(self, nodeorrev, *args, **kwargs)
+    text = orig(self, nodeorrev, *args, **kwargs)
+    sd = self.sidedata(nodeorrev)
     if getattr(self, 'sidedatanocheck', False):
-        return text, sd
+        return text
     if self.hassidedata:
-        return text, sd
+        return text
     if nodeorrev != nullrev and nodeorrev != self.nullid:
         cat1 = sd.get(sidedata.SD_TEST1)
         if cat1 is not None and len(text) != struct.unpack('>I', cat1)[0]:
@@ -52,7 +53,7 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
         got = hashlib.sha256(text).digest()
         if expected is not None and got != expected:
             raise RuntimeError('sha256 mismatch')
-    return text, sd
+    return text
 
 
 def wrapget_sidedata_helpers(orig, srcrepo, dstrepo):

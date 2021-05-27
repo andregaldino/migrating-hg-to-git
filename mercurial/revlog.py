@@ -1967,7 +1967,7 @@ class revlog(object):
                 b'use revlog.rawdata(...)'
             )
             util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        return self._revisiondata(nodeorrev, _df, raw=raw)[0]
+        return self._revisiondata(nodeorrev, _df, raw=raw)
 
     def sidedata(self, nodeorrev, _df=None):
         """a map of extra data related to the changeset but not part of the hash
@@ -1994,23 +1994,16 @@ class revlog(object):
 
         # fast path the special `nullid` rev
         if node == self.nullid:
-            return b"", {}
+            return b""
 
         # ``rawtext`` is the text as stored inside the revlog. Might be the
         # revision or might need to be processed to retrieve the revision.
         rev, rawtext, validated = self._rawtext(node, rev, _df=_df)
 
-        if self.hassidedata:
-            if rev is None:
-                rev = self.rev(node)
-            sidedata = self._sidedata(rev)
-        else:
-            sidedata = {}
-
         if raw and validated:
             # if we don't want to process the raw text and that raw
             # text is cached, we can exit early.
-            return rawtext, sidedata
+            return rawtext
         if rev is None:
             rev = self.rev(node)
         # the revlog's flag for this revision
@@ -2019,7 +2012,7 @@ class revlog(object):
 
         if validated and flags == REVIDX_DEFAULT_FLAGS:
             # no extra flags set, no flag processor runs, text = rawtext
-            return rawtext, sidedata
+            return rawtext
 
         if raw:
             validatehash = flagutil.processflagsraw(self, rawtext, flags)
@@ -2032,7 +2025,7 @@ class revlog(object):
         if not validated:
             self._revisioncache = (node, rev, rawtext)
 
-        return text, sidedata
+        return text
 
     def _rawtext(self, node, rev, _df=None):
         """return the possibly unvalidated rawtext for a revision
@@ -2109,7 +2102,7 @@ class revlog(object):
 
         _df - an existing file handle to read from. (internal-only)
         """
-        return self._revisiondata(nodeorrev, _df, raw=True)[0]
+        return self._revisiondata(nodeorrev, _df, raw=True)
 
     def hash(self, text, p1, p2):
         """Compute a node hash.
@@ -3109,7 +3102,7 @@ class revlog(object):
             cachedelta = None
             rawtext = None
             if deltareuse == self.DELTAREUSEFULLADD:
-                text = self._revisiondata(rev)[0]
+                text = self._revisiondata(rev)
                 sidedata = self.sidedata(rev)
 
                 if sidedata_helpers is not None:
@@ -3138,7 +3131,7 @@ class revlog(object):
 
                 sidedata = None
                 if not cachedelta:
-                    rawtext = self._revisiondata(rev)[0]
+                    rawtext = self._revisiondata(rev)
                     sidedata = self.sidedata(rev)
                 if sidedata is None:
                     sidedata = self.sidedata(rev)
