@@ -1976,7 +1976,12 @@ class revlog(object):
         mapping object will likely be used in the future for a more
         efficient/lazy code.
         """
-        return self._revisiondata(nodeorrev, _df)[1]
+        # deal with <nodeorrev> argument type
+        if isinstance(nodeorrev, int):
+            rev = nodeorrev
+        else:
+            rev = self.rev(nodeorrev)
+        return self._sidedata(rev)
 
     def _revisiondata(self, nodeorrev, _df=None, raw=False):
         # deal with <nodeorrev> argument type
