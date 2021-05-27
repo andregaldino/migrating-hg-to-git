@@ -256,6 +256,10 @@ def parse_index_v1_mixed(data, inline):
 # signed integer)
 _maxentrysize = 0x7FFFFFFF
 
+PARTIAL_READ_MSG = _(
+    b'partial read of revlog %s; expected %d bytes from offset %d, got %d'
+)
+
 
 class revlog(object):
     """
@@ -1709,34 +1713,17 @@ class revlog(object):
         if offset != realoffset or reallength != length:
             startoffset = offset - realoffset
             if len(d) - startoffset < length:
-                raise error.RevlogError(
-                    _(
-                        b'partial read of revlog %s; expected %d bytes from '
-                        b'offset %d, got %d'
-                    )
-                    % (
-                        self._indexfile if self._inline else self._datafile,
-                        length,
-                        offset,
-                        len(d) - startoffset,
-                    )
-                )
-
+                filename = self._indexfile if self._inline else self._datafile
+                got = len(d) - startoffset
+                m = PARTIAL_READ_MSG % (filename, length, offset, got)
+                raise error.RevlogError(m)
             return util.buffer(d, startoffset, length)
 
         if len(d) < length:
-            raise error.RevlogError(
-                _(
-                    b'partial read of revlog %s; expected %d bytes from offset '
-                    b'%d, got %d'
-                )
-                % (
-                    self._indexfile if self._inline else self._datafile,
-                    length,
-                    offset,
-                    len(d),
-                )
-            )
+            filename = self._indexfile if self._inline else self._datafile
+            got = len(d) - startoffset
+            m = PARTIAL_READ_MSG % (filename, length, offset, got)
+            raise error.RevlogError(m)
 
         return d
 
