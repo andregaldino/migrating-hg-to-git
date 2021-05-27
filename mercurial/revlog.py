@@ -3109,7 +3109,8 @@ class revlog(object):
             cachedelta = None
             rawtext = None
             if deltareuse == self.DELTAREUSEFULLADD:
-                text, sidedata = self._revisiondata(rev)
+                text = self._revisiondata(rev)[0]
+                sidedata = self.sidedata(rev)
 
                 if sidedata_helpers is not None:
                     (sidedata, new_flags) = sidedatautil.run_sidedata_helpers(
@@ -3137,7 +3138,8 @@ class revlog(object):
 
                 sidedata = None
                 if not cachedelta:
-                    rawtext, sidedata = self._revisiondata(rev)
+                    rawtext = self._revisiondata(rev)[0]
+                    sidedata = self.sidedata(rev)
                 if sidedata is None:
                     sidedata = self.sidedata(rev)
 
