@@ -295,18 +295,13 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
         }
     }
 
-    pub(super) fn has_entry(&self) -> bool {
-        match self {
-            NodeRef::InMemory(_path, node) => node.entry.is_some(),
-            NodeRef::OnDisk(node) => node.has_entry(),
-        }
-    }
-
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
         match self {
-            NodeRef::InMemory(_path, node) => Ok(node.entry),
+            NodeRef::InMemory(_path, node) => {
+                Ok(node.data.as_entry().copied())
+            }
             NodeRef::OnDisk(node) => node.entry(),
         }
     }
@@ -316,7 +311,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => {
-                Ok(node.entry.as_ref().map(|entry| entry.state))
+                Ok(node.data.as_entry().map(|entry| entry.state))
             }
             NodeRef::OnDisk(node) => node.state(),
         }
@@ -333,8 +328,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 /// Represents a file or a directory
 #[derive(Default)]
 pub(super) struct Node<'on_disk> {
-    /// `None` for directories
-    pub(super) entry: Option<DirstateEntry>,
+    pub(super) data: NodeData,
 
     pub(super) copy_source: Option<Cow<'on_disk, HgPath>>,
 
@@ -342,6 +336,34 @@ pub(super) struct Node<'on_disk> {
 
     /// How many (non-inclusive) descendants of this node are tracked files
     pub(super) tracked_descendants_count: u32,
+}
+
+pub(super) enum NodeData {
+    Entry(DirstateEntry),
+    CachedDirectory { mtime: on_disk::Timestamp },
+    None,
+}
+
+impl Default for NodeData {
+    fn default() -> Self {
+        NodeData::None
+    }
+}
+
+impl NodeData {
+    fn has_entry(&self) -> bool {
+        match self {
+            NodeData::Entry(_) => true,
+            _ => false,
+        }
+    }
+
+    fn as_entry(&self) -> Option<&DirstateEntry> {
+        match self {
+            NodeData::Entry(entry) => Some(entry),
+            _ => None,
+        }
+    }
 }
 
 impl<'on_disk> DirstateMap<'on_disk> {
@@ -386,14 +408,14 @@ impl<'on_disk> DirstateMap<'on_disk> {
                     },
                 )?;
                 assert!(
-                    node.entry.is_none(),
+                    !node.data.has_entry(),
                     "duplicate dirstate entry in read"
                 );
                 assert!(
                     node.copy_source.is_none(),
                     "duplicate dirstate entry in read"
                 );
-                node.entry = Some(*entry);
+                node.data = NodeData::Entry(*entry);
                 node.copy_source = copy_source.map(Cow::Borrowed);
                 map.nodes_with_entry_count += 1;
                 if copy_source.is_some() {
@@ -519,10 +541,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 }
             },
         )?;
-        if node.entry.is_none() {
+        if !node.data.has_entry() {
             self.nodes_with_entry_count += 1
         }
-        node.entry = Some(new_entry);
+        node.data = NodeData::Entry(new_entry);
         Ok(())
     }
 
@@ -587,7 +609,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 &mut self.root,
                 path.as_ref(),
             )? {
-                if let Some(entry) = node.entry.as_mut() {
+                if let NodeData::Entry(entry) = &mut node.data {
                     entry.clear_mtime();
                 }
             }
@@ -703,18 +725,22 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                     return Ok(None);
                 }
             } else {
+                let had_entry = node.data.has_entry();
+                if had_entry {
+                    node.data = NodeData::None
+                }
                 dropped = Dropped {
                     was_tracked: node
-                        .entry
-                        .as_ref()
+                        .data
+                        .as_entry()
                         .map_or(false, |entry| entry.state.is_tracked()),
-                    had_entry: node.entry.take().is_some(),
+                    had_entry,
                     had_copy_source: node.copy_source.take().is_some(),
                 };
             }
             // After recursion, for both leaf (rest_of_path is None) nodes and
             // parent nodes, remove a node if it just became empty.
-            if node.entry.is_none()
+            if !node.data.has_entry()
                 && node.copy_source.is_none()
                 && node.children.is_empty()
             {
@@ -746,7 +772,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             if let Some(node) =
                 Self::get_node_mut(self.on_disk, &mut self.root, &filename)?
             {
-                if let Some(entry) = node.entry.as_mut() {
+                if let NodeData::Entry(entry) = &mut node.data {
                     entry.clear_ambiguous_mtime(now);
                 }
             }
@@ -815,7 +841,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if let Some(node) = self.get_node(directory)? {
             // A node without a `DirstateEntry` was created to hold child
             // nodes, and is therefore a directory.
-            Ok(!node.has_entry() && node.tracked_descendants_count() > 0)
+            let state = node.state()?;
+            Ok(state.is_none() && node.tracked_descendants_count() > 0)
         } else {
             Ok(false)
         }
@@ -825,7 +852,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if let Some(node) = self.get_node(directory)? {
             // A node without a `DirstateEntry` was created to hold child
             // nodes, and is therefore a directory.
-            Ok(!node.has_entry())
+            Ok(node.state()?.is_none())
         } else {
             Ok(false)
         }

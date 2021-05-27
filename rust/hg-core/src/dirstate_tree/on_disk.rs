@@ -17,10 +17,11 @@ use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use crate::EntryState;
-use bytes_cast::unaligned::{I32Be, U32Be, U64Be};
+use bytes_cast::unaligned::{I32Be, I64Be, U32Be, U64Be};
 use bytes_cast::BytesCast;
 use std::borrow::Cow;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
 /// This a redundant sanity check more than an actual "magic number" since
@@ -50,20 +51,41 @@ pub(super) struct Node {
     base_name_start: Size,
 
     copy_source: OptPathSlice,
-    entry: OptEntry,
     children: ChildNodes,
     pub(super) tracked_descendants_count: Size,
+
+    /// Dependending on the value of `state`:
+    ///
+    /// * A null byte: `data` represents nothing
+    /// * A `n`, `a`, `r`, or `m` ASCII byte: `state` and `data` together
+    ///   represents a dirstate entry like in the v1 format.
+    /// * A `d` ASCII byte: the bytes of `data` should instead be interpreted
+    ///   as the `Timestamp` for the mtime of a cached directory.
+    ///
+    /// TODO: document directory caching
+    state: u8,
+    data: Entry,
 }
 
-/// Either nothing if `state == b'\0'`, or a dirstate entry like in the v1
-/// format
 #[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
-struct OptEntry {
-    state: u8,
+struct Entry {
     mode: I32Be,
     mtime: I32Be,
     size: I32Be,
+}
+
+/// Duration since the Unix epoch
+#[derive(BytesCast, Copy, Clone)]
+#[repr(C)]
+pub(super) struct Timestamp {
+    seconds: I64Be,
+
+    /// In `0 .. 1_000_000_000`.
+    ///
+    /// This timestamp is later or earlier than `(seconds, 0)` by this many
+    /// nanoseconds, if `seconds` is non-negative or negative, respectively.
+    nanoseconds: U32Be,
 }
 
 /// Counted in bytes from the start of the file
@@ -216,34 +238,54 @@ impl Node {
         })
     }
 
-    pub(super) fn has_entry(&self) -> bool {
-        self.entry.state != b'\0'
+    pub(super) fn node_data(
+        &self,
+    ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
+        let entry = |state| {
+            dirstate_map::NodeData::Entry(self.entry_with_given_state(state))
+        };
+
+        match self.state {
+            b'\0' => Ok(dirstate_map::NodeData::None),
+            b'd' => Ok(dirstate_map::NodeData::CachedDirectory {
+                mtime: *self.data.as_timestamp(),
+            }),
+            b'n' => Ok(entry(EntryState::Normal)),
+            b'a' => Ok(entry(EntryState::Added)),
+            b'r' => Ok(entry(EntryState::Removed)),
+            b'm' => Ok(entry(EntryState::Merged)),
+            _ => Err(DirstateV2ParseError),
+        }
     }
 
     pub(super) fn state(
         &self,
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        Ok(if self.has_entry() {
-            Some(
-                self.entry
-                    .state
-                    .try_into()
-                    .map_err(|_| DirstateV2ParseError)?,
-            )
-        } else {
-            None
-        })
+        match self.state {
+            b'\0' | b'd' => Ok(None),
+            b'n' => Ok(Some(EntryState::Normal)),
+            b'a' => Ok(Some(EntryState::Added)),
+            b'r' => Ok(Some(EntryState::Removed)),
+            b'm' => Ok(Some(EntryState::Merged)),
+            _ => Err(DirstateV2ParseError),
+        }
+    }
+
+    fn entry_with_given_state(&self, state: EntryState) -> DirstateEntry {
+        DirstateEntry {
+            state,
+            mode: self.data.mode.get(),
+            mtime: self.data.mtime.get(),
+            size: self.data.size.get(),
+        }
     }
 
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
-        Ok(self.state()?.map(|state| DirstateEntry {
-            state,
-            mode: self.entry.mode.get(),
-            mtime: self.entry.mtime.get(),
-            size: self.entry.size.get(),
-        }))
+        Ok(self
+            .state()?
+            .map(|state| self.entry_with_given_state(state)))
     }
 
     pub(super) fn children<'on_disk>(
@@ -262,9 +304,55 @@ impl Node {
                 self.children(on_disk)?,
             ),
             copy_source: self.copy_source(on_disk)?.map(Cow::Borrowed),
-            entry: self.entry()?,
+            data: self.node_data()?,
             tracked_descendants_count: self.tracked_descendants_count.get(),
         })
+    }
+}
+
+impl Entry {
+    fn from_timestamp(timestamp: Timestamp) -> Self {
+        // Safety: both types implement the `ByteCast` trait, so we could
+        // safely use `as_bytes` and `from_bytes` to do this conversion. Using
+        // `transmute` instead makes the compiler check that the two types
+        // have the same size, which eliminates the error case of
+        // `from_bytes`.
+        unsafe { std::mem::transmute::<Timestamp, Entry>(timestamp) }
+    }
+
+    fn as_timestamp(&self) -> &Timestamp {
+        // Safety: same as above in `from_timestamp`
+        unsafe { &*(self as *const Entry as *const Timestamp) }
+    }
+}
+
+impl From<&'_ SystemTime> for Timestamp {
+    fn from(system_time: &'_ SystemTime) -> Self {
+        let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {
+            Ok(duration) => {
+                (duration.as_secs() as i64, duration.subsec_nanos())
+            }
+            Err(error) => {
+                let negative = error.duration();
+                (-(negative.as_secs() as i64), negative.subsec_nanos())
+            }
+        };
+        Timestamp {
+            seconds: secs.into(),
+            nanoseconds: nanos.into(),
+        }
+    }
+}
+
+impl From<&'_ Timestamp> for SystemTime {
+    fn from(timestamp: &'_ Timestamp) -> Self {
+        let secs = timestamp.seconds.get();
+        let nanos = timestamp.nanoseconds.get();
+        if secs >= 0 {
+            UNIX_EPOCH + Duration::new(secs as u64, nanos)
+        } else {
+            UNIX_EPOCH - Duration::new((-secs) as u64, nanos)
+        }
     }
 }
 
@@ -356,33 +444,43 @@ fn write_nodes(
                 }
             };
         on_disk_nodes.push(match node {
-            NodeRef::InMemory(path, node) => Node {
-                children,
-                copy_source,
-                full_path,
-                base_name_start: u32::try_from(path.base_name_start())
-                    // Could only panic for paths over 4 GiB
-                    .expect("dirstate-v2 offset overflow")
-                    .into(),
-                tracked_descendants_count: node
-                    .tracked_descendants_count
-                    .into(),
-                entry: if let Some(entry) = &node.entry {
-                    OptEntry {
-                        state: entry.state.into(),
-                        mode: entry.mode.into(),
-                        mtime: entry.mtime.into(),
-                        size: entry.size.into(),
+            NodeRef::InMemory(path, node) => {
+                let (state, data) = match &node.data {
+                    dirstate_map::NodeData::Entry(entry) => (
+                        entry.state.into(),
+                        Entry {
+                            mode: entry.mode.into(),
+                            mtime: entry.mtime.into(),
+                            size: entry.size.into(),
+                        },
+                    ),
+                    dirstate_map::NodeData::CachedDirectory { mtime } => {
+                        (b'd', Entry::from_timestamp(*mtime))
                     }
-                } else {
-                    OptEntry {
-                        state: b'\0',
-                        mode: 0.into(),
-                        mtime: 0.into(),
-                        size: 0.into(),
-                    }
-                },
-            },
+                    dirstate_map::NodeData::None => (
+                        b'\0',
+                        Entry {
+                            mode: 0.into(),
+                            mtime: 0.into(),
+                            size: 0.into(),
+                        },
+                    ),
+                };
+                Node {
+                    children,
+                    copy_source,
+                    full_path,
+                    base_name_start: u32::try_from(path.base_name_start())
+                        // Could only panic for paths over 4 GiB
+                        .expect("dirstate-v2 offset overflow")
+                        .into(),
+                    tracked_descendants_count: node
+                        .tracked_descendants_count
+                        .into(),
+                    state,
+                    data,
+                }
+            }
             NodeRef::OnDisk(node) => Node {
                 children,
                 copy_source,
