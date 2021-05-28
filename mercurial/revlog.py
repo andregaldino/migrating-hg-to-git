@@ -80,6 +80,7 @@ from .interfaces import (
     util as interfaceutil,
 )
 from .revlogutils import (
+    censor,
     deltas as deltautil,
     docket as docketutil,
     flagutil,
@@ -3232,87 +3233,14 @@ class revlog(object):
                 _(b'cannot censor with version %d revlogs')
                 % self._format_version
             )
-
-        censorrev = self.rev(censornode)
-        tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
-
-        if len(tombstone) > self.rawsize(censorrev):
-            raise error.Abort(
-                _(b'censor tombstone must be no longer than censored data')
+        elif self._format_version == REVLOGV1:
+            censor.v1_censor(self, tr, censornode, tombstone)
+        else:
+            # revlog v2
+            raise error.RevlogError(
+                _(b'cannot censor with version %d revlogs')
+                % self._format_version
             )
-
-        # Rewriting the revlog in place is hard. Our strategy for censoring is
-        # to create a new revlog, copy all revisions to it, then replace the
-        # revlogs on transaction close.
-        #
-        # This is a bit dangerous. We could easily have a mismatch of state.
-        newrl = revlog(
-            self.opener,
-            target=self.target,
-            radix=self.radix,
-            postfix=b'tmpcensored',
-            censorable=True,
-        )
-        newrl._format_version = self._format_version
-        newrl._format_flags = self._format_flags
-        newrl._generaldelta = self._generaldelta
-        newrl._parse_index = self._parse_index
-
-        for rev in self.revs():
-            node = self.node(rev)
-            p1, p2 = self.parents(node)
-
-            if rev == censorrev:
-                newrl.addrawrevision(
-                    tombstone,
-                    tr,
-                    self.linkrev(censorrev),
-                    p1,
-                    p2,
-                    censornode,
-                    REVIDX_ISCENSORED,
-                )
-
-                if newrl.deltaparent(rev) != nullrev:
-                    raise error.Abort(
-                        _(
-                            b'censored revision stored as delta; '
-                            b'cannot censor'
-                        ),
-                        hint=_(
-                            b'censoring of revlogs is not '
-                            b'fully implemented; please report '
-                            b'this bug'
-                        ),
-                    )
-                continue
-
-            if self.iscensored(rev):
-                if self.deltaparent(rev) != nullrev:
-                    raise error.Abort(
-                        _(
-                            b'cannot censor due to censored '
-                            b'revision having delta stored'
-                        )
-                    )
-                rawtext = self._chunk(rev)
-            else:
-                rawtext = self.rawdata(rev)
-
-            newrl.addrawrevision(
-                rawtext, tr, self.linkrev(rev), p1, p2, node, self.flags(rev)
-            )
-
-        tr.addbackup(self._indexfile, location=b'store')
-        if not self._inline:
-            tr.addbackup(self._datafile, location=b'store')
-
-        self.opener.rename(newrl._indexfile, self._indexfile)
-        if not self._inline:
-            self.opener.rename(newrl._datafile, self._datafile)
-
-        self.clearcaches()
-        self._loadindex()
 
     def verifyintegrity(self, state):
         """Verifies the integrity of the revlog.
