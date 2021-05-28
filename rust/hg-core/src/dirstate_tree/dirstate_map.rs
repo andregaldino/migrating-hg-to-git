@@ -317,6 +317,18 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
         }
     }
 
+    pub(super) fn cached_directory_mtime(
+        &self,
+    ) -> Option<&on_disk::Timestamp> {
+        match self {
+            NodeRef::InMemory(_path, node) => match &node.data {
+                NodeData::CachedDirectory { mtime } => Some(mtime),
+                _ => None,
+            },
+            NodeRef::OnDisk(node) => node.cached_directory_mtime(),
+        }
+    }
+
     pub(super) fn tracked_descendants_count(&self) -> u32 {
         match self {
             NodeRef::InMemory(_path, node) => node.tracked_descendants_count,
@@ -479,7 +491,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
-    fn get_or_insert_node<'tree, 'path>(
+    pub(super) fn get_or_insert_node<'tree, 'path>(
         on_disk: &'on_disk [u8],
         root: &'tree mut ChildNodes<'on_disk>,
         path: &'path HgPath,

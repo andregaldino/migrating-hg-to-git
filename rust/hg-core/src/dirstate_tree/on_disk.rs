@@ -56,13 +56,31 @@ pub(super) struct Node {
 
     /// Dependending on the value of `state`:
     ///
-    /// * A null byte: `data` represents nothing
+    /// * A null byte: `data` is not used.
+    ///
     /// * A `n`, `a`, `r`, or `m` ASCII byte: `state` and `data` together
-    ///   represents a dirstate entry like in the v1 format.
+    ///   represent a dirstate entry like in the v1 format.
+    ///
     /// * A `d` ASCII byte: the bytes of `data` should instead be interpreted
     ///   as the `Timestamp` for the mtime of a cached directory.
     ///
-    /// TODO: document directory caching
+    ///   The presence of this state means that at some point, this path in
+    ///   the working directory was observed:
+    ///
+    ///   - To be a directory
+    ///   - With the modification time as given by `Timestamp`
+    ///   - That timestamp was already strictly in the past when observed,
+    ///     meaning that later changes cannot happen in the same clock tick
+    ///     and must cause a different modification time (unless the system
+    ///     clock jumps back and we get unlucky, which is not impossible but
+    ///     but deemed unlikely enough).
+    ///   - The directory did not contain any child entry that did not have a
+    ///     corresponding dirstate node.
+    ///
+    ///   This means that if `std::fs::symlink_metadata` later reports the
+    ///   same modification time, we don’t need to call `std::fs::read_dir`
+    ///   again for this directory and can iterate child dirstate nodes
+    ///   instead.
     state: u8,
     data: Entry,
 }
@@ -76,7 +94,7 @@ struct Entry {
 }
 
 /// Duration since the Unix epoch
-#[derive(BytesCast, Copy, Clone)]
+#[derive(BytesCast, Copy, Clone, PartialEq)]
 #[repr(C)]
 pub(super) struct Timestamp {
     seconds: I64Be,
@@ -258,6 +276,14 @@ impl Node {
         }
     }
 
+    pub(super) fn cached_directory_mtime(&self) -> Option<&Timestamp> {
+        if self.state == b'd' {
+            Some(self.data.as_timestamp())
+        } else {
+            None
+        }
+    }
+
     pub(super) fn state(
         &self,
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
@@ -326,8 +352,8 @@ impl Entry {
     }
 }
 
-impl From<&'_ SystemTime> for Timestamp {
-    fn from(system_time: &'_ SystemTime) -> Self {
+impl From<SystemTime> for Timestamp {
+    fn from(system_time: SystemTime) -> Self {
         let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {
             Ok(duration) => {
                 (duration.as_secs() as i64, duration.subsec_nanos())

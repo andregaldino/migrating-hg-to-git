@@ -2,8 +2,11 @@ use crate::dirstate::status::IgnoreFnType;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
+use crate::dirstate_tree::dirstate_map::NodeData;
 use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
+use crate::dirstate_tree::on_disk::Timestamp;
+use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
@@ -18,10 +21,12 @@ use crate::StatusError;
 use crate::StatusOptions;
 use micro_timer::timed;
 use rayon::prelude::*;
+use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::SystemTime;
 
 /// Returns the status of the working directory compared to its parent
 /// changeset.
@@ -52,19 +57,45 @@ pub fn status<'tree, 'on_disk: 'tree>(
         options,
         matcher,
         ignore_fn,
-        outcome: Mutex::new(DirstateStatus::default()),
+        outcome: Default::default(),
+        cached_directory_mtimes_to_add: Default::default(),
+        filesystem_time_at_status_start: filesystem_now(&root_dir).ok(),
     };
     let is_at_repo_root = true;
     let hg_path = &BorrowedPath::OnDisk(HgPath::new(""));
     let has_ignored_ancestor = false;
+    let root_cached_mtime = None;
+    let root_dir_metadata = None;
+    // If the path we have for the repository root is a symlink, do follow it.
+    // (As opposed to symlinks within the working directory which are not
+    // followed, using `std::fs::symlink_metadata`.)
     common.traverse_fs_directory_and_dirstate(
         has_ignored_ancestor,
         dmap.root.as_ref(),
         hg_path,
         &root_dir,
+        root_dir_metadata,
+        root_cached_mtime,
         is_at_repo_root,
     )?;
-    Ok((common.outcome.into_inner().unwrap(), warnings))
+    let outcome = common.outcome.into_inner().unwrap();
+    let to_add = common.cached_directory_mtimes_to_add.into_inner().unwrap();
+    for (path, mtime) in &to_add {
+        let node = DirstateMap::get_or_insert_node(
+            dmap.on_disk,
+            &mut dmap.root,
+            path,
+            WithBasename::to_cow_owned,
+            |_| {},
+        )?;
+        match &node.data {
+            NodeData::Entry(_) => {} // Don’t overwrite an entry
+            NodeData::CachedDirectory { .. } | NodeData::None => {
+                node.data = NodeData::CachedDirectory { mtime: *mtime }
+            }
+        }
+    }
+    Ok((outcome, warnings))
 }
 
 /// Bag of random things needed by various parts of the algorithm. Reduces the
@@ -75,6 +106,12 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
     outcome: Mutex<DirstateStatus<'on_disk>>,
+    cached_directory_mtimes_to_add:
+        Mutex<Vec<(Cow<'on_disk, HgPath>, Timestamp)>>,
+
+    /// The current time at the start of the `status()` algorithm, as measured
+    /// and possibly truncated by the filesystem.
+    filesystem_time_at_status_start: Option<SystemTime>,
 }
 
 impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
@@ -97,18 +134,54 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
     }
 
+    /// If this returns true, we can get accurate results by only using
+    /// `symlink_metadata` for child nodes that exist in the dirstate and don’t
+    /// need to call `read_dir`.
+    fn can_skip_fs_readdir(
+        &self,
+        directory_metadata: Option<&std::fs::Metadata>,
+        cached_directory_mtime: Option<&Timestamp>,
+    ) -> bool {
+        if !self.options.list_unknown && !self.options.list_ignored {
+            // All states that we care about listing have corresponding
+            // dirstate entries.
+            // This happens for example with `hg status -mard`.
+            return true;
+        }
+        if let Some(cached_mtime) = cached_directory_mtime {
+            // The dirstate contains a cached mtime for this directory, set by
+            // a previous run of the `status` algorithm which found this
+            // directory eligible for `read_dir` caching.
+            if let Some(meta) = directory_metadata {
+                if let Ok(current_mtime) = meta.modified() {
+                    if current_mtime == cached_mtime.into() {
+                        // The mtime of that directory has not changed since
+                        // then, which means that the
+                        // results of `read_dir` should also
+                        // be unchanged.
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    /// Returns whether the filesystem directory was found to have any entry
+    /// that does not have a corresponding dirstate tree node.
     fn traverse_fs_directory_and_dirstate(
         &self,
         has_ignored_ancestor: bool,
         dirstate_nodes: ChildNodesRef<'tree, 'on_disk>,
         directory_hg_path: &BorrowedPath<'tree, 'on_disk>,
         directory_fs_path: &Path,
+        directory_metadata: Option<&std::fs::Metadata>,
+        cached_directory_mtime: Option<&Timestamp>,
         is_at_repo_root: bool,
-    ) -> Result<(), DirstateV2ParseError> {
-        if !self.options.list_unknown && !self.options.list_ignored {
-            // We only care about files in the dirstate, so we can skip listing
-            // filesystem directories entirely.
-            return dirstate_nodes
+    ) -> Result<bool, DirstateV2ParseError> {
+        if self.can_skip_fs_readdir(directory_metadata, cached_directory_mtime)
+        {
+            dirstate_nodes
                 .par_iter()
                 .map(|dirstate_node| {
                     let fs_path = directory_fs_path.join(get_path_from_bytes(
@@ -131,7 +204,13 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                         }
                     }
                 })
-                .collect();
+                .collect::<Result<_, _>>()?;
+
+            // Conservatively don’t let the caller assume that there aren’t
+            // any, since we don’t know.
+            let directory_has_any_fs_only_entry = true;
+
+            return Ok(directory_has_any_fs_only_entry);
         }
 
         let mut fs_entries = if let Ok(entries) = self.read_dir(
@@ -174,6 +253,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         .par_bridge()
         .map(|pair| {
             use itertools::EitherOrBoth::*;
+            let is_fs_only = pair.is_right();
             match pair {
                 Both(dirstate_node, fs_entry) => self
                     .traverse_fs_and_dirstate(
@@ -181,18 +261,19 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                         &fs_entry.metadata,
                         dirstate_node,
                         has_ignored_ancestor,
-                    ),
+                    )?,
                 Left(dirstate_node) => {
-                    self.traverse_dirstate_only(dirstate_node)
+                    self.traverse_dirstate_only(dirstate_node)?
                 }
-                Right(fs_entry) => Ok(self.traverse_fs_only(
+                Right(fs_entry) => self.traverse_fs_only(
                     has_ignored_ancestor,
                     directory_hg_path,
                     fs_entry,
-                )),
+                ),
             }
+            Ok(is_fs_only)
         })
-        .collect()
+        .try_reduce(|| false, |a, b| Ok(a || b))
     }
 
     fn traverse_fs_and_dirstate(
@@ -224,12 +305,20 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             }
             let is_ignored = has_ignored_ancestor || (self.ignore_fn)(hg_path);
             let is_at_repo_root = false;
-            self.traverse_fs_directory_and_dirstate(
-                is_ignored,
-                dirstate_node.children(self.dmap.on_disk)?,
-                hg_path,
-                fs_path,
-                is_at_repo_root,
+            let directory_has_any_fs_only_entry = self
+                .traverse_fs_directory_and_dirstate(
+                    is_ignored,
+                    dirstate_node.children(self.dmap.on_disk)?,
+                    hg_path,
+                    fs_path,
+                    Some(fs_metadata),
+                    dirstate_node.cached_directory_mtime(),
+                    is_at_repo_root,
+                )?;
+            self.maybe_save_directory_mtime(
+                directory_has_any_fs_only_entry,
+                fs_metadata,
+                dirstate_node,
             )?
         } else {
             if file_or_symlink && self.matcher.matches(hg_path) {
@@ -269,6 +358,75 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             for child_node in dirstate_node.children(self.dmap.on_disk)?.iter()
             {
                 self.traverse_dirstate_only(child_node)?
+            }
+        }
+        Ok(())
+    }
+
+    fn maybe_save_directory_mtime(
+        &self,
+        directory_has_any_fs_only_entry: bool,
+        directory_metadata: &std::fs::Metadata,
+        dirstate_node: NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        if !directory_has_any_fs_only_entry {
+            // All filesystem directory entries from `read_dir` have a
+            // corresponding node in the dirstate, so we can reconstitute the
+            // names of those entries without calling `read_dir` again.
+            if let (Some(status_start), Ok(directory_mtime)) = (
+                &self.filesystem_time_at_status_start,
+                directory_metadata.modified(),
+            ) {
+                // Although the Rust standard library’s `SystemTime` type
+                // has nanosecond precision, the times reported for a
+                // directory’s (or file’s) modified time may have lower
+                // resolution based on the filesystem (for example ext3
+                // only stores integer seconds), kernel (see
+                // https://stackoverflow.com/a/14393315/1162888), etc.
+                if &directory_mtime >= status_start {
+                    // The directory was modified too recently, don’t cache its
+                    // `read_dir` results.
+                    //
+                    // A timeline like this is possible:
+                    //
+                    // 1. A change to this directory (direct child was
+                    //    added or removed) cause its mtime to be set
+                    //    (possibly truncated) to `directory_mtime`
+                    // 2. This `status` algorithm calls `read_dir`
+                    // 3. An other change is made to the same directory is
+                    //    made so that calling `read_dir` agin would give
+                    //    different results, but soon enough after 1. that
+                    //    the mtime stays the same
+                    //
+                    // On a system where the time resolution poor, this
+                    // scenario is not unlikely if all three steps are caused
+                    // by the same script.
+                } else {
+                    // We’ve observed (through `status_start`) that time has
+                    // “progressed” since `directory_mtime`, so any further
+                    // change to this directory is extremely likely to cause a
+                    // different mtime.
+                    //
+                    // Having the same mtime again is not entirely impossible
+                    // since the system clock is not monotonous. It could jump
+                    // backward to some point before `directory_mtime`, then a
+                    // directory change could potentially happen during exactly
+                    // the wrong tick.
+                    //
+                    // We deem this scenario (unlike the previous one) to be
+                    // unlikely enough in practice.
+                    let timestamp = directory_mtime.into();
+                    let cached = dirstate_node.cached_directory_mtime();
+                    if cached != Some(&timestamp) {
+                        let hg_path = dirstate_node
+                            .full_path_borrowed(self.dmap.on_disk)?
+                            .detach_from_tree();
+                        self.cached_directory_mtimes_to_add
+                            .lock()
+                            .unwrap()
+                            .push((hg_path, timestamp))
+                    }
+                }
             }
         }
         Ok(())
@@ -504,4 +662,23 @@ impl DirEntry {
         }
         Ok(results)
     }
+}
+
+/// Return the `mtime` of a temporary file newly-created in the `.hg` directory
+/// of the give repository.
+///
+/// This is similar to `SystemTime::now()`, with the result truncated to the
+/// same time resolution as other files’ modification times. Using `.hg`
+/// instead of the system’s default temporary directory (such as `/tmp`) makes
+/// it more likely the temporary file is in the same disk partition as contents
+/// of the working directory, which can matter since different filesystems may
+/// store timestamps with different resolutions.
+///
+/// This may fail, typically if we lack write permissions. In that case we
+/// should continue the `status()` algoritm anyway and consider the current
+/// date/time to be unknown.
+fn filesystem_now(repo_root: &Path) -> Result<SystemTime, io::Error> {
+    tempfile::tempfile_in(repo_root.join(".hg"))?
+        .metadata()?
+        .modified()
 }
