@@ -837,6 +837,23 @@ Note: `hg status some-name` creates a patternmatcher which is not supported
 yet by the Rust implementation of status, but includematcher is supported.
 --include is used below for that reason
 
+#if unix-permissions
+
+Not having permission to read a directory that contains tracked files makes
+status emit a warning then behave as if the directory was empty or removed
+entirely:
+
+  $ chmod 0 subdir
+  $ hg status --include subdir
+  subdir: Permission denied
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+  $ chmod 755 subdir
+
+#endif
+
 Remove a directory that contains tracked files
 
   $ rm -r subdir

@@ -141,7 +141,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         ) {
             entries
         } else {
-            return Ok(());
+            // Treat an unreadable directory (typically because of insufficient
+            // permissions) like an empty directory. `self.read_dir` has
+            // already called `self.io_error` so a warning will be emitted.
+            Vec::new()
         };
 
         // `merge_join_by` requires both its input iterators to be sorted:
