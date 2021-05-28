@@ -1160,7 +1160,6 @@ coreconfigitem(
 # * Exchange-wise, we will also need to do something more efficient than
 #   keeping references to the affected revlogs, especially memory-wise when
 #   rewriting sidedata.
-# * sidedata compression
 # * introduce a proper solution to reduce the number of filelog related files.
 # * Improvement to consider
 #   - avoid compression header in chunk using the default compression?
