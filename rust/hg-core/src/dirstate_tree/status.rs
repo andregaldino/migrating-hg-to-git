@@ -1,4 +1,5 @@
 use crate::dirstate::status::IgnoreFnType;
+use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
 use crate::dirstate_tree::dirstate_map::NodeRef;
@@ -17,7 +18,6 @@ use crate::StatusError;
 use crate::StatusOptions;
 use micro_timer::timed;
 use rayon::prelude::*;
-use std::borrow::Cow;
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
@@ -39,7 +39,7 @@ pub fn status<'tree, 'on_disk: 'tree>(
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
-) -> Result<(DirstateStatus<'tree>, Vec<PatternFileWarning>), StatusError> {
+) -> Result<(DirstateStatus<'on_disk>, Vec<PatternFileWarning>), StatusError> {
     let (ignore_fn, warnings): (IgnoreFnType, _) =
         if options.list_ignored || options.list_unknown {
             get_ignore_function(ignore_files, &root_dir)?
@@ -55,7 +55,7 @@ pub fn status<'tree, 'on_disk: 'tree>(
         outcome: Mutex::new(DirstateStatus::default()),
     };
     let is_at_repo_root = true;
-    let hg_path = HgPath::new("");
+    let hg_path = &BorrowedPath::OnDisk(HgPath::new(""));
     let has_ignored_ancestor = false;
     common.traverse_fs_directory_and_dirstate(
         has_ignored_ancestor,
@@ -69,15 +69,15 @@ pub fn status<'tree, 'on_disk: 'tree>(
 
 /// Bag of random things needed by various parts of the algorithm. Reduces the
 /// number of parameters passed to functions.
-struct StatusCommon<'tree, 'a, 'on_disk: 'tree> {
+struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     dmap: &'tree DirstateMap<'on_disk>,
     options: StatusOptions,
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
-    outcome: Mutex<DirstateStatus<'tree>>,
+    outcome: Mutex<DirstateStatus<'on_disk>>,
 }
 
-impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
+impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     fn read_dir(
         &self,
         hg_path: &HgPath,
@@ -100,8 +100,8 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     fn traverse_fs_directory_and_dirstate(
         &self,
         has_ignored_ancestor: bool,
-        dirstate_nodes: ChildNodesRef<'tree, '_>,
-        directory_hg_path: &'tree HgPath,
+        dirstate_nodes: ChildNodesRef<'tree, 'on_disk>,
+        directory_hg_path: &BorrowedPath<'tree, 'on_disk>,
         directory_fs_path: &Path,
         is_at_repo_root: bool,
     ) -> Result<(), DirstateV2ParseError> {
@@ -199,10 +199,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         &self,
         fs_path: &Path,
         fs_metadata: &std::fs::Metadata,
-        dirstate_node: NodeRef<'tree, '_>,
+        dirstate_node: NodeRef<'tree, 'on_disk>,
         has_ignored_ancestor: bool,
     ) -> Result<(), DirstateV2ParseError> {
-        let hg_path = dirstate_node.full_path(self.dmap.on_disk)?;
+        let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let file_type = fs_metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
         if !file_or_symlink {
@@ -210,13 +210,17 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
             // `hg rm` or similar) or deleted before it could be
             // replaced by a directory or something else.
             self.mark_removed_or_deleted_if_file(
-                hg_path,
+                &hg_path,
                 dirstate_node.state()?,
             );
         }
         if file_type.is_dir() {
             if self.options.collect_traversed_dirs {
-                self.outcome.lock().unwrap().traversed.push(hg_path.into())
+                self.outcome
+                    .lock()
+                    .unwrap()
+                    .traversed
+                    .push(hg_path.detach_from_tree())
             }
             let is_ignored = has_ignored_ancestor || (self.ignore_fn)(hg_path);
             let is_at_repo_root = false;
@@ -229,24 +233,26 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
             )?
         } else {
             if file_or_symlink && self.matcher.matches(hg_path) {
-                let full_path = Cow::from(hg_path);
                 if let Some(state) = dirstate_node.state()? {
                     match state {
-                        EntryState::Added => {
-                            self.outcome.lock().unwrap().added.push(full_path)
-                        }
+                        EntryState::Added => self
+                            .outcome
+                            .lock()
+                            .unwrap()
+                            .added
+                            .push(hg_path.detach_from_tree()),
                         EntryState::Removed => self
                             .outcome
                             .lock()
                             .unwrap()
                             .removed
-                            .push(full_path),
+                            .push(hg_path.detach_from_tree()),
                         EntryState::Merged => self
                             .outcome
                             .lock()
                             .unwrap()
                             .modified
-                            .push(full_path),
+                            .push(hg_path.detach_from_tree()),
                         EntryState::Normal => self
                             .handle_normal_file(&dirstate_node, fs_metadata)?,
                         // This variant is not used in DirstateMap
@@ -256,10 +262,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
                 } else {
                     // `node.entry.is_none()` indicates a "directory"
                     // node, but the filesystem has a file
-                    self.mark_unknown_or_ignored(
-                        has_ignored_ancestor,
-                        full_path,
-                    )
+                    self.mark_unknown_or_ignored(has_ignored_ancestor, hg_path)
                 }
             }
 
@@ -275,7 +278,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     /// filesystem
     fn handle_normal_file(
         &self,
-        dirstate_node: &NodeRef<'tree, '_>,
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
         fs_metadata: &std::fs::Metadata,
     ) -> Result<(), DirstateV2ParseError> {
         // Keep the low 31 bits
@@ -289,7 +292,7 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         let entry = dirstate_node
             .entry()?
             .expect("handle_normal_file called with entry-less node");
-        let full_path = Cow::from(dirstate_node.full_path(self.dmap.on_disk)?);
+        let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let mode_changed =
             || self.options.check_exec && entry.mode_changed(fs_metadata);
         let size_changed = entry.size != truncate_u64(fs_metadata.len());
@@ -299,20 +302,36 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
         {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
-            self.outcome.lock().unwrap().unsure.push(full_path)
+            self.outcome
+                .lock()
+                .unwrap()
+                .unsure
+                .push(hg_path.detach_from_tree())
         } else if dirstate_node.has_copy_source()
             || entry.is_from_other_parent()
             || (entry.size >= 0 && (size_changed || mode_changed()))
         {
-            self.outcome.lock().unwrap().modified.push(full_path)
+            self.outcome
+                .lock()
+                .unwrap()
+                .modified
+                .push(hg_path.detach_from_tree())
         } else {
             let mtime = mtime_seconds(fs_metadata);
             if truncate_i64(mtime) != entry.mtime
                 || mtime == self.options.last_normal_time
             {
-                self.outcome.lock().unwrap().unsure.push(full_path)
+                self.outcome
+                    .lock()
+                    .unwrap()
+                    .unsure
+                    .push(hg_path.detach_from_tree())
             } else if self.options.list_clean {
-                self.outcome.lock().unwrap().clean.push(full_path)
+                self.outcome
+                    .lock()
+                    .unwrap()
+                    .clean
+                    .push(hg_path.detach_from_tree())
             }
         }
         Ok(())
@@ -321,10 +340,10 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     /// A node in the dirstate tree has no corresponding filesystem entry
     fn traverse_dirstate_only(
         &self,
-        dirstate_node: NodeRef<'tree, '_>,
+        dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
         self.mark_removed_or_deleted_if_file(
-            dirstate_node.full_path(self.dmap.on_disk)?,
+            &dirstate_node.full_path_borrowed(self.dmap.on_disk)?,
             dirstate_node.state()?,
         );
         dirstate_node
@@ -340,15 +359,23 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
     /// Does nothing on a "directory" node
     fn mark_removed_or_deleted_if_file(
         &self,
-        hg_path: &'tree HgPath,
+        hg_path: &BorrowedPath<'tree, 'on_disk>,
         dirstate_node_state: Option<EntryState>,
     ) {
         if let Some(state) = dirstate_node_state {
             if self.matcher.matches(hg_path) {
                 if let EntryState::Removed = state {
-                    self.outcome.lock().unwrap().removed.push(hg_path.into())
+                    self.outcome
+                        .lock()
+                        .unwrap()
+                        .removed
+                        .push(hg_path.detach_from_tree())
                 } else {
-                    self.outcome.lock().unwrap().deleted.push(hg_path.into())
+                    self.outcome
+                        .lock()
+                        .unwrap()
+                        .deleted
+                        .push(hg_path.detach_from_tree())
                 }
             }
         }
@@ -395,23 +422,34 @@ impl<'tree, 'a> StatusCommon<'tree, 'a, '_> {
                 self.outcome.lock().unwrap().traversed.push(hg_path.into())
             }
         } else if file_or_symlink && self.matcher.matches(&hg_path) {
-            self.mark_unknown_or_ignored(has_ignored_ancestor, hg_path.into())
+            self.mark_unknown_or_ignored(
+                has_ignored_ancestor,
+                &BorrowedPath::InMemory(&hg_path),
+            )
         }
     }
 
     fn mark_unknown_or_ignored(
         &self,
         has_ignored_ancestor: bool,
-        hg_path: Cow<'tree, HgPath>,
+        hg_path: &BorrowedPath<'_, 'on_disk>,
     ) {
         let is_ignored = has_ignored_ancestor || (self.ignore_fn)(&hg_path);
         if is_ignored {
             if self.options.list_ignored {
-                self.outcome.lock().unwrap().ignored.push(hg_path)
+                self.outcome
+                    .lock()
+                    .unwrap()
+                    .ignored
+                    .push(hg_path.detach_from_tree())
             }
         } else {
             if self.options.list_unknown {
-                self.outcome.lock().unwrap().unknown.push(hg_path)
+                self.outcome
+                    .lock()
+                    .unwrap()
+                    .unknown
+                    .push(hg_path.detach_from_tree())
             }
         }
     }

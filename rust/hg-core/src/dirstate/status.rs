@@ -292,7 +292,7 @@ pub struct DirstateStatus<'a> {
     pub unsure: Vec<HgPathCow<'a>>,
 
     /// Only filled if `collect_traversed_dirs` is `true`
-    pub traversed: Vec<HgPathBuf>,
+    pub traversed: Vec<HgPathCow<'a>>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -880,7 +880,7 @@ where
 #[timed]
 pub fn build_response<'a>(
     results: impl IntoIterator<Item = DispatchedPath<'a>>,
-    traversed: Vec<HgPathBuf>,
+    traversed: Vec<HgPathCow<'a>>,
 ) -> DirstateStatus<'a> {
     let mut unsure = vec![];
     let mut modified = vec![];

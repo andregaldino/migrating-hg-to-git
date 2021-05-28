@@ -61,7 +61,10 @@ impl<'a, M: ?Sized + Matcher + Sync> Status<'a, M> {
         }
 
         drop(traversed_sender);
-        let traversed = traversed_receiver.into_iter().collect();
+        let traversed = traversed_receiver
+            .into_iter()
+            .map(std::borrow::Cow::Owned)
+            .collect();
 
         Ok(build_response(results, traversed))
     }

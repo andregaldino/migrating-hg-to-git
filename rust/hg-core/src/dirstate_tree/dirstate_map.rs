@@ -46,6 +46,13 @@ pub struct DirstateMap<'on_disk> {
 /// string prefix.
 pub(super) type NodeKey<'on_disk> = WithBasename<Cow<'on_disk, HgPath>>;
 
+/// Similar to `&'tree Cow<'on_disk, HgPath>`, but can also be returned
+/// for on-disk nodes that don’t actually have a `Cow` to borrow.
+pub(super) enum BorrowedPath<'tree, 'on_disk> {
+    InMemory(&'tree HgPathBuf),
+    OnDisk(&'on_disk HgPath),
+}
+
 pub(super) enum ChildNodes<'on_disk> {
     InMemory(FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
     OnDisk(&'on_disk [on_disk::Node]),
@@ -59,6 +66,26 @@ pub(super) enum ChildNodesRef<'tree, 'on_disk> {
 pub(super) enum NodeRef<'tree, 'on_disk> {
     InMemory(&'tree NodeKey<'on_disk>, &'tree Node<'on_disk>),
     OnDisk(&'on_disk on_disk::Node),
+}
+
+impl<'tree, 'on_disk> BorrowedPath<'tree, 'on_disk> {
+    pub fn detach_from_tree(&self) -> Cow<'on_disk, HgPath> {
+        match *self {
+            BorrowedPath::InMemory(in_memory) => Cow::Owned(in_memory.clone()),
+            BorrowedPath::OnDisk(on_disk) => Cow::Borrowed(on_disk),
+        }
+    }
+}
+
+impl<'tree, 'on_disk> std::ops::Deref for BorrowedPath<'tree, 'on_disk> {
+    type Target = HgPath;
+
+    fn deref(&self) -> &HgPath {
+        match *self {
+            BorrowedPath::InMemory(in_memory) => in_memory,
+            BorrowedPath::OnDisk(on_disk) => on_disk,
+        }
+    }
 }
 
 impl Default for ChildNodes<'_> {
@@ -210,15 +237,19 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
         }
     }
 
-    /// Returns a `Cow` that can borrow 'on_disk but is detached from 'tree
-    pub(super) fn full_path_cow(
+    /// Returns a `BorrowedPath`, which can be turned into a `Cow<'on_disk,
+    /// HgPath>` detached from `'tree`
+    pub(super) fn full_path_borrowed(
         &self,
         on_disk: &'on_disk [u8],
-    ) -> Result<Cow<'on_disk, HgPath>, DirstateV2ParseError> {
+    ) -> Result<BorrowedPath<'tree, 'on_disk>, DirstateV2ParseError> {
         match self {
-            NodeRef::InMemory(path, _node) => Ok(path.full_path().clone()),
+            NodeRef::InMemory(path, _node) => match path.full_path() {
+                Cow::Borrowed(on_disk) => Ok(BorrowedPath::OnDisk(on_disk)),
+                Cow::Owned(in_memory) => Ok(BorrowedPath::InMemory(in_memory)),
+            },
             NodeRef::OnDisk(node) => {
-                Ok(Cow::Borrowed(node.full_path(on_disk)?))
+                Ok(BorrowedPath::OnDisk(node.full_path(on_disk)?))
             }
         }
     }
@@ -819,7 +850,10 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                     node.copy_source(self.on_disk)?,
                 );
                 if entry.mtime_is_ambiguous(now) {
-                    ambiguous_mtimes.push(node.full_path_cow(self.on_disk)?)
+                    ambiguous_mtimes.push(
+                        node.full_path_borrowed(self.on_disk)?
+                            .detach_from_tree(),
+                    )
                 }
             }
         }
@@ -855,7 +889,10 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             let node = node?;
             if let Some(entry) = node.entry()? {
                 if entry.mtime_is_ambiguous(now) {
-                    paths.push(node.full_path_cow(self.on_disk)?)
+                    paths.push(
+                        node.full_path_borrowed(self.on_disk)?
+                            .detach_from_tree(),
+                    )
                 }
             }
         }
