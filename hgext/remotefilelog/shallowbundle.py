@@ -225,7 +225,17 @@ def addchangegroupfiles(
 
         chain = None
         while True:
-            # returns: (node, p1, p2, cs, deltabase, delta, flags) or None
+            # returns: None or (
+            #   node,
+            #   p1,
+            #   p2,
+            #   cs,
+            #   deltabase,
+            #   delta,
+            #   flags,
+            #   sidedata,
+            #   proto_flags
+            # )
             revisiondata = source.deltachunk(chain)
             if not revisiondata:
                 break
@@ -263,7 +273,7 @@ def addchangegroupfiles(
     prefetchfiles = []
     for f, node in queue:
         revisiondata = revisiondatas[(f, node)]
-        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags)
+        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags, sdata, pfl)
         dependents = [revisiondata[1], revisiondata[2], revisiondata[4]]
 
         for dependent in dependents:
@@ -287,8 +297,18 @@ def addchangegroupfiles(
         fl = repo.file(f)
 
         revisiondata = revisiondatas[(f, node)]
-        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags)
-        node, p1, p2, linknode, deltabase, delta, flags, sidedata = revisiondata
+        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags, sdata, pfl)
+        (
+            node,
+            p1,
+            p2,
+            linknode,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            proto_flags,
+        ) = revisiondata
 
         if not available(f, node, f, deltabase):
             continue

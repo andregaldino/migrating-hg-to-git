@@ -199,6 +199,7 @@ class cg1unpacker(object):
         return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def deltachunk(self, prevnode):
+        # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata, proto_flags)
         l = self._chunklength()
         if not l:
             return {}
@@ -207,7 +208,7 @@ class cg1unpacker(object):
         delta = readexactly(self._stream, l - self.deltaheadersize)
         header = self._deltaheader(header, prevnode)
         node, p1, p2, deltabase, cs, flags, protocol_flags = header
-        return node, p1, p2, cs, deltabase, delta, flags, protocol_flags
+        return node, p1, p2, cs, deltabase, delta, flags, {}, protocol_flags
 
     def getchunks(self):
         """returns all the chunks contains in the bundle
@@ -583,8 +584,8 @@ class cg1unpacker(object):
         """
         chain = None
         for chunkdata in iter(lambda: self.deltachunk(chain), {}):
-            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata)
-            yield chunkdata
+            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata, proto_flags)
+            yield chunkdata[:8]
             chain = chunkdata[0]
 
 
@@ -659,14 +660,35 @@ class cg4unpacker(cg3unpacker):
         if not res:
             return res
 
-        (node, p1, p2, cs, deltabase, delta, flags, protocol_flags) = res
+        (
+            node,
+            p1,
+            p2,
+            cs,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            protocol_flags,
+        ) = res
+        assert not sidedata
 
         sidedata = {}
         if protocol_flags & storageutil.CG_FLAG_SIDEDATA:
             sidedata_raw = getchunk(self._stream)
             sidedata = sidedatamod.deserialize_sidedata(sidedata_raw)
 
-        return node, p1, p2, cs, deltabase, delta, flags, sidedata
+        return (
+            node,
+            p1,
+            p2,
+            cs,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            protocol_flags,
+        )
 
 
 class headerlessfixup(object):
