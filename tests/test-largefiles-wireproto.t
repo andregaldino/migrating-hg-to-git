@@ -425,10 +425,10 @@ a large file from the server rather than to get it from the cache
   >          -d -p $HGPORT --pid-file hg.pid -A access.log
   $ cat hg.pid >> $DAEMON_PIDS
   $ cat << EOF > get_pass.py
-  > import getpass
-  > def newgetpass(arg):
+  > from mercurial import util
+  > def newgetpass():
   >   return "pass"
-  > getpass.getpass = newgetpass
+  > util.get_password = newgetpass
   > EOF
   $ hg clone --config ui.interactive=true --config extensions.getpass=get_pass.py \
   >          http://user@localhost:$HGPORT credentialclone

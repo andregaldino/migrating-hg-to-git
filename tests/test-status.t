@@ -881,3 +881,20 @@ Deeply nested files in an ignored directory are still listed on request
   $ hg status --ignored
   I ignored
   I ignored-dir/subdir/1
+
+Check using include flag while listing ignored composes correctly (issue6514)
+
+  $ cd ..
+  $ hg init issue6514
+  $ cd issue6514
+  $ mkdir ignored-folder
+  $ touch A.hs B.hs C.hs ignored-folder/other.txt ignored-folder/ctest.hs
+  $ cat >.hgignore <<EOF
+  > A.hs
+  > B.hs
+  > ignored-folder/
+  > EOF
+  $ hg st -i -I 're:.*\.hs$'
+  I A.hs
+  I B.hs
+  I ignored-folder/ctest.hs
