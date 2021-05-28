@@ -145,7 +145,7 @@ class RevlogDocket(object):
         return b"%s-%s.idx" % (self._radix, self._index_uuid)
 
     def data_filepath(self):
-        """file path to the current index file associated to this docket"""
+        """file path to the current data file associated to this docket"""
         # very simplistic version at first
         if self._data_uuid is None:
             self._data_uuid = make_uid()
