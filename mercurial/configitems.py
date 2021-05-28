@@ -1162,13 +1162,13 @@ coreconfigitem(
 #   rewriting sidedata.
 # * introduce a proper solution to reduce the number of filelog related files.
 # * use caching for reading sidedata (similar to what we do for data).
+# * no longer set offset=0 if sidedata_size=0 (simplify cutoff computation).
 # * Improvement to consider
 #   - avoid compression header in chunk using the default compression?
 #   - forbid "inline" compression mode entirely?
 #   - split the data offset and flag field (the 2 bytes save are mostly trouble)
 #   - keep track of uncompressed -chunk- size (to preallocate memory better)
 #   - keep track of chain base or size (probably not that useful anymore)
-#   - store data and sidedata in different files
 coreconfigitem(
     b'experimental',
     b'revlogv2',

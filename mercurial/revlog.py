@@ -1,4 +1,5 @@
 # revlog.py - storage back-end for mercurial
+# coding: utf8
 #
 # Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
@@ -260,6 +261,11 @@ PARTIAL_READ_MSG = _(
     b'partial read of revlog %s; expected %d bytes from offset %d, got %d'
 )
 
+FILE_TOO_SHORT_MSG = _(
+    b'cannot read from revlog %s;'
+    b'  expected %d bytes from offset %d, data size is %d'
+)
+
 
 class revlog(object):
     """
@@ -401,6 +407,7 @@ class revlog(object):
         self._docket_file = None
         self._indexfile = None
         self._datafile = None
+        self._sidedatafile = None
         self._nodemap_file = None
         self.postfix = postfix
         self._trypending = trypending
@@ -445,7 +452,7 @@ class revlog(object):
         # custom flags.
         self._flagprocessors = dict(flagutil.flagprocessors)
 
-        # 2-tuple of file handles being used for active writing.
+        # 3-tuple of file handles being used for active writing.
         self._writinghandles = None
         # prevent nesting of addgroup
         self._adding_group = None
@@ -634,6 +641,7 @@ class revlog(object):
 
         if self._docket is not None:
             self._datafile = self._docket.data_filepath()
+            self._sidedatafile = self._docket.sidedata_filepath()
         elif self.postfix is None:
             self._datafile = b'%s.d' % self.radix
         else:
@@ -803,9 +811,14 @@ class revlog(object):
             with func() as fp:
                 yield fp
 
+    @contextlib.contextmanager
     def _sidedatareadfp(self):
         """file object suitable to read sidedata"""
-        return self._datareadfp()
+        if self._writinghandles:
+            yield self._writinghandles[2]
+        else:
+            with self.opener(self._sidedatafile) as fp:
+                yield fp
 
     def tiprev(self):
         return len(self.index) - 1
@@ -908,6 +921,23 @@ class revlog(object):
     # are flags.
     def start(self, rev):
         return int(self.index[rev][0] >> 16)
+
+    def sidedata_cut_off(self, rev):
+        sd_cut_off = self.index[rev][8]
+        if sd_cut_off != 0:
+            return sd_cut_off
+        # This is some annoying dance, because entries without sidedata
+        # currently use 0 as their ofsset. (instead of previous-offset +
+        # previous-size)
+        #
+        # We should reconsider this sidedata → 0 sidata_offset policy.
+        # In the meantime, we need this.
+        while 0 <= rev:
+            e = self.index[rev]
+            if e[9] != 0:
+                return e[8] + e[9]
+            rev -= 1
+        return 0
 
     def flags(self, rev):
         return self.index[rev][0] & 0xFFFF
@@ -2074,11 +2104,19 @@ class revlog(object):
 
         # XXX this need caching, as we do for data
         with self._sidedatareadfp() as sdf:
-            sdf.seek(sidedata_offset)
+            if self._docket.sidedata_end < sidedata_offset + sidedata_size:
+                filename = self._sidedatafile
+                end = self._docket.sidedata_end
+                offset = sidedata_offset
+                length = sidedata_size
+                m = FILE_TOO_SHORT_MSG % (filename, length, offset, end)
+                raise error.RevlogError(m)
+
+            sdf.seek(sidedata_offset, os.SEEK_SET)
             comp_segment = sdf.read(sidedata_size)
 
             if len(comp_segment) < sidedata_size:
-                filename = self._datafile
+                filename = self._sidedatafile
                 length = sidedata_size
                 offset = sidedata_offset
                 got = len(comp_segment)
@@ -2215,7 +2253,7 @@ class revlog(object):
             if existing_handles:
                 # switched from inline to conventional reopen the index
                 ifh = self.__index_write_fp()
-                self._writinghandles = (ifh, new_dfh)
+                self._writinghandles = (ifh, new_dfh, None)
                 new_dfh = None
         finally:
             if new_dfh is not None:
@@ -2233,7 +2271,7 @@ class revlog(object):
         if self._writinghandles is not None:
             yield
         else:
-            ifh = dfh = None
+            ifh = dfh = sdfh = None
             try:
                 r = len(self)
                 # opening the data file.
@@ -2253,6 +2291,17 @@ class revlog(object):
                             raise
                         dfh = self._datafp(b"w+")
                     transaction.add(self._datafile, dsize)
+                if self._sidedatafile is not None:
+                    try:
+                        sdfh = self.opener(self._sidedatafile, mode=b"r+")
+                        dfh.seek(self._docket.sidedata_end, os.SEEK_SET)
+                    except IOError as inst:
+                        if inst.errno != errno.ENOENT:
+                            raise
+                        sdfh = self.opener(self._sidedatafile, mode=b"w+")
+                    transaction.add(
+                        self._sidedatafile, self._docket.sidedata_end
+                    )
 
                 # opening the index file.
                 isize = r * self.index.entry_size
@@ -2262,13 +2311,15 @@ class revlog(object):
                 else:
                     transaction.add(self._indexfile, isize)
                 # exposing all file handle for writing.
-                self._writinghandles = (ifh, dfh)
+                self._writinghandles = (ifh, dfh, sdfh)
                 yield
                 if self._docket is not None:
                     self._write_docket(transaction)
             finally:
                 self._writinghandles = None
                 if dfh is not None:
+                    dfh.close()
+                if sdfh is not None:
                     dfh.close()
                 # closing the index file last to avoid exposing referent to
                 # potential unflushed data content.
@@ -2513,7 +2564,8 @@ class revlog(object):
         offset = self._get_data_offset(prev)
 
         if self._concurrencychecker:
-            ifh, dfh = self._writinghandles
+            ifh, dfh, sdfh = self._writinghandles
+            # XXX no checking for the sidedata file
             if self._inline:
                 # offset is "as if" it were in the .d file, so we need to add on
                 # the size of the entry metadata.
@@ -2570,7 +2622,7 @@ class revlog(object):
         if sidedata and self.hassidedata:
             sidedata_compression_mode = COMP_MODE_PLAIN
             serialized_sidedata = sidedatautil.serialize_sidedata(sidedata)
-            sidedata_offset = offset + deltainfo.deltalen
+            sidedata_offset = self._docket.sidedata_end
             h, comp_sidedata = self.compress(serialized_sidedata)
             if (
                 h != b'u'
@@ -2622,6 +2674,7 @@ class revlog(object):
             link,
             offset,
             serialized_sidedata,
+            sidedata_offset,
         )
 
         rawtext = btext[0]
@@ -2648,7 +2701,9 @@ class revlog(object):
         else:
             return self._docket.data_end
 
-    def _writeentry(self, transaction, entry, data, link, offset, sidedata):
+    def _writeentry(
+        self, transaction, entry, data, link, offset, sidedata, sidedata_offset
+    ):
         # Files opened in a+ mode have inconsistent behavior on various
         # platforms. Windows requires that a file positioning call be made
         # when the file handle transitions between reads and writes. See
@@ -2664,7 +2719,7 @@ class revlog(object):
         if self._writinghandles is None:
             msg = b'adding revision outside `revlog._writing` context'
             raise error.ProgrammingError(msg)
-        ifh, dfh = self._writinghandles
+        ifh, dfh, sdfh = self._writinghandles
         if self._docket is None:
             ifh.seek(0, os.SEEK_END)
         else:
@@ -2674,16 +2729,20 @@ class revlog(object):
                 dfh.seek(0, os.SEEK_END)
             else:
                 dfh.seek(self._docket.data_end, os.SEEK_SET)
+        if sdfh:
+            sdfh.seek(self._docket.sidedata_end, os.SEEK_SET)
 
         curr = len(self) - 1
         if not self._inline:
             transaction.add(self._datafile, offset)
+            if self._sidedatafile:
+                transaction.add(self._sidedatafile, sidedata_offset)
             transaction.add(self._indexfile, curr * len(entry))
             if data[0]:
                 dfh.write(data[0])
             dfh.write(data[1])
             if sidedata:
-                dfh.write(sidedata)
+                sdfh.write(sidedata)
             ifh.write(entry)
         else:
             offset += curr * self.index.entry_size
@@ -2691,12 +2750,12 @@ class revlog(object):
             ifh.write(entry)
             ifh.write(data[0])
             ifh.write(data[1])
-            if sidedata:
-                ifh.write(sidedata)
+            assert not sidedata
             self._enforceinlinesize(transaction)
         if self._docket is not None:
             self._docket.index_end = self._writinghandles[0].tell()
             self._docket.data_end = self._writinghandles[1].tell()
+            self._docket.sidedata_end = self._writinghandles[2].tell()
 
         nodemaputil.setup_persistent_nodemap(transaction, self)
 
@@ -2866,12 +2925,17 @@ class revlog(object):
         else:
             end = data_end + (rev * self.index.entry_size)
 
+        if self._sidedatafile:
+            sidedata_end = self.sidedata_cut_off(rev)
+            transaction.add(self._sidedatafile, sidedata_end)
+
         transaction.add(self._indexfile, end)
         if self._docket is not None:
             # XXX we could, leverage the docket while stripping. However it is
             # not powerfull enough at the time of this comment
             self._docket.index_end = end
             self._docket.data_end = data_end
+            self._docket.sidedata_end = sidedata_end
             self._docket.write(transaction, stripping=True)
 
         # then reset internal state in memory to forget those revisions
@@ -3398,13 +3462,10 @@ class revlog(object):
         new_entries = []
         # append the new sidedata
         with self._writing(transaction):
-            ifh, dfh = self._writinghandles
-            if self._docket is not None:
-                dfh.seek(self._docket.data_end, os.SEEK_SET)
-            else:
-                dfh.seek(0, os.SEEK_END)
+            ifh, dfh, sdfh = self._writinghandles
+            dfh.seek(self._docket.sidedata_end, os.SEEK_SET)
 
-            current_offset = dfh.tell()
+            current_offset = sdfh.tell()
             for rev in range(startrev, endrev + 1):
                 entry = self.index[rev]
                 new_sidedata, flags = sidedatautil.run_sidedata_helpers(
@@ -3455,12 +3516,11 @@ class revlog(object):
                 )
 
                 # the sidedata computation might have move the file cursors around
-                dfh.seek(current_offset, os.SEEK_SET)
-                dfh.write(serialized_sidedata)
+                sdfh.seek(current_offset, os.SEEK_SET)
+                sdfh.write(serialized_sidedata)
                 new_entries.append(entry_update)
                 current_offset += len(serialized_sidedata)
-                if self._docket is not None:
-                    self._docket.data_end = dfh.tell()
+                self._docket.sidedata_end = sdfh.tell()
 
             # rewrite the new index entries
             ifh.seek(startrev * self.index.entry_size)

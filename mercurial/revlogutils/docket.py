@@ -90,12 +90,15 @@ if stable_docket_file:
 #          |   revlog index header.
 # * 1 bytes: size of index uuid
 # * 1 bytes: size of data uuid
+# * 1 bytes: size of sizedata uuid
 # * 8 bytes: size of index-data
 # * 8 bytes: pending size of index-data
 # * 8 bytes: size of data
+# * 8 bytes: size of sidedata
 # * 8 bytes: pending size of data
+# * 8 bytes: pending size of sidedata
 # * 1 bytes: default compression header
-S_HEADER = struct.Struct(constants.INDEX_HEADER_FMT + b'BBLLLLc')
+S_HEADER = struct.Struct(constants.INDEX_HEADER_FMT + b'BBBLLLLLLc')
 
 
 class RevlogDocket(object):
@@ -108,10 +111,13 @@ class RevlogDocket(object):
         version_header=None,
         index_uuid=None,
         data_uuid=None,
+        sidedata_uuid=None,
         index_end=0,
         pending_index_end=0,
         data_end=0,
         pending_data_end=0,
+        sidedata_end=0,
+        pending_sidedata_end=0,
         default_compression_header=None,
     ):
         self._version_header = version_header
@@ -122,19 +128,25 @@ class RevlogDocket(object):
         self._opener = revlog.opener
         self._index_uuid = index_uuid
         self._data_uuid = data_uuid
+        self._sidedata_uuid = sidedata_uuid
         # thes asserts should be True as long as we have a single index filename
         assert index_end <= pending_index_end
         assert data_end <= pending_data_end
+        assert sidedata_end <= pending_sidedata_end
         self._initial_index_end = index_end
         self._pending_index_end = pending_index_end
         self._initial_data_end = data_end
         self._pending_data_end = pending_data_end
+        self._initial_sidedata_end = sidedata_end
+        self._pending_sidedata_end = pending_sidedata_end
         if use_pending:
             self._index_end = self._pending_index_end
             self._data_end = self._pending_data_end
+            self._sidedata_end = self._pending_sidedata_end
         else:
             self._index_end = self._initial_index_end
             self._data_end = self._initial_data_end
+            self._sidedata_end = self._initial_sidedata_end
         self.default_compression_header = default_compression_header
 
     def index_filepath(self):
@@ -150,6 +162,13 @@ class RevlogDocket(object):
         if self._data_uuid is None:
             self._data_uuid = make_uid()
         return b"%s-%s.dat" % (self._radix, self._data_uuid)
+
+    def sidedata_filepath(self):
+        """file path to the current sidedata file associated to this docket"""
+        # very simplistic version at first
+        if self._sidedata_uuid is None:
+            self._sidedata_uuid = make_uid()
+        return b"%s-%s.sda" % (self._radix, self._sidedata_uuid)
 
     @property
     def index_end(self):
@@ -169,6 +188,16 @@ class RevlogDocket(object):
     def data_end(self, new_size):
         if new_size != self._data_end:
             self._data_end = new_size
+            self._dirty = True
+
+    @property
+    def sidedata_end(self):
+        return self._sidedata_end
+
+    @sidedata_end.setter
+    def sidedata_end(self, new_size):
+        if new_size != self._sidedata_end:
+            self._sidedata_end = new_size
             self._dirty = True
 
     def write(self, transaction, pending=False, stripping=False):
@@ -196,26 +225,33 @@ class RevlogDocket(object):
         if pending:
             official_index_end = self._initial_index_end
             official_data_end = self._initial_data_end
+            official_sidedata_end = self._initial_sidedata_end
         else:
             official_index_end = self._index_end
             official_data_end = self._data_end
+            official_sidedata_end = self._sidedata_end
 
         # this assert should be True as long as we have a single index filename
         assert official_data_end <= self._data_end
+        assert official_sidedata_end <= self._sidedata_end
         data = (
             self._version_header,
             len(self._index_uuid),
             len(self._data_uuid),
+            len(self._sidedata_uuid),
             official_index_end,
             self._index_end,
             official_data_end,
             self._data_end,
+            official_sidedata_end,
+            self._sidedata_end,
             self.default_compression_header,
         )
         s = []
         s.append(S_HEADER.pack(*data))
         s.append(self._index_uuid)
         s.append(self._data_uuid)
+        s.append(self._sidedata_uuid)
         return b''.join(s)
 
 
@@ -262,6 +298,9 @@ def parse_docket(revlog, data, use_pending=False):
     data_uuid_size = next(iheader)
     data_uuid = get_data(data_uuid_size)
 
+    sidedata_uuid_size = next(iheader)
+    sidedata_uuid = get_data(sidedata_uuid_size)
+
     index_size = next(iheader)
 
     pending_index_size = next(iheader)
@@ -269,6 +308,10 @@ def parse_docket(revlog, data, use_pending=False):
     data_size = next(iheader)
 
     pending_data_size = next(iheader)
+
+    sidedata_size = next(iheader)
+
+    pending_sidedata_size = next(iheader)
 
     default_compression_header = next(iheader)
 
@@ -278,10 +321,13 @@ def parse_docket(revlog, data, use_pending=False):
         version_header=version_header,
         index_uuid=index_uuid,
         data_uuid=data_uuid,
+        sidedata_uuid=sidedata_uuid,
         index_end=index_size,
         pending_index_end=pending_index_size,
         data_end=data_size,
         pending_data_end=pending_data_size,
+        sidedata_end=sidedata_size,
+        pending_sidedata_end=pending_sidedata_size,
         default_compression_header=default_compression_header,
     )
     return docket

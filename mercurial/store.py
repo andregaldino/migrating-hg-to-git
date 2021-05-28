@@ -395,6 +395,7 @@ REVLOG_FILES_OTHER_EXT = (
     b'.dat',
     b'.n',
     b'.nd',
+    b'.sda',
     b'd.tmpcensored',
 )
 # files that are "volatile" and might change between listing and streaming
