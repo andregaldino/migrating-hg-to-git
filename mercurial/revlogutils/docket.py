@@ -173,6 +173,15 @@ class RevlogDocket(object):
             self._index_uuid = make_uid()
         return b"%s-%s.idx" % (self._radix, self._index_uuid)
 
+    def new_index_file(self):
+        """switch index file to a new UID
+
+        The previous index UID is moved to the "older" list."""
+        old = (self._index_uuid, self._index_end)
+        self._older_index_uuids.insert(0, old)
+        self._index_uuid = make_uid()
+        return self.index_filepath()
+
     def data_filepath(self):
         """file path to the current data file associated to this docket"""
         # very simplistic version at first
@@ -180,12 +189,30 @@ class RevlogDocket(object):
             self._data_uuid = make_uid()
         return b"%s-%s.dat" % (self._radix, self._data_uuid)
 
+    def new_data_file(self):
+        """switch data file to a new UID
+
+        The previous data UID is moved to the "older" list."""
+        old = (self._data_uuid, self._data_end)
+        self._older_data_uuids.insert(0, old)
+        self._data_uuid = make_uid()
+        return self.data_filepath()
+
     def sidedata_filepath(self):
         """file path to the current sidedata file associated to this docket"""
         # very simplistic version at first
         if self._sidedata_uuid is None:
             self._sidedata_uuid = make_uid()
         return b"%s-%s.sda" % (self._radix, self._sidedata_uuid)
+
+    def new_sidedata_file(self):
+        """switch sidedata file to a new UID
+
+        The previous sidedata UID is moved to the "older" list."""
+        old = (self._sidedata_uuid, self._sidedata_end)
+        self._older_sidedata_uuids.insert(0, old)
+        self._sidedata_uuid = make_uid()
+        return self.sidedata_filepath()
 
     @property
     def index_end(self):
