@@ -1050,7 +1050,7 @@ class deltacomputer(object):
             snapshotdepth,
         )
 
-    def finddeltainfo(self, revinfo, fh):
+    def finddeltainfo(self, revinfo, fh, excluded_bases=None):
         """Find an acceptable delta against a candidate revision
 
         revinfo: information about the revision (instance of _revisioninfo)
@@ -1062,9 +1062,16 @@ class deltacomputer(object):
 
         If no suitable deltabase is found, we return delta info for a full
         snapshot.
+
+        `excluded_bases` is an optional set of revision that cannot be used as
+        a delta base. Use this to recompute delta suitable in censor or strip
+        context.
         """
         if not revinfo.textlen:
             return self._fullsnapshotinfo(fh, revinfo)
+
+        if excluded_bases is None:
+            excluded_bases = set()
 
         # no delta for flag processor revision (see "candelta" for why)
         # not calling candelta since only one revision needs test, also to
@@ -1090,6 +1097,8 @@ class deltacomputer(object):
                 # challenge it against refined candidates
                 nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
+                if candidaterev in excluded_bases:
+                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if candidatedelta is not None:
                     if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
