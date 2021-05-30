@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 from ..node import sha1nodeconstants
 from .constants import (
-    COMP_MODE_INLINE,
     INDEX_ENTRY_V0,
 )
 from ..i18n import _
@@ -23,7 +22,6 @@ from .. import (
 )
 
 from . import (
-    flagutil,
     nodemap as nodemaputil,
 )
 
@@ -39,19 +37,14 @@ def gettype(q):
 class revlogoldindex(list):
     rust_ext_compat = 0
     entry_size = INDEX_ENTRY_V0.size
-    null_item = (
-        0,
-        0,
-        0,
-        -1,
-        -1,
-        -1,
-        -1,
-        sha1nodeconstants.nullid,
-        0,
-        0,
-        COMP_MODE_INLINE,
-        COMP_MODE_INLINE,
+    null_item = revlogutils.entry(
+        data_offset=0,
+        data_compressed_length=0,
+        data_delta_base=node.nullrev,
+        link_rev=node.nullrev,
+        parent_rev_1=node.nullrev,
+        parent_rev_2=node.nullrev,
+        node_id=sha1nodeconstants.nullid,
     )
 
     @property
@@ -137,18 +130,14 @@ def parse_index_v0(data, inline):
         off += s
         e = INDEX_ENTRY_V0.unpack(cur)
         # transform to revlogv1 format
-        e2 = (
-            revlogutils.offset_type(e[0], 0),
-            e[1],
-            -1,
-            e[2],
-            e[3],
-            nodemap.get(e[4], node.nullrev),
-            nodemap.get(e[5], node.nullrev),
-            e[6],
-            0,  # no side data support
-            0,  # no side data support
-            COMP_MODE_INLINE,
+        e2 = revlogutils.entry(
+            data_offset=e[0],
+            data_compressed_length=e[1],
+            data_delta_base=e[2],
+            link_rev=e[3],
+            parent_rev_1=nodemap.get(e[4], node.nullrev),
+            parent_rev_2=nodemap.get(e[5], node.nullrev),
+            node_id=e[6],
         )
         index.append(e2)
         nodemap[e[6]] = n
