@@ -72,6 +72,7 @@ from . import (
     mdiff,
     policy,
     pycompat,
+    revlogutils,
     templatefilters,
     util,
 )
@@ -144,12 +145,6 @@ ellipsisprocessor = (
     ellipsiswriteprocessor,
     ellipsisrawprocessor,
 )
-
-
-def offset_type(offset, type):
-    if (type & ~flagutil.REVIDX_KNOWN_FLAGS) != 0:
-        raise ValueError(b'unknown revlog index flags')
-    return int(int(offset) << 16 | type)
 
 
 def _verify_revision(rl, skipflags, state, node):
@@ -2590,7 +2585,7 @@ class revlog(object):
             sidedata_offset = 0
 
         e = (
-            offset_type(offset, flags),
+            revlogutils.offset_type(offset, flags),
             deltainfo.deltalen,
             textlen,
             deltainfo.base,

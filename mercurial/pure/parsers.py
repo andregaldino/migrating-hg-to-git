@@ -17,6 +17,7 @@ from ..node import (
 from .. import (
     error,
     pycompat,
+    revlogutils,
     util,
 )
 
@@ -40,10 +41,6 @@ def dirstatetuple(*x):
 
 def gettype(q):
     return int(q & 0xFFFF)
-
-
-def offset_type(offset, type):
-    return int(int(offset) << 16 | type)
 
 
 class BaseIndexObject(object):
@@ -145,7 +142,8 @@ class BaseIndexObject(object):
             data = self._data[index : index + self.entry_size]
         r = self._unpack_entry(i, data)
         if self._lgt and i == 0:
-            r = (offset_type(0, gettype(r[0])),) + r[1:]
+            offset = revlogutils.offset_type(0, gettype(r[0]))
+            r = (offset,) + r[1:]
         return r
 
     def _unpack_entry(self, rev, data):

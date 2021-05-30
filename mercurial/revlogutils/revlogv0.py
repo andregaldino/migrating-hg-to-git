@@ -18,6 +18,7 @@ from .. import (
     error,
     node,
     pycompat,
+    revlogutils,
     util,
 )
 
@@ -33,12 +34,6 @@ def getoffset(q):
 
 def gettype(q):
     return int(q & 0xFFFF)
-
-
-def offset_type(offset, type):
-    if (type & ~flagutil.REVIDX_KNOWN_FLAGS) != 0:
-        raise ValueError(b'unknown revlog index flags')
-    return int(int(offset) << 16 | type)
 
 
 class revlogoldindex(list):
@@ -143,7 +138,7 @@ def parse_index_v0(data, inline):
         e = INDEX_ENTRY_V0.unpack(cur)
         # transform to revlogv1 format
         e2 = (
-            offset_type(e[0], 0),
+            revlogutils.offset_type(e[0], 0),
             e[1],
             -1,
             e[2],

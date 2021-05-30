@@ -39,6 +39,7 @@ from . import (
     phases,
     pycompat,
     revlog,
+    revlogutils,
     util,
     vfs as vfsmod,
 )
@@ -95,7 +96,7 @@ class bundlerevlog(revlog.revlog):
             baserev = self.rev(deltabase)
             # start, size, full unc. size, base (unused), link, p1, p2, node, sidedata_offset (unused), sidedata_size (unused)
             e = (
-                revlog.offset_type(start, flags),
+                revlogutils.offset_type(start, flags),
                 size,
                 -1,
                 baserev,
