@@ -487,7 +487,7 @@ class revlog(object):
                 raise
             return b''
 
-    def _loadindex(self):
+    def _loadindex(self, docket=None):
 
         new_header, mmapindexthreshold, force_nodemap = self._init_opts()
 
@@ -498,45 +498,51 @@ class revlog(object):
         else:
             entry_point = b'%s.i' % self.radix
 
-        entry_data = b''
-        self._initempty = True
-        entry_data = self._get_data(entry_point, mmapindexthreshold)
-        if len(entry_data) > 0:
-            header = INDEX_HEADER.unpack(entry_data[:4])[0]
-            self._initempty = False
-        else:
-            header = new_header
-
-        self._format_flags = header & ~0xFFFF
-        self._format_version = header & 0xFFFF
-
-        supported_flags = SUPPORTED_FLAGS.get(self._format_version)
-        if supported_flags is None:
-            msg = _(b'unknown version (%d) in revlog %s')
-            msg %= (self._format_version, self.display_id)
-            raise error.RevlogError(msg)
-        elif self._format_flags & ~supported_flags:
-            msg = _(b'unknown flags (%#04x) in version %d revlog %s')
-            display_flag = self._format_flags >> 16
-            msg %= (display_flag, self._format_version, self.display_id)
-            raise error.RevlogError(msg)
-
-        features = FEATURES_BY_VERSION[self._format_version]
-        self._inline = features[b'inline'](self._format_flags)
-        self._generaldelta = features[b'generaldelta'](self._format_flags)
-        self.hassidedata = features[b'sidedata']
-
-        if not features[b'docket']:
-            self._indexfile = entry_point
-            index_data = entry_data
-        else:
+        if docket is not None:
+            self._docket = docket
             self._docket_file = entry_point
-            if self._initempty:
-                self._docket = docketutil.default_docket(self, header)
+        else:
+            entry_data = b''
+            self._initempty = True
+            entry_data = self._get_data(entry_point, mmapindexthreshold)
+            if len(entry_data) > 0:
+                header = INDEX_HEADER.unpack(entry_data[:4])[0]
+                self._initempty = False
             else:
-                self._docket = docketutil.parse_docket(
-                    self, entry_data, use_pending=self._trypending
-                )
+                header = new_header
+
+            self._format_flags = header & ~0xFFFF
+            self._format_version = header & 0xFFFF
+
+            supported_flags = SUPPORTED_FLAGS.get(self._format_version)
+            if supported_flags is None:
+                msg = _(b'unknown version (%d) in revlog %s')
+                msg %= (self._format_version, self.display_id)
+                raise error.RevlogError(msg)
+            elif self._format_flags & ~supported_flags:
+                msg = _(b'unknown flags (%#04x) in version %d revlog %s')
+                display_flag = self._format_flags >> 16
+                msg %= (display_flag, self._format_version, self.display_id)
+                raise error.RevlogError(msg)
+
+            features = FEATURES_BY_VERSION[self._format_version]
+            self._inline = features[b'inline'](self._format_flags)
+            self._generaldelta = features[b'generaldelta'](self._format_flags)
+            self.hassidedata = features[b'sidedata']
+
+            if not features[b'docket']:
+                self._indexfile = entry_point
+                index_data = entry_data
+            else:
+                self._docket_file = entry_point
+                if self._initempty:
+                    self._docket = docketutil.default_docket(self, header)
+                else:
+                    self._docket = docketutil.parse_docket(
+                        self, entry_data, use_pending=self._trypending
+                    )
+
+        if self._docket is not None:
             self._indexfile = self._docket.index_filepath()
             index_data = b''
             index_size = self._docket.index_end
