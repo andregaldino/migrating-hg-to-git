@@ -2584,19 +2584,20 @@ class revlog(object):
             # than ones we manually add.
             sidedata_offset = 0
 
-        e = (
-            revlogutils.offset_type(offset, flags),
-            deltainfo.deltalen,
-            textlen,
-            deltainfo.base,
-            link,
-            p1r,
-            p2r,
-            node,
-            sidedata_offset,
-            len(serialized_sidedata),
-            compression_mode,
-            sidedata_compression_mode,
+        e = revlogutils.entry(
+            flags=flags,
+            data_offset=offset,
+            data_compressed_length=deltainfo.deltalen,
+            data_uncompressed_length=textlen,
+            data_compression_mode=compression_mode,
+            data_delta_base=deltainfo.base,
+            link_rev=link,
+            parent_rev_1=p1r,
+            parent_rev_2=p2r,
+            node_id=node,
+            sidedata_offset=sidedata_offset,
+            sidedata_compressed_length=len(serialized_sidedata),
+            sidedata_compression_mode=sidedata_compression_mode,
         )
 
         self.index.append(e)
