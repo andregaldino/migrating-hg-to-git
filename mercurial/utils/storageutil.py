@@ -481,13 +481,18 @@ def emitrevisions(
         serialized_sidedata = None
         sidedata_flags = (0, 0)
         if sidedata_helpers:
-            old_sidedata = store.sidedata(rev)
-            sidedata, sidedata_flags = sidedatamod.run_sidedata_helpers(
-                store=store,
-                sidedata_helpers=sidedata_helpers,
-                sidedata=old_sidedata,
-                rev=rev,
-            )
+            try:
+                old_sidedata = store.sidedata(rev)
+            except error.CensoredNodeError:
+                # skip any potential sidedata of the censored revision
+                sidedata = {}
+            else:
+                sidedata, sidedata_flags = sidedatamod.run_sidedata_helpers(
+                    store=store,
+                    sidedata_helpers=sidedata_helpers,
+                    sidedata=old_sidedata,
+                    rev=rev,
+                )
             if sidedata:
                 serialized_sidedata = sidedatamod.serialize_sidedata(sidedata)
 
