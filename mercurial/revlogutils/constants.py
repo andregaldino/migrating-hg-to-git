@@ -12,6 +12,7 @@ from __future__ import absolute_import
 import struct
 
 from ..interfaces import repository
+from .. import revlogutils
 
 ### Internal utily constants
 
@@ -229,7 +230,7 @@ COMP_MODE_DEFAULT = 1
 
 # Chunk use a compression mode stored "inline" at the start of the chunk
 # itself.  This is the mode always used for revlog version "0" and "1"
-COMP_MODE_INLINE = 2
+COMP_MODE_INLINE = revlogutils.COMP_MODE_INLINE
 
 SUPPORTED_FLAGS = {
     REVLOGV0: REVLOGV0_FLAGS,
