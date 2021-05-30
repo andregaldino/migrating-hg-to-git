@@ -932,7 +932,7 @@ class deltacomputer(object):
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
 
-        revinfo: _revisioninfo instance that contains all needed info
+        revinfo: revisioninfo instance that contains all needed info
         fh:      file handle to either the .i or the .d revlog file,
                  depending on whether it is inlined or not
         """

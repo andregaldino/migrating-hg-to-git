@@ -167,27 +167,6 @@ HAS_FAST_PERSISTENT_NODEMAP = rustrevlog is not None or util.safehasattr(
 )
 
 
-@attr.s(slots=True, frozen=True)
-class _revisioninfo(object):
-    """Information about a revision that allows building its fulltext
-    node:       expected hash of the revision
-    p1, p2:     parent revs of the revision
-    btext:      built text cache consisting of a one-element list
-    cachedelta: (baserev, uncompressed_delta) or None
-    flags:      flags associated to the revision storage
-
-    One of btext[0] or cachedelta must be set.
-    """
-
-    node = attr.ib()
-    p1 = attr.ib()
-    p2 = attr.ib()
-    btext = attr.ib()
-    textlen = attr.ib()
-    cachedelta = attr.ib()
-    flags = attr.ib()
-
-
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True)
 class revlogrevisiondelta(object):
@@ -2534,7 +2513,15 @@ class revlog(object):
         if deltacomputer is None:
             deltacomputer = deltautil.deltacomputer(self)
 
-        revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
+        revinfo = revlogutils.revisioninfo(
+            node,
+            p1,
+            p2,
+            btext,
+            textlen,
+            cachedelta,
+            flags,
+        )
 
         deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 

@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+from ..thirdparty import attr
 from ..interfaces import repository
 
 # See mercurial.revlogutils.constants for doc
@@ -56,3 +57,24 @@ def entry(
         data_compression_mode,
         sidedata_compression_mode,
     )
+
+
+@attr.s(slots=True, frozen=True)
+class revisioninfo(object):
+    """Information about a revision that allows building its fulltext
+    node:       expected hash of the revision
+    p1, p2:     parent revs of the revision
+    btext:      built text cache consisting of a one-element list
+    cachedelta: (baserev, uncompressed_delta) or None
+    flags:      flags associated to the revision storage
+
+    One of btext[0] or cachedelta must be set.
+    """
+
+    node = attr.ib()
+    p1 = attr.ib()
+    p2 = attr.ib()
+    btext = attr.ib()
+    textlen = attr.ib()
+    cachedelta = attr.ib()
+    flags = attr.ib()
