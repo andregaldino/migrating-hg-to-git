@@ -167,6 +167,8 @@ def parsebundlespec(repo, spec, strict=True):
             # Generaldelta repos require v2.
             if requirementsmod.GENERALDELTA_REQUIREMENT in repo.requirements:
                 version = b'v2'
+            elif requirementsmod.REVLOGV2_REQUIREMENT in repo.requirements:
+                version = b'v2'
             # Modern compression engines require v2.
             if compression not in _bundlespecv1compengines:
                 version = b'v2'

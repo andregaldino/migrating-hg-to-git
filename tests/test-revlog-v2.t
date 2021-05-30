@@ -69,6 +69,14 @@ Header written as expected
   .hg/store/data/foo.i:
   0000: 00 00 de ad                                     |....|
 
+Bundle use a compatible changegroup format
+------------------------------------------
+
+  $ hg bundle --all ../basic.hg
+  1 changesets found
+  $ hg debugbundle --spec ../basic.hg
+  bzip2-v2
+
 The expected files are generated
 --------------------------------
 
