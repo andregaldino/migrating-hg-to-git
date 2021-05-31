@@ -1840,7 +1840,7 @@ class workingctx(committablectx):
     def _poststatusfixup(self, status, fixup):
         """update dirstate for files that are actually clean"""
         poststatus = self._repo.postdsstatus()
-        if fixup or poststatus:
+        if fixup or poststatus or self._repo.dirstate._dirty:
             try:
                 oldid = self._repo.dirstate.identity()
 

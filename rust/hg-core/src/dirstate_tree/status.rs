@@ -78,8 +78,9 @@ pub fn status<'tree, 'on_disk: 'tree>(
         root_cached_mtime,
         is_at_repo_root,
     )?;
-    let outcome = common.outcome.into_inner().unwrap();
+    let mut outcome = common.outcome.into_inner().unwrap();
     let to_add = common.cached_directory_mtimes_to_add.into_inner().unwrap();
+    outcome.dirty = !to_add.is_empty();
     for (path, mtime) in &to_add {
         let node = DirstateMap::get_or_insert_node(
             dmap.on_disk,

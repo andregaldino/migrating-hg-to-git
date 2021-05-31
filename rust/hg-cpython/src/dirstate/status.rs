@@ -260,6 +260,7 @@ fn build_response(
     let unsure = collect_pybytes_list(py, status_res.unsure.as_ref());
     let bad = collect_bad_matches(py, status_res.bad.as_ref())?;
     let traversed = collect_pybytes_list(py, status_res.traversed.as_ref());
+    let dirty = status_res.dirty.to_py_object(py);
     let py_warnings = PyList::new(py, &[]);
     for warning in warnings.iter() {
         // We use duck-typing on the Python side for dispatch, good enough for
@@ -297,6 +298,7 @@ fn build_response(
             py_warnings.into_object(),
             bad.into_object(),
             traversed.into_object(),
+            dirty.into_object(),
         ][..],
     ))
 }

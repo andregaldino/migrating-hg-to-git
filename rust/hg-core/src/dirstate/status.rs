@@ -293,6 +293,10 @@ pub struct DirstateStatus<'a> {
 
     /// Only filled if `collect_traversed_dirs` is `true`
     pub traversed: Vec<HgPathCow<'a>>,
+
+    /// Whether `status()` made changed to the `DirstateMap` that should be
+    /// written back to disk
+    pub dirty: bool,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -919,6 +923,7 @@ pub fn build_response<'a>(
         bad,
         unsure,
         traversed,
+        dirty: false,
     }
 }
 

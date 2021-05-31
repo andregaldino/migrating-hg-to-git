@@ -1137,6 +1137,7 @@ class dirstate(object):
             warnings,
             bad,
             traversed,
+            dirty,
         ) = rustmod.status(
             self._map._rustmap,
             matcher,
@@ -1149,6 +1150,8 @@ class dirstate(object):
             bool(list_unknown),
             bool(matcher.traversedir),
         )
+
+        self._dirty |= dirty
 
         if matcher.traversedir:
             for dir in traversed:
