@@ -535,6 +535,18 @@ py_class!(pub class DirstateMap |py| {
         )
     }
 
+    def directories(&self) -> PyResult<PyList> {
+        let dirs = PyList::new(py, &[]);
+        for item in self.inner(py).borrow().iter_directories() {
+            let (path, mtime) = item.map_err(|e| v2_error(py, e))?;
+            let path = PyBytes::new(py, path.as_bytes());
+            let mtime = mtime.map(|t| t.0).unwrap_or(-1);
+            let tuple = (path, (b'd', 0, 0, mtime));
+            dirs.append(py, tuple.to_py_object(py).into_object())
+        }
+        Ok(dirs)
+    }
+
 });
 
 impl DirstateMap {

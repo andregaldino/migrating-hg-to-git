@@ -143,6 +143,18 @@ pub trait DirstateMapMethods {
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError>;
 
     fn iter(&self) -> StateMapIter<'_>;
+
+    fn iter_directories(
+        &self,
+    ) -> Box<
+        dyn Iterator<
+                Item = Result<
+                    (&HgPath, Option<Timestamp>),
+                    DirstateV2ParseError,
+                >,
+            > + Send
+            + '_,
+    >;
 }
 
 impl DirstateMapMethods for DirstateMap {
@@ -349,5 +361,19 @@ impl DirstateMapMethods for DirstateMap {
 
     fn iter(&self) -> StateMapIter<'_> {
         Box::new((&**self).iter().map(|(key, value)| Ok((&**key, *value))))
+    }
+
+    fn iter_directories(
+        &self,
+    ) -> Box<
+        dyn Iterator<
+                Item = Result<
+                    (&HgPath, Option<Timestamp>),
+                    DirstateV2ParseError,
+                >,
+            > + Send
+            + '_,
+    > {
+        Box::new(std::iter::empty())
     }
 }

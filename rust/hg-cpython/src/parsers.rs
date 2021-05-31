@@ -98,7 +98,7 @@ fn pack_dirstate_wrapper(
             p1: p1.try_into().unwrap(),
             p2: p2.try_into().unwrap(),
         },
-        Timestamp(now.as_object().extract::<u64>(py)?),
+        Timestamp(now.as_object().extract::<i64>(py)?),
     ) {
         Ok(packed) => {
             for (filename, entry) in dirstate_map.iter() {

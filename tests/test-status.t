@@ -915,3 +915,46 @@ Check using include flag while listing ignored composes correctly (issue6514)
   I A.hs
   I B.hs
   I ignored-folder/ctest.hs
+
+#if dirstate-v2
+
+Check read_dir caching
+
+  $ cd ..
+  $ hg init repo8
+  $ cd repo8
+  $ mkdir subdir
+  $ touch subdir/a subdir/b
+  $ hg ci -Aqm '#0'
+
+The cached mtime is initially unset
+
+  $ hg debugdirstate --dirs --no-dates | grep '^d'
+  d   0          0 unset               subdir
+
+It is still not set when there are unknown files
+
+  $ touch subdir/unknown
+  $ hg status
+  ? subdir/unknown
+  $ hg debugdirstate --dirs --no-dates | grep '^d'
+  d   0          0 unset               subdir
+
+Now the directory is eligible for caching, so its mtime is save in the dirstate
+
+  $ rm subdir/unknown
+  $ hg status
+  $ hg debugdirstate --dirs --no-dates | grep '^d'
+  d   0          0 set                 subdir
+
+This time the command should be ever so slightly faster since it does not need `read_dir("subdir")`
+
+  $ hg status
+
+Creating a new file changes the directory’s mtime, invalidating the cache
+
+  $ touch subdir/unknown
+  $ hg status
+  ? subdir/unknown
+
+#endif

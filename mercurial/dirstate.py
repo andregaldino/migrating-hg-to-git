@@ -315,6 +315,9 @@ class dirstate(object):
 
     iteritems = items
 
+    def directories(self):
+        return self._map.directories()
+
     def parents(self):
         return [self._validate(p) for p in self._pl]
 
@@ -1479,6 +1482,10 @@ class dirstatemap(object):
         self._map
         return self.copymap
 
+    def directories(self):
+        # Rust / dirstate-v2 only
+        return []
+
     def clear(self):
         self._map.clear()
         self.copymap.clear()
@@ -1805,6 +1812,9 @@ if rustmod is not None:
         @property
         def copymap(self):
             return self._rustmap.copymap()
+
+        def directories(self):
+            return self._rustmap.directories()
 
         def preload(self):
             self._rustmap

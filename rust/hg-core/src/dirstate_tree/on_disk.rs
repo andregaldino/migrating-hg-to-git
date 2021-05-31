@@ -352,6 +352,12 @@ impl Entry {
     }
 }
 
+impl Timestamp {
+    pub fn seconds(&self) -> i64 {
+        self.seconds.get()
+    }
+}
+
 impl From<SystemTime> for Timestamp {
     fn from(system_time: SystemTime) -> Self {
         let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {

@@ -319,7 +319,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn cached_directory_mtime(
         &self,
-    ) -> Option<&on_disk::Timestamp> {
+    ) -> Option<&'tree on_disk::Timestamp> {
         match self {
             NodeRef::InMemory(_path, node) => match &node.data {
                 NodeData::CachedDirectory { mtime } => Some(mtime),
@@ -1063,6 +1063,30 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Box::new(filter_map_results(self.iter_nodes(), move |node| {
             Ok(if let Some(entry) = node.entry()? {
                 Some((node.full_path(self.on_disk)?, entry))
+            } else {
+                None
+            })
+        }))
+    }
+
+    fn iter_directories(
+        &self,
+    ) -> Box<
+        dyn Iterator<
+                Item = Result<
+                    (&HgPath, Option<Timestamp>),
+                    DirstateV2ParseError,
+                >,
+            > + Send
+            + '_,
+    > {
+        Box::new(filter_map_results(self.iter_nodes(), move |node| {
+            Ok(if node.state()?.is_none() {
+                Some((
+                    node.full_path(self.on_disk)?,
+                    node.cached_directory_mtime()
+                        .map(|mtime| Timestamp(mtime.seconds())),
+                ))
             } else {
                 None
             })

@@ -206,4 +206,18 @@ impl DirstateMapMethods for OwningDirstateMap {
     fn iter(&self) -> StateMapIter<'_> {
         self.get().iter()
     }
+
+    fn iter_directories(
+        &self,
+    ) -> Box<
+        dyn Iterator<
+                Item = Result<
+                    (&HgPath, Option<Timestamp>),
+                    DirstateV2ParseError,
+                >,
+            > + Send
+            + '_,
+    > {
+        self.get().iter_directories()
+    }
 }

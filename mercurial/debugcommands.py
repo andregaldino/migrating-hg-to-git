@@ -941,6 +941,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         ),
         (b'', b'dates', True, _(b'display the saved mtime')),
         (b'', b'datesort', None, _(b'sort by saved mtime')),
+        (b'', b'dirs', False, _(b'display directories')),
     ],
     _(b'[OPTION]...'),
 )
@@ -956,7 +957,11 @@ def debugstate(ui, repo, **opts):
         keyfunc = lambda x: (x[1][3], x[0])  # sort by mtime, then by filename
     else:
         keyfunc = None  # sort by filename
-    for file_, ent in sorted(pycompat.iteritems(repo.dirstate), key=keyfunc):
+    entries = list(pycompat.iteritems(repo.dirstate))
+    if opts['dirs']:
+        entries.extend(repo.dirstate.directories())
+    entries.sort(key=keyfunc)
+    for file_, ent in entries:
         if ent[3] == -1:
             timestr = b'unset               '
         elif nodates:

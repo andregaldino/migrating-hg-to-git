@@ -129,7 +129,7 @@ pub fn pack_entry(
 }
 
 /// Seconds since the Unix epoch
-pub struct Timestamp(pub u64);
+pub struct Timestamp(pub i64);
 
 impl DirstateEntry {
     pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
