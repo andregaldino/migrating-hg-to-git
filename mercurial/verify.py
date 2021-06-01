@@ -145,10 +145,9 @@ class verifier(object):
                                 linkrevs.append(lr)
                     except Exception:
                         pass
-                self._warn(
-                    _(b" (expected %s)")
-                    % b" ".join(map(pycompat.bytestr, linkrevs))
-                )
+                msg = _(b" (expected %s)")
+                msg %= b" ".join(map(pycompat.bytestr, linkrevs))
+                self._warn(msg)
             lr = None  # can't be trusted
 
         try:
