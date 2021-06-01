@@ -46,6 +46,10 @@ WARN_PARENT_DIR_UNKNOWN_REV = _(
     b"parent-directory manifest refers to unknown revision %s"
 )
 
+WARN_UNKNOWN_COPY_SOURCE = _(
+    b"warning: copy source of '%s' not in parents of %s"
+)
+
 
 class verifier(object):
     def __init__(self, repo, level=None):
@@ -547,13 +551,7 @@ class verifier(object):
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
                             if not any(rp[0] in pctx for pctx in ctx.parents()):
-                                self._warn(
-                                    _(
-                                        b"warning: copy source of '%s' not"
-                                        b" in parents of %s"
-                                    )
-                                    % (f, ctx)
-                                )
+                                self._warn(WARN_UNKNOWN_COPY_SOURCE % (f, ctx))
                         fl2 = repo.file(rp[0])
                         if not len(fl2):
                             self._err(
