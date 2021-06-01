@@ -554,15 +554,8 @@ class verifier(object):
                                 self._warn(WARN_UNKNOWN_COPY_SOURCE % (f, ctx))
                         fl2 = repo.file(rp[0])
                         if not len(fl2):
-                            self._err(
-                                lr,
-                                _(
-                                    b"empty or missing copy source revlog "
-                                    b"%s:%s"
-                                )
-                                % (rp[0], short(rp[1])),
-                                f,
-                            )
+                            m = _(b"empty or missing copy source revlog %s:%s")
+                            self._err(lr, m % (rp[0], short(rp[1])), f)
                         elif rp[1] == self.repo.nullid:
                             ui.note(
                                 _(
