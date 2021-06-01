@@ -494,9 +494,8 @@ class verifier(object):
                     storefiles.remove(ff)
                 except KeyError:
                     if self.warnorphanstorefiles:
-                        self._warn(
-                            _(b" warning: revlog '%s' not in fncache!") % ff
-                        )
+                        msg = _(b" warning: revlog '%s' not in fncache!")
+                        self._warn(msg % ff)
                         self.fncachewarned = True
 
             if not len(fl) and (self.havecl or self.havemf):
