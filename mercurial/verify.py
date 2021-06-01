@@ -345,9 +345,8 @@ class verifier(object):
                     if fl == b't':
                         if not match.visitdir(fullpath):
                             continue
-                        subdirnodes.setdefault(fullpath + b'/', {}).setdefault(
-                            fn, []
-                        ).append(lr)
+                        sdn = subdirnodes.setdefault(fullpath + b'/', {})
+                        sdn.setdefault(fn, []).append(lr)
                     else:
                         if not match(fullpath):
                             continue
