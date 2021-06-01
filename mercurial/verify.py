@@ -514,11 +514,8 @@ class verifier(object):
                     if problem.warning:
                         self._warn(problem.warning)
                     elif problem.error:
-                        self._err(
-                            linkrev if linkrev is not None else lr,
-                            problem.error,
-                            f,
-                        )
+                        linkrev_msg = linkrev if linkrev is not None else lr
+                        self._err(linkrev_msg, problem.error, f)
                     else:
                         raise error.ProgrammingError(
                             b'problem instance does not set warning or error '
