@@ -575,12 +575,8 @@ class verifier(object):
             if f in filenodes:
                 fns = [(v, k) for k, v in pycompat.iteritems(filenodes[f])]
                 for lr, node in sorted(fns):
-                    self._err(
-                        lr,
-                        _(b"manifest refers to unknown revision %s")
-                        % short(node),
-                        f,
-                    )
+                    msg = _(b"manifest refers to unknown revision %s")
+                    self._err(lr, msg % short(node), f)
         progress.complete()
 
         if self.warnorphanstorefiles:
