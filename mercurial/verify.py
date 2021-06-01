@@ -114,7 +114,7 @@ class verifier(object):
         arguments are:
         - obj:      the source revlog
         - i:        the revision number
-        - node:        the revision node id
+        - node:     the revision node id
         - seen:     nodes previously seen for this revlog
         - linkrevs: [changelog-revisions] introducing "node"
         - f:        string label ("changelog", "manifest", or filename)
