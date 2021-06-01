@@ -211,10 +211,9 @@ class verifier(object):
         if self.errors:
             ui.warn(_(b"%d integrity errors encountered!\n") % self.errors)
             if self.badrevs:
-                ui.warn(
-                    _(b"(first damaged changeset appears to be %d)\n")
-                    % min(self.badrevs)
-                )
+                msg = _(b"(first damaged changeset appears to be %d)\n")
+                msg %= min(self.badrevs)
+                ui.warn(msg)
             return 1
         return 0
 
