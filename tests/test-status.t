@@ -957,4 +957,18 @@ Creating a new file changes the directory’s mtime, invalidating the cache
   $ hg status
   ? subdir/unknown
 
+  $ rm subdir/unknown
+  $ hg status
+
+Removing a node from the dirstate resets the cache for its parent directory
+
+  $ hg forget subdir/a
+  $ hg debugdirstate --dirs --no-dates | grep '^d'
+  d   0          0 set                 subdir
+  $ hg ci -qm '#1'
+  $ hg debugdirstate --dirs --no-dates | grep '^d'
+  d   0          0 unset               subdir
+  $ hg status
+  ? subdir/a
+
 #endif

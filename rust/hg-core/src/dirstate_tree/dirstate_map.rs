@@ -712,11 +712,17 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             had_entry: bool,
             had_copy_source: bool,
         }
+
+        /// If this returns `Ok(Some((dropped, removed)))`, then
+        ///
+        /// * `dropped` is about the leaf node that was at `filename`
+        /// * `removed` is whether this particular level of recursion just
+        ///   removed a node in `nodes`.
         fn recur<'on_disk>(
             on_disk: &'on_disk [u8],
             nodes: &mut ChildNodes<'on_disk>,
             path: &HgPath,
-        ) -> Result<Option<Dropped>, DirstateV2ParseError> {
+        ) -> Result<Option<(Dropped, bool)>, DirstateV2ParseError> {
             let (first_path_component, rest_of_path) =
                 path.split_first_component();
             let node = if let Some(node) =
@@ -728,10 +734,20 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             };
             let dropped;
             if let Some(rest) = rest_of_path {
-                if let Some(d) = recur(on_disk, &mut node.children, rest)? {
+                if let Some((d, removed)) =
+                    recur(on_disk, &mut node.children, rest)?
+                {
                     dropped = d;
                     if dropped.was_tracked {
                         node.tracked_descendants_count -= 1;
+                    }
+
+                    // Directory caches must be invalidated when removing a
+                    // child node
+                    if removed {
+                        if let NodeData::CachedDirectory { .. } = &node.data {
+                            node.data = NodeData::None
+                        }
                     }
                 } else {
                     return Ok(None);
@@ -752,16 +768,18 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             }
             // After recursion, for both leaf (rest_of_path is None) nodes and
             // parent nodes, remove a node if it just became empty.
-            if !node.data.has_entry()
+            let remove = !node.data.has_entry()
                 && node.copy_source.is_none()
-                && node.children.is_empty()
-            {
+                && node.children.is_empty();
+            if remove {
                 nodes.make_mut(on_disk)?.remove(first_path_component);
             }
-            Ok(Some(dropped))
+            Ok(Some((dropped, remove)))
         }
 
-        if let Some(dropped) = recur(self.on_disk, &mut self.root, filename)? {
+        if let Some((dropped, _removed)) =
+            recur(self.on_disk, &mut self.root, filename)?
+        {
             if dropped.had_entry {
                 self.nodes_with_entry_count -= 1
             }
