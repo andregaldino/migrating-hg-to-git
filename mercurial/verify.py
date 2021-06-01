@@ -153,11 +153,8 @@ class verifier(object):
         try:
             p1, p2 = obj.parents(node)
             if p1 not in seen and p1 != self.repo.nullid:
-                self._err(
-                    lr,
-                    _(b"unknown parent 1 %s of %s") % (short(p1), short(node)),
-                    f,
-                )
+                msg = _(b"unknown parent 1 %s of %s") % (short(p1), short(node))
+                self._err(lr, msg, f)
             if p2 not in seen and p2 != self.repo.nullid:
                 self._err(
                     lr,
