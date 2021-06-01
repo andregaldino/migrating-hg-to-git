@@ -139,11 +139,10 @@ class verifier(object):
                 if f and len(linkrevs) > 1:
                     try:
                         # attempt to filter down to real linkrevs
-                        linkrevs = [
-                            l
-                            for l in linkrevs
-                            if self.lrugetctx(l)[f].filenode() == node
-                        ]
+                        linkrevs = []
+                        for lr in linkrevs:
+                            if self.lrugetctx(lr)[f].filenode() == node:
+                                linkrevs.append(lr)
                     except Exception:
                         pass
                 self._warn(
