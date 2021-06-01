@@ -329,11 +329,8 @@ class verifier(object):
             if n in mflinkrevs:
                 del mflinkrevs[n]
             elif dir:
-                self._err(
-                    lr,
-                    _(b"%s not in parent-directory manifest") % short(n),
-                    label,
-                )
+                msg = _(b"%s not in parent-directory manifest") % short(n)
+                self._err(lr, msg, label)
             else:
                 self._err(lr, _(b"%s not in changesets") % short(n), label)
 
