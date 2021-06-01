@@ -361,12 +361,8 @@ class verifier(object):
                     # code (eg: hash verification, filename are ordered, etc.)
                     mfdelta = mfl.get(dir, n).read()
                 except Exception as inst:
-                    self._exc(
-                        lr,
-                        _(b"reading full manifest %s") % short(n),
-                        inst,
-                        label,
-                    )
+                    msg = _(b"reading full manifest %s") % short(n)
+                    self._exc(lr, msg, inst, label)
 
         if not dir:
             progress.complete()
