@@ -1724,20 +1724,13 @@ def applyupdates(
     removed += msremoved
 
     extraactions = ms.actions()
-    if extraactions:
-        for k, acts in pycompat.iteritems(extraactions):
-            for a in acts:
-                mresult.addfile(a[0], k, *a[1:])
-            if k == mergestatemod.ACTION_GET and wantfiledata:
-                # no filedata until mergestate is updated to provide it
-                for a in acts:
-                    getfiledata[a[0]] = None
 
     progress.complete()
-    assert len(getfiledata) == (
-        mresult.len((mergestatemod.ACTION_GET,)) if wantfiledata else 0
+    return (
+        updateresult(updated, merged, removed, unresolved),
+        getfiledata,
+        extraactions,
     )
-    return updateresult(updated, merged, removed, unresolved), getfiledata
 
 
 def _advertisefsmonitor(repo, num_gets, p1node):
@@ -2122,7 +2115,7 @@ def _update(
         )
 
         wantfiledata = updatedirstate and not branchmerge
-        stats, getfiledata = applyupdates(
+        stats, getfiledata, extraactions = applyupdates(
             repo,
             mresult,
             wc,
@@ -2133,6 +2126,18 @@ def _update(
         )
 
         if updatedirstate:
+            if extraactions:
+                for k, acts in pycompat.iteritems(extraactions):
+                    for a in acts:
+                        mresult.addfile(a[0], k, *a[1:])
+                    if k == mergestatemod.ACTION_GET and wantfiledata:
+                        # no filedata until mergestate is updated to provide it
+                        for a in acts:
+                            getfiledata[a[0]] = None
+
+            assert len(getfiledata) == (
+                mresult.len((mergestatemod.ACTION_GET,)) if wantfiledata else 0
+            )
             with repo.dirstate.parentchange():
                 repo.setparents(fp1, fp2)
                 mergestatemod.recordupdates(
