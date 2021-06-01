@@ -156,11 +156,8 @@ class verifier(object):
                 msg = _(b"unknown parent 1 %s of %s") % (short(p1), short(node))
                 self._err(lr, msg, f)
             if p2 not in seen and p2 != self.repo.nullid:
-                self._err(
-                    lr,
-                    _(b"unknown parent 2 %s of %s") % (short(p2), short(node)),
-                    f,
-                )
+                msg = _(b"unknown parent 2 %s of %s") % (short(p2), short(node))
+                self._err(lr, msg, f)
         except Exception as inst:
             self._exc(lr, _(b"checking parents of %s") % short(node), inst, f)
 
