@@ -50,6 +50,10 @@ WARN_UNKNOWN_COPY_SOURCE = _(
     b"warning: copy source of '%s' not in parents of %s"
 )
 
+WARN_NULLID_COPY_SOURCE = _(
+    b"warning: %s@%s: copy source revision is nullid %s:%s\n"
+)
+
 
 class verifier(object):
     def __init__(self, repo, level=None):
@@ -557,13 +561,9 @@ class verifier(object):
                             m = _(b"empty or missing copy source revlog %s:%s")
                             self._err(lr, m % (rp[0], short(rp[1])), f)
                         elif rp[1] == self.repo.nullid:
-                            ui.note(
-                                _(
-                                    b"warning: %s@%s: copy source"
-                                    b" revision is nullid %s:%s\n"
-                                )
-                                % (f, lr, rp[0], short(rp[1]))
-                            )
+                            msg = WARN_NULLID_COPY_SOURCE
+                            msg %= (f, lr, rp[0], short(rp[1]))
+                            ui.note(msg)
                         else:
                             fl2.rev(rp[1])
                 except Exception as inst:
