@@ -378,12 +378,9 @@ class verifier(object):
                 if dir:
                     self._err(c, WARN_PARENT_DIR_UNKNOWN_REV % short(m), label)
                 else:
-                    self._err(
-                        c,
-                        _(b"changeset refers to unknown revision %s")
-                        % short(m),
-                        label,
-                    )
+                    msg = _(b"changeset refers to unknown revision %s")
+                    msg %= short(m)
+                    self._err(c, msg, label)
 
         if not dir and subdirnodes:
             self.ui.status(_(b"checking directory manifests\n"))
