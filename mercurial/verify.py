@@ -42,6 +42,10 @@ HINT_FNCACHE = _(
     b'hint: run "hg debugrebuildfncache" to recover from corrupt fncache\n'
 )
 
+WARN_PARENT_DIR_UNKNOWN_REV = _(
+    b"parent-directory manifest refers to unknown revision %s"
+)
+
 
 class verifier(object):
     def __init__(self, repo, level=None):
@@ -372,15 +376,7 @@ class verifier(object):
             changesetpairs = [(c, m) for m in mflinkrevs for c in mflinkrevs[m]]
             for c, m in sorted(changesetpairs):
                 if dir:
-                    self._err(
-                        c,
-                        _(
-                            b"parent-directory manifest refers to unknown"
-                            b" revision %s"
-                        )
-                        % short(m),
-                        label,
-                    )
+                    self._err(c, WARN_PARENT_DIR_UNKNOWN_REV % short(m), label)
                 else:
                     self._err(
                         c,
