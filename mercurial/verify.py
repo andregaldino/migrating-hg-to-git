@@ -38,6 +38,11 @@ def _normpath(f):
     return f
 
 
+HINT_FNCACHE = _(
+    b'hint: run "hg debugrebuildfncache" to recover from corrupt fncache\n'
+)
+
+
 class verifier(object):
     def __init__(self, repo, level=None):
         self.repo = repo.unfiltered()
@@ -202,12 +207,7 @@ class verifier(object):
         if self.warnings:
             ui.warn(_(b"%d warnings encountered!\n") % self.warnings)
         if self.fncachewarned:
-            ui.warn(
-                _(
-                    b'hint: run "hg debugrebuildfncache" to recover from '
-                    b'corrupt fncache\n'
-                )
-            )
+            ui.warn(HINT_FNCACHE)
         if self.errors:
             ui.warn(_(b"%d integrity errors encountered!\n") % self.errors)
             if self.badrevs:
