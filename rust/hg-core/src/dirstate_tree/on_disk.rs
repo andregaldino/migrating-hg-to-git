@@ -28,6 +28,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// `.hg/requires` already governs which format should be used.
 pub const V2_FORMAT_MARKER: &[u8; 12] = b"dirstate-v2\n";
 
+pub(super) const IGNORE_PATTERNS_HASH_LEN: usize = 20;
+pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
+
 #[derive(BytesCast)]
 #[repr(C)]
 struct Header {
@@ -40,6 +43,27 @@ struct Header {
     root: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
+
+    /// If non-zero, a hash of ignore files that were used for some previous
+    /// run of the `status` algorithm.
+    ///
+    /// We define:
+    ///
+    /// * "Root" ignore files are `.hgignore` at the root of the repository if
+    ///   it exists, and files from `ui.ignore.*` config. This set of files is
+    ///   then sorted by the string representation of their path.
+    /// * The "expanded contents" of an ignore files is the byte string made
+    ///   by concatenating its contents with the "expanded contents" of other
+    ///   files included with `include:` or `subinclude:` files, in inclusion
+    ///   order. This definition is recursive, as included files can
+    ///   themselves include more files.
+    ///
+    /// This hash is defined as the SHA-1 of the concatenation (in sorted
+    /// order) of the "expanded contents" of each "root" ignore file.
+    /// (Note that computing this does not require actually concatenating byte
+    /// strings into contiguous memory, instead SHA-1 hashing can be done
+    /// incrementally.)
+    ignore_patterns_hash: IgnorePatternsHash,
 }
 
 #[derive(BytesCast)]
@@ -145,7 +169,7 @@ type OptPathSlice = Slice;
 
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
-    let _ = std::mem::transmute::<Header, [u8; 72]>;
+    let _ = std::mem::transmute::<Header, [u8; 92]>;
     let _ = std::mem::transmute::<Node, [u8; 57]>;
 }
 
@@ -197,6 +221,7 @@ pub(super) fn read<'on_disk>(
         nodes_with_copy_source_count: header
             .nodes_with_copy_source_count
             .get(),
+        ignore_patterns_hash: header.ignore_patterns_hash,
     };
     let parents = Some(header.parents.clone());
     Ok((dirstate_map, parents))
@@ -473,6 +498,7 @@ pub(super) fn write(
         nodes_with_copy_source_count: dirstate_map
             .nodes_with_copy_source_count
             .into(),
+        ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
     out[..header_len].copy_from_slice(header.as_bytes());
     Ok(out)

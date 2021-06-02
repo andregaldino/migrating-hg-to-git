@@ -37,6 +37,9 @@ pub struct DirstateMap<'on_disk> {
     /// Number of nodes anywhere in the tree that have
     /// `.copy_source.is_some()`.
     pub(super) nodes_with_copy_source_count: u32,
+
+    /// See on_disk::Header
+    pub(super) ignore_patterns_hash: on_disk::IgnorePatternsHash,
 }
 
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
@@ -385,6 +388,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             root: ChildNodes::default(),
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
+            ignore_patterns_hash: [0; on_disk::IGNORE_PATTERNS_HASH_LEN],
         }
     }
 

@@ -17,8 +17,6 @@ use crate::{
 };
 use lazy_static::lazy_static;
 use regex::bytes::{NoExpand, Regex};
-use std::fs::File;
-use std::io::Read;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::vec::Vec;
@@ -410,24 +408,19 @@ pub fn parse_pattern_file_contents(
 pub fn read_pattern_file(
     file_path: &Path,
     warn: bool,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
 ) -> Result<(Vec<IgnorePattern>, Vec<PatternFileWarning>), PatternError> {
-    let mut f = match File::open(file_path) {
-        Ok(f) => Ok(f),
-        Err(e) => match e.kind() {
-            std::io::ErrorKind::NotFound => {
-                return Ok((
-                    vec![],
-                    vec![PatternFileWarning::NoSuchFile(file_path.to_owned())],
-                ))
-            }
-            _ => Err(e),
-        },
-    }?;
-    let mut contents = Vec::new();
-
-    f.read_to_end(&mut contents)?;
-
-    Ok(parse_pattern_file_contents(&contents, file_path, warn)?)
+    match std::fs::read(file_path) {
+        Ok(contents) => {
+            inspect_pattern_bytes(&contents);
+            parse_pattern_file_contents(&contents, file_path, warn)
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok((
+            vec![],
+            vec![PatternFileWarning::NoSuchFile(file_path.to_owned())],
+        )),
+        Err(e) => Err(e.into()),
+    }
 }
 
 /// Represents an entry in an "ignore" file.
@@ -458,8 +451,10 @@ pub type PatternResult<T> = Result<T, PatternError>;
 pub fn get_patterns_from_file(
     pattern_file: &Path,
     root_dir: &Path,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
 ) -> PatternResult<(Vec<IgnorePattern>, Vec<PatternFileWarning>)> {
-    let (patterns, mut warnings) = read_pattern_file(pattern_file, true)?;
+    let (patterns, mut warnings) =
+        read_pattern_file(pattern_file, true, inspect_pattern_bytes)?;
     let patterns = patterns
         .into_iter()
         .flat_map(|entry| -> PatternResult<_> {
@@ -467,8 +462,11 @@ pub fn get_patterns_from_file(
                 PatternSyntax::Include => {
                     let inner_include =
                         root_dir.join(get_path_from_bytes(&entry.pattern));
-                    let (inner_pats, inner_warnings) =
-                        get_patterns_from_file(&inner_include, root_dir)?;
+                    let (inner_pats, inner_warnings) = get_patterns_from_file(
+                        &inner_include,
+                        root_dir,
+                        inspect_pattern_bytes,
+                    )?;
                     warnings.extend(inner_warnings);
                     inner_pats
                 }
@@ -482,6 +480,7 @@ pub fn get_patterns_from_file(
                         get_patterns_from_file(
                             &sub_include.path,
                             &sub_include.root,
+                            inspect_pattern_bytes,
                         )?;
                     sub_include.included_patterns = inner_patterns;
                     warnings.extend(inner_warnings);

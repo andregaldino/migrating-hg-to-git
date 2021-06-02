@@ -564,8 +564,9 @@ fn build_match<'a, 'b>(
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
 pub fn get_ignore_function<'a>(
-    all_pattern_files: Vec<PathBuf>,
+    mut all_pattern_files: Vec<PathBuf>,
     root_dir: &Path,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
 ) -> PatternResult<(
     Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>,
     Vec<PatternFileWarning>,
@@ -573,9 +574,20 @@ pub fn get_ignore_function<'a>(
     let mut all_patterns = vec![];
     let mut all_warnings = vec![];
 
+    // Sort to make the ordering of calls to `inspect_pattern_bytes`
+    // deterministic even if the ordering of `all_pattern_files` is not (such
+    // as when a iteration order of a Python dict or Rust HashMap is involved).
+    // Sort by "string" representation instead of the default by component
+    // (with a Rust-specific definition of a component)
+    all_pattern_files
+        .sort_unstable_by(|a, b| a.as_os_str().cmp(b.as_os_str()));
+
     for pattern_file in &all_pattern_files {
-        let (patterns, warnings) =
-            get_patterns_from_file(pattern_file, root_dir)?;
+        let (patterns, warnings) = get_patterns_from_file(
+            pattern_file,
+            root_dir,
+            inspect_pattern_bytes,
+        )?;
 
         all_patterns.extend(patterns.to_owned());
         all_warnings.extend(warnings);

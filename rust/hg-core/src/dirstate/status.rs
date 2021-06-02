@@ -351,7 +351,7 @@ where
 
         let (ignore_fn, warnings): (IgnoreFnType, _) =
             if options.list_ignored || options.list_unknown {
-                get_ignore_function(ignore_files, &root_dir)?
+                get_ignore_function(ignore_files, &root_dir, &mut |_| {})?
             } else {
                 (Box::new(|&_| true), vec![])
             };

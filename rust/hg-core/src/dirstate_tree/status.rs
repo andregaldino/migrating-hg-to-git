@@ -21,6 +21,7 @@ use crate::StatusError;
 use crate::StatusOptions;
 use micro_timer::timed;
 use rayon::prelude::*;
+use sha1::{Digest, Sha1};
 use std::borrow::Cow;
 use std::io;
 use std::path::Path;
@@ -45,11 +46,20 @@ pub fn status<'tree, 'on_disk: 'tree>(
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
 ) -> Result<(DirstateStatus<'on_disk>, Vec<PatternFileWarning>), StatusError> {
-    let (ignore_fn, warnings): (IgnoreFnType, _) =
+    let (ignore_fn, warnings, patterns_changed): (IgnoreFnType, _, _) =
         if options.list_ignored || options.list_unknown {
-            get_ignore_function(ignore_files, &root_dir)?
+            let mut hasher = Sha1::new();
+            let (ignore_fn, warnings) = get_ignore_function(
+                ignore_files,
+                &root_dir,
+                &mut |pattern_bytes| hasher.update(pattern_bytes),
+            )?;
+            let new_hash = *hasher.finalize().as_ref();
+            let changed = new_hash != dmap.ignore_patterns_hash;
+            dmap.ignore_patterns_hash = new_hash;
+            (ignore_fn, warnings, Some(changed))
         } else {
-            (Box::new(|&_| true), vec![])
+            (Box::new(|&_| true), vec![], None)
         };
 
     let common = StatusCommon {
@@ -58,7 +68,8 @@ pub fn status<'tree, 'on_disk: 'tree>(
         matcher,
         ignore_fn,
         outcome: Default::default(),
-        cached_directory_mtimes_to_add: Default::default(),
+        ignore_patterns_have_changed: patterns_changed,
+        new_cachable_directories: Default::default(),
         filesystem_time_at_status_start: filesystem_now(&root_dir).ok(),
     };
     let is_at_repo_root = true;
@@ -79,9 +90,12 @@ pub fn status<'tree, 'on_disk: 'tree>(
         is_at_repo_root,
     )?;
     let mut outcome = common.outcome.into_inner().unwrap();
-    let to_add = common.cached_directory_mtimes_to_add.into_inner().unwrap();
-    outcome.dirty = !to_add.is_empty();
-    for (path, mtime) in &to_add {
+    let new_cachable = common.new_cachable_directories.into_inner().unwrap();
+
+    outcome.dirty = common.ignore_patterns_have_changed == Some(true)
+        || !new_cachable.is_empty();
+
+    for (path, mtime) in &new_cachable {
         let node = DirstateMap::get_or_insert_node(
             dmap.on_disk,
             &mut dmap.root,
@@ -96,6 +110,7 @@ pub fn status<'tree, 'on_disk: 'tree>(
             }
         }
     }
+
     Ok((outcome, warnings))
 }
 
@@ -107,8 +122,13 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
     outcome: Mutex<DirstateStatus<'on_disk>>,
-    cached_directory_mtimes_to_add:
-        Mutex<Vec<(Cow<'on_disk, HgPath>, Timestamp)>>,
+    new_cachable_directories: Mutex<Vec<(Cow<'on_disk, HgPath>, Timestamp)>>,
+
+    /// Whether ignore files like `.hgignore` have changed since the previous
+    /// time a `status()` call wrote their hash to the dirstate. `None` means
+    /// we don’t know as this run doesn’t list either ignored or uknown files
+    /// and therefore isn’t reading `.hgignore`.
+    ignore_patterns_have_changed: Option<bool>,
 
     /// The current time at the start of the `status()` algorithm, as measured
     /// and possibly truncated by the filesystem.
@@ -422,7 +442,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                         let hg_path = dirstate_node
                             .full_path_borrowed(self.dmap.on_disk)?
                             .detach_from_tree();
-                        self.cached_directory_mtimes_to_add
+                        self.new_cachable_directories
                             .lock()
                             .unwrap()
                             .push((hg_path, timestamp))
