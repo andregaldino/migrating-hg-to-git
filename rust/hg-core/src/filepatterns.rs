@@ -41,7 +41,7 @@ const GLOB_REPLACEMENTS: &[(&[u8], &[u8])] =
 /// Appended to the regexp of globs
 const GLOB_SUFFIX: &[u8; 7] = b"(?:/|$)";
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PatternSyntax {
     /// A regular expression
     Regexp,
@@ -65,6 +65,14 @@ pub enum PatternSyntax {
     Include,
     /// A file of patterns to match against files under the same directory
     SubInclude,
+    /// SubInclude with the result of parsing the included file
+    ///
+    /// Note: there is no ExpandedInclude because that expansion can be done
+    /// in place by replacing the Include pattern by the included patterns.
+    /// SubInclude requires more handling.
+    ///
+    /// Note: `Box` is used to minimize size impact on other enum variants
+    ExpandedSubInclude(Box<SubInclude>),
 }
 
 /// Transforms a glob pattern into a regex
@@ -218,7 +226,9 @@ fn _build_single_regex(entry: &IgnorePattern) -> Vec<u8> {
         PatternSyntax::Glob | PatternSyntax::RootGlob => {
             [glob_to_re(pattern).as_slice(), GLOB_SUFFIX].concat()
         }
-        PatternSyntax::Include | PatternSyntax::SubInclude => unreachable!(),
+        PatternSyntax::Include
+        | PatternSyntax::SubInclude
+        | PatternSyntax::ExpandedSubInclude(_) => unreachable!(),
     }
 }
 
@@ -441,10 +451,10 @@ impl IgnorePattern {
 pub type PatternResult<T> = Result<T, PatternError>;
 
 /// Wrapper for `read_pattern_file` that also recursively expands `include:`
-/// patterns.
+/// and `subinclude:` patterns.
 ///
-/// `subinclude:` is not treated as a special pattern here: unraveling them
-/// needs to occur in the "ignore" phase.
+/// The former are expanded in place, while `PatternSyntax::ExpandedSubInclude`
+/// is used for the latter to form a tree of patterns.
 pub fn get_patterns_from_file(
     pattern_file: &Path,
     root_dir: &Path,
@@ -453,17 +463,34 @@ pub fn get_patterns_from_file(
     let patterns = patterns
         .into_iter()
         .flat_map(|entry| -> PatternResult<_> {
-            let IgnorePattern {
-                syntax, pattern, ..
-            } = &entry;
-            Ok(match syntax {
+            Ok(match &entry.syntax {
                 PatternSyntax::Include => {
                     let inner_include =
-                        root_dir.join(get_path_from_bytes(&pattern));
+                        root_dir.join(get_path_from_bytes(&entry.pattern));
                     let (inner_pats, inner_warnings) =
                         get_patterns_from_file(&inner_include, root_dir)?;
                     warnings.extend(inner_warnings);
                     inner_pats
+                }
+                PatternSyntax::SubInclude => {
+                    let mut sub_include = SubInclude::new(
+                        &root_dir,
+                        &entry.pattern,
+                        &entry.source,
+                    )?;
+                    let (inner_patterns, inner_warnings) =
+                        get_patterns_from_file(
+                            &sub_include.path,
+                            &sub_include.root,
+                        )?;
+                    sub_include.included_patterns = inner_patterns;
+                    warnings.extend(inner_warnings);
+                    vec![IgnorePattern {
+                        syntax: PatternSyntax::ExpandedSubInclude(Box::new(
+                            sub_include,
+                        )),
+                        ..entry
+                    }]
                 }
                 _ => vec![entry],
             })
@@ -475,6 +502,7 @@ pub fn get_patterns_from_file(
 }
 
 /// Holds all the information needed to handle a `subinclude:` pattern.
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubInclude {
     /// Will be used for repository (hg) paths that start with this prefix.
     /// It is relative to the current working directory, so comparing against
@@ -484,6 +512,8 @@ pub struct SubInclude {
     pub path: PathBuf,
     /// Folder in the filesystem where this it applies
     pub root: PathBuf,
+
+    pub included_patterns: Vec<IgnorePattern>,
 }
 
 impl SubInclude {
@@ -513,29 +543,25 @@ impl SubInclude {
             })?,
             path: path.to_owned(),
             root: new_root.to_owned(),
+            included_patterns: Vec::new(),
         })
     }
 }
 
 /// Separate and pre-process subincludes from other patterns for the "ignore"
 /// phase.
-pub fn filter_subincludes<'a>(
-    ignore_patterns: &'a [IgnorePattern],
-    root_dir: &Path,
-) -> Result<(Vec<SubInclude>, Vec<&'a IgnorePattern>), HgPathError> {
+pub fn filter_subincludes(
+    ignore_patterns: Vec<IgnorePattern>,
+) -> Result<(Vec<Box<SubInclude>>, Vec<IgnorePattern>), HgPathError> {
     let mut subincludes = vec![];
     let mut others = vec![];
 
-    for ignore_pattern in ignore_patterns.iter() {
-        let IgnorePattern {
-            syntax,
-            pattern,
-            source,
-        } = ignore_pattern;
-        if *syntax == PatternSyntax::SubInclude {
-            subincludes.push(SubInclude::new(root_dir, pattern, &source)?);
+    for pattern in ignore_patterns {
+        if let PatternSyntax::ExpandedSubInclude(sub_include) = pattern.syntax
+        {
+            subincludes.push(sub_include);
         } else {
-            others.push(ignore_pattern)
+            others.push(pattern)
         }
     }
     Ok((subincludes, others))

@@ -211,12 +211,9 @@ pub fn status_wrapper(
                 .collect();
 
             let ignore_patterns = ignore_patterns?;
-            let mut all_warnings = vec![];
 
-            let (matcher, warnings) =
-                IncludeMatcher::new(ignore_patterns, &root_dir)
-                    .map_err(|e| handle_fallback(py, e.into()))?;
-            all_warnings.extend(warnings);
+            let matcher = IncludeMatcher::new(ignore_patterns)
+                .map_err(|e| handle_fallback(py, e.into()))?;
 
             let (status_res, warnings) = dmap
                 .status(
@@ -234,9 +231,7 @@ pub fn status_wrapper(
                 )
                 .map_err(|e| handle_fallback(py, e))?;
 
-            all_warnings.extend(warnings);
-
-            build_response(py, status_res, all_warnings)
+            build_response(py, status_res, warnings)
         }
         e => Err(PyErr::new::<ValueError, _>(
             py,
