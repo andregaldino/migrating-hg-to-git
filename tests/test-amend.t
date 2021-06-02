@@ -241,6 +241,13 @@ Cannot cause divergence by default
   abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
   (add --verbose for details or see 'hg help evolution.instability')
   [10]
+  $ hg amend -m divergent --verbose
+  abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
+      changeset 112478962961 already has a successor in changeset 16084da537dd
+      rewriting changeset 112478962961 would create "content-divergence"
+      set experimental.evolution.allowdivergence=True to skip this check
+  (see 'hg help evolution.instability' for details on content-divergence)
+  [10]
   $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
   2 new content-divergent changesets
 #endif

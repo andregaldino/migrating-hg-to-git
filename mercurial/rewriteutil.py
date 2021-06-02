@@ -111,7 +111,12 @@ def precheck(repo, revs, action=b'rewrite'):
                     b'    set experimental.evolution.allowdivergence=True to '
                     b'skip this check'
                 ) % (base_ctx, other_ctx, local_ctx)
-                raise error.InputError(msg)
+                raise error.InputError(
+                    msg,
+                    hint=_(
+                        b"see 'hg help evolution.instability' for details on content-divergence"
+                    ),
+                )
             else:
                 raise error.InputError(
                     msg,
