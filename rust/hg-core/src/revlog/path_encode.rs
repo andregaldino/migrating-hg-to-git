@@ -1,5 +1,4 @@
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
+use sha1::{Digest, Sha1};
 
 #[derive(PartialEq, Debug)]
 #[allow(non_camel_case_types)]
@@ -621,13 +620,7 @@ fn hash_encode(src: &[u8]) -> Vec<u8> {
         panic!("path_encode::hash_encore: string too long: {}", baselen)
     };
     let dirlen = encode_dir(Some(&mut dired[..]), src);
-    let sha = {
-        let mut hasher = Sha1::new();
-        hasher.input(&dired[..dirlen]);
-        let mut hash = vec![0; 20];
-        hasher.result(&mut hash);
-        hash
-    };
+    let sha = Sha1::digest(&dired[..dirlen]);
     let lowerlen = lower_encode(Some(&mut lowered[..]), &dired[..dirlen][5..]);
     let auxlen = aux_encode(Some(&mut auxed[..]), &lowered[..lowerlen]);
     hash_mangle(&auxed[..auxlen], &sha)

@@ -4,10 +4,9 @@ use std::ops::Deref;
 use std::path::Path;
 
 use byteorder::{BigEndian, ByteOrder};
-use crypto::digest::Digest;
-use crypto::sha1::Sha1;
 use flate2::read::ZlibDecoder;
 use micro_timer::timed;
+use sha1::{Digest, Sha1};
 use zstd;
 
 use super::index::Index;
@@ -221,7 +220,7 @@ impl Revlog {
             None => &NULL_NODE,
         };
 
-        hash(data, h1.as_bytes(), h2.as_bytes()).as_slice() == expected
+        &hash(data, h1.as_bytes(), h2.as_bytes()) == expected
     }
 
     /// Build the full data of a revision out its snapshot
@@ -361,20 +360,22 @@ pub fn get_version(index_bytes: &[u8]) -> u16 {
 }
 
 /// Calculate the hash of a revision given its data and its parents.
-fn hash(data: &[u8], p1_hash: &[u8], p2_hash: &[u8]) -> Vec<u8> {
+fn hash(
+    data: &[u8],
+    p1_hash: &[u8],
+    p2_hash: &[u8],
+) -> [u8; NODE_BYTES_LENGTH] {
     let mut hasher = Sha1::new();
     let (a, b) = (p1_hash, p2_hash);
     if a > b {
-        hasher.input(b);
-        hasher.input(a);
+        hasher.update(b);
+        hasher.update(a);
     } else {
-        hasher.input(a);
-        hasher.input(b);
+        hasher.update(a);
+        hasher.update(b);
     }
-    hasher.input(data);
-    let mut hash = vec![0; NODE_BYTES_LENGTH];
-    hasher.result(&mut hash);
-    hash
+    hasher.update(data);
+    *hasher.finalize().as_ref()
 }
 
 #[cfg(test)]
