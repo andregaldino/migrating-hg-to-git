@@ -237,7 +237,7 @@ impl<'a> Matcher for FileMatcher<'a> {
 /// ///
 /// let ignore_patterns =
 /// vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
-/// let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
+/// let (matcher, _) = IncludeMatcher::new(ignore_patterns, "".as_ref()).unwrap();
 /// ///
 /// assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
 /// assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
@@ -479,7 +479,7 @@ fn roots_dirs_and_parents(
 /// should be matched.
 fn build_match<'a, 'b>(
     ignore_patterns: &'a [IgnorePattern],
-    root_dir: impl AsRef<Path>,
+    root_dir: &Path,
 ) -> PatternResult<(
     Vec<u8>,
     Box<dyn Fn(&HgPath) -> bool + 'b + Sync>,
@@ -500,7 +500,7 @@ fn build_match<'a, 'b>(
 
         for SubInclude { prefix, root, path } in subincludes.into_iter() {
             let (match_fn, warnings) =
-                get_ignore_function(vec![path.to_path_buf()], root)?;
+                get_ignore_function(vec![path.to_path_buf()], &root)?;
             all_warnings.extend(warnings);
             prefixes.push(prefix.to_owned());
             submatchers.insert(prefix.to_owned(), match_fn);
@@ -573,7 +573,7 @@ fn build_match<'a, 'b>(
 /// ignored.
 pub fn get_ignore_function<'a>(
     all_pattern_files: Vec<PathBuf>,
-    root_dir: impl AsRef<Path>,
+    root_dir: &Path,
 ) -> PatternResult<(
     Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>,
     Vec<PatternFileWarning>,
@@ -581,9 +581,9 @@ pub fn get_ignore_function<'a>(
     let mut all_patterns = vec![];
     let mut all_warnings = vec![];
 
-    for pattern_file in all_pattern_files.into_iter() {
+    for pattern_file in &all_pattern_files {
         let (patterns, warnings) =
-            get_patterns_from_file(pattern_file, &root_dir)?;
+            get_patterns_from_file(pattern_file, root_dir)?;
 
         all_patterns.extend(patterns.to_owned());
         all_warnings.extend(warnings);
@@ -599,7 +599,7 @@ pub fn get_ignore_function<'a>(
 impl<'a> IncludeMatcher<'a> {
     pub fn new(
         ignore_patterns: Vec<IgnorePattern>,
-        root_dir: impl AsRef<Path>,
+        root_dir: &Path,
     ) -> PatternResult<(Self, Vec<PatternFileWarning>)> {
         let (patterns, match_fn, warnings) =
             build_match(&ignore_patterns, root_dir)?;
@@ -816,7 +816,7 @@ mod tests {
                 b"dir/subdir",
                 Path::new(""),
             )],
-            "",
+            "".as_ref(),
         )
         .unwrap();
 
@@ -854,7 +854,7 @@ mod tests {
                 b"dir/subdir",
                 Path::new(""),
             )],
-            "",
+            "".as_ref(),
         )
         .unwrap();
 
@@ -892,7 +892,7 @@ mod tests {
                 b"dir/z*",
                 Path::new(""),
             )],
-            "",
+            "".as_ref(),
         )
         .unwrap();
 

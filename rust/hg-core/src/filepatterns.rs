@@ -318,9 +318,9 @@ pub enum PatternFileWarning {
     NoSuchFile(PathBuf),
 }
 
-pub fn parse_pattern_file_contents<P: AsRef<Path>>(
+pub fn parse_pattern_file_contents(
     lines: &[u8],
-    file_path: P,
+    file_path: &Path,
     warn: bool,
 ) -> Result<(Vec<IgnorePattern>, Vec<PatternFileWarning>), PatternError> {
     let comment_regex = Regex::new(r"((?:^|[^\\])(?:\\\\)*)#.*").unwrap();
@@ -357,7 +357,7 @@ pub fn parse_pattern_file_contents<P: AsRef<Path>>(
                 current_syntax = rel_syntax;
             } else if warn {
                 warnings.push(PatternFileWarning::InvalidSyntax(
-                    file_path.as_ref().to_owned(),
+                    file_path.to_owned(),
                     syntax.to_owned(),
                 ));
             }
@@ -384,32 +384,30 @@ pub fn parse_pattern_file_contents<P: AsRef<Path>>(
                 PatternError::UnsupportedSyntax(syntax) => {
                     PatternError::UnsupportedSyntaxInFile(
                         syntax,
-                        file_path.as_ref().to_string_lossy().into(),
+                        file_path.to_string_lossy().into(),
                         line_number,
                     )
                 }
                 _ => e,
             })?,
             &line,
-            &file_path,
+            file_path,
         ));
     }
     Ok((inputs, warnings))
 }
 
-pub fn read_pattern_file<P: AsRef<Path>>(
-    file_path: P,
+pub fn read_pattern_file(
+    file_path: &Path,
     warn: bool,
 ) -> Result<(Vec<IgnorePattern>, Vec<PatternFileWarning>), PatternError> {
-    let mut f = match File::open(file_path.as_ref()) {
+    let mut f = match File::open(file_path) {
         Ok(f) => Ok(f),
         Err(e) => match e.kind() {
             std::io::ErrorKind::NotFound => {
                 return Ok((
                     vec![],
-                    vec![PatternFileWarning::NoSuchFile(
-                        file_path.as_ref().to_owned(),
-                    )],
+                    vec![PatternFileWarning::NoSuchFile(file_path.to_owned())],
                 ))
             }
             _ => Err(e),
@@ -431,15 +429,11 @@ pub struct IgnorePattern {
 }
 
 impl IgnorePattern {
-    pub fn new(
-        syntax: PatternSyntax,
-        pattern: &[u8],
-        source: impl AsRef<Path>,
-    ) -> Self {
+    pub fn new(syntax: PatternSyntax, pattern: &[u8], source: &Path) -> Self {
         Self {
             syntax,
             pattern: pattern.to_owned(),
-            source: source.as_ref().to_owned(),
+            source: source.to_owned(),
         }
     }
 }
@@ -452,10 +446,10 @@ pub type PatternResult<T> = Result<T, PatternError>;
 /// `subinclude:` is not treated as a special pattern here: unraveling them
 /// needs to occur in the "ignore" phase.
 pub fn get_patterns_from_file(
-    pattern_file: impl AsRef<Path>,
-    root_dir: impl AsRef<Path>,
+    pattern_file: &Path,
+    root_dir: &Path,
 ) -> PatternResult<(Vec<IgnorePattern>, Vec<PatternFileWarning>)> {
-    let (patterns, mut warnings) = read_pattern_file(&pattern_file, true)?;
+    let (patterns, mut warnings) = read_pattern_file(pattern_file, true)?;
     let patterns = patterns
         .into_iter()
         .flat_map(|entry| -> PatternResult<_> {
@@ -465,11 +459,9 @@ pub fn get_patterns_from_file(
             Ok(match syntax {
                 PatternSyntax::Include => {
                     let inner_include =
-                        root_dir.as_ref().join(get_path_from_bytes(&pattern));
-                    let (inner_pats, inner_warnings) = get_patterns_from_file(
-                        &inner_include,
-                        root_dir.as_ref(),
-                    )?;
+                        root_dir.join(get_path_from_bytes(&pattern));
+                    let (inner_pats, inner_warnings) =
+                        get_patterns_from_file(&inner_include, root_dir)?;
                     warnings.extend(inner_warnings);
                     inner_pats
                 }
@@ -496,9 +488,9 @@ pub struct SubInclude {
 
 impl SubInclude {
     pub fn new(
-        root_dir: impl AsRef<Path>,
+        root_dir: &Path,
         pattern: &[u8],
-        source: impl AsRef<Path>,
+        source: &Path,
     ) -> Result<SubInclude, HgPathError> {
         let normalized_source =
             normalize_path_bytes(&get_bytes_from_path(source));
@@ -510,7 +502,7 @@ impl SubInclude {
         let path = source_root.join(get_path_from_bytes(pattern));
         let new_root = path.parent().unwrap_or_else(|| path.deref());
 
-        let prefix = canonical_path(&root_dir, &root_dir, new_root)?;
+        let prefix = canonical_path(root_dir, root_dir, new_root)?;
 
         Ok(Self {
             prefix: path_to_hg_path_buf(prefix).and_then(|mut p| {
@@ -527,10 +519,10 @@ impl SubInclude {
 
 /// Separate and pre-process subincludes from other patterns for the "ignore"
 /// phase.
-pub fn filter_subincludes(
-    ignore_patterns: &[IgnorePattern],
-    root_dir: impl AsRef<Path>,
-) -> Result<(Vec<SubInclude>, Vec<&IgnorePattern>), HgPathError> {
+pub fn filter_subincludes<'a>(
+    ignore_patterns: &'a [IgnorePattern],
+    root_dir: &Path,
+) -> Result<(Vec<SubInclude>, Vec<&'a IgnorePattern>), HgPathError> {
     let mut subincludes = vec![];
     let mut others = vec![];
 
@@ -541,7 +533,7 @@ pub fn filter_subincludes(
             source,
         } = ignore_pattern;
         if *syntax == PatternSyntax::SubInclude {
-            subincludes.push(SubInclude::new(&root_dir, pattern, &source)?);
+            subincludes.push(SubInclude::new(root_dir, pattern, &source)?);
         } else {
             others.push(ignore_pattern)
         }
