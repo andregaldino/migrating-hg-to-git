@@ -29,7 +29,9 @@ ALL_KINDS = {
 
 ### main revlog header
 
-INDEX_HEADER = struct.Struct(b">I")
+# We cannot rely on  Struct.format is inconsistent for python <=3.6 versus above
+INDEX_HEADER_FMT = b">I"
+INDEX_HEADER = struct.Struct(INDEX_HEADER_FMT)
 
 ## revlog version
 REVLOGV0 = 0
