@@ -495,6 +495,19 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
+    pub(super) fn get_or_insert<'tree, 'path>(
+        &'tree mut self,
+        path: &HgPath,
+    ) -> Result<&'tree mut Node<'on_disk>, DirstateV2ParseError> {
+        Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.root,
+            path,
+            WithBasename::to_cow_owned,
+            |_| {},
+        )
+    }
+
     pub(super) fn get_or_insert_node<'tree, 'path>(
         on_disk: &'on_disk [u8],
         root: &'tree mut ChildNodes<'on_disk>,

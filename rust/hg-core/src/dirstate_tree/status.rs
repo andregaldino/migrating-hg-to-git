@@ -6,7 +6,6 @@ use crate::dirstate_tree::dirstate_map::NodeData;
 use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::dirstate_tree::on_disk::Timestamp;
-use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
@@ -70,6 +69,7 @@ pub fn status<'tree, 'on_disk: 'tree>(
         outcome: Default::default(),
         ignore_patterns_have_changed: patterns_changed,
         new_cachable_directories: Default::default(),
+        outated_cached_directories: Default::default(),
         filesystem_time_at_status_start: filesystem_now(&root_dir).ok(),
     };
     let is_at_repo_root = true;
@@ -91,18 +91,22 @@ pub fn status<'tree, 'on_disk: 'tree>(
     )?;
     let mut outcome = common.outcome.into_inner().unwrap();
     let new_cachable = common.new_cachable_directories.into_inner().unwrap();
+    let outdated = common.outated_cached_directories.into_inner().unwrap();
 
     outcome.dirty = common.ignore_patterns_have_changed == Some(true)
+        || !outdated.is_empty()
         || !new_cachable.is_empty();
 
+    // Remove outdated mtimes before adding new mtimes, in case a given
+    // directory is both
+    for path in &outdated {
+        let node = dmap.get_or_insert(path)?;
+        if let NodeData::CachedDirectory { .. } = &node.data {
+            node.data = NodeData::None
+        }
+    }
     for (path, mtime) in &new_cachable {
-        let node = DirstateMap::get_or_insert_node(
-            dmap.on_disk,
-            &mut dmap.root,
-            path,
-            WithBasename::to_cow_owned,
-            |_| {},
-        )?;
+        let node = dmap.get_or_insert(path)?;
         match &node.data {
             NodeData::Entry(_) => {} // Don’t overwrite an entry
             NodeData::CachedDirectory { .. } | NodeData::None => {
@@ -123,6 +127,7 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     ignore_fn: IgnoreFnType<'a>,
     outcome: Mutex<DirstateStatus<'on_disk>>,
     new_cachable_directories: Mutex<Vec<(Cow<'on_disk, HgPath>, Timestamp)>>,
+    outated_cached_directories: Mutex<Vec<Cow<'on_disk, HgPath>>>,
 
     /// Whether ignore files like `.hgignore` have changed since the previous
     /// time a `status()` call wrote their hash to the dirstate. `None` means
@@ -153,6 +158,22 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             .unwrap()
             .bad
             .push((hg_path.to_owned().into(), BadMatch::OsError(errno)))
+    }
+
+    fn check_for_outdated_directory_cache(
+        &self,
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        if self.ignore_patterns_have_changed == Some(true)
+            && dirstate_node.cached_directory_mtime().is_some()
+        {
+            self.outated_cached_directories.lock().unwrap().push(
+                dirstate_node
+                    .full_path_borrowed(self.dmap.on_disk)?
+                    .detach_from_tree(),
+            )
+        }
+        Ok(())
     }
 
     /// If this returns true, we can get accurate results by only using
@@ -304,6 +325,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         dirstate_node: NodeRef<'tree, 'on_disk>,
         has_ignored_ancestor: bool,
     ) -> Result<(), DirstateV2ParseError> {
+        self.check_for_outdated_directory_cache(&dirstate_node)?;
         let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let file_type = fs_metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
@@ -521,6 +543,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         &self,
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
+        self.check_for_outdated_directory_cache(&dirstate_node)?;
         self.mark_removed_or_deleted_if_file(
             &dirstate_node.full_path_borrowed(self.dmap.on_disk)?,
             dirstate_node.state()?,
