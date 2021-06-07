@@ -6,6 +6,7 @@ use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::{format_bytes, join};
 use hg::config::{Config, ConfigSource};
+use hg::exit_codes;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
@@ -15,7 +16,6 @@ use std::process::Command;
 
 mod blackbox;
 mod error;
-mod exitcode;
 mod ui;
 use error::CommandError;
 
@@ -297,7 +297,7 @@ fn exit_code(
     use_detailed_exit_code: bool,
 ) -> i32 {
     match result {
-        Ok(()) => exitcode::OK,
+        Ok(()) => exit_codes::OK,
         Err(CommandError::Abort {
             message: _,
             detailed_exit_code,
@@ -305,15 +305,15 @@ fn exit_code(
             if use_detailed_exit_code {
                 *detailed_exit_code
             } else {
-                exitcode::ABORT
+                exit_codes::ABORT
             }
         }
-        Err(CommandError::Unsuccessful) => exitcode::UNSUCCESSFUL,
+        Err(CommandError::Unsuccessful) => exit_codes::UNSUCCESSFUL,
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
         Err(CommandError::UnsupportedFeature { .. }) => {
-            exitcode::UNIMPLEMENTED
+            exit_codes::UNIMPLEMENTED
         }
     }
 }
@@ -352,7 +352,7 @@ fn exit(
             let result = command.status();
             match result {
                 Ok(status) => std::process::exit(
-                    status.code().unwrap_or(exitcode::ABORT),
+                    status.code().unwrap_or(exit_codes::ABORT),
                 ),
                 Err(error) => {
                     let _ = ui.write_stderr(&format_bytes!(

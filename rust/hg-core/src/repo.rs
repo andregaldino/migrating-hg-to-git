@@ -1,5 +1,6 @@
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::errors::{HgError, IoErrorContext, IoResultExt};
+use crate::exit_codes;
 use crate::requirements;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::SliceExt;
@@ -150,6 +151,7 @@ impl Repo {
                     Some(b"abort") | None => HgError::abort(
                         "abort: share source does not support share-safe requirement\n\
                         (see `hg help config.format.use-share-safe` for more information)",
+                        exit_codes::ABORT,
                     ),
                     _ => HgError::unsupported("share-safe downgrade"),
                 }
@@ -161,6 +163,7 @@ impl Repo {
                             "abort: version mismatch: source uses share-safe \
                             functionality while the current share does not\n\
                             (see `hg help config.format.use-share-safe` for more information)",
+                        exit_codes::ABORT,
                         ),
                         _ => HgError::unsupported("share-safe upgrade"),
                     }

@@ -11,6 +11,7 @@ pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
 pub mod dirstate;
 pub mod dirstate_tree;
 pub mod discovery;
+pub mod exit_codes;
 pub mod requirements;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{

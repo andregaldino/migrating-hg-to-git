@@ -1,4 +1,5 @@
 use crate::config::ConfigValueParseError;
+use crate::exit_codes;
 use std::fmt;
 
 /// Common error cases that can happen in many different APIs
@@ -27,9 +28,12 @@ pub enum HgError {
 
     /// Operation cannot proceed for some other reason.
     ///
-    /// The given string is a short explanation for users, not intended to be
+    /// The message is a short explanation for users, not intended to be
     /// machine-readable.
-    Abort(String),
+    Abort {
+        message: String,
+        detailed_exit_code: exit_codes::ExitCode,
+    },
 
     /// A configuration value is not in the expected syntax.
     ///
@@ -69,8 +73,15 @@ impl HgError {
     pub fn unsupported(explanation: impl Into<String>) -> Self {
         HgError::UnsupportedFeature(explanation.into())
     }
-    pub fn abort(explanation: impl Into<String>) -> Self {
-        HgError::Abort(explanation.into())
+
+    pub fn abort(
+        explanation: impl Into<String>,
+        exit_code: exit_codes::ExitCode,
+    ) -> Self {
+        HgError::Abort {
+            message: explanation.into(),
+            detailed_exit_code: exit_code,
+        }
     }
 }
 
@@ -78,7 +89,7 @@ impl HgError {
 impl fmt::Display for HgError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            HgError::Abort(explanation) => write!(f, "{}", explanation),
+            HgError::Abort { message, .. } => write!(f, "{}", message),
             HgError::IoError { error, context } => {
                 write!(f, "abort: {}: {}", context, error)
             }
