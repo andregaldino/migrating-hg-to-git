@@ -992,6 +992,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		phasesets[i] = NULL;
 	}
 
+	free(phases);
 	return Py_BuildValue("nN", len, phasesetsdict);
 
 release:
