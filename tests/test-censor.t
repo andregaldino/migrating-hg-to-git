@@ -1,4 +1,14 @@
 #require no-reposimplestore
+#testcases revlogv1 revlogv2
+
+#if revlogv2
+
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > revlogv2=enable-unstable-format-and-corrupt-my-data
+  > EOF
+
+#endif
 
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
@@ -505,3 +515,51 @@ Can import bundle where first revision of a file is censored
   new changesets e97f55b2665a (1 drafts)
   (run 'hg update' to get a working copy)
   $ hg cat -r 0 target | head -n 10
+
+#if revlogv2
+
+Testing feature that does not work in revlog v1
+===============================================
+
+Censoring a revision that is used as delta base
+-----------------------------------------------
+
+  $ cd ..
+  $ hg init censor-with-delta
+  $ cd censor-with-delta
+  $ echo root > target
+  $ hg add target
+  $ hg commit -m root
+  $ B0=`hg id --debug -i`
+  $ for x in `"$PYTHON" $TESTDIR/seq.py 0 50000`
+  > do
+  >   echo "Password: hunter$x" >> target
+  > done
+  $ hg ci -m 'write a long file'
+  $ B1=`hg id --debug -i`
+  $ echo 'small change (should create a delta)' >> target
+  $ hg ci -m 'create a delta over the password'
+(should show that the last revision is a delta, not a snapshot)
+  $ B2=`hg id --debug -i`
+
+Make sure the last revision is a delta against the revision we will censor
+
+  $ hg debugdeltachain target -T '{rev} {chainid} {chainlen} {prevrev}\n'
+  0 1 1 -1
+  1 2 1 -1
+  2 2 2 1
+
+Censor the file
+
+  $ hg cat -r $B1 target | wc -l
+  50002 (re)
+  $ hg censor -r $B1 target
+  $ hg cat -r $B1 target | wc -l
+  0 (re)
+
+Check the children is fine
+
+  $ hg cat -r $B2 target | wc -l
+  50003 (re)
+
+#endif

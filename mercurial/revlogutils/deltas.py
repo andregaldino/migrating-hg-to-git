@@ -1070,7 +1070,7 @@ class deltacomputer(object):
         context.
         """
         if target_rev is None:
-            curr = len(self.revlog)
+            target_rev = len(self.revlog)
 
         if not revinfo.textlen:
             return self._fullsnapshotinfo(fh, revinfo, target_rev)

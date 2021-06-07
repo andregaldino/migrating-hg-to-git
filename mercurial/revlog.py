@@ -3070,11 +3070,7 @@ class revlog(object):
         elif self._format_version == REVLOGV1:
             censor.v1_censor(self, tr, censornode, tombstone)
         else:
-            # revlog v2
-            raise error.RevlogError(
-                _(b'cannot censor with version %d revlogs')
-                % self._format_version
-            )
+            censor.v2_censor(self, tr, censornode, tombstone)
 
     def verifyintegrity(self, state):
         """Verifies the integrity of the revlog.

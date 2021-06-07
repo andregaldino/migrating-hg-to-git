@@ -1,4 +1,5 @@
 # censor code related to censoring revision
+# coding: utf8
 #
 # Copyright 2021 Pierre-Yves David <pierre-yves.david@octobus.net>
 # Copyright 2015 Google, Inc <martinvonz@google.com>
@@ -6,17 +7,44 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+import contextlib
+import os
+
 from ..node import (
     nullrev,
 )
+from .constants import (
+    COMP_MODE_PLAIN,
+    ENTRY_DATA_COMPRESSED_LENGTH,
+    ENTRY_DATA_COMPRESSION_MODE,
+    ENTRY_DATA_OFFSET,
+    ENTRY_DATA_UNCOMPRESSED_LENGTH,
+    ENTRY_DELTA_BASE,
+    ENTRY_LINK_REV,
+    ENTRY_NODE_ID,
+    ENTRY_PARENT_1,
+    ENTRY_PARENT_2,
+    ENTRY_SIDEDATA_COMPRESSED_LENGTH,
+    ENTRY_SIDEDATA_COMPRESSION_MODE,
+    ENTRY_SIDEDATA_OFFSET,
+    REVLOGV0,
+    REVLOGV1,
+)
 from ..i18n import _
+
 from .. import (
     error,
+    pycompat,
+    revlogutils,
+    util,
 )
 from ..utils import (
     storageutil,
 )
-from . import constants
+from . import (
+    constants,
+    deltas,
+)
 
 
 def v1_censor(rl, tr, censornode, tombstone=b''):
@@ -95,3 +123,237 @@ def v1_censor(rl, tr, censornode, tombstone=b''):
 
     rl.clearcaches()
     rl._loadindex()
+
+
+def v2_censor(rl, tr, censornode, tombstone=b''):
+    """censors a revision in a "version 2" revlog"""
+    # General principle
+    #
+    # We create new revlog files (index/data/sidedata) to copy the content of
+    # the existing data without the censored data.
+    #
+    # We need to recompute new delta for any revision that used the censored
+    # revision as delta base. As the cumulative size of the new delta may be
+    # large, we store them in a temporary file until they are stored in their
+    # final destination.
+    #
+    # All data before the censored data can be blindly copied. The rest needs
+    # to be copied as we go and the associated index entry needs adjustement.
+
+    assert rl._format_version != REVLOGV0, rl._format_version
+    assert rl._format_version != REVLOGV1, rl._format_version
+
+    old_index = rl.index
+    docket = rl._docket
+
+    censor_rev = rl.rev(censornode)
+    tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
+
+    censored_entry = rl.index[censor_rev]
+    index_cutoff = rl.index.entry_size * censor_rev
+    data_cutoff = censored_entry[ENTRY_DATA_OFFSET] >> 16
+    sidedata_cutoff = rl.sidedata_cut_off(censor_rev)
+
+    # rev → (new_base, data_start, data_end)
+    rewritten_entries = {}
+
+    dc = deltas.deltacomputer(rl)
+    excl = [censor_rev]
+
+    with pycompat.unnamedtempfile(mode=b"w+b") as tmp_storage:
+        with rl._segmentfile._open_read() as dfh:
+            for rev in range(censor_rev + 1, len(old_index)):
+                entry = old_index[rev]
+                if censor_rev != entry[ENTRY_DELTA_BASE]:
+                    continue
+                # This is a revision that use the censored revision as the base
+                # for its delta. We need a need new deltas
+                if entry[ENTRY_DATA_UNCOMPRESSED_LENGTH] == 0:
+                    # this revision is empty, we can delta against nullrev
+                    rewritten_entries[rev] = (nullrev, 0, 0)
+                else:
+
+                    text = rl.rawdata(rev, _df=dfh)
+                    info = revlogutils.revisioninfo(
+                        node=entry[ENTRY_NODE_ID],
+                        p1=rl.node(entry[ENTRY_PARENT_1]),
+                        p2=rl.node(entry[ENTRY_PARENT_2]),
+                        btext=[text],
+                        textlen=len(text),
+                        cachedelta=None,
+                        flags=entry[ENTRY_DATA_OFFSET] & 0xFFFF,
+                    )
+                    d = dc.finddeltainfo(
+                        info, dfh, excluded_bases=excl, target_rev=rev
+                    )
+                    default_comp = rl._docket.default_compression_header
+                    comp_mode, d = deltas.delta_compression(default_comp, d)
+                    # using `tell` is a bit lazy, but we are not here for speed
+                    start = tmp_storage.tell()
+                    tmp_storage.write(d.data[1])
+                    end = tmp_storage.tell()
+                    rewritten_entries[rev] = (d.base, start, end, comp_mode)
+
+        old_index_filepath = rl.opener.join(docket.index_filepath())
+        old_data_filepath = rl.opener.join(docket.data_filepath())
+        old_sidedata_filepath = rl.opener.join(docket.sidedata_filepath())
+
+        new_index_filepath = rl.opener.join(docket.new_index_file())
+        new_data_filepath = rl.opener.join(docket.new_data_file())
+        new_sidedata_filepath = rl.opener.join(docket.new_sidedata_file())
+
+        util.copyfile(
+            old_index_filepath, new_index_filepath, nb_bytes=index_cutoff
+        )
+        util.copyfile(
+            old_data_filepath, new_data_filepath, nb_bytes=data_cutoff
+        )
+        util.copyfile(
+            old_sidedata_filepath,
+            new_sidedata_filepath,
+            nb_bytes=sidedata_cutoff,
+        )
+        rl.opener.register_file(docket.index_filepath())
+        rl.opener.register_file(docket.data_filepath())
+        rl.opener.register_file(docket.sidedata_filepath())
+
+        docket.index_end = index_cutoff
+        docket.data_end = data_cutoff
+        docket.sidedata_end = sidedata_cutoff
+
+        # reload the revlog internal information
+        rl.clearcaches()
+        rl._loadindex(docket=docket)
+
+        @contextlib.contextmanager
+        def all_files():
+            # hide opening in an helper function to please check-code, black
+            # and various python ersion at the same time
+            with open(old_data_filepath, 'rb') as old_data_file:
+                with open(old_sidedata_filepath, 'rb') as old_sidedata_file:
+                    with open(new_index_filepath, 'r+b') as new_index_file:
+                        with open(new_data_filepath, 'r+b') as new_data_file:
+                            with open(
+                                new_sidedata_filepath, 'r+b'
+                            ) as new_sidedata_file:
+                                yield (
+                                    old_data_file,
+                                    old_sidedata_file,
+                                    new_index_file,
+                                    new_data_file,
+                                    new_sidedata_file,
+                                )
+
+        # we dont need to open the old index file since its content already
+        # exist in a usable form in `old_index`.
+        with all_files() as (
+            old_data_file,
+            old_sidedata_file,
+            new_index_file,
+            new_data_file,
+            new_sidedata_file,
+        ):
+            new_index_file.seek(0, os.SEEK_END)
+            assert new_index_file.tell() == index_cutoff
+            new_data_file.seek(0, os.SEEK_END)
+            assert new_data_file.tell() == data_cutoff
+            new_sidedata_file.seek(0, os.SEEK_END)
+            assert new_sidedata_file.tell() == sidedata_cutoff
+
+            ### writing the censored revision
+            entry = old_index[censor_rev]
+
+            # XXX consider trying the default compression too
+            new_data_size = len(tombstone)
+            new_data_offset = new_data_file.tell()
+            new_data_file.write(tombstone)
+
+            # we are not adding any sidedata as they might leak info about the censored version
+
+            new_entry = revlogutils.entry(
+                flags=constants.REVIDX_ISCENSORED,
+                data_offset=new_data_offset,
+                data_compressed_length=new_data_size,
+                data_uncompressed_length=new_data_size,
+                data_delta_base=censor_rev,
+                link_rev=entry[ENTRY_LINK_REV],
+                parent_rev_1=entry[ENTRY_PARENT_1],
+                parent_rev_2=entry[ENTRY_PARENT_2],
+                node_id=entry[ENTRY_NODE_ID],
+                sidedata_offset=0,
+                sidedata_compressed_length=0,
+                data_compression_mode=COMP_MODE_PLAIN,
+                sidedata_compression_mode=COMP_MODE_PLAIN,
+            )
+            rl.index.append(new_entry)
+            entry_bin = rl.index.entry_binary(censor_rev)
+            new_index_file.write(entry_bin)
+            docket.index_end = new_index_file.tell()
+            docket.data_end = new_data_file.tell()
+
+            #### Writing all subsequent revisions
+            for rev in range(censor_rev + 1, len(old_index)):
+                entry = old_index[rev]
+                flags = entry[ENTRY_DATA_OFFSET] & 0xFFFF
+                old_data_offset = entry[ENTRY_DATA_OFFSET] >> 16
+
+                if rev not in rewritten_entries:
+                    old_data_file.seek(old_data_offset)
+                    new_data_size = entry[ENTRY_DATA_COMPRESSED_LENGTH]
+                    new_data = old_data_file.read(new_data_size)
+                    data_delta_base = entry[ENTRY_DELTA_BASE]
+                    d_comp_mode = entry[ENTRY_DATA_COMPRESSION_MODE]
+                else:
+                    (
+                        data_delta_base,
+                        start,
+                        end,
+                        d_comp_mode,
+                    ) = rewritten_entries[rev]
+                    new_data_size = end - start
+                    tmp_storage.seek(start)
+                    new_data = tmp_storage.read(new_data_size)
+
+                # It might be faster to group continuous read/write operation,
+                # however, this is censor, an operation that is not focussed
+                # around stellar performance. So I have not written this
+                # optimisation yet.
+                new_data_offset = new_data_file.tell()
+                new_data_file.write(new_data)
+
+                sidedata_size = entry[ENTRY_SIDEDATA_COMPRESSED_LENGTH]
+                new_sidedata_offset = new_sidedata_file.tell()
+                if 0 < sidedata_size:
+                    old_sidedata_offset = entry[ENTRY_SIDEDATA_OFFSET]
+                    old_sidedata_file.seek(old_sidedata_offset)
+                    new_sidedata = old_sidedata_file.read(sidedata_size)
+                    new_sidedata_file.write(new_sidedata)
+
+                data_uncompressed_length = entry[ENTRY_DATA_UNCOMPRESSED_LENGTH]
+                sd_com_mode = entry[ENTRY_SIDEDATA_COMPRESSION_MODE]
+                assert data_delta_base <= rev, (data_delta_base, rev)
+
+                new_entry = revlogutils.entry(
+                    flags=flags,
+                    data_offset=new_data_offset,
+                    data_compressed_length=new_data_size,
+                    data_uncompressed_length=data_uncompressed_length,
+                    data_delta_base=data_delta_base,
+                    link_rev=entry[ENTRY_LINK_REV],
+                    parent_rev_1=entry[ENTRY_PARENT_1],
+                    parent_rev_2=entry[ENTRY_PARENT_2],
+                    node_id=entry[ENTRY_NODE_ID],
+                    sidedata_offset=new_sidedata_offset,
+                    sidedata_compressed_length=sidedata_size,
+                    data_compression_mode=d_comp_mode,
+                    sidedata_compression_mode=sd_com_mode,
+                )
+                rl.index.append(new_entry)
+                entry_bin = rl.index.entry_binary(rev)
+                new_index_file.write(entry_bin)
+
+                docket.index_end = new_index_file.tell()
+                docket.data_end = new_data_file.tell()
+                docket.sidedata_end = new_sidedata_file.tell()
+
+    docket.write(transaction=None, stripping=True)
