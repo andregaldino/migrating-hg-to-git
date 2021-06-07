@@ -126,8 +126,8 @@ fn main() {
             })
     });
 
-    let non_repo_config =
-        Config::load(early_args.config).unwrap_or_else(|error| {
+    let mut non_repo_config =
+        Config::load_non_repo().unwrap_or_else(|error| {
             // Normally this is decided based on config, but we don’t have that
             // available. As of this writing config loading never returns an
             // "unsupported" error but that is not enforced by the type system.
@@ -139,6 +139,20 @@ fn main() {
                 on_unsupported,
                 Err(error.into()),
                 false,
+            )
+        });
+
+    non_repo_config
+        .load_cli_args_config(early_args.config)
+        .unwrap_or_else(|error| {
+            exit(
+                &initial_current_dir,
+                &ui,
+                OnUnsupported::from_config(&ui, &non_repo_config),
+                Err(error.into()),
+                non_repo_config
+                    .get_bool(b"ui", b"detailed-exit-code")
+                    .unwrap_or(false),
             )
         });
 
