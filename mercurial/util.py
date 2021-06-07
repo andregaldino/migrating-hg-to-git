@@ -2009,8 +2009,10 @@ def copyfiles(src, dst, hardlink=None, progress=None):
         if hardlink:
             try:
                 oslink(src, dst)
-            except (IOError, OSError):
-                hardlink = False
+            except (IOError, OSError) as exc:
+                if exc.errno != errno.EEXIST:
+                    hardlink = False
+                # XXX maybe try to relink if the file exist ?
                 shutil.copy(src, dst)
         else:
             shutil.copy(src, dst)
