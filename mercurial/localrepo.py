@@ -3677,11 +3677,13 @@ def filterknowncreateopts(ui, createopts):
     return {k: v for k, v in createopts.items() if k not in known}
 
 
-def createrepository(ui, path, createopts=None):
+def createrepository(ui, path, createopts=None, requirements=None):
     """Create a new repository in a vfs.
 
     ``path`` path to the new repo's working directory.
     ``createopts`` options for the new repository.
+    ``requirement`` predefined set of requirements.
+                    (incompatible with ``createopts``)
 
     The following keys for ``createopts`` are recognized:
 
@@ -3704,27 +3706,34 @@ def createrepository(ui, path, createopts=None):
        Indicates that storage for files should be shallow (not all ancestor
        revisions are known).
     """
-    createopts = defaultcreateopts(ui, createopts=createopts)
 
-    unknownopts = filterknowncreateopts(ui, createopts)
+    if requirements is not None:
+        if createopts is not None:
+            msg = b'cannot specify both createopts and requirements'
+            raise error.ProgrammingError(msg)
+        createopts = {}
+    else:
+        createopts = defaultcreateopts(ui, createopts=createopts)
 
-    if not isinstance(unknownopts, dict):
-        raise error.ProgrammingError(
-            b'filterknowncreateopts() did not return a dict'
-        )
+        unknownopts = filterknowncreateopts(ui, createopts)
 
-    if unknownopts:
-        raise error.Abort(
-            _(
-                b'unable to create repository because of unknown '
-                b'creation option: %s'
+        if not isinstance(unknownopts, dict):
+            raise error.ProgrammingError(
+                b'filterknowncreateopts() did not return a dict'
             )
-            % b', '.join(sorted(unknownopts)),
-            hint=_(b'is a required extension not loaded?'),
-        )
 
-    requirements = newreporequirements(ui, createopts=createopts)
-    requirements -= checkrequirementscompat(ui, requirements)
+        if unknownopts:
+            raise error.Abort(
+                _(
+                    b'unable to create repository because of unknown '
+                    b'creation option: %s'
+                )
+                % b', '.join(sorted(unknownopts)),
+                hint=_(b'is a required extension not loaded?'),
+            )
+
+        requirements = newreporequirements(ui, createopts=createopts)
+        requirements -= checkrequirementscompat(ui, requirements)
 
     wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
 
