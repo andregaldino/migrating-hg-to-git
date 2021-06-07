@@ -69,6 +69,12 @@ impl From<HgError> for CommandError {
             HgError::UnsupportedFeature(message) => {
                 CommandError::unsupported(message)
             }
+            HgError::Abort {
+                message,
+                detailed_exit_code,
+            } => {
+                CommandError::abort_with_exit_code(message, detailed_exit_code)
+            }
             _ => CommandError::abort(error.to_string()),
         }
     }
