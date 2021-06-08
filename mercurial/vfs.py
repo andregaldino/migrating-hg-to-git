@@ -329,6 +329,9 @@ class abstractvfs(object):
                     None  # pytype: disable=attribute-error
                 )
 
+    def register_file(self, path):
+        """generic hook point to lets fncache steer its stew"""
+
 
 class vfs(abstractvfs):
     """Operate files relative to a base directory

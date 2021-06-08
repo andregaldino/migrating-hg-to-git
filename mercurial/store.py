@@ -730,6 +730,11 @@ class _fncachevfs(vfsmod.proxyvfs):
         else:
             return self.vfs.join(path)
 
+    def register_file(self, path):
+        """generic hook point to lets fncache steer its stew"""
+        if path.startswith(b'data/') or path.startswith(b'meta/'):
+            self.fncache.add(path)
+
 
 class fncachestore(basicstore):
     def __init__(self, path, vfstype, dotencode):
