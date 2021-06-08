@@ -528,7 +528,11 @@ a transaction, we simulate the situation by creating a zero-size index file:
 
 Unbundling should follow the same rules; existing files should not cause a load:
 
+(loading during the clone is expected)
   $ hg clone -q . tobundle
+  fncache load triggered!
+  fncache load triggered!
+
   $ echo 'new line' > tobundle/bar
   $ hg -R tobundle ci -qm bar
   $ hg -R tobundle bundle -q barupdated.hg

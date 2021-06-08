@@ -24,7 +24,6 @@ from .pycompat import getattr
 from . import (
     bookmarks,
     bundlerepo,
-    cacheutil,
     cmdutil,
     destutil,
     discovery,
@@ -866,18 +865,10 @@ def clone(
                 requirements=dest_reqs,
             )
             destrepo = localrepo.makelocalrepository(ui, destrootpath)
+            destlock = destrepo.lock()
+            from . import streamclone  # avoid cycle
 
-            destpath = destrepo.vfs.base
-            destlock = copystore(ui, srcrepo, destpath)
-            # copy bookmarks over
-            srcbookmarks = srcrepo.vfs.join(b'bookmarks')
-            dstbookmarks = os.path.join(destpath, b'bookmarks')
-            if os.path.exists(srcbookmarks):
-                util.copyfile(srcbookmarks, dstbookmarks)
-
-            dstcachedir = os.path.join(destpath, b'cache')
-            for cache in cacheutil.cachetocopy(srcrepo):
-                _copycache(srcrepo, dstcachedir, cache)
+            streamclone.local_copy(srcrepo, destrepo)
 
             # we need to re-init the repo after manually copying the data
             # into it
