@@ -3485,6 +3485,24 @@ def defaultcreateopts(ui, createopts=None):
     return createopts
 
 
+def clone_requirements(ui, createopts, srcrepo):
+    """clone the requirements of a local repo for a local clone
+
+    The store requirements are unchanged while the working copy requirements
+    depends on the configuration
+    """
+    target_requirements = set()
+    createopts = defaultcreateopts(ui, createopts=createopts)
+    for r in newreporequirements(ui, createopts):
+        if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
+            target_requirements.add(r)
+
+    for r in srcrepo.requirements:
+        if r not in requirementsmod.WORKING_DIR_REQUIREMENTS:
+            target_requirements.add(r)
+    return target_requirements
+
+
 def newreporequirements(ui, createopts):
     """Determine the set of requirements for a new local repository.
 
