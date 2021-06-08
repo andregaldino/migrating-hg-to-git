@@ -454,6 +454,7 @@ class changelog(revlog.revlog):
                 self.opener = _delayopener(
                     self._realopener, self._indexfile, self._delaybuf
                 )
+            self._segmentfile.opener = self.opener
         self._delayed = True
         tr.addpending(b'cl-%i' % id(self), self._writepending)
         tr.addfinalize(b'cl-%i' % id(self), self._finalize)
@@ -462,6 +463,7 @@ class changelog(revlog.revlog):
         """finalize index updates"""
         self._delayed = False
         self.opener = self._realopener
+        self._segmentfile.opener = self.opener
         # move redirected index data back into place
         if self._docket is not None:
             self._write_docket(tr)
@@ -501,6 +503,7 @@ class changelog(revlog.revlog):
             self._delaybuf = None
             self._divert = True
             self.opener = _divertopener(self._realopener, self._indexfile)
+            self._segmentfile.opener = self.opener
 
         if self._divert:
             return True

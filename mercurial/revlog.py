@@ -86,6 +86,7 @@ from .revlogutils import (
     docket as docketutil,
     flagutil,
     nodemap as nodemaputil,
+    randomaccessfile,
     revlogv0,
     sidedata as sidedatautil,
 )
@@ -125,7 +126,6 @@ _zlibdecompress = zlib.decompress
 
 # max size of revlog with inline data
 _maxinline = 131072
-_chunksize = 1048576
 
 # Flag processors for REVIDX_ELLIPSIS.
 def ellipsisreadprocessor(rl, text):
@@ -231,10 +231,6 @@ def parse_index_v1_mixed(data, inline):
 # corresponds to uncompressed length of indexformatng (2 gigs, 4-byte
 # signed integer)
 _maxentrysize = 0x7FFFFFFF
-
-PARTIAL_READ_MSG = _(
-    b'partial read of revlog %s; expected %d bytes from offset %d, got %d'
-)
 
 FILE_TOO_SHORT_MSG = _(
     b'cannot read from revlog %s;'
@@ -605,7 +601,7 @@ class revlog(object):
             self._parse_index = parse_index_v1_mixed
         try:
             d = self._parse_index(index_data, self._inline)
-            index, _chunkcache = d
+            index, chunkcache = d
             use_nodemap = (
                 not self._inline
                 and self._nodemap_file is not None
@@ -626,9 +622,13 @@ class revlog(object):
             raise error.RevlogError(
                 _(b"index %s is corrupted") % self.display_id
             )
-        self.index, self._chunkcache = d
-        if not self._chunkcache:
-            self._chunkclear()
+        self.index = index
+        self._segmentfile = randomaccessfile.randomaccessfile(
+            self.opener,
+            (self._indexfile if self._inline else self._datafile),
+            self._chunkcachesize,
+            chunkcache,
+        )
         # revnum -> (chain-length, sum-delta-length)
         self._chaininfocache = util.lrucachedict(500)
         # revlog header -> revlog compressor
@@ -709,32 +709,6 @@ class revlog(object):
         return self.opener(self._datafile, mode=mode)
 
     @contextlib.contextmanager
-    def _datareadfp(self, existingfp=None):
-        """file object suitable to read data"""
-        # Use explicit file handle, if given.
-        if existingfp is not None:
-            yield existingfp
-
-        # Use a file handle being actively used for writes, if available.
-        # There is some danger to doing this because reads will seek the
-        # file. However, _writeentry() performs a SEEK_END before all writes,
-        # so we should be safe.
-        elif self._writinghandles:
-            if self._inline:
-                yield self._writinghandles[0]
-            else:
-                yield self._writinghandles[1]
-
-        # Otherwise open a new file handle.
-        else:
-            if self._inline:
-                func = self._indexfp
-            else:
-                func = self._datafp
-            with func() as fp:
-                yield fp
-
-    @contextlib.contextmanager
     def _sidedatareadfp(self):
         """file object suitable to read sidedata"""
         if self._writinghandles:
@@ -807,7 +781,7 @@ class revlog(object):
     def clearcaches(self):
         self._revisioncache = None
         self._chainbasecache.clear()
-        self._chunkcache = (0, b'')
+        self._segmentfile.clear_cache()
         self._pcache = {}
         self._nodemap_docket = None
         self.index.clearcaches()
@@ -1629,85 +1603,6 @@ class revlog(object):
         p1, p2 = self.parents(node)
         return storageutil.hashrevisionsha1(text, p1, p2) != node
 
-    def _cachesegment(self, offset, data):
-        """Add a segment to the revlog cache.
-
-        Accepts an absolute offset and the data that is at that location.
-        """
-        o, d = self._chunkcache
-        # try to add to existing cache
-        if o + len(d) == offset and len(d) + len(data) < _chunksize:
-            self._chunkcache = o, d + data
-        else:
-            self._chunkcache = offset, data
-
-    def _readsegment(self, offset, length, df=None):
-        """Load a segment of raw data from the revlog.
-
-        Accepts an absolute offset, length to read, and an optional existing
-        file handle to read from.
-
-        If an existing file handle is passed, it will be seeked and the
-        original seek position will NOT be restored.
-
-        Returns a str or buffer of raw byte data.
-
-        Raises if the requested number of bytes could not be read.
-        """
-        # Cache data both forward and backward around the requested
-        # data, in a fixed size window. This helps speed up operations
-        # involving reading the revlog backwards.
-        cachesize = self._chunkcachesize
-        realoffset = offset & ~(cachesize - 1)
-        reallength = (
-            (offset + length + cachesize) & ~(cachesize - 1)
-        ) - realoffset
-        with self._datareadfp(df) as df:
-            df.seek(realoffset)
-            d = df.read(reallength)
-
-        self._cachesegment(realoffset, d)
-        if offset != realoffset or reallength != length:
-            startoffset = offset - realoffset
-            if len(d) - startoffset < length:
-                filename = self._indexfile if self._inline else self._datafile
-                got = len(d) - startoffset
-                m = PARTIAL_READ_MSG % (filename, length, offset, got)
-                raise error.RevlogError(m)
-            return util.buffer(d, startoffset, length)
-
-        if len(d) < length:
-            filename = self._indexfile if self._inline else self._datafile
-            got = len(d) - startoffset
-            m = PARTIAL_READ_MSG % (filename, length, offset, got)
-            raise error.RevlogError(m)
-
-        return d
-
-    def _getsegment(self, offset, length, df=None):
-        """Obtain a segment of raw data from the revlog.
-
-        Accepts an absolute offset, length of bytes to obtain, and an
-        optional file handle to the already-opened revlog. If the file
-        handle is used, it's original seek position will not be preserved.
-
-        Requests for data may be returned from a cache.
-
-        Returns a str or a buffer instance of raw byte data.
-        """
-        o, d = self._chunkcache
-        l = len(d)
-
-        # is it in the cache?
-        cachestart = offset - o
-        cacheend = cachestart + length
-        if cachestart >= 0 and cacheend <= l:
-            if cachestart == 0 and cacheend == l:
-                return d  # avoid a copy
-            return util.buffer(d, cachestart, cacheend - cachestart)
-
-        return self._readsegment(offset, length, df=df)
-
     def _getsegmentforrevs(self, startrev, endrev, df=None):
         """Obtain a segment of raw data corresponding to a range of revisions.
 
@@ -1740,7 +1635,7 @@ class revlog(object):
             end += (endrev + 1) * self.index.entry_size
         length = end - start
 
-        return start, self._getsegment(start, length, df=df)
+        return start, self._segmentfile.read_chunk(start, length, df)
 
     def _chunk(self, rev, df=None):
         """Obtain a single decompressed chunk for a revision.
@@ -1831,10 +1726,6 @@ class revlog(object):
                     raise error.RevlogError(msg)
 
         return l
-
-    def _chunkclear(self):
-        """Clear the raw chunk cache."""
-        self._chunkcache = (0, b'')
 
     def deltaparent(self, rev):
         """return deltaparent of the given revision"""
@@ -2043,7 +1934,12 @@ class revlog(object):
                 length = sidedata_size
                 offset = sidedata_offset
                 got = len(comp_segment)
-                m = PARTIAL_READ_MSG % (filename, length, offset, got)
+                m = randomaccessfile.PARTIAL_READ_MSG % (
+                    filename,
+                    length,
+                    offset,
+                    got,
+                )
                 raise error.RevlogError(m)
 
         comp = self.index[rev][11]
@@ -2136,6 +2032,7 @@ class revlog(object):
             # We can't use the cached file handle after close(). So prevent
             # its usage.
             self._writinghandles = None
+            self._segmentfile.writing_handle = None
 
         new_dfh = self._datafp(b'w+')
         new_dfh.truncate(0)  # drop any potentially existing data
@@ -2171,12 +2068,17 @@ class revlog(object):
 
             tr.replace(self._indexfile, trindex * self.index.entry_size)
             nodemaputil.setup_persistent_nodemap(tr, self)
-            self._chunkclear()
+            self._segmentfile = randomaccessfile.randomaccessfile(
+                self.opener,
+                self._datafile,
+                self._chunkcachesize,
+            )
 
             if existing_handles:
                 # switched from inline to conventional reopen the index
                 ifh = self.__index_write_fp()
                 self._writinghandles = (ifh, new_dfh, None)
+                self._segmentfile.writing_handle = new_dfh
                 new_dfh = None
         finally:
             if new_dfh is not None:
@@ -2235,11 +2137,13 @@ class revlog(object):
                     transaction.add(self._indexfile, isize)
                 # exposing all file handle for writing.
                 self._writinghandles = (ifh, dfh, sdfh)
+                self._segmentfile.writing_handle = ifh if self._inline else dfh
                 yield
                 if self._docket is not None:
                     self._write_docket(transaction)
             finally:
                 self._writinghandles = None
+                self._segmentfile.writing_handle = None
                 if dfh is not None:
                     dfh.close()
                 if sdfh is not None:
@@ -2873,7 +2777,7 @@ class revlog(object):
         # then reset internal state in memory to forget those revisions
         self._revisioncache = None
         self._chaininfocache = util.lrucachedict(500)
-        self._chunkclear()
+        self._segmentfile.clear_cache()
 
         del self.index[rev:-1]
 
