@@ -94,8 +94,9 @@ def _playback(
                 try:
                     util.copyfile(backuppath, filepath, checkambig=checkambig)
                     backupfiles.append(b)
-                except IOError:
-                    report(_(b"failed to recover %s\n") % f)
+                except IOError as exc:
+                    e_msg = stringutil.forcebytestr(exc)
+                    report(_(b"failed to recover %s (%s)\n") % (f, e_msg))
             else:
                 target = f or b
                 try:
