@@ -3445,8 +3445,9 @@ def aftertrans(files):
             vfs.tryunlink(dest)
             try:
                 vfs.rename(src, dest)
-            except OSError:  # journal file does not yet exist
-                pass
+            except OSError as exc:  # journal file does not yet exist
+                if exc.errno != errno.ENOENT:
+                    raise
 
     return a
 
