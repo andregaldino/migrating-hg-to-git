@@ -48,6 +48,7 @@ Poke at a clone:
   hgrc
   requires
   store
+  wcache
 
 Should be empty:
 

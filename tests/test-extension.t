@@ -111,6 +111,7 @@ Test basic extension support
   reposetup called for a
   ui == repo.ui
   uipopulate called (1 times)
+  uipopulate called (1 times)
   reposetup called for b
   ui == repo.ui
   updating to branch default

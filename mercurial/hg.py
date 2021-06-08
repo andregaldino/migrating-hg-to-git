@@ -857,20 +857,17 @@ def clone(
 
         if copy:
             srcrepo.hook(b'preoutgoing', throw=True, source=b'clone')
-            hgdir = os.path.realpath(os.path.join(dest, b".hg"))
-            if not os.path.exists(dest):
-                util.makedirs(dest)
-            try:
-                destpath = hgdir
-                util.makedir(destpath, notindexed=True)
-            except OSError as inst:
-                if inst.errno == errno.EEXIST:
-                    cleandir = None
-                    raise error.Abort(
-                        _(b"destination '%s' already exists") % dest
-                    )
-                raise
 
+            destrootpath = urlutil.urllocalpath(dest)
+            dest_reqs = localrepo.clone_requirements(ui, createopts, srcrepo)
+            localrepo.createrepository(
+                ui,
+                destrootpath,
+                requirements=dest_reqs,
+            )
+            destrepo = localrepo.makelocalrepository(ui, destrootpath)
+
+            destpath = destrepo.vfs.base
             destlock = copystore(ui, srcrepo, destpath)
             # copy bookmarks over
             srcbookmarks = srcrepo.vfs.join(b'bookmarks')
