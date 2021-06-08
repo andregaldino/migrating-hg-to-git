@@ -825,7 +825,12 @@ def clone(
             abspath = os.path.abspath(urlutil.urllocalpath(origsource))
 
         if islocal(dest):
-            cleandir = dest
+            if os.path.exists(dest):
+                # only clean up directories we create ourselves
+                hgdir = os.path.realpath(os.path.join(dest, b".hg"))
+                cleandir = hgdir
+            else:
+                cleandir = dest
 
         copy = False
         if (
@@ -855,9 +860,6 @@ def clone(
             hgdir = os.path.realpath(os.path.join(dest, b".hg"))
             if not os.path.exists(dest):
                 util.makedirs(dest)
-            else:
-                # only clean up directories we create ourselves
-                cleandir = hgdir
             try:
                 destpath = hgdir
                 util.makedir(destpath, notindexed=True)
