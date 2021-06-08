@@ -1910,7 +1910,13 @@ _hardlinkfswhitelist = {
 
 
 def copyfile(
-    src, dest, hardlink=False, copystat=False, checkambig=False, nb_bytes=None
+    src,
+    dest,
+    hardlink=False,
+    copystat=False,
+    checkambig=False,
+    nb_bytes=None,
+    no_hardlink_cb=None,
 ):
     """copy a file, preserving mode and optionally other stat info like
     atime/mtime
@@ -1937,6 +1943,8 @@ def copyfile(
         except OSError:
             fstype = None
         if fstype not in _hardlinkfswhitelist:
+            if no_hardlink_cb is not None:
+                no_hardlink_cb()
             hardlink = False
     if hardlink:
         try:
@@ -1945,8 +1953,10 @@ def copyfile(
                 m = "the `nb_bytes` argument is incompatible with `hardlink`"
                 raise error.ProgrammingError(m)
             return
-        except (IOError, OSError):
-            pass  # fall back to normal copy
+        except (IOError, OSError) as exc:
+            if exc.errno != errno.EEXIST and no_hardlink_cb is not None:
+                no_hardlink_cb()
+            # fall back to normal copy
     if os.path.islink(src):
         os.symlink(os.readlink(src), dest)
         # copytime is ignored for symlinks, but in general copytime isn't needed
