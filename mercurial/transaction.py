@@ -743,15 +743,15 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
         lines = fp.readlines()
         if lines:
             ver = lines[0][:-1]
-            if ver == (b'%d' % version):
+            if ver != (b'%d' % version):
+                report(BAD_VERSION_MSG)
+            else:
                 for line in lines[1:]:
                     if line:
                         # Shave off the trailing newline
                         line = line[:-1]
                         l, f, b, c = line.split(b'\0')
                         backupentries.append((l, f, b, bool(c)))
-            else:
-                report(BAD_VERSION_MSG)
 
     _playback(
         file,
