@@ -824,6 +824,16 @@ def local_copy(src_repo, dest_repo):
 
     with dest_repo.lock():
         with src_repo.lock():
+
+            # bookmark is not integrated to the streaming as it might use the
+            # `repo.vfs` and they are too many sentitive data accessible
+            # through `repo.vfs` to expose it to streaming clone.
+            src_book_vfs = bookmarks.bookmarksvfs(src_repo)
+            srcbookmarks = src_book_vfs.join(b'bookmarks')
+            bm_count = 0
+            if os.path.exists(srcbookmarks):
+                bm_count = 1
+
             entries, totalfilesize = _v2_walk(
                 src_repo,
                 includes=None,
@@ -834,7 +844,7 @@ def local_copy(src_repo, dest_repo):
             dest_vfs_map = _makemap(dest_repo)
             progress = src_repo.ui.makeprogress(
                 topic=_(b'linking'),
-                total=len(entries),
+                total=len(entries) + bm_count,
                 unit=_(b'files'),
             )
             # copy  files
@@ -848,18 +858,16 @@ def local_copy(src_repo, dest_repo):
             hardlink = _copy_files(src_vfs_map, dest_vfs_map, files, progress)
 
             # copy bookmarks over
-            src_book_vfs = bookmarks.bookmarksvfs(src_repo)
-            srcbookmarks = src_book_vfs.join(b'bookmarks')
-            dst_book_vfs = bookmarks.bookmarksvfs(dest_repo)
-            dstbookmarks = dst_book_vfs.join(b'bookmarks')
-            if os.path.exists(srcbookmarks):
+            if bm_count:
+                dst_book_vfs = bookmarks.bookmarksvfs(dest_repo)
+                dstbookmarks = dst_book_vfs.join(b'bookmarks')
                 util.copyfile(srcbookmarks, dstbookmarks)
         progress.complete()
         if hardlink:
             msg = b'linked %d files\n'
         else:
             msg = b'copied %d files\n'
-        src_repo.ui.debug(msg % len(entries))
+        src_repo.ui.debug(msg % (len(entries) + bm_count))
 
         with dest_repo.transaction(b"localclone") as tr:
             dest_repo.store.write(tr)
