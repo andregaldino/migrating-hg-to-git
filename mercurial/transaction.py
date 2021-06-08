@@ -702,6 +702,11 @@ class transaction(util.transactional):
             self._releasefn = None  # Help prevent cycles.
 
 
+BAD_VERSION_MSG = _(
+    b"journal was created by a different version of Mercurial\n"
+)
+
+
 def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file
 
@@ -746,12 +751,7 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
                         l, f, b, c = line.split(b'\0')
                         backupentries.append((l, f, b, bool(c)))
             else:
-                report(
-                    _(
-                        b"journal was created by a different version of "
-                        b"Mercurial\n"
-                    )
-                )
+                report(BAD_VERSION_MSG)
 
     _playback(
         file,
