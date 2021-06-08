@@ -633,9 +633,9 @@ class transaction(util.transactional):
         """write transaction data for possible future undo call"""
         if self._undoname is None:
             return
-        undobackupfile = self._opener.open(
-            b"%s.backupfiles" % self._undoname, b'w'
-        )
+
+        undo_backup_path = b"%s.backupfiles" % self._undoname
+        undobackupfile = self._opener.open(undo_backup_path, b'w')
         undobackupfile.write(b'%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
