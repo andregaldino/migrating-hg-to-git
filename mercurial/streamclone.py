@@ -603,6 +603,47 @@ def _test_sync_point_walk_2(repo):
     """a function for synchronisation during tests"""
 
 
+def _v2_walk(repo, includes, excludes, includeobsmarkers):
+    """emit a seris of files information useful to clone a repo
+
+    return (entries, totalfilesize)
+
+    entries is a list of tuple (vfs-key, file-path, file-type, size)
+
+    - `vfs-key`: is a key to the right vfs to write the file (see _makemap)
+    - `name`: file path of the file to copy (to be feed to the vfss)
+    - `file-type`: do this file need to be copied with the source lock ?
+    - `size`: the size of the file (or None)
+    """
+    assert repo._currentlock(repo._lockref) is not None
+    entries = []
+    totalfilesize = 0
+
+    matcher = None
+    if includes or excludes:
+        matcher = narrowspec.match(repo.root, includes, excludes)
+
+    for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
+        if size:
+            ft = _fileappend
+            if rl_type & store.FILEFLAGS_VOLATILE:
+                ft = _filefull
+            entries.append((_srcstore, name, ft, size))
+            totalfilesize += size
+    for name in _walkstreamfullstorefiles(repo):
+        if repo.svfs.exists(name):
+            totalfilesize += repo.svfs.lstat(name).st_size
+            entries.append((_srcstore, name, _filefull, None))
+    if includeobsmarkers and repo.svfs.exists(b'obsstore'):
+        totalfilesize += repo.svfs.lstat(b'obsstore').st_size
+        entries.append((_srcstore, b'obsstore', _filefull, None))
+    for name in cacheutil.cachetocopy(repo):
+        if repo.cachevfs.exists(name):
+            totalfilesize += repo.cachevfs.lstat(name).st_size
+            entries.append((_srccache, name, _filefull, None))
+    return entries, totalfilesize
+
+
 def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
@@ -618,32 +659,14 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
 
     with repo.lock():
 
-        entries = []
-        totalfilesize = 0
-
-        matcher = None
-        if includes or excludes:
-            matcher = narrowspec.match(repo.root, includes, excludes)
-
         repo.ui.debug(b'scanning\n')
-        for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
-            if size:
-                ft = _fileappend
-                if rl_type & store.FILEFLAGS_VOLATILE:
-                    ft = _filefull
-                entries.append((_srcstore, name, ft, size))
-                totalfilesize += size
-        for name in _walkstreamfullstorefiles(repo):
-            if repo.svfs.exists(name):
-                totalfilesize += repo.svfs.lstat(name).st_size
-                entries.append((_srcstore, name, _filefull, None))
-        if includeobsmarkers and repo.svfs.exists(b'obsstore'):
-            totalfilesize += repo.svfs.lstat(b'obsstore').st_size
-            entries.append((_srcstore, b'obsstore', _filefull, None))
-        for name in cacheutil.cachetocopy(repo):
-            if repo.cachevfs.exists(name):
-                totalfilesize += repo.cachevfs.lstat(name).st_size
-                entries.append((_srccache, name, _filefull, None))
+
+        entries, totalfilesize = _v2_walk(
+            repo,
+            includes=includes,
+            excludes=excludes,
+            includeobsmarkers=includeobsmarkers,
+        )
 
         chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
