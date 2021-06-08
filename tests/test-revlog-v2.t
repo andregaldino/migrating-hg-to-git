@@ -18,8 +18,8 @@ Can create and open repo with revlog v2 requirement
   > revlogv2 = enable-unstable-format-and-corrupt-my-data
   > EOF
 
-  $ hg init empty-repo
-  $ cd empty-repo
+  $ hg init new-repo
+  $ cd new-repo
   $ cat .hg/requires
   dotencode
   exp-dirstate-v2 (dirstate-v2 !)
@@ -94,3 +94,28 @@ We should have have:
   .hg/store/00manifest-43c37dde.dat
   .hg/store/00manifest-e2c9362a.sda
   .hg/store/00manifest.i
+
+Local clone works
+-----------------
+
+  $ hg clone . ../cloned-repo
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg tip | tee ../tip-new
+  changeset:   0:96ee1d7354c4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     initial
+  
+  $ hg tip -R ../cloned-repo | tee ../tip-cloned
+  changeset:   0:96ee1d7354c4
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     initial
+  
+
+The two repository should be identical, this diff MUST be empty
+
+  $ cmp ../tip-new ../tip-cloned || diff -U8 ../tip-new ../tip-cloned
