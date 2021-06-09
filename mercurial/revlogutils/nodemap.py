@@ -133,7 +133,7 @@ def update_persistent_nodemap(revlog):
 
 
 def delete_nodemap(tr, repo, revlog):
-    """ Delete nodemap data on disk for a given revlog"""
+    """Delete nodemap data on disk for a given revlog"""
     if revlog._nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enabled"
         raise error.ProgrammingError(msg)
