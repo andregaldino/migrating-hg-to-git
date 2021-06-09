@@ -1917,6 +1917,7 @@ def copyfile(
     checkambig=False,
     nb_bytes=None,
     no_hardlink_cb=None,
+    check_fs_hardlink=True,
 ):
     """copy a file, preserving mode and optionally other stat info like
     atime/mtime
@@ -1935,7 +1936,7 @@ def copyfile(
         if checkambig:
             oldstat = checkambig and filestat.frompath(dest)
         unlink(dest)
-    if hardlink:
+    if hardlink and check_fs_hardlink:
         # Hardlinks are problematic on CIFS (issue4546), do not allow hardlinks
         # unless we are confident that dest is on a whitelisted filesystem.
         try:
