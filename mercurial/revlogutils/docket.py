@@ -182,6 +182,13 @@ class RevlogDocket(object):
         self._index_uuid = make_uid()
         return self.index_filepath()
 
+    def old_index_filepaths(self, include_empty=True):
+        """yield file path to older index files associated to this docket"""
+        # very simplistic version at first
+        for uuid, size in self._older_index_uuids:
+            if include_empty or size > 0:
+                yield b"%s-%s.idx" % (self._radix, uuid)
+
     def data_filepath(self):
         """file path to the current data file associated to this docket"""
         # very simplistic version at first
@@ -198,6 +205,13 @@ class RevlogDocket(object):
         self._data_uuid = make_uid()
         return self.data_filepath()
 
+    def old_data_filepaths(self, include_empty=True):
+        """yield file path to older data files associated to this docket"""
+        # very simplistic version at first
+        for uuid, size in self._older_data_uuids:
+            if include_empty or size > 0:
+                yield b"%s-%s.dat" % (self._radix, uuid)
+
     def sidedata_filepath(self):
         """file path to the current sidedata file associated to this docket"""
         # very simplistic version at first
@@ -213,6 +227,13 @@ class RevlogDocket(object):
         self._older_sidedata_uuids.insert(0, old)
         self._sidedata_uuid = make_uid()
         return self.sidedata_filepath()
+
+    def old_sidedata_filepaths(self, include_empty=True):
+        """yield file path to older sidedata files associated to this docket"""
+        # very simplistic version at first
+        for uuid, size in self._older_sidedata_uuids:
+            if include_empty or size > 0:
+                yield b"%s-%s.sda" % (self._radix, uuid)
 
     @property
     def index_end(self):

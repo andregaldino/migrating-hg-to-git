@@ -2821,10 +2821,13 @@ class revlog(object):
                 res.append(self._datafile)
         else:
             res.append(self._docket_file)
+            res.extend(self._docket.old_index_filepaths(include_empty=False))
             if self._docket.data_end:
                 res.append(self._datafile)
+            res.extend(self._docket.old_data_filepaths(include_empty=False))
             if self._docket.sidedata_end:
                 res.append(self._sidedatafile)
+            res.extend(self._docket.old_sidedata_filepaths(include_empty=False))
         return res
 
     def emitrevisions(
