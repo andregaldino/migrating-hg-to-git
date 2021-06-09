@@ -2828,8 +2828,15 @@ class revlog(object):
 
     def files(self):
         res = [self._indexfile]
-        if not self._inline:
-            res.append(self._datafile)
+        if self._docket_file is None:
+            if not self._inline:
+                res.append(self._datafile)
+        else:
+            res.append(self._docket_file)
+            if self._docket.data_end:
+                res.append(self._datafile)
+            if self._docket.sidedata_end:
+                res.append(self._sidedatafile)
         return res
 
     def emitrevisions(
