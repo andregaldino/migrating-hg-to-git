@@ -2135,8 +2135,8 @@ def _docommit(ui, repo, *pats, **opts):
         if not obsolete.isenabled(repo, obsolete.createmarkersopt):
             cmdutil.checkunfinished(repo)
 
-        opts = pycompat.byteskwargs(opts)
         node = cmdutil.amend(ui, repo, old, extra, pats, opts)
+        opts = pycompat.byteskwargs(opts)
         if node == old.node():
             ui.status(_(b"nothing changed\n"))
             return 1

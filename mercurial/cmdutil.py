@@ -2783,6 +2783,7 @@ def samefile(f, ctx1, ctx2):
 
 
 def amend(ui, repo, old, extra, pats, opts):
+    opts = pycompat.byteskwargs(opts)
     # avoid cycle context -> subrepo -> cmdutil
     from . import context
 

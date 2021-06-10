@@ -1478,9 +1478,8 @@ Test heads computation on pending index changes with obsolescence markers
   > command = registrar.command(cmdtable)
   > @command(b"amendtransient",[], _(b'hg amendtransient [rev]'))
   > def amend(ui, repo, *pats, **opts):
-  >   opts = pycompat.byteskwargs(opts)
-  >   opts[b'message'] = b'Test'
-  >   opts[b'logfile'] = None
+  >   opts['message'] = b'Test'
+  >   opts['logfile'] = None
   >   cmdutil.amend(ui, repo, repo[b'.'], {}, pats, opts)
   >   ui.write(b'%s\n' % stringutil.pprint(repo.changelog.headrevs()))
   > EOF
