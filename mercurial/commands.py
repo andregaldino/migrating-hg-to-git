@@ -2077,9 +2077,8 @@ def _docommit(ui, repo, *pats, **opts):
         # commit(), 1 if nothing changed or None on success.
         return 1 if ret == 0 else ret
 
-    opts = pycompat.byteskwargs(opts)
-    if opts.get(b'subrepos'):
-        cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'amend'])
+    if opts.get('subrepos'):
+        cmdutil.check_incompatible_arguments(opts, 'subrepos', ['amend'])
         # Let --subrepos on the command line override config setting.
         ui.setconfig(b'ui', b'commitsubrepos', True, b'commit')
 
@@ -2090,7 +2089,7 @@ def _docommit(ui, repo, *pats, **opts):
     tip = repo.changelog.tip()
 
     extra = {}
-    if opts.get(b'close_branch') or opts.get(b'force_close_branch'):
+    if opts.get('close_branch') or opts.get('force_close_branch'):
         extra[b'close'] = b'1'
 
         if repo[b'.'].closesbranch():
@@ -2104,21 +2103,21 @@ def _docommit(ui, repo, *pats, **opts):
         elif (
             branch == repo[b'.'].branch()
             and repo[b'.'].node() not in bheads
-            and not opts.get(b'force_close_branch')
+            and not opts.get('force_close_branch')
         ):
             hint = _(
                 b'use --force-close-branch to close branch from a non-head'
                 b' changeset'
             )
             raise error.InputError(_(b'can only close branch heads'), hint=hint)
-        elif opts.get(b'amend'):
+        elif opts.get('amend'):
             if (
                 repo[b'.'].p1().branch() != branch
                 and repo[b'.'].p2().branch() != branch
             ):
                 raise error.InputError(_(b'can only close branch heads'))
 
-    if opts.get(b'amend'):
+    if opts.get('amend'):
         if ui.configbool(b'ui', b'commitsubrepos'):
             raise error.InputError(
                 _(b'cannot amend with ui.commitsubrepos enabled')
@@ -2136,6 +2135,7 @@ def _docommit(ui, repo, *pats, **opts):
         if not obsolete.isenabled(repo, obsolete.createmarkersopt):
             cmdutil.checkunfinished(repo)
 
+        opts = pycompat.byteskwargs(opts)
         node = cmdutil.amend(ui, repo, old, extra, pats, opts)
         if node == old.node():
             ui.status(_(b"nothing changed\n"))
@@ -2165,6 +2165,7 @@ def _docommit(ui, repo, *pats, **opts):
                         extra=extra,
                     )
 
+        opts = pycompat.byteskwargs(opts)
         node = cmdutil.commit(ui, repo, commitfunc, pats, opts)
 
         if not node:
