@@ -301,29 +301,29 @@ def check_incompatible_arguments(opts, first, others):
         check_at_most_one_arg(opts, first, other)
 
 
-def resolvecommitoptions(ui, opts):
+def resolve_commit_options(ui, opts):
     """modify commit options dict to handle related options
 
     The return value indicates that ``rewrite.update-timestamp`` is the reason
     the ``date`` option is set.
     """
-    check_at_most_one_arg(opts, b'date', b'currentdate')
-    check_at_most_one_arg(opts, b'user', b'currentuser')
+    check_at_most_one_arg(opts, 'date', 'currentdate')
+    check_at_most_one_arg(opts, 'user', 'currentuser')
 
     datemaydiffer = False  # date-only change should be ignored?
 
-    if opts.get(b'currentdate'):
-        opts[b'date'] = b'%d %d' % dateutil.makedate()
+    if opts.get('currentdate'):
+        opts['date'] = b'%d %d' % dateutil.makedate()
     elif (
-        not opts.get(b'date')
+        not opts.get('date')
         and ui.configbool(b'rewrite', b'update-timestamp')
-        and opts.get(b'currentdate') is None
+        and opts.get('currentdate') is None
     ):
-        opts[b'date'] = b'%d %d' % dateutil.makedate()
+        opts['date'] = b'%d %d' % dateutil.makedate()
         datemaydiffer = True
 
-    if opts.get(b'currentuser'):
-        opts[b'user'] = ui.username()
+    if opts.get('currentuser'):
+        opts['user'] = ui.username()
 
     return datemaydiffer
 
@@ -2783,7 +2783,6 @@ def samefile(f, ctx1, ctx2):
 
 
 def amend(ui, repo, old, extra, pats, opts):
-    opts = pycompat.byteskwargs(opts)
     # avoid cycle context -> subrepo -> cmdutil
     from . import context
 
@@ -2816,7 +2815,8 @@ def amend(ui, repo, old, extra, pats, opts):
         extra.update(wctx.extra())
 
         # date-only change should be ignored?
-        datemaydiffer = resolvecommitoptions(ui, opts)
+        datemaydiffer = resolve_commit_options(ui, opts)
+        opts = pycompat.byteskwargs(opts)
 
         date = old.date()
         if opts.get(b'date'):

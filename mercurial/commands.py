@@ -3104,8 +3104,8 @@ def _dograft(ui, repo, *revs, **opts):
     # list of new nodes created by ongoing graft
     statedata[b'newnodes'] = []
 
+    cmdutil.resolve_commit_options(ui, opts)
     opts = pycompat.byteskwargs(opts)
-    cmdutil.resolvecommitoptions(ui, opts)
 
     editor = cmdutil.getcommiteditor(
         editform=b'graft', **pycompat.strkwargs(opts)

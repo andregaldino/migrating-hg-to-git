@@ -154,8 +154,8 @@ def uncommit(ui, repo, *pats, **opts):
     given.
     """
     cmdutil.check_note_size(opts)
+    cmdutil.resolve_commit_options(ui, opts)
     opts = pycompat.byteskwargs(opts)
-    cmdutil.resolvecommitoptions(ui, opts)
 
     with repo.wlock(), repo.lock():
 
