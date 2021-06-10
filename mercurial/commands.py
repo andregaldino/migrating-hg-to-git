@@ -3088,8 +3088,7 @@ def graft(ui, repo, *revs, **opts):
 
 
 def _dograft(ui, repo, *revs, **opts):
-    opts = pycompat.byteskwargs(opts)
-    if revs and opts.get(b'rev'):
+    if revs and opts.get('rev'):
         ui.warn(
             _(
                 b'warning: inconsistent use of --rev might give unexpected '
@@ -3098,12 +3097,13 @@ def _dograft(ui, repo, *revs, **opts):
         )
 
     revs = list(revs)
-    revs.extend(opts.get(b'rev'))
+    revs.extend(opts.get('rev'))
     # a dict of data to be stored in state file
     statedata = {}
     # list of new nodes created by ongoing graft
     statedata[b'newnodes'] = []
 
+    opts = pycompat.byteskwargs(opts)
     cmdutil.resolvecommitoptions(ui, opts)
 
     editor = cmdutil.getcommiteditor(
