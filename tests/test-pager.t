@@ -219,10 +219,32 @@ use shell=True in the subprocess call:
 #endif
 
 A complicated pager command gets worse behavior. Bonus points if you can
-improve this.
+improve this. Windows apparently does this better?
+#if windows
   $ hg log --limit 3 \
   >   --config pager.pager='this-command-better-never-exist --seriously' \
   >  2>/dev/null || true
+  \x1b[0;33mchangeset:   10:46106edeeb38\x1b[0m (esc)
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a 10
+  
+  \x1b[0;33mchangeset:   9:6dd8ea7dd621\x1b[0m (esc)
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a 9
+  
+  \x1b[0;33mchangeset:   8:cff05a6312fe\x1b[0m (esc)
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a 8
+  
+#else
+  $ hg log --limit 3 \
+  >   --config pager.pager='this-command-better-never-exist --seriously' \
+  >  2>/dev/null || true
+#endif
 
 Pager works with shell aliases.
 
