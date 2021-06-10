@@ -153,9 +153,8 @@ def uncommit(ui, repo, *pats, **opts):
     If no files are specified, the commit will be pruned, unless --keep is
     given.
     """
+    cmdutil.check_note_size(opts)
     opts = pycompat.byteskwargs(opts)
-
-    cmdutil.checknotesize(ui, opts)
     cmdutil.resolvecommitoptions(ui, opts)
 
     with repo.wlock(), repo.lock():

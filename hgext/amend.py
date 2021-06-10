@@ -16,7 +16,6 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
-    pycompat,
     registrar,
 )
 
@@ -66,7 +65,7 @@ def amend(ui, repo, *pats, **opts):
 
     See :hg:`help commit` for more details.
     """
-    cmdutil.checknotesize(ui, pycompat.byteskwargs(opts))
+    cmdutil.check_note_size(opts)
 
     with repo.wlock(), repo.lock():
         if not opts.get('logfile'):

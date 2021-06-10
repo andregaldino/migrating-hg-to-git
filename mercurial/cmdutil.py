@@ -328,10 +328,10 @@ def resolvecommitoptions(ui, opts):
     return datemaydiffer
 
 
-def checknotesize(ui, opts):
+def check_note_size(opts):
     """make sure note is of valid format"""
 
-    note = opts.get(b'note')
+    note = opts.get('note')
     if not note:
         return
 
