@@ -3105,55 +3105,52 @@ def _dograft(ui, repo, *revs, **opts):
     statedata[b'newnodes'] = []
 
     cmdutil.resolve_commit_options(ui, opts)
-    opts = pycompat.byteskwargs(opts)
 
-    editor = cmdutil.getcommiteditor(
-        editform=b'graft', **pycompat.strkwargs(opts)
-    )
+    editor = cmdutil.getcommiteditor(editform=b'graft', **opts)
 
-    cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+    cmdutil.check_at_most_one_arg(opts, 'abort', 'stop', 'continue')
 
     cont = False
-    if opts.get(b'no_commit'):
+    if opts.get('no_commit'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'no_commit',
-            [b'edit', b'currentuser', b'currentdate', b'log'],
+            'no_commit',
+            ['edit', 'currentuser', 'currentdate', 'log'],
         )
 
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
-    if opts.get(b'stop'):
+    if opts.get('stop'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'stop',
+            'stop',
             [
-                b'edit',
-                b'log',
-                b'user',
-                b'date',
-                b'currentdate',
-                b'currentuser',
-                b'rev',
+                'edit',
+                'log',
+                'user',
+                'date',
+                'currentdate',
+                'currentuser',
+                'rev',
             ],
         )
         return _stopgraft(ui, repo, graftstate)
-    elif opts.get(b'abort'):
+    elif opts.get('abort'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'abort',
+            'abort',
             [
-                b'edit',
-                b'log',
-                b'user',
-                b'date',
-                b'currentdate',
-                b'currentuser',
-                b'rev',
+                'edit',
+                'log',
+                'user',
+                'date',
+                'currentdate',
+                'currentuser',
+                'rev',
             ],
         )
         return cmdutil.abortgraft(ui, repo, graftstate)
-    elif opts.get(b'continue'):
+    elif opts.get('continue'):
         cont = True
         if revs:
             raise error.InputError(_(b"can't specify --continue and revisions"))
@@ -3161,15 +3158,15 @@ def _dograft(ui, repo, *revs, **opts):
         if graftstate.exists():
             statedata = cmdutil.readgraftstate(repo, graftstate)
             if statedata.get(b'date'):
-                opts[b'date'] = statedata[b'date']
+                opts['date'] = statedata[b'date']
             if statedata.get(b'user'):
-                opts[b'user'] = statedata[b'user']
+                opts['user'] = statedata[b'user']
             if statedata.get(b'log'):
-                opts[b'log'] = True
+                opts['log'] = True
             if statedata.get(b'no_commit'):
-                opts[b'no_commit'] = statedata.get(b'no_commit')
+                opts['no_commit'] = statedata.get(b'no_commit')
             if statedata.get(b'base'):
-                opts[b'base'] = statedata.get(b'base')
+                opts['base'] = statedata.get(b'base')
             nodes = statedata[b'nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
@@ -3183,8 +3180,8 @@ def _dograft(ui, repo, *revs, **opts):
 
     skipped = set()
     basectx = None
-    if opts.get(b'base'):
-        basectx = scmutil.revsingle(repo, opts[b'base'], None)
+    if opts.get('base'):
+        basectx = scmutil.revsingle(repo, opts['base'], None)
     if basectx is None:
         # check for merges
         for rev in repo.revs(b'%ld and merge()', revs):
@@ -3202,7 +3199,7 @@ def _dograft(ui, repo, *revs, **opts):
     # way to the graftstate. With --force, any revisions we would have otherwise
     # skipped would not have been filtered out, and if they hadn't been applied
     # already, they'd have been in the graftstate.
-    if not (cont or opts.get(b'force')) and basectx is None:
+    if not (cont or opts.get('force')) and basectx is None:
         # check for ancestors of dest branch
         ancestors = repo.revs(b'%ld & (::.)', revs)
         for rev in ancestors:
@@ -3275,10 +3272,10 @@ def _dograft(ui, repo, *revs, **opts):
         if not revs:
             return -1
 
-    if opts.get(b'no_commit'):
+    if opts.get('no_commit'):
         statedata[b'no_commit'] = True
-    if opts.get(b'base'):
-        statedata[b'base'] = opts[b'base']
+    if opts.get('base'):
+        statedata[b'base'] = opts['base']
     for pos, ctx in enumerate(repo.set(b"%ld", revs)):
         desc = b'%d:%s "%s"' % (
             ctx.rev(),
@@ -3289,7 +3286,7 @@ def _dograft(ui, repo, *revs, **opts):
         if names:
             desc += b' (%s)' % b' '.join(names)
         ui.status(_(b'grafting %s\n') % desc)
-        if opts.get(b'dry_run'):
+        if opts.get('dry_run'):
             continue
 
         source = ctx.extra().get(b'source')
@@ -3300,22 +3297,22 @@ def _dograft(ui, repo, *revs, **opts):
         else:
             extra[b'source'] = ctx.hex()
         user = ctx.user()
-        if opts.get(b'user'):
-            user = opts[b'user']
+        if opts.get('user'):
+            user = opts['user']
             statedata[b'user'] = user
         date = ctx.date()
-        if opts.get(b'date'):
-            date = opts[b'date']
+        if opts.get('date'):
+            date = opts['date']
             statedata[b'date'] = date
         message = ctx.description()
-        if opts.get(b'log'):
+        if opts.get('log'):
             message += b'\n(grafted from %s)' % ctx.hex()
             statedata[b'log'] = True
 
         # we don't merge the first commit when continuing
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
-            overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
+            overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
             base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, b'graft'):
                 stats = mergemod.graft(repo, ctx, base, [b'local', b'graft'])
@@ -3333,7 +3330,7 @@ def _dograft(ui, repo, *revs, **opts):
             cont = False
 
         # commit if --no-commit is false
-        if not opts.get(b'no_commit'):
+        if not opts.get('no_commit'):
             node = repo.commit(
                 text=message, user=user, date=date, extra=extra, editor=editor
             )
@@ -3348,7 +3345,7 @@ def _dograft(ui, repo, *revs, **opts):
                 nn.append(node)
 
     # remove state when we complete successfully
-    if not opts.get(b'dry_run'):
+    if not opts.get('dry_run'):
         graftstate.delete()
 
     return 0
