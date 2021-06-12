@@ -1760,7 +1760,7 @@ class revlog(object):
         elif compression_mode == COMP_MODE_INLINE:
             return self.decompress(data)
         else:
-            msg = 'unknown compression mode %d'
+            msg = b'unknown compression mode %d'
             msg %= compression_mode
             raise error.RevlogError(msg)
 
@@ -1826,7 +1826,7 @@ class revlog(object):
                 elif comp_mode == COMP_MODE_DEFAULT:
                     ladd(def_decomp(c))
                 else:
-                    msg = 'unknown compression mode %d'
+                    msg = b'unknown compression mode %d'
                     msg %= comp_mode
                     raise error.RevlogError(msg)
 
@@ -2054,7 +2054,7 @@ class revlog(object):
         elif comp == COMP_MODE_INLINE:
             segment = self.decompress(comp_segment)
         else:
-            msg = 'unknown compression mode %d'
+            msg = b'unknown compression mode %d'
             msg %= comp
             raise error.RevlogError(msg)
 
