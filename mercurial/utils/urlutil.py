@@ -684,7 +684,7 @@ class paths(dict):
         path to a repo.
         """
         msg = b'getpath is deprecated, use `get_*` functions from urlutil'
-        self.deprecwarn(msg, '6.0')
+        ui.deprecwarn(msg, '6.0')
         # Only fall back to default if no path was requested.
         if name is None:
             if not default:
