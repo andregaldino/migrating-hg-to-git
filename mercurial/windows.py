@@ -202,7 +202,7 @@ def get_password():
     """
     pw = ""
     while True:
-        c = msvcrt.getwch()
+        c = msvcrt.getwch()  # pytype: disable=module-attr
         if c == '\r' or c == '\n':
             break
         if c == '\003':
@@ -211,8 +211,8 @@ def get_password():
             pw = pw[:-1]
         else:
             pw = pw + c
-    msvcrt.putwch('\r')
-    msvcrt.putwch('\n')
+    msvcrt.putwch('\r')  # pytype: disable=module-attr
+    msvcrt.putwch('\n')  # pytype: disable=module-attr
     return encoding.strtolocal(pw)
 
 
