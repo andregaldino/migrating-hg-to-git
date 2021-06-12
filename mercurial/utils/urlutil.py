@@ -538,10 +538,12 @@ def get_unique_push_path(action, repo, ui, dest=None):
     dests = list(get_push_paths(repo, ui, dests))
     if len(dests) != 1:
         if dest is None:
-            msg = _("default path points to %d urls while %s only supports one")
+            msg = _(
+                b"default path points to %d urls while %s only supports one"
+            )
             msg %= (len(dests), action)
         else:
-            msg = _("path points to %d urls while %s only supports one: %s")
+            msg = _(b"path points to %d urls while %s only supports one: %s")
             msg %= (len(dests), action, dest)
         raise error.Abort(msg)
     return dests[0]
@@ -577,10 +579,12 @@ def get_unique_pull_path(action, repo, ui, source=None, default_branches=()):
                 urls.append(source)
     if len(urls) != 1:
         if source is None:
-            msg = _("default path points to %d urls while %s only supports one")
+            msg = _(
+                b"default path points to %d urls while %s only supports one"
+            )
             msg %= (len(urls), action)
         else:
-            msg = _("path points to %d urls while %s only supports one: %s")
+            msg = _(b"path points to %d urls while %s only supports one: %s")
             msg %= (len(urls), action, source)
         raise error.Abort(msg)
     return parseurl(urls[0], default_branches)
@@ -609,11 +613,11 @@ def get_clone_path(ui, source, default_branches=()):
     if len(urls) != 1:
         if source is None:
             msg = _(
-                "default path points to %d urls while only one is supported"
+                b"default path points to %d urls while only one is supported"
             )
             msg %= len(urls)
         else:
-            msg = _("path points to %d urls while only one is supported: %s")
+            msg = _(b"path points to %d urls while only one is supported: %s")
             msg %= (len(urls), source)
         raise error.Abort(msg)
     url = urls[0]
