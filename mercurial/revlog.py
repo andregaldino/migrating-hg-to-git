@@ -2243,7 +2243,7 @@ class revlog(object):
                 if dfh is not None:
                     dfh.close()
                 if sdfh is not None:
-                    dfh.close()
+                    sdfh.close()
                 # closing the index file last to avoid exposing referent to
                 # potential unflushed data content.
                 if ifh is not None:
