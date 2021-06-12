@@ -2759,7 +2759,7 @@ class localrepository(object):
                 "`full` argument for `repo.updatecaches` is deprecated\n"
                 "(use `caches=repository.CACHE_ALL` instead)"
             )
-            self.ui.deprecwarn(msg, "5.9")
+            self.ui.deprecwarn(msg, b"5.9")
             caches = repository.CACHES_ALL
             if full == b"post-clone":
                 caches = repository.CACHES_POST_CLONE

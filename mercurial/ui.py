@@ -1065,7 +1065,7 @@ class ui(object):
         This method exist as `getpath` need a ui for potential warning message.
         """
         msg = b'ui.getpath is deprecated, use `get_*` functions from urlutil'
-        self.deprecwarn(msg, '6.0')
+        self.deprecwarn(msg, b'6.0')
         return self.paths.getpath(self, *args, **kwargs)
 
     @property
