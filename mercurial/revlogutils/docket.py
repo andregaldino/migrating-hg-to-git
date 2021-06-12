@@ -60,7 +60,9 @@ if stable_docket_file:
         if pycompat.ispy3:
             iter_seed = iter(seed)
         else:
+            # pytype: disable=wrong-arg-types
             iter_seed = (ord(c) for c in seed)
+            # pytype: enable=wrong-arg-types
         # some basic circular sum hashing on 64 bits
         int_seed = 0
         low_mask = int('1' * 35, 2)
