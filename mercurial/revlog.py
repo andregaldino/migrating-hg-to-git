@@ -629,6 +629,11 @@ class revlog(object):
             self._chunkcachesize,
             chunkcache,
         )
+        self._segmentfile_sidedata = randomaccessfile.randomaccessfile(
+            self.opener,
+            self._sidedatafile,
+            self._chunkcachesize,
+        )
         # revnum -> (chain-length, sum-delta-length)
         self._chaininfocache = util.lrucachedict(500)
         # revlog header -> revlog compressor
@@ -782,6 +787,7 @@ class revlog(object):
         self._revisioncache = None
         self._chainbasecache.clear()
         self._segmentfile.clear_cache()
+        self._segmentfile_sidedata.clear_cache()
         self._pcache = {}
         self._nodemap_docket = None
         self.index.clearcaches()
@@ -1916,31 +1922,17 @@ class revlog(object):
         if sidedata_size == 0:
             return {}
 
-        # XXX this need caching, as we do for data
-        with self._sidedatareadfp() as sdf:
-            if self._docket.sidedata_end < sidedata_offset + sidedata_size:
-                filename = self._sidedatafile
-                end = self._docket.sidedata_end
-                offset = sidedata_offset
-                length = sidedata_size
-                m = FILE_TOO_SHORT_MSG % (filename, length, offset, end)
-                raise error.RevlogError(m)
+        if self._docket.sidedata_end < sidedata_offset + sidedata_size:
+            filename = self._sidedatafile
+            end = self._docket.sidedata_end
+            offset = sidedata_offset
+            length = sidedata_size
+            m = FILE_TOO_SHORT_MSG % (filename, length, offset, end)
+            raise error.RevlogError(m)
 
-            sdf.seek(sidedata_offset, os.SEEK_SET)
-            comp_segment = sdf.read(sidedata_size)
-
-            if len(comp_segment) < sidedata_size:
-                filename = self._sidedatafile
-                length = sidedata_size
-                offset = sidedata_offset
-                got = len(comp_segment)
-                m = randomaccessfile.PARTIAL_READ_MSG % (
-                    filename,
-                    length,
-                    offset,
-                    got,
-                )
-                raise error.RevlogError(m)
+        comp_segment = self._segmentfile_sidedata.read_chunk(
+            sidedata_offset, sidedata_size
+        )
 
         comp = self.index[rev][11]
         if comp == COMP_MODE_PLAIN:
@@ -2033,6 +2025,9 @@ class revlog(object):
             # its usage.
             self._writinghandles = None
             self._segmentfile.writing_handle = None
+            # No need to deal with sidedata writing handle as it is only
+            # relevant with revlog-v2 which is never inline, not reaching
+            # this code
 
         new_dfh = self._datafp(b'w+')
         new_dfh.truncate(0)  # drop any potentially existing data
@@ -2080,6 +2075,9 @@ class revlog(object):
                 self._writinghandles = (ifh, new_dfh, None)
                 self._segmentfile.writing_handle = new_dfh
                 new_dfh = None
+                # No need to deal with sidedata writing handle as it is only
+                # relevant with revlog-v2 which is never inline, not reaching
+                # this code
         finally:
             if new_dfh is not None:
                 new_dfh.close()
@@ -2138,12 +2136,14 @@ class revlog(object):
                 # exposing all file handle for writing.
                 self._writinghandles = (ifh, dfh, sdfh)
                 self._segmentfile.writing_handle = ifh if self._inline else dfh
+                self._segmentfile_sidedata.writing_handle = sdfh
                 yield
                 if self._docket is not None:
                     self._write_docket(transaction)
             finally:
                 self._writinghandles = None
                 self._segmentfile.writing_handle = None
+                self._segmentfile_sidedata.writing_handle = None
                 if dfh is not None:
                     dfh.close()
                 if sdfh is not None:
@@ -2778,6 +2778,7 @@ class revlog(object):
         self._revisioncache = None
         self._chaininfocache = util.lrucachedict(500)
         self._segmentfile.clear_cache()
+        self._segmentfile_sidedata.clear_cache()
 
         del self.index[rev:-1]
 
