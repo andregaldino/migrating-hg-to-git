@@ -15,6 +15,3 @@ RUN yum install -y \
 
 # For creating repo meta data
 RUN yum install -y createrepo
-
-# For rust extensions
-RUN yum install -y cargo
