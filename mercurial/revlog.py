@@ -2086,6 +2086,13 @@ class revlog(object):
         """called when trying to add a node already stored."""
 
     @contextlib.contextmanager
+    def reading(self):
+        """Context manager that keeps data and sidedata files open for reading"""
+        with self._segmentfile.reading():
+            with self._segmentfile_sidedata.reading():
+                yield
+
+    @contextlib.contextmanager
     def _writing(self, transaction):
         if self._trypending:
             msg = b'try to write in a `trypending` revlog: %s'

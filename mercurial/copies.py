@@ -318,15 +318,16 @@ def _changesetforwardcopies(a, b, match):
                 if p in children_count:
                     children_count[p] += 1
         revinfo = _revinfo_getter(repo, match)
-        return _combine_changeset_copies(
-            revs,
-            children_count,
-            b.rev(),
-            revinfo,
-            match,
-            isancestor,
-            multi_thread,
-        )
+        with repo.changelog.reading():
+            return _combine_changeset_copies(
+                revs,
+                children_count,
+                b.rev(),
+                revinfo,
+                match,
+                isancestor,
+                multi_thread,
+            )
     else:
         # When not using side-data, we will process the edges "from" the parent.
         # so we need a full mapping of the parent -> children relation.

@@ -40,6 +40,7 @@ class randomaccessfile(object):
         self.filename = filename
         self.default_cached_chunk_size = default_cached_chunk_size
         self.writing_handle = None  # This is set from revlog.py
+        self.reading_handle = None
         self._cached_chunk = b''
         self._cached_chunk_position = 0  # Offset from the start of the file
         if initial_cache:
@@ -67,10 +68,30 @@ class randomaccessfile(object):
         elif self.writing_handle:
             yield self.writing_handle
 
+        elif self.reading_handle:
+            yield self.reading_handle
+
         # Otherwise open a new file handle.
         else:
             with self._open() as fp:
                 yield fp
+
+    @contextlib.contextmanager
+    def reading(self):
+        """Context manager that keeps the file open for reading"""
+        if (
+            self.reading_handle is None
+            and self.writing_handle is None
+            and self.filename is not None
+        ):
+            with self._open() as fp:
+                self.reading_handle = fp
+                try:
+                    yield
+                finally:
+                    self.reading_handle = None
+        else:
+            yield
 
     def read_chunk(self, offset, length, existing_file_obj=None):
         """Read a chunk of bytes from the file.
