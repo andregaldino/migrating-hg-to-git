@@ -1146,6 +1146,14 @@ class ui(object):
         self._fmsg = f
         self._fmsgout, self._fmsgerr = _selectmsgdests(self)
 
+    @contextlib.contextmanager
+    def silent(self, error=False, subproc=False, labeled=False):
+        self.pushbuffer(error=error, subproc=subproc, labeled=labeled)
+        try:
+            yield
+        finally:
+            self.popbuffer()
+
     def pushbuffer(self, error=False, subproc=False, labeled=False):
         """install a buffer to capture standard output of the ui object
 

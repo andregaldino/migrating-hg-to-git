@@ -7241,9 +7241,8 @@ def summary(ui, repo, **opts):
         if revs:
             revs = [other.lookup(rev) for rev in revs]
         ui.debug(b'comparing with %s\n' % urlutil.hidepassword(source))
-        repo.ui.pushbuffer()
-        commoninc = discovery.findcommonincoming(repo, other, heads=revs)
-        repo.ui.popbuffer()
+        with repo.ui.silent():
+            commoninc = discovery.findcommonincoming(repo, other, heads=revs)
         return source, sbranch, other, commoninc, commoninc[1]
 
     if needsincoming:
@@ -7287,11 +7286,10 @@ def summary(ui, repo, **opts):
             common = commoninc
         if revs:
             revs = [repo.lookup(rev) for rev in revs]
-        repo.ui.pushbuffer()
-        outgoing = discovery.findcommonoutgoing(
-            repo, dother, onlyheads=revs, commoninc=common
-        )
-        repo.ui.popbuffer()
+        with repo.ui.silent():
+            outgoing = discovery.findcommonoutgoing(
+                repo, dother, onlyheads=revs, commoninc=common
+            )
         return dest, dbranch, dother, outgoing
 
     if needsoutgoing:

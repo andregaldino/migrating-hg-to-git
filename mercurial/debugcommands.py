@@ -2754,9 +2754,9 @@ def debugpickmergetool(ui, repo, *pats, **opts):
         changedelete = opts[b'changedelete']
         for path in ctx.walk(m):
             fctx = ctx[path]
-            try:
-                if not ui.debugflag:
-                    ui.pushbuffer(error=True)
+            with ui.silent(
+                error=True
+            ) if not ui.debugflag else util.nullcontextmanager():
                 tool, toolpath = filemerge._picktool(
                     repo,
                     ui,
@@ -2765,9 +2765,6 @@ def debugpickmergetool(ui, repo, *pats, **opts):
                     b'l' in fctx.flags(),
                     changedelete,
                 )
-            finally:
-                if not ui.debugflag:
-                    ui.popbuffer()
             ui.write(b'%s = %s\n' % (path, tool))
 
 
@@ -4580,16 +4577,15 @@ def debugwireproto(ui, repo, path=None, **opts):
             ui.write(_(b'creating http peer for wire protocol version 2\n'))
             # We go through makepeer() because we need an API descriptor for
             # the peer instance to be useful.
-            with ui.configoverride(
+            maybe_silent = (
+                ui.silent()
+                if opts[b'nologhandshake']
+                else util.nullcontextmanager()
+            )
+            with maybe_silent, ui.configoverride(
                 {(b'experimental', b'httppeer.advertise-v2'): True}
             ):
-                if opts[b'nologhandshake']:
-                    ui.pushbuffer()
-
                 peer = httppeer.makepeer(ui, path, opener=opener)
-
-                if opts[b'nologhandshake']:
-                    ui.popbuffer()
 
             if not isinstance(peer, httppeer.httpv2peer):
                 raise error.Abort(

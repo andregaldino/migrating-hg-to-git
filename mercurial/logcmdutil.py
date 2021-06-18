@@ -93,9 +93,8 @@ def diff_parent(ctx):
             },
             b"merge-diff",
         ):
-            repo.ui.pushbuffer()
-            merge.merge(ctx.p2(), wc=wctx)
-            repo.ui.popbuffer()
+            with repo.ui.silent():
+                merge.merge(ctx.p2(), wc=wctx)
         return wctx
     else:
         return ctx.p1()

@@ -28,6 +28,7 @@ from . import (
     pycompat,
     requirements,
     scmutil,
+    util,
 )
 from .utils import (
     hashutil,
@@ -239,19 +240,23 @@ def strip(ui, repo, nodelist, backup=True, topic=b'backup'):
                 ui.note(_(b"adding branch\n"))
                 f = vfs.open(tmpbundlefile, b"rb")
                 gen = exchange.readbundle(ui, f, tmpbundlefile, vfs)
-                if not repo.ui.verbose:
-                    # silence internal shuffling chatter
-                    repo.ui.pushbuffer()
-                tmpbundleurl = b'bundle:' + vfs.join(tmpbundlefile)
-                txnname = b'strip'
-                if not isinstance(gen, bundle2.unbundle20):
-                    txnname = b"strip\n%s" % urlutil.hidepassword(tmpbundleurl)
-                with repo.transaction(txnname) as tr:
-                    bundle2.applybundle(
-                        repo, gen, tr, source=b'strip', url=tmpbundleurl
-                    )
-                if not repo.ui.verbose:
-                    repo.ui.popbuffer()
+                # silence internal shuffling chatter
+                maybe_silent = (
+                    repo.ui.silent()
+                    if not repo.ui.verbose
+                    else util.nullcontextmanager()
+                )
+                with maybe_silent:
+                    tmpbundleurl = b'bundle:' + vfs.join(tmpbundlefile)
+                    txnname = b'strip'
+                    if not isinstance(gen, bundle2.unbundle20):
+                        txnname = b"strip\n%s" % urlutil.hidepassword(
+                            tmpbundleurl
+                        )
+                    with repo.transaction(txnname) as tr:
+                        bundle2.applybundle(
+                            repo, gen, tr, source=b'strip', url=tmpbundleurl
+                        )
                 f.close()
 
             with repo.transaction(b'repair') as tr:
