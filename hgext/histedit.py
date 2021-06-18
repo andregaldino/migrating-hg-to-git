@@ -575,7 +575,7 @@ class histeditaction(object):
         parentctx, but does not commit them."""
         repo = self.repo
         rulectx = repo[self.node]
-        repo.ui.pushbuffer(error=True)
+        repo.ui.pushbuffer()
         hg.update(repo, self.state.parentctxnode, quietempty=True)
         repo.ui.popbuffer()
         stats = applychanges(repo.ui, repo, rulectx, {})

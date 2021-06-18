@@ -117,18 +117,9 @@ directory (reordering nodes):
   > EOF
   $ cd $TESTTMP/hghistedit/somedir
   $ hg --config extensions.histedit= histedit -q --commands ../histedit_commands
+  current directory was removed
+  (consider changing to repo root: $TESTTMP/hghistedit)
 
-histedit doesn't output anything when the current diretory is removed. We rely
-on the tests being commonly run on machines where the current directory
-disappearing from underneath us actually has an observable effect, such as an
-error or no files listed
-#if linuxormacos
-  $ isfile foo
-  no
-#endif
-  $ cd $TESTTMP/hghistedit/somedir
-  $ isfile foo
-  yes
 
   $ cd $TESTTMP/hghistedit
   $ cat > histedit_commands <<EOF
@@ -181,6 +172,8 @@ Histedit doing 'pick, pick, fold':
   > pick ff70a87b588f 0 add foo
   > fold 9992bb0ac0db 2 add baz
   > EOF
+  current directory was removed
+  (consider changing to repo root: $TESTTMP/issue5826_withrm)
   abort: $ENOENT$
   [255]
 
