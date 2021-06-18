@@ -118,7 +118,7 @@ added upstream revisions.
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 2 changes to 2 files
+  added 3 changesets with 2 changes to 3 files
   $ hg l
   @  ...2: add outside
   |
@@ -190,7 +190,7 @@ widen the narrow spec to include the wider file
   adding changesets
   adding manifests
   adding file changes
-  added 8 changesets with 7 changes to 3 files
+  added 8 changesets with 7 changes to 5 files
   $ hg tracked
   I path:inside
   I path:wider
@@ -311,7 +311,7 @@ make narrow clone with every third node.
   adding changesets
   adding manifests
   adding file changes
-  added 9 changesets with 5 changes to 5 files
+  added 9 changesets with 5 changes to 9 files
   $ hg tracked
   I path:d0
   I path:d1

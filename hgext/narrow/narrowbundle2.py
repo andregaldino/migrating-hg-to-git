@@ -281,10 +281,10 @@ def handlechangegroup_widen(op, inpart):
     try:
         gen = exchange.readbundle(ui, f, chgrpfile, vfs)
         # silence internal shuffling chatter
-        override = {(b'ui', b'quiet'): True}
-        if ui.verbose:
-            override = {}
-        with ui.configoverride(override):
+        maybe_silent = (
+            ui.silent() if not ui.verbose else util.nullcontextmanager()
+        )
+        with maybe_silent:
             if isinstance(gen, bundle2.unbundle20):
                 with repo.transaction(b'strip') as tr:
                     bundle2.processbundle(repo, gen, lambda: tr)

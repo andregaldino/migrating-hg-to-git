@@ -305,7 +305,7 @@ Can widen the empty clone
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1 changes to 1 files
+  added 4 changesets with 1 changes to 1 files (+1 heads)
   $ hg tracked
   I path:d0
   $ hg files
