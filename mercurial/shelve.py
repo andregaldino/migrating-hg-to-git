@@ -781,9 +781,7 @@ def mergefiles(ui, repo, wctx, shelvectx):
     dirstate."""
     with ui.configoverride({(b'ui', b'quiet'): True}):
         hg.update(repo, wctx.node())
-        ui.pushbuffer(True)
         cmdutil.revert(ui, repo, shelvectx)
-        ui.popbuffer()
 
 
 def restorebranch(ui, repo, branchtorestore):
