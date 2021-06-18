@@ -3791,16 +3791,13 @@ def debugbackupbundle(ui, repo, *pats, **opts):
         if revs:
             revs = [other.lookup(rev) for rev in revs]
 
-        quiet = ui.quiet
-        try:
-            ui.quiet = True
-            other, chlist, cleanupfn = bundlerepo.getremotechanges(
-                ui, repo, other, revs, opts[b"bundle"], opts[b"force"]
-            )
-        except error.LookupError:
-            continue
-        finally:
-            ui.quiet = quiet
+        with ui.silent():
+            try:
+                other, chlist, cleanupfn = bundlerepo.getremotechanges(
+                    ui, repo, other, revs, opts[b"bundle"], opts[b"force"]
+                )
+            except error.LookupError:
+                continue
 
         try:
             if not chlist:
