@@ -1033,8 +1033,7 @@ class deltacomputer(object):
             snapshotdepth,
         )
 
-    def _fullsnapshotinfo(self, fh, revinfo):
-        curr = len(self.revlog)
+    def _fullsnapshotinfo(self, fh, revinfo, curr):
         rawtext = self.buildtext(revinfo, fh)
         data = self.revlog.compress(rawtext)
         compresseddeltalen = deltalen = dist = len(data[1]) + len(data[0])
@@ -1053,7 +1052,7 @@ class deltacomputer(object):
             snapshotdepth,
         )
 
-    def finddeltainfo(self, revinfo, fh, excluded_bases=None):
+    def finddeltainfo(self, revinfo, fh, excluded_bases=None, target_rev=None):
         """Find an acceptable delta against a candidate revision
 
         revinfo: information about the revision (instance of _revisioninfo)
@@ -1070,8 +1069,11 @@ class deltacomputer(object):
         a delta base. Use this to recompute delta suitable in censor or strip
         context.
         """
+        if target_rev is None:
+            curr = len(self.revlog)
+
         if not revinfo.textlen:
-            return self._fullsnapshotinfo(fh, revinfo)
+            return self._fullsnapshotinfo(fh, revinfo, target_rev)
 
         if excluded_bases is None:
             excluded_bases = set()
@@ -1080,7 +1082,7 @@ class deltacomputer(object):
         # not calling candelta since only one revision needs test, also to
         # avoid overhead fetching flags again.
         if revinfo.flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
-            return self._fullsnapshotinfo(fh, revinfo)
+            return self._fullsnapshotinfo(fh, revinfo, target_rev)
 
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
@@ -1102,6 +1104,8 @@ class deltacomputer(object):
             for candidaterev in candidaterevs:
                 if candidaterev in excluded_bases:
                     continue
+                if candidaterev >= target_rev:
+                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if candidatedelta is not None:
                     if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
@@ -1114,7 +1118,7 @@ class deltacomputer(object):
                 candidaterevs = next(groups)
 
         if deltainfo is None:
-            deltainfo = self._fullsnapshotinfo(fh, revinfo)
+            deltainfo = self._fullsnapshotinfo(fh, revinfo, target_rev)
         return deltainfo
 
 
