@@ -1063,18 +1063,17 @@ def rebase(ui, repo, **opts):
     unresolved conflicts.
 
     """
-    opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool(b'rebase', b'experimental.inmemory')
-    action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+    action = cmdutil.check_at_most_one_arg(opts, 'abort', 'stop', 'continue')
     if action:
         cmdutil.check_incompatible_arguments(
-            opts, action, [b'confirm', b'dry_run']
+            opts, action, ['confirm', 'dry_run']
         )
         cmdutil.check_incompatible_arguments(
-            opts, action, [b'rev', b'source', b'base', b'dest']
+            opts, action, ['rev', 'source', 'base', 'dest']
         )
-    cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
-    cmdutil.check_at_most_one_arg(opts, b'rev', b'source', b'base')
+    cmdutil.check_at_most_one_arg(opts, 'confirm', 'dry_run')
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'source', 'base')
 
     if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
@@ -1082,19 +1081,20 @@ def rebase(ui, repo, **opts):
         # fail the entire transaction.)
         inmemory = False
 
-    if opts.get(b'auto_orphans'):
-        disallowed_opts = set(opts) - {b'auto_orphans'}
+    if opts.get('auto_orphans'):
+        disallowed_opts = set(opts) - {'auto_orphans'}
         cmdutil.check_incompatible_arguments(
-            opts, b'auto_orphans', disallowed_opts
+            opts, 'auto_orphans', disallowed_opts
         )
 
-        userrevs = list(repo.revs(opts.get(b'auto_orphans')))
-        opts[b'rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
-        opts[b'dest'] = b'_destautoorphanrebase(SRC)'
+        userrevs = list(repo.revs(opts.get('auto_orphans')))
+        opts['rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
+        opts['dest'] = b'_destautoorphanrebase(SRC)'
 
+    opts = pycompat.byteskwargs(opts)
     if opts.get(b'dry_run') or opts.get(b'confirm'):
         return _dryrunrebase(ui, repo, action, opts)
-    elif action == b'stop':
+    elif action == 'stop':
         rbsrt = rebaseruntime(repo, ui)
         with repo.wlock(), repo.lock():
             rbsrt.restorestatus()
@@ -1210,7 +1210,7 @@ def _dorebase(ui, repo, action, opts, inmemory=False):
 
 
 def _origrebase(ui, repo, action, opts, rbsrt):
-    assert action != b'stop'
+    assert action != 'stop'
     with repo.wlock(), repo.lock():
         if opts.get(b'interactive'):
             try:
@@ -1238,15 +1238,13 @@ def _origrebase(ui, repo, action, opts, rbsrt):
                 raise error.InputError(
                     _(b'cannot use collapse with continue or abort')
                 )
-            if action == b'abort' and opts.get(b'tool', False):
+            if action == 'abort' and opts.get(b'tool', False):
                 ui.warn(_(b'tool option will be ignored\n'))
-            if action == b'continue':
+            if action == 'continue':
                 ms = mergestatemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(
-                isabort=(action == b'abort')
-            )
+            retcode = rbsrt._prepareabortorcontinue(isabort=(action == 'abort'))
             if retcode is not None:
                 return retcode
         else:
