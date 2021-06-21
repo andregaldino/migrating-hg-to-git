@@ -2437,21 +2437,9 @@ class revlog(object):
 
         compression_mode = COMP_MODE_INLINE
         if self._docket is not None:
-            h, d = deltainfo.data
-            if not h and not d:
-                # not data to store at all... declare them uncompressed
-                compression_mode = COMP_MODE_PLAIN
-            elif not h:
-                t = d[0:1]
-                if t == b'\0':
-                    compression_mode = COMP_MODE_PLAIN
-                elif t == self._docket.default_compression_header:
-                    compression_mode = COMP_MODE_DEFAULT
-            elif h == b'u':
-                # we have a more efficient way to declare uncompressed
-                h = b''
-                compression_mode = COMP_MODE_PLAIN
-                deltainfo = deltautil.drop_u_compression(deltainfo)
+            default_comp = self._docket.default_compression_header
+            r = deltautil.delta_compression(default_comp, deltainfo)
+            compression_mode, deltainfo = r
 
         sidedata_compression_mode = COMP_MODE_INLINE
         if sidedata and self.hassidedata:

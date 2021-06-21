@@ -18,6 +18,9 @@ from ..i18n import _
 from ..pycompat import getattr
 
 from .constants import (
+    COMP_MODE_DEFAULT,
+    COMP_MODE_INLINE,
+    COMP_MODE_PLAIN,
     REVIDX_ISCENSORED,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
 )
@@ -1113,3 +1116,28 @@ class deltacomputer(object):
         if deltainfo is None:
             deltainfo = self._fullsnapshotinfo(fh, revinfo)
         return deltainfo
+
+
+def delta_compression(default_compression_header, deltainfo):
+    """return (COMPRESSION_MODE, deltainfo)
+
+    used by revlog v2+ format to dispatch between PLAIN and DEFAULT
+    compression.
+    """
+    h, d = deltainfo.data
+    compression_mode = COMP_MODE_INLINE
+    if not h and not d:
+        # not data to store at all... declare them uncompressed
+        compression_mode = COMP_MODE_PLAIN
+    elif not h:
+        t = d[0:1]
+        if t == b'\0':
+            compression_mode = COMP_MODE_PLAIN
+        elif t == default_compression_header:
+            compression_mode = COMP_MODE_DEFAULT
+    elif h == b'u':
+        # we have a more efficient way to declare uncompressed
+        h = b''
+        compression_mode = COMP_MODE_PLAIN
+        deltainfo = drop_u_compression(deltainfo)
+    return compression_mode, deltainfo
