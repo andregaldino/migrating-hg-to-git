@@ -81,13 +81,13 @@ from .interfaces import (
     util as interfaceutil,
 )
 from .revlogutils import (
-    censor,
     deltas as deltautil,
     docket as docketutil,
     flagutil,
     nodemap as nodemaputil,
     randomaccessfile,
     revlogv0,
+    rewrite,
     sidedata as sidedatautil,
 )
 from .utils import (
@@ -3075,9 +3075,9 @@ class revlog(object):
                 % self._format_version
             )
         elif self._format_version == REVLOGV1:
-            censor.v1_censor(self, tr, censornode, tombstone)
+            rewrite.v1_censor(self, tr, censornode, tombstone)
         else:
-            censor.v2_censor(self, tr, censornode, tombstone)
+            rewrite.v2_censor(self, tr, censornode, tombstone)
 
     def verifyintegrity(self, state):
         """Verifies the integrity of the revlog.
