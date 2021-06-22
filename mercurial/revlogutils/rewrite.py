@@ -125,7 +125,7 @@ def v1_censor(rl, tr, censornode, tombstone=b''):
     rl._loadindex()
 
 
-def v2_censor(rl, tr, censornode, tombstone=b''):
+def v2_censor(revlog, tr, censornode, tombstone=b''):
     """censors a revision in a "version 2" revlog"""
     # General principle
     #
@@ -140,31 +140,31 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
     # All data before the censored data can be blindly copied. The rest needs
     # to be copied as we go and the associated index entry needs adjustement.
 
-    assert rl._format_version != REVLOGV0, rl._format_version
-    assert rl._format_version != REVLOGV1, rl._format_version
+    assert revlog._format_version != REVLOGV0, revlog._format_version
+    assert revlog._format_version != REVLOGV1, revlog._format_version
 
-    old_index = rl.index
-    docket = rl._docket
+    old_index = revlog.index
+    docket = revlog._docket
 
-    censor_rev = rl.rev(censornode)
+    censor_rev = revlog.rev(censornode)
     tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
 
-    censored_entry = rl.index[censor_rev]
-    index_cutoff = rl.index.entry_size * censor_rev
+    censored_entry = revlog.index[censor_rev]
+    index_cutoff = revlog.index.entry_size * censor_rev
     data_cutoff = censored_entry[ENTRY_DATA_OFFSET] >> 16
-    sidedata_cutoff = rl.sidedata_cut_off(censor_rev)
+    sidedata_cutoff = revlog.sidedata_cut_off(censor_rev)
 
     with pycompat.unnamedtempfile(mode=b"w+b") as tmp_storage:
         # rev → (new_base, data_start, data_end, compression_mode)
         rewritten_entries = _precompute_rewritten_delta(
-            rl,
+            revlog,
             old_index,
             {censor_rev},
             tmp_storage,
         )
 
         all_files = _setup_new_files(
-            rl,
+            revlog,
             index_cutoff,
             data_cutoff,
             sidedata_cutoff,
@@ -183,7 +183,7 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
 
             # writing the censored revision
             _rewrite_censor(
-                rl,
+                revlog,
                 old_index,
                 open_files,
                 censor_rev,
@@ -193,7 +193,7 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
             # Writing all subsequent revisions
             for rev in range(censor_rev + 1, len(old_index)):
                 _rewrite_simple(
-                    rl,
+                    revlog,
                     old_index,
                     open_files,
                     rev,
