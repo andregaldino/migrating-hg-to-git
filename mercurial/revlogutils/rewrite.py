@@ -270,72 +270,97 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
                 tombstone,
             )
 
-            #### Writing all subsequent revisions
+            # Writing all subsequent revisions
             for rev in range(censor_rev + 1, len(old_index)):
-                entry = old_index[rev]
-                flags = entry[ENTRY_DATA_OFFSET] & 0xFFFF
-                old_data_offset = entry[ENTRY_DATA_OFFSET] >> 16
-
-                if rev not in rewritten_entries:
-                    old_data_file.seek(old_data_offset)
-                    new_data_size = entry[ENTRY_DATA_COMPRESSED_LENGTH]
-                    new_data = old_data_file.read(new_data_size)
-                    data_delta_base = entry[ENTRY_DELTA_BASE]
-                    d_comp_mode = entry[ENTRY_DATA_COMPRESSION_MODE]
-                else:
-                    (
-                        data_delta_base,
-                        start,
-                        end,
-                        d_comp_mode,
-                    ) = rewritten_entries[rev]
-                    new_data_size = end - start
-                    tmp_storage.seek(start)
-                    new_data = tmp_storage.read(new_data_size)
-
-                # It might be faster to group continuous read/write operation,
-                # however, this is censor, an operation that is not focussed
-                # around stellar performance. So I have not written this
-                # optimisation yet.
-                new_data_offset = new_data_file.tell()
-                new_data_file.write(new_data)
-
-                sidedata_size = entry[ENTRY_SIDEDATA_COMPRESSED_LENGTH]
-                new_sidedata_offset = new_sidedata_file.tell()
-                if 0 < sidedata_size:
-                    old_sidedata_offset = entry[ENTRY_SIDEDATA_OFFSET]
-                    old_sidedata_file.seek(old_sidedata_offset)
-                    new_sidedata = old_sidedata_file.read(sidedata_size)
-                    new_sidedata_file.write(new_sidedata)
-
-                data_uncompressed_length = entry[ENTRY_DATA_UNCOMPRESSED_LENGTH]
-                sd_com_mode = entry[ENTRY_SIDEDATA_COMPRESSION_MODE]
-                assert data_delta_base <= rev, (data_delta_base, rev)
-
-                new_entry = revlogutils.entry(
-                    flags=flags,
-                    data_offset=new_data_offset,
-                    data_compressed_length=new_data_size,
-                    data_uncompressed_length=data_uncompressed_length,
-                    data_delta_base=data_delta_base,
-                    link_rev=entry[ENTRY_LINK_REV],
-                    parent_rev_1=entry[ENTRY_PARENT_1],
-                    parent_rev_2=entry[ENTRY_PARENT_2],
-                    node_id=entry[ENTRY_NODE_ID],
-                    sidedata_offset=new_sidedata_offset,
-                    sidedata_compressed_length=sidedata_size,
-                    data_compression_mode=d_comp_mode,
-                    sidedata_compression_mode=sd_com_mode,
+                _rewrite_simple(
+                    rl,
+                    old_index,
+                    open_files,
+                    rev,
+                    rewritten_entries,
+                    tmp_storage,
                 )
-                rl.index.append(new_entry)
-                entry_bin = rl.index.entry_binary(rev)
-                new_index_file.write(entry_bin)
-
-                docket.index_end = new_index_file.tell()
-                docket.data_end = new_data_file.tell()
-                docket.sidedata_end = new_sidedata_file.tell()
-
     docket.write(transaction=None, stripping=True)
+
+
+def _rewrite_simple(
+    revlog,
+    old_index,
+    all_files,
+    rev,
+    rewritten_entries,
+    tmp_storage,
+):
+    """append a normal revision to the index after the rewritten one(s)"""
+    (
+        old_data_file,
+        old_sidedata_file,
+        new_index_file,
+        new_data_file,
+        new_sidedata_file,
+    ) = all_files
+    entry = old_index[rev]
+    flags = entry[ENTRY_DATA_OFFSET] & 0xFFFF
+    old_data_offset = entry[ENTRY_DATA_OFFSET] >> 16
+
+    if rev not in rewritten_entries:
+        old_data_file.seek(old_data_offset)
+        new_data_size = entry[ENTRY_DATA_COMPRESSED_LENGTH]
+        new_data = old_data_file.read(new_data_size)
+        data_delta_base = entry[ENTRY_DELTA_BASE]
+        d_comp_mode = entry[ENTRY_DATA_COMPRESSION_MODE]
+    else:
+        (
+            data_delta_base,
+            start,
+            end,
+            d_comp_mode,
+        ) = rewritten_entries[rev]
+        new_data_size = end - start
+        tmp_storage.seek(start)
+        new_data = tmp_storage.read(new_data_size)
+
+    # It might be faster to group continuous read/write operation,
+    # however, this is censor, an operation that is not focussed
+    # around stellar performance. So I have not written this
+    # optimisation yet.
+    new_data_offset = new_data_file.tell()
+    new_data_file.write(new_data)
+
+    sidedata_size = entry[ENTRY_SIDEDATA_COMPRESSED_LENGTH]
+    new_sidedata_offset = new_sidedata_file.tell()
+    if 0 < sidedata_size:
+        old_sidedata_offset = entry[ENTRY_SIDEDATA_OFFSET]
+        old_sidedata_file.seek(old_sidedata_offset)
+        new_sidedata = old_sidedata_file.read(sidedata_size)
+        new_sidedata_file.write(new_sidedata)
+
+    data_uncompressed_length = entry[ENTRY_DATA_UNCOMPRESSED_LENGTH]
+    sd_com_mode = entry[ENTRY_SIDEDATA_COMPRESSION_MODE]
+    assert data_delta_base <= rev, (data_delta_base, rev)
+
+    new_entry = revlogutils.entry(
+        flags=flags,
+        data_offset=new_data_offset,
+        data_compressed_length=new_data_size,
+        data_uncompressed_length=data_uncompressed_length,
+        data_delta_base=data_delta_base,
+        link_rev=entry[ENTRY_LINK_REV],
+        parent_rev_1=entry[ENTRY_PARENT_1],
+        parent_rev_2=entry[ENTRY_PARENT_2],
+        node_id=entry[ENTRY_NODE_ID],
+        sidedata_offset=new_sidedata_offset,
+        sidedata_compressed_length=sidedata_size,
+        data_compression_mode=d_comp_mode,
+        sidedata_compression_mode=sd_com_mode,
+    )
+    revlog.index.append(new_entry)
+    entry_bin = revlog.index.entry_binary(rev)
+    new_index_file.write(entry_bin)
+
+    revlog._docket.index_end = new_index_file.tell()
+    revlog._docket.data_end = new_data_file.tell()
+    revlog._docket.sidedata_end = new_sidedata_file.tell()
 
 
 def _rewrite_censor(
