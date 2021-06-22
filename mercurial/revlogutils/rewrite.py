@@ -154,45 +154,14 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
     data_cutoff = censored_entry[ENTRY_DATA_OFFSET] >> 16
     sidedata_cutoff = rl.sidedata_cut_off(censor_rev)
 
-    # rev → (new_base, data_start, data_end)
-    rewritten_entries = {}
-
-    dc = deltas.deltacomputer(rl)
-    excl = [censor_rev]
-
     with pycompat.unnamedtempfile(mode=b"w+b") as tmp_storage:
-        with rl._segmentfile._open_read() as dfh:
-            for rev in range(censor_rev + 1, len(old_index)):
-                entry = old_index[rev]
-                if censor_rev != entry[ENTRY_DELTA_BASE]:
-                    continue
-                # This is a revision that use the censored revision as the base
-                # for its delta. We need a need new deltas
-                if entry[ENTRY_DATA_UNCOMPRESSED_LENGTH] == 0:
-                    # this revision is empty, we can delta against nullrev
-                    rewritten_entries[rev] = (nullrev, 0, 0)
-                else:
-
-                    text = rl.rawdata(rev, _df=dfh)
-                    info = revlogutils.revisioninfo(
-                        node=entry[ENTRY_NODE_ID],
-                        p1=rl.node(entry[ENTRY_PARENT_1]),
-                        p2=rl.node(entry[ENTRY_PARENT_2]),
-                        btext=[text],
-                        textlen=len(text),
-                        cachedelta=None,
-                        flags=entry[ENTRY_DATA_OFFSET] & 0xFFFF,
-                    )
-                    d = dc.finddeltainfo(
-                        info, dfh, excluded_bases=excl, target_rev=rev
-                    )
-                    default_comp = rl._docket.default_compression_header
-                    comp_mode, d = deltas.delta_compression(default_comp, d)
-                    # using `tell` is a bit lazy, but we are not here for speed
-                    start = tmp_storage.tell()
-                    tmp_storage.write(d.data[1])
-                    end = tmp_storage.tell()
-                    rewritten_entries[rev] = (d.base, start, end, comp_mode)
+        # rev → (new_base, data_start, data_end, compression_mode)
+        rewritten_entries = _precompute_rewritten_delta(
+            rl,
+            old_index,
+            {censor_rev},
+            tmp_storage,
+        )
 
         old_index_filepath = rl.opener.join(docket.index_filepath())
         old_data_filepath = rl.opener.join(docket.data_filepath())
@@ -281,6 +250,59 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
                     tmp_storage,
                 )
     docket.write(transaction=None, stripping=True)
+
+
+def _precompute_rewritten_delta(
+    revlog,
+    old_index,
+    excluded_revs,
+    tmp_storage,
+):
+    """Compute new delta for revisions whose delta is based on revision that
+    will not survive as is.
+
+    Return a mapping: {rev → (new_base, data_start, data_end, compression_mode)}
+    """
+    dc = deltas.deltacomputer(revlog)
+    rewritten_entries = {}
+    first_excl_rev = min(excluded_revs)
+    with revlog._segmentfile._open_read() as dfh:
+        for rev in range(first_excl_rev, len(old_index)):
+            if rev in excluded_revs:
+                # this revision will be preserved as is, so we don't need to
+                # consider recomputing a delta.
+                continue
+            entry = old_index[rev]
+            if entry[ENTRY_DELTA_BASE] not in excluded_revs:
+                continue
+            # This is a revision that use the censored revision as the base
+            # for its delta. We need a need new deltas
+            if entry[ENTRY_DATA_UNCOMPRESSED_LENGTH] == 0:
+                # this revision is empty, we can delta against nullrev
+                rewritten_entries[rev] = (nullrev, 0, 0, COMP_MODE_PLAIN)
+            else:
+
+                text = revlog.rawdata(rev, _df=dfh)
+                info = revlogutils.revisioninfo(
+                    node=entry[ENTRY_NODE_ID],
+                    p1=revlog.node(entry[ENTRY_PARENT_1]),
+                    p2=revlog.node(entry[ENTRY_PARENT_2]),
+                    btext=[text],
+                    textlen=len(text),
+                    cachedelta=None,
+                    flags=entry[ENTRY_DATA_OFFSET] & 0xFFFF,
+                )
+                d = dc.finddeltainfo(
+                    info, dfh, excluded_bases=excluded_revs, target_rev=rev
+                )
+                default_comp = revlog._docket.default_compression_header
+                comp_mode, d = deltas.delta_compression(default_comp, d)
+                # using `tell` is a bit lazy, but we are not here for speed
+                start = tmp_storage.tell()
+                tmp_storage.write(d.data[1])
+                end = tmp_storage.tell()
+                rewritten_entries[rev] = (d.base, start, end, comp_mode)
+    return rewritten_entries
 
 
 def _rewrite_simple(
