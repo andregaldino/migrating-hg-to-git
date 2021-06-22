@@ -127,26 +127,35 @@ def v1_censor(rl, tr, censornode, tombstone=b''):
 
 def v2_censor(revlog, tr, censornode, tombstone=b''):
     """censors a revision in a "version 2" revlog"""
-    # General principle
-    #
-    # We create new revlog files (index/data/sidedata) to copy the content of
-    # the existing data without the censored data.
-    #
-    # We need to recompute new delta for any revision that used the censored
-    # revision as delta base. As the cumulative size of the new delta may be
-    # large, we store them in a temporary file until they are stored in their
-    # final destination.
-    #
-    # All data before the censored data can be blindly copied. The rest needs
-    # to be copied as we go and the associated index entry needs adjustement.
+    assert revlog._format_version != REVLOGV0, revlog._format_version
+    assert revlog._format_version != REVLOGV1, revlog._format_version
 
+    censor_revs = {revlog.rev(censornode)}
+    _rewrite_v2(revlog, tr, censor_revs, tombstone)
+
+
+def _rewrite_v2(revlog, tr, censor_revs, tombstone=b''):
+    """rewrite a revlog to censor some of its content
+
+    General principle
+
+    We create new revlog files (index/data/sidedata) to copy the content of
+    the existing data without the censored data.
+
+    We need to recompute new delta for any revision that used the censored
+    revision as delta base. As the cumulative size of the new delta may be
+    large, we store them in a temporary file until they are stored in their
+    final destination.
+
+    All data before the censored data can be blindly copied. The rest needs
+    to be copied as we go and the associated index entry needs adjustement.
+    """
     assert revlog._format_version != REVLOGV0, revlog._format_version
     assert revlog._format_version != REVLOGV1, revlog._format_version
 
     old_index = revlog.index
     docket = revlog._docket
 
-    censor_revs = {revlog.rev(censornode)}
     tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
 
     first_excl_rev = min(censor_revs)
