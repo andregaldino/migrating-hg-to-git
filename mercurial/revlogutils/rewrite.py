@@ -261,36 +261,14 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
             new_sidedata_file.seek(0, os.SEEK_END)
             assert new_sidedata_file.tell() == sidedata_cutoff
 
-            ### writing the censored revision
-            entry = old_index[censor_rev]
-
-            # XXX consider trying the default compression too
-            new_data_size = len(tombstone)
-            new_data_offset = new_data_file.tell()
-            new_data_file.write(tombstone)
-
-            # we are not adding any sidedata as they might leak info about the censored version
-
-            new_entry = revlogutils.entry(
-                flags=constants.REVIDX_ISCENSORED,
-                data_offset=new_data_offset,
-                data_compressed_length=new_data_size,
-                data_uncompressed_length=new_data_size,
-                data_delta_base=censor_rev,
-                link_rev=entry[ENTRY_LINK_REV],
-                parent_rev_1=entry[ENTRY_PARENT_1],
-                parent_rev_2=entry[ENTRY_PARENT_2],
-                node_id=entry[ENTRY_NODE_ID],
-                sidedata_offset=0,
-                sidedata_compressed_length=0,
-                data_compression_mode=COMP_MODE_PLAIN,
-                sidedata_compression_mode=COMP_MODE_PLAIN,
+            # writing the censored revision
+            _rewrite_censor(
+                rl,
+                old_index,
+                open_files,
+                censor_rev,
+                tombstone,
             )
-            rl.index.append(new_entry)
-            entry_bin = rl.index.entry_binary(censor_rev)
-            new_index_file.write(entry_bin)
-            docket.index_end = new_index_file.tell()
-            docket.data_end = new_data_file.tell()
 
             #### Writing all subsequent revisions
             for rev in range(censor_rev + 1, len(old_index)):
@@ -358,3 +336,54 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
                 docket.sidedata_end = new_sidedata_file.tell()
 
     docket.write(transaction=None, stripping=True)
+
+
+def _rewrite_censor(
+    revlog,
+    old_index,
+    all_files,
+    rev,
+    tombstone,
+):
+    """rewrite and append a censored revision"""
+    (
+        old_data_file,
+        old_sidedata_file,
+        new_index_file,
+        new_data_file,
+        new_sidedata_file,
+    ) = all_files
+    entry = old_index[rev]
+
+    # XXX consider trying the default compression too
+    new_data_size = len(tombstone)
+    new_data_offset = new_data_file.tell()
+    new_data_file.write(tombstone)
+
+    # we are not adding any sidedata as they might leak info about the censored version
+
+    link_rev = entry[ENTRY_LINK_REV]
+
+    p1 = entry[ENTRY_PARENT_1]
+    p2 = entry[ENTRY_PARENT_2]
+
+    new_entry = revlogutils.entry(
+        flags=constants.REVIDX_ISCENSORED,
+        data_offset=new_data_offset,
+        data_compressed_length=new_data_size,
+        data_uncompressed_length=new_data_size,
+        data_delta_base=rev,
+        link_rev=link_rev,
+        parent_rev_1=p1,
+        parent_rev_2=p2,
+        node_id=entry[ENTRY_NODE_ID],
+        sidedata_offset=0,
+        sidedata_compressed_length=0,
+        data_compression_mode=COMP_MODE_PLAIN,
+        sidedata_compression_mode=COMP_MODE_PLAIN,
+    )
+    revlog.index.append(new_entry)
+    entry_bin = revlog.index.entry_binary(rev)
+    new_index_file.write(entry_bin)
+    revlog._docket.index_end = new_index_file.tell()
+    revlog._docket.data_end = new_data_file.tell()
