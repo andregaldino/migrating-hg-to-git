@@ -163,55 +163,12 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
             tmp_storage,
         )
 
-        old_index_filepath = rl.opener.join(docket.index_filepath())
-        old_data_filepath = rl.opener.join(docket.data_filepath())
-        old_sidedata_filepath = rl.opener.join(docket.sidedata_filepath())
-
-        new_index_filepath = rl.opener.join(docket.new_index_file())
-        new_data_filepath = rl.opener.join(docket.new_data_file())
-        new_sidedata_filepath = rl.opener.join(docket.new_sidedata_file())
-
-        util.copyfile(
-            old_index_filepath, new_index_filepath, nb_bytes=index_cutoff
+        all_files = _setup_new_files(
+            rl,
+            index_cutoff,
+            data_cutoff,
+            sidedata_cutoff,
         )
-        util.copyfile(
-            old_data_filepath, new_data_filepath, nb_bytes=data_cutoff
-        )
-        util.copyfile(
-            old_sidedata_filepath,
-            new_sidedata_filepath,
-            nb_bytes=sidedata_cutoff,
-        )
-        rl.opener.register_file(docket.index_filepath())
-        rl.opener.register_file(docket.data_filepath())
-        rl.opener.register_file(docket.sidedata_filepath())
-
-        docket.index_end = index_cutoff
-        docket.data_end = data_cutoff
-        docket.sidedata_end = sidedata_cutoff
-
-        # reload the revlog internal information
-        rl.clearcaches()
-        rl._loadindex(docket=docket)
-
-        @contextlib.contextmanager
-        def all_files():
-            # hide opening in an helper function to please check-code, black
-            # and various python ersion at the same time
-            with open(old_data_filepath, 'rb') as old_data_file:
-                with open(old_sidedata_filepath, 'rb') as old_sidedata_file:
-                    with open(new_index_filepath, 'r+b') as new_index_file:
-                        with open(new_data_filepath, 'r+b') as new_data_file:
-                            with open(
-                                new_sidedata_filepath, 'r+b'
-                            ) as new_sidedata_file:
-                                yield (
-                                    old_data_file,
-                                    old_sidedata_file,
-                                    new_index_file,
-                                    new_data_file,
-                                    new_sidedata_file,
-                                )
 
         # we dont need to open the old index file since its content already
         # exist in a usable form in `old_index`.
@@ -223,12 +180,6 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
                 new_data_file,
                 new_sidedata_file,
             ) = open_files
-            new_index_file.seek(0, os.SEEK_END)
-            assert new_index_file.tell() == index_cutoff
-            new_data_file.seek(0, os.SEEK_END)
-            assert new_data_file.tell() == data_cutoff
-            new_sidedata_file.seek(0, os.SEEK_END)
-            assert new_sidedata_file.tell() == sidedata_cutoff
 
             # writing the censored revision
             _rewrite_censor(
@@ -303,6 +254,80 @@ def _precompute_rewritten_delta(
                 end = tmp_storage.tell()
                 rewritten_entries[rev] = (d.base, start, end, comp_mode)
     return rewritten_entries
+
+
+def _setup_new_files(
+    revlog,
+    index_cutoff,
+    data_cutoff,
+    sidedata_cutoff,
+):
+    """
+
+    return a context manager to open all the relevant files:
+    - old_data_file,
+    - old_sidedata_file,
+    - new_index_file,
+    - new_data_file,
+    - new_sidedata_file,
+
+    The old_index_file is not here because it is accessed through the
+    `old_index` object if the caller function.
+    """
+    docket = revlog._docket
+    old_index_filepath = revlog.opener.join(docket.index_filepath())
+    old_data_filepath = revlog.opener.join(docket.data_filepath())
+    old_sidedata_filepath = revlog.opener.join(docket.sidedata_filepath())
+
+    new_index_filepath = revlog.opener.join(docket.new_index_file())
+    new_data_filepath = revlog.opener.join(docket.new_data_file())
+    new_sidedata_filepath = revlog.opener.join(docket.new_sidedata_file())
+
+    util.copyfile(old_index_filepath, new_index_filepath, nb_bytes=index_cutoff)
+    util.copyfile(old_data_filepath, new_data_filepath, nb_bytes=data_cutoff)
+    util.copyfile(
+        old_sidedata_filepath,
+        new_sidedata_filepath,
+        nb_bytes=sidedata_cutoff,
+    )
+    revlog.opener.register_file(docket.index_filepath())
+    revlog.opener.register_file(docket.data_filepath())
+    revlog.opener.register_file(docket.sidedata_filepath())
+
+    docket.index_end = index_cutoff
+    docket.data_end = data_cutoff
+    docket.sidedata_end = sidedata_cutoff
+
+    # reload the revlog internal information
+    revlog.clearcaches()
+    revlog._loadindex(docket=docket)
+
+    @contextlib.contextmanager
+    def all_files_opener():
+        # hide opening in an helper function to please check-code, black
+        # and various python version at the same time
+        with open(old_data_filepath, 'rb') as old_data_file:
+            with open(old_sidedata_filepath, 'rb') as old_sidedata_file:
+                with open(new_index_filepath, 'r+b') as new_index_file:
+                    with open(new_data_filepath, 'r+b') as new_data_file:
+                        with open(
+                            new_sidedata_filepath, 'r+b'
+                        ) as new_sidedata_file:
+                            new_index_file.seek(0, os.SEEK_END)
+                            assert new_index_file.tell() == index_cutoff
+                            new_data_file.seek(0, os.SEEK_END)
+                            assert new_data_file.tell() == data_cutoff
+                            new_sidedata_file.seek(0, os.SEEK_END)
+                            assert new_sidedata_file.tell() == sidedata_cutoff
+                            yield (
+                                old_data_file,
+                                old_sidedata_file,
+                                new_index_file,
+                                new_data_file,
+                                new_sidedata_file,
+                            )
+
+    return all_files_opener
 
 
 def _rewrite_simple(
