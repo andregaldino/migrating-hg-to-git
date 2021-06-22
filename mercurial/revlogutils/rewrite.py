@@ -146,20 +146,22 @@ def v2_censor(revlog, tr, censornode, tombstone=b''):
     old_index = revlog.index
     docket = revlog._docket
 
-    censor_rev = revlog.rev(censornode)
+    censor_revs = {revlog.rev(censornode)}
     tombstone = storageutil.packmeta({b'censored': tombstone}, b'')
 
-    censored_entry = revlog.index[censor_rev]
-    index_cutoff = revlog.index.entry_size * censor_rev
-    data_cutoff = censored_entry[ENTRY_DATA_OFFSET] >> 16
-    sidedata_cutoff = revlog.sidedata_cut_off(censor_rev)
+    first_excl_rev = min(censor_revs)
+
+    first_excl_entry = revlog.index[first_excl_rev]
+    index_cutoff = revlog.index.entry_size * first_excl_rev
+    data_cutoff = first_excl_entry[ENTRY_DATA_OFFSET] >> 16
+    sidedata_cutoff = revlog.sidedata_cut_off(first_excl_rev)
 
     with pycompat.unnamedtempfile(mode=b"w+b") as tmp_storage:
         # rev → (new_base, data_start, data_end, compression_mode)
         rewritten_entries = _precompute_rewritten_delta(
             revlog,
             old_index,
-            {censor_rev},
+            censor_revs,
             tmp_storage,
         )
 
@@ -182,24 +184,26 @@ def v2_censor(revlog, tr, censornode, tombstone=b''):
             ) = open_files
 
             # writing the censored revision
-            _rewrite_censor(
-                revlog,
-                old_index,
-                open_files,
-                censor_rev,
-                tombstone,
-            )
 
             # Writing all subsequent revisions
-            for rev in range(censor_rev + 1, len(old_index)):
-                _rewrite_simple(
-                    revlog,
-                    old_index,
-                    open_files,
-                    rev,
-                    rewritten_entries,
-                    tmp_storage,
-                )
+            for rev in range(first_excl_rev, len(old_index)):
+                if rev in censor_revs:
+                    _rewrite_censor(
+                        revlog,
+                        old_index,
+                        open_files,
+                        rev,
+                        tombstone,
+                    )
+                else:
+                    _rewrite_simple(
+                        revlog,
+                        old_index,
+                        open_files,
+                        rev,
+                        rewritten_entries,
+                        tmp_storage,
+                    )
     docket.write(transaction=None, stripping=True)
 
 
