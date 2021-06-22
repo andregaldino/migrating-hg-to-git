@@ -246,13 +246,14 @@ def v2_censor(rl, tr, censornode, tombstone=b''):
 
         # we dont need to open the old index file since its content already
         # exist in a usable form in `old_index`.
-        with all_files() as (
-            old_data_file,
-            old_sidedata_file,
-            new_index_file,
-            new_data_file,
-            new_sidedata_file,
-        ):
+        with all_files() as open_files:
+            (
+                old_data_file,
+                old_sidedata_file,
+                new_index_file,
+                new_data_file,
+                new_sidedata_file,
+            ) = open_files
             new_index_file.seek(0, os.SEEK_END)
             assert new_index_file.tell() == index_cutoff
             new_data_file.seek(0, os.SEEK_END)
