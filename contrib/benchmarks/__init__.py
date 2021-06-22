@@ -76,8 +76,9 @@ def runperfcommand(reponame, command, *args, **kwargs):
         ui, 'perfext', os.path.join(basedir, 'contrib', 'perf.py')
     )
     cmd = getattr(perfext, command)
-    with ui.silent():
-        cmd(ui, repo, *args, **kwargs)
+    ui.pushbuffer()
+    cmd(ui, repo, *args, **kwargs)
+    output = ui.popbuffer()
     match = outputre.search(output)
     if not match:
         raise ValueError("Invalid output {}".format(output))
