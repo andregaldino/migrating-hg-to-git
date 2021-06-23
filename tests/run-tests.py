@@ -1308,6 +1308,11 @@ class Test(unittest.TestCase):
             (br'\bHG_TXNID=TXN:[a-f0-9]{40}\b', br'HG_TXNID=TXN:$ID$'),
         ]
         r.append((self._escapepath(self._testtmp), b'$TESTTMP'))
+        if os.name == 'nt':
+            # JSON output escapes backslashes in Windows paths, so also catch a
+            # double-escape.
+            replaced = self._testtmp.replace(b'\\', br'\\')
+            r.append((self._escapepath(replaced), b'$STR_REPR_TESTTMP'))
 
         replacementfile = os.path.join(self._testdir, b'common-pattern.py')
 
