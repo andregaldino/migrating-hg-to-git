@@ -73,7 +73,9 @@ Install an extension that can sleep and guarantee a profiler has time to run
   > command = registrar.command(cmdtable)
   > @command(b'sleep', [], b'hg sleep')
   > def sleep_for_at_least_one_stat_cycle(ui, *args, **kwargs):
-  >     time.sleep(0.1)
+  >     t = time.time()  # don't use time.sleep because we need CPU time
+  >     while time.time() - t < 0.5:
+  >         pass
   > EOF
 
   $ cat >> $HGRCPATH << EOF
@@ -100,10 +102,19 @@ Various statprof formatters work
     %   cumulative      self          
   $ cat ../out | statprofran
 
-  $ hg --profile --config profiling.statformat=hotpath sleep 2>../out || cat ../out
+Windows real time tracking is broken, only use CPU
+
+#if no-windows
+  $ hg --profile --config profiling.time-track=real --config profiling.statformat=hotpath sleep 2>../out || cat ../out
   $ cat ../out | statprofran
-  $ grep sleepext_with_a_long_filename.py ../out
-  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line 7:    time\.sleep.* (re)
+  $ grep sleepext_with_a_long_filename.py ../out | head -n 1
+  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line \d+:\s+(while|pass).* (re)
+#endif
+
+  $ hg --profile --config profiling.time-track=cpu --config profiling.statformat=hotpath sleep 2>../out || cat ../out
+  $ cat ../out | statprofran
+  $ grep sleepext_with_a_long_filename.py ../out | head -n 1
+  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line \d+:\s+(while|pass).* (re)
 
   $ hg --profile --config profiling.statformat=json sleep 2>../out || cat ../out
   $ cat ../out
