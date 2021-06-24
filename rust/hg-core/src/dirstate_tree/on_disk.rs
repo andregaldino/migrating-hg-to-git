@@ -98,13 +98,16 @@ pub(super) struct Node {
     ///     and must cause a different modification time (unless the system
     ///     clock jumps back and we get unlucky, which is not impossible but
     ///     but deemed unlikely enough).
-    ///   - The directory did not contain any child entry that did not have a
-    ///     corresponding dirstate node.
+    ///   - All direct children of this directory (as returned by
+    ///     `std::fs::read_dir`) either have a corresponding dirstate node, or
+    ///     are ignored by ignore patterns whose hash is in
+    ///     `Header::ignore_patterns_hash`.
     ///
     ///   This means that if `std::fs::symlink_metadata` later reports the
-    ///   same modification time, we don’t need to call `std::fs::read_dir`
-    ///   again for this directory and can iterate child dirstate nodes
-    ///   instead.
+    ///   same modification time and ignored patterns haven’t changed, a run
+    ///   of status that is not listing ignored   files can skip calling
+    ///   `std::fs::read_dir` again for this directory,   iterate child
+    ///   dirstate nodes instead.
     state: u8,
     data: Entry,
 }

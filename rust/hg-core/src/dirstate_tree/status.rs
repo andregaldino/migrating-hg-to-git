@@ -190,18 +190,21 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             // This happens for example with `hg status -mard`.
             return true;
         }
-        if let Some(cached_mtime) = cached_directory_mtime {
-            // The dirstate contains a cached mtime for this directory, set by
-            // a previous run of the `status` algorithm which found this
-            // directory eligible for `read_dir` caching.
-            if let Some(meta) = directory_metadata {
-                if let Ok(current_mtime) = meta.modified() {
-                    if current_mtime == cached_mtime.into() {
-                        // The mtime of that directory has not changed since
-                        // then, which means that the
-                        // results of `read_dir` should also
-                        // be unchanged.
-                        return true;
+        if !self.options.list_ignored
+            && self.ignore_patterns_have_changed == Some(false)
+        {
+            if let Some(cached_mtime) = cached_directory_mtime {
+                // The dirstate contains a cached mtime for this directory, set
+                // by a previous run of the `status` algorithm which found this
+                // directory eligible for `read_dir` caching.
+                if let Some(meta) = directory_metadata {
+                    if let Ok(current_mtime) = meta.modified() {
+                        if current_mtime == cached_mtime.into() {
+                            // The mtime of that directory has not changed
+                            // since then, which means that the results of
+                            // `read_dir` should also be unchanged.
+                            return true;
+                        }
                     }
                 }
             }
@@ -209,8 +212,8 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         false
     }
 
-    /// Returns whether the filesystem directory was found to have any entry
-    /// that does not have a corresponding dirstate tree node.
+    /// Returns whether all child entries of the filesystem directory have a
+    /// corresponding dirstate node or are ignored.
     fn traverse_fs_directory_and_dirstate(
         &self,
         has_ignored_ancestor: bool,
@@ -248,11 +251,10 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 })
                 .collect::<Result<_, _>>()?;
 
-            // Conservatively don’t let the caller assume that there aren’t
-            // any, since we don’t know.
-            let directory_has_any_fs_only_entry = true;
+            // We don’t know, so conservatively say this isn’t the case
+            let children_all_have_dirstate_node_or_are_ignored = false;
 
-            return Ok(directory_has_any_fs_only_entry);
+            return Ok(children_all_have_dirstate_node_or_are_ignored);
         }
 
         let mut fs_entries = if let Ok(entries) = self.read_dir(
@@ -295,27 +297,32 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         .par_bridge()
         .map(|pair| {
             use itertools::EitherOrBoth::*;
-            let is_fs_only = pair.is_right();
+            let has_dirstate_node_or_is_ignored;
             match pair {
-                Both(dirstate_node, fs_entry) => self
-                    .traverse_fs_and_dirstate(
+                Both(dirstate_node, fs_entry) => {
+                    self.traverse_fs_and_dirstate(
                         &fs_entry.full_path,
                         &fs_entry.metadata,
                         dirstate_node,
                         has_ignored_ancestor,
-                    )?,
-                Left(dirstate_node) => {
-                    self.traverse_dirstate_only(dirstate_node)?
+                    )?;
+                    has_dirstate_node_or_is_ignored = true
                 }
-                Right(fs_entry) => self.traverse_fs_only(
-                    has_ignored_ancestor,
-                    directory_hg_path,
-                    fs_entry,
-                ),
+                Left(dirstate_node) => {
+                    self.traverse_dirstate_only(dirstate_node)?;
+                    has_dirstate_node_or_is_ignored = true;
+                }
+                Right(fs_entry) => {
+                    has_dirstate_node_or_is_ignored = self.traverse_fs_only(
+                        has_ignored_ancestor,
+                        directory_hg_path,
+                        fs_entry,
+                    )
+                }
             }
-            Ok(is_fs_only)
+            Ok(has_dirstate_node_or_is_ignored)
         })
-        .try_reduce(|| false, |a, b| Ok(a || b))
+        .try_reduce(|| true, |a, b| Ok(a && b))
     }
 
     fn traverse_fs_and_dirstate(
@@ -348,7 +355,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             }
             let is_ignored = has_ignored_ancestor || (self.ignore_fn)(hg_path);
             let is_at_repo_root = false;
-            let directory_has_any_fs_only_entry = self
+            let children_all_have_dirstate_node_or_are_ignored = self
                 .traverse_fs_directory_and_dirstate(
                     is_ignored,
                     dirstate_node.children(self.dmap.on_disk)?,
@@ -359,7 +366,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     is_at_repo_root,
                 )?;
             self.maybe_save_directory_mtime(
-                directory_has_any_fs_only_entry,
+                children_all_have_dirstate_node_or_are_ignored,
                 fs_metadata,
                 dirstate_node,
             )?
@@ -394,7 +401,10 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 } else {
                     // `node.entry.is_none()` indicates a "directory"
                     // node, but the filesystem has a file
-                    self.mark_unknown_or_ignored(has_ignored_ancestor, hg_path)
+                    self.mark_unknown_or_ignored(
+                        has_ignored_ancestor,
+                        hg_path,
+                    );
                 }
             }
 
@@ -408,11 +418,11 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
 
     fn maybe_save_directory_mtime(
         &self,
-        directory_has_any_fs_only_entry: bool,
+        children_all_have_dirstate_node_or_are_ignored: bool,
         directory_metadata: &std::fs::Metadata,
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
-        if !directory_has_any_fs_only_entry {
+        if children_all_have_dirstate_node_or_are_ignored {
             // All filesystem directory entries from `read_dir` have a
             // corresponding node in the dirstate, so we can reconstitute the
             // names of those entries without calling `read_dir` again.
@@ -584,12 +594,14 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     }
 
     /// Something in the filesystem has no corresponding dirstate node
+    ///
+    /// Returns whether that path is ignored
     fn traverse_fs_only(
         &self,
         has_ignored_ancestor: bool,
         directory_hg_path: &HgPath,
         fs_entry: &DirEntry,
-    ) {
+    ) -> bool {
         let hg_path = directory_hg_path.join(&fs_entry.base_name);
         let file_type = fs_entry.metadata.file_type();
         let file_or_symlink = file_type.is_file() || file_type.is_symlink();
@@ -616,26 +628,43 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                             is_ignored,
                             &hg_path,
                             child_fs_entry,
-                        )
+                        );
                     })
                 }
             }
             if self.options.collect_traversed_dirs {
                 self.outcome.lock().unwrap().traversed.push(hg_path.into())
             }
-        } else if file_or_symlink && self.matcher.matches(&hg_path) {
-            self.mark_unknown_or_ignored(
-                has_ignored_ancestor,
-                &BorrowedPath::InMemory(&hg_path),
-            )
+            is_ignored
+        } else {
+            if file_or_symlink {
+                if self.matcher.matches(&hg_path) {
+                    self.mark_unknown_or_ignored(
+                        has_ignored_ancestor,
+                        &BorrowedPath::InMemory(&hg_path),
+                    )
+                } else {
+                    // We haven’t computed whether this path is ignored. It
+                    // might not be, and a future run of status might have a
+                    // different matcher that matches it. So treat it as not
+                    // ignored. That is, inhibit readdir caching of the parent
+                    // directory.
+                    false
+                }
+            } else {
+                // This is neither a directory, a plain file, or a symlink.
+                // Treat it like an ignored file.
+                true
+            }
         }
     }
 
+    /// Returns whether that path is ignored
     fn mark_unknown_or_ignored(
         &self,
         has_ignored_ancestor: bool,
         hg_path: &BorrowedPath<'_, 'on_disk>,
-    ) {
+    ) -> bool {
         let is_ignored = has_ignored_ancestor || (self.ignore_fn)(&hg_path);
         if is_ignored {
             if self.options.list_ignored {
@@ -654,6 +683,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     .push(hg_path.detach_from_tree())
             }
         }
+        is_ignored
     }
 }
 
