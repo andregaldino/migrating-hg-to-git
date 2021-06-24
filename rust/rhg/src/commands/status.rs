@@ -133,6 +133,18 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         ));
     }
 
+    // TODO: lift these limitations
+    if invocation.config.get_bool(b"ui", b"tweakdefaults").ok() == Some(true) {
+        return Err(CommandError::unsupported(
+            "ui.tweakdefaults is not yet supported with rhg status",
+        ));
+    }
+    if invocation.config.get_bool(b"ui", b"statuscopies").ok() == Some(true) {
+        return Err(CommandError::unsupported(
+            "ui.statuscopies is not yet supported with rhg status",
+        ));
+    }
+
     let ui = invocation.ui;
     let args = invocation.subcommand_args;
     let display_states = if args.is_present("all") {
