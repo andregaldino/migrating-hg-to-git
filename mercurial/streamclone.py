@@ -560,6 +560,16 @@ def _makemap(repo):
 def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
+    # we keep repo.vfs out of the on purpose, ther are too many danger there
+    # (eg: .hg/hgrc),
+    #
+    # this assert is duplicated (from _makemap) as author might think this is
+    # fine, while this is really not fine.
+    if repo.vfs in vfsmap.values():
+        raise error.ProgrammingError(
+            b'repo.vfs must not be added to vfsmap for security reasons'
+        )
+
     progress = repo.ui.makeprogress(
         _(b'bundle'), total=totalfilesize, unit=_(b'bytes')
     )
@@ -685,6 +695,15 @@ def consumev2(repo, fp, filecount, filesize):
         progress.update(0)
 
         vfsmap = _makemap(repo)
+        # we keep repo.vfs out of the on purpose, ther are too many danger
+        # there (eg: .hg/hgrc),
+        #
+        # this assert is duplicated (from _makemap) as author might think this
+        # is fine, while this is really not fine.
+        if repo.vfs in vfsmap.values():
+            raise error.ProgrammingError(
+                b'repo.vfs must not be added to vfsmap for security reasons'
+            )
 
         with repo.transaction(b'clone'):
             ctxs = (vfs.backgroundclosing(repo.ui) for vfs in vfsmap.values())
