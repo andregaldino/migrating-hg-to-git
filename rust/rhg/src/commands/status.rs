@@ -267,7 +267,7 @@ fn display_status_paths(
     relative = config
         .get_bool(b"commands", b"status.relative")
         .unwrap_or(relative);
-    if relative {
+    if relative && !ui.plain() {
         relativize_paths(
             repo,
             paths,
