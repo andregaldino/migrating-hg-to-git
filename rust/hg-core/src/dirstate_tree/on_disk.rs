@@ -76,6 +76,7 @@ pub(super) struct Node {
 
     copy_source: OptPathSlice,
     children: ChildNodes,
+    pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
 
     /// Dependending on the value of `state`:
@@ -172,7 +173,7 @@ type OptPathSlice = Slice;
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
     let _ = std::mem::transmute::<Header, [u8; 88]>;
-    let _ = std::mem::transmute::<Node, [u8; 45]>;
+    let _ = std::mem::transmute::<Node, [u8; 49]>;
 }
 
 /// Unexpected file format found in `.hg/dirstate` with the "v2" format.
@@ -360,6 +361,9 @@ impl Node {
             ),
             copy_source: self.copy_source(on_disk)?.map(Cow::Borrowed),
             data: self.node_data()?,
+            descendants_with_entry_count: self
+                .descendants_with_entry_count
+                .get(),
             tracked_descendants_count: self.tracked_descendants_count.get(),
         })
     }
@@ -564,6 +568,9 @@ fn write_nodes(
                     base_name_start: u32::try_from(path.base_name_start())
                         // Could only panic for paths over 4 GiB
                         .expect("dirstate-v2 offset overflow")
+                        .into(),
+                    descendants_with_entry_count: node
+                        .descendants_with_entry_count
                         .into(),
                     tracked_descendants_count: node
                         .tracked_descendants_count

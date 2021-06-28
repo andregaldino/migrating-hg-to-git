@@ -332,6 +332,15 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
         }
     }
 
+    pub(super) fn descendants_with_entry_count(&self) -> u32 {
+        match self {
+            NodeRef::InMemory(_path, node) => {
+                node.descendants_with_entry_count
+            }
+            NodeRef::OnDisk(node) => node.descendants_with_entry_count.get(),
+        }
+    }
+
     pub(super) fn tracked_descendants_count(&self) -> u32 {
         match self {
             NodeRef::InMemory(_path, node) => node.tracked_descendants_count,
@@ -349,7 +358,11 @@ pub(super) struct Node<'on_disk> {
 
     pub(super) children: ChildNodes<'on_disk>,
 
-    /// How many (non-inclusive) descendants of this node are tracked files
+    /// How many (non-inclusive) descendants of this node have an entry.
+    pub(super) descendants_with_entry_count: u32,
+
+    /// How many (non-inclusive) descendants of this node have an entry whose
+    /// state is "tracked".
     pub(super) tracked_descendants_count: u32,
 }
 
@@ -421,6 +434,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                         if tracked {
                             ancestor.tracked_descendants_count += 1
                         }
+                        ancestor.descendants_with_entry_count += 1
                     },
                 )?;
                 assert!(
@@ -547,6 +561,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         old_state: EntryState,
         new_entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
+        let had_entry = old_state != EntryState::Unknown;
         let tracked_count_increment =
             match (old_state.is_tracked(), new_entry.state.is_tracked()) {
                 (false, true) => 1,
@@ -560,6 +575,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
             path,
             WithBasename::to_cow_owned,
             |ancestor| {
+                if !had_entry {
+                    ancestor.descendants_with_entry_count += 1;
+                }
+
                 // We can’t use `+= increment` because the counter is unsigned,
                 // and we want debug builds to detect accidental underflow
                 // through zero
@@ -570,7 +589,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 }
             },
         )?;
-        if !node.data.has_entry() {
+        if !had_entry {
             self.nodes_with_entry_count += 1
         }
         node.data = NodeData::Entry(new_entry);
@@ -755,6 +774,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                     recur(on_disk, &mut node.children, rest)?
                 {
                     dropped = d;
+                    if dropped.had_entry {
+                        node.descendants_with_entry_count -= 1;
+                    }
                     if dropped.was_tracked {
                         node.tracked_descendants_count -= 1;
                     }
@@ -899,7 +921,8 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if let Some(node) = self.get_node(directory)? {
             // A node without a `DirstateEntry` was created to hold child
             // nodes, and is therefore a directory.
-            Ok(node.state()?.is_none())
+            let state = node.state()?;
+            Ok(state.is_none() && node.descendants_with_entry_count() > 0)
         } else {
             Ok(false)
         }
