@@ -1147,7 +1147,10 @@ def perfdirs(ui, repo, **opts):
 
     def d():
         dirstate.hasdir(b'a')
-        del dirstate._map._dirs
+        try:
+            del dirstate._map._dirs
+        except AttributeError:
+            pass
 
     timer(d)
     fm.end()
@@ -1225,7 +1228,10 @@ def perfdirstatedirs(ui, repo, **opts):
     repo.dirstate.hasdir(b"a")
 
     def setup():
-        del repo.dirstate._map._dirs
+        try:
+            del repo.dirstate._map._dirs
+        except AttributeError:
+            pass
 
     def d():
         repo.dirstate.hasdir(b"a")
@@ -1268,7 +1274,10 @@ def perfdirfoldmap(ui, repo, **opts):
 
     def setup():
         del dirstate._map.dirfoldmap
-        del dirstate._map._dirs
+        try:
+            del dirstate._map._dirs
+        except AttributeError:
+            pass
 
     def d():
         dirstate._map.dirfoldmap.get(b'a')

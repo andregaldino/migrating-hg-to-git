@@ -128,14 +128,6 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().pack_v2(parents, now)
     }
 
-    fn set_all_dirs(&mut self) -> Result<(), DirstateError> {
-        self.get_mut().set_all_dirs()
-    }
-
-    fn set_dirs(&mut self) -> Result<(), DirstateError> {
-        self.get_mut().set_dirs()
-    }
-
     fn status<'a>(
         &'a mut self,
         matcher: &'a (dyn Matcher + Sync),

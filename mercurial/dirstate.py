@@ -1951,20 +1951,10 @@ if rustmod is not None:
             return self._rustmap.filefoldmapasdict()
 
         def hastrackeddir(self, d):
-            self._dirs  # Trigger Python's propertycache
             return self._rustmap.hastrackeddir(d)
 
         def hasdir(self, d):
-            self._dirs  # Trigger Python's propertycache
             return self._rustmap.hasdir(d)
-
-        @propertycache
-        def _dirs(self):
-            return self._rustmap.getdirs()
-
-        @propertycache
-        def _alldirs(self):
-            return self._rustmap.getalldirs()
 
         @propertycache
         def identity(self):
@@ -1988,6 +1978,6 @@ if rustmod is not None:
         def dirfoldmap(self):
             f = {}
             normcase = util.normcase
-            for name in self._dirs:
+            for name, _pseudo_entry in self.directories():
                 f[normcase(name)] = name
             return f

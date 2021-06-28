@@ -977,18 +977,6 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         on_disk::write(self, parents)
     }
 
-    fn set_all_dirs(&mut self) -> Result<(), DirstateError> {
-        // Do nothing, this `DirstateMap` does not a separate `all_dirs` that
-        // needs to be recomputed
-        Ok(())
-    }
-
-    fn set_dirs(&mut self) -> Result<(), DirstateError> {
-        // Do nothing, this `DirstateMap` does not a separate `dirs` that needs
-        // to be recomputed
-        Ok(())
-    }
-
     fn status<'a>(
         &'a mut self,
         matcher: &'a (dyn Matcher + Sync),

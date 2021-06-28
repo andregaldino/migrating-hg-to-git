@@ -19,11 +19,11 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
+    dirstate::make_dirstate_tuple,
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
     dirstate::owning::OwningDirstateMap,
-    dirstate::{dirs_multiset::Dirs, make_dirstate_tuple},
     parsers::dirstate_parents_to_pytuple,
 };
 use hg::{
@@ -34,8 +34,8 @@ use hg::{
     revlog::Node,
     utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
-    DirsMultiset, DirstateEntry, DirstateError,
-    DirstateMap as RustDirstateMap, DirstateParents, EntryState, StateMapIter,
+    DirstateEntry, DirstateError, DirstateMap as RustDirstateMap,
+    DirstateParents, EntryState, StateMapIter,
 };
 
 // TODO
@@ -388,40 +388,6 @@ py_class!(pub class DirstateMap |py| {
         DirstateMapKeysIterator::from_inner(
             py,
             unsafe { leaked_ref.map(py, |o| o.iter()) },
-        )
-    }
-
-    def getdirs(&self) -> PyResult<Dirs> {
-        // TODO don't copy, share the reference
-        self.inner(py).borrow_mut().set_dirs()
-            .map_err(|e| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?;
-        Dirs::from_inner(
-            py,
-            DirsMultiset::from_dirstate(
-                self.inner(py).borrow().iter(),
-                Some(EntryState::Removed),
-            )
-            .map_err(|e| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?,
-        )
-    }
-    def getalldirs(&self) -> PyResult<Dirs> {
-        // TODO don't copy, share the reference
-        self.inner(py).borrow_mut().set_all_dirs()
-            .map_err(|e| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?;
-        Dirs::from_inner(
-            py,
-            DirsMultiset::from_dirstate(
-                self.inner(py).borrow().iter(),
-                None,
-            ).map_err(|e| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?,
         )
     }
 

@@ -95,10 +95,6 @@ pub trait DirstateMapMethods {
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError>;
 
-    fn set_all_dirs(&mut self) -> Result<(), DirstateError>;
-
-    fn set_dirs(&mut self) -> Result<(), DirstateError>;
-
     fn status<'a>(
         &'a mut self,
         matcher: &'a (dyn Matcher + Sync),
@@ -279,14 +275,6 @@ impl DirstateMapMethods for DirstateMap {
         panic!(
             "should have used dirstate_tree::DirstateMap to use the v2 format"
         )
-    }
-
-    fn set_all_dirs(&mut self) -> Result<(), DirstateError> {
-        self.set_all_dirs()
-    }
-
-    fn set_dirs(&mut self) -> Result<(), DirstateError> {
-        self.set_dirs()
     }
 
     fn status<'a>(
