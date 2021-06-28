@@ -17,7 +17,7 @@ use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use crate::EntryState;
-use bytes_cast::unaligned::{I32Be, I64Be, U32Be, U64Be};
+use bytes_cast::unaligned::{I32Be, I64Be, U32Be};
 use bytes_cast::BytesCast;
 use std::borrow::Cow;
 use std::convert::TryFrom;
@@ -135,9 +135,8 @@ pub(super) struct Timestamp {
 
 /// Counted in bytes from the start of the file
 ///
-/// NOTE: If we decide to never support `.hg/dirstate` files larger than 4 GiB
-/// we could save space by using `U32Be` instead.
-type Offset = U64Be;
+/// NOTE: not supporting `.hg/dirstate` files larger than 4 GiB.
+type Offset = U32Be;
 
 /// Counted in number of items
 ///
@@ -172,8 +171,8 @@ type OptPathSlice = Slice;
 
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
-    let _ = std::mem::transmute::<Header, [u8; 92]>;
-    let _ = std::mem::transmute::<Node, [u8; 57]>;
+    let _ = std::mem::transmute::<Header, [u8; 88]>;
+    let _ = std::mem::transmute::<Node, [u8; 45]>;
 }
 
 /// Unexpected file format found in `.hg/dirstate` with the "v2" format.
@@ -589,8 +588,8 @@ fn write_slice<T>(slice: &[T], out: &mut Vec<u8>) -> Slice
 where
     T: BytesCast,
 {
-    let start = u64::try_from(out.len())
-        // Could only panic on a 128-bit CPU with a dirstate over 16 EiB
+    let start = u32::try_from(out.len())
+        // Could only panic for a dirstate file larger than 4 GiB
         .expect("dirstate-v2 offset overflow")
         .into();
     let len = u32::try_from(slice.len())
