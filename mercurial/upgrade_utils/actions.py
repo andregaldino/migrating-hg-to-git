@@ -633,7 +633,10 @@ def determine_upgrade_actions(
     newactions = []
 
     for d in format_upgrades:
-        name = d._requirement
+        if util.safehasattr(d, '_requirement'):
+            name = d._requirement
+        else:
+            name = None
 
         # If the action is a requirement that doesn't show up in the
         # destination requirements, prune the action.
