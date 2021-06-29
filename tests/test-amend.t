@@ -251,11 +251,46 @@ Cannot cause divergence by default
   $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
   2 new content-divergent changesets
 
+Amending pruned part of split commit does not cause divergence (issue6262)
+
+  $ hg debugobsolete $(hg log  -T '{node}' -r .)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg co '.^'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ node_B=$(hg log -T '{node}' -r 4)
+  $ hg revert -r $node_B -a
+  adding B
+  adding bar
+  $ hg ci -m B-split1
+  created new head
+  $ node_B_split1=$(hg log -T '{node}' -r .)
+  $ hg co '.^'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg revert -r 4 -a
+  adding B
+  adding bar
+  $ hg ci -m B-split2
+  created new head
+  $ node_B_split2=$(hg log -T '{node}' -r .)
+  $ hg debugobsolete $node_B $node_B_split1 $node_B_split2
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg debugobsolete $node_B_split2
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg co --hidden $node_B_split2
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg amend -m 'revived B-split2'
+  abort: cannot amend 809fe227532f, as that creates content-divergence with c68306a86921, from 16084da537dd (known-bad-output !)
+  (add --verbose for details or see 'hg help evolution.instability') (known-bad-output !)
+  [10]
+
 Hidden common predecessor of divergence does not cause crash
 
 First create C1 as a pruned successor of C
   $ hg co C
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg amend -m C1
   $ hg tag --local C1
   $ hg debugobsolete $(hg log -T '{node}' -r C1)
