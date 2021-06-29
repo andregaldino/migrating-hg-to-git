@@ -145,7 +145,7 @@ def _find_new_divergence(repo, revs):
     for r in obsrevs:
         div = find_new_divergence_from(repo, repo[r])
         if div:
-            return (repo[r], repo[div[0]], repo[div[1]])
+            return (repo[r], repo[div[0]], repo.unfiltered()[div[1]])
     return None
 
 

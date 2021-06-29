@@ -273,9 +273,9 @@ Make the common predecessor (C) pruned
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 Try to cause divergence
   $ hg amend -m C11
-  abort: filtered revision '26805aba1e600a82e93661149f2313866a221a7b' (known-bad-output !)
-  [255]
- [10]
+  abort: cannot amend 2758767f5d17, as that creates content-divergence with bfcb433a0dea, from 26805aba1e60
+  (add --verbose for details or see 'hg help evolution.instability')
+  [10]
 #endif
 
 Cannot amend public changeset
