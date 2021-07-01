@@ -442,10 +442,9 @@ class dirstate(object):
                     break
                 entry = self._map.get(d)
                 if entry is not None and entry[0] != b'r':
-                    raise error.Abort(
-                        _(b'file %r in dirstate clashes with %r')
-                        % (pycompat.bytestr(d), pycompat.bytestr(f))
-                    )
+                    msg = _(b'file %r in dirstate clashes with %r')
+                    msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
+                    raise error.Abort(msg)
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
