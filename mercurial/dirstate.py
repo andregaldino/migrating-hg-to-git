@@ -48,6 +48,10 @@ _rangemask = 0x7FFFFFFF
 dirstatetuple = parsers.dirstatetuple
 
 
+# a special value used internally for `size` if the file come from the other parent
+FROM_P2 = -2
+
+
 class repocache(filecache):
     """filecache for files in .hg/"""
 
@@ -371,7 +375,7 @@ class dirstate(object):
                         copies[f] = source
                     self.normallookup(f)
                 # Also fix up otherparent markers
-                elif s[0] == b'n' and s[2] == -2:
+                elif s[0] == b'n' and s[2] == FROM_P2:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
@@ -484,16 +488,16 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry[0] == b'r' and entry[2] in (-1, -2):
+                if entry[0] == b'r' and entry[2] in (-1, FROM_P2):
                     source = self._map.copymap.get(f)
                     if entry[2] == -1:
                         self.merge(f)
-                    elif entry[2] == -2:
+                    elif entry[2] == FROM_P2:
                         self.otherparent(f)
                     if source:
                         self.copy(source, f)
                     return
-                if entry[0] == b'm' or entry[0] == b'n' and entry[2] == -2:
+                if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
                     return
         self._addpath(f, b'n', 0, -1, -1)
         self._map.copymap.pop(f, None)
@@ -505,10 +509,10 @@ class dirstate(object):
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
-            self._addpath(f, b'm', 0, -2, -1)
+            self._addpath(f, b'm', 0, FROM_P2, -1)
         else:
             # add-like
-            self._addpath(f, b'n', 0, -2, -1)
+            self._addpath(f, b'n', 0, FROM_P2, -1)
         self._map.copymap.pop(f, None)
 
     def add(self, f):
@@ -527,8 +531,8 @@ class dirstate(object):
                 # backup the previous state
                 if entry[0] == b'm':  # merge
                     size = -1
-                elif entry[0] == b'n' and entry[2] == -2:  # other parent
-                    size = -2
+                elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
+                    size = FROM_P2
                     self._map.otherparentset.add(f)
         self._updatedfiles.add(f)
         self._map.removefile(f, oldstate, size)
@@ -1302,7 +1306,7 @@ class dirstate(object):
                         (size != st.st_size and size != st.st_size & _rangemask)
                         or ((mode ^ st.st_mode) & 0o100 and checkexec)
                     )
-                    or size == -2  # other parent
+                    or size == FROM_P2  # other parent
                     or fn in copymap
                 ):
                     if stat.S_ISLNK(st.st_mode) and size != st.st_size:
@@ -1532,7 +1536,7 @@ class dirstatemap(object):
         self._map[f] = dirstatetuple(state, mode, size, mtime)
         if state != b'n' or mtime == -1:
             self.nonnormalset.add(f)
-        if size == -2:
+        if size == FROM_P2:
             self.otherparentset.add(f)
 
     def removefile(self, f, oldstate, size):
@@ -1587,7 +1591,7 @@ class dirstatemap(object):
             for fname, e in pycompat.iteritems(self._map):
                 if e[0] != b'n' or e[3] == -1:
                     nonnorm.add(fname)
-                if e[0] == b'n' and e[2] == -2:
+                if e[0] == b'n' and e[2] == FROM_P2:
                     otherparent.add(fname)
             return nonnorm, otherparent
 
