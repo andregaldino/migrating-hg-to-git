@@ -502,9 +502,8 @@ class dirstate(object):
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
         if self._pl[1] == self._nodeconstants.nullid:
-            raise error.Abort(
-                _(b"setting %r to other parent only allowed in merges") % f
-            )
+            msg = _(b"setting %r to other parent only allowed in merges") % f
+            raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
             self._addpath(f, b'm', 0, -2, -1)
