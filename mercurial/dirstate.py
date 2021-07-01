@@ -433,9 +433,9 @@ class dirstate(object):
         if state == b'a' or oldstate == b'r':
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
-                raise error.Abort(
-                    _(b'directory %r already in dirstate') % pycompat.bytestr(f)
-                )
+                msg = _(b'directory %r already in dirstate')
+                msg %= pycompat.bytestr(f)
+                raise error.Abort(msg)
             # shadows
             for d in pathutil.finddirs(f):
                 if self._map.hastrackeddir(d):
