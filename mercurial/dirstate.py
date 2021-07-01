@@ -54,6 +54,9 @@ FROM_P2 = -2
 # a special value used internally for `size` if the file is modified/merged/added
 NONNORMAL = -1
 
+# a special value used internally for `time` if the time is ambigeous
+AMBIGUOUS_TIME = -1
+
 
 class repocache(filecache):
     """filecache for files in .hg/"""
@@ -502,7 +505,7 @@ class dirstate(object):
                     return
                 if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
                     return
-        self._addpath(f, b'n', 0, NONNORMAL, -1)
+        self._addpath(f, b'n', 0, NONNORMAL, AMBIGUOUS_TIME)
         self._map.copymap.pop(f, None)
 
     def otherparent(self, f):
@@ -512,15 +515,15 @@ class dirstate(object):
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
-            self._addpath(f, b'm', 0, FROM_P2, -1)
+            self._addpath(f, b'm', 0, FROM_P2, AMBIGUOUS_TIME)
         else:
             # add-like
-            self._addpath(f, b'n', 0, FROM_P2, -1)
+            self._addpath(f, b'n', 0, FROM_P2, AMBIGUOUS_TIME)
         self._map.copymap.pop(f, None)
 
     def add(self, f):
         '''Mark a file added.'''
-        self._addpath(f, b'a', 0, NONNORMAL, -1)
+        self._addpath(f, b'a', 0, NONNORMAL, AMBIGUOUS_TIME)
         self._map.copymap.pop(f, None)
 
     def remove(self, f):
@@ -1537,7 +1540,7 @@ class dirstatemap(object):
         if oldstate == b"?" and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         self._map[f] = dirstatetuple(state, mode, size, mtime)
-        if state != b'n' or mtime == -1:
+        if state != b'n' or mtime == AMBIGUOUS_TIME:
             self.nonnormalset.add(f)
         if size == FROM_P2:
             self.otherparentset.add(f)
@@ -1581,7 +1584,7 @@ class dirstatemap(object):
         for f in files:
             e = self.get(f)
             if e is not None and e[0] == b'n' and e[3] == now:
-                self._map[f] = dirstatetuple(e[0], e[1], e[2], -1)
+                self._map[f] = dirstatetuple(e[0], e[1], e[2], AMBIGUOUS_TIME)
                 self.nonnormalset.add(f)
 
     def nonnormalentries(self):
@@ -1592,7 +1595,7 @@ class dirstatemap(object):
             nonnorm = set()
             otherparent = set()
             for fname, e in pycompat.iteritems(self._map):
-                if e[0] != b'n' or e[3] == -1:
+                if e[0] != b'n' or e[3] == AMBIGUOUS_TIME:
                     nonnorm.add(fname)
                 if e[0] == b'n' and e[2] == FROM_P2:
                     otherparent.add(fname)
