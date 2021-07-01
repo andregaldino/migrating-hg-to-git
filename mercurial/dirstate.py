@@ -51,6 +51,9 @@ dirstatetuple = parsers.dirstatetuple
 # a special value used internally for `size` if the file come from the other parent
 FROM_P2 = -2
 
+# a special value used internally for `size` if the file is modified/merged/added
+NONNORMAL = -1
+
 
 class repocache(filecache):
     """filecache for files in .hg/"""
@@ -488,9 +491,9 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry[0] == b'r' and entry[2] in (-1, FROM_P2):
+                if entry[0] == b'r' and entry[2] in (NONNORMAL, FROM_P2):
                     source = self._map.copymap.get(f)
-                    if entry[2] == -1:
+                    if entry[2] == NONNORMAL:
                         self.merge(f)
                     elif entry[2] == FROM_P2:
                         self.otherparent(f)
@@ -499,7 +502,7 @@ class dirstate(object):
                     return
                 if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
                     return
-        self._addpath(f, b'n', 0, -1, -1)
+        self._addpath(f, b'n', 0, NONNORMAL, -1)
         self._map.copymap.pop(f, None)
 
     def otherparent(self, f):
@@ -517,7 +520,7 @@ class dirstate(object):
 
     def add(self, f):
         '''Mark a file added.'''
-        self._addpath(f, b'a', 0, -1, -1)
+        self._addpath(f, b'a', 0, NONNORMAL, -1)
         self._map.copymap.pop(f, None)
 
     def remove(self, f):
@@ -530,7 +533,7 @@ class dirstate(object):
             if entry is not None:
                 # backup the previous state
                 if entry[0] == b'm':  # merge
-                    size = -1
+                    size = NONNORMAL
                 elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
                     size = FROM_P2
                     self._map.otherparentset.add(f)
