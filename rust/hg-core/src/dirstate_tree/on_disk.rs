@@ -79,7 +79,7 @@ pub(super) struct Node {
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
 
-    /// Dependending on the value of `state`:
+    /// Depending on the value of `state`:
     ///
     /// * A null byte: `data` is not used.
     ///
