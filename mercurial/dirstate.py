@@ -438,7 +438,15 @@ class dirstate(object):
     def copies(self):
         return self._map.copymap
 
-    def _addpath(self, f, state, mode, size=NONNORMAL, mtime=AMBIGUOUS_TIME):
+    def _addpath(
+        self,
+        f,
+        state,
+        mode,
+        size=NONNORMAL,
+        mtime=AMBIGUOUS_TIME,
+        from_p2=False,
+    ):
         oldstate = self[f]
         if state == b'a' or oldstate == b'r':
             scmutil.checkfilename(f)
@@ -455,10 +463,15 @@ class dirstate(object):
                     msg = _(b'file %r in dirstate clashes with %r')
                     msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
                     raise error.Abort(msg)
-        if size != NONNORMAL and size != FROM_P2:
-            size = size & _rangemask
-        if mtime != AMBIGUOUS_TIME:
-            mtime = mtime & _rangemask
+        if from_p2:
+            size = FROM_P2
+            mtime = AMBIGUOUS_TIME
+        else:
+            assert size != FROM_P2
+            if size != NONNORMAL:
+                size = size & _rangemask
+            if mtime != AMBIGUOUS_TIME:
+                mtime = mtime & _rangemask
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
@@ -519,10 +532,10 @@ class dirstate(object):
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
-            self._addpath(f, b'm', 0, FROM_P2)
+            self._addpath(f, b'm', 0, from_p2=True)
         else:
             # add-like
-            self._addpath(f, b'n', 0, FROM_P2)
+            self._addpath(f, b'n', 0, from_p2=True)
         self._map.copymap.pop(f, None)
 
     def add(self, f):
