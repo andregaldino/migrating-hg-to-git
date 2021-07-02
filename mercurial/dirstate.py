@@ -464,17 +464,22 @@ class dirstate(object):
                     msg = _(b'file %r in dirstate clashes with %r')
                     msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
                     raise error.Abort(msg)
-        if from_p2:
+        if state == b'a':
+            assert not possibly_dirty
+            assert not from_p2
+            size = NONNORMAL
+            mtime = AMBIGUOUS_TIME
+        elif from_p2:
+            assert not possibly_dirty
             size = FROM_P2
             mtime = AMBIGUOUS_TIME
         elif possibly_dirty:
             mtime = AMBIGUOUS_TIME
         else:
             assert size != FROM_P2
-            if size != NONNORMAL:
-                size = size & _rangemask
-            if mtime != AMBIGUOUS_TIME:
-                mtime = mtime & _rangemask
+            assert size != NONNORMAL
+            size = size & _rangemask
+            mtime = mtime & _rangemask
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
