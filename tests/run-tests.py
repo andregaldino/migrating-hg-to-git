@@ -3564,10 +3564,9 @@ class TestRunner(object):
                     f.write(b'py -3.%d "$@"\n' % sys.version_info[1])
 
             exedir, exename = os.path.split(sysexecutable)
-            vlog(
-                "# Modifying search path to find %s as %s in '%s'"
-                % (exename, pyexename, exedir)
-            )
+            msg = "# Modifying search path to find %s as %s in '%s'"
+            msg %= (exename, pyexename, exedir)
+            vlog(msg)
             path = os.environ['PATH'].split(os.pathsep)
             while exedir in path:
                 path.remove(exedir)
