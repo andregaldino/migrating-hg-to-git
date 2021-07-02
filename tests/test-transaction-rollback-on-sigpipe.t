@@ -47,7 +47,8 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
 
   $ cat >remote/.hg/hgrc <<EOF
   > [hooks]
-  > pretxnchangegroup.break-things=$hook_script
+  > pretxnchangegroup.00-break-things=$hook_script
+  > pretxnchangegroup.01-output-things=echo "some remote output to be forward to the closed pipe"
   > EOF
 
   $ hg --cwd ./remote tip -T '{node|short}\n'
