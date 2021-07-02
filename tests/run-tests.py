@@ -3575,9 +3575,10 @@ class TestRunner(object):
             # not be in PATH by default.
             extra_paths = [exedir]
             vi = sys.version_info
-            if 'APPDATA' in os.environ:
+            appdata = os.environ.get('APPDATA')
+            if appdata is not None:
                 scripts_dir = os.path.join(
-                    os.environ['APPDATA'],
+                    appdata,
                     'Python',
                     'Python%d%d' % (vi[0], vi[1]),
                     'Scripts',
@@ -3585,7 +3586,7 @@ class TestRunner(object):
 
                 if vi.major == 2:
                     scripts_dir = os.path.join(
-                        os.environ['APPDATA'],
+                        appdata,
                         'Python',
                         'Scripts',
                     )
