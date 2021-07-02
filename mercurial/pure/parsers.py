@@ -35,6 +35,13 @@ _decompress = zlib.decompress
 # Some code below makes tuples directly because it's more convenient. However,
 # code outside this module should always use dirstatetuple.
 def dirstatetuple(*x):
+    """the four items are:
+    - state (one of 'n', 'a', 'r', 'm')
+    - mode,
+    - size,
+    - mtime,
+    """
+
     # x is a tuple
     return x
 
