@@ -3534,10 +3534,9 @@ class TestRunner(object):
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
         if getattr(os, 'symlink', None) and os.name != 'nt':
-            vlog(
-                "# Making python executable in test path a symlink to '%s'"
-                % sysexecutable
-            )
+            msg = "# Making python executable in test path a symlink to '%s'"
+            msg %= sysexecutable
+            vlog(msg)
             mypython = os.path.join(self._tmpbindir, pyexename)
             try:
                 if os.readlink(mypython) == sysexecutable:
