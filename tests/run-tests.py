@@ -3529,7 +3529,10 @@ class TestRunner(object):
     def _usecorrectpython(self):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
-        pyexename = sys.platform == 'win32' and b'python.exe' or b'python3'
+        if sys.platform == 'win32':
+            pyexename = b'python.exe'
+        else:
+            pyexename = b'python3'  # XXX this is wrong with python2...
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
