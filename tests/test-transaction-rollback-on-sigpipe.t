@@ -50,12 +50,16 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
   > pretxnchangegroup.break-things=$hook_script
   > EOF
 
+  $ hg --cwd ./remote tip -T '{node|short}\n'
+  000000000000
   $ cd local
   $ echo foo > foo ; hg commit -qAm "commit"
   $ hg push -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd $remotecmd 2>&1 | grep -v $killable_pipe
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
 
 The remote should be left in a good state
+  $ hg --cwd ../remote tip -T '{node|short}\n'
+  000000000000
   $ hg --cwd ../remote recover
   no interrupted transaction available
   [1]
