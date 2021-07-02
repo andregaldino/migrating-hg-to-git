@@ -1,53 +1,30 @@
-#require bash
 Test that, when an hg push is interrupted and the remote side receives SIGPIPE,
 the remote hg is able to successfully roll back the transaction.
 
   $ hg init -q remote
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -q ssh://user@dummy/`pwd`/remote local
-
-  $ pidfile=`pwd`/pidfile
-  $ >$pidfile
-
-  $ script() {
-  >     cat >"$1"
-  >     chmod +x "$1"
-  > }
+  $ hg clone -e "\"$PYTHON\" \"$RUNTESTDIR/dummyssh\"" -q ssh://user@dummy/`pwd`/remote local
+  $ SIGPIPE_REMOTE_DEBUG_FILE="$TESTTMP/DEBUGFILE"
+  $ SYNCFILE1="$TESTTMP/SYNCFILE1"
+  $ SYNCFILE2="$TESTTMP/SYNCFILE2"
+  $ export SIGPIPE_REMOTE_DEBUG_FILE
+  $ export SYNCFILE1
+  $ export SYNCFILE2
+  $ PYTHONUNBUFFERED=1
+  $ export PYTHONUNBUFFERED
 
 On the remote end, run hg, piping stdout and stderr through processes that we
 know the PIDs of. We will later kill these to simulate an ssh client
 disconnecting.
 
-  $ killable_pipe=`pwd`/killable_pipe.sh
-  $ script $killable_pipe <<EOF
-  > #!/usr/bin/env bash
-  > echo \$\$ >> $pidfile
-  > exec cat
-  > EOF
-
-  $ remotecmd=`pwd`/remotecmd.sh
-  $ script $remotecmd <<EOF
-  > #!/usr/bin/env bash
-  > hg "\$@" 1> >($killable_pipe) 2> >($killable_pipe >&2)
-  > EOF
+  $ remotecmd="$RUNTESTDIR/testlib/sigpipe-remote.py"
 
 In the pretxnchangegroup hook, kill the PIDs recorded above to simulate ssh
 disconnecting. Then exit nonzero, to force a transaction rollback.
 
-  $ hook_script=`pwd`/pretxnchangegroup.sh
-  $ script $hook_script <<EOF
-  > #!/usr/bin/env bash
-  > for pid in \$(cat $pidfile) ; do
-  >   kill \$pid
-  >   while kill -0 \$pid 2>/dev/null ; do
-  >     sleep 0.1
-  >   done
-  > done
-  > exit 1
-  > EOF
 
   $ cat >remote/.hg/hgrc <<EOF
   > [hooks]
-  > pretxnchangegroup.00-break-things=$hook_script
+  > pretxnchangegroup.00-break-things="$RUNTESTDIR/testlib/wait-on-file" 10 "$SYNCFILE2" "$SYNCFILE1"
   > pretxnchangegroup.01-output-things=echo "some remote output to be forward to the closed pipe"
   > EOF
 
@@ -55,8 +32,24 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
   000000000000
   $ cd local
   $ echo foo > foo ; hg commit -qAm "commit"
-  $ hg push -q -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd $remotecmd 2>&1 | grep -v $killable_pipe
+  $ hg push -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd "$remotecmd"
+  pushing to ssh://user@dummy/$TESTTMP/remote
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
+  [255]
+  $ cat $SIGPIPE_REMOTE_DEBUG_FILE
+  SIGPIPE-HELPER: Starting
+  SIGPIPE-HELPER: Mercurial started
+  SIGPIPE-HELPER: Redirection in place
+  SIGPIPE-HELPER: SYNCFILE1 detected
+  SIGPIPE-HELPER: pipes closed
+  SIGPIPE-HELPER: creating SYNCFILE2
+  SIGPIPE-HELPER: Shutting down
+  SIGPIPE-HELPER: Server process terminated
+  SIGPIPE-HELPER: Shut down
 
 The remote should be left in a good state
   $ hg --cwd ../remote tip -T '{node|short}\n'
