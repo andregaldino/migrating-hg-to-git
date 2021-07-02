@@ -1713,20 +1713,58 @@ Moving files
   record this change to 'plain3'?
   (enter ? for help) [Ynesfdaq?] y
   
+
+Rename file but discard edits
+
+  $ echo content > new-file
+  $ hg add -q new-file
+  $ hg commit -qm 'new file'
+  $ hg mv new-file renamed-file
+  $ echo new-content >> renamed-file
+  $ hg commit -i -d '24 0' -m content-rename<<EOF
+  > y
+  > n
+  > EOF
+  diff --git a/new-file b/renamed-file
+  rename from new-file
+  rename to renamed-file
+  1 hunks, 1 lines changed
+  examine changes to 'new-file' and 'renamed-file'?
+  (enter ? for help) [Ynesfdaq?] y
+  
+  @@ -1,1 +1,2 @@
+   content
+  +new-content
+  record this change to 'renamed-file'?
+  (enter ? for help) [Ynesfdaq?] n
+  
+  $ hg status
+  M renamed-file
+  ? editedfile.orig
+  ? editedfile.rej
+  ? editor.sh
+  $ hg diff
+  diff -r * renamed-file (glob)
+  --- a/renamed-file	Thu Jan 01 00:00:24 1970 +0000
+  +++ b/renamed-file	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,2 @@
+   content
+  +new-content
+
 The #if execbit block above changes the hash here on some systems
   $ hg status -A plain3
   C plain3
   $ hg tip
-  changeset:   32:* (glob)
+  changeset:   34:* (glob)
   tag:         tip
   user:        test
-  date:        Thu Jan 01 00:00:23 1970 +0000
-  summary:     moving_files
+  date:        Thu Jan 01 00:00:24 1970 +0000
+  summary:     content-rename
   
 Editing patch of newly added file
 
   $ hg update -C .
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat > editor.sh << '__EOF__'
   > cat "$1"  | sed "s/first/very/g"  > tt
   > mv tt  "$1"
@@ -1737,7 +1775,7 @@ Editing patch of newly added file
   > This is the third line
   > __EOF__
   $ hg add newfile
-  $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit -i -d '23 0' -medit-patch-new <<EOF
+  $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit -i -d '25 0' -medit-patch-new <<EOF
   > y
   > e
   > EOF
@@ -1770,7 +1808,7 @@ Add new file from within a subdirectory
   $ cd folder
   $ echo "foo" > bar
   $ hg add bar
-  $ hg commit -i -d '23 0' -mnewfilesubdir  <<EOF
+  $ hg commit -i -d '26 0' -mnewfilesubdir  <<EOF
   > y
   > y
   > EOF
@@ -1786,15 +1824,15 @@ Add new file from within a subdirectory
   
 The #if execbit block above changes the hashes here on some systems
   $ hg tip -p
-  changeset:   34:* (glob)
+  changeset:   36:* (glob)
   tag:         tip
   user:        test
-  date:        Thu Jan 01 00:00:23 1970 +0000
+  date:        Thu Jan 01 00:00:26 1970 +0000
   summary:     newfilesubdir
   
   diff -r * -r * folder/bar (glob)
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
-  +++ b/folder/bar	Thu Jan 01 00:00:23 1970 +0000
+  +++ b/folder/bar	Thu Jan 01 00:00:26 1970 +0000
   @@ -0,0 +1,1 @@
   +foo
   

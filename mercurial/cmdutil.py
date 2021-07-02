@@ -346,19 +346,18 @@ def ishunk(x):
     return isinstance(x, hunkclasses)
 
 
-def newandmodified(chunks, originalchunks):
+def isheader(x):
+    headerclasses = (crecordmod.uiheader, patch.header)
+    return isinstance(x, headerclasses)
+
+
+def newandmodified(chunks):
     newlyaddedandmodifiedfiles = set()
     alsorestore = set()
     for chunk in chunks:
-        if (
-            ishunk(chunk)
-            and chunk.header.isnewfile()
-            and chunk not in originalchunks
-        ):
-            newlyaddedandmodifiedfiles.add(chunk.header.filename())
-            alsorestore.update(
-                set(chunk.header.files()) - {chunk.header.filename()}
-            )
+        if isheader(chunk) and chunk.isnewfile():
+            newlyaddedandmodifiedfiles.add(chunk.filename())
+            alsorestore.update(set(chunk.files()) - {chunk.filename()})
     return newlyaddedandmodifiedfiles, alsorestore
 
 
@@ -517,12 +516,12 @@ def dorecord(
         diffopts.git = True
         diffopts.showfunc = True
         originaldiff = patch.diff(repo, changes=status, opts=diffopts)
-        originalchunks = patch.parsepatch(originaldiff)
+        original_headers = patch.parsepatch(originaldiff)
         match = scmutil.match(repo[None], pats)
 
         # 1. filter patch, since we are intending to apply subset of it
         try:
-            chunks, newopts = filterfn(ui, originalchunks, match)
+            chunks, newopts = filterfn(ui, original_headers, match)
         except error.PatchError as err:
             raise error.InputError(_(b'error parsing patch: %s') % err)
         opts.update(newopts)
@@ -532,15 +531,11 @@ def dorecord(
         # version without the edit in the workdir. We also will need to restore
         # files that were the sources of renames so that the patch application
         # works.
-        newlyaddedandmodifiedfiles, alsorestore = newandmodified(
-            chunks, originalchunks
-        )
+        newlyaddedandmodifiedfiles, alsorestore = newandmodified(chunks)
         contenders = set()
         for h in chunks:
-            try:
+            if isheader(h):
                 contenders.update(set(h.files()))
-            except AttributeError:
-                pass
 
         changed = status.modified + status.added + status.removed
         newfiles = [f for f in changed if f in contenders]
@@ -3630,12 +3625,12 @@ def _performrevert(
             diff = patch.diff(repo, None, ctx.node(), m, opts=diffopts)
         else:
             diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
-        originalchunks = patch.parsepatch(diff)
+        original_headers = patch.parsepatch(diff)
 
         try:
 
             chunks, opts = recordfilter(
-                repo.ui, originalchunks, match, operation=operation
+                repo.ui, original_headers, match, operation=operation
             )
             if operation == b'discard':
                 chunks = patch.reversehunks(chunks)
@@ -3648,9 +3643,7 @@ def _performrevert(
         # "remove added file <name> (Yn)?", so we don't need to worry about the
         # alsorestore value. Ideally we'd be able to partially revert
         # copied/renamed files.
-        newlyaddedandmodifiedfiles, unusedalsorestore = newandmodified(
-            chunks, originalchunks
-        )
+        newlyaddedandmodifiedfiles, unusedalsorestore = newandmodified(chunks)
         if tobackup is None:
             tobackup = set()
         # Apply changes
