@@ -446,6 +446,7 @@ class dirstate(object):
         size=NONNORMAL,
         mtime=AMBIGUOUS_TIME,
         from_p2=False,
+        possibly_dirty=False,
     ):
         oldstate = self[f]
         if state == b'a' or oldstate == b'r':
@@ -465,6 +466,8 @@ class dirstate(object):
                     raise error.Abort(msg)
         if from_p2:
             size = FROM_P2
+            mtime = AMBIGUOUS_TIME
+        elif possibly_dirty:
             mtime = AMBIGUOUS_TIME
         else:
             assert size != FROM_P2
@@ -522,7 +525,7 @@ class dirstate(object):
                     return
                 if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
                     return
-        self._addpath(f, b'n', 0)
+        self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)
 
     def otherparent(self, f):
