@@ -3540,22 +3540,23 @@ class TestRunner(object):
             msg = "# Making python executable in test path a symlink to '%s'"
             msg %= sysexecutable
             vlog(msg)
-            mypython = os.path.join(self._tmpbindir, pyexename)
-            try:
-                if os.readlink(mypython) == sysexecutable:
-                    return
-                os.unlink(mypython)
-            except OSError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-            if self._findprogram(pyexename) != sysexecutable:
+            for pyexename in [pyexename]:
+                mypython = os.path.join(self._tmpbindir, pyexename)
                 try:
-                    os.symlink(sysexecutable, mypython)
-                    self._createdfiles.append(mypython)
+                    if os.readlink(mypython) == sysexecutable:
+                        continue
+                    os.unlink(mypython)
                 except OSError as err:
-                    # child processes may race, which is harmless
-                    if err.errno != errno.EEXIST:
+                    if err.errno != errno.ENOENT:
                         raise
+                if self._findprogram(pyexename) != sysexecutable:
+                    try:
+                        os.symlink(sysexecutable, mypython)
+                        self._createdfiles.append(mypython)
+                    except OSError as err:
+                        # child processes may race, which is harmless
+                        if err.errno != errno.EEXIST:
+                            raise
         else:
             # Windows doesn't have `python3.exe`, and MSYS cannot understand the
             # reparse point with that name provided by Microsoft.  Create a
