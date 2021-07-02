@@ -438,7 +438,7 @@ class dirstate(object):
     def copies(self):
         return self._map.copymap
 
-    def _addpath(self, f, state, mode, size, mtime):
+    def _addpath(self, f, state, mode, size=NONNORMAL, mtime=AMBIGUOUS_TIME):
         oldstate = self[f]
         if state == b'a' or oldstate == b'r':
             scmutil.checkfilename(f)
@@ -509,7 +509,7 @@ class dirstate(object):
                     return
                 if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
                     return
-        self._addpath(f, b'n', 0, NONNORMAL, AMBIGUOUS_TIME)
+        self._addpath(f, b'n', 0)
         self._map.copymap.pop(f, None)
 
     def otherparent(self, f):
@@ -519,15 +519,15 @@ class dirstate(object):
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
-            self._addpath(f, b'm', 0, FROM_P2, AMBIGUOUS_TIME)
+            self._addpath(f, b'm', 0, FROM_P2)
         else:
             # add-like
-            self._addpath(f, b'n', 0, FROM_P2, AMBIGUOUS_TIME)
+            self._addpath(f, b'n', 0, FROM_P2)
         self._map.copymap.pop(f, None)
 
     def add(self, f):
         '''Mark a file added.'''
-        self._addpath(f, b'a', 0, NONNORMAL, AMBIGUOUS_TIME)
+        self._addpath(f, b'a', 0)
         self._map.copymap.pop(f, None)
 
     def remove(self, f):
