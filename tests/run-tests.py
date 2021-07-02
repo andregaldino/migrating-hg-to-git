@@ -3530,9 +3530,11 @@ class TestRunner(object):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
         if sys.platform == 'win32':
-            pyexename = b'python.exe'
+            pyexe_names = [b'python', b'python.exe']
+        elif sys.version_info[0] < 3:
+            pyexe_names = [b'python', b'python2']
         else:
-            pyexename = b'python3'  # XXX this is wrong with python2...
+            pyexe_names = [b'python', b'python3']
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
@@ -3540,7 +3542,7 @@ class TestRunner(object):
             msg = "# Making python executable in test path a symlink to '%s'"
             msg %= sysexecutable
             vlog(msg)
-            for pyexename in [pyexename]:
+            for pyexename in pyexe_names:
                 mypython = os.path.join(self._tmpbindir, pyexename)
                 try:
                     if os.readlink(mypython) == sysexecutable:
@@ -3566,11 +3568,16 @@ class TestRunner(object):
                 with open(osenvironb[b'RUNTESTDIR'] + b'/python3', 'wb') as f:
                     f.write(b'#!/bin/sh\n')
                     f.write(b'py -3.%d "$@"\n' % sys.version_info[1])
+            if os.getenv('MSYSTEM'):
+                with open(osenvironb[b'RUNTESTDIR'] + b'/python2', 'wb') as f:
+                    f.write(b'#!/bin/sh\n')
+                    f.write(b'py -2.%d "$@"\n' % sys.version_info[1])
 
             exedir, exename = os.path.split(sysexecutable)
-            msg = "# Modifying search path to find %s as %s in '%s'"
-            msg %= (exename, pyexename, exedir)
-            vlog(msg)
+            for pyexename in pyexe_names:
+                msg = "# Modifying search path to find %s as %s in '%s'"
+                msg %= (exename, pyexename, exedir)
+                vlog(msg)
             path = os.environ['PATH'].split(os.pathsep)
             while exedir in path:
                 path.remove(exedir)
@@ -3598,8 +3605,9 @@ class TestRunner(object):
                 extra_paths.append(scripts_dir)
 
             os.environ['PATH'] = os.pathsep.join(extra_paths + path)
-            if not self._findprogram(pyexename):
-                print("WARNING: Cannot find %s in search path" % pyexename)
+            for pyexename in pyexe_names:
+                if not self._findprogram(pyexename):
+                    print("WARNING: Cannot find %s in search path" % pyexename)
 
     def _installhg(self):
         """Install hg into the test environment.

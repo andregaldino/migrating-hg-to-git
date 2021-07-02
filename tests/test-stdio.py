@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Tests the buffering behavior of stdio streams in `mercurial.utils.procutil`.
 """

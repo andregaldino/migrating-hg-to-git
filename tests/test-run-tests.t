@@ -2036,3 +2036,34 @@ Test conditional output matching
   # Ran 2 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
+
+Test that a proper "python" has been set up
+===========================================
+
+(with a small check-code work around)
+  $ printf "#!/usr/bi" > test-py3.tmp
+  $ printf "n/en" >> test-py3.tmp
+  $ cat << EOF >> test-py3.tmp
+  > v python3
+  > import sys
+  > print('.'.join(str(x) for x in sys.version_info))
+  > EOF
+  $ mv test-py3.tmp test-py3.py
+  $ chmod +x test-py3.py
+
+(with a small check-code work around)
+  $ printf "#!/usr/bi" > test-py.tmp
+  $ printf "n/en" >> test-py.tmp
+  $ cat << EOF >> test-py.tmp
+  > v python
+  > import sys
+  > print('.'.join(str(x) for x in sys.version_info))
+  > EOF
+  $ mv test-py.tmp test-py.py
+  $ chmod +x test-py.py
+
+  $ ./test-py3.py
+  3.* (glob)
+  $ ./test-py.py
+  2.* (glob) (no-py3 !)
+  3.* (glob) (py3 !)

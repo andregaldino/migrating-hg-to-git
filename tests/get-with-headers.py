@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 """This does HTTP GET requests given a host:port and path and returns
 a subset of the headers plus the body of the result."""

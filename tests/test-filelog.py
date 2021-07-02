@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Tests the behavior of filelog w.r.t. data starting with '\1\n'
 """
