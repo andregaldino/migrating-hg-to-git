@@ -745,6 +745,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             entry.size = SIZE_FROM_OTHER_PARENT;
             entry.mtime = MTIME_UNSET;
         } else if possibly_dirty {
+            entry.state = EntryState::Normal;
             entry.size = SIZE_NON_NORMAL;
             entry.mtime = MTIME_UNSET;
         } else {

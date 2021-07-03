@@ -530,7 +530,7 @@ class dirstate(object):
                     return
                 elif entry.merged or entry.from_p2:
                     return
-        self._addpath(f, b'n', 0, possibly_dirty=True)
+        self._addpath(f, possibly_dirty=True)
         self._map.copymap.pop(f, None)
 
     def otherparent(self, f):
