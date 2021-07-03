@@ -172,6 +172,7 @@ class dirstatemap(object):
             mtime = AMBIGUOUS_TIME
         elif from_p2:
             assert not possibly_dirty
+            state = b'n'
             size = FROM_P2
             mtime = AMBIGUOUS_TIME
         elif possibly_dirty:

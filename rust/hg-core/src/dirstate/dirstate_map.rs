@@ -91,6 +91,7 @@ impl DirstateMap {
             entry.mtime = MTIME_UNSET;
         } else if from_p2 {
             assert!(!possibly_dirty);
+            entry.state = EntryState::Normal;
             entry.size = SIZE_FROM_OTHER_PARENT;
             entry.mtime = MTIME_UNSET;
         } else if possibly_dirty {

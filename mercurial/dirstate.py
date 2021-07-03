@@ -543,7 +543,7 @@ class dirstate(object):
             self._addpath(f, merged=True)
         else:
             # add-like
-            self._addpath(f, b'n', 0, from_p2=True)
+            self._addpath(f, from_p2=True)
         self._map.copymap.pop(f, None)
 
     def add(self, f):
