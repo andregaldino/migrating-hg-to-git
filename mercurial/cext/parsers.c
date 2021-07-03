@@ -118,6 +118,38 @@ static PySequenceMethods dirstate_tuple_sq = {
     0                      /* sq_inplace_repeat */
 };
 
+static PyObject *dirstatetuple_v1_state(dirstateTupleObject *self)
+{
+	return PyBytes_FromStringAndSize(&self->state, 1);
+};
+
+static PyObject *dirstatetuple_v1_mode(dirstateTupleObject *self)
+{
+	return PyInt_FromLong(self->mode);
+};
+
+static PyObject *dirstatetuple_v1_size(dirstateTupleObject *self)
+{
+	return PyInt_FromLong(self->size);
+};
+
+static PyObject *dirstatetuple_v1_mtime(dirstateTupleObject *self)
+{
+	return PyInt_FromLong(self->mtime);
+};
+
+static PyMethodDef dirstatetuple_methods[] = {
+    {"v1_state", (PyCFunction)dirstatetuple_v1_state, METH_NOARGS,
+     "return a \"state\" suitable for v1 serialization"},
+    {"v1_mode", (PyCFunction)dirstatetuple_v1_mode, METH_NOARGS,
+     "return a \"mode\" suitable for v1 serialization"},
+    {"v1_size", (PyCFunction)dirstatetuple_v1_size, METH_NOARGS,
+     "return a \"size\" suitable for v1 serialization"},
+    {"v1_mtime", (PyCFunction)dirstatetuple_v1_mtime, METH_NOARGS,
+     "return a \"mtime\" suitable for v1 serialization"},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject dirstateTupleType = {
     PyVarObject_HEAD_INIT(NULL, 0)      /* header */
     "dirstate_tuple",                   /* tp_name */
@@ -146,7 +178,7 @@ PyTypeObject dirstateTupleType = {
     0,                                  /* tp_weaklistoffset */
     0,                                  /* tp_iter */
     0,                                  /* tp_iternext */
-    0,                                  /* tp_methods */
+    dirstatetuple_methods,              /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */

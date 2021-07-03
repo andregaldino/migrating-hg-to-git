@@ -64,6 +64,22 @@ class dirstatetuple(object):
         else:
             raise IndexError(idx)
 
+    def v1_state(self):
+        """return a "state" suitable for v1 serialization"""
+        return self._state
+
+    def v1_mode(self):
+        """return a "mode" suitable for v1 serialization"""
+        return self._mode
+
+    def v1_size(self):
+        """return a "size" suitable for v1 serialization"""
+        return self._size
+
+    def v1_mtime(self):
+        """return a "mtime" suitable for v1 serialization"""
+        return self._mtime
+
 
 def gettype(q):
     return int(q & 0xFFFF)
@@ -450,7 +466,14 @@ def pack_dirstate(dmap, copymap, pl, now):
 
         if f in copymap:
             f = b"%s\0%s" % (f, copymap[f])
-        e = _pack(b">cllll", e[0], e[1], e[2], e[3], len(f))
+        e = _pack(
+            b">cllll",
+            e.v1_state(),
+            e.v1_mode(),
+            e.v1_size(),
+            e.v1_mtime(),
+            len(f),
+        )
         write(e)
         write(f)
     return cs.getvalue()
