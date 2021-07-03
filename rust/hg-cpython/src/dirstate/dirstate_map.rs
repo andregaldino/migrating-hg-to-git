@@ -108,7 +108,6 @@ py_class!(pub class DirstateMap |py| {
     def addfile(
         &self,
         f: PyObject,
-        state: PyObject,
         mode: PyObject,
         size: PyObject,
         mtime: PyObject,
@@ -119,16 +118,6 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let f = f.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
-        let state = if state.is_none(py) {
-            // Arbitrary default value
-            EntryState::Normal
-        } else {
-            state.extract::<PyBytes>(py)?.data(py)[0]
-            .try_into()
-            .map_err(|e: HgError| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?
-        };
         let mode = if mode.is_none(py) {
             // fallback default value
             0
@@ -148,7 +137,8 @@ py_class!(pub class DirstateMap |py| {
             mtime.extract(py)?
         };
         let entry = DirstateEntry {
-            state: state,
+            // XXX Arbitrary default value since the value is determined later
+            state: EntryState::Normal,
             mode: mode,
             size: size,
             mtime: mtime,

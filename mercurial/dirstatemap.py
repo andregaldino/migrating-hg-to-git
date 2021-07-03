@@ -147,7 +147,6 @@ class dirstatemap(object):
     def addfile(
         self,
         f,
-        state=None,
         mode=0,
         size=None,
         mtime=None,
@@ -180,9 +179,9 @@ class dirstatemap(object):
             size = NONNORMAL
             mtime = AMBIGUOUS_TIME
         else:
-            assert state != b'a'
             assert size != FROM_P2
             assert size != NONNORMAL
+            state = b'n'
             size = size & rangemask
             mtime = mtime & rangemask
         assert state is not None
@@ -475,7 +474,6 @@ if rustmod is not None:
         def addfile(
             self,
             f,
-            state=None,
             mode=0,
             size=None,
             mtime=None,
@@ -486,7 +484,6 @@ if rustmod is not None:
         ):
             return self._rustmap.addfile(
                 f,
-                state,
                 mode,
                 size,
                 mtime,

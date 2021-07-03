@@ -443,7 +443,6 @@ class dirstate(object):
     def _addpath(
         self,
         f,
-        state=None,
         mode=0,
         size=None,
         mtime=None,
@@ -472,7 +471,6 @@ class dirstate(object):
         self._updatedfiles.add(f)
         self._map.addfile(
             f,
-            state=state,
             mode=mode,
             size=size,
             mtime=mtime,
@@ -499,7 +497,7 @@ class dirstate(object):
             mode = s.st_mode
             size = s.st_size
             mtime = s[stat.ST_MTIME]
-        self._addpath(f, b'n', mode, size, mtime)
+        self._addpath(f, mode=mode, size=size, mtime=mtime)
         self._map.copymap.pop(f, None)
         if f in self._map.nonnormalset:
             self._map.nonnormalset.remove(f)

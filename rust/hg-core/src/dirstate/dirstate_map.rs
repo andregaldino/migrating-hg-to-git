@@ -99,6 +99,7 @@ impl DirstateMap {
             entry.size = SIZE_NON_NORMAL;
             entry.mtime = MTIME_UNSET;
         } else {
+            entry.state = EntryState::Normal;
             entry.size = entry.size & V1_RANGEMASK;
             entry.mtime = entry.mtime & V1_RANGEMASK;
         }
