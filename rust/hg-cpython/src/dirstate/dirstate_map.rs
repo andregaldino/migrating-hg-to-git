@@ -108,7 +108,6 @@ py_class!(pub class DirstateMap |py| {
     def addfile(
         &self,
         f: PyObject,
-        oldstate: PyObject,
         state: PyObject,
         mode: PyObject,
         size: PyObject,
@@ -118,11 +117,6 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let f = f.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
-        let oldstate = oldstate.extract::<PyBytes>(py)?.data(py)[0]
-            .try_into()
-            .map_err(|e: HgError| {
-                PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?;
         let state = state.extract::<PyBytes>(py)?.data(py)[0]
             .try_into()
             .map_err(|e: HgError| {
@@ -151,7 +145,6 @@ py_class!(pub class DirstateMap |py| {
         let possibly_dirty = possibly_dirty.extract::<PyBool>(py)?.is_true();
         self.inner(py).borrow_mut().add_file(
             filename,
-            oldstate,
             entry,
             from_p2,
             possibly_dirty

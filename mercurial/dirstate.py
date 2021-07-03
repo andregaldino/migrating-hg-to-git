@@ -450,7 +450,6 @@ class dirstate(object):
         from_p2=False,
         possibly_dirty=False,
     ):
-        oldstate = self[f]
         entry = self._map.get(f)
         if state == b'a' or entry is not None and entry.removed:
             scmutil.checkfilename(f)
@@ -471,7 +470,6 @@ class dirstate(object):
         self._updatedfiles.add(f)
         self._map.addfile(
             f,
-            oldstate,
             state=state,
             mode=mode,
             size=size,

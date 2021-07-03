@@ -147,7 +147,6 @@ class dirstatemap(object):
     def addfile(
         self,
         f,
-        oldstate,
         state,
         mode,
         size=None,
@@ -175,9 +174,12 @@ class dirstatemap(object):
             mtime = mtime & rangemask
         assert size is not None
         assert mtime is not None
-        if oldstate in b"?r" and "_dirs" in self.__dict__:
+        old_entry = self.get(f)
+        if (
+            old_entry is None or old_entry.removed
+        ) and "_dirs" in self.__dict__:
             self._dirs.addpath(f)
-        if oldstate == b"?" and "_alldirs" in self.__dict__:
+        if old_entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         self._map[f] = dirstatetuple(state, mode, size, mtime)
         if state != b'n' or mtime == AMBIGUOUS_TIME:
@@ -459,7 +461,6 @@ if rustmod is not None:
         def addfile(
             self,
             f,
-            oldstate,
             state,
             mode,
             size=None,
@@ -469,7 +470,6 @@ if rustmod is not None:
         ):
             return self._rustmap.addfile(
                 f,
-                oldstate,
                 state,
                 mode,
                 size,

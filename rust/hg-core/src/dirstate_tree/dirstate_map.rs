@@ -721,7 +721,6 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn add_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
         entry: DirstateEntry,
         from_p2: bool,
         possibly_dirty: bool,
@@ -743,6 +742,11 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             entry.size = entry.size & V1_RANGEMASK;
             entry.mtime = entry.mtime & V1_RANGEMASK;
         }
+
+        let old_state = match self.get(filename)? {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
 
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }

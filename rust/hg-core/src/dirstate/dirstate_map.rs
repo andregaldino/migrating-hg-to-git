@@ -68,7 +68,6 @@ impl DirstateMap {
     pub fn add_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
         entry: DirstateEntry,
         // XXX once the dust settle this should probably become an enum
         from_p2: bool,
@@ -91,7 +90,10 @@ impl DirstateMap {
             entry.size = entry.size & V1_RANGEMASK;
             entry.mtime = entry.mtime & V1_RANGEMASK;
         }
-
+        let old_state = match self.get(filename) {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
@@ -397,7 +399,6 @@ mod tests {
 
         map.add_file(
             HgPath::new(b"meh"),
-            EntryState::Normal,
             DirstateEntry {
                 state: EntryState::Normal,
                 mode: 1337,
