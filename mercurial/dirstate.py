@@ -337,6 +337,11 @@ class dirstate(object):
     def p2(self):
         return self._validate(self._pl[1])
 
+    @property
+    def in_merge(self):
+        """True if a merge is in progress"""
+        return self._pl[1] != self._nodeconstants.nullid
+
     def branch(self):
         return encoding.tolocal(self._branch)
 
@@ -513,7 +518,7 @@ class dirstate(object):
 
     def normallookup(self, f):
         '''Mark a file normal, but possibly dirty.'''
-        if self._pl[1] != self._nodeconstants.nullid:
+        if self.in_merge:
             # if there is a merge going on and the file was either
             # in state 'm' (-1) or coming from other parent (-2) before
             # being removed, restore that state.
@@ -535,7 +540,7 @@ class dirstate(object):
 
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
-        if self._pl[1] == self._nodeconstants.nullid:
+        if not self.in_merge:
             msg = _(b"setting %r to other parent only allowed in merges") % f
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
@@ -556,7 +561,7 @@ class dirstate(object):
         self._dirty = True
         oldstate = self[f]
         size = 0
-        if self._pl[1] != self._nodeconstants.nullid:
+        if self.in_merge:
             entry = self._map.get(f)
             if entry is not None:
                 # backup the previous state
@@ -572,7 +577,7 @@ class dirstate(object):
 
     def merge(self, f):
         '''Mark a file merged.'''
-        if self._pl[1] == self._nodeconstants.nullid:
+        if not self.in_merge:
             return self.normallookup(f)
         return self.otherparent(f)
 
