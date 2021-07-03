@@ -184,6 +184,10 @@ def _checkpublish(pushop):
         published = repo.filtered(b'served').revs(b'not public()')
     else:
         published = repo.revs(b'::%ln - public()', pushop.revs)
+        # we want to use pushop.revs in the revset even if they themselves are
+        # secret, but we don't want to have anything that the server won't see
+        # in the result of this expression
+        published &= repo.filtered(b'served')
     if published:
         if behavior == b'warn':
             ui.warn(
