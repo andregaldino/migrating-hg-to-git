@@ -451,7 +451,8 @@ class dirstate(object):
         possibly_dirty=False,
     ):
         oldstate = self[f]
-        if state == b'a' or oldstate == b'r':
+        entry = self._map.get(f)
+        if state == b'a' or entry is not None and entry.removed:
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
                 msg = _(b'directory %r already in dirstate')
