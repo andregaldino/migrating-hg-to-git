@@ -171,7 +171,7 @@ class dirstatemap(object):
             # would be nice.
             if entry is not None:
                 # backup the previous state
-                if entry[0] == b'm':  # merge
+                if entry.merged:  # merge
                     size = NONNORMAL
                 elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
                     size = FROM_P2

@@ -355,7 +355,7 @@ class dirstate(object):
     def setparents(self, p1, p2=None):
         """Set dirstate parents to p1 and p2.
 
-        When moving from two parents to one, 'm' merged entries a
+        When moving from two parents to one, "merged" entries a
         adjusted to normal and previous copy records discarded and
         returned by the call.
 
@@ -386,8 +386,8 @@ class dirstate(object):
                 if s is None:
                     continue
 
-                # Discard 'm' markers when moving away from a merge state
-                if s.state == b'm':
+                # Discard "merged" markers when moving away from a merge state
+                if s.merged:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
@@ -527,7 +527,7 @@ class dirstate(object):
         '''Mark a file normal, but possibly dirty.'''
         if self.in_merge:
             # if there is a merge going on and the file was either
-            # in state 'm' (-1) or coming from other parent (-2) before
+            # "merged" or coming from other parent (-2) before
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
@@ -540,11 +540,7 @@ class dirstate(object):
                     if source:
                         self.copy(source, f)
                     return
-                if (
-                    entry.state == b'm'
-                    or entry.state == b'n'
-                    and entry[2] == FROM_P2
-                ):
+                if entry.merged or entry.state == b'n' and entry[2] == FROM_P2:
                     return
         self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)
@@ -1362,7 +1358,7 @@ class dirstate(object):
                     ladd(fn)
                 elif listclean:
                     cadd(fn)
-            elif state == b'm':
+            elif t.merged:
                 madd(fn)
             elif state == b'a':
                 aadd(fn)

@@ -155,8 +155,18 @@ static PyObject *dirstatetuple_get_state(dirstateTupleObject *self)
 	return PyBytes_FromStringAndSize(&self->state, 1);
 };
 
+static PyObject *dirstatetuple_get_merged(dirstateTupleObject *self)
+{
+	if (self->state == 'm') {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyGetSetDef dirstatetuple_getset[] = {
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
+    {"merged", (getter)dirstatetuple_get_merged, NULL, "merged", NULL},
     {NULL} /* Sentinel */
 };
 

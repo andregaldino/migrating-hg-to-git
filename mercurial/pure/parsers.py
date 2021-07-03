@@ -79,6 +79,14 @@ class dirstatetuple(object):
         """
         return self._state
 
+    @property
+    def merged(self):
+        """True if the file has been merged
+
+        Should only be set if a merge is in progress in the dirstate
+        """
+        return self._state == b'm'
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         return self._state
