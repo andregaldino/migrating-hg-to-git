@@ -722,13 +722,15 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         &mut self,
         filename: &HgPath,
         entry: DirstateEntry,
+        added: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
         let mut entry = entry;
-        if entry.state == EntryState::Added {
+        if added {
             assert!(!possibly_dirty);
             assert!(!from_p2);
+            entry.state = EntryState::Added;
             entry.size = SIZE_NON_NORMAL;
             entry.mtime = MTIME_UNSET;
         } else if from_p2 {

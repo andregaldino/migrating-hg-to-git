@@ -70,13 +70,15 @@ impl DirstateMap {
         filename: &HgPath,
         entry: DirstateEntry,
         // XXX once the dust settle this should probably become an enum
+        added: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
         let mut entry = entry;
-        if entry.state == EntryState::Added {
+        if added {
             assert!(!possibly_dirty);
             assert!(!from_p2);
+            entry.state = EntryState::Added;
             entry.size = SIZE_NON_NORMAL;
             entry.mtime = MTIME_UNSET;
         } else if from_p2 {
@@ -405,6 +407,7 @@ mod tests {
                 mtime: 1337,
                 size: 1337,
             },
+            false,
             false,
             false,
         )

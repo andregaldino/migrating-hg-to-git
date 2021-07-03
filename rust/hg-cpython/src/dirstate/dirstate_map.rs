@@ -112,17 +112,28 @@ py_class!(pub class DirstateMap |py| {
         mode: PyObject,
         size: PyObject,
         mtime: PyObject,
+        added: PyObject,
         from_p2: PyObject,
         possibly_dirty: PyObject,
     ) -> PyResult<PyObject> {
         let f = f.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
-        let state = state.extract::<PyBytes>(py)?.data(py)[0]
+        let state = if state.is_none(py) {
+            // Arbitrary default value
+            EntryState::Normal
+        } else {
+            state.extract::<PyBytes>(py)?.data(py)[0]
             .try_into()
             .map_err(|e: HgError| {
                 PyErr::new::<exc::ValueError, _>(py, e.to_string())
-            })?;
-        let mode = mode.extract(py)?;
+            })?
+        };
+        let mode = if mode.is_none(py) {
+            // fallback default value
+            0
+        } else {
+            mode.extract(py)?
+        };
         let size = if size.is_none(py) {
             // fallback default value
             SIZE_NON_NORMAL
@@ -141,11 +152,13 @@ py_class!(pub class DirstateMap |py| {
             size: size,
             mtime: mtime,
         };
+        let added = added.extract::<PyBool>(py)?.is_true();
         let from_p2 = from_p2.extract::<PyBool>(py)?.is_true();
         let possibly_dirty = possibly_dirty.extract::<PyBool>(py)?.is_true();
         self.inner(py).borrow_mut().add_file(
             filename,
             entry,
+            added,
             from_p2,
             possibly_dirty
         ).and(Ok(py.None())).or_else(|e: DirstateError| {

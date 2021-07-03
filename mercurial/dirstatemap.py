@@ -147,17 +147,19 @@ class dirstatemap(object):
     def addfile(
         self,
         f,
-        state,
-        mode,
+        state=None,
+        mode=0,
         size=None,
         mtime=None,
+        added=False,
         from_p2=False,
         possibly_dirty=False,
     ):
         """Add a tracked file to the dirstate."""
-        if state == b'a':
+        if added:
             assert not possibly_dirty
             assert not from_p2
+            state = b'a'
             size = NONNORMAL
             mtime = AMBIGUOUS_TIME
         elif from_p2:
@@ -168,10 +170,12 @@ class dirstatemap(object):
             size = NONNORMAL
             mtime = AMBIGUOUS_TIME
         else:
+            assert state != b'a'
             assert size != FROM_P2
             assert size != NONNORMAL
             size = size & rangemask
             mtime = mtime & rangemask
+        assert state is not None
         assert size is not None
         assert mtime is not None
         old_entry = self.get(f)
@@ -461,10 +465,11 @@ if rustmod is not None:
         def addfile(
             self,
             f,
-            state,
-            mode,
+            state=None,
+            mode=0,
             size=None,
             mtime=None,
+            added=False,
             from_p2=False,
             possibly_dirty=False,
         ):
@@ -474,6 +479,7 @@ if rustmod is not None:
                 mode,
                 size,
                 mtime,
+                added,
                 from_p2,
                 possibly_dirty,
             )

@@ -443,15 +443,16 @@ class dirstate(object):
     def _addpath(
         self,
         f,
-        state,
-        mode,
+        state=None,
+        mode=0,
         size=None,
         mtime=None,
+        added=False,
         from_p2=False,
         possibly_dirty=False,
     ):
         entry = self._map.get(f)
-        if state == b'a' or entry is not None and entry.removed:
+        if added or entry is not None and entry.removed:
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
                 msg = _(b'directory %r already in dirstate')
@@ -474,6 +475,7 @@ class dirstate(object):
             mode=mode,
             size=size,
             mtime=mtime,
+            added=added,
             from_p2=from_p2,
             possibly_dirty=possibly_dirty,
         )
@@ -544,7 +546,7 @@ class dirstate(object):
 
     def add(self, f):
         '''Mark a file added.'''
-        self._addpath(f, b'a', 0)
+        self._addpath(f, added=True)
         self._map.copymap.pop(f, None)
 
     def remove(self, f):
