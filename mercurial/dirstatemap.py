@@ -173,7 +173,7 @@ class dirstatemap(object):
                 # backup the previous state
                 if entry.merged:  # merge
                     size = NONNORMAL
-                elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
+                elif entry[0] == b'n' and entry.from_p2:
                     size = FROM_P2
                     self.otherparentset.add(f)
         if size == 0:

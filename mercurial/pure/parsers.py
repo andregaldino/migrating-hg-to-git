@@ -33,6 +33,10 @@ _compress = zlib.compress
 _decompress = zlib.decompress
 
 
+# a special value used internally for `size` if the file come from the other parent
+FROM_P2 = -2
+
+
 class dirstatetuple(object):
     """represent a dirstate entry
 
@@ -86,6 +90,14 @@ class dirstatetuple(object):
         Should only be set if a merge is in progress in the dirstate
         """
         return self._state == b'm'
+
+    @property
+    def from_p2(self):
+        """True if the file have been fetched from p2 during the current merge
+
+        Should only be set if a merge is in progress in the dirstate
+        """
+        return self._size == FROM_P2
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""

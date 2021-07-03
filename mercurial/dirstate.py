@@ -393,7 +393,7 @@ class dirstate(object):
                         copies[f] = source
                     self.normallookup(f)
                 # Also fix up otherparent markers
-                elif s.state == b'n' and s[2] == FROM_P2:
+                elif s.state == b'n' and s.from_p2:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
@@ -531,16 +531,18 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry.state == b'r' and entry[2] in (NONNORMAL, FROM_P2):
+                if entry.state == b'r' and (
+                    entry[2] == NONNORMAL or entry.from_p2
+                ):
                     source = self._map.copymap.get(f)
                     if entry[2] == NONNORMAL:
                         self.merge(f)
-                    elif entry[2] == FROM_P2:
+                    elif entry.from_p2:
                         self.otherparent(f)
                     if source:
                         self.copy(source, f)
                     return
-                if entry.merged or entry.state == b'n' and entry[2] == FROM_P2:
+                if entry.merged or entry.state == b'n' and entry.from_p2:
                     return
         self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)
@@ -1336,7 +1338,7 @@ class dirstate(object):
                         (size != st.st_size and size != st.st_size & _rangemask)
                         or ((mode ^ st.st_mode) & 0o100 and checkexec)
                     )
-                    or size == FROM_P2  # other parent
+                    or t.from_p2
                     or fn in copymap
                 ):
                     if stat.S_ISLNK(st.st_mode) and size != st.st_size:

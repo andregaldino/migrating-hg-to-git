@@ -29,6 +29,8 @@
 
 static const char *const versionerrortext = "Python minor version mismatch";
 
+static const int dirstate_v1_from_p2 = -2;
+
 static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 {
 	Py_ssize_t expected_size;
@@ -164,9 +166,19 @@ static PyObject *dirstatetuple_get_merged(dirstateTupleObject *self)
 	}
 };
 
+static PyObject *dirstatetuple_get_from_p2(dirstateTupleObject *self)
+{
+	if (self->size == dirstate_v1_from_p2) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyGetSetDef dirstatetuple_getset[] = {
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
     {"merged", (getter)dirstatetuple_get_merged, NULL, "merged", NULL},
+    {"from_p2", (getter)dirstatetuple_get_from_p2, NULL, "from_p2", NULL},
     {NULL} /* Sentinel */
 };
 
