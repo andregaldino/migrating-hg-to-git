@@ -175,10 +175,20 @@ static PyObject *dirstatetuple_get_from_p2(dirstateTupleObject *self)
 	}
 };
 
+static PyObject *dirstatetuple_get_removed(dirstateTupleObject *self)
+{
+	if (self->state == 'r') {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyGetSetDef dirstatetuple_getset[] = {
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
     {"merged", (getter)dirstatetuple_get_merged, NULL, "merged", NULL},
     {"from_p2", (getter)dirstatetuple_get_from_p2, NULL, "from_p2", NULL},
+    {"removed", (getter)dirstatetuple_get_removed, NULL, "removed", NULL},
     {NULL} /* Sentinel */
 };
 

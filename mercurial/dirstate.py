@@ -472,7 +472,7 @@ class dirstate(object):
                 if self._map.hastrackeddir(d):
                     break
                 entry = self._map.get(d)
-                if entry is not None and entry.state != b'r':
+                if entry is not None and not entry.removed:
                     msg = _(b'file %r in dirstate clashes with %r')
                     msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
                     raise error.Abort(msg)
@@ -531,9 +531,7 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry.state == b'r' and (
-                    entry[2] == NONNORMAL or entry.from_p2
-                ):
+                if entry.removed and (entry[2] == NONNORMAL or entry.from_p2):
                     source = self._map.copymap.get(f)
                     if entry[2] == NONNORMAL:
                         self.merge(f)
@@ -1364,7 +1362,7 @@ class dirstate(object):
                 madd(fn)
             elif state == b'a':
                 aadd(fn)
-            elif state == b'r':
+            elif t.removed:
                 radd(fn)
         status = scmutil.status(
             modified, added, removed, deleted, unknown, ignored, clean

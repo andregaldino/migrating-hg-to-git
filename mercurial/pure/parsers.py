@@ -99,6 +99,11 @@ class dirstatetuple(object):
         """
         return self._size == FROM_P2
 
+    @property
+    def removed(self):
+        """True if the file has been removed"""
+        return self._state == b'r'
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         return self._state
