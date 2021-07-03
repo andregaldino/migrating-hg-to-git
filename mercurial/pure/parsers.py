@@ -32,18 +32,37 @@ _unpack = struct.unpack
 _compress = zlib.compress
 _decompress = zlib.decompress
 
-# Some code below makes tuples directly because it's more convenient. However,
-# code outside this module should always use dirstatetuple.
-def dirstatetuple(*x):
-    """the four items are:
+
+class dirstatetuple(object):
+    """represent a dirstate entry
+
+    It contains:
+
     - state (one of 'n', 'a', 'r', 'm')
     - mode,
     - size,
     - mtime,
     """
 
-    # x is a tuple
-    return x
+    __slot__ = ('_state', '_mode', '_size', '_mtime')
+
+    def __init__(self, state, mode, size, mtime):
+        self._state = state
+        self._mode = mode
+        self._size = size
+        self._mtime = mtime
+
+    def __getitem__(self, idx):
+        if idx == 0 or idx == -4:
+            return self._state
+        elif idx == 1 or idx == -3:
+            return self._mode
+        elif idx == 2 or idx == -2:
+            return self._size
+        elif idx == 3 or idx == -1:
+            return self._mtime
+        else:
+            raise IndexError(idx)
 
 
 def gettype(q):
