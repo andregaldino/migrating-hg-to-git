@@ -87,6 +87,11 @@ class dirstatetuple(object):
         return self._state
 
     @property
+    def added(self):
+        """True if the file has been added"""
+        return self._state == b'a'
+
+    @property
     def merged(self):
         """True if the file has been merged
 

@@ -1346,7 +1346,7 @@ class dirstate(object):
                     cadd(fn)
             elif t.merged:
                 madd(fn)
-            elif state == b'a':
+            elif t.added:
                 aadd(fn)
             elif t.removed:
                 radd(fn)
