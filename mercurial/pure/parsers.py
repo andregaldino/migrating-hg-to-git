@@ -425,7 +425,7 @@ def parse_dirstate(dmap, copymap, st):
         if b'\0' in f:
             f, c = f.split(b'\0')
             copymap[f] = c
-        dmap[f] = e[:4]
+        dmap[f] = dirstatetuple(*e[:4])
     return parents
 
 
