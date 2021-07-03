@@ -83,6 +83,9 @@ const MTIME_UNSET: i32 = -1;
 /// other parent. This allows revert to pick the right status back during a
 /// merge.
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
+/// A special value used for internal representation of special case in
+/// dirstate v1 format.
+pub const SIZE_NON_NORMAL: i32 = -1;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> = Box<

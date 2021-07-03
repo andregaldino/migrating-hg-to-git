@@ -8,6 +8,8 @@
 use crate::dirstate::parsers::Timestamp;
 use crate::{
     dirstate::EntryState,
+    dirstate::SIZE_FROM_OTHER_PARENT,
+    dirstate::SIZE_NON_NORMAL,
     pack_dirstate, parse_dirstate,
     utils::hg_path::{HgPath, HgPathBuf},
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateParents,
@@ -102,9 +104,34 @@ impl DirstateMap {
     pub fn remove_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
-        size: i32,
+        in_merge: bool,
     ) -> Result<(), DirstateError> {
+        let old_entry_opt = self.get(filename);
+        let old_state = match old_entry_opt {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
+        let mut size = 0;
+        if in_merge {
+            // XXX we should not be able to have 'm' state and 'FROM_P2' if not
+            // during a merge. So I (marmoute) am not sure we need the
+            // conditionnal at all. Adding double checking this with assert
+            // would be nice.
+            if let Some(old_entry) = old_entry_opt {
+                // backup the previous state
+                if old_entry.state == EntryState::Merged {
+                    size = SIZE_NON_NORMAL;
+                } else if old_entry.state == EntryState::Normal
+                    && old_entry.size == SIZE_FROM_OTHER_PARENT
+                {
+                    // other parent
+                    size = SIZE_FROM_OTHER_PARENT;
+                    self.get_non_normal_other_parent_entries()
+                        .1
+                        .insert(filename.to_owned());
+                }
+            }
+        }
         if old_state != EntryState::Unknown && old_state != EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
@@ -115,6 +142,9 @@ impl DirstateMap {
             if let Some(ref mut all_dirs) = self.all_dirs {
                 all_dirs.add_path(filename)?;
             }
+        }
+        if size == 0 {
+            self.copy_map.remove(filename);
         }
 
         self.state_map.insert(

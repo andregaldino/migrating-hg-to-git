@@ -61,8 +61,7 @@ pub trait DirstateMapMethods {
     fn remove_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
-        size: i32,
+        in_merge: bool,
     ) -> Result<(), DirstateError>;
 
     /// Drop information about this file from the map if any, and return
@@ -295,10 +294,9 @@ impl DirstateMapMethods for DirstateMap {
     fn remove_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
-        size: i32,
+        in_merge: bool,
     ) -> Result<(), DirstateError> {
-        self.remove_file(filename, old_state, size)
+        self.remove_file(filename, in_merge)
     }
 
     fn drop_file(

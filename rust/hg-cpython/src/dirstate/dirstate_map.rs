@@ -137,18 +137,12 @@ py_class!(pub class DirstateMap |py| {
     def removefile(
         &self,
         f: PyObject,
-        oldstate: PyObject,
-        size: PyObject
+        in_merge: PyObject
     ) -> PyResult<PyObject> {
         self.inner(py).borrow_mut()
             .remove_file(
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
-                oldstate.extract::<PyBytes>(py)?.data(py)[0]
-                    .try_into()
-                    .map_err(|e: HgError| {
-                        PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                    })?,
-                size.extract(py)?,
+                in_merge.extract::<PyBool>(py)?.is_true(),
             )
             .or_else(|_| {
                 Err(PyErr::new::<exc::OSError, _>(

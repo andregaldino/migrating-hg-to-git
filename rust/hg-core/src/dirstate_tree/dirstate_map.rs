@@ -11,6 +11,8 @@ use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::Timestamp;
+use crate::dirstate::SIZE_FROM_OTHER_PARENT;
+use crate::dirstate::SIZE_NON_NORMAL;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::CopyMapIter;
@@ -726,9 +728,34 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     fn remove_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
-        size: i32,
+        in_merge: bool,
     ) -> Result<(), DirstateError> {
+        let old_entry_opt = self.get(filename)?;
+        let old_state = match old_entry_opt {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
+        let mut size = 0;
+        if in_merge {
+            // XXX we should not be able to have 'm' state and 'FROM_P2' if not
+            // during a merge. So I (marmoute) am not sure we need the
+            // conditionnal at all. Adding double checking this with assert
+            // would be nice.
+            if let Some(old_entry) = old_entry_opt {
+                // backup the previous state
+                if old_entry.state == EntryState::Merged {
+                    size = SIZE_NON_NORMAL;
+                } else if old_entry.state == EntryState::Normal
+                    && old_entry.size == SIZE_FROM_OTHER_PARENT
+                {
+                    // other parent
+                    size = SIZE_FROM_OTHER_PARENT;
+                }
+            }
+        }
+        if size == 0 {
+            self.copy_map_remove(filename)?;
+        }
         let entry = DirstateEntry {
             state: EntryState::Removed,
             mode: 0,

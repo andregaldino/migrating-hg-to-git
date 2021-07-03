@@ -154,7 +154,7 @@ class dirstatemap(object):
         if size == FROM_P2:
             self.otherparentset.add(f)
 
-    def removefile(self, f, oldstate, size):
+    def removefile(self, f, in_merge=False):
         """
         Mark a file as removed in the dirstate.
 
@@ -162,9 +162,26 @@ class dirstatemap(object):
         the file's previous state.  In the future, we should refactor this
         to be more explicit about what that state is.
         """
-        if oldstate not in b"?r" and "_dirs" in self.__dict__:
+        entry = self.get(f)
+        size = 0
+        if in_merge:
+            # XXX we should not be able to have 'm' state and 'FROM_P2' if not
+            # during a merge. So I (marmoute) am not sure we need the
+            # conditionnal at all. Adding double checking this with assert
+            # would be nice.
+            if entry is not None:
+                # backup the previous state
+                if entry[0] == b'm':  # merge
+                    size = NONNORMAL
+                elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
+                    size = FROM_P2
+                    self.otherparentset.add(f)
+        if size == 0:
+            self.copymap.pop(f, None)
+
+        if entry is not None and entry[0] != b'r' and "_dirs" in self.__dict__:
             self._dirs.delpath(f)
-        if oldstate == b"?" and "_alldirs" in self.__dict__:
+        if entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         if "filefoldmap" in self.__dict__:
             normed = util.normcase(f)

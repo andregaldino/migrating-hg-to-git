@@ -559,21 +559,8 @@ class dirstate(object):
     def remove(self, f):
         '''Mark a file removed.'''
         self._dirty = True
-        oldstate = self[f]
-        size = 0
-        if self.in_merge:
-            entry = self._map.get(f)
-            if entry is not None:
-                # backup the previous state
-                if entry[0] == b'm':  # merge
-                    size = NONNORMAL
-                elif entry[0] == b'n' and entry[2] == FROM_P2:  # other parent
-                    size = FROM_P2
-                    self._map.otherparentset.add(f)
         self._updatedfiles.add(f)
-        self._map.removefile(f, oldstate, size)
-        if size == 0:
-            self._map.copymap.pop(f, None)
+        self._map.removefile(f, in_merge=self.in_merge)
 
     def merge(self, f):
         '''Mark a file merged.'''
