@@ -47,15 +47,6 @@ _rangemask = dirstatemap.rangemask
 
 dirstatetuple = parsers.dirstatetuple
 
-# a special value used internally for `size` if the file come from the other parent
-FROM_P2 = dirstatemap.FROM_P2
-
-# a special value used internally for `size` if the file is modified/merged/added
-NONNORMAL = dirstatemap.NONNORMAL
-
-# a special value used internally for `time` if the time is ambigeous
-AMBIGUOUS_TIME = dirstatemap.AMBIGUOUS_TIME
-
 
 class repocache(filecache):
     """filecache for files in .hg/"""
