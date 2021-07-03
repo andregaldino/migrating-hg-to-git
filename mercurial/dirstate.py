@@ -531,16 +531,18 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry.removed and (entry[2] == NONNORMAL or entry.from_p2):
+                # XXX this should probably be dealt with a a lower level
+                # (see `merged_removed` and `from_p2_removed`)
+                if entry.merged_removed or entry.from_p2_removed:
                     source = self._map.copymap.get(f)
-                    if entry[2] == NONNORMAL:
+                    if entry.merged_removed:
                         self.merge(f)
-                    elif entry.from_p2:
+                    elif entry.from_p2_removed:
                         self.otherparent(f)
-                    if source:
+                    if source is not None:
                         self.copy(source, f)
                     return
-                if entry.merged or entry.state == b'n' and entry.from_p2:
+                elif entry.merged or entry.state == b'n' and entry.from_p2:
                     return
         self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)

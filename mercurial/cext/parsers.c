@@ -30,6 +30,7 @@
 static const char *const versionerrortext = "Python minor version mismatch";
 
 static const int dirstate_v1_from_p2 = -2;
+static const int dirstate_v1_nonnormal = -1;
 
 static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 {
@@ -166,9 +167,27 @@ static PyObject *dirstatetuple_get_merged(dirstateTupleObject *self)
 	}
 };
 
+static PyObject *dirstatetuple_get_merged_removed(dirstateTupleObject *self)
+{
+	if (self->state == 'r' && self->size == dirstate_v1_nonnormal) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyObject *dirstatetuple_get_from_p2(dirstateTupleObject *self)
 {
 	if (self->size == dirstate_v1_from_p2) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
+static PyObject *dirstatetuple_get_from_p2_removed(dirstateTupleObject *self)
+{
+	if (self->state == 'r' && self->size == dirstate_v1_from_p2) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -186,7 +205,11 @@ static PyObject *dirstatetuple_get_removed(dirstateTupleObject *self)
 
 static PyGetSetDef dirstatetuple_getset[] = {
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
+    {"merged_removed", (getter)dirstatetuple_get_merged_removed, NULL,
+     "merged_removed", NULL},
     {"merged", (getter)dirstatetuple_get_merged, NULL, "merged", NULL},
+    {"from_p2_removed", (getter)dirstatetuple_get_from_p2_removed, NULL,
+     "from_p2_removed", NULL},
     {"from_p2", (getter)dirstatetuple_get_from_p2, NULL, "from_p2", NULL},
     {"removed", (getter)dirstatetuple_get_removed, NULL, "removed", NULL},
     {NULL} /* Sentinel */

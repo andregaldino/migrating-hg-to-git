@@ -36,6 +36,9 @@ _decompress = zlib.decompress
 # a special value used internally for `size` if the file come from the other parent
 FROM_P2 = -2
 
+# a special value used internally for `size` if the file is modified/merged/added
+NONNORMAL = -1
+
 
 class dirstatetuple(object):
     """represent a dirstate entry
@@ -100,9 +103,27 @@ class dirstatetuple(object):
         return self._size == FROM_P2
 
     @property
+    def from_p2_removed(self):
+        """True if the file has been removed, but was "from_p2" initially
+
+        This property seems like an abstraction leakage and should probably be
+        dealt in this class (or maybe the dirstatemap) directly.
+        """
+        return self._state == b'r' and self._size == FROM_P2
+
+    @property
     def removed(self):
         """True if the file has been removed"""
         return self._state == b'r'
+
+    @property
+    def merged_removed(self):
+        """True if the file has been removed, but was "merged" initially
+
+        This property seems like an abstraction leakage and should probably be
+        dealt in this class (or maybe the dirstatemap)  directly.
+        """
+        return self._state == b'r' and self._size == NONNORMAL
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
