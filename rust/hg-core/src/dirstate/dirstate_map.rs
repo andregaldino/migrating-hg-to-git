@@ -71,15 +71,23 @@ impl DirstateMap {
         entry: DirstateEntry,
         // XXX once the dust settle this should probably become an enum
         added: bool,
+        merged: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
         let mut entry = entry;
         if added {
+            assert!(!merged);
             assert!(!possibly_dirty);
             assert!(!from_p2);
             entry.state = EntryState::Added;
             entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else if merged {
+            assert!(!possibly_dirty);
+            assert!(!from_p2);
+            entry.state = EntryState::Merged;
+            entry.size = SIZE_FROM_OTHER_PARENT;
             entry.mtime = MTIME_UNSET;
         } else if from_p2 {
             assert!(!possibly_dirty);
@@ -407,6 +415,7 @@ mod tests {
                 mtime: 1337,
                 size: 1337,
             },
+            false,
             false,
             false,
             false,

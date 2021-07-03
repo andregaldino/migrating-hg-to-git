@@ -152,15 +152,23 @@ class dirstatemap(object):
         size=None,
         mtime=None,
         added=False,
+        merged=False,
         from_p2=False,
         possibly_dirty=False,
     ):
         """Add a tracked file to the dirstate."""
         if added:
+            assert not merged
             assert not possibly_dirty
             assert not from_p2
             state = b'a'
             size = NONNORMAL
+            mtime = AMBIGUOUS_TIME
+        elif merged:
+            assert not possibly_dirty
+            assert not from_p2
+            state = b'm'
+            size = FROM_P2
             mtime = AMBIGUOUS_TIME
         elif from_p2:
             assert not possibly_dirty
@@ -470,6 +478,7 @@ if rustmod is not None:
             size=None,
             mtime=None,
             added=False,
+            merged=False,
             from_p2=False,
             possibly_dirty=False,
         ):
@@ -480,6 +489,7 @@ if rustmod is not None:
                 size,
                 mtime,
                 added,
+                merged,
                 from_p2,
                 possibly_dirty,
             )

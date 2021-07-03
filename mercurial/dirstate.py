@@ -448,6 +448,7 @@ class dirstate(object):
         size=None,
         mtime=None,
         added=False,
+        merged=False,
         from_p2=False,
         possibly_dirty=False,
     ):
@@ -476,6 +477,7 @@ class dirstate(object):
             size=size,
             mtime=mtime,
             added=added,
+            merged=merged,
             from_p2=from_p2,
             possibly_dirty=possibly_dirty,
         )
@@ -538,7 +540,7 @@ class dirstate(object):
             raise error.Abort(msg)
         if f in self and self[f] == b'n':
             # merge-like
-            self._addpath(f, b'm', 0, from_p2=True)
+            self._addpath(f, merged=True)
         else:
             # add-like
             self._addpath(f, b'n', 0, from_p2=True)

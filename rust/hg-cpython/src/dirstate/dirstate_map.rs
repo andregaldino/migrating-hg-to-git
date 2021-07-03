@@ -113,6 +113,7 @@ py_class!(pub class DirstateMap |py| {
         size: PyObject,
         mtime: PyObject,
         added: PyObject,
+        merged: PyObject,
         from_p2: PyObject,
         possibly_dirty: PyObject,
     ) -> PyResult<PyObject> {
@@ -153,12 +154,14 @@ py_class!(pub class DirstateMap |py| {
             mtime: mtime,
         };
         let added = added.extract::<PyBool>(py)?.is_true();
+        let merged = merged.extract::<PyBool>(py)?.is_true();
         let from_p2 = from_p2.extract::<PyBool>(py)?.is_true();
         let possibly_dirty = possibly_dirty.extract::<PyBool>(py)?.is_true();
         self.inner(py).borrow_mut().add_file(
             filename,
             entry,
             added,
+            merged,
             from_p2,
             possibly_dirty
         ).and(Ok(py.None())).or_else(|e: DirstateError| {

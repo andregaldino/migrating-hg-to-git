@@ -49,6 +49,7 @@ pub trait DirstateMapMethods {
         filename: &HgPath,
         entry: DirstateEntry,
         added: bool,
+        merged: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError>;
@@ -289,10 +290,11 @@ impl DirstateMapMethods for DirstateMap {
         filename: &HgPath,
         entry: DirstateEntry,
         added: bool,
+        merged: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        self.add_file(filename, entry, added, from_p2, possibly_dirty)
+        self.add_file(filename, entry, added, merged, from_p2, possibly_dirty)
     }
 
     fn remove_file(

@@ -723,6 +723,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         filename: &HgPath,
         entry: DirstateEntry,
         added: bool,
+        merged: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
@@ -732,6 +733,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             assert!(!from_p2);
             entry.state = EntryState::Added;
             entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else if merged {
+            assert!(!possibly_dirty);
+            assert!(!from_p2);
+            entry.state = EntryState::Merged;
+            entry.size = SIZE_FROM_OTHER_PARENT;
             entry.mtime = MTIME_UNSET;
         } else if from_p2 {
             assert!(!possibly_dirty);

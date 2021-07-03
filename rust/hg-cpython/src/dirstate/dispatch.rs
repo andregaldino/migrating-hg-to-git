@@ -26,6 +26,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         filename: &HgPath,
         entry: DirstateEntry,
         added: bool,
+        merged: bool,
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
@@ -33,6 +34,7 @@ impl DirstateMapMethods for OwningDirstateMap {
             filename,
             entry,
             added,
+            merged,
             from_p2,
             possibly_dirty,
         )
