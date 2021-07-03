@@ -178,7 +178,7 @@ static PyObject *dirstatetuple_get_merged_removed(dirstateTupleObject *self)
 
 static PyObject *dirstatetuple_get_from_p2(dirstateTupleObject *self)
 {
-	if (self->size == dirstate_v1_from_p2) {
+	if (self->state == 'n' && self->size == dirstate_v1_from_p2) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;

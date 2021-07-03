@@ -98,9 +98,11 @@ class dirstatetuple(object):
     def from_p2(self):
         """True if the file have been fetched from p2 during the current merge
 
+        This is only True is the file is currently tracked.
+
         Should only be set if a merge is in progress in the dirstate
         """
-        return self._size == FROM_P2
+        return self._state == b'n' and self._size == FROM_P2
 
     @property
     def from_p2_removed(self):

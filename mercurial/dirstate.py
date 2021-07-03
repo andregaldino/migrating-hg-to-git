@@ -393,7 +393,7 @@ class dirstate(object):
                         copies[f] = source
                     self.normallookup(f)
                 # Also fix up otherparent markers
-                elif s.state == b'n' and s.from_p2:
+                elif s.from_p2:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
@@ -542,7 +542,7 @@ class dirstate(object):
                     if source is not None:
                         self.copy(source, f)
                     return
-                elif entry.merged or entry.state == b'n' and entry.from_p2:
+                elif entry.merged or entry.from_p2:
                     return
         self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)
