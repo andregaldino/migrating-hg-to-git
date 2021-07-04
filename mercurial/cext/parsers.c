@@ -169,6 +169,11 @@ static PyMethodDef dirstatetuple_methods[] = {
     {NULL} /* Sentinel */
 };
 
+static PyObject *dirstatetuple_get_mode(dirstateTupleObject *self)
+{
+	return PyInt_FromLong(self->mode);
+};
+
 static PyObject *dirstatetuple_get_state(dirstateTupleObject *self)
 {
 	return PyBytes_FromStringAndSize(&self->state, 1);
@@ -238,6 +243,7 @@ static PyObject *dirstatetuple_get_removed(dirstateTupleObject *self)
 };
 
 static PyGetSetDef dirstatetuple_getset[] = {
+    {"mode", (getter)dirstatetuple_get_mode, NULL, "mode", NULL},
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
     {"tracked", (getter)dirstatetuple_get_tracked, NULL, "tracked", NULL},
     {"added", (getter)dirstatetuple_get_added, NULL, "added", NULL},

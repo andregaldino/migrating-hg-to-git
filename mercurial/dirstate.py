@@ -1307,7 +1307,7 @@ class dirstate(object):
             # general. That is much slower than simply accessing and storing the
             # tuple members one by one.
             t = dget(fn)
-            mode = t[1]
+            mode = t.mode
             size = t[2]
             time = t[3]
 

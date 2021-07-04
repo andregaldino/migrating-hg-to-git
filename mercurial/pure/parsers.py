@@ -72,6 +72,10 @@ class dirstatetuple(object):
             raise IndexError(idx)
 
     @property
+    def mode(self):
+        return self._mode
+
+    @property
     def state(self):
         """
         States are:
