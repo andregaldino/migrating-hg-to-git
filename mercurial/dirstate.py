@@ -1321,7 +1321,7 @@ class dirstate(object):
                 aadd(fn)
             elif t.removed:
                 radd(fn)
-            elif state == b'n':
+            elif t.tracked:
                 if (
                     size >= 0
                     and (
