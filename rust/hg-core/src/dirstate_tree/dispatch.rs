@@ -10,7 +10,6 @@ use crate::DirstateError;
 use crate::DirstateMap;
 use crate::DirstateParents;
 use crate::DirstateStatus;
-use crate::EntryState;
 use crate::PatternFileWarning;
 use crate::StateMapIter;
 use crate::StatusError;
@@ -74,11 +73,7 @@ pub trait DirstateMapMethods {
     ///
     /// `old_state` is the state in the entry that `get` would have returned
     /// before this call, or `EntryState::Unknown` if there was no such entry.
-    fn drop_file(
-        &mut self,
-        filename: &HgPath,
-        old_state: EntryState,
-    ) -> Result<bool, DirstateError>;
+    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError>;
 
     /// Among given files, mark the stored `mtime` as ambiguous if there is one
     /// (if `state == EntryState::Normal`) equal to the given current Unix
@@ -305,12 +300,8 @@ impl DirstateMapMethods for DirstateMap {
         self.remove_file(filename, in_merge)
     }
 
-    fn drop_file(
-        &mut self,
-        filename: &HgPath,
-        old_state: EntryState,
-    ) -> Result<bool, DirstateError> {
-        self.drop_file(filename, old_state)
+    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
+        self.drop_file(filename)
     }
 
     fn clear_ambiguous_times(

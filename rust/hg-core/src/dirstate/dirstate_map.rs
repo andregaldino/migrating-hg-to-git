@@ -205,8 +205,11 @@ impl DirstateMap {
     pub fn drop_file(
         &mut self,
         filename: &HgPath,
-        old_state: EntryState,
     ) -> Result<bool, DirstateError> {
+        let old_state = match self.get(filename) {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
         let exists = self.state_map.remove(filename).is_some();
 
         if exists {

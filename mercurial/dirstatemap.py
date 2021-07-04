@@ -235,12 +235,17 @@ class dirstatemap(object):
         self._map[f] = dirstatetuple(b'r', 0, size, 0)
         self.nonnormalset.add(f)
 
-    def dropfile(self, f, oldstate):
+    def dropfile(self, f):
         """
         Remove a file from the dirstate.  Returns True if the file was
         previously recorded.
         """
-        exists = self._map.pop(f, None) is not None
+        old_entry = self._map.pop(f, None)
+        exists = False
+        oldstate = b'?'
+        if old_entry is not None:
+            exists = True
+            oldstate = old_entry.state
         if exists:
             if oldstate != b"r" and "_dirs" in self.__dict__:
                 self._dirs.delpath(f)

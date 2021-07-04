@@ -803,11 +803,11 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }
 
-    fn drop_file(
-        &mut self,
-        filename: &HgPath,
-        old_state: EntryState,
-    ) -> Result<bool, DirstateError> {
+    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
+        let old_state = match self.get(filename)? {
+            Some(e) => e.state,
+            None => EntryState::Unknown,
+        };
         struct Dropped {
             was_tracked: bool,
             had_entry: bool,

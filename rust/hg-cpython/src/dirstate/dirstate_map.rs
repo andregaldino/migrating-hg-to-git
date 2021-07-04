@@ -32,7 +32,6 @@ use hg::{
     dirstate::SIZE_NON_NORMAL,
     dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
-    errors::HgError,
     revlog::Node,
     utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
@@ -181,16 +180,10 @@ py_class!(pub class DirstateMap |py| {
     def dropfile(
         &self,
         f: PyObject,
-        oldstate: PyObject
     ) -> PyResult<PyBool> {
         self.inner(py).borrow_mut()
             .drop_file(
                 HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
-                oldstate.extract::<PyBytes>(py)?.data(py)[0]
-                    .try_into()
-                    .map_err(|e: HgError| {
-                        PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                    })?,
             )
             .and_then(|b| Ok(b.to_py_object(py)))
             .or_else(|e| {

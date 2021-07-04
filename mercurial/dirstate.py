@@ -563,8 +563,7 @@ class dirstate(object):
 
     def drop(self, f):
         '''Drop a file from the dirstate'''
-        oldstate = self[f]
-        if self._map.dropfile(f, oldstate):
+        if self._map.dropfile(f):
             self._dirty = True
             self._updatedfiles.add(f)
             self._map.copymap.pop(f, None)
@@ -1308,7 +1307,6 @@ class dirstate(object):
             # general. That is much slower than simply accessing and storing the
             # tuple members one by one.
             t = dget(fn)
-            state = t.state
             mode = t[1]
             size = t[2]
             time = t[3]

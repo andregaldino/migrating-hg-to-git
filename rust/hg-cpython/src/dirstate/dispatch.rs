@@ -9,7 +9,6 @@ use hg::DirstateEntry;
 use hg::DirstateError;
 use hg::DirstateParents;
 use hg::DirstateStatus;
-use hg::EntryState;
 use hg::PatternFileWarning;
 use hg::StateMapIter;
 use hg::StatusError;
@@ -48,12 +47,8 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().remove_file(filename, in_merge)
     }
 
-    fn drop_file(
-        &mut self,
-        filename: &HgPath,
-        old_state: EntryState,
-    ) -> Result<bool, DirstateError> {
-        self.get_mut().drop_file(filename, old_state)
+    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
+        self.get_mut().drop_file(filename)
     }
 
     fn clear_ambiguous_times(
