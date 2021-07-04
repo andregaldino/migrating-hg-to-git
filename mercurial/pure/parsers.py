@@ -80,6 +80,10 @@ class dirstatetuple(object):
         return self._size
 
     @property
+    def mtime(self):
+        return self._mtime
+
+    @property
     def state(self):
         """
         States are:

@@ -1309,7 +1309,7 @@ class dirstate(object):
             t = dget(fn)
             mode = t.mode
             size = t.size
-            time = t[3]
+            time = t.mtime
 
             if not st and t.tracked:
                 dadd(fn)
