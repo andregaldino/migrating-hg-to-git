@@ -40,7 +40,7 @@ FROM_P2 = -2
 NONNORMAL = -1
 
 
-class dirstatetuple(object):
+class DirstateItem(object):
     """represent a dirstate entry
 
     It contains:
@@ -530,7 +530,7 @@ def parse_dirstate(dmap, copymap, st):
         if b'\0' in f:
             f, c = f.split(b'\0')
             copymap[f] = c
-        dmap[f] = dirstatetuple(*e[:4])
+        dmap[f] = DirstateItem(*e[:4])
     return parents
 
 
@@ -550,7 +550,7 @@ def pack_dirstate(dmap, copymap, pl, now):
             # dirstate, forcing future 'status' calls to compare the
             # contents of the file if the size is the same. This prevents
             # mistakenly treating such files as clean.
-            e = dirstatetuple(e[0], e[1], e[2], -1)
+            e = DirstateItem(e[0], e[1], e[2], -1)
             dmap[f] = e
 
         if f in copymap:

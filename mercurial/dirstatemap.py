@@ -23,7 +23,7 @@ rustmod = policy.importrust('dirstate')
 
 propertycache = util.propertycache
 
-dirstatetuple = parsers.dirstatetuple
+DirstateItem = parsers.DirstateItem
 
 
 # a special value used internally for `size` if the file come from the other parent
@@ -194,7 +194,7 @@ class dirstatemap(object):
             self._dirs.addpath(f)
         if old_entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
-        self._map[f] = dirstatetuple(state, mode, size, mtime)
+        self._map[f] = DirstateItem(state, mode, size, mtime)
         if state != b'n' or mtime == AMBIGUOUS_TIME:
             self.nonnormalset.add(f)
         if size == FROM_P2:
@@ -232,7 +232,7 @@ class dirstatemap(object):
         if "filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
-        self._map[f] = dirstatetuple(b'r', 0, size, 0)
+        self._map[f] = DirstateItem(b'r', 0, size, 0)
         self.nonnormalset.add(f)
 
     def dropfile(self, f):
@@ -261,7 +261,7 @@ class dirstatemap(object):
         for f in files:
             e = self.get(f)
             if e is not None and e[0] == b'n' and e[3] == now:
-                self._map[f] = dirstatetuple(e[0], e[1], e[2], AMBIGUOUS_TIME)
+                self._map[f] = DirstateItem(e[0], e[1], e[2], AMBIGUOUS_TIME)
                 self.nonnormalset.add(f)
 
     def nonnormalentries(self):

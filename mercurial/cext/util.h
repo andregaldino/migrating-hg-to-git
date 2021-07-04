@@ -28,11 +28,11 @@ typedef struct {
 	int mode;
 	int size;
 	int mtime;
-} dirstateTupleObject;
+} dirstateItemObject;
 /* clang-format on */
 
-extern PyTypeObject dirstateTupleType;
-#define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateTupleType)
+extern PyTypeObject dirstateItemType;
+#define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

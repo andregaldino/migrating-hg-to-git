@@ -20,7 +20,7 @@ use hg::{
 };
 use std::convert::TryInto;
 
-use crate::dirstate::{extract_dirstate, make_dirstate_tuple};
+use crate::dirstate::{extract_dirstate, make_dirstate_item};
 
 fn parse_dirstate_wrapper(
     py: Python,
@@ -43,7 +43,7 @@ fn parse_dirstate_wrapper(
                 dmap.set_item(
                     py,
                     PyBytes::new(py, filename.as_bytes()),
-                    make_dirstate_tuple(py, entry)?,
+                    make_dirstate_item(py, entry)?,
                 )?;
             }
             for (path, copy_path) in copy_map {
@@ -105,7 +105,7 @@ fn pack_dirstate_wrapper(
                 dmap.set_item(
                     py,
                     PyBytes::new(py, filename.as_bytes()),
-                    make_dirstate_tuple(py, &entry)?,
+                    make_dirstate_item(py, &entry)?,
                 )?;
             }
             Ok(PyBytes::new(py, &packed))

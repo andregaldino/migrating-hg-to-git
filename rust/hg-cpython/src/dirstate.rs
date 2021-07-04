@@ -38,8 +38,8 @@ use std::convert::TryFrom;
 // for a pure Python tuple of the same effective structure to be used,
 // rendering this type and the capsule below useless.
 py_capsule_fn!(
-    from mercurial.cext.parsers import make_dirstate_tuple_CAPI
-        as make_dirstate_tuple_capi
+    from mercurial.cext.parsers import make_dirstate_item_CAPI
+        as make_dirstate_item_capi
         signature (
             state: c_char,
             mode: c_int,
@@ -48,12 +48,12 @@ py_capsule_fn!(
         ) -> *mut RawPyObject
 );
 
-pub fn make_dirstate_tuple(
+pub fn make_dirstate_item(
     py: Python,
     entry: &DirstateEntry,
 ) -> PyResult<PyObject> {
     // might be silly to retrieve capsule function in hot loop
-    let make = make_dirstate_tuple_capi::retrieve(py)?;
+    let make = make_dirstate_item_capi::retrieve(py)?;
 
     let &DirstateEntry {
         state,

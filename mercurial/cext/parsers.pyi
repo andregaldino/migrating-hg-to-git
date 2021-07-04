@@ -12,7 +12,7 @@ from typing import (
 version: int
 versionerrortext: str
 
-class dirstatetuple:
+class DirstateItem:
     __doc__: str
 
     def __len__(self) -> int: ...

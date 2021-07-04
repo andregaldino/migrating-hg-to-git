@@ -84,7 +84,7 @@ class idirstate(interfaceutil.Interface):
         """Iterate the dirstate's contained filenames as bytestrings."""
 
     def items():
-        """Iterate the dirstate's entries as (filename, dirstatetuple).
+        """Iterate the dirstate's entries as (filename, DirstateItem.
 
         As usual, filename is a bytestring.
         """

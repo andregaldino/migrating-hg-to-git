@@ -19,7 +19,7 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::make_dirstate_tuple,
+    dirstate::make_dirstate_item,
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
@@ -98,7 +98,7 @@ py_class!(pub class DirstateMap |py| {
             .map_err(|e| v2_error(py, e))?
         {
             Some(entry) => {
-                Ok(Some(make_dirstate_tuple(py, &entry)?))
+                Ok(Some(make_dirstate_item(py, &entry)?))
             },
             None => Ok(default)
         }
@@ -370,7 +370,7 @@ py_class!(pub class DirstateMap |py| {
             .map_err(|e| v2_error(py, e))?
         {
             Some(entry) => {
-                Ok(make_dirstate_tuple(py, &entry)?)
+                Ok(make_dirstate_item(py, &entry)?)
             },
             None => Err(PyErr::new::<exc::KeyError, _>(
                 py,
@@ -548,7 +548,7 @@ impl DirstateMap {
         let (f, entry) = res.map_err(|e| v2_error(py, e))?;
         Ok(Some((
             PyBytes::new(py, f.as_bytes()),
-            make_dirstate_tuple(py, &entry)?,
+            make_dirstate_item(py, &entry)?,
         )))
     }
 }

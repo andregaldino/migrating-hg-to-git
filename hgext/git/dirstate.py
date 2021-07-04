@@ -111,7 +111,7 @@ class gitdirstate(object):
 
     def items(self):
         for ie in self.git.index:
-            yield ie.path, None  # value should be a dirstatetuple
+            yield ie.path, None  # value should be a DirstateItem
 
     # py2,3 compat forward
     iteritems = items

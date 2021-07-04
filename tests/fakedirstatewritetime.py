@@ -43,7 +43,7 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     actualnow = int(now)
     for f, e in dmap.items():
         if e[0] == 'n' and e[3] == actualnow:
-            e = parsers.dirstatetuple(e[0], e[1], e[2], -1)
+            e = parsers.DirstateItem(e[0], e[1], e[2], -1)
             dmap[f] = e
 
     return orig(dmap, copymap, pl, fakenow)

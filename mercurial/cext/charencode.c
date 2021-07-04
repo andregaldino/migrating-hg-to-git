@@ -223,7 +223,7 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 	PyObject *file_foldmap = NULL;
 	enum normcase_spec spec;
 	PyObject *k, *v;
-	dirstateTupleObject *tuple;
+	dirstateItemObject *tuple;
 	Py_ssize_t pos = 0;
 	const char *table;
 
@@ -263,7 +263,7 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 			goto quit;
 		}
 
-		tuple = (dirstateTupleObject *)v;
+		tuple = (dirstateItemObject *)v;
 		if (tuple->state != 'r') {
 			PyObject *normed;
 			if (table != NULL) {

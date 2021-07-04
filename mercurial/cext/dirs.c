@@ -177,7 +177,7 @@ static int dirs_fromdict(PyObject *dirs, PyObject *source, char skipchar)
 				                "expected a dirstate tuple");
 				return -1;
 			}
-			if (((dirstateTupleObject *)value)->state == skipchar)
+			if (((dirstateItemObject *)value)->state == skipchar)
 				continue;
 		}
 
