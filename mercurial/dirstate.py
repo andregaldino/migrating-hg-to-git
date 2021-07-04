@@ -536,7 +536,8 @@ class dirstate(object):
         if not self.in_merge:
             msg = _(b"setting %r to other parent only allowed in merges") % f
             raise error.Abort(msg)
-        if f in self and self[f] == b'n':
+        entry = self._map.get(f)
+        if entry is not None and entry.tracked:
             # merge-like
             self._addpath(f, merged=True)
         else:
