@@ -77,7 +77,7 @@ struct RawEntry {
     length: unaligned::I32Be,
 }
 
-const MTIME_UNSET: i32 = -1;
+pub const MTIME_UNSET: i32 = -1;
 
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the
 /// other parent. This allows revert to pick the right status back during a
