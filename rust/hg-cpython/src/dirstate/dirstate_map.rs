@@ -112,23 +112,31 @@ py_class!(pub class DirstateMap |py| {
         size: PyObject,
         mtime: PyObject
     ) -> PyResult<PyObject> {
+        let f = f.extract::<PyBytes>(py)?;
+        let filename = HgPath::new(f.data(py));
+        let oldstate = oldstate.extract::<PyBytes>(py)?.data(py)[0]
+            .try_into()
+            .map_err(|e: HgError| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
+        let state = state.extract::<PyBytes>(py)?.data(py)[0]
+            .try_into()
+            .map_err(|e: HgError| {
+                PyErr::new::<exc::ValueError, _>(py, e.to_string())
+            })?;
+        let mode = mode.extract(py)?;
+        let size = size.extract(py)?;
+        let mtime = mtime.extract(py)?;
+        let entry = DirstateEntry {
+            state: state,
+            mode: mode,
+            size: size,
+            mtime: mtime,
+        };
         self.inner(py).borrow_mut().add_file(
-            HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
-            oldstate.extract::<PyBytes>(py)?.data(py)[0]
-                .try_into()
-                .map_err(|e: HgError| {
-                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                })?,
-            DirstateEntry {
-                state: state.extract::<PyBytes>(py)?.data(py)[0]
-                    .try_into()
-                    .map_err(|e: HgError| {
-                        PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                    })?,
-                mode: mode.extract(py)?,
-                size: size.extract(py)?,
-                mtime: mtime.extract(py)?,
-            },
+            filename,
+            oldstate,
+            entry,
         ).and(Ok(py.None())).or_else(|e: DirstateError| {
             Err(PyErr::new::<exc::ValueError, _>(py, e.to_string()))
         })
