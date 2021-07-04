@@ -1308,7 +1308,7 @@ class dirstate(object):
             # tuple members one by one.
             t = dget(fn)
             mode = t.mode
-            size = t[2]
+            size = t.size
             time = t[3]
 
             if not st and t.tracked:

@@ -76,6 +76,10 @@ class dirstatetuple(object):
         return self._mode
 
     @property
+    def size(self):
+        return self._size
+
+    @property
     def state(self):
         """
         States are:
