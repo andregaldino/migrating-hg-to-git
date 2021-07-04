@@ -1315,6 +1315,12 @@ class dirstate(object):
 
             if not st and t.tracked:
                 dadd(fn)
+            elif t.merged:
+                madd(fn)
+            elif t.added:
+                aadd(fn)
+            elif t.removed:
+                radd(fn)
             elif state == b'n':
                 if (
                     size >= 0
@@ -1344,12 +1350,6 @@ class dirstate(object):
                     ladd(fn)
                 elif listclean:
                     cadd(fn)
-            elif t.merged:
-                madd(fn)
-            elif t.added:
-                aadd(fn)
-            elif t.removed:
-                radd(fn)
         status = scmutil.status(
             modified, added, removed, deleted, unknown, ignored, clean
         )
