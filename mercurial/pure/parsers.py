@@ -63,12 +63,20 @@ class DirstateItem(object):
 
     def __getitem__(self, idx):
         if idx == 0 or idx == -4:
+            msg = b"do not use item[x], use item.state"
+            util.nouideprecwarn(msg, b'6.0', stacklevel=2)
             return self._state
         elif idx == 1 or idx == -3:
+            msg = b"do not use item[x], use item.mode"
+            util.nouideprecwarn(msg, b'6.0', stacklevel=2)
             return self._mode
         elif idx == 2 or idx == -2:
+            msg = b"do not use item[x], use item.size"
+            util.nouideprecwarn(msg, b'6.0', stacklevel=2)
             return self._size
         elif idx == 3 or idx == -1:
+            msg = b"do not use item[x], use item.mtime"
+            util.nouideprecwarn(msg, b'6.0', stacklevel=2)
             return self._mtime
         else:
             raise IndexError(idx)
