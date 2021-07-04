@@ -64,6 +64,21 @@ class dirstatetuple(object):
         else:
             raise IndexError(idx)
 
+    @property
+    def state(self):
+        """
+        States are:
+          n  normal
+          m  needs merging
+          r  marked for removal
+          a  marked for addition
+
+        XXX This "state" is a bit obscure and mostly a direct expression of the
+        dirstatev1 format. It would make sense to ultimately deprecate it in
+        favor of the more "semantic" attributes.
+        """
+        return self._state
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         return self._state

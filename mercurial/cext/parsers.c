@@ -150,6 +150,16 @@ static PyMethodDef dirstatetuple_methods[] = {
     {NULL} /* Sentinel */
 };
 
+static PyObject *dirstatetuple_get_state(dirstateTupleObject *self)
+{
+	return PyBytes_FromStringAndSize(&self->state, 1);
+};
+
+static PyGetSetDef dirstatetuple_getset[] = {
+    {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
+    {NULL} /* Sentinel */
+};
+
 PyTypeObject dirstateTupleType = {
     PyVarObject_HEAD_INIT(NULL, 0)      /* header */
     "dirstate_tuple",                   /* tp_name */
@@ -180,7 +190,7 @@ PyTypeObject dirstateTupleType = {
     0,                                  /* tp_iternext */
     dirstatetuple_methods,              /* tp_methods */
     0,                                  /* tp_members */
-    0,                                  /* tp_getset */
+    dirstatetuple_getset,               /* tp_getset */
     0,                                  /* tp_base */
     0,                                  /* tp_dict */
     0,                                  /* tp_descr_get */

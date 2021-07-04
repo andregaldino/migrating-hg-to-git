@@ -311,8 +311,15 @@ class dirstate(object):
           r  marked for removal
           a  marked for addition
           ?  not tracked
+
+        XXX The "state" is a bit obscure to be in the "public" API. we should
+        consider migrating all user of this to going through the dirstate entry
+        instead.
         """
-        return self._map.get(key, (b"?",))[0]
+        entry = self._map.get(key)
+        if entry is not None:
+            return entry.state
+        return b'?'
 
     def __contains__(self, key):
         return key in self._map
@@ -380,13 +387,13 @@ class dirstate(object):
                     continue
 
                 # Discard 'm' markers when moving away from a merge state
-                if s[0] == b'm':
+                if s.state == b'm':
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
                     self.normallookup(f)
                 # Also fix up otherparent markers
-                elif s[0] == b'n' and s[2] == FROM_P2:
+                elif s.state == b'n' and s[2] == FROM_P2:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
@@ -465,7 +472,7 @@ class dirstate(object):
                 if self._map.hastrackeddir(d):
                     break
                 entry = self._map.get(d)
-                if entry is not None and entry[0] != b'r':
+                if entry is not None and entry.state != b'r':
                     msg = _(b'file %r in dirstate clashes with %r')
                     msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
                     raise error.Abort(msg)
@@ -524,7 +531,7 @@ class dirstate(object):
             # being removed, restore that state.
             entry = self._map.get(f)
             if entry is not None:
-                if entry[0] == b'r' and entry[2] in (NONNORMAL, FROM_P2):
+                if entry.state == b'r' and entry[2] in (NONNORMAL, FROM_P2):
                     source = self._map.copymap.get(f)
                     if entry[2] == NONNORMAL:
                         self.merge(f)
@@ -533,7 +540,11 @@ class dirstate(object):
                     if source:
                         self.copy(source, f)
                     return
-                if entry[0] == b'm' or entry[0] == b'n' and entry[2] == FROM_P2:
+                if (
+                    entry.state == b'm'
+                    or entry.state == b'n'
+                    and entry[2] == FROM_P2
+                ):
                     return
         self._addpath(f, b'n', 0, possibly_dirty=True)
         self._map.copymap.pop(f, None)
@@ -761,7 +772,7 @@ class dirstate(object):
         if delaywrite > 0:
             # do we have any files to delay for?
             for f, e in pycompat.iteritems(self._map):
-                if e[0] == b'n' and e[3] == now:
+                if e.state == b'n' and e[3] == now:
                     import time  # to avoid useless import
 
                     # rather than sleep n seconds, sleep until the next
@@ -1315,7 +1326,7 @@ class dirstate(object):
             # general. That is much slower than simply accessing and storing the
             # tuple members one by one.
             t = dget(fn)
-            state = t[0]
+            state = t.state
             mode = t[1]
             size = t[2]
             time = t[3]
