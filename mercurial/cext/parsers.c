@@ -158,6 +158,15 @@ static PyObject *dirstatetuple_get_state(dirstateTupleObject *self)
 	return PyBytes_FromStringAndSize(&self->state, 1);
 };
 
+static PyObject *dirstatetuple_get_tracked(dirstateTupleObject *self)
+{
+	if (self->state == 'a' || self->state == 'm' || self->state == 'n') {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyObject *dirstatetuple_get_added(dirstateTupleObject *self)
 {
 	if (self->state == 'a') {
@@ -214,6 +223,7 @@ static PyObject *dirstatetuple_get_removed(dirstateTupleObject *self)
 
 static PyGetSetDef dirstatetuple_getset[] = {
     {"state", (getter)dirstatetuple_get_state, NULL, "state", NULL},
+    {"tracked", (getter)dirstatetuple_get_tracked, NULL, "tracked", NULL},
     {"added", (getter)dirstatetuple_get_added, NULL, "added", NULL},
     {"merged_removed", (getter)dirstatetuple_get_merged_removed, NULL,
      "merged_removed", NULL},

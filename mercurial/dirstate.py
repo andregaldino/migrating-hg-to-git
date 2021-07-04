@@ -1313,7 +1313,7 @@ class dirstate(object):
             size = t[2]
             time = t[3]
 
-            if not st and state in b"nma":
+            if not st and t.tracked:
                 dadd(fn)
             elif state == b'n':
                 if (

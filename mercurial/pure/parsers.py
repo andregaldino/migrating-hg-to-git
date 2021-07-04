@@ -87,6 +87,11 @@ class dirstatetuple(object):
         return self._state
 
     @property
+    def tracked(self):
+        """True is the file is tracked in the working copy"""
+        return self._state in b"nma"
+
+    @property
     def added(self):
         """True if the file has been added"""
         return self._state == b'a'
