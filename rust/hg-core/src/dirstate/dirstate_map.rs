@@ -8,8 +8,10 @@
 use crate::dirstate::parsers::Timestamp;
 use crate::{
     dirstate::EntryState,
+    dirstate::MTIME_UNSET,
     dirstate::SIZE_FROM_OTHER_PARENT,
     dirstate::SIZE_NON_NORMAL,
+    dirstate::V1_RANGEMASK,
     pack_dirstate, parse_dirstate,
     utils::hg_path::{HgPath, HgPathBuf},
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateParents,
@@ -68,7 +70,28 @@ impl DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
+        // XXX once the dust settle this should probably become an enum
+        from_p2: bool,
+        possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
+        let mut entry = entry;
+        if entry.state == EntryState::Added {
+            assert!(!possibly_dirty);
+            assert!(!from_p2);
+            entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else if from_p2 {
+            assert!(!possibly_dirty);
+            entry.size = SIZE_FROM_OTHER_PARENT;
+            entry.mtime = MTIME_UNSET;
+        } else if possibly_dirty {
+            entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else {
+            entry.size = entry.size & V1_RANGEMASK;
+            entry.mtime = entry.mtime & V1_RANGEMASK;
+        }
+
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
         {
             if let Some(ref mut dirs) = self.dirs {
@@ -381,6 +404,8 @@ mod tests {
                 mtime: 1337,
                 size: 1337,
             },
+            false,
+            false,
         )
         .unwrap();
 

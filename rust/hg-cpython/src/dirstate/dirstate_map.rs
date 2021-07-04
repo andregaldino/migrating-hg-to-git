@@ -28,6 +28,8 @@ use crate::{
 };
 use hg::{
     dirstate::parsers::Timestamp,
+    dirstate::MTIME_UNSET,
+    dirstate::SIZE_NON_NORMAL,
     dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
     errors::HgError,
@@ -110,7 +112,9 @@ py_class!(pub class DirstateMap |py| {
         state: PyObject,
         mode: PyObject,
         size: PyObject,
-        mtime: PyObject
+        mtime: PyObject,
+        from_p2: PyObject,
+        possibly_dirty: PyObject,
     ) -> PyResult<PyObject> {
         let f = f.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
@@ -125,18 +129,32 @@ py_class!(pub class DirstateMap |py| {
                 PyErr::new::<exc::ValueError, _>(py, e.to_string())
             })?;
         let mode = mode.extract(py)?;
-        let size = size.extract(py)?;
-        let mtime = mtime.extract(py)?;
+        let size = if size.is_none(py) {
+            // fallback default value
+            SIZE_NON_NORMAL
+        } else {
+            size.extract(py)?
+        };
+        let mtime = if mtime.is_none(py) {
+            // fallback default value
+            MTIME_UNSET
+        } else {
+            mtime.extract(py)?
+        };
         let entry = DirstateEntry {
             state: state,
             mode: mode,
             size: size,
             mtime: mtime,
         };
+        let from_p2 = from_p2.extract::<PyBool>(py)?.is_true();
+        let possibly_dirty = possibly_dirty.extract::<PyBool>(py)?.is_true();
         self.inner(py).borrow_mut().add_file(
             filename,
             oldstate,
             entry,
+            from_p2,
+            possibly_dirty
         ).and(Ok(py.None())).or_else(|e: DirstateError| {
             Err(PyErr::new::<exc::ValueError, _>(py, e.to_string()))
         })

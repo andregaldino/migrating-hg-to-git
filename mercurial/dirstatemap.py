@@ -35,6 +35,8 @@ NONNORMAL = -1
 # a special value used internally for `time` if the time is ambigeous
 AMBIGUOUS_TIME = -1
 
+rangemask = 0x7FFFFFFF
+
 
 class dirstatemap(object):
     """Map encapsulating the dirstate's contents.
@@ -142,8 +144,37 @@ class dirstatemap(object):
         """Loads the underlying data, if it's not already loaded"""
         self._map
 
-    def addfile(self, f, oldstate, state, mode, size, mtime):
+    def addfile(
+        self,
+        f,
+        oldstate,
+        state,
+        mode,
+        size=None,
+        mtime=None,
+        from_p2=False,
+        possibly_dirty=False,
+    ):
         """Add a tracked file to the dirstate."""
+        if state == b'a':
+            assert not possibly_dirty
+            assert not from_p2
+            size = NONNORMAL
+            mtime = AMBIGUOUS_TIME
+        elif from_p2:
+            assert not possibly_dirty
+            size = FROM_P2
+            mtime = AMBIGUOUS_TIME
+        elif possibly_dirty:
+            size = NONNORMAL
+            mtime = AMBIGUOUS_TIME
+        else:
+            assert size != FROM_P2
+            assert size != NONNORMAL
+            size = size & rangemask
+            mtime = mtime & rangemask
+        assert size is not None
+        assert mtime is not None
         if oldstate in b"?r" and "_dirs" in self.__dict__:
             self._dirs.addpath(f)
         if oldstate == b"?" and "_alldirs" in self.__dict__:
@@ -425,8 +456,27 @@ if rustmod is not None:
                 False,
             )
 
-        def addfile(self, *args, **kwargs):
-            return self._rustmap.addfile(*args, **kwargs)
+        def addfile(
+            self,
+            f,
+            oldstate,
+            state,
+            mode,
+            size=None,
+            mtime=None,
+            from_p2=False,
+            possibly_dirty=False,
+        ):
+            return self._rustmap.addfile(
+                f,
+                oldstate,
+                state,
+                mode,
+                size,
+                mtime,
+                from_p2,
+                possibly_dirty,
+            )
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)

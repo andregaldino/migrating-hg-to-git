@@ -43,10 +43,9 @@ SUPPORTS_DIRSTATE_V2 = rustmod is not None
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
-_rangemask = 0x7FFFFFFF
+_rangemask = dirstatemap.rangemask
 
 dirstatetuple = parsers.dirstatetuple
-
 
 # a special value used internally for `size` if the file come from the other parent
 FROM_P2 = dirstatemap.FROM_P2
@@ -455,8 +454,8 @@ class dirstate(object):
         f,
         state,
         mode,
-        size=NONNORMAL,
-        mtime=AMBIGUOUS_TIME,
+        size=None,
+        mtime=None,
         from_p2=False,
         possibly_dirty=False,
     ):
@@ -476,25 +475,18 @@ class dirstate(object):
                     msg = _(b'file %r in dirstate clashes with %r')
                     msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
                     raise error.Abort(msg)
-        if state == b'a':
-            assert not possibly_dirty
-            assert not from_p2
-            size = NONNORMAL
-            mtime = AMBIGUOUS_TIME
-        elif from_p2:
-            assert not possibly_dirty
-            size = FROM_P2
-            mtime = AMBIGUOUS_TIME
-        elif possibly_dirty:
-            mtime = AMBIGUOUS_TIME
-        else:
-            assert size != FROM_P2
-            assert size != NONNORMAL
-            size = size & _rangemask
-            mtime = mtime & _rangemask
         self._dirty = True
         self._updatedfiles.add(f)
-        self._map.addfile(f, oldstate, state, mode, size, mtime)
+        self._map.addfile(
+            f,
+            oldstate,
+            state=state,
+            mode=mode,
+            size=size,
+            mtime=mtime,
+            from_p2=from_p2,
+            possibly_dirty=possibly_dirty,
+        )
 
     def normal(self, f, parentfiledata=None):
         """Mark a file normal and clean.

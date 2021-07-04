@@ -49,6 +49,8 @@ pub trait DirstateMapMethods {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
+        from_p2: bool,
+        possibly_dirty: bool,
     ) -> Result<(), DirstateError>;
 
     /// Mark a file as "removed" (as in `hg rm`).
@@ -287,8 +289,10 @@ impl DirstateMapMethods for DirstateMap {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
+        from_p2: bool,
+        possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        self.add_file(filename, old_state, entry)
+        self.add_file(filename, old_state, entry, from_p2, possibly_dirty)
     }
 
     fn remove_file(

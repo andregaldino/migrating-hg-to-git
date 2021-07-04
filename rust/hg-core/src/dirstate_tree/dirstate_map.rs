@@ -11,8 +11,10 @@ use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::Timestamp;
+use crate::dirstate::MTIME_UNSET;
 use crate::dirstate::SIZE_FROM_OTHER_PARENT;
 use crate::dirstate::SIZE_NON_NORMAL;
+use crate::dirstate::V1_RANGEMASK;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::CopyMapIter;
@@ -721,7 +723,27 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         filename: &HgPath,
         old_state: EntryState,
         entry: DirstateEntry,
+        from_p2: bool,
+        possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
+        let mut entry = entry;
+        if entry.state == EntryState::Added {
+            assert!(!possibly_dirty);
+            assert!(!from_p2);
+            entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else if from_p2 {
+            assert!(!possibly_dirty);
+            entry.size = SIZE_FROM_OTHER_PARENT;
+            entry.mtime = MTIME_UNSET;
+        } else if possibly_dirty {
+            entry.size = SIZE_NON_NORMAL;
+            entry.mtime = MTIME_UNSET;
+        } else {
+            entry.size = entry.size & V1_RANGEMASK;
+            entry.mtime = entry.mtime & V1_RANGEMASK;
+        }
+
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }
 

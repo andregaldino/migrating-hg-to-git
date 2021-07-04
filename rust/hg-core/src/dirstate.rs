@@ -77,6 +77,8 @@ struct RawEntry {
     length: unaligned::I32Be,
 }
 
+pub const V1_RANGEMASK: i32 = 0x7FFFFFFF;
+
 pub const MTIME_UNSET: i32 = -1;
 
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the
