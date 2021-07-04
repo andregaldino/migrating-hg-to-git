@@ -141,6 +141,20 @@ static PyObject *dirstatetuple_v1_mtime(dirstateTupleObject *self)
 	return PyInt_FromLong(self->mtime);
 };
 
+static PyObject *dirstatetuple_need_delay(dirstateTupleObject *self,
+                                          PyObject *value)
+{
+	long now;
+	if (!pylong_to_long(value, &now)) {
+		return NULL;
+	}
+	if (self->state == 'n' && self->mtime == now) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyMethodDef dirstatetuple_methods[] = {
     {"v1_state", (PyCFunction)dirstatetuple_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
@@ -150,6 +164,8 @@ static PyMethodDef dirstatetuple_methods[] = {
      "return a \"size\" suitable for v1 serialization"},
     {"v1_mtime", (PyCFunction)dirstatetuple_v1_mtime, METH_NOARGS,
      "return a \"mtime\" suitable for v1 serialization"},
+    {"need_delay", (PyCFunction)dirstatetuple_need_delay, METH_O,
+     "True if the stored mtime would be ambiguous with the current time"},
     {NULL} /* Sentinel */
 };
 

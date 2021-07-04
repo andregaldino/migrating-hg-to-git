@@ -754,7 +754,7 @@ class dirstate(object):
         if delaywrite > 0:
             # do we have any files to delay for?
             for f, e in pycompat.iteritems(self._map):
-                if e.state == b'n' and e[3] == now:
+                if e.need_delay(now):
                     import time  # to avoid useless import
 
                     # rather than sleep n seconds, sleep until the next

@@ -153,6 +153,10 @@ class dirstatetuple(object):
         """return a "mtime" suitable for v1 serialization"""
         return self._mtime
 
+    def need_delay(self, now):
+        """True if the stored mtime would be ambiguous with the current time"""
+        return self._state == b'n' and self._mtime == now
+
 
 def gettype(q):
     return int(q & 0xFFFF)
