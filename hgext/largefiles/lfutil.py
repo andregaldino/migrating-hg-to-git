@@ -546,7 +546,7 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     lfstandin = standin(lfile)
     if lfstandin in repo.dirstate:
         stat = repo.dirstate._map[lfstandin]
-        state, mtime = stat[0], stat[3]
+        state, mtime = stat.state, stat.mtime
     else:
         state, mtime = b'?', -1
     if state == b'n':
