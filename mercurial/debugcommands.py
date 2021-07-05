@@ -2608,7 +2608,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         files, dirs = set(), set()
         adddir, addfile = dirs.add, files.add
         for f, st in pycompat.iteritems(dirstate):
-            if f.startswith(spec) and st[0] in acceptable:
+            if f.startswith(spec) and st.state in acceptable:
                 if fixpaths:
                     f = f.replace(b'/', pycompat.ossep)
                 if fullpaths:
