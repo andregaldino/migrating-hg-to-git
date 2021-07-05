@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from mercurial import (
     dirstate,
     extensions,
+    pycompat,
 )
 
 
@@ -27,10 +28,13 @@ def checkconsistency(ui, orig, dmap, _nonnormalset, label):
     """Compute nonnormalset from dmap, check that it matches _nonnormalset"""
     nonnormalcomputedmap = nonnormalentries(dmap)
     if _nonnormalset != nonnormalcomputedmap:
-        ui.develwarn(b"%s call to %s\n" % (label, orig), config=b'dirstate')
+        b_orig = pycompat.sysbytes(repr(orig))
+        ui.develwarn(b"%s call to %s\n" % (label, b_orig), config=b'dirstate')
         ui.develwarn(b"inconsistency in nonnormalset\n", config=b'dirstate')
-        ui.develwarn(b"[nonnormalset] %s\n" % _nonnormalset, config=b'dirstate')
-        ui.develwarn(b"[map] %s\n" % nonnormalcomputedmap, config=b'dirstate')
+        b_nonnormal = pycompat.sysbytes(repr(_nonnormalset))
+        ui.develwarn(b"[nonnormalset] %s\n" % b_nonnormal, config=b'dirstate')
+        b_nonnormalcomputed = pycompat.sysbytes(repr(nonnormalcomputedmap))
+        ui.develwarn(b"[map] %s\n" % b_nonnormalcomputed, config=b'dirstate')
 
 
 def _checkdirstate(orig, self, arg):
