@@ -219,13 +219,13 @@ class dirstatemap(object):
                 # backup the previous state
                 if entry.merged:  # merge
                     size = NONNORMAL
-                elif entry[0] == b'n' and entry.from_p2:
+                elif entry.from_p2:
                     size = FROM_P2
                     self.otherparentset.add(f)
         if size == 0:
             self.copymap.pop(f, None)
 
-        if entry is not None and entry[0] != b'r' and "_dirs" in self.__dict__:
+        if entry is not None and not entry.removed and "_dirs" in self.__dict__:
             self._dirs.delpath(f)
         if entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
@@ -260,8 +260,10 @@ class dirstatemap(object):
     def clearambiguoustimes(self, files, now):
         for f in files:
             e = self.get(f)
-            if e is not None and e[0] == b'n' and e[3] == now:
-                self._map[f] = DirstateItem(e[0], e[1], e[2], AMBIGUOUS_TIME)
+            if e is not None and e.need_delay(now):
+                self._map[f] = DirstateItem(
+                    e.state, e.mode, e.size, AMBIGUOUS_TIME
+                )
                 self.nonnormalset.add(f)
 
     def nonnormalentries(self):
@@ -272,9 +274,9 @@ class dirstatemap(object):
             nonnorm = set()
             otherparent = set()
             for fname, e in pycompat.iteritems(self._map):
-                if e[0] != b'n' or e[3] == AMBIGUOUS_TIME:
+                if e.state != b'n' or e.mtime == AMBIGUOUS_TIME:
                     nonnorm.add(fname)
-                if e[0] == b'n' and e[2] == FROM_P2:
+                if e.from_p2:
                     otherparent.add(fname)
             return nonnorm, otherparent
 
@@ -295,7 +297,7 @@ class dirstatemap(object):
         f = {}
         normcase = util.normcase
         for name, s in pycompat.iteritems(self._map):
-            if s[0] != b'r':
+            if not s.removed:
                 f[normcase(name)] = name
         f[b'.'] = b'.'  # prevents useless util.fspath() invocation
         return f
