@@ -18,7 +18,7 @@ def nonnormalentries(dmap):
     """Compute nonnormal entries from dirstate's dmap"""
     res = set()
     for f, e in dmap.iteritems():
-        if e[0] != b'n' or e[3] == -1:
+        if e.state != b'n' or e.mtime == -1:
             res.add(f)
     return res
 
