@@ -954,7 +954,10 @@ def debugstate(ui, repo, **opts):
     datesort = opts.get('datesort')
 
     if datesort:
-        keyfunc = lambda x: (x[1][3], x[0])  # sort by mtime, then by filename
+        keyfunc = lambda x: (
+            x[1].v1_mtime(),
+            x[0],
+        )  # sort by mtime, then by filename
     else:
         keyfunc = None  # sort by filename
     entries = list(pycompat.iteritems(repo.dirstate))
@@ -962,20 +965,23 @@ def debugstate(ui, repo, **opts):
         entries.extend(repo.dirstate.directories())
     entries.sort(key=keyfunc)
     for file_, ent in entries:
-        if ent[3] == -1:
+        if ent.v1_mtime() == -1:
             timestr = b'unset               '
         elif nodates:
             timestr = b'set                 '
         else:
             timestr = time.strftime(
-                "%Y-%m-%d %H:%M:%S ", time.localtime(ent[3])
+                "%Y-%m-%d %H:%M:%S ", time.localtime(ent.v1_mtime())
             )
             timestr = encoding.strtolocal(timestr)
-        if ent[1] & 0o20000:
+        if ent.mode & 0o20000:
             mode = b'lnk'
         else:
-            mode = b'%3o' % (ent[1] & 0o777 & ~util.umask)
-        ui.write(b"%c %s %10d %s%s\n" % (ent[0], mode, ent[2], timestr, file_))
+            mode = b'%3o' % (ent.v1_mode() & 0o777 & ~util.umask)
+        ui.write(
+            b"%c %s %10d %s%s\n"
+            % (ent.v1_state(), mode, ent.v1_size(), timestr, file_)
+        )
     for f in repo.dirstate.copies():
         ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
 
