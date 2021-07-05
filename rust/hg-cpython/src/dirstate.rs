@@ -73,6 +73,19 @@ pub fn make_dirstate_item(
     maybe_obj.ok_or_else(|| PyErr::fetch(py))
 }
 
+// XXX a bit strange to have a dedicated function, but directory are not
+// treated as dirstate node by hg-core for now so…
+pub fn make_directory_item(py: Python, mtime: i32) -> PyResult<PyObject> {
+    // might be silly to retrieve capsule function in hot loop
+    let make = make_dirstate_item_capi::retrieve(py)?;
+
+    let maybe_obj = unsafe {
+        let ptr = make(b'd' as c_char, 0 as i32, 0 as i32, mtime);
+        PyObject::from_owned_ptr_opt(py, ptr)
+    };
+    maybe_obj.ok_or_else(|| PyErr::fetch(py))
+}
+
 pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
     dmap.items(py)
         .iter()

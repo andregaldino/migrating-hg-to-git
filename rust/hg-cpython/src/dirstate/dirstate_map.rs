@@ -19,6 +19,7 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
+    dirstate::make_directory_item,
     dirstate::make_dirstate_item,
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
@@ -519,7 +520,8 @@ py_class!(pub class DirstateMap |py| {
             let (path, mtime) = item.map_err(|e| v2_error(py, e))?;
             let path = PyBytes::new(py, path.as_bytes());
             let mtime = mtime.map(|t| t.0).unwrap_or(-1);
-            let tuple = (path, (b'd', 0, 0, mtime));
+            let item = make_directory_item(py, mtime as i32)?;
+            let tuple = (path, item);
             dirs.append(py, tuple.to_py_object(py).into_object())
         }
         Ok(dirs)
