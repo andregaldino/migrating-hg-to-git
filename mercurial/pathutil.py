@@ -323,7 +323,7 @@ class dirs(object):
         addpath = self.addpath
         if isinstance(map, dict) and skip is not None:
             for f, s in pycompat.iteritems(map):
-                if s[0] != skip:
+                if s.state != skip:
                     addpath(f)
         elif skip is not None:
             raise error.ProgrammingError(
