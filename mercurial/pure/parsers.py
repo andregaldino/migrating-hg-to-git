@@ -39,6 +39,9 @@ FROM_P2 = -2
 # a special value used internally for `size` if the file is modified/merged/added
 NONNORMAL = -1
 
+# a special value used internally for `time` if the time is ambigeous
+AMBIGUOUS_TIME = -1
+
 
 class DirstateItem(object):
     """represent a dirstate entry
@@ -540,7 +543,7 @@ def pack_dirstate(dmap, copymap, pl, now):
     write = cs.write
     write(b"".join(pl))
     for f, e in pycompat.iteritems(dmap):
-        if e[0] == b'n' and e[3] == now:
+        if e.need_delay(now):
             # The file was last modified "simultaneously" with the current
             # write to dirstate (i.e. within the same second for file-
             # systems with a granularity of 1 sec). This commonly happens
@@ -550,7 +553,7 @@ def pack_dirstate(dmap, copymap, pl, now):
             # dirstate, forcing future 'status' calls to compare the
             # contents of the file if the size is the same. This prevents
             # mistakenly treating such files as clean.
-            e = DirstateItem(e[0], e[1], e[2], -1)
+            e = DirstateItem(e.state, e.mode, e.size, AMBIGUOUS_TIME)
             dmap[f] = e
 
         if f in copymap:
