@@ -10,13 +10,12 @@ Helper extension to intercept renames.
   > 
   > def extsetup(ui):
   >     def close(orig, *args, **kwargs):
-  >         path = args[0]._atomictempfile__name
+  >         path = util.normpath(args[0]._atomictempfile__name)
   >         if path.endswith(b'/.hg/store/data/file.i'):
   >             os._exit(80)
   >         return orig(*args, **kwargs)
   >     extensions.wrapfunction(util.atomictempfile, 'close', close)
   > EOF
-
 
 Test offset computation to correctly factor in the index entries themselve.
 Also test that the new data size has the correct size if the transaction is aborted
