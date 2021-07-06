@@ -126,10 +126,8 @@ Status is buggy, even with debugrebuilddirstate
   5
   bar
   $ hg status
-  M b.txt (known-bad-output !)
   $ hg debugrebuilddirstate
   $ hg status
-  M b.txt (known-bad-output !)
 
 the history was altered
 
@@ -139,8 +137,7 @@ marker that some metadata are present and should be fetched.
   $ hg debugrevlogindex b.txt
      rev linkrev nodeid       p1           p2
        0       2 05b806ebe5ea 000000000000 000000000000
-       1       3 a58b36ad6b65 05b806ebe5ea 000000000000 (known-bad-output !)
-       1       3 a58b36ad6b65 000000000000 05b806ebe5ea (missing-correct-output !)
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
 
 Check commit Graph
 
