@@ -863,7 +863,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                 else:
                     util.copyfile(repo.wjoin(srclfile), repo.wjoin(destlfile))
 
-                lfdirstate.add(destlfile)
+                lfdirstate.set_tracked(destlfile)
         lfdirstate.write()
     except error.Abort as e:
         if e.message != _(b'no files to copy'):
