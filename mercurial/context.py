@@ -1701,12 +1701,8 @@ class workingctx(committablectx):
                         % uipath(f)
                     )
                     rejected.append(f)
-                elif ds[f] in b'amn':
+                elif not ds.set_tracked(f):
                     ui.warn(_(b"%s already tracked!\n") % uipath(f))
-                elif ds[f] == b'r':
-                    ds.normallookup(f)
-                else:
-                    ds.add(f)
             return rejected
 
     def forget(self, files, prefix=b""):

@@ -85,7 +85,7 @@ def requires_parents_change(func):
 
 def requires_no_parents_change(func):
     def wrap(self, *args, **kwargs):
-        if not self.pendingparentchange():
+        if self.pendingparentchange():
             msg = 'calling `%s` inside of a parentchange context'
             msg %= func.__name__
             raise error.ProgrammingError(msg)
