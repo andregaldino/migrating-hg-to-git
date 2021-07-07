@@ -1738,10 +1738,7 @@ class workingctx(committablectx):
         else:
             with self._repo.wlock():
                 ds = self._repo.dirstate
-                if ds[dest] in b'?':
-                    ds.add(dest)
-                elif ds[dest] in b'r':
-                    ds.normallookup(dest)
+                ds.set_tracked(dest)
                 ds.copy(source, dest)
 
     def match(
