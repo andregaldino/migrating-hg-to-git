@@ -537,6 +537,62 @@ class dirstate(object):
         else:
             assert False, 'unreachable'
 
+    @requires_parents_change
+    def update_file(
+        self,
+        filename,
+        wc_tracked,
+        p1_tracked,
+        p2_tracked=False,
+        merged=False,
+        clean_p1=False,
+        clean_p2=False,
+        possibly_dirty=False,
+    ):
+        """update the information about a file in the dirstate
+
+        This is to be called when the direstates parent changes to keep track
+        of what is the file situation in regards to the working copy and its parent.
+
+        This function must be called within a `dirstate.parentchange` context.
+
+        note: the API is at an early stage and we might need to ajust it
+        depending of what information ends up being relevant and useful to
+        other processing.
+        """
+        if not self.pendingparentchange():
+            msg = b'calling `update_file` outside of a parentchange context'
+            raise error.ProgrammingError(msg)
+        if merged and (clean_p1 or clean_p2):
+            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
+            raise error.ProgrammingError(msg)
+        assert not (merged and (clean_p1 or clean_p1))
+        if not (p1_tracked or p2_tracked or wc_tracked):
+            self._drop(filename)
+        elif merged:
+            assert wc_tracked
+            if not self.in_merge:
+                self.normallookup(filename)
+            self.otherparent(filename)
+        elif not (p1_tracked or p2_tracked) and wc_tracked:
+            self._addpath(filename, added=True, possibly_dirty=possibly_dirty)
+            self._map.copymap.pop(filename, None)
+        elif (p1_tracked or p2_tracked) and not wc_tracked:
+            self._remove(filename)
+        elif clean_p2 and wc_tracked:
+            assert p2_tracked
+            self.otherparent(filename)
+        elif not p1_tracked and p2_tracked and wc_tracked:
+            self._addpath(filename, from_p2=True, possibly_dirty=possibly_dirty)
+            self._map.copymap.pop(filename, None)
+        elif possibly_dirty:
+            self._addpath(filename, possibly_dirty=possibly_dirty)
+        elif wc_tracked:
+            self.normal(filename)
+        # XXX We need something for file that are dirty after an update
+        else:
+            assert False, 'unreachable'
+
     def _addpath(
         self,
         f,
