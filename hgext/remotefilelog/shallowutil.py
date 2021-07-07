@@ -251,23 +251,22 @@ def parsesizeflags(raw):
         raise BadRemotefilelogHeader(
             "unexpected remotefilelog header: illegal format"
         )
-    if True:
-        header = raw[:index]
-        if header.startswith(b'v'):
-            # v1 and above, header starts with 'v'
-            if header.startswith(b'v1\n'):
-                for s in header.split(b'\n'):
-                    if s.startswith(constants.METAKEYSIZE):
-                        size = int(s[len(constants.METAKEYSIZE) :])
-                    elif s.startswith(constants.METAKEYFLAG):
-                        flags = int(s[len(constants.METAKEYFLAG) :])
-            else:
-                raise BadRemotefilelogHeader(
-                    b'unsupported remotefilelog header: %s' % header
-                )
+    header = raw[:index]
+    if header.startswith(b'v'):
+        # v1 and above, header starts with 'v'
+        if header.startswith(b'v1\n'):
+            for s in header.split(b'\n'):
+                if s.startswith(constants.METAKEYSIZE):
+                    size = int(s[len(constants.METAKEYSIZE) :])
+                elif s.startswith(constants.METAKEYFLAG):
+                    flags = int(s[len(constants.METAKEYFLAG) :])
         else:
-            # v0, str(int(size)) is the header
-            size = int(header)
+            raise BadRemotefilelogHeader(
+                b'unsupported remotefilelog header: %s' % header
+            )
+    else:
+        # v0, str(int(size)) is the header
+        size = int(header)
     if size is None:
         raise BadRemotefilelogHeader(
             "unexpected remotefilelog header: no size found"
