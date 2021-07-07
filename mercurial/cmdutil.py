@@ -3686,7 +3686,7 @@ def _performrevert(
         if f not in newlyaddedandmodifiedfiles:
             prntstatusmsg(b'add', f)
             checkout(f)
-            repo.dirstate.add(f)
+            repo.dirstate.set_tracked(f)
 
     normal = repo.dirstate.normallookup
     if node == parent and p2 == repo.nullid:
