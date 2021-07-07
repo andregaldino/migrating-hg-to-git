@@ -387,7 +387,7 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self.add(f)
+                    self._add(f)
         return copies
 
     def setbranch(self, branch):
@@ -547,8 +547,12 @@ class dirstate(object):
 
     def add(self, f):
         '''Mark a file added.'''
-        self._addpath(f, added=True)
-        self._map.copymap.pop(f, None)
+        self._add(f)
+
+    def _add(self, filename):
+        """internal function to mark a file as added"""
+        self._addpath(filename, added=True)
+        self._map.copymap.pop(filename, None)
 
     def remove(self, f):
         '''Mark a file removed.'''
