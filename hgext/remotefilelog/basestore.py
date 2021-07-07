@@ -308,7 +308,7 @@ class basestore(object):
                     # Content matches the intended path
                     return True
                 return False
-        except (ValueError, RuntimeError):
+        except (ValueError, shallowutil.BadRemotefilelogHeader):
             pass
 
         return False

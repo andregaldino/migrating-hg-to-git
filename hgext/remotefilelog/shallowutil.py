@@ -233,6 +233,10 @@ def bin2int(buf):
     return x
 
 
+class BadRemotefilelogHeader(error.StorageError):
+    """Exception raised when parsing a remotefilelog blob header fails."""
+
+
 def parsesizeflags(raw):
     """given a remotefilelog blob, return (headersize, rawtextsize, flags)
 
@@ -253,16 +257,20 @@ def parsesizeflags(raw):
                     elif s.startswith(constants.METAKEYFLAG):
                         flags = int(s[len(constants.METAKEYFLAG) :])
             else:
-                raise RuntimeError(
+                raise BadRemotefilelogHeader(
                     b'unsupported remotefilelog header: %s' % header
                 )
         else:
             # v0, str(int(size)) is the header
             size = int(header)
     except ValueError:
-        raise RuntimeError("unexpected remotefilelog header: illegal format")
+        raise BadRemotefilelogHeader(
+            "unexpected remotefilelog header: illegal format"
+        )
     if size is None:
-        raise RuntimeError("unexpected remotefilelog header: no size found")
+        raise BadRemotefilelogHeader(
+            "unexpected remotefilelog header: no size found"
+        )
     return index + 1, size, flags
 
 
