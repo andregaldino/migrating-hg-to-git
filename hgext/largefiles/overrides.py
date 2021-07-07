@@ -650,12 +650,15 @@ def overridecalculateupdates(
 def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
     if MERGE_ACTION_LARGEFILE_MARK_REMOVED in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        for lfile, args, msg in actions[MERGE_ACTION_LARGEFILE_MARK_REMOVED]:
-            # this should be executed before 'orig', to execute 'remove'
-            # before all other actions
-            repo.dirstate.remove(lfile)
-            # make sure lfile doesn't get synclfdirstate'd as normal
-            lfdirstate.add(lfile)
+        with lfdirstate.parentchange():
+            for lfile, args, msg in actions[
+                MERGE_ACTION_LARGEFILE_MARK_REMOVED
+            ]:
+                # this should be executed before 'orig', to execute 'remove'
+                # before all other actions
+                repo.dirstate.remove(lfile)
+                # make sure lfile doesn't get synclfdirstate'd as normal
+                lfdirstate.add(lfile)
         lfdirstate.write()
 
     return orig(repo, actions, branchmerge, getfiledata)
