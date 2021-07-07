@@ -708,6 +708,13 @@ class dirstate(object):
 
     def add(self, f):
         '''Mark a file added.'''
+        if not self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `add` outside of update/merge context."
+                b" Use `set_tracked`",
+                b'6.0',
+                stacklevel=2,
+            )
         self._add(f)
 
     def _add(self, filename):
