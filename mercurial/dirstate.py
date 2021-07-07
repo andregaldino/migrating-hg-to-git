@@ -555,10 +555,14 @@ class dirstate(object):
         self._map.copymap.pop(filename, None)
 
     def remove(self, f):
-        '''Mark a file removed.'''
+        '''Mark a file removed'''
+        self._remove(f)
+
+    def _remove(self, filename):
+        """internal function to mark a file removed"""
         self._dirty = True
-        self._updatedfiles.add(f)
-        self._map.removefile(f, in_merge=self.in_merge)
+        self._updatedfiles.add(filename)
+        self._map.removefile(filename, in_merge=self.in_merge)
 
     def merge(self, f):
         '''Mark a file merged.'''
