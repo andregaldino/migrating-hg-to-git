@@ -1711,13 +1711,9 @@ class workingctx(committablectx):
             uipath = lambda f: ds.pathto(pathutil.join(prefix, f))
             rejected = []
             for f in files:
-                if f not in ds:
+                if not ds.set_untracked(f):
                     self._repo.ui.warn(_(b"%s not tracked!\n") % uipath(f))
                     rejected.append(f)
-                elif ds[f] != b'a':
-                    ds.remove(f)
-                else:
-                    ds.drop(f)
             return rejected
 
     def copy(self, source, dest):
