@@ -250,6 +250,32 @@ Cannot cause divergence by default
   [10]
   $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
   2 new content-divergent changesets
+
+Hidden common predecessor of divergence does not cause crash
+
+First create C1 as a pruned successor of C
+  $ hg co C
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg amend -m C1
+  $ hg tag --local C1
+  $ hg debugobsolete $(hg log -T '{node}' -r C1)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+Now create C2 as other side of divergence (not actually divergent because C1 is
+pruned)
+  $ hg co C
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg amend -m C2
+  1 new orphan changesets
+Make the common predecessor (C) pruned
+  $ hg tag --local --remove C
+  $ hg co C1
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+Try to cause divergence
+  $ hg amend -m C11
+  abort: filtered revision '26805aba1e600a82e93661149f2313866a221a7b' (known-bad-output !)
+  [255]
+ [10]
 #endif
 
 Cannot amend public changeset
