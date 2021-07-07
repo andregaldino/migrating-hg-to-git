@@ -247,6 +247,11 @@ def parsesizeflags(raw):
     size = None
     try:
         index = raw.index(b'\0')
+    except ValueError:
+        raise BadRemotefilelogHeader(
+            "unexpected remotefilelog header: illegal format"
+        )
+    if True:
         header = raw[:index]
         if header.startswith(b'v'):
             # v1 and above, header starts with 'v'
@@ -263,10 +268,6 @@ def parsesizeflags(raw):
         else:
             # v0, str(int(size)) is the header
             size = int(header)
-    except ValueError:
-        raise BadRemotefilelogHeader(
-            "unexpected remotefilelog header: illegal format"
-        )
     if size is None:
         raise BadRemotefilelogHeader(
             "unexpected remotefilelog header: no size found"
