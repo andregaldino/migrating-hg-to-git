@@ -150,10 +150,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
                     executable=lfutil.getexecutable(repo.wjoin(f)),
                 )
                 standins.append(standinname)
-                if lfdirstate[f] == b'r':
-                    lfdirstate.normallookup(f)
-                else:
-                    lfdirstate.add(f)
+                lfdirstate.set_tracked(f)
             lfdirstate.write()
             bad += [
                 lfutil.splitstandin(f)
