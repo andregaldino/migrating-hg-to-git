@@ -1406,7 +1406,7 @@ running is placed.
   > - \$RUNTESTDIR, in which run-tests.py is placed (expanded at runtime)
   > 
   > #if windows
-  >   $ test "\$TESTDIR" = "$TESTTMP\anothertests"
+  >   $ test "\$TESTDIR" = "$TESTTMP\\anothertests"
   > #else
   >   $ test "\$TESTDIR" = "$TESTTMP"/anothertests
   > #endif
