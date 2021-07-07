@@ -574,22 +574,23 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
 def markcommitted(orig, ctx, node):
     repo = ctx.repo()
 
-    orig(node)
+    with ctx._repo.dirstate.parentchange():
+        orig(node)
 
-    # ATTENTION: "ctx.files()" may differ from "repo[node].files()"
-    # because files coming from the 2nd parent are omitted in the latter.
-    #
-    # The former should be used to get targets of "synclfdirstate",
-    # because such files:
-    # - are marked as "a" by "patch.patch()" (e.g. via transplant), and
-    # - have to be marked as "n" after commit, but
-    # - aren't listed in "repo[node].files()"
+        # ATTENTION: "ctx.files()" may differ from "repo[node].files()"
+        # because files coming from the 2nd parent are omitted in the latter.
+        #
+        # The former should be used to get targets of "synclfdirstate",
+        # because such files:
+        # - are marked as "a" by "patch.patch()" (e.g. via transplant), and
+        # - have to be marked as "n" after commit, but
+        # - aren't listed in "repo[node].files()"
 
-    lfdirstate = openlfdirstate(repo.ui, repo)
-    for f in ctx.files():
-        lfile = splitstandin(f)
-        if lfile is not None:
-            synclfdirstate(repo, lfdirstate, lfile, False)
+        lfdirstate = openlfdirstate(repo.ui, repo)
+        for f in ctx.files():
+            lfile = splitstandin(f)
+            if lfile is not None:
+                synclfdirstate(repo, lfdirstate, lfile, False)
     lfdirstate.write()
 
     # As part of committing, copy all of the largefiles into the cache.
