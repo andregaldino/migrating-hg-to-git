@@ -165,6 +165,9 @@ class largefilesdirstate(dirstate.dirstate):
     def set_tracked(self, f):
         return super(largefilesdirstate, self).set_tracked(unixpath(f))
 
+    def set_untracked(self, f):
+        return super(largefilesdirstate, self).set_untracked(unixpath(f))
+
     def normal(self, f):
         return super(largefilesdirstate, self).normal(unixpath(f))
 

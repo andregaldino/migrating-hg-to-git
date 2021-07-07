@@ -42,6 +42,10 @@ def wrapdirstate(repo, dirstate):
             return super(narrowdirstate, self).set_tracked(*args)
 
         @_editfunc
+        def set_untracked(self, *args):
+            return super(narrowdirstate, self).set_untracked(*args)
+
+        @_editfunc
         def add(self, *args):
             return super(narrowdirstate, self).add(*args)
 

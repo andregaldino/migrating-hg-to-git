@@ -257,6 +257,7 @@ def _setupdirstate(ui):
     editfuncs = [
         b'normal',
         b'set_tracked',
+        b'set_untracked',
         b'add',
         b'normallookup',
         b'copy',

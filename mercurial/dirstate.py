@@ -480,6 +480,25 @@ class dirstate(object):
             return True
         return False
 
+    @requires_no_parents_change
+    def set_untracked(self, filename):
+        """a "public" method for generic code to mark a file as untracked
+
+        This function is to be called outside of "update/merge" case. For
+        example by a command like `hg remove X`.
+
+        return True the file was previously tracked, False otherwise.
+        """
+        entry = self._map.get(filename)
+        if entry is None:
+            return False
+        elif entry.added:
+            self._drop(filename)
+            return True
+        else:
+            self._remove(filename)
+            return True
+
     @requires_parents_change
     def update_file_reference(
         self,
