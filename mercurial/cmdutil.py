@@ -3549,7 +3549,7 @@ def _performrevert(
             repo.wvfs.unlinkpath(f, rmdir=rmdir)
         except OSError:
             pass
-        repo.dirstate.remove(f)
+        repo.dirstate.set_untracked(f)
 
     def prntstatusmsg(action, f):
         exact = names[f]
@@ -3587,7 +3587,7 @@ def _performrevert(
     for f in actions[b'drop'][0]:
         audit_path(f)
         prntstatusmsg(b'drop', f)
-        repo.dirstate.remove(f)
+        repo.dirstate.set_untracked(f)
 
     normal = None
     if node == parent:
