@@ -857,7 +857,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                     # The file is gone, but this deletes any empty parent
                     # directories as a side-effect.
                     repo.wvfs.unlinkpath(srclfile, ignoremissing=True)
-                    lfdirstate.remove(srclfile)
+                    lfdirstate.set_untracked(srclfile)
                 else:
                     util.copyfile(repo.wjoin(srclfile), repo.wjoin(destlfile))
 
