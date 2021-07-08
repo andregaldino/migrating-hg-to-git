@@ -227,9 +227,7 @@ def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
         repo[None].forget(remove)
 
         for f in remove:
-            lfutil.synclfdirstate(
-                repo, lfdirstate, lfutil.splitstandin(f), False
-            )
+            lfdirstate.set_untracked(lfutil.splitstandin(f))
 
         lfdirstate.write()
 
