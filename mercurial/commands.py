@@ -6238,7 +6238,20 @@ def resolve(ui, repo, *pats, **opts):
 
         ms.commit()
         branchmerge = repo.dirstate.p2() != repo.nullid
-        mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
+        # resolve is not doing a parent change here, however, `record updates`
+        # will call some dirstate API that at intended for parent changes call.
+        # Ideally we would not need this and could implement a lighter version
+        # of the recordupdateslogic that will not have to deal with the part
+        # related to parent changes. However this would requires that:
+        # - we are sure we passed around enough information at update/merge
+        #   time to no longer needs it at `hg resolve time`
+        # - we are sure we store that information well enough to be able to reuse it
+        # - we are the necessary logic to reuse it right.
+        #
+        # All this should eventually happens, but in the mean time, we use this
+        # context manager slightly out of the context it should be.
+        with repo.dirstate.parentchange():
+            mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
 
         if not didwork and pats:
             hint = None
