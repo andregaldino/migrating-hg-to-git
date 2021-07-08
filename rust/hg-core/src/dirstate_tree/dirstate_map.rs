@@ -29,6 +29,10 @@ use crate::StateMapIter;
 use crate::StatusError;
 use crate::StatusOptions;
 
+/// Append to an existing data file if the amount of unreachable data (not used
+/// anymore) is less than this fraction of the total amount of existing data.
+const ACCEPTABLE_UNREACHABLE_BYTES_RATIO: f32 = 0.5;
+
 pub struct DirstateMap<'on_disk> {
     /// Contents of the `.hg/dirstate` file
     pub(super) on_disk: &'on_disk [u8],
@@ -44,6 +48,9 @@ pub struct DirstateMap<'on_disk> {
 
     /// See on_disk::Header
     pub(super) ignore_patterns_hash: on_disk::IgnorePatternsHash,
+
+    /// How many bytes of `on_disk` are not used anymore
+    pub(super) unreachable_bytes: u32,
 }
 
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
@@ -118,9 +125,10 @@ impl<'on_disk> ChildNodes<'on_disk> {
         }
     }
 
-    pub(super) fn make_mut(
+    fn make_mut(
         &mut self,
         on_disk: &'on_disk [u8],
+        unreachable_bytes: &mut u32,
     ) -> Result<
         &mut FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>,
         DirstateV2ParseError,
@@ -128,6 +136,8 @@ impl<'on_disk> ChildNodes<'on_disk> {
         match self {
             ChildNodes::InMemory(nodes) => Ok(nodes),
             ChildNodes::OnDisk(nodes) => {
+                *unreachable_bytes +=
+                    std::mem::size_of_val::<[on_disk::Node]>(nodes) as u32;
                 let nodes = nodes
                     .iter()
                     .map(|node| {
@@ -406,6 +416,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             nodes_with_entry_count: 0,
             nodes_with_copy_source_count: 0,
             ignore_patterns_hash: [0; on_disk::IGNORE_PATTERNS_HASH_LEN],
+            unreachable_bytes: 0,
         }
     }
 
@@ -436,6 +447,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 let tracked = entry.state.is_tracked();
                 let node = Self::get_or_insert_node(
                     map.on_disk,
+                    &mut map.unreachable_bytes,
                     &mut map.root,
                     path,
                     WithBasename::to_cow_borrowed,
@@ -472,18 +484,8 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// append to the existing data file that contains `self.on_disk` (true),
     /// or create a new data file from scratch (false).
     pub(super) fn write_should_append(&self) -> bool {
-        // Soon this will be a heuristic based on the amount of unreachable
-        // data. For now it’s pseudo-random in order to make tests exercise
-        // both code paths.
-
-        fn bad_rng() -> u32 {
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .subsec_millis()
-        }
-
-        bad_rng() % 2 == 0
+        let ratio = self.unreachable_bytes as f32 / self.on_disk.len() as f32;
+        ratio < ACCEPTABLE_UNREACHABLE_BYTES_RATIO
     }
 
     fn get_node<'tree>(
@@ -514,6 +516,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// other fields while the returned borrow is still valid
     fn get_node_mut<'tree>(
         on_disk: &'on_disk [u8],
+        unreachable_bytes: &mut u32,
         root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
     ) -> Result<Option<&'tree mut Node<'on_disk>>, DirstateV2ParseError> {
@@ -522,7 +525,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let mut component =
             components.next().expect("expected at least one components");
         loop {
-            if let Some(child) = children.make_mut(on_disk)?.get_mut(component)
+            if let Some(child) = children
+                .make_mut(on_disk, unreachable_bytes)?
+                .get_mut(component)
             {
                 if let Some(next_component) = components.next() {
                     component = next_component;
@@ -542,6 +547,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     ) -> Result<&'tree mut Node<'on_disk>, DirstateV2ParseError> {
         Self::get_or_insert_node(
             self.on_disk,
+            &mut self.unreachable_bytes,
             &mut self.root,
             path,
             WithBasename::to_cow_owned,
@@ -549,8 +555,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
         )
     }
 
-    pub(super) fn get_or_insert_node<'tree, 'path>(
+    fn get_or_insert_node<'tree, 'path>(
         on_disk: &'on_disk [u8],
+        unreachable_bytes: &mut u32,
         root: &'tree mut ChildNodes<'on_disk>,
         path: &'path HgPath,
         to_cow: impl Fn(
@@ -569,7 +576,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             // map already contains that key, without introducing double
             // lookup?
             let child_node = child_nodes
-                .make_mut(on_disk)?
+                .make_mut(on_disk, unreachable_bytes)?
                 .entry(to_cow(ancestor_path))
                 .or_default();
             if let Some(next) = inclusive_ancestor_paths.next() {
@@ -598,6 +605,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
 
         let node = Self::get_or_insert_node(
             self.on_disk,
+            &mut self.unreachable_bytes,
             &mut self.root,
             path,
             WithBasename::to_cow_owned,
@@ -681,6 +689,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         for path in paths {
             if let Some(node) = Self::get_node_mut(
                 self.on_disk,
+                &mut self.unreachable_bytes,
                 &mut self.root,
                 path.as_ref(),
             )? {
@@ -711,6 +720,12 @@ impl<'on_disk> DirstateMap<'on_disk> {
             }
             Ok(None)
         })
+    }
+
+    fn count_dropped_path(unreachable_bytes: &mut u32, path: &Cow<HgPath>) {
+        if let Cow::Borrowed(path) = path {
+            *unreachable_bytes += path.len() as u32
+        }
     }
 }
 
@@ -844,13 +859,14 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         ///   removed a node in `nodes`.
         fn recur<'on_disk>(
             on_disk: &'on_disk [u8],
+            unreachable_bytes: &mut u32,
             nodes: &mut ChildNodes<'on_disk>,
             path: &HgPath,
         ) -> Result<Option<(Dropped, bool)>, DirstateV2ParseError> {
             let (first_path_component, rest_of_path) =
                 path.split_first_component();
-            let node = if let Some(node) =
-                nodes.make_mut(on_disk)?.get_mut(first_path_component)
+            let nodes = nodes.make_mut(on_disk, unreachable_bytes)?;
+            let node = if let Some(node) = nodes.get_mut(first_path_component)
             {
                 node
             } else {
@@ -858,9 +874,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             };
             let dropped;
             if let Some(rest) = rest_of_path {
-                if let Some((d, removed)) =
-                    recur(on_disk, &mut node.children, rest)?
-                {
+                if let Some((d, removed)) = recur(
+                    on_disk,
+                    unreachable_bytes,
+                    &mut node.children,
+                    rest,
+                )? {
                     dropped = d;
                     if dropped.had_entry {
                         node.descendants_with_entry_count -= 1;
@@ -884,6 +903,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                 if had_entry {
                     node.data = NodeData::None
                 }
+                if let Some(source) = &node.copy_source {
+                    DirstateMap::count_dropped_path(unreachable_bytes, source)
+                }
                 dropped = Dropped {
                     was_tracked: node
                         .data
@@ -899,14 +921,22 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                 && node.copy_source.is_none()
                 && node.children.is_empty();
             if remove {
-                nodes.make_mut(on_disk)?.remove(first_path_component);
+                let (key, _) =
+                    nodes.remove_entry(first_path_component).unwrap();
+                DirstateMap::count_dropped_path(
+                    unreachable_bytes,
+                    key.full_path(),
+                )
             }
             Ok(Some((dropped, remove)))
         }
 
-        if let Some((dropped, _removed)) =
-            recur(self.on_disk, &mut self.root, filename)?
-        {
+        if let Some((dropped, _removed)) = recur(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+        )? {
             if dropped.had_entry {
                 self.nodes_with_entry_count -= 1
             }
@@ -926,9 +956,12 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         now: i32,
     ) -> Result<(), DirstateV2ParseError> {
         for filename in filenames {
-            if let Some(node) =
-                Self::get_node_mut(self.on_disk, &mut self.root, &filename)?
-            {
+            if let Some(node) = Self::get_node_mut(
+                self.on_disk,
+                &mut self.unreachable_bytes,
+                &mut self.root,
+                &filename,
+            )? {
                 if let NodeData::Entry(entry) = &mut node.data {
                     entry.clear_ambiguous_mtime(now);
                 }
@@ -1144,16 +1177,20 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         key: &HgPath,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         let count = &mut self.nodes_with_copy_source_count;
-        Ok(
-            Self::get_node_mut(self.on_disk, &mut self.root, key)?.and_then(
-                |node| {
-                    if node.copy_source.is_some() {
-                        *count -= 1
-                    }
-                    node.copy_source.take().map(Cow::into_owned)
-                },
-            ),
-        )
+        let unreachable_bytes = &mut self.unreachable_bytes;
+        Ok(Self::get_node_mut(
+            self.on_disk,
+            unreachable_bytes,
+            &mut self.root,
+            key,
+        )?
+        .and_then(|node| {
+            if let Some(source) = &node.copy_source {
+                *count -= 1;
+                Self::count_dropped_path(unreachable_bytes, source);
+            }
+            node.copy_source.take().map(Cow::into_owned)
+        }))
     }
 
     fn copy_map_insert(
@@ -1163,6 +1200,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         let node = Self::get_or_insert_node(
             self.on_disk,
+            &mut self.unreachable_bytes,
             &mut self.root,
             &key,
             WithBasename::to_cow_owned,

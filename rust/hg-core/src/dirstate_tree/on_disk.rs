@@ -73,6 +73,9 @@ struct Root {
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
 
+    /// How many bytes of this data file are not used anymore
+    unreachable_bytes: Size,
+
     /// If non-zero, a hash of ignore files that were used for some previous
     /// run of the `status` algorithm.
     ///
@@ -205,7 +208,7 @@ type OptPathSlice = PathSlice;
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
     let _ = std::mem::transmute::<DocketHeader, [u8; 81]>;
-    let _ = std::mem::transmute::<Root, [u8; 36]>;
+    let _ = std::mem::transmute::<Root, [u8; 40]>;
     let _ = std::mem::transmute::<Node, [u8; 43]>;
 }
 
@@ -283,6 +286,9 @@ pub(super) fn read<'on_disk>(
         return Ok(DirstateMap::empty(on_disk));
     }
     let root = read_root(on_disk)?;
+    let mut unreachable_bytes = root.unreachable_bytes.get();
+    // Each append writes a new `Root`, so it’s never reused
+    unreachable_bytes += std::mem::size_of::<Root>() as u32;
     let dirstate_map = DirstateMap {
         on_disk,
         root: dirstate_map::ChildNodes::OnDisk(read_nodes(
@@ -292,6 +298,7 @@ pub(super) fn read<'on_disk>(
         nodes_with_entry_count: root.nodes_with_entry_count.get(),
         nodes_with_copy_source_count: root.nodes_with_copy_source_count.get(),
         ignore_patterns_hash: root.ignore_patterns_hash,
+        unreachable_bytes,
     };
     Ok(dirstate_map)
 }
@@ -573,6 +580,7 @@ pub(super) fn write(
         nodes_with_copy_source_count: dirstate_map
             .nodes_with_copy_source_count
             .into(),
+        unreachable_bytes: dirstate_map.unreachable_bytes.into(),
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
     writer.out.extend(root.as_bytes());
