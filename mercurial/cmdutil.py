@@ -3564,12 +3564,12 @@ def _performrevert(
             )
             if choice == 0:
                 prntstatusmsg(b'forget', f)
-                repo.dirstate.drop(f)
+                repo.dirstate.set_untracked(f)
             else:
                 excluded_files.append(f)
         else:
             prntstatusmsg(b'forget', f)
-            repo.dirstate.drop(f)
+            repo.dirstate.set_untracked(f)
     for f in actions[b'remove'][0]:
         audit_path(f)
         if interactive:
