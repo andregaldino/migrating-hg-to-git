@@ -574,7 +574,8 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
 def markcommitted(orig, ctx, node):
     repo = ctx.repo()
 
-    with ctx._repo.dirstate.parentchange():
+    lfdirstate = openlfdirstate(repo.ui, repo)
+    with lfdirstate.parentchange():
         orig(node)
 
         # ATTENTION: "ctx.files()" may differ from "repo[node].files()"
@@ -586,7 +587,6 @@ def markcommitted(orig, ctx, node):
         # - have to be marked as "n" after commit, but
         # - aren't listed in "repo[node].files()"
 
-        lfdirstate = openlfdirstate(repo.ui, repo)
         for f in ctx.files():
             lfile = splitstandin(f)
             if lfile is not None:
