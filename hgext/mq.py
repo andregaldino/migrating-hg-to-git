@@ -3641,7 +3641,7 @@ def rename(ui, repo, patch, name=None, **opts):
         with r.wlock():
             if r.dirstate[patch] == b'a':
                 r.dirstate.drop(patch)
-                r.dirstate.add(name)
+                r.dirstate.set_tracked(name)
             else:
                 wctx.copy(patch, name)
                 wctx.forget([patch])
