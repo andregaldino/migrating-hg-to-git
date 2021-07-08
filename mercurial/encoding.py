@@ -338,10 +338,19 @@ def upperfallback(s):
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
-    environ = {
-        tolocal(k.encode('utf-8')): tolocal(v.encode('utf-8'))
-        for k, v in os.environ.items()  # re-exports
-    }
+    if pycompat.iswindows and pycompat.ispy3:
+
+        class WindowsEnviron(dict):
+            """`os.environ` normalizes environment variables to uppercase on windows"""
+
+            def get(self, key, default=None):
+                return super().get(upper(key), default)
+
+        environ = WindowsEnviron()
+
+    for k, v in os.environ.items():  # re-exports
+        environ[tolocal(k.encode('utf-8'))] = tolocal(v.encode('utf-8'))
+
 
 if pycompat.ispy3:
     # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
