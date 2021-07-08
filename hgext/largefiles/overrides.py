@@ -1380,10 +1380,7 @@ def cmdutilforget(
     with repo.wlock():
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         for f in forget:
-            if lfdirstate[f] == b'a':
-                lfdirstate.drop(f)
-            else:
-                lfdirstate.remove(f)
+            lfdirstate.set_untracked(f)
         lfdirstate.write()
         standins = [lfutil.standin(f) for f in forget]
         for f in standins:
