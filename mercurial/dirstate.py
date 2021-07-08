@@ -83,6 +83,17 @@ def requires_parents_change(func):
     return wrap
 
 
+def requires_no_parents_change(func):
+    def wrap(self, *args, **kwargs):
+        if not self.pendingparentchange():
+            msg = 'calling `%s` inside of a parentchange context'
+            msg %= func.__name__
+            raise error.ProgrammingError(msg)
+        return func(self, *args, **kwargs)
+
+    return wrap
+
+
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
     def __init__(
@@ -450,6 +461,24 @@ class dirstate(object):
 
     def copies(self):
         return self._map.copymap
+
+    @requires_no_parents_change
+    def set_tracked(self, filename):
+        """a "public" method for generic code to mark a file as tracked
+
+        This function is to be called outside of "update/merge" case. For
+        example by a command like `hg add X`.
+
+        return True the file was previously untracked, False otherwise.
+        """
+        entry = self._map.get(filename)
+        if entry is None:
+            self._add(filename)
+            return True
+        elif not entry.tracked:
+            self.normallookup(filename)
+            return True
+        return False
 
     @requires_parents_change
     def update_file_reference(

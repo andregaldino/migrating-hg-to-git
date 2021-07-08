@@ -162,6 +162,9 @@ class largefilesdirstate(dirstate.dirstate):
     def __getitem__(self, key):
         return super(largefilesdirstate, self).__getitem__(unixpath(key))
 
+    def set_tracked(self, f):
+        return super(largefilesdirstate, self).set_tracked(unixpath(f))
+
     def normal(self, f):
         return super(largefilesdirstate, self).normal(unixpath(f))
 
