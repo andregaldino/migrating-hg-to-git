@@ -2022,12 +2022,12 @@ class workingctx(committablectx):
             self._repo.dirstate.setparents(node)
             self._repo._quick_access_changeid_invalidate()
 
+            sparse.aftercommit(self._repo, node)
+
         # write changes out explicitly, because nesting wlock at
         # runtime may prevent 'wlock.release()' in 'repo.commit()'
         # from immediately doing so for subsequent changing files
         self._repo.dirstate.write(self._repo.currenttransaction())
-
-        sparse.aftercommit(self._repo, node)
 
     def mergestate(self, clean=False):
         if clean:

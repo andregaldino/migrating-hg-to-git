@@ -646,7 +646,7 @@ def importfromfiles(repo, opts, paths, force=False):
     The updated sparse config is written out and the working directory
     is refreshed, as needed.
     """
-    with repo.wlock():
+    with repo.wlock(), repo.dirstate.parentchange():
         # read current configuration
         raw = repo.vfs.tryread(b'sparse')
         includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
