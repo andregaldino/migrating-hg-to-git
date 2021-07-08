@@ -19,6 +19,7 @@ use crate::DirstateParents;
 use crate::EntryState;
 use bytes_cast::unaligned::{I32Be, I64Be, U32Be};
 use bytes_cast::BytesCast;
+use format_bytes::format_bytes;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -28,18 +29,34 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 /// `.hg/requires` already governs which format should be used.
 pub const V2_FORMAT_MARKER: &[u8; 12] = b"dirstate-v2\n";
 
+/// Keep space for 256-bit hashes
+const STORED_NODE_ID_BYTES: usize = 32;
+
+/// … even though only 160 bits are used for now, with SHA-1
+const USED_NODE_ID_BYTES: usize = 20;
+
 pub(super) const IGNORE_PATTERNS_HASH_LEN: usize = 20;
 pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
+
+// Must match `HEADER` in `mercurial/dirstateutils/docket.py`
+#[derive(BytesCast)]
+#[repr(C)]
+struct DocketHeader {
+    marker: [u8; V2_FORMAT_MARKER.len()],
+    parent_1: [u8; STORED_NODE_ID_BYTES],
+    parent_2: [u8; STORED_NODE_ID_BYTES],
+    data_size: Size,
+    uuid_size: u8,
+}
+
+pub struct Docket<'on_disk> {
+    header: &'on_disk DocketHeader,
+    uuid: &'on_disk [u8],
+}
 
 #[derive(BytesCast)]
 #[repr(C)]
 struct Header {
-    marker: [u8; V2_FORMAT_MARKER.len()],
-
-    /// `dirstatemap.parents()` in `mercurial/dirstate.py` relies on this
-    /// `parents` field being at this offset, immediately after `marker`.
-    parents: DirstateParents,
-
     root: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
@@ -172,7 +189,8 @@ type OptPathSlice = Slice;
 
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
-    let _ = std::mem::transmute::<Header, [u8; 88]>;
+    let _ = std::mem::transmute::<DocketHeader, [u8; 81]>;
+    let _ = std::mem::transmute::<Header, [u8; 36]>;
     let _ = std::mem::transmute::<Node, [u8; 49]>;
 }
 
@@ -194,11 +212,31 @@ impl From<DirstateV2ParseError> for crate::DirstateError {
     }
 }
 
-fn read_header(on_disk: &[u8]) -> Result<&Header, DirstateV2ParseError> {
-    let (header, _) =
-        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
-    if header.marker == *V2_FORMAT_MARKER {
-        Ok(header)
+impl<'on_disk> Docket<'on_disk> {
+    pub fn parents(&self) -> DirstateParents {
+        use crate::Node;
+        let p1 = Node::try_from(&self.header.parent_1[..USED_NODE_ID_BYTES])
+            .unwrap()
+            .clone();
+        let p2 = Node::try_from(&self.header.parent_2[..USED_NODE_ID_BYTES])
+            .unwrap()
+            .clone();
+        DirstateParents { p1, p2 }
+    }
+
+    pub fn data_filename(&self) -> String {
+        String::from_utf8(format_bytes!(b"dirstate.{}.d", self.uuid)).unwrap()
+    }
+}
+
+pub fn read_docket(
+    on_disk: &[u8],
+) -> Result<Docket<'_>, DirstateV2ParseError> {
+    let (header, uuid) =
+        DocketHeader::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
+    let uuid_size = header.uuid_size as usize;
+    if header.marker == *V2_FORMAT_MARKER && uuid.len() == uuid_size {
+        Ok(Docket { header, uuid })
     } else {
         Err(DirstateV2ParseError)
     }
@@ -206,14 +244,12 @@ fn read_header(on_disk: &[u8]) -> Result<&Header, DirstateV2ParseError> {
 
 pub(super) fn read<'on_disk>(
     on_disk: &'on_disk [u8],
-) -> Result<
-    (DirstateMap<'on_disk>, Option<DirstateParents>),
-    DirstateV2ParseError,
-> {
+) -> Result<DirstateMap<'on_disk>, DirstateV2ParseError> {
     if on_disk.is_empty() {
-        return Ok((DirstateMap::empty(on_disk), None));
+        return Ok(DirstateMap::empty(on_disk));
     }
-    let header = read_header(on_disk)?;
+    let (header, _) =
+        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
     let dirstate_map = DirstateMap {
         on_disk,
         root: dirstate_map::ChildNodes::OnDisk(read_slice::<Node>(
@@ -226,8 +262,7 @@ pub(super) fn read<'on_disk>(
             .get(),
         ignore_patterns_hash: header.ignore_patterns_hash,
     };
-    let parents = Some(header.parents.clone());
-    Ok((dirstate_map, parents))
+    Ok(dirstate_map)
 }
 
 impl Node {
@@ -447,17 +482,12 @@ where
         .ok_or_else(|| DirstateV2ParseError)
 }
 
-pub(crate) fn parse_dirstate_parents(
-    on_disk: &[u8],
-) -> Result<&DirstateParents, HgError> {
-    Ok(&read_header(on_disk)?.parents)
-}
-
 pub(crate) fn for_each_tracked_path<'on_disk>(
     on_disk: &'on_disk [u8],
     mut f: impl FnMut(&'on_disk HgPath),
 ) -> Result<(), DirstateV2ParseError> {
-    let header = read_header(on_disk)?;
+    let (header, _) =
+        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
     fn recur<'on_disk>(
         on_disk: &'on_disk [u8],
         nodes: Slice,
@@ -478,7 +508,6 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
 
 pub(super) fn write(
     dirstate_map: &mut DirstateMap,
-    parents: DirstateParents,
 ) -> Result<Vec<u8>, DirstateError> {
     let header_len = std::mem::size_of::<Header>();
 
@@ -497,8 +526,6 @@ pub(super) fn write(
         write_nodes(dirstate_map, dirstate_map.root.as_ref(), &mut out)?;
 
     let header = Header {
-        marker: *V2_FORMAT_MARKER,
-        parents: parents,
         root,
         nodes_with_entry_count: dirstate_map.nodes_with_entry_count.into(),
         nodes_with_copy_source_count: dirstate_map

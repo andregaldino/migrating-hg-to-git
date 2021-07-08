@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import binascii
 import codecs
 import collections
 import contextlib
@@ -984,6 +985,24 @@ def debugstate(ui, repo, **opts):
         )
     for f in repo.dirstate.copies():
         ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
+
+
+@command(
+    b'debugdirstateignorepatternshash',
+    [],
+    _(b''),
+)
+def debugdirstateignorepatternshash(ui, repo, **opts):
+    """show the hash of ignore patterns stored in dirstate if v2,
+    or nothing for dirstate-v2
+    """
+    if repo.dirstate._use_dirstate_v2:
+        hash_offset = 16  # Four 32-bit integers before this field
+        hash_len = 20  # 160 bits for SHA-1
+        data_filename = repo.dirstate._map.docket.data_filename()
+        with repo.vfs(data_filename) as f:
+            hash_bytes = f.read(hash_offset + hash_len)[-hash_len:]
+        ui.write(binascii.hexlify(hash_bytes) + b'\n')
 
 
 @command(

@@ -6,7 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::parse_dirstate_entries;
-use crate::dirstate_tree::on_disk::for_each_tracked_path;
+use crate::dirstate_tree::on_disk::{for_each_tracked_path, read_docket};
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
@@ -27,8 +27,13 @@ pub struct Dirstate {
 
 impl Dirstate {
     pub fn new(repo: &Repo) -> Result<Self, HgError> {
+        let mut content = repo.hg_vfs().read("dirstate")?;
+        if repo.has_dirstate_v2() {
+            let docket = read_docket(&content)?;
+            content = repo.hg_vfs().read(docket.data_filename())?;
+        }
         Ok(Self {
-            content: repo.hg_vfs().read("dirstate")?,
+            content,
             dirstate_v2: repo.has_dirstate_v2(),
         })
     }

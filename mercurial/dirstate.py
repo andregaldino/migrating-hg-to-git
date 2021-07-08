@@ -906,13 +906,13 @@ class dirstate(object):
             tr.addfilegenerator(
                 b'dirstate',
                 (self._filename,),
-                self._writedirstate,
+                lambda f: self._writedirstate(tr, f),
                 location=b'plain',
             )
             return
 
         st = self._opener(filename, b"w", atomictemp=True, checkambig=True)
-        self._writedirstate(st)
+        self._writedirstate(tr, st)
 
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
@@ -925,7 +925,7 @@ class dirstate(object):
         """
         self._plchangecallbacks[category] = callback
 
-    def _writedirstate(self, st):
+    def _writedirstate(self, tr, st):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
             for c, callback in sorted(
@@ -955,7 +955,7 @@ class dirstate(object):
                     now = end  # trust our estimate that the end is near now
                     break
 
-        self._map.write(st, now)
+        self._map.write(tr, st, now)
         self._lastnormaltime = 0
         self._dirty = False
 
@@ -1580,7 +1580,8 @@ class dirstate(object):
         # output file will be used to create backup of dirstate at this point.
         if self._dirty or not self._opener.exists(filename):
             self._writedirstate(
-                self._opener(filename, b"w", atomictemp=True, checkambig=True)
+                tr,
+                self._opener(filename, b"w", atomictemp=True, checkambig=True),
             )
 
         if tr:
@@ -1590,7 +1591,7 @@ class dirstate(object):
             tr.addfilegenerator(
                 b'dirstate',
                 (self._filename,),
-                self._writedirstate,
+                lambda f: self._writedirstate(tr, f),
                 location=b'plain',
             )
 

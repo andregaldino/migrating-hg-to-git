@@ -183,11 +183,7 @@ pub trait DirstateMapMethods {
     /// format.
     ///
     /// Note: this is only supported by the tree dirstate map.
-    fn pack_v2(
-        &mut self,
-        parents: DirstateParents,
-        now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError>;
+    fn pack_v2(&mut self, now: Timestamp) -> Result<Vec<u8>, DirstateError>;
 
     /// Run the status algorithm.
     ///
@@ -387,11 +383,7 @@ impl DirstateMapMethods for DirstateMap {
         self.pack(parents, now)
     }
 
-    fn pack_v2(
-        &mut self,
-        _parents: DirstateParents,
-        _now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError> {
+    fn pack_v2(&mut self, _now: Timestamp) -> Result<Vec<u8>, DirstateError> {
         panic!(
             "should have used dirstate_tree::DirstateMap to use the v2 format"
         )

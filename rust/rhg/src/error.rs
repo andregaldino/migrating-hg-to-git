@@ -3,6 +3,7 @@ use crate::ui::UiError;
 use crate::NoRepoInCwdError;
 use format_bytes::format_bytes;
 use hg::config::{ConfigError, ConfigParseError, ConfigValueParseError};
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
 use hg::errors::HgError;
 use hg::exit_codes;
 use hg::repo::RepoError;
@@ -197,5 +198,11 @@ impl From<DirstateError> for CommandError {
             DirstateError::Common(error) => error.into(),
             DirstateError::Map(error) => error.into(),
         }
+    }
+}
+
+impl From<DirstateV2ParseError> for CommandError {
+    fn from(error: DirstateV2ParseError) -> Self {
+        HgError::from(error).into()
     }
 }

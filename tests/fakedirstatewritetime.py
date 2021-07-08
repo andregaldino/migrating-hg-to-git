@@ -67,8 +67,8 @@ def fakewrite(ui, func):
         # The Rust implementation does not use public parse/pack dirstate
         # to prevent conversion round-trips
         orig_dirstatemap_write = dirstatemapmod.dirstatemap.write
-        wrapper = lambda self, st, now: orig_dirstatemap_write(
-            self, st, fakenow
+        wrapper = lambda self, tr, st, now: orig_dirstatemap_write(
+            self, tr, st, fakenow
         )
         dirstatemapmod.dirstatemap.write = wrapper
 

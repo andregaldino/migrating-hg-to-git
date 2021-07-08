@@ -37,12 +37,12 @@ def checkconsistency(ui, orig, dmap, _nonnormalset, label):
         ui.develwarn(b"[map] %s\n" % b_nonnormalcomputed, config=b'dirstate')
 
 
-def _checkdirstate(orig, self, arg):
+def _checkdirstate(orig, self, *args, **kwargs):
     """Check nonnormal set consistency before and after the call to orig"""
     checkconsistency(
         self._ui, orig, self._map, self._map.nonnormalset, b"before"
     )
-    r = orig(self, arg)
+    r = orig(self, *args, **kwargs)
     checkconsistency(
         self._ui, orig, self._map, self._map.nonnormalset, b"after"
     )

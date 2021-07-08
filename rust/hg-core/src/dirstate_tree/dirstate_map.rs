@@ -410,9 +410,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     }
 
     #[timed]
-    pub fn new_v2(
-        on_disk: &'on_disk [u8],
-    ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
+    pub fn new_v2(on_disk: &'on_disk [u8]) -> Result<Self, DirstateError> {
         Ok(on_disk::read(on_disk)?)
     }
 
@@ -1039,11 +1037,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     #[timed]
-    fn pack_v2(
-        &mut self,
-        parents: DirstateParents,
-        now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError> {
+    fn pack_v2(&mut self, now: Timestamp) -> Result<Vec<u8>, DirstateError> {
         // TODO: how do we want to handle this in 2038?
         let now: i32 = now.0.try_into().expect("time overflow");
         let mut paths = Vec::new();
@@ -1062,7 +1056,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
         self.clear_known_ambiguous_mtimes(&paths)?;
 
-        on_disk::write(self, parents)
+        on_disk::write(self)
     }
 
     fn status<'a>(

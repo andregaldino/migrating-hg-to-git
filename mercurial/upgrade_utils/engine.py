@@ -643,6 +643,7 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
     srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
     srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2
     srcrepo.dirstate._dirty = True
+    srcrepo.vfs.unlink(b'dirstate')
     srcrepo.dirstate.write(None)
 
     scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)

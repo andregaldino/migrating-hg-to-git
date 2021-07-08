@@ -10,6 +10,7 @@ use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
 use hg::dirstate_tree::dirstate_map::DirstateMap;
+use hg::dirstate_tree::on_disk;
 use hg::errors::HgResultExt;
 use hg::errors::IoResultExt;
 use hg::matchers::AlwaysMatcher;
@@ -165,17 +166,33 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     };
 
     let repo = invocation.repo?;
-    let dirstate_data =
-        repo.hg_vfs().mmap_open("dirstate").io_not_found_as_none()?;
-    let dirstate_data = match &dirstate_data {
-        Some(mmap) => &**mmap,
-        None => b"",
-    };
+    let dirstate_data_mmap;
     let (mut dmap, parents) = if repo.has_dirstate_v2() {
-        DirstateMap::new_v2(dirstate_data)?
+        let parents;
+        let dirstate_data;
+        if let Some(docket_data) =
+            repo.hg_vfs().read("dirstate").io_not_found_as_none()?
+        {
+            let docket = on_disk::read_docket(&docket_data)?;
+            parents = Some(docket.parents());
+            dirstate_data_mmap = repo
+                .hg_vfs()
+                .mmap_open(docket.data_filename())
+                .io_not_found_as_none()?;
+            dirstate_data = dirstate_data_mmap.as_deref().unwrap_or(b"");
+        } else {
+            parents = None;
+            dirstate_data = b"";
+        }
+        let dmap = DirstateMap::new_v2(dirstate_data)?;
+        (dmap, parents)
     } else {
+        dirstate_data_mmap =
+            repo.hg_vfs().mmap_open("dirstate").io_not_found_as_none()?;
+        let dirstate_data = dirstate_data_mmap.as_deref().unwrap_or(b"");
         DirstateMap::new_v1(dirstate_data)?
     };
+
     let options = StatusOptions {
         // TODO should be provided by the dirstate parsing and
         // hence be stored on dmap. Using a value that assumes we aren't

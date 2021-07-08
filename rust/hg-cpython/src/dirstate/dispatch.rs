@@ -124,12 +124,8 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().pack_v1(parents, now)
     }
 
-    fn pack_v2(
-        &mut self,
-        parents: DirstateParents,
-        now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError> {
-        self.get_mut().pack_v2(parents, now)
+    fn pack_v2(&mut self, now: Timestamp) -> Result<Vec<u8>, DirstateError> {
+        self.get_mut().pack_v2(now)
     }
 
     fn status<'a>(

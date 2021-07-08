@@ -241,11 +241,12 @@ impl Repo {
             return Ok(crate::dirstate::DirstateParents::NULL);
         }
         let parents = if self.has_dirstate_v2() {
-            crate::dirstate_tree::on_disk::parse_dirstate_parents(&dirstate)?
+            crate::dirstate_tree::on_disk::read_docket(&dirstate)?.parents()
         } else {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
+                .clone()
         };
-        Ok(parents.clone())
+        Ok(parents)
     }
 }
 

@@ -28,17 +28,12 @@ pub(super) struct OwningDirstateMap {
 }
 
 impl OwningDirstateMap {
-    pub fn new(
+    pub fn new_v1(
         py: Python,
         on_disk: PyBytes,
-        use_dirstate_v2: bool,
     ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
         let bytes: &'_ [u8] = on_disk.data(py);
-        let (map, parents) = if use_dirstate_v2 {
-            DirstateMap::new_v2(bytes)?
-        } else {
-            DirstateMap::new_v1(bytes)?
-        };
+        let (map, parents) = DirstateMap::new_v1(bytes)?;
 
         // Like in `bytes` above, this `'_` lifetime parameter borrows from
         // the bytes buffer owned by `on_disk`.
@@ -48,6 +43,23 @@ impl OwningDirstateMap {
         let ptr: *mut () = ptr.cast();
 
         Ok((Self { on_disk, ptr }, parents))
+    }
+
+    pub fn new_v2(
+        py: Python,
+        on_disk: PyBytes,
+    ) -> Result<Self, DirstateError> {
+        let bytes: &'_ [u8] = on_disk.data(py);
+        let map = DirstateMap::new_v2(bytes)?;
+
+        // Like in `bytes` above, this `'_` lifetime parameter borrows from
+        // the bytes buffer owned by `on_disk`.
+        let ptr: *mut DirstateMap<'_> = Box::into_raw(Box::new(map));
+
+        // Erase the pointed type entirely in order to erase the lifetime.
+        let ptr: *mut () = ptr.cast();
+
+        Ok(Self { on_disk, ptr })
     }
 
     pub fn get_mut<'a>(&'a mut self) -> &'a mut DirstateMap<'a> {

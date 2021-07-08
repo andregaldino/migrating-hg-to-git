@@ -57,17 +57,15 @@ py_class!(pub class DirstateMap |py| {
 
     /// Returns a `(dirstate_map, parents)` tuple
     @staticmethod
-    def new(
+    def new_v1(
         use_dirstate_tree: bool,
-        use_dirstate_v2: bool,
         on_disk: PyBytes,
     ) -> PyResult<PyObject> {
         let dirstate_error = |e: DirstateError| {
             PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
         };
-        let (inner, parents) = if use_dirstate_tree || use_dirstate_v2 {
-            let (map, parents) =
-                OwningDirstateMap::new(py, on_disk, use_dirstate_v2)
+        let (inner, parents) = if use_dirstate_tree {
+            let (map, parents) = OwningDirstateMap::new_v1(py, on_disk)
                 .map_err(dirstate_error)?;
             (Box::new(map) as _, parents)
         } else {
@@ -79,6 +77,20 @@ py_class!(pub class DirstateMap |py| {
         let map = Self::create_instance(py, inner)?;
         let parents = parents.map(|p| dirstate_parents_to_pytuple(py, &p));
         Ok((map, parents).to_py_object(py).into_object())
+    }
+
+    /// Returns a DirstateMap
+    @staticmethod
+    def new_v2(
+        on_disk: PyBytes,
+    ) -> PyResult<PyObject> {
+        let dirstate_error = |e: DirstateError| {
+            PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
+        };
+        let inner = OwningDirstateMap::new_v2(py, on_disk)
+                .map_err(dirstate_error)?;
+        let map = Self::create_instance(py, Box::new(inner))?;
+        Ok(map.into_object())
     }
 
     def clear(&self) -> PyResult<PyObject> {
@@ -304,25 +316,37 @@ py_class!(pub class DirstateMap |py| {
             .to_py_object(py))
     }
 
-    def write(
+    def write_v1(
         &self,
-        use_dirstate_v2: bool,
         p1: PyObject,
         p2: PyObject,
         now: PyObject
     ) -> PyResult<PyBytes> {
         let now = Timestamp(now.extract(py)?);
+
+        let mut inner = self.inner(py).borrow_mut();
         let parents = DirstateParents {
             p1: extract_node_id(py, &p1)?,
             p2: extract_node_id(py, &p2)?,
         };
+        let result = inner.pack_v1(parents, now);
+        match result {
+            Ok(packed) => Ok(PyBytes::new(py, &packed)),
+            Err(_) => Err(PyErr::new::<exc::OSError, _>(
+                py,
+                "Dirstate error".to_string(),
+            )),
+        }
+    }
+
+    def write_v2(
+        &self,
+        now: PyObject
+    ) -> PyResult<PyBytes> {
+        let now = Timestamp(now.extract(py)?);
 
         let mut inner = self.inner(py).borrow_mut();
-        let result = if use_dirstate_v2 {
-            inner.pack_v2(parents, now)
-        } else {
-            inner.pack_v1(parents, now)
-        };
+        let result = inner.pack_v2(now);
         match result {
             Ok(packed) => Ok(PyBytes::new(py, &packed)),
             Err(_) => Err(PyErr::new::<exc::OSError, _>(
