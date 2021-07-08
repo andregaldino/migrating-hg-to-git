@@ -572,10 +572,14 @@ class dirstate(object):
 
     def drop(self, f):
         '''Drop a file from the dirstate'''
-        if self._map.dropfile(f):
+        self._drop(f)
+
+    def _drop(self, filename):
+        """internal function to drop a file from the dirstate"""
+        if self._map.dropfile(filename):
             self._dirty = True
-            self._updatedfiles.add(f)
-            self._map.copymap.pop(f, None)
+            self._updatedfiles.add(filename)
+            self._map.copymap.pop(filename, None)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
@@ -689,7 +693,7 @@ class dirstate(object):
         for f in to_lookup:
             self.normallookup(f)
         for f in to_drop:
-            self.drop(f)
+            self._drop(f)
 
         self._dirty = True
 
