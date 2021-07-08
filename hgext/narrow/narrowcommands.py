@@ -321,8 +321,9 @@ def _narrow(
                 repo.store.markremoved(f)
 
             ui.status(_(b'deleting unwanted files from working copy\n'))
-            narrowspec.updateworkingcopy(repo, assumeclean=True)
-            narrowspec.copytoworkingcopy(repo)
+            with repo.dirstate.parentchange():
+                narrowspec.updateworkingcopy(repo, assumeclean=True)
+                narrowspec.copytoworkingcopy(repo)
 
         repo.destroyed()
 
@@ -422,7 +423,7 @@ def _widen(
             with ds.parentchange():
                 ds.setparents(p1, p2)
 
-        with repo.transaction(b'widening'):
+        with repo.transaction(b'widening'), repo.dirstate.parentchange():
             repo.setnewnarrowpats()
             narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo)
@@ -589,7 +590,9 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         return 0
 
     if update_working_copy:
-        with repo.wlock(), repo.lock(), repo.transaction(b'narrow-wc'):
+        with repo.wlock(), repo.lock(), repo.transaction(
+            b'narrow-wc'
+        ), repo.dirstate.parentchange():
             narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo)
         return 0
