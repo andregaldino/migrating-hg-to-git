@@ -284,6 +284,57 @@ else:
 
     strmethod = pycompat.identity
 
+
+def lower(s):
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
+    try:
+        return asciilower(s)
+    except UnicodeDecodeError:
+        pass
+    try:
+        if isinstance(s, localstr):
+            u = s._utf8.decode("utf-8")
+        else:
+            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
+
+        lu = u.lower()
+        if u == lu:
+            return s  # preserve localstring
+        return lu.encode(_sysstr(encoding))
+    except UnicodeError:
+        return s.lower()  # we don't know how to fold this except in ASCII
+    except LookupError as k:
+        raise error.Abort(k, hint=b"please check your locale settings")
+
+
+def upper(s):
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
+    try:
+        return asciiupper(s)
+    except UnicodeDecodeError:
+        return upperfallback(s)
+
+
+def upperfallback(s):
+    # type: (Any) -> Any
+    try:
+        if isinstance(s, localstr):
+            u = s._utf8.decode("utf-8")
+        else:
+            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
+
+        uu = u.upper()
+        if u == uu:
+            return s  # preserve localstring
+        return uu.encode(_sysstr(encoding))
+    except UnicodeError:
+        return s.upper()  # we don't know how to fold this except in ASCII
+    except LookupError as k:
+        raise error.Abort(k, hint=b"please check your locale settings")
+
+
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
@@ -439,56 +490,6 @@ def trim(s, width, ellipsis=b'', leftside=False):
         if ucolwidth(usub) <= width:
             return concat(usub.encode(_sysstr(encoding)))
     return ellipsis  # no enough room for multi-column characters
-
-
-def lower(s):
-    # type: (bytes) -> bytes
-    """best-effort encoding-aware case-folding of local string s"""
-    try:
-        return asciilower(s)
-    except UnicodeDecodeError:
-        pass
-    try:
-        if isinstance(s, localstr):
-            u = s._utf8.decode("utf-8")
-        else:
-            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
-
-        lu = u.lower()
-        if u == lu:
-            return s  # preserve localstring
-        return lu.encode(_sysstr(encoding))
-    except UnicodeError:
-        return s.lower()  # we don't know how to fold this except in ASCII
-    except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
-
-
-def upper(s):
-    # type: (bytes) -> bytes
-    """best-effort encoding-aware case-folding of local string s"""
-    try:
-        return asciiupper(s)
-    except UnicodeDecodeError:
-        return upperfallback(s)
-
-
-def upperfallback(s):
-    # type: (Any) -> Any
-    try:
-        if isinstance(s, localstr):
-            u = s._utf8.decode("utf-8")
-        else:
-            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
-
-        uu = u.upper()
-        if u == uu:
-            return s  # preserve localstring
-        return uu.encode(_sysstr(encoding))
-    except UnicodeError:
-        return s.upper()  # we don't know how to fold this except in ASCII
-    except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 class normcasespecs(object):
