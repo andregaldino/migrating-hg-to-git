@@ -2149,10 +2149,10 @@ def _update(
                 if not branchmerge:
                     repo.dirstate.setbranch(p2.branch())
 
-    # If we're updating to a location, clean up any stale temporary includes
-    # (ex: this happens during hg rebase --abort).
-    if not branchmerge:
-        sparse.prunetemporaryincludes(repo)
+                # If we're updating to a location, clean up any stale temporary includes
+                # (ex: this happens during hg rebase --abort).
+                if not branchmerge:
+                    sparse.prunetemporaryincludes(repo)
 
     if updatedirstate:
         repo.hook(
