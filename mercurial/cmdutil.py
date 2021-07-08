@@ -2967,29 +2967,30 @@ def amend(ui, repo, old, extra, pats, opts):
         newid = repo.commitctx(new)
         ms.reset()
 
-        # Reroute the working copy parent to the new changeset
-        repo.setparents(newid, repo.nullid)
+        with repo.dirstate.parentchange():
+            # Reroute the working copy parent to the new changeset
+            repo.setparents(newid, repo.nullid)
 
-        # Fixing the dirstate because localrepo.commitctx does not update
-        # it. This is rather convenient because we did not need to update
-        # the dirstate for all the files in the new commit which commitctx
-        # could have done if it updated the dirstate. Now, we can
-        # selectively update the dirstate only for the amended files.
-        dirstate = repo.dirstate
+            # Fixing the dirstate because localrepo.commitctx does not update
+            # it. This is rather convenient because we did not need to update
+            # the dirstate for all the files in the new commit which commitctx
+            # could have done if it updated the dirstate. Now, we can
+            # selectively update the dirstate only for the amended files.
+            dirstate = repo.dirstate
 
-        # Update the state of the files which were added and modified in the
-        # amend to "normal" in the dirstate. We need to use "normallookup" since
-        # the files may have changed since the command started; using "normal"
-        # would mark them as clean but with uncommitted contents.
-        normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
-        for f in normalfiles:
-            dirstate.normallookup(f)
+            # Update the state of the files which were added and modified in the
+            # amend to "normal" in the dirstate. We need to use "normallookup" since
+            # the files may have changed since the command started; using "normal"
+            # would mark them as clean but with uncommitted contents.
+            normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
+            for f in normalfiles:
+                dirstate.normallookup(f)
 
-        # Update the state of files which were removed in the amend
-        # to "removed" in the dirstate.
-        removedfiles = set(wctx.removed()) & filestoamend
-        for f in removedfiles:
-            dirstate.drop(f)
+            # Update the state of files which were removed in the amend
+            # to "removed" in the dirstate.
+            removedfiles = set(wctx.removed()) & filestoamend
+            for f in removedfiles:
+                dirstate.drop(f)
 
         mapping = {old.node(): (newid,)}
         obsmetadata = None
