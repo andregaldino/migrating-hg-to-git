@@ -3419,11 +3419,10 @@ class TestRunner(object):
             if self.options.list_tests:
                 result = runner.listtests(suite)
             else:
+                self._usecorrectpython()
                 if self._installdir:
                     self._installhg()
                     self._checkhglib("Testing")
-                else:
-                    self._usecorrectpython()
                 if self.options.chg:
                     assert self._installdir
                     self._installchg()
@@ -3704,8 +3703,6 @@ class TestRunner(object):
                         sys.stdout.write(line)
             sys.exit(1)
         os.chdir(self._testdir)
-
-        self._usecorrectpython()
 
         hgbat = os.path.join(self._bindir, b'hg.bat')
         if os.path.isfile(hgbat):
