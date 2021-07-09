@@ -593,6 +593,14 @@ class dirstate(object):
         else:
             assert False, 'unreachable'
 
+    @requires_parents_change
+    def update_parent_file_data(self, f, filedata):
+        """update the information about the content of a file
+
+        This function should be called within a `dirstate.parentchange` context.
+        """
+        self.normal(f, parentfiledata=filedata)
+
     def _addpath(
         self,
         f,
