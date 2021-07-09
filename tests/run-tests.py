@@ -728,7 +728,9 @@ def parseargs(args, parser):
         ):
             parser.error('--with-hg must specify an executable hg script')
         if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
-            sys.stderr.write('warning: --with-hg should specify an hg script\n')
+            msg = 'warning: --with-hg should specify an hg script, not: %s\n'
+            msg %= _bytes2sys(os.path.basename(options.with_hg))
+            sys.stderr.write(msg)
             sys.stderr.flush()
 
     if (options.chg or options.with_chg) and WINDOWS:
