@@ -22,7 +22,7 @@ Testing hghave extensibility for third party tools
   > EOF
   $ ( \
   > testrepohgenv; \
-  > "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` -j 1 \
+  > "$PYTHON" $TESTDIR/run-tests.py --with-hg=$HGTEST_REAL_HG -j 1 \
   >    $HGTEST_RUN_TESTS_PURE test-hghaveaddon.t \
   > )
   running 1 tests using 1 parallel processes 

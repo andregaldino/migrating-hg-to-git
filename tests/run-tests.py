@@ -3160,10 +3160,12 @@ class TestRunner(object):
         if WINDOWS and not self._hgcommand.endswith(b'.exe'):
             self._hgcommand += b'.exe'
 
+        real_hg = os.path.join(self._bindir, self._hgcommand)
+        osenvironb[b'HGTEST_REAL_HG'] = real_hg
         # set CHGHG, then replace "hg" command by "chg"
         chgbindir = self._bindir
         if self.options.chg or self.options.with_chg:
-            osenvironb[b'CHGHG'] = os.path.join(self._bindir, self._hgcommand)
+            osenvironb[b'CHGHG'] = real_hg
         else:
             osenvironb.pop(b'CHGHG', None)  # drop flag for hghave
         if self.options.chg:
@@ -3182,9 +3184,7 @@ class TestRunner(object):
             # `--config` but that disrupts tests that print command lines and check expected
             # output.
             osenvironb[b'RHG_ON_UNSUPPORTED'] = b'fallback'
-            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = os.path.join(
-                self._bindir, self._hgcommand
-            )
+            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = real_hg
         if self.options.rhg:
             self._hgcommand = b'rhg'
         elif self.options.with_rhg:
