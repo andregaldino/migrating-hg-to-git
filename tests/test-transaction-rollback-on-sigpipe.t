@@ -35,9 +35,12 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
   $ hg push -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd "$remotecmd"
   pushing to ssh://user@dummy/$TESTTMP/remote
   searching for changes
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
+  remote: adding changesets (py3 !)
+  remote: adding manifests (py3 !)
+  remote: adding file changes (py3 !)
+  remote: adding changesets (no-py3 no-chg !)
+  remote: adding manifests (no-py3 no-chg !)
+  remote: adding file changes (no-py3 no-chg !)
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
   [255]
   $ cat $SIGPIPE_REMOTE_DEBUG_FILE

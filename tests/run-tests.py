@@ -359,6 +359,21 @@ def canonpath(path):
     return os.path.realpath(os.path.expanduser(path))
 
 
+def which(exe):
+    if PYTHON3:
+        # shutil.which only accept bytes from 3.8
+        cmd = _bytes2sys(exe)
+        real_exec = shutil.which(cmd)
+        return _sys2bytes(real_exec)
+    else:
+        # let us do the os work
+        for p in osenvironb[b'PATH'].split(os.pathsep):
+            f = os.path.join(p, exe)
+            if os.path.isfile(f):
+                return f
+        return None
+
+
 def parselistfiles(files, listtype, warn=True):
     entries = dict()
     for filename in files:
@@ -1829,8 +1844,6 @@ class TTest(Test):
 
         if self._debug:
             script.append(b'set -x\n')
-        if self._hgcommand != b'hg':
-            script.append(b'alias hg="%s"\n' % self._hgcommand)
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
 
@@ -3436,6 +3449,7 @@ class TestRunner(object):
                 if self.options.rhg:
                     assert self._installdir
                     self._installrhg()
+                self._use_correct_mercurial()
 
                 log(
                     'running %d tests using %d parallel processes'
@@ -3627,6 +3641,25 @@ class TestRunner(object):
             for pyexename in pyexe_names:
                 if not self._findprogram(pyexename):
                     print("WARNING: Cannot find %s in search path" % pyexename)
+
+    def _use_correct_mercurial(self):
+        target_exec = os.path.join(self._custom_bin_dir, b'hg')
+        if self._hgcommand != b'hg':
+            # shutil.which only accept bytes from 3.8
+            real_exec = which(self._hgcommand)
+            if real_exec is None:
+                raise ValueError('could not find exec path for "%s"', real_exec)
+            if real_exec == target_exec:
+                # do not overwrite something with itself
+                return
+            if WINDOWS:
+                with open(target_exec, 'wb') as f:
+                    f.write(b'#!/bin/sh\n')
+                    escaped_exec = shellquote(_bytes2sys(real_exec))
+                    f.write(b'%s "$@"\n' % _sys2bytes(escaped_exec))
+            else:
+                os.symlink(real_exec, target_exec)
+            self._createdfiles.append(target_exec)
 
     def _installhg(self):
         """Install hg into the test environment.
