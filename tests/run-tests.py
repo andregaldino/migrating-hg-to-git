@@ -3185,6 +3185,9 @@ class TestRunner(object):
             # output.
             osenvironb[b'RHG_ON_UNSUPPORTED'] = b'fallback'
             osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = real_hg
+        else:
+            # drop flag for hghave
+            osenvironb.pop(b'RHG_INSTALLED_AS_HG', None)
         if self.options.rhg:
             self._hgcommand = b'rhg'
         elif self.options.with_rhg:
