@@ -3023,6 +3023,8 @@ class TestRunner(object):
         self._bindir = None
         self._tmpbindir = None
         self._pythondir = None
+        # True if we had to infer the pythondir from --with-hg
+        self._pythondir_inferred = False
         self._coveragefile = None
         self._createdfiles = []
         self._hgcommand = None
@@ -3139,6 +3141,7 @@ class TestRunner(object):
             # Fall back to the legacy behavior.
             else:
                 self._pythondir = self._bindir
+            self._pythondir_inferred = True
 
         else:
             self._installdir = os.path.join(self._hgtmp, b"install")
@@ -3740,9 +3743,7 @@ class TestRunner(object):
     def _checkhglib(self, verb):
         """Ensure that the 'mercurial' package imported by python is
         the one we expect it to be.  If not, print a warning to stderr."""
-        if (self._bindir == self._pythondir) and (
-            self._bindir != self._tmpbindir
-        ):
+        if self._pythondir_inferred:
             # The pythondir has been inferred from --with-hg flag.
             # We cannot expect anything sensible here.
             return
