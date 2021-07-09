@@ -191,7 +191,7 @@ def has_bzr():
 
 @check("chg", "running with chg")
 def has_chg():
-    return 'CHGHG' in os.environ
+    return 'CHG_INSTALLED_AS_HG' in os.environ
 
 
 @check("rhg", "running with rhg as 'hg'")

@@ -3165,9 +3165,11 @@ class TestRunner(object):
         # set CHGHG, then replace "hg" command by "chg"
         chgbindir = self._bindir
         if self.options.chg or self.options.with_chg:
+            osenvironb[b'CHG_INSTALLED_AS_HG'] = b'1'
             osenvironb[b'CHGHG'] = real_hg
         else:
-            osenvironb.pop(b'CHGHG', None)  # drop flag for hghave
+            # drop flag for hghave
+            osenvironb.pop(b'CHG_INSTALLED_AS_HG', None)
         if self.options.chg:
             self._hgcommand = b'chg'
         elif self.options.with_chg:
