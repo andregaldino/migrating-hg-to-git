@@ -3576,13 +3576,15 @@ class TestRunner(object):
             # simple script on PATH with that name that delegates to the py3
             # launcher so the shebang lines work.
             if os.getenv('MSYSTEM'):
-                with open(osenvironb[b'RUNTESTDIR'] + b'/python3', 'wb') as f:
+                py3exe_name = os.path.join(self._custom_bin_dir, b'python3')
+                with open(py3exe_name, 'wb') as f:
                     f.write(b'#!/bin/sh\n')
                     f.write(b'py -3.%d "$@"\n' % sys.version_info[1])
-            if os.getenv('MSYSTEM'):
-                with open(osenvironb[b'RUNTESTDIR'] + b'/python2', 'wb') as f:
+
+                pyexe_name = os.path.join(self._custom_bin_dir, b'python')
+                with open(pyexe_name, 'wb') as f:
                     f.write(b'#!/bin/sh\n')
-                    f.write(b'py -2.%d "$@"\n' % sys.version_info[1])
+                    f.write(b'py -%d.%d "$@"\n' % sys.version_info[0:2])
 
             exedir, exename = os.path.split(sysexecutable)
             for pyexename in pyexe_names:
