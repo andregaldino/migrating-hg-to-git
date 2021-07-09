@@ -230,6 +230,18 @@ else:
     osenvironb = os.environ
     getcwdb = os.getcwd
 
+if WINDOWS:
+    _getcwdb = getcwdb
+
+    def getcwdb():
+        cwd = _getcwdb()
+        if re.match(b'^[a-z]:', cwd):
+            # os.getcwd() is inconsistent on the capitalization of the drive
+            # letter, so adjust it. see https://bugs.python.org/issue40368
+            cwd = cwd[0:1].upper() + cwd[1:]
+        return cwd
+
+
 # For Windows support
 wifexited = getattr(os, "WIFEXITED", lambda x: False)
 
@@ -3078,7 +3090,6 @@ class TestRunner(object):
 
     def _run(self, testdescs):
         testdir = getcwdb()
-        self._testdir = osenvironb[b'TESTDIR'] = getcwdb()
         # assume all tests in same folder for now
         if testdescs:
             pathname = os.path.dirname(testdescs[0]['path'])
