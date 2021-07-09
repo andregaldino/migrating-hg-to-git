@@ -70,6 +70,8 @@ import unittest
 import uuid
 import xml.dom.minidom as minidom
 
+WINDOWS = os.name == r'nt'
+
 try:
     import Queue as queue
 except ImportError:
@@ -84,6 +86,7 @@ except (ImportError, AttributeError):
 
     shellquote = pipes.quote
 
+
 processlock = threading.Lock()
 
 pygmentspresent = False
@@ -95,7 +98,7 @@ try:  # is pygments installed
     import pygments.token as token
     import pygments.style as style
 
-    if os.name == 'nt':
+    if WINDOWS:
         hgpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         sys.path.append(hgpath)
         try:
@@ -151,6 +154,7 @@ if pygmentspresent:
 
 origenviron = os.environ.copy()
 
+
 if sys.version_info > (3, 5, 0):
     PYTHON3 = True
     xrange = range  # we use xrange in one place, and we'd rather not use range
@@ -203,7 +207,7 @@ if sys.version_info > (3, 5, 0):
         osenvironb = environbytes(os.environ)
 
     getcwdb = getattr(os, 'getcwdb')
-    if not getcwdb or os.name == 'nt':
+    if not getcwdb or WINDOWS:
         getcwdb = lambda: _sys2bytes(os.getcwd())
 
 elif sys.version_info >= (3, 0, 0):
@@ -270,7 +274,7 @@ def checkportisavailable(port):
             s.bind(('localhost', port))
         return True
     except socket.error as exc:
-        if os.name == 'nt' and exc.errno == errno.WSAEACCES:
+        if WINDOWS and exc.errno == errno.WSAEACCES:
             return False
         elif PYTHON3:
             # TODO: make a proper exception handler after dropping py2.  This
@@ -709,7 +713,7 @@ def parseargs(args, parser):
             pathandattrs.append((b'rust/target/release/rhg', 'with_rhg'))
         for relpath, attr in pathandattrs:
             binpath = os.path.join(reporootdir, relpath)
-            if os.name != 'nt' and not os.access(binpath, os.X_OK):
+            if not (WINDOWS or os.access(binpath, os.X_OK)):
                 parser.error(
                     '--local specified, but %r not found or '
                     'not executable' % binpath
@@ -727,9 +731,9 @@ def parseargs(args, parser):
             sys.stderr.write('warning: --with-hg should specify an hg script\n')
             sys.stderr.flush()
 
-    if (options.chg or options.with_chg) and os.name == 'nt':
+    if (options.chg or options.with_chg) and WINDOWS:
         parser.error('chg does not work on %s' % os.name)
-    if (options.rhg or options.with_rhg) and os.name == 'nt':
+    if (options.rhg or options.with_rhg) and WINDOWS:
         parser.error('rhg does not work on %s' % os.name)
     if options.with_chg:
         options.chg = False  # no installation to temporary location
@@ -1308,7 +1312,7 @@ class Test(unittest.TestCase):
             (br'\bHG_TXNID=TXN:[a-f0-9]{40}\b', br'HG_TXNID=TXN:$ID$'),
         ]
         r.append((self._escapepath(self._testtmp), b'$TESTTMP'))
-        if os.name == 'nt':
+        if WINDOWS:
             # JSON output escapes backslashes in Windows paths, so also catch a
             # double-escape.
             replaced = self._testtmp.replace(b'\\', br'\\')
@@ -1331,7 +1335,7 @@ class Test(unittest.TestCase):
         return r
 
     def _escapepath(self, p):
-        if os.name == 'nt':
+        if WINDOWS:
             return b''.join(
                 c.isalpha()
                 and b'[%s%s]' % (c.lower(), c.upper())
@@ -1395,7 +1399,7 @@ class Test(unittest.TestCase):
         env['HGTEST_UUIDFILE'] = uid_file
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
-        if os.name == 'nt':
+        if WINDOWS:
             env['REALUSERPROFILE'] = env['USERPROFILE']
             # py3.8+ ignores HOME: https://bugs.python.org/issue36264
             env['USERPROFILE'] = env['HOME']
@@ -1444,7 +1448,7 @@ class Test(unittest.TestCase):
         # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
         # but this is needed for testing python instances like dummyssh,
         # dummysmtpd.py, and dumbhttp.py.
-        if PYTHON3 and os.name == 'nt':
+        if PYTHON3 and WINDOWS:
             env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
 
         # Modified HOME in test environment can confuse Rust tools. So set
@@ -1609,8 +1613,7 @@ class PythonTest(Test):
         # Quote the python(3) executable for Windows
         cmd = b'"%s" "%s"' % (PYTHON, self.path)
         vlog("# Running", cmd.decode("utf-8"))
-        normalizenewlines = os.name == 'nt'
-        result = self._runcommand(cmd, env, normalizenewlines=normalizenewlines)
+        result = self._runcommand(cmd, env, normalizenewlines=WINDOWS)
         if self._aborted:
             raise KeyboardInterrupt()
 
@@ -2083,7 +2086,7 @@ class TTest(Test):
             flags = flags or b''
             el = flags + b'(?:' + el + b')'
             # use \Z to ensure that the regex matches to the end of the string
-            if os.name == 'nt':
+            if WINDOWS:
                 return re.match(el + br'\r?\n\Z', l)
             return re.match(el + br'\n\Z', l)
         except re.error:
@@ -2144,7 +2147,7 @@ class TTest(Test):
                 el = el.encode('latin-1')
             else:
                 el = el[:-7].decode('string-escape') + '\n'
-        if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
+        if el == l or WINDOWS and el[:-1] + b'\r\n' == l:
             return True, True
         if el.endswith(b" (re)\n"):
             return (TTest.rematch(el[:-6], l) or retry), False
@@ -2155,7 +2158,7 @@ class TTest(Test):
             return (TTest.globmatch(el[:-8], l) or retry), False
         if os.altsep:
             _l = l.replace(b'\\', b'/')
-            if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
+            if el == _l or WINDOWS and el[:-1] + b'\r\n' == _l:
                 return True, True
         return retry, True
 
@@ -2222,7 +2225,7 @@ class TestResult(unittest._TextTestResult):
             # For some reason, redirecting stdout on Windows disables the ANSI
             # color processing of stderr, which is what is used to print the
             # output.  Therefore, both must be tty on Windows to enable color.
-            if os.name == 'nt':
+            if WINDOWS:
                 isatty = isatty and sys.stdout.isatty()
             self.color = pygmentspresent and isatty
         elif options.color == 'never':
@@ -3099,7 +3102,7 @@ class TestRunner(object):
             os.makedirs(tmpdir)
         else:
             d = None
-            if os.name == 'nt':
+            if WINDOWS:
                 # without this, we get the default temp dir location, but
                 # in all lowercase, which causes troubles with paths (issue3490)
                 d = osenvironb.get(b'TMP', None)
@@ -3148,7 +3151,7 @@ class TestRunner(object):
         # a python script and feed it to python.exe.  Legacy stdio is force
         # enabled by hg.exe, and this is a more realistic way to launch hg
         # anyway.
-        if os.name == 'nt' and not self._hgcommand.endswith(b'.exe'):
+        if WINDOWS and not self._hgcommand.endswith(b'.exe'):
             self._hgcommand += b'.exe'
 
         # set CHGHG, then replace "hg" command by "chg"
@@ -3543,7 +3546,7 @@ class TestRunner(object):
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
-        if getattr(os, 'symlink', None) and os.name != 'nt':
+        if getattr(os, 'symlink', None) and not WINDOWS:
             msg = "# Making python executable in test path a symlink to '%s'"
             msg %= sysexecutable
             vlog(msg)
@@ -3643,7 +3646,7 @@ class TestRunner(object):
         self._hgroot = hgroot
         os.chdir(hgroot)
         nohome = b'--home=""'
-        if os.name == 'nt':
+        if WINDOWS:
             # The --home="" trick works only on OS where os.sep == '/'
             # because of a distutils convert_path() fast-path. Avoid it at
             # least on Windows for now, deal with .pydistutils.cfg bugs
@@ -3862,14 +3865,14 @@ class TestRunner(object):
         sepb = _sys2bytes(os.pathsep)
         for p in osenvironb.get(b'PATH', dpb).split(sepb):
             name = os.path.join(p, program)
-            if os.name == 'nt' or os.access(name, os.X_OK):
+            if WINDOWS or os.access(name, os.X_OK):
                 return _bytes2sys(name)
         return None
 
     def _checktools(self):
         """Ensure tools required to run tests are present."""
         for p in self.REQUIREDTOOLS:
-            if os.name == 'nt' and not p.endswith(b'.exe'):
+            if WINDOWS and not p.endswith(b'.exe'):
                 p += b'.exe'
             found = self._findprogram(p)
             p = p.decode("utf-8")

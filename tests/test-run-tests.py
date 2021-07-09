@@ -62,6 +62,8 @@ def wintests():
         >>> os.altsep = True
         >>> _osname = os.name
         >>> os.name = 'nt'
+        >>> _old_windows = run_tests.WINDOWS
+        >>> run_tests.WINDOWS = True
 
     valid match on windows
         >>> lm(b'g/a*/d (glob)\n', b'g\\abc/d\n')
@@ -80,6 +82,7 @@ def wintests():
     restore os.altsep
         >>> os.altsep = _osaltsep
         >>> os.name = _osname
+        >>> run_tests.WINDOWS = _old_windows
     """
     pass
 
