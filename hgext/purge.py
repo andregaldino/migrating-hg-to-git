@@ -25,7 +25,8 @@
 '''command to delete untracked files from the working directory (DEPRECATED)
 
 The functionality of this extension has been included in core Mercurial since
-version 5.7. Please use :hg:`purge ...` instead. :hg:`purge --confirm` is now the default, unless the extension is enabled for backward compatibility.
+version 5.7. Please use :hg:`purge ...` instead. :hg:`purge --confirm` is now
+the default, unless the extension is enabled for backward compatibility.
 '''
 
 # This empty extension looks pointless, but core mercurial checks if it's loaded
