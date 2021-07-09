@@ -1381,8 +1381,28 @@ Add support for external test formatter
 Test reusability for third party tools
 ======================================
 
-  $ mkdir "$TESTTMP"/anothertests
-  $ cd "$TESTTMP"/anothertests
+  $ THISTESTDIR="$TESTDIR"
+  $ export THISTESTDIR
+  $ THISTESTTMP="$TESTTMP"
+  $ export THISTESTTMP
+
+#if windows
+
+  $ NEWTESTDIR="$THISTESTTMP"\\anothertests
+
+#else
+
+  $ NEWTESTDIR="$THISTESTTMP"/anothertests
+
+#endif
+
+  $ export NEWTESTDIR
+
+  $ echo creating some new test in: $NEWTESTDIR
+  creating some new test in: $TESTTMP\anothertests (windows !)
+  creating some new test in: $TESTTMP/anothertests (no-windows !)
+  $ mkdir "$NEWTESTDIR"
+  $ cd "$NEWTESTDIR"
 
 test that `run-tests.py` can execute hghave, even if it runs not in
 Mercurial source tree.
@@ -1400,22 +1420,20 @@ Mercurial source tree.
 test that RUNTESTDIR refers the directory, in which `run-tests.py` now
 running is placed.
 
+
   $ cat > test-runtestdir.t <<EOF
-  > - $TESTDIR, in which test-run-tests.t is placed
-  > - \$TESTDIR, in which test-runtestdir.t is placed (expanded at runtime)
-  > - \$RUNTESTDIR, in which run-tests.py is placed (expanded at runtime)
+  > # \$THISTESTDIR, in which test-run-tests.t (this test file) is placed
+  > # \$THISTESTTMP, in which test-run-tests.t (this test file) is placed
+  > # \$TESTDIR, in which test-runtestdir.t is placed (expanded at runtime)
+  > # \$RUNTESTDIR, in which run-tests.py is placed (expanded at runtime)
   > 
-  > #if windows
-  >   $ test "\$TESTDIR" = "$TESTTMP\\anothertests"
-  > #else
-  >   $ test "\$TESTDIR" = "$TESTTMP"/anothertests
-  > #endif
+  >   $ test "\$TESTDIR" = "\$NEWTESTDIR"
   > If this prints a path, that means RUNTESTDIR didn't equal
-  > TESTDIR as it should have.
-  >   $ test "\$RUNTESTDIR" = "$TESTDIR" || echo "\$RUNTESTDIR"
+  > THISTESTDIR as it should have.
+  >   $ test "\$RUNTESTDIR" = "\$THISTESTDIR" || echo "\$RUNTESTDIR"
   > This should print the start of check-code. If this passes but the
   > previous check failed, that means we found a copy of check-code at whatever
-  > RUNTESTSDIR ended up containing, even though it doesn't match TESTDIR.
+  > RUNTESTSDIR ended up containing, even though it doesn't match THISTESTDIR.
   >   $ head -n 3 "\$RUNTESTDIR"/../contrib/check-code.py | sed 's@.!.*python3@#!USRBINENVPY@'
   >   #!USRBINENVPY
   >   #
