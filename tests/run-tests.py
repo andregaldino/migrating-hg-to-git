@@ -3021,7 +3021,8 @@ class TestRunner(object):
         self._hgtmp = None
         self._installdir = None
         self._bindir = None
-        self._tmpbindir = None
+        # a place for run-tests.py to generate executable it needs
+        self._custom_bin_dir = None
         self._pythondir = None
         # True if we had to infer the pythondir from --with-hg
         self._pythondir_inferred = False
@@ -3112,14 +3113,15 @@ class TestRunner(object):
 
         self._hgtmp = osenvironb[b'HGTMP'] = os.path.realpath(tmpdir)
 
+        self._custom_bin_dir = os.path.join(self._hgtmp, b'custom-bin')
+        os.makedirs(self._custom_bin_dir)
+
         if self.options.with_hg:
             self._installdir = None
             whg = self.options.with_hg
             self._bindir = os.path.dirname(os.path.realpath(whg))
             assert isinstance(self._bindir, bytes)
             self._hgcommand = os.path.basename(whg)
-            self._tmpbindir = os.path.join(self._hgtmp, b'install', b'bin')
-            os.makedirs(self._tmpbindir)
 
             normbin = os.path.normpath(os.path.abspath(whg))
             normbin = normbin.replace(_sys2bytes(os.sep), b'/')
@@ -3147,7 +3149,6 @@ class TestRunner(object):
             self._installdir = os.path.join(self._hgtmp, b"install")
             self._bindir = os.path.join(self._installdir, b"bin")
             self._hgcommand = b'hg'
-            self._tmpbindir = self._bindir
             self._pythondir = os.path.join(self._installdir, b"lib", b"python")
 
         # Force the use of hg.exe instead of relying on MSYS to recognize hg is
@@ -3210,8 +3211,7 @@ class TestRunner(object):
             path.insert(1, rhgbindir)
         if self._testdir != runtestdir:
             path = [self._testdir] + path
-        if self._tmpbindir != self._bindir:
-            path = [self._tmpbindir] + path
+        path = [self._custom_bin_dir] + path
         osenvironb[b"PATH"] = sepb.join(path)
 
         # Include TESTDIR in PYTHONPATH so that out-of-tree extensions
@@ -3554,7 +3554,7 @@ class TestRunner(object):
             msg %= sysexecutable
             vlog(msg)
             for pyexename in pyexe_names:
-                mypython = os.path.join(self._tmpbindir, pyexename)
+                mypython = os.path.join(self._custom_bin_dir, pyexename)
                 try:
                     if os.readlink(mypython) == sysexecutable:
                         continue
