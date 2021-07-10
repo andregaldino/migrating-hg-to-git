@@ -429,7 +429,7 @@ def setuplogging(ui, repo=None, fp=None):
     elif logpath == b'-':
         logger = loggingutil.fileobjectlogger(ui.ferr, tracked)
     else:
-        logpath = os.path.abspath(util.expandpath(logpath))
+        logpath = util.abspath(util.expandpath(logpath))
         # developer config: cmdserver.max-log-files
         maxfiles = ui.configint(b'cmdserver', b'max-log-files')
         # developer config: cmdserver.max-log-size
