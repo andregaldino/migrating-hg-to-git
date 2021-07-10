@@ -84,7 +84,11 @@ def request(host, path, show):
                 b"%s: %s\n"
                 % (h.encode('ascii'), response.getheader(h).encode('ascii'))
             )
-    if not headeronly:
+    if headeronly:
+        # still read the body to prevent windows to be unhappy about that
+        # (this might some flakyness in test-hgweb-filelog.t on Windows)
+        data = response.read()
+    else:
         stdout.write(b'\n')
         data = response.read()
 
@@ -111,6 +115,9 @@ def request(host, path, show):
 
     if twice and response.getheader('ETag', None):
         tag = response.getheader('ETag')
+
+    # further try to please the windows-flakyness deity
+    conn.close()
 
     return response.status
 
