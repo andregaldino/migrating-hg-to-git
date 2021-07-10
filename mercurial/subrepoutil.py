@@ -458,7 +458,7 @@ def _abssource(repo, push=False, abort=True):
             #   C:\some\path\relative
             if urlutil.hasdriveletter(path):
                 if len(path) == 2 or path[2:3] not in br'\/':
-                    path = os.path.abspath(path)
+                    path = util.abspath(path)
             return path
 
     if abort:
