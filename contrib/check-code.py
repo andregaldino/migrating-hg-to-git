@@ -545,6 +545,22 @@ commonpyfilters = [
     ),
 ]
 
+# pattern only for mercurial and extensions
+core_py_pats = [
+    [
+        # Windows tend to get confused about capitalization of the drive letter
+        #
+        # see mercurial.windows.abspath for details
+        (
+            r'os\.path\.abspath',
+            "use util.abspath instead (windows)",
+            r'#.*re-exports',
+        ),
+    ],
+    # warnings
+    [],
+]
+
 # filters to convert normal *.py files
 pyfilters = [] + commonpyfilters
 
@@ -699,6 +715,13 @@ checks = [
         '',
         pyfilters,
         py3pats,
+    ),
+    (
+        'core files',
+        r'.*(hgext|mercurial)/(?!demandimport|policy|pycompat).*\.py',
+        '',
+        pyfilters,
+        core_py_pats,
     ),
     ('test script', r'(.*/)?test-[^.~]*$', '', testfilters, testpats),
     ('c', r'.*\.[ch]$', '', cfilters, cpats),
