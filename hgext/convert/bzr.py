@@ -17,6 +17,7 @@ from mercurial import (
     demandimport,
     error,
     pycompat,
+    util,
 )
 from . import common
 
@@ -65,7 +66,7 @@ class bzr_source(common.converter_source):
         except NameError:
             raise common.NoRepo(_(b'Bazaar modules could not be loaded'))
 
-        path = os.path.abspath(path)
+        path = util.abspath(path)
         self._checkrepotype(path)
         try:
             bzr_dir = bzrdir.BzrDir.open(path.decode())
