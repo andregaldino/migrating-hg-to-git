@@ -36,6 +36,8 @@ osutil = policy.importmod('osutil')
 
 normpath = os.path.normpath
 samestat = os.path.samestat
+abspath = os.path.abspath  # re-exports
+
 try:
     oslink = os.link
 except AttributeError:

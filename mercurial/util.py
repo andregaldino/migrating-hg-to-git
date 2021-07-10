@@ -99,6 +99,7 @@ else:
 
 _ = i18n._
 
+abspath = platform.abspath
 bindunixsocket = platform.bindunixsocket
 cachestat = platform.cachestat
 checkexec = platform.checkexec
@@ -2632,7 +2633,7 @@ def makedirs(name, mode=None, notindexed=False):
             return
         if err.errno != errno.ENOENT or not name:
             raise
-        parent = os.path.dirname(os.path.abspath(name))
+        parent = os.path.dirname(abspath(name))
         if parent == name:
             raise
         makedirs(parent, mode, notindexed)
