@@ -10,7 +10,6 @@
 from __future__ import absolute_import
 
 import base64
-import os
 import socket
 import sys
 
@@ -685,7 +684,7 @@ def open(ui, url_, data=None, sendaccept=True):
         u.scheme = u.scheme.lower()
         url_, authinfo = u.authinfo()
     else:
-        path = util.normpath(os.path.abspath(url_))
+        path = util.normpath(util.abspath(url_))
         url_ = b'file://' + pycompat.bytesurl(
             urlreq.pathname2url(pycompat.fsdecode(path))
         )
