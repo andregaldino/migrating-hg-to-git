@@ -60,7 +60,7 @@ def _expandedabspath(path):
     expandedpath = urlutil.urllocalpath(util.expandpath(path))
     u = urlutil.url(expandedpath)
     if not u.scheme:
-        path = util.normpath(os.path.abspath(u.path))
+        path = util.normpath(util.abspath(u.path))
     return path
 
 
