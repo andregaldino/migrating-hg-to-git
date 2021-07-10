@@ -1011,6 +1011,10 @@ case)
 
   $ hg -R ../cloned-bookmarks-update bookmarks | grep ' Y '
    * Y                         3:125c9a1d6df6
+  $ hg -R ../cloned-bookmarks-update path
+  default = $TESTTMP/repo
+  $ pwd
+  $TESTTMP/repo
   $ hg -R ../cloned-bookmarks-update pull . --update
   pulling from .
   searching for changes
