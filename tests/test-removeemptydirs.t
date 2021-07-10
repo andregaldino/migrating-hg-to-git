@@ -103,6 +103,8 @@ directory (reordering nodes):
 A directory with the right pass exists at the end of the run, but it is a
 different directory than the current one.
 
+Windows is not affected
+
   $ hg init hghistedit
   $ cd hghistedit
   $ echo hi > r0
@@ -122,8 +124,8 @@ different directory than the current one.
   > EOF
   $ cd $TESTTMP/hghistedit/somedir
   $ hg $DO_RM --config extensions.histedit= histedit -q --commands ../histedit_commands
-  current directory was removed
-  (consider changing to repo root: $TESTTMP/hghistedit)
+  current directory was removed (no-windows !)
+  (consider changing to repo root: $TESTTMP/hghistedit) (no-windows !)
   $ ls -1 $TESTTMP/hghistedit/
   histedit_commands
   r0
@@ -135,6 +137,7 @@ different directory than the current one.
   $ ls -1 $TESTTMP/hghistedit/somedir
   foo
   $ ls -1
+  foo (windows !)
 
 Get out of the doomed directory
 
