@@ -713,7 +713,7 @@ def _disabledpaths():
     # it might not be on a filesystem even if it does.
     if util.safehasattr(hgext, '__file__'):
         extpath = os.path.dirname(
-            os.path.abspath(pycompat.fsencode(hgext.__file__))
+            util.abspath(pycompat.fsencode(hgext.__file__))
         )
         try:
             files = os.listdir(extpath)
