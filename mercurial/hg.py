@@ -567,7 +567,7 @@ def clonewithshare(
 
     # Resolve the value to put in [paths] section for the source.
     if islocal(source):
-        defaultpath = os.path.abspath(urlutil.urllocalpath(source))
+        defaultpath = util.abspath(urlutil.urllocalpath(source))
     else:
         defaultpath = source
 
@@ -821,7 +821,7 @@ def clone(
 
         abspath = origsource
         if islocal(origsource):
-            abspath = os.path.abspath(urlutil.urllocalpath(origsource))
+            abspath = util.abspath(urlutil.urllocalpath(origsource))
 
         if islocal(dest):
             if os.path.exists(dest):
