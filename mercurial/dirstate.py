@@ -72,6 +72,17 @@ def _getfsnow(vfs):
         vfs.unlink(tmpname)
 
 
+def requires_parents_change(func):
+    def wrap(self, *args, **kwargs):
+        if not self.pendingparentchange():
+            msg = 'calling `%s` outside of a parentchange context'
+            msg %= func.__name__
+            raise error.ProgrammingError(msg)
+        return func(self, *args, **kwargs)
+
+    return wrap
+
+
 @interfaceutil.implementer(intdirstate.idirstate)
 class dirstate(object):
     def __init__(
@@ -439,6 +450,44 @@ class dirstate(object):
 
     def copies(self):
         return self._map.copymap
+
+    @requires_parents_change
+    def update_file_reference(
+        self,
+        filename,
+        p1_tracked,
+    ):
+        """Set a file as tracked in the parent (or not)
+
+        This is to be called when adjust the dirstate to a new parent after an history
+        rewriting operation.
+
+        It should not be called during a merge (p2 != nullid) and only within
+        a `with dirstate.parentchange():` context.
+        """
+        if self.in_merge:
+            msg = b'update_file_reference should not be called when merging'
+            raise error.ProgrammingError(msg)
+        entry = self._map.get(filename)
+        if entry is None:
+            wc_tracked = False
+        else:
+            wc_tracked = entry.tracked
+        if p1_tracked and wc_tracked:
+            # the underlying reference might have changed, we will have to
+            # check it.
+            self.normallookup(filename)
+        elif not (p1_tracked or wc_tracked):
+            # the file is no longer relevant to anyone
+            self._drop(filename)
+        elif (not p1_tracked) and wc_tracked:
+            if not entry.added:
+                self._add(filename)
+        elif p1_tracked and not wc_tracked:
+            if entry is None or not entry.removed:
+                self._remove(filename)
+        else:
+            assert False, 'unreachable'
 
     def _addpath(
         self,

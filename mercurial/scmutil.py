@@ -1485,25 +1485,15 @@ def movedirstate(repo, newctx, match=None):
     copies = dict(ds.copies())
     ds.setparents(newctx.node(), repo.nullid)
     s = newctx.status(oldctx, match=match)
+
     for f in s.modified:
-        if ds[f] == b'r':
-            # modified + removed -> removed
-            continue
-        ds.normallookup(f)
+        ds.update_file_reference(f, p1_tracked=True)
 
     for f in s.added:
-        if ds[f] == b'r':
-            # added + removed -> unknown
-            ds.drop(f)
-        elif ds[f] != b'a':
-            ds.add(f)
+        ds.update_file_reference(f, p1_tracked=False)
 
     for f in s.removed:
-        if ds[f] == b'a':
-            # removed + added -> normal
-            ds.normallookup(f)
-        elif ds[f] != b'r':
-            ds.remove(f)
+        ds.update_file_reference(f, p1_tracked=True)
 
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
