@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function
 
 import locale
 import os
+import re
 import unicodedata
 
 from .pycompat import getattr
@@ -352,6 +353,8 @@ if not _nativeenviron:
         environ[tolocal(k.encode('utf-8'))] = tolocal(v.encode('utf-8'))
 
 
+DRIVE_RE = re.compile(b'^[a-z]:')
+
 if pycompat.ispy3:
     # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
     # returns bytes.
@@ -363,7 +366,21 @@ if pycompat.ispy3:
         # os.path.realpath(), which is used on ``repo.root``.  Since those
         # strings are compared in various places as simple strings, also call
         # realpath here.  See https://bugs.python.org/issue40368
-        getcwd = lambda: strtolocal(os.path.realpath(os.getcwd()))  # re-exports
+        #
+        # However this is not reliable, so lets explicitly make this drive
+        # letter upper case.
+        #
+        # note: we should consider dropping realpath here since it seems to
+        # change the semantic of `getcwd`.
+
+        def getcwd():
+            cwd = os.getcwd()  # re-exports
+            cwd = os.path.realpath(cwd)
+            cwd = strtolocal(cwd)
+            if DRIVE_RE.match(cwd):
+                cwd = cwd[0:1].upper() + cwd[1:]
+            return cwd
+
     else:
         getcwd = os.getcwdb  # re-exports
 else:
