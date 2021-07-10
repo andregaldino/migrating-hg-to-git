@@ -14,6 +14,7 @@ from mercurial import (
     config,
     error,
     pycompat,
+    util,
 )
 
 from . import common
@@ -74,7 +75,7 @@ class convert_git(common.converter_source, common.commandline):
 
         # Pass an absolute path to git to prevent from ever being interpreted
         # as a URL
-        path = os.path.abspath(path)
+        path = util.abspath(path)
 
         if os.path.isdir(path + b"/.git"):
             path += b"/.git"
