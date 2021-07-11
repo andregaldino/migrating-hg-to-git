@@ -9,6 +9,21 @@ import time
 
 # we cannot use mercurial.testing as long as python2 is not dropped as the test will only install the mercurial module for python2 in python2 run
 
+DEBUG_FILE = os.environ.get('SIGPIPE_REMOTE_DEBUG_FILE')
+if DEBUG_FILE is None:
+    debug_stream = sys.stderr.buffer
+else:
+    debug_stream = open(DEBUG_FILE, 'bw', buffering=0)
+
+SYNCFILE1 = os.environ.get('SYNCFILE1')
+SYNCFILE2 = os.environ.get('SYNCFILE2')
+if SYNCFILE1 is None:
+    print('SIGPIPE-HELPER: missing variable $SYNCFILE1', file=sys.stderr)
+    sys.exit(255)
+if SYNCFILE2 is None:
+    print('SIGPIPE-HELPER: missing variable $SYNCFILE2', file=sys.stderr)
+    sys.exit(255)
+
 
 def _timeout_factor():
     """return the current modification to timeout"""
@@ -55,21 +70,6 @@ stdout_writer = os.fdopen(piped_stdout[1], "rb")
 stdout_reader = os.fdopen(piped_stdout[0], "rb")
 stderr_writer = os.fdopen(piped_stderr[1], "rb")
 stderr_reader = os.fdopen(piped_stderr[0], "rb")
-
-DEBUG_FILE = os.environ.get('SIGPIPE_REMOTE_DEBUG_FILE')
-if DEBUG_FILE is None:
-    debug_stream = sys.stderr.buffer
-else:
-    debug_stream = open(DEBUG_FILE, 'bw', buffering=0)
-
-SYNCFILE1 = os.environ.get('SYNCFILE1')
-SYNCFILE2 = os.environ.get('SYNCFILE2')
-if SYNCFILE1 is None:
-    print('SIGPIPE-HELPER: missing variable $SYNCFILE1', file=sys.stderr)
-    sys.exit(255)
-if SYNCFILE2 is None:
-    print('SIGPIPE-HELPER: missing variable $SYNCFILE2', file=sys.stderr)
-    sys.exit(255)
 
 debug_stream.write(b'SIGPIPE-HELPER: Starting\n')
 
