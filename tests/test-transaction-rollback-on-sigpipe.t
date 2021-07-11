@@ -24,7 +24,7 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
 
   $ cat >remote/.hg/hgrc <<EOF
   > [hooks]
-  > pretxnchangegroup.00-break-things="$RUNTESTDIR/testlib/wait-on-file" 10 "$SYNCFILE2" "$SYNCFILE1"
+  > pretxnchangegroup.00-break-things=sh "$RUNTESTDIR/testlib/wait-on-file" 10 "$SYNCFILE2" "$SYNCFILE1"
   > pretxnchangegroup.01-output-things=echo "some remote output to be forward to the closed pipe"
   > EOF
 
