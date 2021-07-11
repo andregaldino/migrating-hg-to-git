@@ -3571,16 +3571,18 @@ class TestRunner(object):
     def _usecorrectpython(self):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
-        if sys.platform == 'win32':
+        if WINDOWS and PYTHON3:
+            pyexe_names = [b'python', b'python3', b'python.exe']
+        elif WINDOWS:
             pyexe_names = [b'python', b'python.exe']
-        elif sys.version_info[0] < 3:
-            pyexe_names = [b'python', b'python2']
-        else:
+        elif PYTHON3:
             pyexe_names = [b'python', b'python3']
+        else:
+            pyexe_names = [b'python', b'python2']
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
-        if getattr(os, 'symlink', None) and not WINDOWS:
+        if not WINDOWS and getattr(os, 'symlink', None):
             msg = "# Making python executable in test path a symlink to '%s'"
             msg %= sysexecutable
             vlog(msg)
@@ -3601,57 +3603,50 @@ class TestRunner(object):
                         # child processes may race, which is harmless
                         if err.errno != errno.EEXIST:
                             raise
+        elif WINDOWS and not os.getenv('MSYSTEM'):
+            raise AssertionError('cannot run test on Windows without MSYSTEM')
         else:
-            # Windows doesn't have `python3.exe`, and MSYS cannot understand the
-            # reparse point with that name provided by Microsoft.  Create a
-            # simple script on PATH with that name that delegates to the py3
-            # launcher so the shebang lines work.
-            if os.getenv('MSYSTEM'):
-                py3exe_name = os.path.join(self._custom_bin_dir, b'python3')
-                with open(py3exe_name, 'wb') as f:
-                    f.write(b'#!/bin/sh\n')
-                    f.write(b'py -3.%d "$@"\n' % sys.version_info[1])
-
-                pyexe_name = os.path.join(self._custom_bin_dir, b'python')
-                with open(pyexe_name, 'wb') as f:
-                    f.write(b'#!/bin/sh\n')
-                    f.write(b'py -%d.%d "$@"\n' % sys.version_info[0:2])
-
-            exedir, exename = os.path.split(sysexecutable)
+            # Generate explicit file instead of symlink
+            #
+            # This is especially important as Windows doesn't have
+            # `python3.exe`, and MSYS cannot understand the reparse point with
+            # that name provided by Microsoft.  Create a simple script on PATH
+            # with that name that delegates to the py3 launcher so the shebang
+            # lines work.
+            esc_executable = _sys2bytes(shellquote(sysexecutable))
             for pyexename in pyexe_names:
-                msg = "# Modifying search path to find %s as %s in '%s'"
-                msg %= (exename, pyexename, exedir)
-                vlog(msg)
-            path = os.environ['PATH'].split(os.pathsep)
-            while exedir in path:
-                path.remove(exedir)
+                stub_exec_path = os.path.join(self._custom_bin_dir, pyexename)
+                with open(stub_exec_path, 'wb') as f:
+                    f.write(b'#!/bin/sh\n')
+                    f.write(b'%s "$@"\n' % esc_executable)
 
-            # Binaries installed by pip into the user area like pylint.exe may
-            # not be in PATH by default.
-            extra_paths = [exedir]
-            vi = sys.version_info
-            appdata = os.environ.get('APPDATA')
-            if appdata is not None:
-                scripts_dir = os.path.join(
-                    appdata,
-                    'Python',
-                    'Python%d%d' % (vi[0], vi[1]),
-                    'Scripts',
-                )
+            if WINDOWS:
+                if not PYTHON3:
+                    # lets try to build a valid python3 executable for the
+                    # scrip that requires it.
+                    py3exe_name = os.path.join(self._custom_bin_dir, b'python3')
+                    with open(py3exe_name, 'wb') as f:
+                        f.write(b'#!/bin/sh\n')
+                        f.write(b'py -3 "$@"\n')
 
-                if vi.major == 2:
-                    scripts_dir = os.path.join(
-                        appdata,
-                        'Python',
-                        'Scripts',
-                    )
+                # adjust the path to make sur the main python finds it own dll
+                path = os.environ['PATH'].split(os.pathsep)
+                main_exec_dir = os.path.dirname(sysexecutable)
+                extra_paths = [_bytes2sys(self._custom_bin_dir), main_exec_dir]
 
-                extra_paths.append(scripts_dir)
+                # Binaries installed by pip into the user area like pylint.exe may
+                # not be in PATH by default.
+                appdata = os.environ.get('APPDATA')
+                vi = sys.version_info
+                if appdata is not None:
+                    python_dir = 'Python%d%d' % (vi[0], vi[1])
+                    scripts_path = [appdata, 'Python', python_dir, 'Scripts']
+                    if not PYTHON3:
+                        scripts_path = [appdata, 'Python', 'Scripts']
+                    scripts_dir = os.path.join(*scripts_path)
+                    extra_paths.append(scripts_dir)
 
-            os.environ['PATH'] = os.pathsep.join(extra_paths + path)
-            for pyexename in pyexe_names:
-                if not self._findprogram(pyexename):
-                    print("WARNING: Cannot find %s in search path" % pyexename)
+                os.environ['PATH'] = os.pathsep.join(extra_paths + path)
 
     def _use_correct_mercurial(self):
         target_exec = os.path.join(self._custom_bin_dir, b'hg')
