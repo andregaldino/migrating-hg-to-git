@@ -7,7 +7,11 @@ import subprocess
 import sys
 import time
 
-# we cannot use mercurial.testing as long as python2 is not dropped as the test will only install the mercurial module for python2 in python2 run
+# we cannot use mercurial.testing as long as python2 is not dropped as the test
+# will only install the mercurial module for python2 in python2 run
+if sys.version_info[0] < 3:
+    print('SIGPIPE-HELPER: script should run with Python 3', file=sys.stderr)
+    sys.exit(255)
 
 if isinstance(sys.stdout.buffer, io.BufferedWriter):
     print('SIGPIPE-HELPER: script need unbuffered output', file=sys.stderr)
@@ -53,10 +57,6 @@ def write_file(path, content=b''):
 
 
 # end of mercurial.testing content
-
-if sys.version_info[0] < 3:
-    print('SIGPIPE-HELPER: script should run with Python 3', file=sys.stderr)
-    sys.exit(255)
 
 
 def sysbytes(s):
