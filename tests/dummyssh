@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import os
+import subprocess
 import sys
 
 os.chdir(os.getenv('TESTTMP'))
@@ -22,5 +23,5 @@ hgcmd = sys.argv[2]
 if os.name == 'nt':
     # hack to make simple unix single quote quoting work on windows
     hgcmd = hgcmd.replace("'", '"')
-r = os.system(hgcmd)
+r = subprocess.call(hgcmd, shell=True)
 sys.exit(bool(r))
