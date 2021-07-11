@@ -3990,6 +3990,15 @@ def aggregateexceptions(path):
 
 
 if __name__ == '__main__':
+    if WINDOWS and not os.getenv('MSYSTEM'):
+        print('cannot run test on Windows without MSYSTEM', file=sys.stderr)
+        print(
+            '(if you need to do so contact the mercurial devs: '
+            'mercurial@mercurial-scm.org)',
+            file=sys.stderr,
+        )
+        sys.exit(255)
+
     runner = TestRunner()
 
     try:
