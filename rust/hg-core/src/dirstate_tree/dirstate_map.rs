@@ -410,8 +410,15 @@ impl<'on_disk> DirstateMap<'on_disk> {
     }
 
     #[timed]
-    pub fn new_v2(on_disk: &'on_disk [u8]) -> Result<Self, DirstateError> {
-        Ok(on_disk::read(on_disk)?)
+    pub fn new_v2(
+        on_disk: &'on_disk [u8],
+        data_size: usize,
+    ) -> Result<Self, DirstateError> {
+        if let Some(data) = on_disk.get(..data_size) {
+            Ok(on_disk::read(data)?)
+        } else {
+            Err(DirstateV2ParseError.into())
+        }
     }
 
     #[timed]

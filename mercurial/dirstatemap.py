@@ -637,7 +637,9 @@ if rustmod is not None:
                     data = self._opener.read(self.docket.data_filename())
                 else:
                     data = b''
-                self._rustmap = rustmod.DirstateMap.new_v2(data)
+                self._rustmap = rustmod.DirstateMap.new_v2(
+                    data, self.docket.data_size
+                )
                 parents = self.docket.parents
             else:
                 self._rustmap, parents = rustmod.DirstateMap.new_v1(

@@ -21,7 +21,7 @@ use bytes_cast::unaligned::{I32Be, I64Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
@@ -222,6 +222,11 @@ impl<'on_disk> Docket<'on_disk> {
             .unwrap()
             .clone();
         DirstateParents { p1, p2 }
+    }
+
+    pub fn data_size(&self) -> usize {
+        // This `unwrap` could only panic on a 16-bit CPU
+        self.header.data_size.get().try_into().unwrap()
     }
 
     pub fn data_filename(&self) -> String {

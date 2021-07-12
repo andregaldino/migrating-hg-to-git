@@ -48,9 +48,10 @@ impl OwningDirstateMap {
     pub fn new_v2(
         py: Python,
         on_disk: PyBytes,
+        data_size: usize,
     ) -> Result<Self, DirstateError> {
         let bytes: &'_ [u8] = on_disk.data(py);
-        let map = DirstateMap::new_v2(bytes)?;
+        let map = DirstateMap::new_v2(bytes, data_size)?;
 
         // Like in `bytes` above, this `'_` lifetime parameter borrows from
         // the bytes buffer owned by `on_disk`.

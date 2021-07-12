@@ -83,11 +83,12 @@ py_class!(pub class DirstateMap |py| {
     @staticmethod
     def new_v2(
         on_disk: PyBytes,
+        data_size: usize,
     ) -> PyResult<PyObject> {
         let dirstate_error = |e: DirstateError| {
             PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
         };
-        let inner = OwningDirstateMap::new_v2(py, on_disk)
+        let inner = OwningDirstateMap::new_v2(py, on_disk, data_size)
                 .map_err(dirstate_error)?;
         let map = Self::create_instance(py, Box::new(inner))?;
         Ok(map.into_object())

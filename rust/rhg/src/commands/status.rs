@@ -170,11 +170,13 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let (mut dmap, parents) = if repo.has_dirstate_v2() {
         let parents;
         let dirstate_data;
+        let data_size;
         if let Some(docket_data) =
             repo.hg_vfs().read("dirstate").io_not_found_as_none()?
         {
             let docket = on_disk::read_docket(&docket_data)?;
             parents = Some(docket.parents());
+            data_size = docket.data_size();
             dirstate_data_mmap = repo
                 .hg_vfs()
                 .mmap_open(docket.data_filename())
@@ -182,9 +184,10 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             dirstate_data = dirstate_data_mmap.as_deref().unwrap_or(b"");
         } else {
             parents = None;
+            data_size = 0;
             dirstate_data = b"";
         }
-        let dmap = DirstateMap::new_v2(dirstate_data)?;
+        let dmap = DirstateMap::new_v2(dirstate_data, data_size)?;
         (dmap, parents)
     } else {
         dirstate_data_mmap =
