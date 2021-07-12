@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import print_function
 
+import io
 import os
 import subprocess
 import sys
@@ -8,6 +9,10 @@ import threading
 import time
 
 # we cannot use mercurial.testing as long as python2 is not dropped as the test will only install the mercurial module for python2 in python2 run
+
+if isinstance(sys.stdout.buffer, io.BufferedWriter):
+    print('SIGPIPE-HELPER: script need unbuffered output', file=sys.stderr)
+    sys.exit(255)
 
 DEBUG_FILE = os.environ.get('SIGPIPE_REMOTE_DEBUG_FILE')
 if DEBUG_FILE is None:
