@@ -103,6 +103,12 @@ def make_exe(dist):
         exe.add_python_resources(
             exe.pip_install(["-r", ROOT + "/contrib/packaging/requirements-windows-py3.txt"]),
         )
+    extra_packages = VARS.get("extra_py_packages", "")
+    if extra_packages:
+        for extra in extra_packages.split(","):
+            extra_src, pkgs = extra.split("=")
+            pkgs = pkgs.split(":")
+            exe.add_python_resources(exe.read_package_root(extra_src, pkgs))
 
     return exe
 
@@ -143,6 +149,17 @@ def make_windows_install_layout(manifest):
 
         print("copying %s to %s" % (path, new_path))
         manifest.add_file(manifest.get_file(path), path = new_path)
+
+    extra_install_files = VARS.get("extra_install_files", "")
+    if extra_install_files:
+        for extra in extra_install_files.split(","):
+            print("adding extra files from %s" % extra)
+            # TODO: I expected a ** glob to work, but it didn't.
+            #
+            # TODO: I know this has forward-slash paths. As far as I can tell,
+            # backslashes don't ever match glob() expansions in 
+            # tugger-starlark, even on Windows.
+            manifest.add_manifest(glob(include=[extra + "/*/*"], strip_prefix=extra+"/"))
 
     # We also install a handful of additional files.
     EXTRA_CONTRIB_FILES = [
