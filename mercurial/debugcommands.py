@@ -997,11 +997,13 @@ def debugdirstateignorepatternshash(ui, repo, **opts):
     or nothing for dirstate-v2
     """
     if repo.dirstate._use_dirstate_v2:
-        hash_offset = 16  # Four 32-bit integers before this field
+        docket = repo.dirstate._map.docket
         hash_len = 20  # 160 bits for SHA-1
-        data_filename = repo.dirstate._map.docket.data_filename()
+        hash_offset = docket.data_size - hash_len  # hash is at the end
+        data_filename = docket.data_filename()
         with repo.vfs(data_filename) as f:
-            hash_bytes = f.read(hash_offset + hash_len)[-hash_len:]
+            f.seek(hash_offset)
+            hash_bytes = f.read(hash_len)
         ui.write(binascii.hexlify(hash_bytes) + b'\n')
 
 

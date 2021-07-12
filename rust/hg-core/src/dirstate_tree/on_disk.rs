@@ -2,8 +2,17 @@
 //!
 //! # File format
 //!
-//! The file starts with a fixed-sized header, whose layout is defined by the
-//! `Header` struct. Its `root` field contains the slice (offset and length) to
+//! In dirstate-v2 format, the `.hg/dirstate` file is a "docket that starts
+//! with a fixed-sized header whose layout is defined by the `DocketHeader`
+//! struct, followed by the data file identifier.
+//!
+//! A separate `.hg/dirstate.{uuid}.d` file contains most of the data. That
+//! file may be longer than the size given in the docket, but not shorter. Only
+//! the start of the data file up to the given size is considered. The
+//! fixed-size "root" of the dirstate tree whose layout is defined by the
+//! `Root` struct is found at the end of that slice of data.
+//!
+//! Its `root_nodes` field contains the slice (offset and length) to
 //! the nodes representing the files and directories at the root of the
 //! repository. Each node is also fixed-size, defined by the `Node` struct.
 //! Nodes in turn contain slices to variable-size paths, and to their own child
@@ -56,8 +65,8 @@ pub struct Docket<'on_disk> {
 
 #[derive(BytesCast)]
 #[repr(C)]
-struct Header {
-    root: ChildNodes,
+struct Root {
+    root_nodes: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
 
@@ -119,7 +128,7 @@ pub(super) struct Node {
     ///   - All direct children of this directory (as returned by
     ///     `std::fs::read_dir`) either have a corresponding dirstate node, or
     ///     are ignored by ignore patterns whose hash is in
-    ///     `Header::ignore_patterns_hash`.
+    ///     `Root::ignore_patterns_hash`.
     ///
     ///   This means that if `std::fs::symlink_metadata` later reports the
     ///   same modification time and ignored patterns haven’t changed, a run
@@ -190,7 +199,7 @@ type OptPathSlice = Slice;
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
     let _ = std::mem::transmute::<DocketHeader, [u8; 81]>;
-    let _ = std::mem::transmute::<Header, [u8; 36]>;
+    let _ = std::mem::transmute::<Root, [u8; 36]>;
     let _ = std::mem::transmute::<Node, [u8; 49]>;
 }
 
@@ -247,25 +256,36 @@ pub fn read_docket(
     }
 }
 
+fn read_root<'on_disk>(
+    on_disk: &'on_disk [u8],
+) -> Result<&'on_disk Root, DirstateV2ParseError> {
+    // Find the `Root` at the end of the given slice
+    let root_offset = on_disk
+        .len()
+        .checked_sub(std::mem::size_of::<Root>())
+        // A non-empty slice too short is an error
+        .ok_or(DirstateV2ParseError)?;
+    let (root, _) = Root::from_bytes(&on_disk[root_offset..])
+        .map_err(|_| DirstateV2ParseError)?;
+    Ok(root)
+}
+
 pub(super) fn read<'on_disk>(
     on_disk: &'on_disk [u8],
 ) -> Result<DirstateMap<'on_disk>, DirstateV2ParseError> {
     if on_disk.is_empty() {
         return Ok(DirstateMap::empty(on_disk));
     }
-    let (header, _) =
-        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
+    let root = read_root(on_disk)?;
     let dirstate_map = DirstateMap {
         on_disk,
         root: dirstate_map::ChildNodes::OnDisk(read_slice::<Node>(
             on_disk,
-            header.root,
+            root.root_nodes,
         )?),
-        nodes_with_entry_count: header.nodes_with_entry_count.get(),
-        nodes_with_copy_source_count: header
-            .nodes_with_copy_source_count
-            .get(),
-        ignore_patterns_hash: header.ignore_patterns_hash,
+        nodes_with_entry_count: root.nodes_with_entry_count.get(),
+        nodes_with_copy_source_count: root.nodes_with_copy_source_count.get(),
+        ignore_patterns_hash: root.ignore_patterns_hash,
     };
     Ok(dirstate_map)
 }
@@ -491,8 +511,7 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
     on_disk: &'on_disk [u8],
     mut f: impl FnMut(&'on_disk HgPath),
 ) -> Result<(), DirstateV2ParseError> {
-    let (header, _) =
-        Header::from_bytes(on_disk).map_err(|_| DirstateV2ParseError)?;
+    let root = read_root(on_disk)?;
     fn recur<'on_disk>(
         on_disk: &'on_disk [u8],
         nodes: Slice,
@@ -508,37 +527,33 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
         }
         Ok(())
     }
-    recur(on_disk, header.root, &mut f)
+    recur(on_disk, root.root_nodes, &mut f)
 }
 
 pub(super) fn write(
     dirstate_map: &mut DirstateMap,
 ) -> Result<Vec<u8>, DirstateError> {
-    let header_len = std::mem::size_of::<Header>();
+    let root_len = std::mem::size_of::<Root>();
 
     // This ignores the space for paths, and for nodes without an entry.
     // TODO: better estimate? Skip the `Vec` and write to a file directly?
-    let size_guess = header_len
+    let size_guess = root_len
         + std::mem::size_of::<Node>()
             * dirstate_map.nodes_with_entry_count as usize;
     let mut out = Vec::with_capacity(size_guess);
 
-    // Keep space for the header. We’ll fill it out at the end when we know the
-    // actual offset for the root nodes.
-    out.resize(header_len, 0_u8);
-
-    let root =
+    let root_nodes =
         write_nodes(dirstate_map, dirstate_map.root.as_ref(), &mut out)?;
 
-    let header = Header {
-        root,
+    let root = Root {
+        root_nodes,
         nodes_with_entry_count: dirstate_map.nodes_with_entry_count.into(),
         nodes_with_copy_source_count: dirstate_map
             .nodes_with_copy_source_count
             .into(),
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
-    out[..header_len].copy_from_slice(header.as_bytes());
+    out.extend(root.as_bytes());
     Ok(out)
 }
 
