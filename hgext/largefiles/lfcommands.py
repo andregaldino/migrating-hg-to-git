@@ -565,20 +565,19 @@ def updatelfiles(
         # largefile processing might be slow and be interrupted - be prepared
         lfdirstate.write()
 
+        if lfiles:
+            lfiles = [f for f in lfiles if f not in dropped]
+
+            for f in dropped:
+                repo.wvfs.unlinkpath(lfutil.standin(f))
+                # This needs to happen for dropped files, otherwise they stay in
+                # the M state.
+                lfdirstate._drop(f)
+
+            statuswriter(_(b'getting changed largefiles\n'))
+            cachelfiles(ui, repo, None, lfiles)
+
         with lfdirstate.parentchange():
-            if lfiles:
-                lfiles = [f for f in lfiles if f not in dropped]
-
-                for f in dropped:
-                    repo.wvfs.unlinkpath(lfutil.standin(f))
-
-                    # This needs to happen for dropped files, otherwise they stay in
-                    # the M state.
-                    lfutil.synclfdirstate(repo, lfdirstate, f, normallookup)
-
-                statuswriter(_(b'getting changed largefiles\n'))
-                cachelfiles(ui, repo, None, lfiles)
-
             for lfile in lfiles:
                 update1 = 0
 
