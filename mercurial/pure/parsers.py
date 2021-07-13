@@ -44,7 +44,7 @@ NONNORMAL = -1
 AMBIGUOUS_TIME = -1
 
 
-@attr.s(slots=True)
+@attr.s(slots=True, init=False)
 class DirstateItem(object):
     """represent a dirstate entry
 
@@ -60,6 +60,12 @@ class DirstateItem(object):
     _mode = attr.ib()
     _size = attr.ib()
     _mtime = attr.ib()
+
+    def __init__(self, state, mode, size, mtime):
+        self._state = state
+        self._mode = mode
+        self._size = size
+        self._mtime = mtime
 
     def __getitem__(self, idx):
         if idx == 0 or idx == -4:
