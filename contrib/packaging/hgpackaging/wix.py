@@ -8,6 +8,7 @@
 # no-check-code because Python 3 native.
 
 import collections
+import json
 import os
 import pathlib
 import re
@@ -386,6 +387,7 @@ def build_installer_pyoxidizer(
     extra_wxs: typing.Optional[typing.Dict[str, str]] = None,
     extra_features: typing.Optional[typing.List[str]] = None,
     signing_info: typing.Optional[typing.Dict[str, str]] = None,
+    extra_pyoxidizer_vars=None,
 ):
     """Build a WiX MSI installer using PyOxidizer."""
     hg_build_dir = source_dir / "build"
@@ -417,6 +419,9 @@ def build_installer_pyoxidizer(
             build_vars["SIGNING_SUBJECT_NAME"] = signing_info["subject_name"]
         if signing_info["timestamp_url"]:
             build_vars["TIME_STAMP_SERVER_URL"] = signing_info["timestamp_url"]
+
+    if extra_pyoxidizer_vars:
+        build_vars.update(json.loads(extra_pyoxidizer_vars))
 
     if extra_wxs:
         raise Exception(
