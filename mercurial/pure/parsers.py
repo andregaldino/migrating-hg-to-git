@@ -67,6 +67,20 @@ class DirstateItem(object):
         self._size = size
         self._mtime = mtime
 
+    @classmethod
+    def from_v1_data(cls, state, mode, size, mtime):
+        """Build a new DirstateItem object from V1 data
+
+        Since the dirstate-v1 format is frozen, the signature of this function
+        is not expected to change, unlike the __init__ one.
+        """
+        return cls(
+            state=state,
+            mode=mode,
+            size=size,
+            mtime=mtime,
+        )
+
     def __getitem__(self, idx):
         if idx == 0 or idx == -4:
             msg = b"do not use item[x], use item.state"
@@ -546,7 +560,7 @@ def parse_dirstate(dmap, copymap, st):
         if b'\0' in f:
             f, c = f.split(b'\0')
             copymap[f] = c
-        dmap[f] = DirstateItem(*e[:4])
+        dmap[f] = DirstateItem.from_v1_data(*e[:4])
     return parents
 
 

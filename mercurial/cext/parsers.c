@@ -155,6 +155,48 @@ static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
 	}
 };
 
+/* This will never change since it's bound to V1, unlike `make_dirstate_item`
+ */
+static inline dirstateItemObject *
+dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
+{
+	dirstateItemObject *t =
+	    PyObject_New(dirstateItemObject, &dirstateItemType);
+	if (!t) {
+		return NULL;
+	}
+	t->state = state;
+	t->mode = mode;
+	t->size = size;
+	t->mtime = mtime;
+	return t;
+}
+
+/* This will never change since it's bound to V1, unlike `dirstate_item_new` */
+static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
+                                            PyObject *args)
+{
+	/* We do all the initialization here and not a tp_init function because
+	 * dirstate_item is immutable. */
+	dirstateItemObject *t;
+	char state;
+	int size, mode, mtime;
+	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime)) {
+		return NULL;
+	}
+
+	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
+	if (!t) {
+		return NULL;
+	}
+	t->state = state;
+	t->mode = mode;
+	t->size = size;
+	t->mtime = mtime;
+
+	return (PyObject *)t;
+};
+
 static PyMethodDef dirstate_item_methods[] = {
     {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
@@ -166,6 +208,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "return a \"mtime\" suitable for v1 serialization"},
     {"need_delay", (PyCFunction)dirstate_item_need_delay, METH_O,
      "True if the stored mtime would be ambiguous with the current time"},
+    {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth, METH_O,
+     "build a new DirstateItem object from V1 data"},
     {NULL} /* Sentinel */
 };
 
@@ -363,8 +407,8 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 			goto quit;
 		}
 
-		entry =
-		    (PyObject *)make_dirstate_item(state, mode, size, mtime);
+		entry = (PyObject *)dirstate_item_from_v1_data(state, mode,
+		                                               size, mtime);
 		cpos = memchr(cur, 0, flen);
 		if (cpos) {
 			fname = PyBytes_FromStringAndSize(cur, cpos - cur);
