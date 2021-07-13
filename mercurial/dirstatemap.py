@@ -655,13 +655,41 @@ if rustmod is not None:
             return self._rustmap
 
         def write(self, tr, st, now):
-            if self._use_dirstate_v2:
-                packed = self._rustmap.write_v2(now)
+            if not self._use_dirstate_v2:
+                p1, p2 = self.parents()
+                packed = self._rustmap.write_v1(p1, p2, now)
+                st.write(packed)
+                st.close()
+                self._dirtyparents = False
+                return
+
+            # We can only append to an existing data file if there is one
+            can_append = self.docket.uuid is not None
+            packed, append = self._rustmap.write_v2(now, can_append)
+            if append:
+                docket = self.docket
+                data_filename = docket.data_filename()
+                if tr:
+                    tr.add(data_filename, docket.data_size)
+                with self._opener(data_filename, b'r+b') as fp:
+                    fp.seek(docket.data_size)
+                    assert fp.tell() == docket.data_size
+                    written = fp.write(packed)
+                    if written is not None:  # py2 may return None
+                        assert written == len(packed), (written, len(packed))
+                docket.data_size += len(packed)
+                docket.parents = self.parents()
+                st.write(docket.serialize())
+                st.close()
+            else:
                 old_docket = self.docket
                 new_docket = docketmod.DirstateDocket.with_new_uuid(
                     self.parents(), len(packed)
                 )
-                self._opener.write(new_docket.data_filename(), packed)
+                data_filename = new_docket.data_filename()
+                if tr:
+                    tr.add(data_filename, 0)
+                self._opener.write(data_filename, packed)
                 # Write the new docket after the new data file has been
                 # written. Because `st` was opened with `atomictemp=True`,
                 # the actual `.hg/dirstate` file is only affected on close.
@@ -670,13 +698,16 @@ if rustmod is not None:
                 # Remove the old data file after the new docket pointing to
                 # the new data file was written.
                 if old_docket.uuid:
-                    self._opener.unlink(old_docket.data_filename())
+                    data_filename = old_docket.data_filename()
+                    unlink = lambda _tr=None: self._opener.unlink(data_filename)
+                    if tr:
+                        category = b"dirstate-v2-clean-" + old_docket.uuid
+                        tr.addpostclose(category, unlink)
+                    else:
+                        unlink()
                 self._docket = new_docket
-            else:
-                p1, p2 = self.parents()
-                packed = self._rustmap.write_v1(p1, p2, now)
-                st.write(packed)
-                st.close()
+            # Reload from the newly-written file
+            util.clearcachedproperty(self, b"_rustmap")
             self._dirtyparents = False
 
         @propertycache

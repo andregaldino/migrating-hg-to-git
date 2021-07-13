@@ -544,20 +544,28 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
     recur(on_disk, root.root_nodes, &mut f)
 }
 
+/// Returns new data together with whether that data should be appended to the
+/// existing data file whose content is at `dirstate_map.on_disk` (true),
+/// instead of written to a new data file (false).
 pub(super) fn write(
     dirstate_map: &mut DirstateMap,
-) -> Result<Vec<u8>, DirstateError> {
-    let root_len = std::mem::size_of::<Root>();
+    can_append: bool,
+) -> Result<(Vec<u8>, bool), DirstateError> {
+    let append = can_append && dirstate_map.write_should_append();
 
     // This ignores the space for paths, and for nodes without an entry.
     // TODO: better estimate? Skip the `Vec` and write to a file directly?
-    let size_guess = root_len
+    let size_guess = std::mem::size_of::<Root>()
         + std::mem::size_of::<Node>()
             * dirstate_map.nodes_with_entry_count as usize;
-    let mut out = Vec::with_capacity(size_guess);
 
-    let root_nodes =
-        write_nodes(dirstate_map, dirstate_map.root.as_ref(), &mut out)?;
+    let mut writer = Writer {
+        dirstate_map,
+        append,
+        out: Vec::with_capacity(size_guess),
+    };
+
+    let root_nodes = writer.write_nodes(dirstate_map.root.as_ref())?;
 
     let root = Root {
         root_nodes,
@@ -567,112 +575,121 @@ pub(super) fn write(
             .into(),
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
-    out.extend(root.as_bytes());
-    Ok(out)
+    writer.out.extend(root.as_bytes());
+    Ok((writer.out, append))
 }
 
-fn write_nodes(
-    dirstate_map: &DirstateMap,
-    nodes: dirstate_map::ChildNodesRef,
-    out: &mut Vec<u8>,
-) -> Result<ChildNodes, DirstateError> {
-    // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
-    // order. Sort to enable binary search in the written file.
-    let nodes = nodes.sorted();
-    let nodes_len = nodes.len();
+struct Writer<'dmap, 'on_disk> {
+    dirstate_map: &'dmap DirstateMap<'on_disk>,
+    append: bool,
+    out: Vec<u8>,
+}
 
-    // First accumulate serialized nodes in a `Vec`
-    let mut on_disk_nodes = Vec::with_capacity(nodes_len);
-    for node in nodes {
-        let children = write_nodes(
-            dirstate_map,
-            node.children(dirstate_map.on_disk)?,
-            out,
-        )?;
-        let full_path = node.full_path(dirstate_map.on_disk)?;
-        let full_path = write_path(full_path.as_bytes(), out);
-        let copy_source =
-            if let Some(source) = node.copy_source(dirstate_map.on_disk)? {
-                write_path(source.as_bytes(), out)
+impl Writer<'_, '_> {
+    fn write_nodes(
+        &mut self,
+        nodes: dirstate_map::ChildNodesRef,
+    ) -> Result<ChildNodes, DirstateError> {
+        // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
+        // order. Sort to enable binary search in the written file.
+        let nodes = nodes.sorted();
+        let nodes_len = nodes.len();
+
+        // First accumulate serialized nodes in a `Vec`
+        let mut on_disk_nodes = Vec::with_capacity(nodes_len);
+        for node in nodes {
+            let children =
+                self.write_nodes(node.children(self.dirstate_map.on_disk)?)?;
+            let full_path = node.full_path(self.dirstate_map.on_disk)?;
+            let full_path = self.write_path(full_path.as_bytes());
+            let copy_source = if let Some(source) =
+                node.copy_source(self.dirstate_map.on_disk)?
+            {
+                self.write_path(source.as_bytes())
             } else {
                 PathSlice {
                     start: 0.into(),
                     len: 0.into(),
                 }
             };
-        on_disk_nodes.push(match node {
-            NodeRef::InMemory(path, node) => {
-                let (state, data) = match &node.data {
-                    dirstate_map::NodeData::Entry(entry) => (
-                        entry.state.into(),
-                        Entry {
-                            mode: entry.mode.into(),
-                            mtime: entry.mtime.into(),
-                            size: entry.size.into(),
-                        },
-                    ),
-                    dirstate_map::NodeData::CachedDirectory { mtime } => {
-                        (b'd', Entry::from_timestamp(*mtime))
+            on_disk_nodes.push(match node {
+                NodeRef::InMemory(path, node) => {
+                    let (state, data) = match &node.data {
+                        dirstate_map::NodeData::Entry(entry) => (
+                            entry.state.into(),
+                            Entry {
+                                mode: entry.mode.into(),
+                                mtime: entry.mtime.into(),
+                                size: entry.size.into(),
+                            },
+                        ),
+                        dirstate_map::NodeData::CachedDirectory { mtime } => {
+                            (b'd', Entry::from_timestamp(*mtime))
+                        }
+                        dirstate_map::NodeData::None => (
+                            b'\0',
+                            Entry {
+                                mode: 0.into(),
+                                mtime: 0.into(),
+                                size: 0.into(),
+                            },
+                        ),
+                    };
+                    Node {
+                        children,
+                        copy_source,
+                        full_path,
+                        base_name_start: u16::try_from(path.base_name_start())
+                            // Could only panic for paths over 64 KiB
+                            .expect("dirstate-v2 path length overflow")
+                            .into(),
+                        descendants_with_entry_count: node
+                            .descendants_with_entry_count
+                            .into(),
+                        tracked_descendants_count: node
+                            .tracked_descendants_count
+                            .into(),
+                        state,
+                        data,
                     }
-                    dirstate_map::NodeData::None => (
-                        b'\0',
-                        Entry {
-                            mode: 0.into(),
-                            mtime: 0.into(),
-                            size: 0.into(),
-                        },
-                    ),
-                };
-                Node {
+                }
+                NodeRef::OnDisk(node) => Node {
                     children,
                     copy_source,
                     full_path,
-                    base_name_start: u16::try_from(path.base_name_start())
-                        // Could only panic for paths over 64 KiB
-                        .expect("dirstate-v2 path length overflow")
-                        .into(),
-                    descendants_with_entry_count: node
-                        .descendants_with_entry_count
-                        .into(),
-                    tracked_descendants_count: node
-                        .tracked_descendants_count
-                        .into(),
-                    state,
-                    data,
-                }
-            }
-            NodeRef::OnDisk(node) => Node {
-                children,
-                copy_source,
-                full_path,
-                ..*node
-            },
-        })
+                    ..*node
+                },
+            })
+        }
+        // … so we can write them contiguously, after writing everything else
+        // they refer to.
+        let start = self.current_offset();
+        let len = u32::try_from(nodes_len)
+            // Could only panic with over 4 billion nodes
+            .expect("dirstate-v2 path length overflow")
+            .into();
+        self.out.extend(on_disk_nodes.as_bytes());
+        Ok(ChildNodes { start, len })
     }
-    // … so we can write them contiguously, after writing everything else they
-    // refer to.
-    let start = current_offset(out);
-    let len = u32::try_from(nodes_len)
-        // Could only panic with over 4 billion nodes
-        .expect("dirstate-v2 path length overflow")
-        .into();
-    out.extend(on_disk_nodes.as_bytes());
-    Ok(ChildNodes { start, len })
-}
 
-fn current_offset(out: &Vec<u8>) -> Offset {
-    u32::try_from(out.len())
-        // Could only panic for a dirstate file larger than 4 GiB
-        .expect("dirstate-v2 offset overflow")
-        .into()
-}
+    fn current_offset(&mut self) -> Offset {
+        let mut offset = self.out.len();
+        if self.append {
+            offset += self.dirstate_map.on_disk.len()
+        }
+        u32::try_from(offset)
+            // Could only panic for a dirstate file larger than 4 GiB
+            .expect("dirstate-v2 offset overflow")
+            .into()
+    }
 
-fn write_path(slice: &[u8], out: &mut Vec<u8>) -> PathSlice {
-    let start = current_offset(out);
-    let len = u16::try_from(slice.len())
-        // Could only panic for paths over 64 KiB
-        .expect("dirstate-v2 path length overflow")
-        .into();
-    out.extend(slice.as_bytes());
-    PathSlice { start, len }
+    fn write_path(&mut self, slice: &[u8]) -> PathSlice {
+        let start = self.current_offset();
+        let len = u16::try_from(slice.len())
+            // Could only panic for paths over 64 KiB
+            .expect("dirstate-v2 path length overflow")
+            .into();
+        self.out.extend(slice.as_bytes());
+        PathSlice { start, len }
+    }
 }

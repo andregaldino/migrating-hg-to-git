@@ -179,11 +179,19 @@ pub trait DirstateMapMethods {
 
     /// Clear mtimes that are ambigous with `now` (similar to
     /// `clear_ambiguous_times` but for all files in the dirstate map), and
-    /// serialize bytes to write the `.hg/dirstate` file to disk in dirstate-v2
+    /// serialize bytes to write a dirstate data file to disk in dirstate-v2
     /// format.
     ///
+    /// Returns new data together with whether that data should be appended to
+    /// the existing data file whose content is at `self.on_disk` (true),
+    /// instead of written to a new data file (false).
+    ///
     /// Note: this is only supported by the tree dirstate map.
-    fn pack_v2(&mut self, now: Timestamp) -> Result<Vec<u8>, DirstateError>;
+    fn pack_v2(
+        &mut self,
+        now: Timestamp,
+        can_append: bool,
+    ) -> Result<(Vec<u8>, bool), DirstateError>;
 
     /// Run the status algorithm.
     ///
@@ -383,7 +391,11 @@ impl DirstateMapMethods for DirstateMap {
         self.pack(parents, now)
     }
 
-    fn pack_v2(&mut self, _now: Timestamp) -> Result<Vec<u8>, DirstateError> {
+    fn pack_v2(
+        &mut self,
+        _now: Timestamp,
+        _can_append: bool,
+    ) -> Result<(Vec<u8>, bool), DirstateError> {
         panic!(
             "should have used dirstate_tree::DirstateMap to use the v2 format"
         )

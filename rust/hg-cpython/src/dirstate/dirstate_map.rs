@@ -340,16 +340,23 @@ py_class!(pub class DirstateMap |py| {
         }
     }
 
+    /// Returns new data together with whether that data should be appended to
+    /// the existing data file whose content is at `self.on_disk` (True),
+    /// instead of written to a new data file (False).
     def write_v2(
         &self,
-        now: PyObject
-    ) -> PyResult<PyBytes> {
+        now: PyObject,
+        can_append: bool,
+    ) -> PyResult<PyObject> {
         let now = Timestamp(now.extract(py)?);
 
         let mut inner = self.inner(py).borrow_mut();
-        let result = inner.pack_v2(now);
+        let result = inner.pack_v2(now, can_append);
         match result {
-            Ok(packed) => Ok(PyBytes::new(py, &packed)),
+            Ok((packed, append)) => {
+                let packed = PyBytes::new(py, &packed);
+                Ok((packed, append).to_py_object(py).into_object())
+            },
             Err(_) => Err(PyErr::new::<exc::OSError, _>(
                 py,
                 "Dirstate error".to_string(),

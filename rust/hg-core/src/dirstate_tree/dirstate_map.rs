@@ -468,6 +468,24 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok((map, parents))
     }
 
+    /// Assuming dirstate-v2 format, returns whether the next write should
+    /// append to the existing data file that contains `self.on_disk` (true),
+    /// or create a new data file from scratch (false).
+    pub(super) fn write_should_append(&self) -> bool {
+        // Soon this will be a heuristic based on the amount of unreachable
+        // data. For now it’s pseudo-random in order to make tests exercise
+        // both code paths.
+
+        fn bad_rng() -> u32 {
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .subsec_millis()
+        }
+
+        bad_rng() % 2 == 0
+    }
+
     fn get_node<'tree>(
         &'tree self,
         path: &HgPath,
@@ -1043,8 +1061,15 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Ok(packed)
     }
 
+    /// Returns new data together with whether that data should be appended to
+    /// the existing data file whose content is at `self.on_disk` (true),
+    /// instead of written to a new data file (false).
     #[timed]
-    fn pack_v2(&mut self, now: Timestamp) -> Result<Vec<u8>, DirstateError> {
+    fn pack_v2(
+        &mut self,
+        now: Timestamp,
+        can_append: bool,
+    ) -> Result<(Vec<u8>, bool), DirstateError> {
         // TODO: how do we want to handle this in 2038?
         let now: i32 = now.0.try_into().expect("time overflow");
         let mut paths = Vec::new();
@@ -1063,7 +1088,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
         self.clear_known_ambiguous_mtimes(&paths)?;
 
-        on_disk::write(self)
+        on_disk::write(self, can_append)
     }
 
     fn status<'a>(
