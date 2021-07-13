@@ -26,7 +26,7 @@ use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use crate::EntryState;
-use bytes_cast::unaligned::{I32Be, I64Be, U32Be};
+use bytes_cast::unaligned::{I32Be, I64Be, U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
@@ -54,7 +54,10 @@ struct DocketHeader {
     marker: [u8; V2_FORMAT_MARKER.len()],
     parent_1: [u8; STORED_NODE_ID_BYTES],
     parent_2: [u8; STORED_NODE_ID_BYTES],
+
+    /// Counted in bytes
     data_size: Size,
+
     uuid_size: u8,
 }
 
@@ -98,7 +101,7 @@ pub(super) struct Node {
     full_path: PathSlice,
 
     /// In bytes from `self.full_path.start`
-    base_name_start: Size,
+    base_name_start: PathSize,
 
     copy_source: OptPathSlice,
     children: ChildNodes,
@@ -167,20 +170,13 @@ type Offset = U32Be;
 
 /// Counted in number of items
 ///
-/// NOTE: not supporting directories with more than 4 billion direct children,
-/// or filenames more than 4 GiB.
+/// NOTE: we choose not to support counting more than 4 billion nodes anywhere.
 type Size = U32Be;
 
-/// Location of consecutive, fixed-size items.
+/// Counted in bytes
 ///
-/// An item can be a single byte for paths, or a struct with
-/// `derive(BytesCast)`.
-#[derive(BytesCast, Copy, Clone)]
-#[repr(C)]
-struct Slice {
-    start: Offset,
-    len: Size,
-}
+/// NOTE: we choose not to support file names/paths longer than 64 KiB.
+type PathSize = U16Be;
 
 /// A contiguous sequence of `len` times `Node`, representing the child nodes
 /// of either some other node or of the repository root.
@@ -188,19 +184,29 @@ struct Slice {
 /// Always sorted by ascending `full_path`, to allow binary search.
 /// Since nodes with the same parent nodes also have the same parent path,
 /// only the `base_name`s need to be compared during binary search.
-type ChildNodes = Slice;
+#[derive(BytesCast, Copy, Clone)]
+#[repr(C)]
+struct ChildNodes {
+    start: Offset,
+    len: Size,
+}
 
 /// A `HgPath` of `len` bytes
-type PathSlice = Slice;
+#[derive(BytesCast, Copy, Clone)]
+#[repr(C)]
+struct PathSlice {
+    start: Offset,
+    len: PathSize,
+}
 
 /// Either nothing if `start == 0`, or a `HgPath` of `len` bytes
-type OptPathSlice = Slice;
+type OptPathSlice = PathSlice;
 
 /// Make sure that size-affecting changes are made knowingly
 fn _static_assert_size_of() {
     let _ = std::mem::transmute::<DocketHeader, [u8; 81]>;
     let _ = std::mem::transmute::<Root, [u8; 36]>;
-    let _ = std::mem::transmute::<Node, [u8; 49]>;
+    let _ = std::mem::transmute::<Node, [u8; 43]>;
 }
 
 /// Unexpected file format found in `.hg/dirstate` with the "v2" format.
@@ -279,7 +285,7 @@ pub(super) fn read<'on_disk>(
     let root = read_root(on_disk)?;
     let dirstate_map = DirstateMap {
         on_disk,
-        root: dirstate_map::ChildNodes::OnDisk(read_slice::<Node>(
+        root: dirstate_map::ChildNodes::OnDisk(read_nodes(
             on_disk,
             root.root_nodes,
         )?),
@@ -408,7 +414,7 @@ impl Node {
         &self,
         on_disk: &'on_disk [u8],
     ) -> Result<&'on_disk [Node], DirstateV2ParseError> {
-        read_slice::<Node>(on_disk, self.children)
+        read_nodes(on_disk, self.children)
     }
 
     pub(super) fn to_in_memory_node<'on_disk>(
@@ -483,23 +489,31 @@ impl From<&'_ Timestamp> for SystemTime {
 
 fn read_hg_path(
     on_disk: &[u8],
-    slice: Slice,
+    slice: PathSlice,
 ) -> Result<&HgPath, DirstateV2ParseError> {
-    let bytes = read_slice::<u8>(on_disk, slice)?;
-    Ok(HgPath::new(bytes))
+    read_slice(on_disk, slice.start, slice.len.get()).map(HgPath::new)
 }
 
-fn read_slice<T>(
+fn read_nodes(
     on_disk: &[u8],
-    slice: Slice,
+    slice: ChildNodes,
+) -> Result<&[Node], DirstateV2ParseError> {
+    read_slice(on_disk, slice.start, slice.len.get())
+}
+
+fn read_slice<T, Len>(
+    on_disk: &[u8],
+    start: Offset,
+    len: Len,
 ) -> Result<&[T], DirstateV2ParseError>
 where
     T: BytesCast,
+    Len: TryInto<usize>,
 {
     // Either `usize::MAX` would result in "out of bounds" error since a single
     // `&[u8]` cannot occupy the entire addess space.
-    let start = usize::try_from(slice.start.get()).unwrap_or(std::usize::MAX);
-    let len = usize::try_from(slice.len.get()).unwrap_or(std::usize::MAX);
+    let start = start.get().try_into().unwrap_or(std::usize::MAX);
+    let len = len.try_into().unwrap_or(std::usize::MAX);
     on_disk
         .get(start..)
         .and_then(|bytes| T::slice_from_bytes(bytes, len).ok())
@@ -514,10 +528,10 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
     let root = read_root(on_disk)?;
     fn recur<'on_disk>(
         on_disk: &'on_disk [u8],
-        nodes: Slice,
+        nodes: ChildNodes,
         f: &mut impl FnMut(&'on_disk HgPath),
     ) -> Result<(), DirstateV2ParseError> {
-        for node in read_slice::<Node>(on_disk, nodes)? {
+        for node in read_nodes(on_disk, nodes)? {
             if let Some(state) = node.state()? {
                 if state.is_tracked() {
                     f(node.full_path(on_disk)?)
@@ -565,9 +579,10 @@ fn write_nodes(
     // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
     // order. Sort to enable binary search in the written file.
     let nodes = nodes.sorted();
+    let nodes_len = nodes.len();
 
     // First accumulate serialized nodes in a `Vec`
-    let mut on_disk_nodes = Vec::with_capacity(nodes.len());
+    let mut on_disk_nodes = Vec::with_capacity(nodes_len);
     for node in nodes {
         let children = write_nodes(
             dirstate_map,
@@ -575,12 +590,12 @@ fn write_nodes(
             out,
         )?;
         let full_path = node.full_path(dirstate_map.on_disk)?;
-        let full_path = write_slice::<u8>(full_path.as_bytes(), out);
+        let full_path = write_path(full_path.as_bytes(), out);
         let copy_source =
             if let Some(source) = node.copy_source(dirstate_map.on_disk)? {
-                write_slice::<u8>(source.as_bytes(), out)
+                write_path(source.as_bytes(), out)
             } else {
-                Slice {
+                PathSlice {
                     start: 0.into(),
                     len: 0.into(),
                 }
@@ -612,9 +627,9 @@ fn write_nodes(
                     children,
                     copy_source,
                     full_path,
-                    base_name_start: u32::try_from(path.base_name_start())
-                        // Could only panic for paths over 4 GiB
-                        .expect("dirstate-v2 offset overflow")
+                    base_name_start: u16::try_from(path.base_name_start())
+                        // Could only panic for paths over 64 KiB
+                        .expect("dirstate-v2 path length overflow")
                         .into(),
                     descendants_with_entry_count: node
                         .descendants_with_entry_count
@@ -634,23 +649,30 @@ fn write_nodes(
             },
         })
     }
-    // … so we can write them contiguously
-    Ok(write_slice::<Node>(&on_disk_nodes, out))
+    // … so we can write them contiguously, after writing everything else they
+    // refer to.
+    let start = current_offset(out);
+    let len = u32::try_from(nodes_len)
+        // Could only panic with over 4 billion nodes
+        .expect("dirstate-v2 path length overflow")
+        .into();
+    out.extend(on_disk_nodes.as_bytes());
+    Ok(ChildNodes { start, len })
 }
 
-fn write_slice<T>(slice: &[T], out: &mut Vec<u8>) -> Slice
-where
-    T: BytesCast,
-{
-    let start = u32::try_from(out.len())
+fn current_offset(out: &Vec<u8>) -> Offset {
+    u32::try_from(out.len())
         // Could only panic for a dirstate file larger than 4 GiB
         .expect("dirstate-v2 offset overflow")
-        .into();
-    let len = u32::try_from(slice.len())
-        // Could only panic for paths over 4 GiB or nodes with over 4 billions
-        // child nodes
-        .expect("dirstate-v2 offset overflow")
+        .into()
+}
+
+fn write_path(slice: &[u8], out: &mut Vec<u8>) -> PathSlice {
+    let start = current_offset(out);
+    let len = u16::try_from(slice.len())
+        // Could only panic for paths over 64 KiB
+        .expect("dirstate-v2 path length overflow")
         .into();
     out.extend(slice.as_bytes());
-    Slice { start, len }
+    PathSlice { start, len }
 }
