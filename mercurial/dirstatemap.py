@@ -146,6 +146,15 @@ class dirstatemap(object):
         """Loads the underlying data, if it's not already loaded"""
         self._map
 
+    def _dirs_incr(self, filename, old_entry=None):
+        """incremente the dirstate counter if applicable"""
+        if (
+            old_entry is None or old_entry.removed
+        ) and "_dirs" in self.__dict__:
+            self._dirs.addpath(filename)
+        if old_entry is None and "_alldirs" in self.__dict__:
+            self._alldirs.addpath(filename)
+
     def addfile(
         self,
         f,
@@ -190,12 +199,7 @@ class dirstatemap(object):
         assert size is not None
         assert mtime is not None
         old_entry = self.get(f)
-        if (
-            old_entry is None or old_entry.removed
-        ) and "_dirs" in self.__dict__:
-            self._dirs.addpath(f)
-        if old_entry is None and "_alldirs" in self.__dict__:
-            self._alldirs.addpath(f)
+        self._dirs_incr(f, old_entry)
         e = self._map[f] = DirstateItem(state, mode, size, mtime)
         if e.dm_nonnormal:
             self.nonnormalset.add(f)
