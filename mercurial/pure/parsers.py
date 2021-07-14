@@ -187,6 +187,14 @@ class DirstateItem(object):
         """
         return self._state == b'r' and self._size == NONNORMAL
 
+    @property
+    def dm_nonnormal(self):
+        """True is the entry is non-normal in the dirstatemap sense
+
+        There is no reason for any code, but the dirstatemap one to use this.
+        """
+        return self.state != b'n' or self.mtime == AMBIGUOUS_TIME
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         return self._state

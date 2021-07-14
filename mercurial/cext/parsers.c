@@ -142,6 +142,15 @@ static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 	return PyInt_FromLong(self->mtime);
 };
 
+static PyObject *dm_nonnormal(dirstateItemObject *self)
+{
+	if (self->state != 'n' || self->mtime == ambiguous_time) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
                                           PyObject *value)
 {
@@ -221,6 +230,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "build a new DirstateItem object from V1 data"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
      METH_NOARGS, "mark a file as \"possibly dirty\""},
+    {"dm_nonnormal", (PyCFunction)dm_nonnormal, METH_NOARGS,
+     "True is the entry is non-normal in the dirstatemap sense"},
     {NULL} /* Sentinel */
 };
 

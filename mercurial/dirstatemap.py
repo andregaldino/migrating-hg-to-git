@@ -196,8 +196,8 @@ class dirstatemap(object):
             self._dirs.addpath(f)
         if old_entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
-        self._map[f] = DirstateItem(state, mode, size, mtime)
-        if state != b'n' or mtime == AMBIGUOUS_TIME:
+        e = self._map[f] = DirstateItem(state, mode, size, mtime)
+        if e.dm_nonnormal:
             self.nonnormalset.add(f)
         if size == FROM_P2:
             self.otherparentset.add(f)
@@ -274,7 +274,7 @@ class dirstatemap(object):
             nonnorm = set()
             otherparent = set()
             for fname, e in pycompat.iteritems(self._map):
-                if e.state != b'n' or e.mtime == AMBIGUOUS_TIME:
+                if e.dm_nonnormal:
                     nonnorm.add(fname)
                 if e.from_p2:
                     otherparent.add(fname)
