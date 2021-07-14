@@ -560,9 +560,6 @@ class dirstate(object):
         depending of what information ends up being relevant and useful to
         other processing.
         """
-        if not self.pendingparentchange():
-            msg = b'calling `update_file` outside of a parentchange context'
-            raise error.ProgrammingError(msg)
         if merged and (clean_p1 or clean_p2):
             msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
             raise error.ProgrammingError(msg)
