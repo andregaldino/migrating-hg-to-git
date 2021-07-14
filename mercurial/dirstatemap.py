@@ -222,7 +222,7 @@ class dirstatemap(object):
                 elif entry.from_p2:
                     size = FROM_P2
                     self.otherparentset.add(f)
-        if size == 0:
+        if entry is not None and not (entry.merged or entry.from_p2):
             self.copymap.pop(f, None)
 
         if entry is not None and not entry.removed and "_dirs" in self.__dict__:
