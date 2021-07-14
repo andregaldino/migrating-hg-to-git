@@ -155,6 +155,17 @@ class dirstatemap(object):
         if old_entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(filename)
 
+    def _dirs_decr(self, filename, old_entry=None):
+        """decremente the dirstate counter if applicable"""
+        if old_entry is not None:
+            if "_dirs" in self.__dict__ and not old_entry.removed:
+                self._dirs.delpath(filename)
+            if "_alldirs" in self.__dict__:
+                self._alldirs.delpath(filename)
+        if "filefoldmap" in self.__dict__:
+            normed = util.normcase(filename)
+            self.filefoldmap.pop(normed, None)
+
     def addfile(
         self,
         f,
@@ -247,21 +258,9 @@ class dirstatemap(object):
         previously recorded.
         """
         old_entry = self._map.pop(f, None)
-        exists = False
-        oldstate = b'?'
-        if old_entry is not None:
-            exists = True
-            oldstate = old_entry.state
-        if exists:
-            if oldstate != b"r" and "_dirs" in self.__dict__:
-                self._dirs.delpath(f)
-            if "_alldirs" in self.__dict__:
-                self._alldirs.delpath(f)
-        if "filefoldmap" in self.__dict__:
-            normed = util.normcase(f)
-            self.filefoldmap.pop(normed, None)
+        self._dirs_decr(f, old_entry=old_entry)
         self.nonnormalset.discard(f)
-        return exists
+        return old_entry is not None
 
     def clearambiguoustimes(self, files, now):
         for f in files:
