@@ -195,6 +195,14 @@ class DirstateItem(object):
         """
         return self.state != b'n' or self.mtime == AMBIGUOUS_TIME
 
+    @property
+    def dm_otherparent(self):
+        """True is the entry is `otherparent` in the dirstatemap sense
+
+        There is no reason for any code, but the dirstatemap one to use this.
+        """
+        return self._size == FROM_P2
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         return self._state

@@ -150,6 +150,14 @@ static PyObject *dm_nonnormal(dirstateItemObject *self)
 		Py_RETURN_FALSE;
 	}
 };
+static PyObject *dm_otherparent(dirstateItemObject *self)
+{
+	if (self->size == dirstate_v1_from_p2) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
 
 static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
                                           PyObject *value)
@@ -232,6 +240,8 @@ static PyMethodDef dirstate_item_methods[] = {
      METH_NOARGS, "mark a file as \"possibly dirty\""},
     {"dm_nonnormal", (PyCFunction)dm_nonnormal, METH_NOARGS,
      "True is the entry is non-normal in the dirstatemap sense"},
+    {"dm_otherparent", (PyCFunction)dm_otherparent, METH_NOARGS,
+     "True is the entry is `otherparent` in the dirstatemap sense"},
     {NULL} /* Sentinel */
 };
 

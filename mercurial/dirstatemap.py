@@ -199,7 +199,7 @@ class dirstatemap(object):
         e = self._map[f] = DirstateItem(state, mode, size, mtime)
         if e.dm_nonnormal:
             self.nonnormalset.add(f)
-        if size == FROM_P2:
+        if e.dm_otherparent:
             self.otherparentset.add(f)
 
     def removefile(self, f, in_merge=False):
