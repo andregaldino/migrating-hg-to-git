@@ -563,7 +563,6 @@ class dirstate(object):
         if merged and (clean_p1 or clean_p2):
             msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
             raise error.ProgrammingError(msg)
-        assert not (merged and (clean_p1 or clean_p1))
         if not (p1_tracked or p2_tracked or wc_tracked):
             self._drop(filename)
         elif merged:
