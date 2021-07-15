@@ -155,13 +155,15 @@ class dirstatemap(object):
         if old_entry is None and "_alldirs" in self.__dict__:
             self._alldirs.addpath(filename)
 
-    def _dirs_decr(self, filename, old_entry=None):
+    def _dirs_decr(self, filename, old_entry=None, remove_variant=False):
         """decremente the dirstate counter if applicable"""
         if old_entry is not None:
             if "_dirs" in self.__dict__ and not old_entry.removed:
                 self._dirs.delpath(filename)
-            if "_alldirs" in self.__dict__:
+            if "_alldirs" in self.__dict__ and not remove_variant:
                 self._alldirs.delpath(filename)
+        elif remove_variant and "_alldirs" in self.__dict__:
+            self._alldirs.addpath(filename)
         if "filefoldmap" in self.__dict__:
             normed = util.normcase(filename)
             self.filefoldmap.pop(normed, None)
@@ -241,14 +243,7 @@ class dirstatemap(object):
                     self.otherparentset.add(f)
         if entry is not None and not (entry.merged or entry.from_p2):
             self.copymap.pop(f, None)
-
-        if entry is not None and not entry.removed and "_dirs" in self.__dict__:
-            self._dirs.delpath(f)
-        if entry is None and "_alldirs" in self.__dict__:
-            self._alldirs.addpath(f)
-        if "filefoldmap" in self.__dict__:
-            normed = util.normcase(f)
-            self.filefoldmap.pop(normed, None)
+        self._dirs_decr(f, old_entry=entry, remove_variant=True)
         self._map[f] = DirstateItem(b'r', 0, size, 0)
         self.nonnormalset.add(f)
 
