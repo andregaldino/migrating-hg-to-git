@@ -593,7 +593,9 @@ impl Writer<'_, '_> {
         // Reuse already-written nodes if possible
         if self.append {
             if let dirstate_map::ChildNodesRef::OnDisk(nodes_slice) = nodes {
-                let start = self.offset_of(nodes_slice);
+                let start = self.on_disk_offset_of(nodes_slice).expect(
+                    "dirstate-v2 OnDisk nodes not found within on_disk",
+                );
                 let len = child_nodes_len_from_usize(nodes_slice.len());
                 return Ok(ChildNodes { start, len });
             }
@@ -679,11 +681,9 @@ impl Writer<'_, '_> {
         Ok(ChildNodes { start, len })
     }
 
-    /// Takes a slice of items within `on_disk` and returns its offset for the
-    /// start of `on_disk`.
-    ///
-    /// Panics if the given slice is not within `on_disk`.
-    fn offset_of<T>(&self, slice: &[T]) -> Offset
+    /// If the given slice of items is within `on_disk`, returns its offset
+    /// from the start of `on_disk`.
+    fn on_disk_offset_of<T>(&self, slice: &[T]) -> Option<Offset>
     where
         T: BytesCast,
     {
@@ -694,10 +694,14 @@ impl Writer<'_, '_> {
         }
         let slice_addresses = address_range(slice.as_bytes());
         let on_disk_addresses = address_range(self.dirstate_map.on_disk);
-        assert!(on_disk_addresses.contains(slice_addresses.start()));
-        assert!(on_disk_addresses.contains(slice_addresses.end()));
-        let offset = slice_addresses.start() - on_disk_addresses.start();
-        offset_from_usize(offset)
+        if on_disk_addresses.contains(slice_addresses.start())
+            && on_disk_addresses.contains(slice_addresses.end())
+        {
+            let offset = slice_addresses.start() - on_disk_addresses.start();
+            Some(offset_from_usize(offset))
+        } else {
+            None
+        }
     }
 
     fn current_offset(&mut self) -> Offset {
@@ -709,8 +713,14 @@ impl Writer<'_, '_> {
     }
 
     fn write_path(&mut self, slice: &[u8]) -> PathSlice {
-        let start = self.current_offset();
         let len = path_len_from_usize(slice.len());
+        // Reuse an already-written path if possible
+        if self.append {
+            if let Some(start) = self.on_disk_offset_of(slice) {
+                return PathSlice { start, len };
+            }
+        }
+        let start = self.current_offset();
         self.out.extend(slice.as_bytes());
         PathSlice { start, len }
     }
