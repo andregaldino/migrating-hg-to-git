@@ -590,8 +590,18 @@ impl Writer<'_, '_> {
         &mut self,
         nodes: dirstate_map::ChildNodesRef,
     ) -> Result<ChildNodes, DirstateError> {
-        // `dirstate_map::ChildNodes` is a `HashMap` with undefined iteration
-        // order. Sort to enable binary search in the written file.
+        // Reuse already-written nodes if possible
+        if self.append {
+            if let dirstate_map::ChildNodesRef::OnDisk(nodes_slice) = nodes {
+                let start = self.offset_of(nodes_slice);
+                let len = child_nodes_len_from_usize(nodes_slice.len());
+                return Ok(ChildNodes { start, len });
+            }
+        }
+
+        // `dirstate_map::ChildNodes::InMemory` contains a `HashMap` which has
+        // undefined iteration order. Sort to enable binary search in the
+        // written file.
         let nodes = nodes.sorted();
         let nodes_len = nodes.len();
 
@@ -664,12 +674,30 @@ impl Writer<'_, '_> {
         // … so we can write them contiguously, after writing everything else
         // they refer to.
         let start = self.current_offset();
-        let len = u32::try_from(nodes_len)
-            // Could only panic with over 4 billion nodes
-            .expect("dirstate-v2 path length overflow")
-            .into();
+        let len = child_nodes_len_from_usize(nodes_len);
         self.out.extend(on_disk_nodes.as_bytes());
         Ok(ChildNodes { start, len })
+    }
+
+    /// Takes a slice of items within `on_disk` and returns its offset for the
+    /// start of `on_disk`.
+    ///
+    /// Panics if the given slice is not within `on_disk`.
+    fn offset_of<T>(&self, slice: &[T]) -> Offset
+    where
+        T: BytesCast,
+    {
+        fn address_range(slice: &[u8]) -> std::ops::RangeInclusive<usize> {
+            let start = slice.as_ptr() as usize;
+            let end = start + slice.len();
+            start..=end
+        }
+        let slice_addresses = address_range(slice.as_bytes());
+        let on_disk_addresses = address_range(self.dirstate_map.on_disk);
+        assert!(on_disk_addresses.contains(slice_addresses.start()));
+        assert!(on_disk_addresses.contains(slice_addresses.end()));
+        let offset = slice_addresses.start() - on_disk_addresses.start();
+        offset_from_usize(offset)
     }
 
     fn current_offset(&mut self) -> Offset {
@@ -677,19 +705,34 @@ impl Writer<'_, '_> {
         if self.append {
             offset += self.dirstate_map.on_disk.len()
         }
-        u32::try_from(offset)
-            // Could only panic for a dirstate file larger than 4 GiB
-            .expect("dirstate-v2 offset overflow")
-            .into()
+        offset_from_usize(offset)
     }
 
     fn write_path(&mut self, slice: &[u8]) -> PathSlice {
         let start = self.current_offset();
-        let len = u16::try_from(slice.len())
-            // Could only panic for paths over 64 KiB
-            .expect("dirstate-v2 path length overflow")
-            .into();
+        let len = path_len_from_usize(slice.len());
         self.out.extend(slice.as_bytes());
         PathSlice { start, len }
     }
+}
+
+fn offset_from_usize(x: usize) -> Offset {
+    u32::try_from(x)
+        // Could only panic for a dirstate file larger than 4 GiB
+        .expect("dirstate-v2 offset overflow")
+        .into()
+}
+
+fn child_nodes_len_from_usize(x: usize) -> Size {
+    u32::try_from(x)
+        // Could only panic with over 4 billion nodes
+        .expect("dirstate-v2 slice length overflow")
+        .into()
+}
+
+fn path_len_from_usize(x: usize) -> PathSize {
+    u16::try_from(x)
+        // Could only panic for paths over 64 KiB
+        .expect("dirstate-v2 path length overflow")
+        .into()
 }
