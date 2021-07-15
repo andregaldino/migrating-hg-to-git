@@ -500,7 +500,7 @@ class dirstate(object):
             return True
 
     @requires_parents_change
-    def update_file_reference(
+    def update_file_p1(
         self,
         filename,
         p1_tracked,

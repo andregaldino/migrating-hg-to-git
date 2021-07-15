@@ -1487,13 +1487,13 @@ def movedirstate(repo, newctx, match=None):
     s = newctx.status(oldctx, match=match)
 
     for f in s.modified:
-        ds.update_file_reference(f, p1_tracked=True)
+        ds.update_file_p1(f, p1_tracked=True)
 
     for f in s.added:
-        ds.update_file_reference(f, p1_tracked=False)
+        ds.update_file_p1(f, p1_tracked=False)
 
     for f in s.removed:
-        ds.update_file_reference(f, p1_tracked=True)
+        ds.update_file_p1(f, p1_tracked=True)
 
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
