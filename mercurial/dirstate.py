@@ -567,8 +567,7 @@ class dirstate(object):
             self._drop(filename)
         elif merged:
             assert wc_tracked
-            if not self.in_merge:
-                self.normallookup(filename)
+            assert self.in_merge  # we are never in the "normallookup" case
             self.otherparent(filename)
         elif not (p1_tracked or p2_tracked) and wc_tracked:
             self._addpath(filename, added=True, possibly_dirty=possibly_dirty)
