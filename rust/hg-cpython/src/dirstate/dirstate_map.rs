@@ -84,12 +84,14 @@ py_class!(pub class DirstateMap |py| {
     def new_v2(
         on_disk: PyBytes,
         data_size: usize,
+        tree_metadata: PyBytes,
     ) -> PyResult<PyObject> {
         let dirstate_error = |e: DirstateError| {
             PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
         };
-        let inner = OwningDirstateMap::new_v2(py, on_disk, data_size)
-                .map_err(dirstate_error)?;
+        let inner = OwningDirstateMap::new_v2(
+            py, on_disk, data_size, tree_metadata,
+        ).map_err(dirstate_error)?;
         let map = Self::create_instance(py, Box::new(inner))?;
         Ok(map.into_object())
     }
@@ -353,9 +355,11 @@ py_class!(pub class DirstateMap |py| {
         let mut inner = self.inner(py).borrow_mut();
         let result = inner.pack_v2(now, can_append);
         match result {
-            Ok((packed, append)) => {
+            Ok((packed, tree_metadata, append)) => {
                 let packed = PyBytes::new(py, &packed);
-                Ok((packed, append).to_py_object(py).into_object())
+                let tree_metadata = PyBytes::new(py, &tree_metadata);
+                let tuple = (packed, tree_metadata, append);
+                Ok(tuple.to_py_object(py).into_object())
             },
             Err(_) => Err(PyErr::new::<exc::OSError, _>(
                 py,

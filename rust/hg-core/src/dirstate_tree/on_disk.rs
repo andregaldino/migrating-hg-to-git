@@ -47,6 +47,18 @@ const USED_NODE_ID_BYTES: usize = 20;
 pub(super) const IGNORE_PATTERNS_HASH_LEN: usize = 20;
 pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 
+/// Must match the constant of the same name in
+/// `mercurial/dirstateutils/docket.py`
+const TREE_METADATA_SIZE: usize = 40;
+
+/// Make sure that size-affecting changes are made knowingly
+#[allow(unused)]
+fn static_assert_size_of() {
+    let _ = std::mem::transmute::<DocketHeader, [u8; 121]>;
+    let _ = std::mem::transmute::<TreeMetadata, [u8; TREE_METADATA_SIZE]>;
+    let _ = std::mem::transmute::<Node, [u8; 43]>;
+}
+
 // Must match `HEADER` in `mercurial/dirstateutils/docket.py`
 #[derive(BytesCast)]
 #[repr(C)]
@@ -58,6 +70,8 @@ struct DocketHeader {
     /// Counted in bytes
     data_size: Size,
 
+    metadata: TreeMetadata,
+
     uuid_size: u8,
 }
 
@@ -68,7 +82,7 @@ pub struct Docket<'on_disk> {
 
 #[derive(BytesCast)]
 #[repr(C)]
-struct Root {
+struct TreeMetadata {
     root_nodes: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
@@ -134,7 +148,7 @@ pub(super) struct Node {
     ///   - All direct children of this directory (as returned by
     ///     `std::fs::read_dir`) either have a corresponding dirstate node, or
     ///     are ignored by ignore patterns whose hash is in
-    ///     `Root::ignore_patterns_hash`.
+    ///     `TreeMetadata::ignore_patterns_hash`.
     ///
     ///   This means that if `std::fs::symlink_metadata` later reports the
     ///   same modification time and ignored patterns haven’t changed, a run
@@ -205,13 +219,6 @@ struct PathSlice {
 /// Either nothing if `start == 0`, or a `HgPath` of `len` bytes
 type OptPathSlice = PathSlice;
 
-/// Make sure that size-affecting changes are made knowingly
-fn _static_assert_size_of() {
-    let _ = std::mem::transmute::<DocketHeader, [u8; 81]>;
-    let _ = std::mem::transmute::<Root, [u8; 40]>;
-    let _ = std::mem::transmute::<Node, [u8; 43]>;
-}
-
 /// Unexpected file format found in `.hg/dirstate` with the "v2" format.
 ///
 /// This should only happen if Mercurial is buggy or a repository is corrupted.
@@ -242,6 +249,10 @@ impl<'on_disk> Docket<'on_disk> {
         DirstateParents { p1, p2 }
     }
 
+    pub fn tree_metadata(&self) -> &[u8] {
+        self.header.metadata.as_bytes()
+    }
+
     pub fn data_size(&self) -> usize {
         // This `unwrap` could only panic on a 16-bit CPU
         self.header.data_size.get().try_into().unwrap()
@@ -265,40 +276,25 @@ pub fn read_docket(
     }
 }
 
-fn read_root<'on_disk>(
-    on_disk: &'on_disk [u8],
-) -> Result<&'on_disk Root, DirstateV2ParseError> {
-    // Find the `Root` at the end of the given slice
-    let root_offset = on_disk
-        .len()
-        .checked_sub(std::mem::size_of::<Root>())
-        // A non-empty slice too short is an error
-        .ok_or(DirstateV2ParseError)?;
-    let (root, _) = Root::from_bytes(&on_disk[root_offset..])
-        .map_err(|_| DirstateV2ParseError)?;
-    Ok(root)
-}
-
 pub(super) fn read<'on_disk>(
     on_disk: &'on_disk [u8],
+    metadata: &[u8],
 ) -> Result<DirstateMap<'on_disk>, DirstateV2ParseError> {
     if on_disk.is_empty() {
         return Ok(DirstateMap::empty(on_disk));
     }
-    let root = read_root(on_disk)?;
-    let mut unreachable_bytes = root.unreachable_bytes.get();
-    // Each append writes a new `Root`, so it’s never reused
-    unreachable_bytes += std::mem::size_of::<Root>() as u32;
+    let (meta, _) = TreeMetadata::from_bytes(metadata)
+        .map_err(|_| DirstateV2ParseError)?;
     let dirstate_map = DirstateMap {
         on_disk,
         root: dirstate_map::ChildNodes::OnDisk(read_nodes(
             on_disk,
-            root.root_nodes,
+            meta.root_nodes,
         )?),
-        nodes_with_entry_count: root.nodes_with_entry_count.get(),
-        nodes_with_copy_source_count: root.nodes_with_copy_source_count.get(),
-        ignore_patterns_hash: root.ignore_patterns_hash,
-        unreachable_bytes,
+        nodes_with_entry_count: meta.nodes_with_entry_count.get(),
+        nodes_with_copy_source_count: meta.nodes_with_copy_source_count.get(),
+        ignore_patterns_hash: meta.ignore_patterns_hash,
+        unreachable_bytes: meta.unreachable_bytes.get(),
     };
     Ok(dirstate_map)
 }
@@ -530,9 +526,11 @@ where
 
 pub(crate) fn for_each_tracked_path<'on_disk>(
     on_disk: &'on_disk [u8],
+    metadata: &[u8],
     mut f: impl FnMut(&'on_disk HgPath),
 ) -> Result<(), DirstateV2ParseError> {
-    let root = read_root(on_disk)?;
+    let (meta, _) = TreeMetadata::from_bytes(metadata)
+        .map_err(|_| DirstateV2ParseError)?;
     fn recur<'on_disk>(
         on_disk: &'on_disk [u8],
         nodes: ChildNodes,
@@ -548,23 +546,23 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
         }
         Ok(())
     }
-    recur(on_disk, root.root_nodes, &mut f)
+    recur(on_disk, meta.root_nodes, &mut f)
 }
 
-/// Returns new data together with whether that data should be appended to the
-/// existing data file whose content is at `dirstate_map.on_disk` (true),
-/// instead of written to a new data file (false).
+/// Returns new data and metadata, together with whether that data should be
+/// appended to the existing data file whose content is at
+/// `dirstate_map.on_disk` (true), instead of written to a new data file
+/// (false).
 pub(super) fn write(
     dirstate_map: &mut DirstateMap,
     can_append: bool,
-) -> Result<(Vec<u8>, bool), DirstateError> {
+) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
     let append = can_append && dirstate_map.write_should_append();
 
     // This ignores the space for paths, and for nodes without an entry.
     // TODO: better estimate? Skip the `Vec` and write to a file directly?
-    let size_guess = std::mem::size_of::<Root>()
-        + std::mem::size_of::<Node>()
-            * dirstate_map.nodes_with_entry_count as usize;
+    let size_guess = std::mem::size_of::<Node>()
+        * dirstate_map.nodes_with_entry_count as usize;
 
     let mut writer = Writer {
         dirstate_map,
@@ -574,7 +572,7 @@ pub(super) fn write(
 
     let root_nodes = writer.write_nodes(dirstate_map.root.as_ref())?;
 
-    let root = Root {
+    let meta = TreeMetadata {
         root_nodes,
         nodes_with_entry_count: dirstate_map.nodes_with_entry_count.into(),
         nodes_with_copy_source_count: dirstate_map
@@ -583,8 +581,7 @@ pub(super) fn write(
         unreachable_bytes: dirstate_map.unreachable_bytes.into(),
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
-    writer.out.extend(root.as_bytes());
-    Ok((writer.out, append))
+    Ok((writer.out, meta.as_bytes().to_vec(), append))
 }
 
 struct Writer<'dmap, 'on_disk> {

@@ -424,9 +424,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
     pub fn new_v2(
         on_disk: &'on_disk [u8],
         data_size: usize,
+        metadata: &[u8],
     ) -> Result<Self, DirstateError> {
         if let Some(data) = on_disk.get(..data_size) {
-            Ok(on_disk::read(data)?)
+            Ok(on_disk::read(data, metadata)?)
         } else {
             Err(DirstateV2ParseError.into())
         }
@@ -1094,15 +1095,16 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Ok(packed)
     }
 
-    /// Returns new data together with whether that data should be appended to
-    /// the existing data file whose content is at `self.on_disk` (true),
-    /// instead of written to a new data file (false).
+    /// Returns new data and metadata together with whether that data should be
+    /// appended to the existing data file whose content is at
+    /// `self.on_disk` (true), instead of written to a new data file
+    /// (false).
     #[timed]
     fn pack_v2(
         &mut self,
         now: Timestamp,
         can_append: bool,
-    ) -> Result<(Vec<u8>, bool), DirstateError> {
+    ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
         // TODO: how do we want to handle this in 2038?
         let now: i32 = now.0.try_into().expect("time overflow");
         let mut paths = Vec::new();

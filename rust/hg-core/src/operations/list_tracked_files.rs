@@ -22,27 +22,33 @@ use rayon::prelude::*;
 pub struct Dirstate {
     /// The `dirstate` content.
     content: Vec<u8>,
-    dirstate_v2: bool,
+    v2_metadata: Option<Vec<u8>>,
 }
 
 impl Dirstate {
     pub fn new(repo: &Repo) -> Result<Self, HgError> {
         let mut content = repo.hg_vfs().read("dirstate")?;
-        if repo.has_dirstate_v2() {
+        let v2_metadata = if repo.has_dirstate_v2() {
             let docket = read_docket(&content)?;
+            let meta = docket.tree_metadata().to_vec();
             content = repo.hg_vfs().read(docket.data_filename())?;
-        }
+            Some(meta)
+        } else {
+            None
+        };
         Ok(Self {
             content,
-            dirstate_v2: repo.has_dirstate_v2(),
+            v2_metadata,
         })
     }
 
     pub fn tracked_files(&self) -> Result<Vec<&HgPath>, DirstateError> {
         let mut files = Vec::new();
         if !self.content.is_empty() {
-            if self.dirstate_v2 {
-                for_each_tracked_path(&self.content, |path| files.push(path))?
+            if let Some(meta) = &self.v2_metadata {
+                for_each_tracked_path(&self.content, meta, |path| {
+                    files.push(path)
+                })?
             } else {
                 let _parents = parse_dirstate_entries(
                     &self.content,

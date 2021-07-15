@@ -128,7 +128,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         &mut self,
         now: Timestamp,
         can_append: bool,
-    ) -> Result<(Vec<u8>, bool), DirstateError> {
+    ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
         self.get_mut().pack_v2(now, can_append)
     }
 

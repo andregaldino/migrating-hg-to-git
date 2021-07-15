@@ -638,7 +638,7 @@ if rustmod is not None:
                 else:
                     data = b''
                 self._rustmap = rustmod.DirstateMap.new_v2(
-                    data, self.docket.data_size
+                    data, self.docket.data_size, self.docket.tree_metadata
                 )
                 parents = self.docket.parents
             else:
@@ -665,7 +665,7 @@ if rustmod is not None:
 
             # We can only append to an existing data file if there is one
             can_append = self.docket.uuid is not None
-            packed, append = self._rustmap.write_v2(now, can_append)
+            packed, meta, append = self._rustmap.write_v2(now, can_append)
             if append:
                 docket = self.docket
                 data_filename = docket.data_filename()
@@ -679,12 +679,13 @@ if rustmod is not None:
                         assert written == len(packed), (written, len(packed))
                 docket.data_size += len(packed)
                 docket.parents = self.parents()
+                docket.tree_metadata = meta
                 st.write(docket.serialize())
                 st.close()
             else:
                 old_docket = self.docket
                 new_docket = docketmod.DirstateDocket.with_new_uuid(
-                    self.parents(), len(packed)
+                    self.parents(), len(packed), meta
                 )
                 data_filename = new_docket.data_filename()
                 if tr:

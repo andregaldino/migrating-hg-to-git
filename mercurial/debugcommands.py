@@ -999,11 +999,7 @@ def debugdirstateignorepatternshash(ui, repo, **opts):
     if repo.dirstate._use_dirstate_v2:
         docket = repo.dirstate._map.docket
         hash_len = 20  # 160 bits for SHA-1
-        hash_offset = docket.data_size - hash_len  # hash is at the end
-        data_filename = docket.data_filename()
-        with repo.vfs(data_filename) as f:
-            f.seek(hash_offset)
-            hash_bytes = f.read(hash_len)
+        hash_bytes = docket.tree_metadata[-hash_len:]
         ui.write(binascii.hexlify(hash_bytes) + b'\n')
 
 
