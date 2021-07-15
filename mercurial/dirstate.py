@@ -521,21 +521,37 @@ class dirstate(object):
             wc_tracked = False
         else:
             wc_tracked = entry.tracked
+        possibly_dirty = False
         if p1_tracked and wc_tracked:
             # the underlying reference might have changed, we will have to
             # check it.
-            self.normallookup(filename)
+            possibly_dirty = True
         elif not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
             self._drop(filename)
         elif (not p1_tracked) and wc_tracked:
-            if not entry.added:
-                self._add(filename)
+            if entry is not None and entry.added:
+                return  # avoid dropping copy information (maybe?)
         elif p1_tracked and not wc_tracked:
-            if entry is None or not entry.removed:
-                self._remove(filename)
+            pass
         else:
             assert False, 'unreachable'
+
+        # this mean we are doing call for file we do not really care about the
+        # data (eg: added or removed), however this should be a minor overhead
+        # compared to the overall update process calling this.
+        parentfiledata = None
+        if wc_tracked:
+            parentfiledata = self._get_filedata(filename)
+
+        self._updatedfiles.add(filename)
+        self._map.reset_state(
+            filename,
+            wc_tracked,
+            p1_tracked,
+            possibly_dirty=possibly_dirty,
+            parentfiledata=parentfiledata,
+        )
 
     @requires_parents_change
     def update_file(
