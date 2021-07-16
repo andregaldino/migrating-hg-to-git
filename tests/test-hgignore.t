@@ -1,7 +1,6 @@
 #testcases dirstate-v1 dirstate-v2
 
 #if dirstate-v2
-#require rust
   $ echo '[format]' >> $HGRCPATH
   $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
 #endif
@@ -397,9 +396,10 @@ Windows paths are accepted on input
 
 #endif
 
-#if dirstate-v2
+#if dirstate-v2 rust
 
 Check the hash of ignore patterns written in the dirstate
+This is an optimization that is only relevant when using the Rust extensions
 
   $ hg status > /dev/null
   $ cat .hg/testhgignore .hg/testhgignorerel .hgignore dir2/.hgignore dir1/.hgignore dir1/.hgignoretwo | $TESTDIR/f --sha1

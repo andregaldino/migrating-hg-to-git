@@ -917,9 +917,6 @@ def gathersupportedrequirements(ui):
     # Start with all requirements supported by this file.
     supported = set(localrepository._basesupported)
 
-    if dirstate.SUPPORTS_DIRSTATE_V2:
-        supported.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
-
     # Execute ``featuresetupfuncs`` entries if they belong to an extension
     # relevant to this ui instance.
     modules = {m.__name__ for n, m in extensions.extensions(ui)}
@@ -1266,6 +1263,7 @@ class localrepository(object):
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.SHARESAFE_REQUIREMENT,
+        requirementsmod.DIRSTATE_V2_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         requirementsmod.STORE_REQUIREMENT,
@@ -3609,15 +3607,7 @@ def newreporequirements(ui, createopts):
     # experimental config: format.exp-dirstate-v2
     # Keep this logic in sync with `has_dirstate_v2()` in `tests/hghave.py`
     if ui.configbool(b'format', b'exp-dirstate-v2'):
-        if dirstate.SUPPORTS_DIRSTATE_V2:
-            requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
-        else:
-            raise error.Abort(
-                _(
-                    b"dirstate v2 format requested by config "
-                    b"but not supported (requires Rust extensions)"
-                )
-            )
+        requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
 
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):

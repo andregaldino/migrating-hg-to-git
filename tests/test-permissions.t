@@ -3,7 +3,6 @@
 #testcases dirstate-v1 dirstate-v2
 
 #if dirstate-v2
-#require rust
   $ echo '[format]' >> $HGRCPATH
   $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
 #endif

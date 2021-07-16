@@ -1,13 +1,6 @@
 #testcases dirstate-v1 dirstate-v2
 
-#if no-rust
-  $ hg init repo0 --config format.exp-dirstate-v2=1
-  abort: dirstate v2 format requested by config but not supported (requires Rust extensions)
-  [255]
-#endif
-
 #if dirstate-v2
-#require rust
   $ echo '[format]' >> $HGRCPATH
   $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
 #endif
@@ -743,7 +736,7 @@ When a directory containing a tracked file gets symlinked, as of 5.8
 if also listing unknowns.
 The tree-based dirstate and status algorithm fix this:
 
-#if symlink no-dirstate-v1
+#if symlink no-dirstate-v1 rust
 
   $ cd ..
   $ hg init issue6335
@@ -759,11 +752,11 @@ The tree-based dirstate and status algorithm fix this:
   ? bar/a
   ? foo
 
-  $ hg status -c  # incorrect output with `dirstate-v1`
+  $ hg status -c  # incorrect output without the Rust implementation
   $ hg status -cu
   ? bar/a
   ? foo
-  $ hg status -d  # incorrect output with `dirstate-v1`
+  $ hg status -d  # incorrect output without the Rust implementation
   ! foo/a
   $ hg status -du
   ! foo/a
@@ -910,7 +903,7 @@ Check using include flag while listing ignored composes correctly (issue6514)
   I B.hs
   I ignored-folder/ctest.hs
 
-#if dirstate-v2
+#if rust dirstate-v2
 
 Check read_dir caching
 

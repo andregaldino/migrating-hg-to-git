@@ -332,15 +332,6 @@ class dirstatemap(_dirstatemapcommon):
       denormalized form that they appear as in the dirstate.
     """
 
-    def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
-        super(dirstatemap, self).__init__(
-            ui, opener, root, nodeconstants, use_dirstate_v2
-        )
-        if self._use_dirstate_v2:
-            msg = "Dirstate V2 not supportedi"
-            msg += "(should have detected unsupported requirement)"
-            raise error.ProgrammingError(msg)
-
     ### Core data storage and access
 
     @propertycache
@@ -406,19 +397,17 @@ class dirstatemap(_dirstatemapcommon):
             self._opener.join(self._filename)
         )
 
-        try:
-            fp = self._opendirstatefile()
-            try:
-                st = fp.read()
-            finally:
-                fp.close()
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            return
+        if self._use_dirstate_v2:
+            if not self.docket.uuid:
+                return
+            st = self._opener.read(self.docket.data_filename())
+        else:
+            st = self._readdirstatefile()
+
         if not st:
             return
 
+        # TODO: adjust this estimate for dirstate-v2
         if util.safehasattr(parsers, b'dict_new_presized'):
             # Make an estimate of the number of files in the dirstate based on
             # its size. This trades wasting some memory for avoiding costly
@@ -440,8 +429,14 @@ class dirstatemap(_dirstatemapcommon):
         # parsing the dirstate.
         #
         # (we cannot decorate the function directly since it is in a C module)
-        parse_dirstate = util.nogc(parsers.parse_dirstate)
-        p = parse_dirstate(self._map, self.copymap, st)
+        if self._use_dirstate_v2:
+            p = self.docket.parents
+            meta = self.docket.tree_metadata
+            parse_dirstate = util.nogc(v2.parse_dirstate)
+            parse_dirstate(self._map, self.copymap, st, meta)
+        else:
+            parse_dirstate = util.nogc(parsers.parse_dirstate)
+            p = parse_dirstate(self._map, self.copymap, st)
         if not self._dirtyparents:
             self.setparents(*p)
 
@@ -450,10 +445,16 @@ class dirstatemap(_dirstatemapcommon):
         self.__getitem__ = self._map.__getitem__
         self.get = self._map.get
 
-    def write(self, _tr, st, now):
-        d = parsers.pack_dirstate(self._map, self.copymap, self.parents(), now)
-        st.write(d)
-        st.close()
+    def write(self, tr, st, now):
+        if self._use_dirstate_v2:
+            packed, meta = v2.pack_dirstate(self._map, self.copymap, now)
+            self.write_v2_no_append(tr, st, meta, packed)
+        else:
+            packed = parsers.pack_dirstate(
+                self._map, self.copymap, self.parents(), now
+            )
+            st.write(packed)
+            st.close()
         self._dirtyparents = False
 
     @propertycache
