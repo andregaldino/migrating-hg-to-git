@@ -306,10 +306,6 @@ class dirstatemap(object):
                 msg = b'failed to pass parentfiledata for a normal file: %s'
                 msg %= filename
                 raise error.ProgrammingError(msg)
-            mode, size, mtime = parentfiledata
-            self.addfile(filename, mode=mode, size=size, mtime=mtime)
-            self.nonnormalset.discard(filename)
-            return
         else:
             assert False, 'unreachable'
 
