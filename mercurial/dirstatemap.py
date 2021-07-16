@@ -298,8 +298,7 @@ class dirstatemap(object):
             self.addfile(filename, from_p2=True, possibly_dirty=possibly_dirty)
             return
         elif possibly_dirty:
-            self.addfile(filename, possibly_dirty=possibly_dirty)
-            return
+            pass
         elif wc_tracked:
             # this is a "normal" file
             if parentfiledata is None:
