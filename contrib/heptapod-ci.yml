@@ -169,5 +169,6 @@ windows-py3:
       - windows
     timeout: 2h
     variables:
+        TEST_HGMODULEPOLICY: "c"
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
         PYTHON: py -3
