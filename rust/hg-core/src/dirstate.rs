@@ -65,6 +65,12 @@ impl DirstateEntry {
         let fs_exec_bit = filesystem_metadata.mode() & EXEC_BIT_MASK;
         dirstate_exec_bit != fs_exec_bit
     }
+
+    /// Returns a `(state, mode, size, mtime)` tuple as for
+    /// `DirstateMapMethods::debug_iter`.
+    pub fn debug_tuple(&self) -> (u8, i32, i32, i32) {
+        (self.state.into(), self.mode, self.size, self.mtime)
+    }
 }
 
 #[derive(BytesCast)]

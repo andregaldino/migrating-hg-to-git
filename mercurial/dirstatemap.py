@@ -105,10 +105,6 @@ class dirstatemap(object):
         self._map
         return self.copymap
 
-    def directories(self):
-        # Rust / dirstate-v2 only
-        return []
-
     def clear(self):
         self._map.clear()
         self.copymap.clear()
@@ -125,6 +121,8 @@ class dirstatemap(object):
 
     # forward for python2,3 compat
     iteritems = items
+
+    debug_iter = items
 
     def __len__(self):
         return len(self._map)
@@ -525,6 +523,9 @@ if rustmod is not None:
         def directories(self):
             return self._rustmap.directories()
 
+        def debug_iter(self):
+            return self._rustmap.debug_iter()
+
         def preload(self):
             self._rustmap
 
@@ -746,6 +747,6 @@ if rustmod is not None:
         def dirfoldmap(self):
             f = {}
             normcase = util.normcase
-            for name, _pseudo_entry in self.directories():
+            for name in self._rustmap.tracked_dirs():
                 f[normcase(name)] = name
             return f

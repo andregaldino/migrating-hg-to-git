@@ -929,23 +929,23 @@ Check read_dir caching
 
 The cached mtime is initially unset
 
-  $ hg debugdirstate --dirs --no-dates | grep '^d'
-  d   0          0 unset               subdir
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
 
 It is still not set when there are unknown files
 
   $ touch subdir/unknown
   $ hg status
   ? subdir/unknown
-  $ hg debugdirstate --dirs --no-dates | grep '^d'
-  d   0          0 unset               subdir
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
 
 Now the directory is eligible for caching, so its mtime is save in the dirstate
 
   $ rm subdir/unknown
   $ hg status
-  $ hg debugdirstate --dirs --no-dates | grep '^d'
-  d   0          0 set                 subdir
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 set                 subdir
 
 This time the command should be ever so slightly faster since it does not need `read_dir("subdir")`
 
@@ -963,11 +963,11 @@ Creating a new file changes the directory’s mtime, invalidating the cache
 Removing a node from the dirstate resets the cache for its parent directory
 
   $ hg forget subdir/a
-  $ hg debugdirstate --dirs --no-dates | grep '^d'
-  d   0          0 set                 subdir
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 set                 subdir
   $ hg ci -qm '#1'
-  $ hg debugdirstate --dirs --no-dates | grep '^d'
-  d   0          0 unset               subdir
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
   $ hg status
   ? subdir/a
 

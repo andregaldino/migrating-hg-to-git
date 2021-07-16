@@ -19,8 +19,8 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::make_directory_item,
     dirstate::make_dirstate_item,
+    dirstate::make_dirstate_item_raw,
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
@@ -61,17 +61,14 @@ py_class!(pub class DirstateMap |py| {
         use_dirstate_tree: bool,
         on_disk: PyBytes,
     ) -> PyResult<PyObject> {
-        let dirstate_error = |e: DirstateError| {
-            PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
-        };
         let (inner, parents) = if use_dirstate_tree {
             let (map, parents) = OwningDirstateMap::new_v1(py, on_disk)
-                .map_err(dirstate_error)?;
+                .map_err(|e| dirstate_error(py, e))?;
             (Box::new(map) as _, parents)
         } else {
             let bytes = on_disk.data(py);
             let mut map = RustDirstateMap::default();
-            let parents = map.read(bytes).map_err(dirstate_error)?;
+            let parents = map.read(bytes).map_err(|e| dirstate_error(py, e))?;
             (Box::new(map) as _, parents)
         };
         let map = Self::create_instance(py, inner)?;
@@ -550,19 +547,29 @@ py_class!(pub class DirstateMap |py| {
         )
     }
 
-    def directories(&self) -> PyResult<PyList> {
+    def tracked_dirs(&self) -> PyResult<PyList> {
         let dirs = PyList::new(py, &[]);
-        for item in self.inner(py).borrow().iter_directories() {
-            let (path, mtime) = item.map_err(|e| v2_error(py, e))?;
+        for path in self.inner(py).borrow_mut().iter_tracked_dirs()
+            .map_err(|e |dirstate_error(py, e))?
+        {
+            let path = path.map_err(|e| v2_error(py, e))?;
             let path = PyBytes::new(py, path.as_bytes());
-            let mtime = mtime.map(|t| t.0).unwrap_or(-1);
-            let item = make_directory_item(py, mtime as i32)?;
-            let tuple = (path, item);
-            dirs.append(py, tuple.to_py_object(py).into_object())
+            dirs.append(py, path.into_object())
         }
         Ok(dirs)
     }
 
+    def debug_iter(&self) -> PyResult<PyList> {
+        let dirs = PyList::new(py, &[]);
+        for item in self.inner(py).borrow().debug_iter() {
+            let (path, (state, mode, size, mtime)) =
+                item.map_err(|e| v2_error(py, e))?;
+            let path = PyBytes::new(py, path.as_bytes());
+            let item = make_dirstate_item_raw(py, state, mode, size, mtime)?;
+            dirs.append(py, (path, item).to_py_object(py).into_object())
+        }
+        Ok(dirs)
+    }
 });
 
 impl DirstateMap {
@@ -615,4 +622,8 @@ fn extract_node_id(py: Python, obj: &PyObject) -> PyResult<Node> {
 
 pub(super) fn v2_error(py: Python<'_>, _: DirstateV2ParseError) -> PyErr {
     PyErr::new::<exc::ValueError, _>(py, "corrupted dirstate-v2")
+}
+
+fn dirstate_error(py: Python<'_>, e: DirstateError) -> PyErr {
+    PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
 }

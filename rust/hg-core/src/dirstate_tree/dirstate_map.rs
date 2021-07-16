@@ -1246,27 +1246,50 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         }))
     }
 
-    fn iter_directories(
+    fn iter_tracked_dirs(
+        &mut self,
+    ) -> Result<
+        Box<
+            dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>>
+                + Send
+                + '_,
+        >,
+        DirstateError,
+    > {
+        let on_disk = self.on_disk;
+        Ok(Box::new(filter_map_results(
+            self.iter_nodes(),
+            move |node| {
+                Ok(if node.tracked_descendants_count() > 0 {
+                    Some(node.full_path(on_disk)?)
+                } else {
+                    None
+                })
+            },
+        )))
+    }
+
+    fn debug_iter(
         &self,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
-                    (&HgPath, Option<Timestamp>),
+                    (&HgPath, (u8, i32, i32, i32)),
                     DirstateV2ParseError,
                 >,
             > + Send
             + '_,
     > {
-        Box::new(filter_map_results(self.iter_nodes(), move |node| {
-            Ok(if node.state()?.is_none() {
-                Some((
-                    node.full_path(self.on_disk)?,
-                    node.cached_directory_mtime()
-                        .map(|mtime| Timestamp(mtime.seconds())),
-                ))
+        Box::new(self.iter_nodes().map(move |node| {
+            let node = node?;
+            let debug_tuple = if let Some(entry) = node.entry()? {
+                entry.debug_tuple()
+            } else if let Some(mtime) = node.cached_directory_mtime() {
+                (b' ', 0, -1, mtime.seconds() as i32)
             } else {
-                None
-            })
+                (b' ', 0, -1, -1)
+            };
+            Ok((node.full_path(self.on_disk)?, debug_tuple))
         }))
     }
 }

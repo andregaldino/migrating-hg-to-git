@@ -942,7 +942,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         ),
         (b'', b'dates', True, _(b'display the saved mtime')),
         (b'', b'datesort', None, _(b'sort by saved mtime')),
-        (b'', b'dirs', False, _(b'display directories')),
+        (
+            b'',
+            b'all',
+            False,
+            _(b'display dirstate-v2 tree nodes that would not exist in v1'),
+        ),
     ],
     _(b'[OPTION]...'),
 )
@@ -961,9 +966,10 @@ def debugstate(ui, repo, **opts):
         )  # sort by mtime, then by filename
     else:
         keyfunc = None  # sort by filename
-    entries = list(pycompat.iteritems(repo.dirstate))
-    if opts['dirs']:
-        entries.extend(repo.dirstate.directories())
+    if opts['all']:
+        entries = list(repo.dirstate._map.debug_iter())
+    else:
+        entries = list(pycompat.iteritems(repo.dirstate))
     entries.sort(key=keyfunc)
     for file_, ent in entries:
         if ent.v1_mtime() == -1:

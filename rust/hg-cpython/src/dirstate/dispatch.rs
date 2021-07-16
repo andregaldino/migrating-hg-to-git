@@ -203,17 +203,30 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get().iter()
     }
 
-    fn iter_directories(
+    fn iter_tracked_dirs(
+        &mut self,
+    ) -> Result<
+        Box<
+            dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>>
+                + Send
+                + '_,
+        >,
+        DirstateError,
+    > {
+        self.get_mut().iter_tracked_dirs()
+    }
+
+    fn debug_iter(
         &self,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
-                    (&HgPath, Option<Timestamp>),
+                    (&HgPath, (u8, i32, i32, i32)),
                     DirstateV2ParseError,
                 >,
             > + Send
             + '_,
     > {
-        self.get().iter_directories()
+        self.get().debug_iter()
     }
 }

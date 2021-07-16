@@ -52,9 +52,6 @@ pub fn make_dirstate_item(
     py: Python,
     entry: &DirstateEntry,
 ) -> PyResult<PyObject> {
-    // might be silly to retrieve capsule function in hot loop
-    let make = make_dirstate_item_capi::retrieve(py)?;
-
     let &DirstateEntry {
         state,
         mode,
@@ -65,22 +62,19 @@ pub fn make_dirstate_item(
     // because Into<u8> has a specific implementation while `as c_char` would
     // just do a naive enum cast.
     let state_code: u8 = state.into();
-
-    let maybe_obj = unsafe {
-        let ptr = make(state_code as c_char, mode, size, mtime);
-        PyObject::from_owned_ptr_opt(py, ptr)
-    };
-    maybe_obj.ok_or_else(|| PyErr::fetch(py))
+    make_dirstate_item_raw(py, state_code, mode, size, mtime)
 }
 
-// XXX a bit strange to have a dedicated function, but directory are not
-// treated as dirstate node by hg-core for now so…
-pub fn make_directory_item(py: Python, mtime: i32) -> PyResult<PyObject> {
-    // might be silly to retrieve capsule function in hot loop
+pub fn make_dirstate_item_raw(
+    py: Python,
+    state: u8,
+    mode: i32,
+    size: i32,
+    mtime: i32,
+) -> PyResult<PyObject> {
     let make = make_dirstate_item_capi::retrieve(py)?;
-
     let maybe_obj = unsafe {
-        let ptr = make(b'd' as c_char, 0 as i32, 0 as i32, mtime);
+        let ptr = make(state as c_char, mode, size, mtime);
         PyObject::from_owned_ptr_opt(py, ptr)
     };
     maybe_obj.ok_or_else(|| PyErr::fetch(py))

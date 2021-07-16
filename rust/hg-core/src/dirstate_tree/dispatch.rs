@@ -259,20 +259,40 @@ pub trait DirstateMapMethods {
     /// are `Result`s.
     fn iter(&self) -> StateMapIter<'_>;
 
-    /// In the tree dirstate, return an iterator of "directory" (entry-less)
-    /// nodes with the data stored for them. This is for `hg debugdirstate
-    /// --dirs`.
+    /// Returns an iterator of tracked directories.
     ///
-    /// In the flat dirstate, returns an empty iterator.
+    /// This is the paths for which `has_tracked_dir` would return true.
+    /// Or, in other words, the union of ancestor paths of all paths that have
+    /// an associated entry in a "tracked" state in this dirstate map.
     ///
     /// Because parse errors can happen during iteration, the iterated items
     /// are `Result`s.
-    fn iter_directories(
+    fn iter_tracked_dirs(
+        &mut self,
+    ) -> Result<
+        Box<
+            dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>>
+                + Send
+                + '_,
+        >,
+        DirstateError,
+    >;
+
+    /// Return an iterator of `(path, (state, mode, size, mtime))` for every
+    /// node stored in this dirstate map, for the purpose of the `hg
+    /// debugdirstate` command.
+    ///
+    /// For nodes that don’t have an entry, `state` is the ASCII space.
+    /// An `mtime` may still be present. It is used to optimize `status`.
+    ///
+    /// Because parse errors can happen during iteration, the iterated items
+    /// are `Result`s.
+    fn debug_iter(
         &self,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
-                    (&HgPath, Option<Timestamp>),
+                    (&HgPath, (u8, i32, i32, i32)),
                     DirstateV2ParseError,
                 >,
             > + Send
@@ -476,17 +496,41 @@ impl DirstateMapMethods for DirstateMap {
         Box::new((&**self).iter().map(|(key, value)| Ok((&**key, *value))))
     }
 
-    fn iter_directories(
+    fn iter_tracked_dirs(
+        &mut self,
+    ) -> Result<
+        Box<
+            dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>>
+                + Send
+                + '_,
+        >,
+        DirstateError,
+    > {
+        self.set_all_dirs()?;
+        Ok(Box::new(
+            self.all_dirs
+                .as_ref()
+                .unwrap()
+                .iter()
+                .map(|path| Ok(&**path)),
+        ))
+    }
+
+    fn debug_iter(
         &self,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
-                    (&HgPath, Option<Timestamp>),
+                    (&HgPath, (u8, i32, i32, i32)),
                     DirstateV2ParseError,
                 >,
             > + Send
             + '_,
     > {
-        Box::new(std::iter::empty())
+        Box::new(
+            (&**self)
+                .iter()
+                .map(|(path, entry)| Ok((&**path, entry.debug_tuple()))),
+        )
     }
 }
