@@ -29,16 +29,6 @@ propertycache = util.propertycache
 
 DirstateItem = parsers.DirstateItem
 
-
-# a special value used internally for `size` if the file come from the other parent
-FROM_P2 = -2
-
-# a special value used internally for `size` if the file is modified/merged/added
-NONNORMAL = -1
-
-# a special value used internally for `time` if the time is ambigeous
-AMBIGUOUS_TIME = -1
-
 rangemask = 0x7FFFFFFF
 
 
