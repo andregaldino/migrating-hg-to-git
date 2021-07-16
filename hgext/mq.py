@@ -1099,7 +1099,7 @@ class queue(object):
                         removed.append(f)
                 with repo.dirstate.parentchange():
                     for f in removed:
-                        repo.dirstate.remove(f)
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
                     for f in merged:
                         repo.dirstate.merge(f)
                     p1 = repo.dirstate.p1()
@@ -2038,7 +2038,7 @@ class queue(object):
                         for f in list(repo.dirstate.copies()):
                             repo.dirstate.copy(None, f)
                     for f in r:
-                        repo.dirstate.remove(f)
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
                     # if the patch excludes a modified file, mark that
                     # file with mtime=0 so status can see it.
                     mm = []
