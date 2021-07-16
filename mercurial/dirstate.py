@@ -765,7 +765,14 @@ class dirstate(object):
 
     def remove(self, f):
         '''Mark a file removed'''
-        if not self.pendingparentchange():
+        if self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `remove` insde of update/merge context."
+                b" Use `update_file` or `update_file_p1`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
             util.nouideprecwarn(
                 b"do not use `remove` outside of update/merge context."
                 b" Use `set_untracked`",
