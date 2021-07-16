@@ -220,7 +220,7 @@ class dirstatemap(object):
         assert mtime is not None
         old_entry = self.get(f)
         self._dirs_incr(f, old_entry)
-        e = self._map[f] = DirstateItem(state, mode, size, mtime)
+        e = self._map[f] = DirstateItem.from_v1_data(state, mode, size, mtime)
         if e.dm_nonnormal:
             self.nonnormalset.add(f)
         if e.dm_otherparent:
@@ -273,7 +273,7 @@ class dirstatemap(object):
             # XXX might be merged and removed ?
             old_entry = self._map.get(filename)
             self._dirs_decr(filename, old_entry=old_entry, remove_variant=True)
-            self._map[filename] = DirstateItem(b'r', 0, 0, 0)
+            self._map[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
             self.nonnormalset.add(filename)
         elif clean_p2 and wc_tracked:
             if p1_tracked or self.get(filename) is not None:
