@@ -636,6 +636,14 @@ class dirstate(object):
             possibly_dirty=possibly_dirty,
         )
 
+    def _get_filedata(self, filename):
+        """returns"""
+        s = os.lstat(self._join(filename))
+        mode = s.st_mode
+        size = s.st_size
+        mtime = s[stat.ST_MTIME]
+        return (mode, size, mtime)
+
     def normal(self, f, parentfiledata=None):
         """Mark a file normal and clean.
 
@@ -649,10 +657,7 @@ class dirstate(object):
         if parentfiledata:
             (mode, size, mtime) = parentfiledata
         else:
-            s = os.lstat(self._join(f))
-            mode = s.st_mode
-            size = s.st_size
-            mtime = s[stat.ST_MTIME]
+            (mode, size, mtime) = self._get_filedata(f)
         self._addpath(f, mode=mode, size=size, mtime=mtime)
         self._map.copymap.pop(f, None)
         if f in self._map.nonnormalset:
