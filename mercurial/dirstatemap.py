@@ -256,6 +256,7 @@ class dirstatemap(object):
 
         if not (p1_tracked or p2_tracked or wc_tracked):
             self.dropfile(filename)
+            return
         elif merged:
             # XXX might be merged and removed ?
             entry = self.get(filename)
@@ -265,16 +266,20 @@ class dirstatemap(object):
                 # actually mean merged. Dropping the else clause will show
                 # failure in `test-graft.t`
                 self.addfile(filename, merged=True)
+                return
             else:
                 self.addfile(filename, from_p2=True)
+                return
         elif not (p1_tracked or p2_tracked) and wc_tracked:
             self.addfile(filename, added=True, possibly_dirty=possibly_dirty)
+            return
         elif (p1_tracked or p2_tracked) and not wc_tracked:
             # XXX might be merged and removed ?
             old_entry = self._map.get(filename)
             self._dirs_decr(filename, old_entry=old_entry, remove_variant=True)
             self._map[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
             self.nonnormalset.add(filename)
+            return
         elif clean_p2 and wc_tracked:
             if p1_tracked or self.get(filename) is not None:
                 # XXX the `self.get` call is catching some case in
@@ -285,12 +290,16 @@ class dirstatemap(object):
                 # as merged without actually being the result of a merge
                 # action. So thing are not ideal here.
                 self.addfile(filename, merged=True)
+                return
             else:
                 self.addfile(filename, from_p2=True)
+                return
         elif not p1_tracked and p2_tracked and wc_tracked:
             self.addfile(filename, from_p2=True, possibly_dirty=possibly_dirty)
+            return
         elif possibly_dirty:
             self.addfile(filename, possibly_dirty=possibly_dirty)
+            return
         elif wc_tracked:
             # this is a "normal" file
             if parentfiledata is None:
@@ -300,6 +309,7 @@ class dirstatemap(object):
             mode, size, mtime = parentfiledata
             self.addfile(filename, mode=mode, size=size, mtime=mtime)
             self.nonnormalset.discard(filename)
+            return
         else:
             assert False, 'unreachable'
 
