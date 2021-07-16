@@ -61,11 +61,62 @@ class DirstateItem(object):
     _size = attr.ib()
     _mtime = attr.ib()
 
-    def __init__(self, state, mode, size, mtime):
-        self._state = state
-        self._mode = mode
-        self._size = size
-        self._mtime = mtime
+    def __init__(
+        self,
+        wc_tracked=False,
+        p1_tracked=False,
+        p2_tracked=False,
+        merged=False,
+        clean_p1=False,
+        clean_p2=False,
+        possibly_dirty=False,
+        parentfiledata=None,
+    ):
+        if merged and (clean_p1 or clean_p2):
+            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
+            raise error.ProgrammingError(msg)
+
+        self._state = None
+        self._mode = 0
+        self._size = NONNORMAL
+        self._mtime = AMBIGUOUS_TIME
+        if not (p1_tracked or p2_tracked or wc_tracked):
+            pass  # the object has no state to record
+        elif merged:
+            self._state = b'm'
+            self._size = FROM_P2
+            self._mtime = AMBIGUOUS_TIME
+        elif not (p1_tracked or p2_tracked) and wc_tracked:
+            self._state = b'a'
+            self._size = NONNORMAL
+            self._mtime = AMBIGUOUS_TIME
+        elif (p1_tracked or p2_tracked) and not wc_tracked:
+            self._state = b'r'
+            self._size = 0
+            self._mtime = 0
+        elif clean_p2 and wc_tracked:
+            self._state = b'n'
+            self._size = FROM_P2
+            self._mtime = AMBIGUOUS_TIME
+        elif not p1_tracked and p2_tracked and wc_tracked:
+            self._state = b'n'
+            self._size = FROM_P2
+            self._mtime = AMBIGUOUS_TIME
+        elif possibly_dirty:
+            self._state = b'n'
+            self._size = NONNORMAL
+            self._mtime = AMBIGUOUS_TIME
+        elif wc_tracked:
+            # this is a "normal" file
+            if parentfiledata is None:
+                msg = b'failed to pass parentfiledata for a normal file'
+                raise error.ProgrammingError(msg)
+            self._state = b'n'
+            self._mode = parentfiledata[0]
+            self._size = parentfiledata[1]
+            self._mtime = parentfiledata[2]
+        else:
+            assert False, 'unreachable'
 
     @classmethod
     def from_v1_data(cls, state, mode, size, mtime):
@@ -74,12 +125,12 @@ class DirstateItem(object):
         Since the dirstate-v1 format is frozen, the signature of this function
         is not expected to change, unlike the __init__ one.
         """
-        return cls(
-            state=state,
-            mode=mode,
-            size=size,
-            mtime=mtime,
-        )
+        instance = cls()
+        instance._state = state
+        instance._mode = mode
+        instance._size = size
+        instance._mtime = mtime
+        return instance
 
     def set_possibly_dirty(self):
         """Mark a file as "possibly dirty"

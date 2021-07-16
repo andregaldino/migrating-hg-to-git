@@ -65,21 +65,100 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	/* We do all the initialization here and not a tp_init function because
 	 * dirstate_item is immutable. */
 	dirstateItemObject *t;
-	char state;
-	int size, mode, mtime;
-	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime)) {
+	int wc_tracked;
+	int p1_tracked;
+	int p2_tracked;
+	int merged;
+	int clean_p1;
+	int clean_p2;
+	int possibly_dirty;
+	PyObject *parentfiledata;
+	static char *keywords_name[] = {
+	    "wc_tracked",     "p1_tracked",     "p2_tracked",
+	    "merged",         "clean_p1",       "clean_p2",
+	    "possibly_dirty", "parentfiledata", NULL,
+	};
+	wc_tracked = 0;
+	p1_tracked = 0;
+	p2_tracked = 0;
+	merged = 0;
+	clean_p1 = 0;
+	clean_p2 = 0;
+	possibly_dirty = 0;
+	parentfiledata = Py_None;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiiiiiiO", keywords_name,
+	                                 &wc_tracked, &p1_tracked, &p2_tracked,
+	                                 &merged, &clean_p1, &clean_p2,
+	                                 &possibly_dirty, &parentfiledata
+
+	                                 )) {
 		return NULL;
 	}
-
+	if (merged && (clean_p1 || clean_p2)) {
+		PyErr_SetString(PyExc_RuntimeError,
+		                "`merged` argument incompatible with "
+		                "`clean_p1`/`clean_p2`");
+		return NULL;
+	}
 	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
 	if (!t) {
 		return NULL;
 	}
-	t->state = state;
-	t->mode = mode;
-	t->size = size;
-	t->mtime = mtime;
-
+	t->state = 'r';
+	t->mode = 0;
+	t->size = dirstate_v1_nonnormal;
+	t->mtime = ambiguous_time;
+	if (!(p1_tracked || p2_tracked || wc_tracked)) {
+		/* Nothing special to do, file is untracked */
+	} else if (merged) {
+		t->state = 'm';
+		t->size = dirstate_v1_from_p2;
+		t->mtime = ambiguous_time;
+	} else if (!(p1_tracked || p2_tracked) && wc_tracked) {
+		t->state = 'a';
+		t->size = dirstate_v1_nonnormal;
+		t->mtime = ambiguous_time;
+	} else if ((p1_tracked || p2_tracked) && !wc_tracked) {
+		t->state = 'r';
+		t->size = 0;
+		t->mtime = 0;
+	} else if (clean_p2 && wc_tracked) {
+		t->state = 'n';
+		t->size = dirstate_v1_from_p2;
+		t->mtime = ambiguous_time;
+	} else if (!p1_tracked && p2_tracked && wc_tracked) {
+		t->state = 'n';
+		t->size = dirstate_v1_from_p2;
+		t->mtime = ambiguous_time;
+	} else if (possibly_dirty) {
+		t->state = 'n';
+		t->size = dirstate_v1_nonnormal;
+		t->mtime = ambiguous_time;
+	} else if (wc_tracked) {
+		/* this is a "normal" file */
+		if (parentfiledata == Py_None) {
+			PyErr_SetString(
+			    PyExc_RuntimeError,
+			    "failed to pass parentfiledata for a normal file");
+			return NULL;
+		}
+		if (!PyTuple_CheckExact(parentfiledata)) {
+			PyErr_SetString(
+			    PyExc_TypeError,
+			    "parentfiledata should be a Tuple or None");
+			return NULL;
+		}
+		t->state = 'n';
+		t->mode =
+		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 0));
+		t->size =
+		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 1));
+		t->mtime =
+		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 2));
+	} else {
+		PyErr_SetString(PyExc_RuntimeError, "unreachable");
+		return NULL;
+	}
 	return (PyObject *)t;
 }
 
