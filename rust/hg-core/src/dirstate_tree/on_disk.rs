@@ -49,13 +49,13 @@ pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 
 /// Must match the constant of the same name in
 /// `mercurial/dirstateutils/docket.py`
-const TREE_METADATA_SIZE: usize = 40;
+const TREE_METADATA_SIZE: usize = 44;
 
 /// Make sure that size-affecting changes are made knowingly
 #[allow(unused)]
 fn static_assert_size_of() {
-    let _ = std::mem::transmute::<DocketHeader, [u8; 121]>;
     let _ = std::mem::transmute::<TreeMetadata, [u8; TREE_METADATA_SIZE]>;
+    let _ = std::mem::transmute::<DocketHeader, [u8; TREE_METADATA_SIZE + 81]>;
     let _ = std::mem::transmute::<Node, [u8; 43]>;
 }
 
@@ -89,6 +89,12 @@ struct TreeMetadata {
 
     /// How many bytes of this data file are not used anymore
     unreachable_bytes: Size,
+
+    /// Current version always sets these bytes to zero when creating or
+    /// updating a dirstate. Future versions could assign some bits to signal
+    /// for example "the version that last wrote/updated this dirstate did so
+    /// in such and such way that can be relied on by versions that know to."
+    unused: [u8; 4],
 
     /// If non-zero, a hash of ignore files that were used for some previous
     /// run of the `status` algorithm.
@@ -579,6 +585,7 @@ pub(super) fn write(
             .nodes_with_copy_source_count
             .into(),
         unreachable_bytes: dirstate_map.unreachable_bytes.into(),
+        unused: [0; 4],
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
     Ok((writer.out, meta.as_bytes().to_vec(), append))

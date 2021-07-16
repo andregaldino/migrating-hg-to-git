@@ -16,7 +16,7 @@ V2_FORMAT_MARKER = b"dirstate-v2\n"
 
 # Must match the constant of the same name in
 # `rust/hg-core/src/dirstate_tree/on_disk.rs`
-TREE_METADATA_SIZE = 40
+TREE_METADATA_SIZE = 44
 
 # * 12 bytes: format marker
 # * 32 bytes: node ID of the working directory's first parent
