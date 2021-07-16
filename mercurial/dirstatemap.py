@@ -289,11 +289,8 @@ class dirstatemap(object):
                 # In addition, this seems to be a case where the file is marked
                 # as merged without actually being the result of a merge
                 # action. So thing are not ideal here.
-                self.addfile(filename, merged=True)
-                return
-            else:
-                self.addfile(filename, from_p2=True)
-                return
+                merged = True
+                clean_p2 = False
         elif not p1_tracked and p2_tracked and wc_tracked:
             clean_p2 = True
         elif possibly_dirty:
