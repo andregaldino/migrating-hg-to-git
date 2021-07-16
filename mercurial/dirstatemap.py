@@ -295,8 +295,7 @@ class dirstatemap(object):
                 self.addfile(filename, from_p2=True)
                 return
         elif not p1_tracked and p2_tracked and wc_tracked:
-            self.addfile(filename, from_p2=True, possibly_dirty=possibly_dirty)
-            return
+            clean_p2 = True
         elif possibly_dirty:
             pass
         elif wc_tracked:
