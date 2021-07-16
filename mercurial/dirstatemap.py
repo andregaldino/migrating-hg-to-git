@@ -274,12 +274,7 @@ class dirstatemap(object):
             self.addfile(filename, added=True, possibly_dirty=possibly_dirty)
             return
         elif (p1_tracked or p2_tracked) and not wc_tracked:
-            # XXX might be merged and removed ?
-            old_entry = self._map.get(filename)
-            self._dirs_decr(filename, old_entry=old_entry, remove_variant=True)
-            self._map[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
-            self.nonnormalset.add(filename)
-            return
+            pass
         elif clean_p2 and wc_tracked:
             if p1_tracked or self.get(filename) is not None:
                 # XXX the `self.get` call is catching some case in
