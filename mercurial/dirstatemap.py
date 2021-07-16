@@ -188,42 +188,28 @@ class dirstatemap(object):
             assert not merged
             assert not possibly_dirty
             assert not from_p2
-            state = b'a'
-            size = NONNORMAL
-            mtime = AMBIGUOUS_TIME
+            new_entry = DirstateItem.new_added()
         elif merged:
             assert not possibly_dirty
             assert not from_p2
-            state = b'm'
-            size = FROM_P2
-            mtime = AMBIGUOUS_TIME
+            new_entry = DirstateItem.new_merged()
         elif from_p2:
             assert not possibly_dirty
-            state = b'n'
-            size = FROM_P2
-            mtime = AMBIGUOUS_TIME
+            new_entry = DirstateItem.new_from_p2()
         elif possibly_dirty:
-            state = b'n'
-            size = NONNORMAL
-            mtime = AMBIGUOUS_TIME
+            new_entry = DirstateItem.new_possibly_dirty()
         else:
-            assert size != FROM_P2
-            assert size != NONNORMAL
             assert size is not None
             assert mtime is not None
-
-            state = b'n'
             size = size & rangemask
             mtime = mtime & rangemask
-        assert state is not None
-        assert size is not None
-        assert mtime is not None
+            new_entry = DirstateItem.new_normal(mode, size, mtime)
         old_entry = self.get(f)
         self._dirs_incr(f, old_entry)
-        e = self._map[f] = DirstateItem.from_v1_data(state, mode, size, mtime)
-        if e.dm_nonnormal:
+        self._map[f] = new_entry
+        if new_entry.dm_nonnormal:
             self.nonnormalset.add(f)
-        if e.dm_otherparent:
+        if new_entry.dm_otherparent:
             self.otherparentset.add(f)
 
     def reset_state(

@@ -119,6 +119,73 @@ class DirstateItem(object):
             assert False, 'unreachable'
 
     @classmethod
+    def new_added(cls):
+        """constructor to help legacy API to build a new "added" item
+
+        Should eventually be removed
+        """
+        instance = cls()
+        instance._state = b'a'
+        instance._mode = 0
+        instance._size = NONNORMAL
+        instance._mtime = AMBIGUOUS_TIME
+        return instance
+
+    @classmethod
+    def new_merged(cls):
+        """constructor to help legacy API to build a new "merged" item
+
+        Should eventually be removed
+        """
+        instance = cls()
+        instance._state = b'm'
+        instance._mode = 0
+        instance._size = FROM_P2
+        instance._mtime = AMBIGUOUS_TIME
+        return instance
+
+    @classmethod
+    def new_from_p2(cls):
+        """constructor to help legacy API to build a new "from_p2" item
+
+        Should eventually be removed
+        """
+        instance = cls()
+        instance._state = b'n'
+        instance._mode = 0
+        instance._size = FROM_P2
+        instance._mtime = AMBIGUOUS_TIME
+        return instance
+
+    @classmethod
+    def new_possibly_dirty(cls):
+        """constructor to help legacy API to build a new "possibly_dirty" item
+
+        Should eventually be removed
+        """
+        instance = cls()
+        instance._state = b'n'
+        instance._mode = 0
+        instance._size = NONNORMAL
+        instance._mtime = AMBIGUOUS_TIME
+        return instance
+
+    @classmethod
+    def new_normal(cls, mode, size, mtime):
+        """constructor to help legacy API to build a new "normal" item
+
+        Should eventually be removed
+        """
+        assert size != FROM_P2
+        assert size != NONNORMAL
+        instance = cls()
+        instance._state = b'n'
+        instance._mode = mode
+        instance._size = size
+        instance._mtime = mtime
+        return instance
+
+    @classmethod
     def from_v1_data(cls, state, mode, size, mtime):
         """Build a new DirstateItem object from V1 data
 
