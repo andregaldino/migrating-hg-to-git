@@ -313,6 +313,28 @@ class dirstatemap(object):
         else:
             assert False, 'unreachable'
 
+        old_entry = self._map.get(filename)
+        self._dirs_incr(filename, old_entry)
+        entry = DirstateItem(
+            wc_tracked=wc_tracked,
+            p1_tracked=p1_tracked,
+            p2_tracked=p2_tracked,
+            merged=merged,
+            clean_p1=clean_p1,
+            clean_p2=clean_p2,
+            possibly_dirty=possibly_dirty,
+            parentfiledata=parentfiledata,
+        )
+        if entry.dm_nonnormal:
+            self.nonnormalset.add(filename)
+        else:
+            self.nonnormalset.discard(filename)
+        if entry.dm_otherparent:
+            self.otherparentset.add(filename)
+        else:
+            self.otherparentset.discard(filename)
+        self._map[filename] = entry
+
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
         entry = self[f]
