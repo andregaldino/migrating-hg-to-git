@@ -260,16 +260,13 @@ class dirstatemap(object):
         elif merged:
             # XXX might be merged and removed ?
             entry = self.get(filename)
-            if entry is not None and entry.tracked:
+            if entry is None or not entry.tracked:
                 # XXX mostly replicate dirstate.other parent.  We should get
                 # the higher layer to pass us more reliable data where `merged`
-                # actually mean merged. Dropping the else clause will show
-                # failure in `test-graft.t`
-                self.addfile(filename, merged=True)
-                return
-            else:
-                self.addfile(filename, from_p2=True)
-                return
+                # actually mean merged. Dropping this clause will show failure
+                # in `test-graft.t`
+                merged = False
+                clean_p2 = True
         elif not (p1_tracked or p2_tracked) and wc_tracked:
             pass  # file is added, nothing special to adjust
         elif (p1_tracked or p2_tracked) and not wc_tracked:
