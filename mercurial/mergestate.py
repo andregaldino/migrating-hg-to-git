@@ -801,7 +801,12 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
             )
         else:
             parentfiledata = getfiledata[f] if getfiledata else None
-            repo.dirstate.update_parent_file_data(f, parentfiledata)
+            repo.dirstate.update_file(
+                f,
+                p1_tracked=True,
+                wc_tracked=True,
+                parentfiledata=parentfiledata,
+            )
 
     # merge
     for f, args, msg in actions.get(ACTION_MERGE, []):

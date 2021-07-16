@@ -548,6 +548,7 @@ class dirstate(object):
         clean_p1=False,
         clean_p2=False,
         possibly_dirty=False,
+        parentfiledata=None,
     ):
         """update the information about a file in the dirstate
 
@@ -583,18 +584,10 @@ class dirstate(object):
         elif possibly_dirty:
             self._addpath(filename, possibly_dirty=possibly_dirty)
         elif wc_tracked:
-            self.normal(filename)
+            self.normal(filename, parentfiledata=parentfiledata)
         # XXX We need something for file that are dirty after an update
         else:
             assert False, 'unreachable'
-
-    @requires_parents_change
-    def update_parent_file_data(self, f, filedata):
-        """update the information about the content of a file
-
-        This function should be called within a `dirstate.parentchange` context.
-        """
-        self.normal(f, parentfiledata=filedata)
 
     def _addpath(
         self,
