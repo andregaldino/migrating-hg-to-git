@@ -1842,7 +1842,9 @@ class queue(object):
                 with repo.dirstate.parentchange():
                     for f in a:
                         repo.wvfs.unlinkpath(f, ignoremissing=True)
-                        repo.dirstate.drop(f)
+                        repo.dirstate.update_file(
+                            f, p1_tracked=False, wc_tracked=False
+                        )
                     for f in m + r:
                         fctx = ctx[f]
                         repo.wwrite(f, fctx.data(), fctx.flags())
@@ -2044,7 +2046,7 @@ class queue(object):
                     for f in mm:
                         repo.dirstate.update_file_p1(f, p1_tracked=True)
                     for f in forget:
-                        repo.dirstate.drop(f)
+                        repo.dirstate.update_file_p1(f, p1_tracked=False)
 
                     user = ph.user or ctx.user()
 
