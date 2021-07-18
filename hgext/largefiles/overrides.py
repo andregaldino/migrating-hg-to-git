@@ -1796,23 +1796,24 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
             raise error.ProgrammingError(
                 b'largefiles is not compatible with in-memory merge'
             )
-        result = orig(repo, node, branchmerge, force, *args, **kwargs)
+        with lfdirstate.parentchange():
+            result = orig(repo, node, branchmerge, force, *args, **kwargs)
 
-        newstandins = lfutil.getstandinsstate(repo)
-        filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
+            newstandins = lfutil.getstandinsstate(repo)
+            filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
 
-        # to avoid leaving all largefiles as dirty and thus rehash them, mark
-        # all the ones that didn't change as clean
-        for lfile in oldclean.difference(filelist):
-            lfdirstate.normal(lfile)
-        lfdirstate.write()
+            # to avoid leaving all largefiles as dirty and thus rehash them, mark
+            # all the ones that didn't change as clean
+            for lfile in oldclean.difference(filelist):
+                lfdirstate.normal(lfile)
+            lfdirstate.write()
 
-        if branchmerge or force or partial:
-            filelist.extend(s.deleted + s.removed)
+            if branchmerge or force or partial:
+                filelist.extend(s.deleted + s.removed)
 
-        lfcommands.updatelfiles(
-            repo.ui, repo, filelist=filelist, normallookup=partial
-        )
+            lfcommands.updatelfiles(
+                repo.ui, repo, filelist=filelist, normallookup=partial
+            )
 
         return result
 
