@@ -569,7 +569,7 @@ def updatelfiles(
                         removed += 1
 
         # largefile processing might be slow and be interrupted - be prepared
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
 
         if lfiles:
             lfiles = [f for f in lfiles if f not in dropped]
@@ -619,7 +619,7 @@ def updatelfiles(
 
                 lfutil.synclfdirstate(repo, lfdirstate, lfile, normallookup)
 
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
         if lfiles:
             statuswriter(
                 _(b'%d largefiles updated, %d removed\n') % (updated, removed)

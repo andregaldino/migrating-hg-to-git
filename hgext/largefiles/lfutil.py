@@ -191,7 +191,7 @@ class largefilesdirstate(dirstate.dirstate):
     def _ignore(self, f):
         return False
 
-    def write(self, tr=False):
+    def write(self, tr):
         # (1) disable PENDING mode always
         #     (lfdirstate isn't yet managed as a part of the transaction)
         # (2) avoid develwarn 'use dirstate.write with ....'
@@ -588,7 +588,7 @@ def markcommitted(orig, ctx, node):
             lfile = splitstandin(f)
             if lfile is not None:
                 synclfdirstate(repo, lfdirstate, lfile, False)
-    lfdirstate.write()
+    lfdirstate.write(repo.currenttransaction())
 
     # As part of committing, copy all of the largefiles into the cache.
     #

@@ -151,7 +151,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
                 )
                 standins.append(standinname)
                 lfdirstate.set_tracked(f)
-            lfdirstate.write()
+            lfdirstate.write(repo.currenttransaction())
             bad += [
                 lfutil.splitstandin(f)
                 for f in repo[None].add(standins)
@@ -229,7 +229,7 @@ def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
         for f in remove:
             lfdirstate.set_untracked(lfutil.splitstandin(f))
 
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
 
     return result
 
@@ -659,7 +659,7 @@ def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
                 )
                 # make sure lfile doesn't get synclfdirstate'd as normal
                 lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
 
     return orig(repo, actions, branchmerge, getfiledata)
 
@@ -864,7 +864,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                     util.copyfile(repo.wjoin(srclfile), repo.wjoin(destlfile))
 
                 lfdirstate.set_tracked(destlfile)
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
     except error.Abort as e:
         if e.message != _(b'no files to copy'):
             raise e
@@ -896,7 +896,7 @@ def overriderevert(orig, ui, repo, ctx, *pats, **opts):
     with repo.wlock():
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         s = lfutil.lfdirstatestatus(lfdirstate, repo)
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
         for lfile in s.modified:
             lfutil.updatestandin(repo, lfile, lfutil.standin(lfile))
         for lfile in s.deleted:
@@ -1383,7 +1383,7 @@ def cmdutilforget(
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         for f in forget:
             lfdirstate.set_untracked(f)
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
         standins = [lfutil.standin(f) for f in forget]
         for f in standins:
             repo.wvfs.unlinkpath(f, ignoremissing=True)
@@ -1792,7 +1792,7 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         # interrupted before largefiles and lfdirstate are synchronized
         for lfile in oldclean:
             lfdirstate.set_possibly_dirty(lfile)
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
 
         oldstandins = lfutil.getstandinsstate(repo)
         wc = kwargs.get('wc')
@@ -1812,7 +1812,7 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
             # all the ones that didn't change as clean
             for lfile in oldclean.difference(filelist):
                 lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
-            lfdirstate.write()
+            lfdirstate.write(repo.currenttransaction())
 
             if branchmerge or force or partial:
                 filelist.extend(s.deleted + s.removed)

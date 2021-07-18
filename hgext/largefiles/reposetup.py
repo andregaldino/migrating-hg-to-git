@@ -310,7 +310,7 @@ def reposetup(ui, repo):
                     ]
 
                 if gotlock:
-                    lfdirstate.write()
+                    lfdirstate.write(self.currenttransaction())
 
             self.lfstatus = True
             return scmutil.status(*result)
