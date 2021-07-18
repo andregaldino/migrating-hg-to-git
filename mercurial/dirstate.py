@@ -499,6 +499,13 @@ class dirstate(object):
             self._remove(filename)
             return True
 
+    @requires_no_parents_change
+    def set_clean(self, filename, parentfiledata=None):
+        """record that the current state of the file on disk is known to be clean"""
+        self._dirty = True
+        self._updatedfiles.add(filename)
+        self.normal(filename, parentfiledata=parentfiledata)
+
     @requires_parents_change
     def update_file_p1(
         self,
