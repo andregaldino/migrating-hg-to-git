@@ -185,10 +185,12 @@ conditional above.
 
   $ find share_dst/.hg/largefiles/* | sort
   share_dst/.hg/largefiles/dirstate
+  share_dst/.hg/largefiles/undo.backup.dirstate
 
   $ find src/.hg/largefiles/* | egrep "(dirstate|$hash)" | sort
   src/.hg/largefiles/dirstate
   src/.hg/largefiles/e2fb5f2139d086ded2cb600d5a91a196e76bf020
+  src/.hg/largefiles/undo.backup.dirstate
 
 Verify that backwards compatibility is maintained for old storage layout
   $ mv src/.hg/largefiles/$hash share_dst/.hg/largefiles

@@ -195,6 +195,8 @@ class largefilesdirstate(dirstate.dirstate):
         # (1) disable PENDING mode always
         #     (lfdirstate isn't yet managed as a part of the transaction)
         # (2) avoid develwarn 'use dirstate.write with ....'
+        if tr:
+            tr.addbackup(b'largefiles/dirstate', location=b'plain')
         super(largefilesdirstate, self).write(None)
 
 
