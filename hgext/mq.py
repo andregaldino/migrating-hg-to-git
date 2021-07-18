@@ -2051,7 +2051,7 @@ class queue(object):
                     for f in m:
                         repo.dirstate.update_file_p1(f, p1_tracked=True)
                     for f in mm:
-                        repo.dirstate.normallookup(f)
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
                     for f in forget:
                         repo.dirstate.drop(f)
 
