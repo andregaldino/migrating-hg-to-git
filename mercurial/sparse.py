@@ -572,7 +572,9 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     for file in lookup:
         # File exists on disk, and we're bringing it back in an unknown state.
-        dirstate.normallookup(file)
+        dirstate.update_file(
+            file, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+        )
 
     return added, dropped, lookup
 
