@@ -565,7 +565,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     # Fix dirstate
     for file in added:
-        dirstate.normal(file)
+        dirstate.update_file(file, p1_tracked=True, wc_tracked=True)
 
     for file in dropped:
         dirstate.drop(file)
