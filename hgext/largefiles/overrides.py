@@ -1636,18 +1636,6 @@ def overriderollback(orig, ui, repo, **opts):
         for standin in orphans:
             repo.wvfs.unlinkpath(standin, ignoremissing=True)
 
-        lfdirstate = lfutil.openlfdirstate(ui, repo)
-        with lfdirstate.parentchange():
-            orphans = set(lfdirstate)
-            lfiles = lfutil.listlfiles(repo)
-            for file in lfiles:
-                lfutil.synclfdirstate(repo, lfdirstate, file, True)
-                orphans.discard(file)
-            for lfile in orphans:
-                lfdirstate.update_file(
-                    lfile, p1_tracked=False, wc_tracked=False
-                )
-        lfdirstate.write()
     return result
 
 
