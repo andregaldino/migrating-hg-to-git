@@ -453,7 +453,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
             for file, flags, msg in tmresult.getactions(
                 [mergestatemod.ACTION_GET]
             ):
-                dirstate.normal(file)
+                dirstate.update_file(file, p1_tracked=True, wc_tracked=True)
 
     profiles = activeconfig(repo)[2]
     changedprofiles = profiles & files
