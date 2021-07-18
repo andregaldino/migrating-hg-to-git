@@ -403,7 +403,7 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self.normallookup(f)
+                    self._normallookup(f)
                 # Also fix up otherparent markers
                 elif s.from_p2:
                     source = self._map.copymap.get(f)
@@ -476,7 +476,7 @@ class dirstate(object):
             self._add(filename)
             return True
         elif not entry.tracked:
-            self.normallookup(filename)
+            self._normallookup(filename)
             return True
         # XXX This is probably overkill for more case, but we need this to
         # fully replace the `normallookup` call with `set_tracked` one.
@@ -746,6 +746,24 @@ class dirstate(object):
 
     def normallookup(self, f):
         '''Mark a file normal, but possibly dirty.'''
+        if self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `normallookup` inside of update/merge context."
+                b" Use `update_file` or `update_file_p1`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
+            util.nouideprecwarn(
+                b"do not use `normallookup` outside of update/merge context."
+                b" Use `set_possibly_dirty` or `set_tracked`",
+                b'6.0',
+                stacklevel=2,
+            )
+        self._normallookup(f)
+
+    def _normallookup(self, f):
+        '''Mark a file normal, but possibly dirty.'''
         if self.in_merge:
             # if there is a merge going on and the file was either
             # "merged" or coming from other parent (-2) before
@@ -825,7 +843,7 @@ class dirstate(object):
     def merge(self, f):
         '''Mark a file merged.'''
         if not self.in_merge:
-            return self.normallookup(f)
+            return self._normallookup(f)
         return self.otherparent(f)
 
     def drop(self, f):
@@ -956,7 +974,7 @@ class dirstate(object):
         self._map.setparents(parent, self._nodeconstants.nullid)
 
         for f in to_lookup:
-            self.normallookup(f)
+            self._normallookup(f)
         for f in to_drop:
             self._drop(f)
 
