@@ -1855,7 +1855,9 @@ class queue(object):
                     for f in m + r:
                         fctx = ctx[f]
                         repo.wwrite(f, fctx.data(), fctx.flags())
-                        repo.dirstate.normal(f)
+                        repo.dirstate.update_file(
+                            f, p1_tracked=True, wc_tracked=True
+                        )
                     repo.setparents(qp, repo.nullid)
             for patch in reversed(self.applied[start:end]):
                 self.ui.status(_(b"popping %s\n") % patch.name)
@@ -2047,7 +2049,7 @@ class queue(object):
                             mm.append(m[i])
                             del m[i]
                     for f in m:
-                        repo.dirstate.normal(f)
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
                     for f in mm:
                         repo.dirstate.normallookup(f)
                     for f in forget:
