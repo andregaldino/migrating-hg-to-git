@@ -2010,7 +2010,9 @@ class queue(object):
                             # be removed. Treat this as a simple add.
                             if src is not None and src in repo.dirstate:
                                 copies.setdefault(src, []).append(dst)
-                            repo.dirstate.add(dst)
+                            repo.dirstate.update_file(
+                                dst, p1_tracked=False, wc_tracked=True
+                            )
                         # remember the copies between patchparent and qtip
                         for dst in aaa:
                             src = ctx[dst].copysource()
@@ -2028,7 +2030,9 @@ class queue(object):
                                 repo.dirstate.copy(src, dst)
                     else:
                         for dst in a:
-                            repo.dirstate.add(dst)
+                            repo.dirstate.update_file(
+                                dst, p1_tracked=False, wc_tracked=True
+                            )
                         # Drop useless copy information
                         for f in list(repo.dirstate.copies()):
                             repo.dirstate.copy(None, f)
