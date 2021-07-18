@@ -777,7 +777,7 @@ class dirstate(object):
                     if entry.merged_removed:
                         self.merge(f)
                     elif entry.from_p2_removed:
-                        self.otherparent(f)
+                        self._otherparent(f)
                     if source is not None:
                         self.copy(source, f)
                     return
@@ -788,6 +788,23 @@ class dirstate(object):
 
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
+        if self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `otherparent` inside of update/merge context."
+                b" Use `update_file` or `update_file_p1`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
+            util.nouideprecwarn(
+                b"do not use `otherparent` outside of update/merge context."
+                b"It should have been set by the update/merge code",
+                b'6.0',
+                stacklevel=2,
+            )
+        self._otherparent(f)
+
+    def _otherparent(self, f):
         if not self.in_merge:
             msg = _(b"setting %r to other parent only allowed in merges") % f
             raise error.Abort(msg)
@@ -844,7 +861,7 @@ class dirstate(object):
         '''Mark a file merged.'''
         if not self.in_merge:
             return self._normallookup(f)
-        return self.otherparent(f)
+        return self._otherparent(f)
 
     def drop(self, f):
         '''Drop a file from the dirstate'''
