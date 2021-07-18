@@ -1805,7 +1805,7 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
             # to avoid leaving all largefiles as dirty and thus rehash them, mark
             # all the ones that didn't change as clean
             for lfile in oldclean.difference(filelist):
-                lfdirstate.normal(lfile)
+                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
             lfdirstate.write()
 
             if branchmerge or force or partial:
