@@ -168,6 +168,10 @@ class dirstatemap(object):
             normed = util.normcase(filename)
             self.filefoldmap.pop(normed, None)
 
+    def set_possibly_dirty(self, filename):
+        """record that the current state of the file on disk is unknown"""
+        self[filename].set_possibly_dirty()
+
     def addfile(
         self,
         f,
@@ -906,6 +910,12 @@ if rustmod is not None:
             for name in self._rustmap.tracked_dirs():
                 f[normcase(name)] = name
             return f
+
+        def set_possibly_dirty(self, filename):
+            """record that the current state of the file on disk is unknown"""
+            entry = self[filename]
+            entry.set_possibly_dirty()
+            self._rustmap.set_v1(filename, entry)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)

@@ -506,6 +506,13 @@ class dirstate(object):
         self._updatedfiles.add(filename)
         self._normal(filename, parentfiledata=parentfiledata)
 
+    @requires_no_parents_change
+    def set_possibly_dirty(self, filename):
+        """record that the current state of the file on disk is unknown"""
+        self._dirty = True
+        self._updatedfiles.add(filename)
+        self._map.set_possibly_dirty(filename)
+
     @requires_parents_change
     def update_file_p1(
         self,
