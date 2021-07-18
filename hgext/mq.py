@@ -1090,18 +1090,9 @@ class queue(object):
 
             if merge and files:
                 # Mark as removed/merged and update dirstate parent info
-                removed = []
-                merged = []
-                for f in files:
-                    if os.path.lexists(repo.wjoin(f)):
-                        merged.append(f)
-                    else:
-                        removed.append(f)
                 with repo.dirstate.parentchange():
-                    for f in removed:
+                    for f in files:
                         repo.dirstate.update_file_p1(f, p1_tracked=True)
-                    for f in merged:
-                        repo.dirstate.merge(f)
                     p1 = repo.dirstate.p1()
                     repo.setparents(p1, merge)
 
