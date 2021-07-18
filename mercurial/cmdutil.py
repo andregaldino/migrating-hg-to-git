@@ -2984,7 +2984,9 @@ def amend(ui, repo, old, extra, pats, opts):
             # would mark them as clean but with uncommitted contents.
             normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
             for f in normalfiles:
-                dirstate.normallookup(f)
+                dirstate.update_file(
+                    f, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
 
             # Update the state of files which were removed in the amend
             # to "removed" in the dirstate.
