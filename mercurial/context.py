@@ -1838,9 +1838,15 @@ class workingctx(committablectx):
                 # wlock can invalidate the dirstate, so cache normal _after_
                 # taking the lock
                 with self._repo.wlock(False):
-                    if self._repo.dirstate.identity() == oldid:
+                    dirstate = self._repo.dirstate
+                    if dirstate.identity() == oldid:
                         if fixup:
-                            normal = self._repo.dirstate.normal
+                            if dirstate.pendingparentchange():
+                                normal = lambda f: dirstate.update_file(
+                                    f, p1_tracked=True, wc_tracked=True
+                                )
+                            else:
+                                normal = dirstate.set_clean
                             for f in fixup:
                                 normal(f)
                             # write changes out explicitly, because nesting
