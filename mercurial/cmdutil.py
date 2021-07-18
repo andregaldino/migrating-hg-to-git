@@ -630,7 +630,19 @@ def dorecord(
                         # without normallookup, restoring timestamp
                         # may cause partially committed files
                         # to be treated as unmodified
-                        dirstate.normallookup(realname)
+
+                        # XXX-PENDINGCHANGE: We should clarify the context in
+                        # which this function is called  to make sure it
+                        # already called within a `pendingchange`, However we
+                        # are taking a shortcut here in order to be able to
+                        # quickly deprecated the older API.
+                        with dirstate.parentchange():
+                            dirstate.update_file(
+                                realname,
+                                p1_tracked=True,
+                                wc_tracked=True,
+                                possibly_dirty=True,
+                            )
 
                     # copystat=True here and above are a hack to trick any
                     # editors that have f open that we haven't modified them.
