@@ -251,7 +251,7 @@ def lfdirstatestatus(lfdirstate, repo):
             modified.append(lfile)
         else:
             clean.append(lfile)
-            lfdirstate.normal(lfile)
+            lfdirstate.set_clean(lfile)
     return s
 
 
