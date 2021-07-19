@@ -261,9 +261,7 @@ class dirstatemap(object):
         for f in files:
             e = self.get(f)
             if e is not None and e.need_delay(now):
-                self._map[f] = DirstateItem(
-                    e.state, e.mode, e.size, AMBIGUOUS_TIME
-                )
+                e.set_possibly_dirty()
                 self.nonnormalset.add(f)
 
     def nonnormalentries(self):
