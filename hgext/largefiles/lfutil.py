@@ -564,7 +564,7 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
         elif state == b'm':
             lfdirstate.normallookup(lfile)
         elif state == b'r':
-            lfdirstate.remove(lfile)
+            lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
         elif state == b'a':
             lfdirstate.add(lfile)
 
