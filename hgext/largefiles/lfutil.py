@@ -229,9 +229,12 @@ def openlfdirstate(ui, repo, create=True):
         if len(standins) > 0:
             vfs.makedirs(lfstoredir)
 
-        for standin in standins:
-            lfile = splitstandin(standin)
-            lfdirstate.normallookup(lfile)
+        with lfdirstate.parentchange():
+            for standin in standins:
+                lfile = splitstandin(standin)
+                lfdirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
     return lfdirstate
 
 
