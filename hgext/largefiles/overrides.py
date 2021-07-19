@@ -658,7 +658,7 @@ def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
                     lfile, p1_tracked=True, wc_tracked=False
                 )
                 # make sure lfile doesn't get synclfdirstate'd as normal
-                lfdirstate.add(lfile)
+                lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
         lfdirstate.write()
 
     return orig(repo, actions, branchmerge, getfiledata)
