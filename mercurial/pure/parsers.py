@@ -588,8 +588,7 @@ def pack_dirstate(dmap, copymap, pl, now):
             # dirstate, forcing future 'status' calls to compare the
             # contents of the file if the size is the same. This prevents
             # mistakenly treating such files as clean.
-            e = DirstateItem(e.state, e.mode, e.size, AMBIGUOUS_TIME)
-            dmap[f] = e
+            e.set_possibly_dirty()
 
         if f in copymap:
             f = b"%s\0%s" % (f, copymap[f])
