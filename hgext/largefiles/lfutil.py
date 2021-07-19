@@ -569,7 +569,9 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
             else:
                 lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
         elif state == b'm':
-            lfdirstate.normallookup(lfile)
+            lfdirstate.update_file(
+                lfile, p1_tracked=True, wc_tracked=True, merged=True
+            )
         elif state == b'r':
             lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
         elif state == b'a':
