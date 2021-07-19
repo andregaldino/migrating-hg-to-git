@@ -37,6 +37,8 @@ pub trait DirstateMapMethods {
     /// Remove information about all files in this map
     fn clear(&mut self);
 
+    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry);
+
     /// Add or change the information associated to a given file.
     ///
     /// `old_state` is the state in the entry that `get` would have returned
@@ -95,7 +97,13 @@ pub trait DirstateMapMethods {
     /// Mark the given path as "normal" file. This is only relevant in the flat
     /// dirstate map where there is a separate `HashSet` that needs to be kept
     /// up to date.
-    fn non_normal_entries_remove(&mut self, key: &HgPath);
+    /// Returns whether the key was present in the set.
+    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool;
+
+    /// Mark the given path as "non-normal" file.
+    /// This is only relevant in the flat dirstate map where there is a
+    /// separate `HashSet` that needs to be kept up to date.
+    fn non_normal_entries_add(&mut self, key: &HgPath);
 
     /// Return an iterator of paths whose respective entry are either
     /// "non-normal" (see `non_normal_entries_contains`) or "from other
@@ -305,6 +313,14 @@ impl DirstateMapMethods for DirstateMap {
         self.clear()
     }
 
+    /// Used to set a value directory.
+    ///
+    /// XXX Is temporary during a refactor of V1 dirstate and will disappear
+    /// shortly.
+    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry) {
+        self.set_v1_inner(&filename, entry)
+    }
+
     fn add_file(
         &mut self,
         filename: &HgPath,
@@ -346,8 +362,12 @@ impl DirstateMapMethods for DirstateMap {
         Ok(non_normal.contains(key))
     }
 
-    fn non_normal_entries_remove(&mut self, key: &HgPath) {
+    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
         self.non_normal_entries_remove(key)
+    }
+
+    fn non_normal_entries_add(&mut self, key: &HgPath) {
+        self.non_normal_entries_add(key)
     }
 
     fn non_normal_or_other_parent_paths(

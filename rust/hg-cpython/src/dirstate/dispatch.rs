@@ -20,6 +20,10 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().clear()
     }
 
+    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry) {
+        self.get_mut().set_v1(filename, entry)
+    }
+
     fn add_file(
         &mut self,
         filename: &HgPath,
@@ -66,8 +70,12 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().non_normal_entries_contains(key)
     }
 
-    fn non_normal_entries_remove(&mut self, key: &HgPath) {
+    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
         self.get_mut().non_normal_entries_remove(key)
+    }
+
+    fn non_normal_entries_add(&mut self, key: &HgPath) {
+        self.get_mut().non_normal_entries_add(key)
     }
 
     fn non_normal_or_other_parent_paths(

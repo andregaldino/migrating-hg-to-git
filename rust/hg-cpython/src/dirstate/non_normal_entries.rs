@@ -26,6 +26,12 @@ py_class!(pub class NonNormalEntries |py| {
     def remove(&self, key: PyObject) -> PyResult<PyObject> {
         self.dmap(py).non_normal_entries_remove(py, key)
     }
+    def add(&self, key: PyObject) -> PyResult<PyObject> {
+        self.dmap(py).non_normal_entries_add(py, key)
+    }
+    def discard(&self, key: PyObject) -> PyResult<PyObject> {
+        self.dmap(py).non_normal_entries_discard(py, key)
+    }
     def __richcmp__(&self, other: PyObject, op: CompareOp) -> PyResult<bool> {
         match op {
             CompareOp::Eq => self.is_equal_to(py, other),

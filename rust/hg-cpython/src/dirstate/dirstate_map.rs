@@ -117,6 +117,21 @@ py_class!(pub class DirstateMap |py| {
         }
     }
 
+    def set_v1(&self, path: PyObject, item: PyObject) -> PyResult<PyObject> {
+        let f = path.extract::<PyBytes>(py)?;
+        let filename = HgPath::new(f.data(py));
+        let state = item.getattr(py, "state")?.extract::<PyBytes>(py)?;
+        let state = state.data(py)[0];
+        let entry = DirstateEntry {
+            state: state.try_into().expect("state is always valid"),
+            mtime: item.getattr(py, "mtime")?.extract(py)?,
+            size: item.getattr(py, "size")?.extract(py)?,
+            mode: item.getattr(py, "mode")?.extract(py)?,
+        };
+        self.inner(py).borrow_mut().set_v1(filename, entry);
+        Ok(py.None())
+    }
+
     def addfile(
         &self,
         f: PyObject,
@@ -261,10 +276,35 @@ py_class!(pub class DirstateMap |py| {
 
     def non_normal_entries_remove(&self, key: PyObject) -> PyResult<PyObject> {
         let key = key.extract::<PyBytes>(py)?;
+        let key = key.data(py);
+        let was_present = self
+            .inner(py)
+            .borrow_mut()
+            .non_normal_entries_remove(HgPath::new(key));
+        if !was_present {
+            let msg = String::from_utf8_lossy(key);
+            Err(PyErr::new::<exc::KeyError, _>(py, msg))
+        } else {
+            Ok(py.None())
+        }
+    }
+
+    def non_normal_entries_discard(&self, key: PyObject) -> PyResult<PyObject>
+    {
+        let key = key.extract::<PyBytes>(py)?;
         self
             .inner(py)
             .borrow_mut()
             .non_normal_entries_remove(HgPath::new(key.data(py)));
+        Ok(py.None())
+    }
+
+    def non_normal_entries_add(&self, key: PyObject) -> PyResult<PyObject> {
+        let key = key.extract::<PyBytes>(py)?;
+        self
+            .inner(py)
+            .borrow_mut()
+            .non_normal_entries_add(HgPath::new(key.data(py)));
         Ok(py.None())
     }
 

@@ -64,6 +64,10 @@ impl DirstateMap {
         self.other_parent_set = None;
     }
 
+    pub fn set_v1_inner(&mut self, filename: &HgPath, entry: DirstateEntry) {
+        self.state_map.insert(filename.to_owned(), entry);
+    }
+
     /// Add a tracked file to the dirstate
     pub fn add_file(
         &mut self,
@@ -245,10 +249,19 @@ impl DirstateMap {
         }
     }
 
-    pub fn non_normal_entries_remove(&mut self, key: impl AsRef<HgPath>) {
+    pub fn non_normal_entries_remove(
+        &mut self,
+        key: impl AsRef<HgPath>,
+    ) -> bool {
         self.get_non_normal_other_parent_entries()
             .0
-            .remove(key.as_ref());
+            .remove(key.as_ref())
+    }
+
+    pub fn non_normal_entries_add(&mut self, key: impl AsRef<HgPath>) {
+        self.get_non_normal_other_parent_entries()
+            .0
+            .insert(key.as_ref().into());
     }
 
     pub fn non_normal_entries_union(

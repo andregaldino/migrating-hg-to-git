@@ -564,30 +564,46 @@ class dirstate(object):
         if merged and (clean_p1 or clean_p2):
             msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
             raise error.ProgrammingError(msg)
-        if not (p1_tracked or p2_tracked or wc_tracked):
-            self._drop(filename)
-        elif merged:
-            assert wc_tracked
-            assert self.in_merge  # we are never in the "normallookup" case
-            self.otherparent(filename)
-        elif not (p1_tracked or p2_tracked) and wc_tracked:
-            self._addpath(filename, added=True, possibly_dirty=possibly_dirty)
-            self._map.copymap.pop(filename, None)
-        elif (p1_tracked or p2_tracked) and not wc_tracked:
-            self._remove(filename)
-        elif clean_p2 and wc_tracked:
-            assert p2_tracked
-            self.otherparent(filename)
-        elif not p1_tracked and p2_tracked and wc_tracked:
-            self._addpath(filename, from_p2=True, possibly_dirty=possibly_dirty)
-            self._map.copymap.pop(filename, None)
-        elif possibly_dirty:
-            self._addpath(filename, possibly_dirty=possibly_dirty)
-        elif wc_tracked:
-            self.normal(filename, parentfiledata=parentfiledata)
-        # XXX We need something for file that are dirty after an update
-        else:
-            assert False, 'unreachable'
+
+        # note: I do not think we need to double check name clash here since we
+        # are in a update/merge case that should already have taken care of
+        # this. The test agrees
+
+        self._dirty = True
+        self._updatedfiles.add(filename)
+
+        need_parent_file_data = (
+            not (possibly_dirty or clean_p2 or merged)
+            and wc_tracked
+            and p1_tracked
+        )
+
+        # this mean we are doing call for file we do not really care about the
+        # data (eg: added or removed), however this should be a minor overhead
+        # compared to the overall update process calling this.
+        if need_parent_file_data:
+            if parentfiledata is None:
+                parentfiledata = self._get_filedata(filename)
+            mtime = parentfiledata[2]
+
+            if mtime > self._lastnormaltime:
+                # Remember the most recent modification timeslot for
+                # status(), to make sure we won't miss future
+                # size-preserving file content modifications that happen
+                # within the same timeslot.
+                self._lastnormaltime = mtime
+
+        self._map.reset_state(
+            filename,
+            wc_tracked,
+            p1_tracked,
+            p2_tracked=p2_tracked,
+            merged=merged,
+            clean_p1=clean_p1,
+            clean_p2=clean_p2,
+            possibly_dirty=possibly_dirty,
+            parentfiledata=parentfiledata,
+        )
 
     def _addpath(
         self,
