@@ -420,12 +420,12 @@ manifest
 We have files in the dirstate that are included and excluded. Some are in the
 manifest and some are not.
   $ hg debugdirstate --no-dates
-  n 644          0 * excluded (glob)
-  a   0         -1 * excludednomanifest (glob)
-  n 644          0 * included (glob)
-  a   0         -1 * includedadded (glob)
+  n * excluded (glob)
+  a * excludednomanifest (glob)
+  n * included (glob)
+  a * includedadded (glob)
   $ hg debugrebuilddirstate --minimal
   $ hg debugdirstate --no-dates
-  n 644          0 * included (glob)
-  a   0         -1 * includedadded (glob)
+  n * included (glob)
+  a * includedadded (glob)
 

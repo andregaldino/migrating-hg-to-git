@@ -439,13 +439,21 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
                     message,
                 )
 
-        mergemod.applyupdates(
-            repo, tmresult, repo[None], repo[b'.'], False, wantfiledata=False
-        )
+        with repo.dirstate.parentchange():
+            mergemod.applyupdates(
+                repo,
+                tmresult,
+                repo[None],
+                repo[b'.'],
+                False,
+                wantfiledata=False,
+            )
 
-        dirstate = repo.dirstate
-        for file, flags, msg in tmresult.getactions([mergestatemod.ACTION_GET]):
-            dirstate.normal(file)
+            dirstate = repo.dirstate
+            for file, flags, msg in tmresult.getactions(
+                [mergestatemod.ACTION_GET]
+            ):
+                dirstate.normal(file)
 
     profiles = activeconfig(repo)[2]
     changedprofiles = profiles & files
