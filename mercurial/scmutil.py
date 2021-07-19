@@ -1456,7 +1456,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     origsrc = repo.dirstate.copied(src) or src
     if dst == origsrc:  # copying back a copy?
         if repo.dirstate[dst] not in b'mn' and not dryrun:
-            repo.dirstate.normallookup(dst)
+            repo.dirstate.set_tracked(dst)
     else:
         if repo.dirstate[origsrc] == b'a' and origsrc == src:
             if not ui.quiet:
