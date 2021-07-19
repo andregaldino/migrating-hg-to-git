@@ -1640,7 +1640,9 @@ def overriderollback(orig, ui, repo, **opts):
                 lfutil.synclfdirstate(repo, lfdirstate, file, True)
                 orphans.discard(file)
             for lfile in orphans:
-                lfdirstate.drop(lfile)
+                lfdirstate.update_file(
+                    lfile, p1_tracked=False, wc_tracked=False
+                )
         lfdirstate.write()
     return result
 
