@@ -556,7 +556,7 @@ def getstandinsstate(repo):
 def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     lfstandin = standin(lfile)
     if lfstandin not in repo.dirstate:
-        lfdirstate.drop(lfile)
+        lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=False)
     else:
         stat = repo.dirstate._map[lfstandin]
         state, mtime = stat.state, stat.mtime
