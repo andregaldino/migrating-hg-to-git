@@ -768,7 +768,9 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
     # re-add/mark as modified
     for f, args, msg in actions.get(ACTION_ADD_MODIFIED, []):
         if branchmerge:
-            repo.dirstate.normallookup(f)
+            repo.dirstate.update_file(
+                f, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+            )
         else:
             repo.dirstate.update_file(f, p1_tracked=False, wc_tracked=True)
 
