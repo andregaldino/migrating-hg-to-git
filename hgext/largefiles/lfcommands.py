@@ -588,7 +588,9 @@ def updatelfiles(
                         continue
                     # Synchronize largefile dirstate to the last modified
                     # time of the file
-                    lfdirstate.normal(lfile)
+                    lfdirstate.update_file(
+                        lfile, p1_tracked=True, wc_tracked=True
+                    )
                     update1 = 1
 
                 # copy the exec mode of largefile standin from the repository's
