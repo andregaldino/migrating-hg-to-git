@@ -620,6 +620,14 @@ class dirstate(object):
             possibly_dirty=possibly_dirty,
             parentfiledata=parentfiledata,
         )
+        if (
+            parentfiledata is not None
+            and parentfiledata[2] > self._lastnormaltime
+        ):
+            # Remember the most recent modification timeslot for status(),
+            # to make sure we won't miss future size-preserving file content
+            # modifications that happen within the same timeslot.
+            self._lastnormaltime = parentfiledata[2]
 
     def _addpath(
         self,
