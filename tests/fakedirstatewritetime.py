@@ -43,10 +43,7 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     actualnow = int(now)
     for f, e in dmap.items():
         if e.need_delay(actualnow):
-            e = parsers.DirstateItem(
-                e.state, e.mode, e.size, dirstatemapmod.AMBIGUOUS_TIME
-            )
-            dmap[f] = e
+            e.set_possibly_dirty()
 
     return orig(dmap, copymap, pl, fakenow)
 
