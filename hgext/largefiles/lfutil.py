@@ -550,25 +550,23 @@ def getstandinsstate(repo):
 
 def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     lfstandin = standin(lfile)
-    if lfstandin in repo.dirstate:
+    if lfstandin not in repo.dirstate:
+        lfdirstate.drop(lfile)
+    else:
         stat = repo.dirstate._map[lfstandin]
         state, mtime = stat.state, stat.mtime
-    else:
-        state, mtime = b'?', -1
-    if state == b'n':
-        if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
-            # state 'n' doesn't ensure 'clean' in this case
+        if state == b'n':
+            if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
+                # state 'n' doesn't ensure 'clean' in this case
+                lfdirstate.normallookup(lfile)
+            else:
+                lfdirstate.normal(lfile)
+        elif state == b'm':
             lfdirstate.normallookup(lfile)
-        else:
-            lfdirstate.normal(lfile)
-    elif state == b'm':
-        lfdirstate.normallookup(lfile)
-    elif state == b'r':
-        lfdirstate.remove(lfile)
-    elif state == b'a':
-        lfdirstate.add(lfile)
-    elif state == b'?':
-        lfdirstate.drop(lfile)
+        elif state == b'r':
+            lfdirstate.remove(lfile)
+        elif state == b'a':
+            lfdirstate.add(lfile)
 
 
 def markcommitted(orig, ctx, node):
