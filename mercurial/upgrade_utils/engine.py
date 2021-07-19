@@ -64,7 +64,12 @@ def _revlogfrompath(repo, rl_type, path):
         )
     else:
         # drop the extension and the `data/` prefix
-        path = path.rsplit(b'.', 1)[0].split(b'/', 1)[1]
+        path_part = path.rsplit(b'.', 1)[0].split(b'/', 1)
+        if len(path_part) < 2:
+            msg = _('cannot recognize revlog from filename: %s')
+            msg %= path
+            raise error.Abort(msg)
+        path = path_part[1]
         return filelog.filelog(repo.svfs, path)
 
 
