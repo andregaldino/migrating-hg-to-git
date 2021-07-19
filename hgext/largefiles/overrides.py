@@ -654,7 +654,9 @@ def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
             ]:
                 # this should be executed before 'orig', to execute 'remove'
                 # before all other actions
-                repo.dirstate.remove(lfile)
+                repo.dirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=False
+                )
                 # make sure lfile doesn't get synclfdirstate'd as normal
                 lfdirstate.add(lfile)
         lfdirstate.write()
