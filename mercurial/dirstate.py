@@ -819,9 +819,16 @@ class dirstate(object):
 
     def add(self, f):
         '''Mark a file added.'''
-        if not self.pendingparentchange():
+        if self.pendingparentchange():
             util.nouideprecwarn(
-                b"do not use `add` outside of update/merge context."
+                b"do not use `add` inside of update/merge context."
+                b" Use `update_file`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
+            util.nouideprecwarn(
+                b"do not use `remove` outside of update/merge context."
                 b" Use `set_tracked`",
                 b'6.0',
                 stacklevel=2,
