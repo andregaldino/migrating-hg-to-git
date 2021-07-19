@@ -3004,7 +3004,7 @@ def amend(ui, repo, old, extra, pats, opts):
             # to "removed" in the dirstate.
             removedfiles = set(wctx.removed()) & filestoamend
             for f in removedfiles:
-                dirstate.drop(f)
+                dirstate.update_file(f, p1_tracked=False, wc_tracked=False)
 
         mapping = {old.node(): (newid,)}
         obsmetadata = None
