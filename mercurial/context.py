@@ -2022,7 +2022,9 @@ class workingctx(committablectx):
     def markcommitted(self, node):
         with self._repo.dirstate.parentchange():
             for f in self.modified() + self.added():
-                self._repo.dirstate.normal(f)
+                self._repo.dirstate.update_file(
+                    f, p1_tracked=True, wc_tracked=True
+                )
             for f in self.removed():
                 self._repo.dirstate.drop(f)
             self._repo.dirstate.setparents(node)
