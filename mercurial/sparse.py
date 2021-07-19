@@ -283,7 +283,7 @@ def prunetemporaryincludes(repo):
 
     # Fix dirstate
     for file in dropped:
-        dirstate.drop(file)
+        dirstate.update_file(file, p1_tracked=False, wc_tracked=False)
 
     repo.vfs.unlink(b'tempsparse')
     repo._sparsesignaturecache.clear()
