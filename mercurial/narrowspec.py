@@ -343,7 +343,7 @@ def updateworkingcopy(repo, assumeclean=False):
     for f in sorted(status.ignored):
         repo.ui.status(_(b'not deleting ignored file %s\n') % uipathfn(f))
     for f in clean + trackeddirty:
-        ds.drop(f)
+        ds.update_file(f, p1_tracked=False, wc_tracked=False)
 
     pctx = repo[b'.']
 
