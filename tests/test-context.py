@@ -240,7 +240,7 @@ for i in [b'1', b'2', b'3']:
 with repo.wlock(), repo.lock(), repo.transaction(b'test'):
     with open(b'4', 'wb') as f:
         f.write(b'4')
-    repo.dirstate.normal(b'4')
+    repo.dirstate.set_tracked(b'4')
     repo.commit(b'4')
     revsbefore = len(repo.changelog)
     repo.invalidate(clearfilecache=True)
