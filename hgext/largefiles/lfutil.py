@@ -563,7 +563,9 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
         if state == b'n':
             if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
                 # state 'n' doesn't ensure 'clean' in this case
-                lfdirstate.normallookup(lfile)
+                lfdirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
             else:
                 lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
         elif state == b'm':
