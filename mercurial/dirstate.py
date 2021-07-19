@@ -775,7 +775,7 @@ class dirstate(object):
                 if entry.merged_removed or entry.from_p2_removed:
                     source = self._map.copymap.get(f)
                     if entry.merged_removed:
-                        self.merge(f)
+                        self._merge(f)
                     elif entry.from_p2_removed:
                         self._otherparent(f)
                     if source is not None:
@@ -859,6 +859,23 @@ class dirstate(object):
 
     def merge(self, f):
         '''Mark a file merged.'''
+        if self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `merge` inside of update/merge context."
+                b" Use `update_file`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
+            util.nouideprecwarn(
+                b"do not use `merge` outside of update/merge context."
+                b"It should have been set by the update/merge code",
+                b'6.0',
+                stacklevel=2,
+            )
+        self._merge(f)
+
+    def _merge(self, f):
         if not self.in_merge:
             return self._normallookup(f)
         return self._otherparent(f)
