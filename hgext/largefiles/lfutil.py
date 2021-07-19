@@ -562,7 +562,7 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
                 # state 'n' doesn't ensure 'clean' in this case
                 lfdirstate.normallookup(lfile)
             else:
-                lfdirstate.normal(lfile)
+                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
         elif state == b'm':
             lfdirstate.normallookup(lfile)
         elif state == b'r':
