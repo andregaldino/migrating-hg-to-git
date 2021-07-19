@@ -81,6 +81,14 @@ class DirstateItem(object):
             mtime=mtime,
         )
 
+    def set_possibly_dirty(self):
+        """Mark a file as "possibly dirty"
+
+        This means the next status call will have to actually check its content
+        to make sure it is correct.
+        """
+        self._mtime = AMBIGUOUS_TIME
+
     def __getitem__(self, idx):
         if idx == 0 or idx == -4:
             msg = b"do not use item[x], use item.state"

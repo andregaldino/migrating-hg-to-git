@@ -31,6 +31,7 @@ static const char *const versionerrortext = "Python minor version mismatch";
 
 static const int dirstate_v1_from_p2 = -2;
 static const int dirstate_v1_nonnormal = -1;
+static const int ambiguous_time = -1;
 
 static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 {
@@ -197,6 +198,14 @@ static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
 	return (PyObject *)t;
 };
 
+/* This means the next status call will have to actually check its content
+   to make sure it is correct. */
+static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
+{
+	self->mtime = ambiguous_time;
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef dirstate_item_methods[] = {
     {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
@@ -210,6 +219,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "True if the stored mtime would be ambiguous with the current time"},
     {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth, METH_O,
      "build a new DirstateItem object from V1 data"},
+    {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
+     METH_NOARGS, "mark a file as \"possibly dirty\""},
     {NULL} /* Sentinel */
 };
 
