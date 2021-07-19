@@ -478,6 +478,10 @@ class dirstate(object):
         elif not entry.tracked:
             self.normallookup(filename)
             return True
+        # XXX This is probably overkill for more case, but we need this to
+        # fully replace the `normallookup` call with `set_tracked` one.
+        # Consider smoothing this in the future.
+        self.set_possibly_dirty(filename)
         return False
 
     @requires_no_parents_change
