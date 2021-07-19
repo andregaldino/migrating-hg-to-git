@@ -575,7 +575,7 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
         elif state == b'r':
             lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
         elif state == b'a':
-            lfdirstate.add(lfile)
+            lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
 
 
 def markcommitted(orig, ctx, node):
