@@ -168,7 +168,9 @@ class largefilesdirstate(dirstate.dirstate):
     def set_untracked(self, f):
         return super(largefilesdirstate, self).set_untracked(unixpath(f))
 
-    def normal(self, f):
+    def normal(self, f, parentfiledata=None):
+        # not sure if we should pass the `parentfiledata` down or throw it
+        # away. So throwing it away to stay on the safe side.
         return super(largefilesdirstate, self).normal(unixpath(f))
 
     def remove(self, f):
