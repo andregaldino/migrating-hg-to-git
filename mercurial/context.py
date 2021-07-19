@@ -2026,7 +2026,9 @@ class workingctx(committablectx):
                     f, p1_tracked=True, wc_tracked=True
                 )
             for f in self.removed():
-                self._repo.dirstate.drop(f)
+                self._repo.dirstate.update_file(
+                    f, p1_tracked=False, wc_tracked=False
+                )
             self._repo.dirstate.setparents(node)
             self._repo._quick_access_changeid_invalidate()
 
