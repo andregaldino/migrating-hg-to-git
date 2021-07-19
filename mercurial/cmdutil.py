@@ -3610,7 +3610,7 @@ def _performrevert(
         # to report the file as clean. We have to use normallookup for
         # merges to avoid losing information about merged/dirty files.
         if p2 != repo.nullid:
-            normal = repo.dirstate.normallookup
+            normal = repo.dirstate.set_tracked
         else:
             normal = repo.dirstate.set_clean
 
@@ -3703,7 +3703,7 @@ def _performrevert(
             checkout(f)
             repo.dirstate.set_tracked(f)
 
-    normal = repo.dirstate.normallookup
+    normal = repo.dirstate.set_tracked
     if node == parent and p2 == repo.nullid:
         normal = repo.dirstate.set_clean
     for f in actions[b'undelete'][0]:
