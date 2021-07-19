@@ -3598,7 +3598,7 @@ def _performrevert(
         if p2 != repo.nullid:
             normal = repo.dirstate.normallookup
         else:
-            normal = repo.dirstate.normal
+            normal = repo.dirstate.set_clean
 
     newlyaddedandmodifiedfiles = set()
     if interactive:
@@ -3691,7 +3691,7 @@ def _performrevert(
 
     normal = repo.dirstate.normallookup
     if node == parent and p2 == repo.nullid:
-        normal = repo.dirstate.normal
+        normal = repo.dirstate.set_clean
     for f in actions[b'undelete'][0]:
         if interactive:
             choice = repo.ui.promptchoice(
