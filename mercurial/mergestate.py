@@ -776,7 +776,9 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
 
     # exec change
     for f, args, msg in actions.get(ACTION_EXEC, []):
-        repo.dirstate.normallookup(f)
+        repo.dirstate.update_file(
+            f, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+        )
 
     # keep
     for f, args, msg in actions.get(ACTION_KEEP, []):
