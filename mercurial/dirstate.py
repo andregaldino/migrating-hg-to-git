@@ -882,7 +882,14 @@ class dirstate(object):
 
     def drop(self, f):
         '''Drop a file from the dirstate'''
-        if not self.pendingparentchange():
+        if self.pendingparentchange():
+            util.nouideprecwarn(
+                b"do not use `drop` inside of update/merge context."
+                b" Use `update_file`",
+                b'6.0',
+                stacklevel=2,
+            )
+        else:
             util.nouideprecwarn(
                 b"do not use `drop` outside of update/merge context."
                 b" Use `set_untracked`",
