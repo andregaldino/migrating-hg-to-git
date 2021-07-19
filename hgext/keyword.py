@@ -356,7 +356,7 @@ class kwtemplater(object):
                 fp.write(data)
                 fp.close()
                 if kwcmd:
-                    self.repo.dirstate.normal(f)
+                    self.repo.dirstate.set_clean(f)
                 elif self.postcommit:
                     self.repo.dirstate.normallookup(f)
 
