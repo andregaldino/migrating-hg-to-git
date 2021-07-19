@@ -548,7 +548,12 @@ def updatelfiles(
                         # use normallookup() to allocate an entry in largefiles
                         # dirstate to prevent lfilesrepo.status() from reporting
                         # missing files as removed.
-                        lfdirstate.normallookup(lfile)
+                        lfdirstate.update_file(
+                            lfile,
+                            p1_tracked=True,
+                            wc_tracked=True,
+                            possibly_dirty=True,
+                        )
                         update[lfile] = expecthash
                 else:
                     # Remove lfiles for which the standin is deleted, unless the
