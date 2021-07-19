@@ -405,6 +405,8 @@ REVLOG_FILES_OTHER_EXT = (
 REVLOG_FILES_VOLATILE_EXT = (b'.n', b'.nd')
 
 # some exception to the above matching
+#
+# XXX This is currently not in use because of issue6542
 EXCLUDED = re.compile(b'.*undo\.[^/]+\.(nd?|i)$')
 
 
@@ -415,9 +417,12 @@ def is_revlog(f, kind, st):
 
 
 def revlog_type(f):
-    if f.endswith(REVLOG_FILES_MAIN_EXT) and EXCLUDED.match(f) is None:
+    # XXX we need to filter `undo.` created by the transaction here, however
+    # being naive about it also filter revlog for `undo.*` files, leading to
+    # issue6542. So we no longer use EXCLUDED.
+    if f.endswith(REVLOG_FILES_MAIN_EXT):
         return FILEFLAGS_REVLOG_MAIN
-    elif f.endswith(REVLOG_FILES_OTHER_EXT) and EXCLUDED.match(f) is None:
+    elif f.endswith(REVLOG_FILES_OTHER_EXT):
         t = FILETYPE_FILELOG_OTHER
         if f.endswith(REVLOG_FILES_VOLATILE_EXT):
             t |= FILEFLAGS_VOLATILE
