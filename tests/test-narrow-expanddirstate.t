@@ -74,8 +74,14 @@ have this method available in narrowhg proper at the moment.
   >   narrowspec.copytoworkingcopy(repo)
   >   newmatcher = narrowspec.match(repo.root, includes, excludes)
   >   added = matchmod.differencematcher(newmatcher, currentmatcher)
-  >   for f in repo[b'.'].manifest().walk(added):
-  >     repo.dirstate.normallookup(f)
+  >   with repo.dirstate.parentchange():
+  >       for f in repo[b'.'].manifest().walk(added):
+  >           repo.dirstate.update_file(
+  >               f,
+  >               p1_tracked=True,
+  >               wc_tracked=True,
+  >               possibly_dirty=True,
+  >           )
   > 
   > def reposetup(ui, repo):
   >   class expandingrepo(repo.__class__):
