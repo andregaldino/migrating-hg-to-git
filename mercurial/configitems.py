@@ -1266,6 +1266,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'web.full-garbage-collection-rate',
+    default=1,  # still forcing a full collection on each request
+)
+coreconfigitem(
+    b'experimental',
     b'worker.wdir-get-thread-safe',
     default=False,
 )
