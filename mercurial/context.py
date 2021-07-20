@@ -992,6 +992,16 @@ class basefilectx:
             if self._repo._encodefilterpats:
                 # can't rely on size() because wdir content may be decoded
                 return self._filelog.cmp(self._filenode, fctx.data())
+            # filelog.size() has two special cases:
+            # - censored metadata
+            # - copy/rename tracking
+            # The first is detected by peaking into the delta,
+            # the second is detected by abusing parent order
+            # in the revlog index as flag bit. This leaves files using
+            # the dummy encoding and non-standard meta attributes.
+            # The following check is a special case for the empty
+            # metadata block used if the raw file content starts with '\1\n'.
+            # Cases of arbitrary metadata flags are currently mishandled.
             if self.size() - 4 == fctx.size():
                 # size() can match:
                 # if file data starts with '\1\n', empty metadata block is

@@ -298,6 +298,7 @@ class revlog:
         persistentnodemap=False,
         concurrencychecker=None,
         trypending=False,
+        canonical_parent_order=True,
     ):
         """
         create a revlog object
@@ -372,6 +373,13 @@ class revlog:
         self._loadindex()
 
         self._concurrencychecker = concurrencychecker
+
+        # parent order is supposed to be semantically irrelevant, so we
+        # normally resort parents to ensure that the first parent is non-null,
+        # if there is a non-null parent at all.
+        # filelog abuses the parent order as flag to mark some instances of
+        # meta-encoded files, so allow it to disable this behavior.
+        self.canonical_parent_order = canonical_parent_order
 
     def _init_opts(self):
         """process options (from above/config) to setup associated default revlog mode
@@ -898,7 +906,10 @@ class revlog:
                 raise error.WdirUnsupported
             raise
 
-        return entry[5], entry[6]
+        if self.canonical_parent_order and entry[5] == nullrev:
+            return entry[6], entry[5]
+        else:
+            return entry[5], entry[6]
 
     # fast parentrevs(rev) where rev isn't filtered
     _uncheckedparentrevs = parentrevs
@@ -919,7 +930,11 @@ class revlog:
     def parents(self, node):
         i = self.index
         d = i[self.rev(node)]
-        return i[d[5]][7], i[d[6]][7]  # map revisions to nodes inline
+        # inline node() to avoid function call overhead
+        if self.canonical_parent_order and d[5] == self.nullid:
+            return i[d[6]][7], i[d[5]][7]
+        else:
+            return i[d[5]][7], i[d[6]][7]
 
     def chainlen(self, rev):
         return self._chaininfo(rev)[0]
