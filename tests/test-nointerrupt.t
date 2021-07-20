@@ -5,85 +5,87 @@ XXX-RHG this test hangs if `hg` is really `rhg`. This was hidden by the use of
 buggy. This need to be resolved sooner than later.
 
 Dummy extension simulating unsafe long running command
-  $ cat > sleepext.py <<EOF
-  > import itertools
+  $ SYNC_FILE="$TESTTMP/sync-file"
+  $ export SYNC_FILE
+  $ DONE_FILE="$TESTTMP/done-file"
+  $ export DONE_FILE
+  $ 
+  $ cat > wait_ext.py <<EOF
+  > import os
   > import time
   > 
   > from mercurial.i18n import _
   > from mercurial import registrar
+  > from mercurial import testing
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > 
-  > @command(b'sleep', [], _(b'TIME'), norepo=True)
-  > def sleep(ui, sleeptime=b"1", **opts):
+  > @command(b'wait-signal', [], _(b'SYNC_FILE DONE_FILE'), norepo=True)
+  > def sleep(ui, sync_file=b"$SYNC_FILE", done_file=b"$DONE_FILE", **opts):
+  >     start = time.time()
   >     with ui.uninterruptible():
-  >         for _i in itertools.repeat(None, int(sleeptime)):
-  >             time.sleep(1)
+  >         testing.write_file(sync_file, b'%d' % os.getpid())
+  >         testing.wait_file(done_file)
   >         ui.warn(b"end of unsafe operation\n")
-  >     ui.warn(b"%s second(s) passed\n" % sleeptime)
+  >     ui.warn(b"%d second(s) passed\n" % int(time.time() - start))
   > EOF
 
-Kludge to emulate timeout(1) which is not generally available.
-  $ cat > timeout.py <<EOF
-  > from __future__ import print_function
-  > import argparse
-  > import signal
-  > import subprocess
-  > import sys
-  > import time
-  > 
-  > ap = argparse.ArgumentParser()
-  > ap.add_argument('-s', nargs=1, default='SIGTERM')
-  > ap.add_argument('duration', nargs=1, type=int)
-  > ap.add_argument('argv', nargs='*')
-  > opts = ap.parse_args()
-  > try:
-  >     sig = int(opts.s[0])
-  > except ValueError:
-  >     sname = opts.s[0]
-  >     if not sname.startswith('SIG'):
-  >         sname = 'SIG' + sname
-  >     sig = getattr(signal, sname)
-  > proc = subprocess.Popen(opts.argv)
-  > time.sleep(opts.duration[0])
-  > proc.poll()
-  > if proc.returncode is None:
-  >     proc.send_signal(sig)
-  >     proc.wait()
-  >     sys.exit(124)
+  $ cat > send-signal.sh << EOF
+  > #!/bin/sh
+  > SIG=\$1
+  > if [ -z "\$SIG" ]; then
+  >    echo "send-signal.sh requires one argument" >&2
+  >    exit 1
+  > fi
+  > "$RUNTESTDIR/testlib/wait-on-file" 10 "$SYNC_FILE" || exit 2
+  > kill -s \$SIG \`cat "$SYNC_FILE"\`
+  > touch "$DONE_FILE"
   > EOF
+
+#if no-windows
+  $ chmod +x send-signal.sh
+#endif
+
+Kludge to emulate timeout(1) which is not generally available.
 
 Set up repository
   $ hg init repo
   $ cd repo
   $ cat >> $HGRCPATH << EOF
   > [extensions]
-  > sleepext = ../sleepext.py
+  > wait_ext = $TESTTMP/wait_ext.py
   > EOF
 
+
 Test ctrl-c
-  $ "$PYTHON" $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ rm -f $SYNC_FILE $DONE_FILE
+  $ sh -c "../send-signal.sh INT" &
+  $ hg wait-signal
   interrupted!
-  [124]
+  [255]
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > nointerrupt = yes
   > EOF
 
-  $ "$PYTHON" $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ rm -f $SYNC_FILE $DONE_FILE
+  $ sh -c "../send-signal.sh INT" &
+  $ hg wait-signal
   interrupted!
-  [124]
+  [255]
 
   $ cat >> $HGRCPATH << EOF
   > [experimental]
   > nointerrupt-interactiveonly = False
   > EOF
 
-  $ "$PYTHON" $TESTTMP/timeout.py -s INT 1 hg sleep 2
+  $ rm -f $SYNC_FILE $DONE_FILE
+  $ sh -c "../send-signal.sh INT" &
+  $ hg wait-signal
   shutting down cleanly
   press ^C again to terminate immediately (dangerous)
   end of unsafe operation
   interrupted!
-  [124]
+  [255]
