@@ -19,7 +19,6 @@ import shutil
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
 )
 
@@ -40,6 +39,7 @@ from . import (
     phases,
     pycompat,
     revlog,
+    revlogutils,
     util,
     vfs as vfsmod,
 )
@@ -47,9 +47,13 @@ from .utils import (
     urlutil,
 )
 
+from .revlogutils import (
+    constants as revlog_constants,
+)
+
 
 class bundlerevlog(revlog.revlog):
-    def __init__(self, opener, indexfile, cgunpacker, linkmapper):
+    def __init__(self, opener, target, radix, cgunpacker, linkmapper):
         # How it works:
         # To retrieve a revision, we need to know the offset of the revision in
         # the bundle (an unbundle object). We store this offset in the index
@@ -58,7 +62,7 @@ class bundlerevlog(revlog.revlog):
         # To differentiate a rev in the bundle from a rev in the revlog, we
         # check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
-        revlog.revlog.__init__(self, opener, indexfile)
+        revlog.revlog.__init__(self, opener, target=target, radix=radix)
         self.bundle = cgunpacker
         n = len(self)
         self.repotiprev = n - 1
@@ -81,25 +85,25 @@ class bundlerevlog(revlog.revlog):
             for p in (p1, p2):
                 if not self.index.has_node(p):
                     raise error.LookupError(
-                        p, self.indexfile, _(b"unknown parent")
+                        p, self.display_id, _(b"unknown parent")
                     )
 
             if not self.index.has_node(deltabase):
                 raise LookupError(
-                    deltabase, self.indexfile, _(b'unknown delta base')
+                    deltabase, self.display_id, _(b'unknown delta base')
                 )
 
             baserev = self.rev(deltabase)
-            # start, size, full unc. size, base (unused), link, p1, p2, node
-            e = (
-                revlog.offset_type(start, flags),
-                size,
-                -1,
-                baserev,
-                linkrev,
-                self.rev(p1),
-                self.rev(p2),
-                node,
+            # start, size, full unc. size, base (unused), link, p1, p2, node, sidedata_offset (unused), sidedata_size (unused)
+            e = revlogutils.entry(
+                flags=flags,
+                data_offset=start,
+                data_compressed_length=size,
+                data_delta_base=baserev,
+                link_rev=linkrev,
+                parent_rev_1=self.rev(p1),
+                parent_rev_2=self.rev(p2),
+                node_id=node,
             )
             self.index.append(e)
             self.bundlerevs.add(n)
@@ -172,7 +176,12 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
         changelog.changelog.__init__(self, opener)
         linkmapper = lambda x: x
         bundlerevlog.__init__(
-            self, opener, self.indexfile, cgunpacker, linkmapper
+            self,
+            opener,
+            (revlog_constants.KIND_CHANGELOG, None),
+            self.radix,
+            cgunpacker,
+            linkmapper,
         )
 
 
@@ -188,7 +197,12 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     ):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener, tree=dir)
         bundlerevlog.__init__(
-            self, opener, self.indexfile, cgunpacker, linkmapper
+            self,
+            opener,
+            (revlog_constants.KIND_MANIFESTLOG, dir),
+            self._revlog.radix,
+            cgunpacker,
+            linkmapper,
         )
         if dirlogstarts is None:
             dirlogstarts = {}
@@ -215,7 +229,12 @@ class bundlefilelog(filelog.filelog):
     def __init__(self, opener, path, cgunpacker, linkmapper):
         filelog.filelog.__init__(self, opener, path)
         self._revlog = bundlerevlog(
-            opener, self.indexfile, cgunpacker, linkmapper
+            opener,
+            # XXX should use the unencoded path
+            target=(revlog_constants.KIND_FILELOG, path),
+            radix=self._revlog.radix,
+            cgunpacker=cgunpacker,
+            linkmapper=linkmapper,
         )
 
 
@@ -447,7 +466,9 @@ class bundlerepository(object):
         return encoding.getcwd()  # always outside the repo
 
     # Check if parents exist in localrepo before setting
-    def setparents(self, p1, p2=nullid):
+    def setparents(self, p1, p2=None):
+        if p2 is None:
+            p2 = self.nullid
         p1rev = self.changelog.rev(p1)
         p2rev = self.changelog.rev(p2)
         msg = _(b"setting parent to node %s that only exists in the bundle\n")

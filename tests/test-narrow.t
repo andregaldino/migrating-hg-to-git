@@ -132,12 +132,14 @@ Force deletion of local changes
   looking for local changes to affected paths
   The following changeset(s) or their ancestors have local changes not on the remote:
   * (glob)
+  moving unwanted changesets to backup
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d0/f.i (reporevlogstore !)
   deleting meta/d0/00manifest.i (tree !)
   deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
   deleting data/d0/f/4374b5650fc5ae54ac857c0f0381971fdde376f7 (reposimplestore !)
   deleting data/d0/f/index (reposimplestore !)
+  deleting unwanted files from working copy
 
   $ hg log -T "{rev}: {desc} {outsidenarrow}\n"
   7: local change to d3 
@@ -164,12 +166,14 @@ Pruned commits affecting removed paths should not prevent narrowing
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
+  moving unwanted changesets to backup
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d0/f.i (reporevlogstore !)
   deleting meta/d0/00manifest.i (tree !)
   deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
   deleting data/d0/f/4374b5650fc5ae54ac857c0f0381971fdde376f7 (reposimplestore !)
   deleting data/d0/f/index (reposimplestore !)
+  deleting unwanted files from working copy
 
 Updates off of stripped commit if necessary
   $ hg co -r 'desc("local change to d3")' -q
@@ -183,12 +187,14 @@ Updates off of stripped commit if necessary
   * (glob)
   * (glob)
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  moving unwanted changesets to backup
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d3/f.i (reporevlogstore !)
   deleting meta/d3/00manifest.i (tree !)
   deleting data/d3/f/2661d26c649684b482d10f91960cc3db683c38b4 (reposimplestore !)
   deleting data/d3/f/99fa7136105a15e2045ce3d9152e4837c5349e4d (reposimplestore !)
   deleting data/d3/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg log -T '{desc}\n' -r .
   add d10/f
 Updates to nullid if necessary
@@ -206,12 +212,14 @@ Updates to nullid if necessary
   The following changeset(s) or their ancestors have local changes not on the remote:
   * (glob)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  moving unwanted changesets to backup
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d3/f.i (reporevlogstore !)
   deleting meta/d3/00manifest.i (tree !)
   deleting data/d3/f/2661d26c649684b482d10f91960cc3db683c38b4 (reposimplestore !)
   deleting data/d3/f/5ce0767945cbdbca3b924bb9fbf5143f72ab40ac (reposimplestore !)
   deleting data/d3/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg id
   000000000000
   $ cd ..
@@ -272,6 +280,7 @@ Can remove last include, making repo empty
   deleting meta/d0/00manifest.i (tree !)
   deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
   deleting data/d0/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg tracked
   $ hg files
   [1]
@@ -296,7 +305,7 @@ Can widen the empty clone
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1 changes to 1 files
+  added 4 changesets with 1 changes to 1 files (+1 heads)
   $ hg tracked
   I path:d0
   $ hg files
@@ -332,6 +341,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   deleting meta/d6/00manifest.i (tree !)
   deleting data/d6/f/7339d30678f451ac8c3f38753beeb4cf2e1655c7 (reposimplestore !)
   deleting data/d6/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg tracked
   I path:d0
   I path:d3
@@ -355,6 +365,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   deleting data/d3/f.i (reporevlogstore !)
   deleting data/d3/f/2661d26c649684b482d10f91960cc3db683c38b4 (reposimplestore !)
   deleting data/d3/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg tracked
   I path:d0
   I path:d3
@@ -378,6 +389,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   deleting meta/d0/00manifest.i (tree !)
   deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
   deleting data/d0/f/index (reposimplestore !)
+  deleting unwanted files from working copy
   $ hg tracked
   I path:d3
   I path:d9
@@ -478,11 +490,13 @@ Test --auto-remove-includes
   path:d2
   remove these unused includes (yn)? y
   looking for local changes to affected paths
+  moving unwanted changesets to backup
   saved backup bundle to $TESTTMP/narrow-auto-remove/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d0/f.i
   deleting data/d2/f.i
   deleting meta/d0/00manifest.i (tree !)
   deleting meta/d2/00manifest.i (tree !)
+  deleting unwanted files from working copy
   $ hg tracked
   I path:d1
   $ hg files
@@ -504,10 +518,12 @@ Test --no-backup
   path:d2
   remove these unused includes (yn)? y
   looking for local changes to affected paths
+  deleting unwanted changesets
   deleting data/d0/f.i
   deleting data/d2/f.i
   deleting meta/d0/00manifest.i (tree !)
   deleting meta/d2/00manifest.i (tree !)
+  deleting unwanted files from working copy
   $ ls .hg/strip-backup/
 
 
@@ -521,4 +537,5 @@ Test removing include while concurrently modifying file in that path
   looking for local changes to affected paths
   deleting data/d0/f.i
   deleting meta/d0/00manifest.i (tree !)
+  deleting unwanted files from working copy
   not deleting possibly dirty file d0/f

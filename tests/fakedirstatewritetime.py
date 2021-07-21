@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from mercurial import (
     context,
     dirstate,
+    dirstatemap as dirstatemapmod,
     extensions,
     policy,
     registrar,
@@ -41,9 +42,8 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     # for consistency
     actualnow = int(now)
     for f, e in dmap.items():
-        if e[0] == 'n' and e[3] == actualnow:
-            e = parsers.dirstatetuple(e[0], e[1], e[2], -1)
-            dmap[f] = e
+        if e.need_delay(actualnow):
+            e.set_possibly_dirty()
 
     return orig(dmap, copymap, pl, fakenow)
 
@@ -66,11 +66,11 @@ def fakewrite(ui, func):
     if rustmod is not None:
         # The Rust implementation does not use public parse/pack dirstate
         # to prevent conversion round-trips
-        orig_dirstatemap_write = dirstate.dirstatemap.write
-        wrapper = lambda self, st, now: orig_dirstatemap_write(
-            self, st, fakenow
+        orig_dirstatemap_write = dirstatemapmod.dirstatemap.write
+        wrapper = lambda self, tr, st, now: orig_dirstatemap_write(
+            self, tr, st, fakenow
         )
-        dirstate.dirstatemap.write = wrapper
+        dirstatemapmod.dirstatemap.write = wrapper
 
     orig_dirstate_getfsnow = dirstate._getfsnow
     wrapper = lambda *args: pack_dirstate(fakenow, orig_pack_dirstate, *args)
@@ -86,7 +86,7 @@ def fakewrite(ui, func):
         orig_module.pack_dirstate = orig_pack_dirstate
         dirstate._getfsnow = orig_dirstate_getfsnow
         if rustmod is not None:
-            dirstate.dirstatemap.write = orig_dirstatemap_write
+            dirstatemapmod.dirstatemap.write = orig_dirstatemap_write
 
 
 def _poststatusfixup(orig, workingctx, status, fixup):

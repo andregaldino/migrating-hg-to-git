@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
 	PyObject_HEAD
 	PyObject *pydata;
+	Py_ssize_t nodelen;
 	line *lines;
 	int numlines; /* number of line entries */
 	int livelines; /* number of non-deleted lines */
@@ -49,12 +50,11 @@ static Py_ssize_t pathlen(line *l)
 }
 
 /* get the node value of a single line */
-static PyObject *nodeof(line *l, char *flag)
+static PyObject *nodeof(Py_ssize_t nodelen, line *l, char *flag)
 {
 	char *s = l->start;
 	Py_ssize_t llen = pathlen(l);
 	Py_ssize_t hlen = l->len - llen - 2;
-	Py_ssize_t hlen_raw;
 	PyObject *hash;
 	if (llen + 1 + 40 + 1 > l->len) { /* path '\0' hash '\n' */
 		PyErr_SetString(PyExc_ValueError, "manifest line too short");
@@ -73,36 +73,29 @@ static PyObject *nodeof(line *l, char *flag)
 		break;
 	}
 
-	switch (hlen) {
-	case 40: /* sha1 */
-		hlen_raw = 20;
-		break;
-	case 64: /* new hash */
-		hlen_raw = 32;
-		break;
-	default:
+	if (hlen != 2 * nodelen) {
 		PyErr_SetString(PyExc_ValueError, "invalid node length in manifest");
 		return NULL;
 	}
-	hash = unhexlify(s + llen + 1, hlen_raw * 2);
+	hash = unhexlify(s + llen + 1, nodelen * 2);
 	if (!hash) {
 		return NULL;
 	}
 	if (l->hash_suffix != '\0') {
 		char newhash[33];
-		memcpy(newhash, PyBytes_AsString(hash), hlen_raw);
+		memcpy(newhash, PyBytes_AsString(hash), nodelen);
 		Py_DECREF(hash);
-		newhash[hlen_raw] = l->hash_suffix;
-		hash = PyBytes_FromStringAndSize(newhash, hlen_raw+1);
+		newhash[nodelen] = l->hash_suffix;
+		hash = PyBytes_FromStringAndSize(newhash, nodelen + 1);
 	}
 	return hash;
 }
 
 /* get the node hash and flags of a line as a tuple */
-static PyObject *hashflags(line *l)
+static PyObject *hashflags(Py_ssize_t nodelen, line *l)
 {
 	char flag;
-	PyObject *hash = nodeof(l, &flag);
+	PyObject *hash = nodeof(nodelen, l, &flag);
 	PyObject *flags;
 	PyObject *tup;
 
@@ -190,17 +183,23 @@ static void lazymanifest_init_early(lazymanifest *self)
 static int lazymanifest_init(lazymanifest *self, PyObject *args)
 {
 	char *data;
-	Py_ssize_t len;
+	Py_ssize_t nodelen, len;
 	int err, ret;
 	PyObject *pydata;
 
 	lazymanifest_init_early(self);
-	if (!PyArg_ParseTuple(args, "S", &pydata)) {
+	if (!PyArg_ParseTuple(args, "nS", &nodelen, &pydata)) {
 		return -1;
 	}
-	err = PyBytes_AsStringAndSize(pydata, &data, &len);
-
+	if (nodelen != 20 && nodelen != 32) {
+		/* See fixed buffer in nodeof */
+		PyErr_Format(PyExc_ValueError, "Unsupported node length");
+		return -1;
+	}
+	self->nodelen = nodelen;
 	self->dirty = false;
+
+	err = PyBytes_AsStringAndSize(pydata, &data, &len);
 	if (err == -1)
 		return -1;
 	self->pydata = pydata;
@@ -291,17 +290,18 @@ static line *lmiter_nextline(lmIter *self)
 
 static PyObject *lmiter_iterentriesnext(PyObject *o)
 {
+	lmIter *self = (lmIter *)o;
 	Py_ssize_t pl;
 	line *l;
 	char flag;
 	PyObject *ret = NULL, *path = NULL, *hash = NULL, *flags = NULL;
-	l = lmiter_nextline((lmIter *)o);
+	l = lmiter_nextline(self);
 	if (!l) {
 		goto done;
 	}
 	pl = pathlen(l);
 	path = PyBytes_FromStringAndSize(l->start, pl);
-	hash = nodeof(l, &flag);
+	hash = nodeof(self->m->nodelen, l, &flag);
 	if (!path || !hash) {
 		goto done;
 	}
@@ -471,7 +471,7 @@ static PyObject *lazymanifest_getitem(lazymanifest *self, PyObject *key)
 		PyErr_Format(PyExc_KeyError, "No such manifest entry.");
 		return NULL;
 	}
-	return hashflags(hit);
+	return hashflags(self->nodelen, hit);
 }
 
 static int lazymanifest_delitem(lazymanifest *self, PyObject *key)
@@ -568,13 +568,13 @@ static int lazymanifest_setitem(
 	pyhash = PyTuple_GetItem(value, 0);
 	if (!PyBytes_Check(pyhash)) {
 		PyErr_Format(PyExc_TypeError,
-			     "node must be a 20 or 32 bytes string");
+			     "node must be a %zi bytes string", self->nodelen);
 		return -1;
 	}
 	hlen = PyBytes_Size(pyhash);
-	if (hlen != 20 && hlen != 32) {
+	if (hlen != self->nodelen) {
 		PyErr_Format(PyExc_TypeError,
-			     "node must be a 20 or 32 bytes string");
+			     "node must be a %zi bytes string", self->nodelen);
 		return -1;
 	}
 	hash = PyBytes_AsString(pyhash);
@@ -739,6 +739,7 @@ static lazymanifest *lazymanifest_copy(lazymanifest *self)
 		goto nomem;
 	}
 	lazymanifest_init_early(copy);
+	copy->nodelen = self->nodelen;
 	copy->numlines = self->numlines;
 	copy->livelines = self->livelines;
 	copy->dirty = false;
@@ -777,6 +778,7 @@ static lazymanifest *lazymanifest_filtercopy(
 		goto nomem;
 	}
 	lazymanifest_init_early(copy);
+	copy->nodelen = self->nodelen;
 	copy->dirty = true;
 	copy->lines = malloc(self->maxlines * sizeof(line));
 	if (!copy->lines) {
@@ -872,7 +874,7 @@ static PyObject *lazymanifest_diff(lazymanifest *self, PyObject *args)
 		if (!key)
 			goto nomem;
 		if (result < 0) {
-			PyObject *l = hashflags(left);
+			PyObject *l = hashflags(self->nodelen, left);
 			if (!l) {
 				goto nomem;
 			}
@@ -885,7 +887,7 @@ static PyObject *lazymanifest_diff(lazymanifest *self, PyObject *args)
 			Py_DECREF(outer);
 			sneedle++;
 		} else if (result > 0) {
-			PyObject *r = hashflags(right);
+			PyObject *r = hashflags(self->nodelen, right);
 			if (!r) {
 				goto nomem;
 			}
@@ -902,12 +904,12 @@ static PyObject *lazymanifest_diff(lazymanifest *self, PyObject *args)
 			if (left->len != right->len
 			    || memcmp(left->start, right->start, left->len)
 			    || left->hash_suffix != right->hash_suffix) {
-				PyObject *l = hashflags(left);
+				PyObject *l = hashflags(self->nodelen, left);
 				PyObject *r;
 				if (!l) {
 					goto nomem;
 				}
-				r = hashflags(right);
+				r = hashflags(self->nodelen, right);
 				if (!r) {
 					Py_DECREF(l);
 					goto nomem;

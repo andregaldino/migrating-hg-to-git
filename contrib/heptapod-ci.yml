@@ -139,3 +139,36 @@ check-pytype-py3:
         RUNTEST_ARGS: " --allow-slow-tests tests/test-check-pytype.t"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "c"
+
+# `sh.exe --login` sets a couple of extra environment variables that are defined
+# in the MinGW shell, but switches CWD to /home/$username.  The previous value
+# is stored in OLDPWD.  Of the added variables, MSYSTEM is crucial to running
+# run-tests.py- it is needed to make run-tests.py generate a `python3` script
+# that satisfies the various shebang lines and delegates to `py -3`.
+.window_runtests_template: &windows_runtests
+    stage: tests
+    before_script:
+      # Temporary until this is adjusted in the environment
+      - $Env:TEMP="C:/Temp"
+      - $Env:TMP="C:/Temp"
+      # TODO: find/install cvs, bzr, perforce, gpg, sqlite3
+
+    script:
+        - echo "Entering script section"
+        - echo "python used, $Env:PYTHON"
+        - Invoke-Expression "$Env:PYTHON -V"
+        - Invoke-Expression "$Env:PYTHON -m black --version"
+        - echo "$Env:RUNTEST_ARGS"
+
+        - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" $PYTHON tests/run-tests.py --color=always $RUNTEST_ARGS'
+
+windows-py3:
+    <<: *windows_runtests
+    when: manual
+    tags:
+      - windows
+    timeout: 2h
+    variables:
+        TEST_HGMODULEPOLICY: "c"
+        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        PYTHON: py -3

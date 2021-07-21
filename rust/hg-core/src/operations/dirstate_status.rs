@@ -5,17 +5,12 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::dirstate::status::{build_response, Dispatch, HgPathCow, Status};
+use crate::dirstate::status::{build_response, Dispatch, Status};
 use crate::matchers::Matcher;
 use crate::{DirstateStatus, StatusError};
 
-/// A tuple of the paths that need to be checked in the filelog because it's
-/// ambiguous whether they've changed, and the rest of the already dispatched
-/// files.
-pub type LookupAndStatus<'a> = (Vec<HgPathCow<'a>>, DirstateStatus<'a>);
-
-impl<'a, M: Matcher + Sync> Status<'a, M> {
-    pub(crate) fn run(&self) -> Result<LookupAndStatus<'a>, StatusError> {
+impl<'a, M: ?Sized + Matcher + Sync> Status<'a, M> {
+    pub(crate) fn run(&self) -> Result<DirstateStatus<'a>, StatusError> {
         let (traversed_sender, traversed_receiver) =
             crossbeam_channel::unbounded();
 
@@ -66,7 +61,10 @@ impl<'a, M: Matcher + Sync> Status<'a, M> {
         }
 
         drop(traversed_sender);
-        let traversed = traversed_receiver.into_iter().collect();
+        let traversed = traversed_receiver
+            .into_iter()
+            .map(std::borrow::Cow::Owned)
+            .collect();
 
         Ok(build_response(results, traversed))
     }

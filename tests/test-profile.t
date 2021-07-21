@@ -23,27 +23,29 @@ In alias
 
 #if lsprof
 
-  $ prof='hg --config profiling.type=ls --profile'
+  $ prof () {
+  >   hg --config profiling.type=ls --profile $@
+  > }
 
-  $ $prof st 2>../out
+  $ prof st 2>../out
   $ grep CallCount ../out > /dev/null || cat ../out
 
-  $ $prof --config profiling.output=../out st
+  $ prof --config profiling.output=../out st
   $ grep CallCount ../out > /dev/null || cat ../out
 
-  $ $prof --config profiling.output=blackbox --config extensions.blackbox= st
+  $ prof --config profiling.output=blackbox --config extensions.blackbox= st
   $ grep CallCount .hg/blackbox.log > /dev/null || cat .hg/blackbox.log
 
-  $ $prof --config profiling.format=text st 2>../out
+  $ prof --config profiling.format=text st 2>../out
   $ grep CallCount ../out > /dev/null || cat ../out
 
   $ echo "[profiling]" >> $HGRCPATH
   $ echo "format=kcachegrind" >> $HGRCPATH
 
-  $ $prof st 2>../out
+  $ prof st 2>../out
   $ grep 'events: Ticks' ../out > /dev/null || cat ../out
 
-  $ $prof --config profiling.output=../out st
+  $ prof --config profiling.output=../out st
   $ grep 'events: Ticks' ../out > /dev/null || cat ../out
 
 #endif
@@ -52,7 +54,7 @@ In alias
 
 Profiling of HTTP requests works
 
-  $ $prof --config profiling.format=text --config profiling.output=../profile.log serve -d -p $HGPORT --pid-file ../hg.pid -A ../access.log
+  $ prof --config profiling.format=text --config profiling.output=../profile.log serve -d -p $HGPORT --pid-file ../hg.pid -A ../access.log
   $ cat ../hg.pid >> $DAEMON_PIDS
   $ hg -q clone -U http://localhost:$HGPORT ../clone
 
@@ -71,7 +73,9 @@ Install an extension that can sleep and guarantee a profiler has time to run
   > command = registrar.command(cmdtable)
   > @command(b'sleep', [], b'hg sleep')
   > def sleep_for_at_least_one_stat_cycle(ui, *args, **kwargs):
-  >     time.sleep(0.1)
+  >     t = time.time()  # don't use time.sleep because we need CPU time
+  >     while time.time() - t < 0.5:
+  >         pass
   > EOF
 
   $ cat >> $HGRCPATH << EOF
@@ -98,10 +102,19 @@ Various statprof formatters work
     %   cumulative      self          
   $ cat ../out | statprofran
 
-  $ hg --profile --config profiling.statformat=hotpath sleep 2>../out || cat ../out
+Windows real time tracking is broken, only use CPU
+
+#if no-windows
+  $ hg --profile --config profiling.time-track=real --config profiling.statformat=hotpath sleep 2>../out || cat ../out
   $ cat ../out | statprofran
-  $ grep sleepext_with_a_long_filename.py ../out
-  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line 7:    time\.sleep.* (re)
+  $ grep sleepext_with_a_long_filename.py ../out | head -n 1
+  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line \d+:\s+(while|pass).* (re)
+#endif
+
+  $ hg --profile --config profiling.time-track=cpu --config profiling.statformat=hotpath sleep 2>../out || cat ../out
+  $ cat ../out | statprofran
+  $ grep sleepext_with_a_long_filename.py ../out | head -n 1
+  .* [0-9.]+%  [0-9.]+s  sleepext_with_a_long_filename.py:\s*sleep_for_at_least_one_stat_cycle, line \d+:\s+(while|pass).* (re)
 
   $ hg --profile --config profiling.statformat=json sleep 2>../out || cat ../out
   $ cat ../out

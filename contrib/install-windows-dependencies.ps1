@@ -32,15 +32,15 @@ $PYTHON37_x86_SHA256 = "769bb7c74ad1df6d7d74071cc16a984ff6182e4016e11b8949b93db4
 $PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe"
 $PYTHON37_x64_SHA256 = "e69ed52afb5a722e5c56f6c21d594e85c17cb29f12f18bb69751cf1714e0f987"
 
-$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.6/python-3.8.6.exe"
-$PYTHON38_x86_SHA256 = "287d5df01ff22ff09e6a487ae018603ee19eade71d462ec703850c96f1d5e8a0"
-$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.6/python-3.8.6-amd64.exe"
-$PYTHON38_x64_SHA256 = "328a257f189cb500606bb26ab0fbdd298ed0e05d8c36540a322a1744f489a0a0"
+$PYTHON38_x86_URL = "https://www.python.org/ftp/python/3.8.10/python-3.8.10.exe"
+$PYTHON38_x86_SHA256 = "ad07633a1f0cd795f3bf9da33729f662281df196b4567fa795829f3bb38a30ac"
+$PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe"
+$PYTHON38_x64_SHA256 = "7628244cb53408b50639d2c1287c659f4e29d3dfdb9084b11aed5870c0c6a48a"
 
-$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.0/python-3.9.0.exe"
-$PYTHON39_x86_SHA256 = "a4c65917f4225d1543959342f0615c813a4e9e7ff1137c4394ff6a5290ac1913"
-$PYTHON39_x64_URL = "https://www.python.org/ftp/python/3.9.0/python-3.9.0-amd64.exe"
-$PYTHON39_x64_SHA256 = "fd2e2c6612d43bb6b213b72fc53f07d73d99059fa72c96e44bde12e7815073ae"
+$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.5/python-3.9.5.exe"
+$PYTHON39_x86_SHA256 = "505129081a839b699a6ab9064b441ad922ef03767b5dd4241fd0c2166baf64de"
+$PYTHON39_x64_URL = "https://www.python.org/ftp/python/3.9.5/python-3.9.5-amd64.exe"
+$PYTHON39_x64_SHA256 = "84d5243088ba00c11e51905c704dbe041040dfff044f4e1ce5476844ee2e6eac"
 
 # PIP 19.2.3.
 $PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
@@ -61,6 +61,9 @@ $MERCURIAL_WHEEL_SHA256 = "1d18c7f6ca1456f0f62ee65c9a50c14cbba48ce6e924930cdb105
 
 $RUSTUP_INIT_URL = "https://static.rust-lang.org/rustup/archive/1.21.1/x86_64-pc-windows-gnu/rustup-init.exe"
 $RUSTUP_INIT_SHA256 = "d17df34ba974b9b19cf5c75883a95475aa22ddc364591d75d174090d55711c72"
+
+$PYOXIDIZER_URL = "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.16.0/PyOxidizer-0.16.0-x64.msi"
+$PYOXIDIZER_SHA256 = "2a9c58add9161c272c418d5e6dec13fbe648f624b5d26770190357e4d664f24e"
 
 # Writing progress slows down downloads substantially. So disable it.
 $progressPreference = 'silentlyContinue'
@@ -121,11 +124,8 @@ function Install-Rust($prefix) {
 
     Invoke-Process "${prefix}\assets\rustup-init.exe" "-y --default-host x86_64-pc-windows-msvc"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "target add i686-pc-windows-msvc"
-    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.46.0"
+    Invoke-Process "${prefix}\cargo\bin\rustup.exe" "install 1.52.0"
     Invoke-Process "${prefix}\cargo\bin\rustup.exe" "component add clippy"
-
-    # Install PyOxidizer for packaging.
-    Invoke-Process "${prefix}\cargo\bin\cargo.exe" "install --version 0.10.3 pyoxidizer"
 }
 
 function Install-Dependencies($prefix) {
@@ -151,6 +151,7 @@ function Install-Dependencies($prefix) {
     Secure-Download $MINGW_BIN_URL ${prefix}\assets\mingw-get-bin.zip $MINGW_BIN_SHA256
     Secure-Download $MERCURIAL_WHEEL_URL ${prefix}\assets\${MERCURIAL_WHEEL_FILENAME} $MERCURIAL_WHEEL_SHA256
     Secure-Download $RUSTUP_INIT_URL ${prefix}\assets\rustup-init.exe $RUSTUP_INIT_SHA256
+    Secure-Download $PYOXIDIZER_URL ${prefix}\assets\PyOxidizer.msi $PYOXIDIZER_SHA256
 
     Write-Output "installing Python 2.7 32-bit"
     Invoke-Process msiexec.exe "/i ${prefix}\assets\python27-x86.msi /l* ${prefix}\assets\python27-x86.log /q TARGETDIR=${prefix}\python27-x86 ALLUSERS="
@@ -171,6 +172,9 @@ function Install-Dependencies($prefix) {
 
     Write-Output "installing Visual Studio 2017 Build Tools and SDKs"
     Invoke-Process ${prefix}\assets\vs_buildtools.exe "--quiet --wait --norestart --nocache --channelUri https://aka.ms/vs/15/release/channel --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.Windows10SDK.17763 --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows10SDK --add Microsoft.VisualStudio.Component.VC.140"
+
+    Write-Output "installing PyOxidizer"
+    Invoke-Process msiexec.exe "/i ${prefix}\assets\PyOxidizer.msi /l* ${prefix}\assets\PyOxidizer.log /quiet"
 
     Install-Rust ${prefix}
 

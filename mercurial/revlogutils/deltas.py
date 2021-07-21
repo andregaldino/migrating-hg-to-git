@@ -18,6 +18,9 @@ from ..i18n import _
 from ..pycompat import getattr
 
 from .constants import (
+    COMP_MODE_DEFAULT,
+    COMP_MODE_INLINE,
+    COMP_MODE_PLAIN,
     REVIDX_ISCENSORED,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
 )
@@ -553,6 +556,24 @@ class _deltainfo(object):
     snapshotdepth = attr.ib()
 
 
+def drop_u_compression(delta):
+    """turn into a "u" (no-compression) into no-compression without header
+
+    This is useful for revlog format that has better compression method.
+    """
+    assert delta.data[0] == b'u', delta.data[0]
+    return _deltainfo(
+        delta.distance,
+        delta.deltalen - 1,
+        (b'', delta.data[1]),
+        delta.base,
+        delta.chainbase,
+        delta.chainlen,
+        delta.compresseddeltalen,
+        delta.snapshotdepth,
+    )
+
+
 def isgooddeltainfo(revlog, deltainfo, revinfo):
     """Returns True if the given delta is good. Good means that it is within
     the disk span, disk size, and chain length bounds that we know to be
@@ -914,7 +935,7 @@ class deltacomputer(object):
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
 
-        revinfo: _revisioninfo instance that contains all needed info
+        revinfo: revisioninfo instance that contains all needed info
         fh:      file handle to either the .i or the .d revlog file,
                  depending on whether it is inlined or not
         """
@@ -1012,8 +1033,7 @@ class deltacomputer(object):
             snapshotdepth,
         )
 
-    def _fullsnapshotinfo(self, fh, revinfo):
-        curr = len(self.revlog)
+    def _fullsnapshotinfo(self, fh, revinfo, curr):
         rawtext = self.buildtext(revinfo, fh)
         data = self.revlog.compress(rawtext)
         compresseddeltalen = deltalen = dist = len(data[1]) + len(data[0])
@@ -1032,7 +1052,7 @@ class deltacomputer(object):
             snapshotdepth,
         )
 
-    def finddeltainfo(self, revinfo, fh):
+    def finddeltainfo(self, revinfo, fh, excluded_bases=None, target_rev=None):
         """Find an acceptable delta against a candidate revision
 
         revinfo: information about the revision (instance of _revisioninfo)
@@ -1044,15 +1064,25 @@ class deltacomputer(object):
 
         If no suitable deltabase is found, we return delta info for a full
         snapshot.
+
+        `excluded_bases` is an optional set of revision that cannot be used as
+        a delta base. Use this to recompute delta suitable in censor or strip
+        context.
         """
+        if target_rev is None:
+            target_rev = len(self.revlog)
+
         if not revinfo.textlen:
-            return self._fullsnapshotinfo(fh, revinfo)
+            return self._fullsnapshotinfo(fh, revinfo, target_rev)
+
+        if excluded_bases is None:
+            excluded_bases = set()
 
         # no delta for flag processor revision (see "candelta" for why)
         # not calling candelta since only one revision needs test, also to
         # avoid overhead fetching flags again.
         if revinfo.flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
-            return self._fullsnapshotinfo(fh, revinfo)
+            return self._fullsnapshotinfo(fh, revinfo, target_rev)
 
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
@@ -1072,6 +1102,10 @@ class deltacomputer(object):
                 # challenge it against refined candidates
                 nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
+                if candidaterev in excluded_bases:
+                    continue
+                if candidaterev >= target_rev:
+                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if candidatedelta is not None:
                     if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
@@ -1084,5 +1118,30 @@ class deltacomputer(object):
                 candidaterevs = next(groups)
 
         if deltainfo is None:
-            deltainfo = self._fullsnapshotinfo(fh, revinfo)
+            deltainfo = self._fullsnapshotinfo(fh, revinfo, target_rev)
         return deltainfo
+
+
+def delta_compression(default_compression_header, deltainfo):
+    """return (COMPRESSION_MODE, deltainfo)
+
+    used by revlog v2+ format to dispatch between PLAIN and DEFAULT
+    compression.
+    """
+    h, d = deltainfo.data
+    compression_mode = COMP_MODE_INLINE
+    if not h and not d:
+        # not data to store at all... declare them uncompressed
+        compression_mode = COMP_MODE_PLAIN
+    elif not h:
+        t = d[0:1]
+        if t == b'\0':
+            compression_mode = COMP_MODE_PLAIN
+        elif t == default_compression_header:
+            compression_mode = COMP_MODE_DEFAULT
+    elif h == b'u':
+        # we have a more efficient way to declare uncompressed
+        h = b''
+        compression_mode = COMP_MODE_PLAIN
+        deltainfo = drop_u_compression(deltainfo)
+    return compression_mode, deltainfo

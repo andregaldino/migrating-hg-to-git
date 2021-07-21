@@ -14,14 +14,9 @@ import stat
 
 from .i18n import _
 from .node import (
-    addednodeid,
     hex,
-    modifiednodeid,
-    nullid,
     nullrev,
     short,
-    wdirfilenodeids,
-    wdirhex,
 )
 from .pycompat import (
     getattr,
@@ -140,7 +135,7 @@ class basectx(object):
                 removed.append(fn)
             elif flag1 != flag2:
                 modified.append(fn)
-            elif node2 not in wdirfilenodeids:
+            elif node2 not in self._repo.nodeconstants.wdirfilenodeids:
                 # When comparing files between two commits, we save time by
                 # not comparing the file contents when the nodeids differ.
                 # Note that this means we incorrectly report a reverted change
@@ -737,7 +732,7 @@ class changectx(basectx):
             n2 = c2._parents[0]._node
         cahs = self._repo.changelog.commonancestorsheads(self._node, n2)
         if not cahs:
-            anc = nullid
+            anc = self._repo.nodeconstants.nullid
         elif len(cahs) == 1:
             anc = cahs[0]
         else:
@@ -1132,7 +1127,11 @@ class basefilectx(object):
         _path = self._path
         fl = self._filelog
         parents = self._filelog.parents(self._filenode)
-        pl = [(_path, node, fl) for node in parents if node != nullid]
+        pl = [
+            (_path, node, fl)
+            for node in parents
+            if node != self._repo.nodeconstants.nullid
+        ]
 
         r = fl.renamed(self._filenode)
         if r:
@@ -1393,6 +1392,9 @@ class committablectx(basectx):
     def __bytes__(self):
         return bytes(self._parents[0]) + b"+"
 
+    def hex(self):
+        self._repo.nodeconstants.wdirhex
+
     __str__ = encoding.strmethod(__bytes__)
 
     def __nonzero__(self):
@@ -1556,12 +1558,12 @@ class workingctx(committablectx):
         return self._repo.dirstate[key] not in b"?r"
 
     def hex(self):
-        return wdirhex
+        return self._repo.nodeconstants.wdirhex
 
     @propertycache
     def _parents(self):
         p = self._repo.dirstate.parents()
-        if p[1] == nullid:
+        if p[1] == self._repo.nodeconstants.nullid:
             p = p[:-1]
         # use unfiltered repo to delay/avoid loading obsmarkers
         unfi = self._repo.unfiltered()
@@ -1572,7 +1574,9 @@ class workingctx(committablectx):
             for n in p
         ]
 
-    def setparents(self, p1node, p2node=nullid):
+    def setparents(self, p1node, p2node=None):
+        if p2node is None:
+            p2node = self._repo.nodeconstants.nullid
         dirstate = self._repo.dirstate
         with dirstate.parentchange():
             copies = dirstate.setparents(p1node, p2node)
@@ -1584,7 +1588,7 @@ class workingctx(committablectx):
                 for f in copies:
                     if f not in pctx and copies[f] in pctx:
                         dirstate.copy(copies[f], f)
-            if p2node == nullid:
+            if p2node == self._repo.nodeconstants.nullid:
                 for f, s in sorted(dirstate.copies().items()):
                     if f not in pctx and s not in pctx:
                         dirstate.copy(None, f)
@@ -1697,12 +1701,8 @@ class workingctx(committablectx):
                         % uipath(f)
                     )
                     rejected.append(f)
-                elif ds[f] in b'amn':
+                elif not ds.set_tracked(f):
                     ui.warn(_(b"%s already tracked!\n") % uipath(f))
-                elif ds[f] == b'r':
-                    ds.normallookup(f)
-                else:
-                    ds.add(f)
             return rejected
 
     def forget(self, files, prefix=b""):
@@ -1711,13 +1711,9 @@ class workingctx(committablectx):
             uipath = lambda f: ds.pathto(pathutil.join(prefix, f))
             rejected = []
             for f in files:
-                if f not in ds:
+                if not ds.set_untracked(f):
                     self._repo.ui.warn(_(b"%s not tracked!\n") % uipath(f))
                     rejected.append(f)
-                elif ds[f] != b'a':
-                    ds.remove(f)
-                else:
-                    ds.drop(f)
             return rejected
 
     def copy(self, source, dest):
@@ -1738,10 +1734,7 @@ class workingctx(committablectx):
         else:
             with self._repo.wlock():
                 ds = self._repo.dirstate
-                if ds[dest] in b'?':
-                    ds.add(dest)
-                elif ds[dest] in b'r':
-                    ds.normallookup(dest)
+                ds.set_tracked(dest)
                 ds.copy(source, dest)
 
     def match(
@@ -1836,7 +1829,7 @@ class workingctx(committablectx):
     def _poststatusfixup(self, status, fixup):
         """update dirstate for files that are actually clean"""
         poststatus = self._repo.postdsstatus()
-        if fixup or poststatus:
+        if fixup or poststatus or self._repo.dirstate._dirty:
             try:
                 oldid = self._repo.dirstate.identity()
 
@@ -1845,9 +1838,15 @@ class workingctx(committablectx):
                 # wlock can invalidate the dirstate, so cache normal _after_
                 # taking the lock
                 with self._repo.wlock(False):
-                    if self._repo.dirstate.identity() == oldid:
+                    dirstate = self._repo.dirstate
+                    if dirstate.identity() == oldid:
                         if fixup:
-                            normal = self._repo.dirstate.normal
+                            if dirstate.pendingparentchange():
+                                normal = lambda f: dirstate.update_file(
+                                    f, p1_tracked=True, wc_tracked=True
+                                )
+                            else:
+                                normal = dirstate.set_clean
                             for f in fixup:
                                 normal(f)
                             # write changes out explicitly, because nesting
@@ -1944,8 +1943,8 @@ class workingctx(committablectx):
 
         ff = self._flagfunc
         for i, l in (
-            (addednodeid, status.added),
-            (modifiednodeid, status.modified),
+            (self._repo.nodeconstants.addednodeid, status.added),
+            (self._repo.nodeconstants.modifiednodeid, status.modified),
         ):
             for f in l:
                 man[f] = i
@@ -2023,18 +2022,22 @@ class workingctx(committablectx):
     def markcommitted(self, node):
         with self._repo.dirstate.parentchange():
             for f in self.modified() + self.added():
-                self._repo.dirstate.normal(f)
+                self._repo.dirstate.update_file(
+                    f, p1_tracked=True, wc_tracked=True
+                )
             for f in self.removed():
-                self._repo.dirstate.drop(f)
+                self._repo.dirstate.update_file(
+                    f, p1_tracked=False, wc_tracked=False
+                )
             self._repo.dirstate.setparents(node)
             self._repo._quick_access_changeid_invalidate()
+
+            sparse.aftercommit(self._repo, node)
 
         # write changes out explicitly, because nesting wlock at
         # runtime may prevent 'wlock.release()' in 'repo.commit()'
         # from immediately doing so for subsequent changing files
         self._repo.dirstate.write(self._repo.currenttransaction())
-
-        sparse.aftercommit(self._repo, node)
 
     def mergestate(self, clean=False):
         if clean:
@@ -2070,13 +2073,18 @@ class committablefilectx(basefilectx):
         path = self.copysource()
         if not path:
             return None
-        return path, self._changectx._parents[0]._manifest.get(path, nullid)
+        return (
+            path,
+            self._changectx._parents[0]._manifest.get(
+                path, self._repo.nodeconstants.nullid
+            ),
+        )
 
     def parents(self):
         '''return parent filectxs, following copies if necessary'''
 
         def filenode(ctx, path):
-            return ctx._manifest.get(path, nullid)
+            return ctx._manifest.get(path, self._repo.nodeconstants.nullid)
 
         path = self._path
         fl = self._filelog
@@ -2094,7 +2102,7 @@ class committablefilectx(basefilectx):
         return [
             self._parentfilectx(p, fileid=n, filelog=l)
             for p, n, l in pl
-            if n != nullid
+            if n != self._repo.nodeconstants.nullid
         ]
 
     def children(self):
@@ -2222,7 +2230,9 @@ class overlayworkingctx(committablectx):
         # ``overlayworkingctx`` (e.g. with --collapse).
         util.clearcachedproperty(self, b'_manifest')
 
-    def setparents(self, p1node, p2node=nullid):
+    def setparents(self, p1node, p2node=None):
+        if p2node is None:
+            p2node = self._repo.nodeconstants.nullid
         assert p1node == self._wrappedctx.node()
         self._parents = [self._wrappedctx, self._repo.unfiltered()[p2node]]
 
@@ -2248,10 +2258,10 @@ class overlayworkingctx(committablectx):
 
         flag = self._flagfunc
         for path in self.added():
-            man[path] = addednodeid
+            man[path] = self._repo.nodeconstants.addednodeid
             man.setflag(path, flag(path))
         for path in self.modified():
-            man[path] = modifiednodeid
+            man[path] = self._repo.nodeconstants.modifiednodeid
             man.setflag(path, flag(path))
         for path in self.removed():
             del man[path]
@@ -2827,7 +2837,7 @@ class memctx(committablectx):
         )
         self._rev = None
         self._node = None
-        parents = [(p or nullid) for p in parents]
+        parents = [(p or self._repo.nodeconstants.nullid) for p in parents]
         p1, p2 = parents
         self._parents = [self._repo[p] for p in (p1, p2)]
         files = sorted(set(files))
@@ -2866,10 +2876,10 @@ class memctx(committablectx):
         man = pctx.manifest().copy()
 
         for f in self._status.modified:
-            man[f] = modifiednodeid
+            man[f] = self._repo.nodeconstants.modifiednodeid
 
         for f in self._status.added:
-            man[f] = addednodeid
+            man[f] = self._repo.nodeconstants.addednodeid
 
         for f in self._status.removed:
             if f in man:
@@ -3006,12 +3016,12 @@ class metadataonlyctx(committablectx):
         # sanity check to ensure that the reused manifest parents are
         # manifests of our commit parents
         mp1, mp2 = self.manifestctx().parents
-        if p1 != nullid and p1.manifestnode() != mp1:
+        if p1 != self._repo.nodeconstants.nullid and p1.manifestnode() != mp1:
             raise RuntimeError(
                 r"can't reuse the manifest: its p1 "
                 r"doesn't match the new ctx p1"
             )
-        if p2 != nullid and p2.manifestnode() != mp2:
+        if p2 != self._repo.nodeconstants.nullid and p2.manifestnode() != mp2:
             raise RuntimeError(
                 r"can't reuse the manifest: "
                 r"its p2 doesn't match the new ctx p2"

@@ -1,4 +1,14 @@
 #require no-reposimplestore
+#testcases revlogv1 revlogv2
+
+#if revlogv2
+
+  $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > revlogv2=enable-unstable-format-and-corrupt-my-data
+  > EOF
+
+#endif
 
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
@@ -52,25 +62,19 @@ the second head H2, and so on
 
 Verify target contents before censorship at each revision
 
-  $ hg cat -r $H1 target
+  $ hg cat -r $H1 target | head -n 10
   Tainted file is now sanitized
-  $ hg cat -r $H2 target
+  $ hg cat -r $H2 target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $C2 target
+  $ hg cat -r $C2 target | head -n 10
   Tainted file
   Passwords: hunter2
   hunter3
-  $ hg cat -r $C1 target
+  $ hg cat -r $C1 target | head -n 10
   Tainted file
   Passwords: hunter2
-  $ hg cat -r 0 target
+  $ hg cat -r 0 target | head -n 10
   Initially untainted file
-
-Try to censor revision with too large of a tombstone message
-
-  $ hg censor -r $C1 -t 'blah blah blah blah blah blah blah blah bla' target
-  abort: censor tombstone must be no longer than censored data
-  [255]
 
 Censor revision with 2 offenses
 
@@ -78,18 +82,17 @@ Censor revision with 2 offenses
 
   $ mkdir -p foo/bar/baz
   $ hg --cwd foo/bar/baz censor -r $C2 -t "remove password" ../../../target
-  $ hg cat -r $H1 target
+  $ hg cat -r $H1 target | head -n 10
   Tainted file is now sanitized
-  $ hg cat -r $H2 target
+  $ hg cat -r $H2 target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $C2 target
+  $ hg cat -r $C2 target | head -n 10
   abort: censored node: 1e0247a9a4b7
   (set censor.policy to ignore errors)
-  [255]
-  $ hg cat -r $C1 target
+  $ hg cat -r $C1 target | head -n 10
   Tainted file
   Passwords: hunter2
-  $ hg cat -r 0 target
+  $ hg cat -r 0 target | head -n 10
   Initially untainted file
 
 Censor revision with 1 offense
@@ -97,31 +100,27 @@ Censor revision with 1 offense
 (this also tests file pattern matching: with 'path:' scheme)
 
   $ hg --cwd foo/bar/baz censor -r $C1 path:target
-  $ hg cat -r $H1 target
+  $ hg cat -r $H1 target | head -n 10
   Tainted file is now sanitized
-  $ hg cat -r $H2 target
+  $ hg cat -r $H2 target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $C2 target
+  $ hg cat -r $C2 target | head -n 10
   abort: censored node: 1e0247a9a4b7
   (set censor.policy to ignore errors)
-  [255]
-  $ hg cat -r $C1 target
+  $ hg cat -r $C1 target | head -n 10
   abort: censored node: 613bc869fceb
   (set censor.policy to ignore errors)
-  [255]
-  $ hg cat -r 0 target
+  $ hg cat -r 0 target | head -n 10
   Initially untainted file
 
 Can only checkout target at uncensored revisions, -X is workaround for --all
 
-  $ hg revert -r $C2 target
+  $ hg revert -r $C2 target | head -n 10
   abort: censored node: 1e0247a9a4b7
   (set censor.policy to ignore errors)
-  [255]
-  $ hg revert -r $C1 target
+  $ hg revert -r $C1 target | head -n 10
   abort: censored node: 613bc869fceb
   (set censor.policy to ignore errors)
-  [255]
   $ hg revert -r $C1 --all
   reverting bystander
   reverting target
@@ -129,38 +128,38 @@ Can only checkout target at uncensored revisions, -X is workaround for --all
   (set censor.policy to ignore errors)
   [255]
   $ hg revert -r $C1 --all -X target
-  $ cat target
+  $ cat target | head -n 10
   Tainted file now super sanitized
   $ hg revert -r 0 --all
   reverting target
-  $ cat target
+  $ cat target | head -n 10
   Initially untainted file
   $ hg revert -r $H2 --all
   reverting bystander
   reverting target
-  $ cat target
+  $ cat target | head -n 10
   Tainted file now super sanitized
 
 Uncensored file can be viewed at any revision
 
-  $ hg cat -r $H1 bystander
+  $ hg cat -r $H1 bystander | head -n 10
   Normal file v2
-  $ hg cat -r $C2 bystander
+  $ hg cat -r $C2 bystander | head -n 10
   Normal file v2
-  $ hg cat -r $C1 bystander
+  $ hg cat -r $C1 bystander | head -n 10
   Normal file here
-  $ hg cat -r 0 bystander
+  $ hg cat -r 0 bystander | head -n 10
   Normal file here
 
 Can update to children of censored revision
 
   $ hg update -r $H1
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Tainted file is now sanitized
   $ hg update -r $H2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Tainted file now super sanitized
 
 Set censor policy to abort in trusted $HGRC so hg verify fails
@@ -221,17 +220,17 @@ May update to revision with censored data with explicit config
 
   $ hg update -r $C2
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   $ hg update -r $C1
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   $ hg update -r 0
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Initially untainted file
   $ hg update -r $H2
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Tainted file now super sanitized
 
 Can merge in revision with censored data. Test requires one branch of history
@@ -288,20 +287,19 @@ Can re-add file after being deleted + censored
   $ hg ci -m 'delete target so it may be censored'
   $ H2=`hg id --debug -i`
   $ hg censor -r $C4 target
-  $ hg cat -r $C4 target
-  $ hg cat -r "$H2^^" target
+  $ hg cat -r $C4 target | head -n 10
+  $ hg cat -r "$H2^^" target | head -n 10
   Tainted file now super sanitized
   $ echo 'fresh start' > target
   $ hg add target
   $ hg ci -m reincarnated target
   $ H2=`hg id --debug -i`
-  $ hg cat -r $H2 target
+  $ hg cat -r $H2 target | head -n 10
   fresh start
-  $ hg cat -r "$H2^" target
+  $ hg cat -r "$H2^" target | head -n 10
   target: no such file in rev 452ec1762369
-  [1]
-  $ hg cat -r $C4 target
-  $ hg cat -r "$H2^^^" target
+  $ hg cat -r $C4 target | head -n 10
+  $ hg cat -r "$H2^^^" target | head -n 10
   Tainted file now super sanitized
 
 Can censor after revlog has expanded to no longer permit inline storage
@@ -317,8 +315,8 @@ Can censor after revlog has expanded to no longer permit inline storage
   $ hg ci -m 'cleaned 100k passwords'
   $ H2=`hg id --debug -i`
   $ hg censor -r $C5 target
-  $ hg cat -r $C5 target
-  $ hg cat -r $H2 target
+  $ hg cat -r $C5 target | head -n 10
+  $ hg cat -r $H2 target | head -n 10
   fresh start
 
 Repo with censored nodes can be cloned and cloned nodes are censored
@@ -328,13 +326,13 @@ Repo with censored nodes can be cloned and cloned nodes are censored
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd rclone
-  $ hg cat -r $H1 target
+  $ hg cat -r $H1 target | head -n 10
   advanced head H1
-  $ hg cat -r $H2~5 target
+  $ hg cat -r $H2~5 target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $C2 target
-  $ hg cat -r $C1 target
-  $ hg cat -r 0 target
+  $ hg cat -r $C2 target | head -n 10
+  $ hg cat -r $C1 target | head -n 10
+  $ hg cat -r 0 target | head -n 10
   Initially untainted file
   $ hg verify
   checking changesets
@@ -346,7 +344,7 @@ Repo with censored nodes can be cloned and cloned nodes are censored
 Repo cloned before tainted content introduced can pull censored nodes
 
   $ cd ../rpull
-  $ hg cat -r tip target
+  $ hg cat -r tip target | head -n 10
   Initially untainted file
   $ hg verify
   checking changesets
@@ -365,15 +363,15 @@ Repo cloned before tainted content introduced can pull censored nodes
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg update 4
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $H1 target
+  $ hg cat -r $H1 target | head -n 10
   advanced head H1
-  $ hg cat -r $H2~5 target
+  $ hg cat -r $H2~5 target | head -n 10
   Tainted file now super sanitized
-  $ hg cat -r $C2 target
-  $ hg cat -r $C1 target
-  $ hg cat -r 0 target
+  $ hg cat -r $C2 target | head -n 10
+  $ hg cat -r $C1 target | head -n 10
+  $ hg cat -r 0 target | head -n 10
   Initially untainted file
   $ hg verify
   checking changesets
@@ -393,11 +391,11 @@ Censored nodes can be pushed if they censor previously unexchanged nodes
   $ hg ci -m 're-sanitized' target
   $ H2=`hg id --debug -i`
   $ CLEANREV=$H2
-  $ hg cat -r $REV target
+  $ hg cat -r $REV target | head -n 10
   Passwords: hunter2hunter2
   $ hg censor -r $REV target
-  $ hg cat -r $REV target
-  $ hg cat -r $CLEANREV target
+  $ hg cat -r $REV target | head -n 10
+  $ hg cat -r $CLEANREV target | head -n 10
   Re-sanitized; nothing to see here
   $ hg push -f -r $H2
   pushing to $TESTTMP/r
@@ -408,12 +406,12 @@ Censored nodes can be pushed if they censor previously unexchanged nodes
   added 2 changesets with 2 changes to 1 files (+1 heads)
 
   $ cd ../r
-  $ hg cat -r $REV target
-  $ hg cat -r $CLEANREV target
+  $ hg cat -r $REV target | head -n 10
+  $ hg cat -r $CLEANREV target | head -n 10
   Re-sanitized; nothing to see here
   $ hg update $CLEANREV
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Re-sanitized; nothing to see here
 
 Censored nodes can be bundled up and unbundled in another repo
@@ -428,12 +426,12 @@ Censored nodes can be bundled up and unbundled in another repo
   added 2 changesets with 2 changes to 2 files (+1 heads)
   new changesets 075be80ac777:dcbaf17bf3a1 (2 drafts)
   (run 'hg heads .' to see heads, 'hg merge' to merge)
-  $ hg cat -r $REV target
-  $ hg cat -r $CLEANREV target
+  $ hg cat -r $REV target | head -n 10
+  $ hg cat -r $CLEANREV target | head -n 10
   Re-sanitized; nothing to see here
   $ hg update $CLEANREV
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Re-sanitized; nothing to see here
   $ hg verify
   checking changesets
@@ -492,7 +490,7 @@ Censored nodes can be imported on top of censored nodes, consecutively
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg update $H2
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cat target
+  $ cat target | head -n 10
   Re-sanitized; nothing to see here
   $ hg verify
   checking changesets
@@ -516,4 +514,52 @@ Can import bundle where first revision of a file is censored
   added 1 changesets with 2 changes to 2 files
   new changesets e97f55b2665a (1 drafts)
   (run 'hg update' to get a working copy)
-  $ hg cat -r 0 target
+  $ hg cat -r 0 target | head -n 10
+
+#if revlogv2
+
+Testing feature that does not work in revlog v1
+===============================================
+
+Censoring a revision that is used as delta base
+-----------------------------------------------
+
+  $ cd ..
+  $ hg init censor-with-delta
+  $ cd censor-with-delta
+  $ echo root > target
+  $ hg add target
+  $ hg commit -m root
+  $ B0=`hg id --debug -i`
+  $ for x in `"$PYTHON" $TESTDIR/seq.py 0 50000`
+  > do
+  >   echo "Password: hunter$x" >> target
+  > done
+  $ hg ci -m 'write a long file'
+  $ B1=`hg id --debug -i`
+  $ echo 'small change (should create a delta)' >> target
+  $ hg ci -m 'create a delta over the password'
+(should show that the last revision is a delta, not a snapshot)
+  $ B2=`hg id --debug -i`
+
+Make sure the last revision is a delta against the revision we will censor
+
+  $ hg debugdeltachain target -T '{rev} {chainid} {chainlen} {prevrev}\n'
+  0 1 1 -1
+  1 2 1 -1
+  2 2 2 1
+
+Censor the file
+
+  $ hg cat -r $B1 target | wc -l
+  50002 (re)
+  $ hg censor -r $B1 target
+  $ hg cat -r $B1 target | wc -l
+  0 (re)
+
+Check the children is fine
+
+  $ hg cat -r $B2 target | wc -l
+  50003 (re)
+
+#endif

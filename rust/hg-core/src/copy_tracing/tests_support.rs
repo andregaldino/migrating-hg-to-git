@@ -123,7 +123,10 @@ macro_rules! merge_copies_dict {
                     ),
                 )
             })
-            .collect::<OrdMap<_, _>>()
+            .collect::<OrdMap<
+                String,
+                (Revision, Option<String>, OrdSet<Revision>)
+            >>()
         }
     };
 }

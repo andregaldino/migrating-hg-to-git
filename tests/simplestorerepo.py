@@ -18,7 +18,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     nullrev,
 )
 from mercurial.thirdparty import attr
@@ -136,18 +135,18 @@ class filestorage(object):
             self._indexbynode[entry[b'node']] = entry
             self._indexbyrev[i] = entry
 
-        self._indexbynode[nullid] = {
-            b'node': nullid,
-            b'p1': nullid,
-            b'p2': nullid,
+        self._indexbynode[self._repo.nullid] = {
+            b'node': self._repo.nullid,
+            b'p1': self._repo.nullid,
+            b'p2': self._repo.nullid,
             b'linkrev': nullrev,
             b'flags': 0,
         }
 
         self._indexbyrev[nullrev] = {
-            b'node': nullid,
-            b'p1': nullid,
-            b'p2': nullid,
+            b'node': self._repo.nullid,
+            b'p1': self._repo.nullid,
+            b'p2': self._repo.nullid,
             b'linkrev': nullrev,
             b'flags': 0,
         }
@@ -160,7 +159,7 @@ class filestorage(object):
                 (0, 0, 0, -1, entry[b'linkrev'], p1rev, p2rev, entry[b'node'])
             )
 
-        self._index.append((0, 0, 0, -1, -1, -1, -1, nullid))
+        self._index.append((0, 0, 0, -1, -1, -1, -1, self._repo.nullid))
 
     def __len__(self):
         return len(self._indexdata)
@@ -288,7 +287,7 @@ class filestorage(object):
             node = nodeorrev
         validatenode(node)
 
-        if node == nullid:
+        if node == self._repo.nullid:
             return b''
 
         rev = self.rev(node)
@@ -325,7 +324,7 @@ class filestorage(object):
     def renamed(self, node):
         validatenode(node)
 
-        if self.parents(node)[0] != nullid:
+        if self.parents(node)[0] != self._repo.nullid:
             return False
 
         fulltext = self.revision(node)
@@ -451,7 +450,7 @@ class filestorage(object):
         sidedata_helpers=None,
     ):
         # TODO this will probably break on some ordering options.
-        nodes = [n for n in nodes if n != nullid]
+        nodes = [n for n in nodes if n != self._repo.nullid]
         if not nodes:
             return
         for delta in storageutil.emitrevisions(
@@ -559,7 +558,7 @@ class filestorage(object):
                 continue
 
             # Need to resolve the fulltext from the delta base.
-            if deltabase == nullid:
+            if deltabase == self._repo.nullid:
                 text = mdiff.patch(b'', delta)
             else:
                 text = mdiff.patch(self.revision(deltabase), delta)
@@ -588,11 +587,11 @@ class filestorage(object):
         # This is copied from revlog.py.
         if start is None and stop is None:
             if not len(self):
-                return [nullid]
+                return [self._repo.nullid]
             return [self.node(r) for r in self._headrevs()]
 
         if start is None:
-            start = nullid
+            start = self._repo.nullid
         if stop is None:
             stop = []
         stoprevs = {self.rev(n) for n in stop}

@@ -73,11 +73,14 @@ import errno
 import struct
 
 from .i18n import _
+from .node import (
+    bin,
+    hex,
+)
 from .pycompat import getattr
 from .node import (
     bin,
     hex,
-    nullid,
 )
 from . import (
     encoding,
@@ -103,6 +106,7 @@ propertycache = util.propertycache
 # Options for obsolescence
 createmarkersopt = b'createmarkers'
 allowunstableopt = b'allowunstable'
+allowdivergenceopt = b'allowdivergence'
 exchangeopt = b'exchange'
 
 
@@ -141,10 +145,13 @@ def getoptions(repo):
 
     createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
     unstablevalue = _getoptionvalue(repo, allowunstableopt)
+    divergencevalue = _getoptionvalue(repo, allowdivergenceopt)
     exchangevalue = _getoptionvalue(repo, exchangeopt)
 
     # createmarkers must be enabled if other options are enabled
-    if (unstablevalue or exchangevalue) and not createmarkersvalue:
+    if (
+        unstablevalue or divergencevalue or exchangevalue
+    ) and not createmarkersvalue:
         raise error.Abort(
             _(
                 b"'createmarkers' obsolete option must be enabled "
@@ -155,6 +162,7 @@ def getoptions(repo):
     return {
         createmarkersopt: createmarkersvalue,
         allowunstableopt: unstablevalue,
+        allowdivergenceopt: divergencevalue,
         exchangeopt: exchangevalue,
     }
 
@@ -526,14 +534,14 @@ def _addchildren(children, markers):
                 children.setdefault(p, set()).add(mark)
 
 
-def _checkinvalidmarkers(markers):
+def _checkinvalidmarkers(repo, markers):
     """search for marker with invalid data and raise error if needed
 
     Exist as a separated function to allow the evolve extension for a more
     subtle handling.
     """
     for mark in markers:
-        if nullid in mark[1]:
+        if repo.nullid in mark[1]:
             raise error.Abort(
                 _(
                     b'bad obsolescence marker detected: '
@@ -727,7 +735,7 @@ class obsstore(object):
             return []
         self._version, markers = _readmarkers(data)
         markers = list(markers)
-        _checkinvalidmarkers(markers)
+        _checkinvalidmarkers(self.repo, markers)
         return markers
 
     @propertycache
@@ -761,7 +769,7 @@ class obsstore(object):
             _addpredecessors(self.predecessors, markers)
         if self._cached('children'):
             _addchildren(self.children, markers)
-        _checkinvalidmarkers(markers)
+        _checkinvalidmarkers(self.repo, markers)
 
     def relevantmarkers(self, nodes):
         """return a set of all obsolescence markers relevant to a set of nodes.

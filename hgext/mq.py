@@ -73,7 +73,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -908,13 +907,13 @@ class queue(object):
         """
         if rev is None:
             (p1, p2) = repo.dirstate.parents()
-            if p2 == nullid:
+            if p2 == repo.nullid:
                 return p1
             if not self.applied:
                 return None
             return self.applied[-1].node
         p1, p2 = repo.changelog.parents(rev)
-        if p2 != nullid and p2 in [x.node for x in self.applied]:
+        if p2 != repo.nullid and p2 in [x.node for x in self.applied]:
             return p2
         return p1
 
@@ -1091,18 +1090,9 @@ class queue(object):
 
             if merge and files:
                 # Mark as removed/merged and update dirstate parent info
-                removed = []
-                merged = []
-                for f in files:
-                    if os.path.lexists(repo.wjoin(f)):
-                        merged.append(f)
-                    else:
-                        removed.append(f)
                 with repo.dirstate.parentchange():
-                    for f in removed:
-                        repo.dirstate.remove(f)
-                    for f in merged:
-                        repo.dirstate.merge(f)
+                    for f in files:
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
                     p1 = repo.dirstate.p1()
                     repo.setparents(p1, merge)
 
@@ -1591,7 +1581,7 @@ class queue(object):
             for hs in repo.branchmap().iterheads():
                 heads.extend(hs)
             if not heads:
-                heads = [nullid]
+                heads = [repo.nullid]
             if repo.dirstate.p1() not in heads and not exact:
                 self.ui.status(_(b"(working directory not at a head)\n"))
 
@@ -1852,12 +1842,16 @@ class queue(object):
                 with repo.dirstate.parentchange():
                     for f in a:
                         repo.wvfs.unlinkpath(f, ignoremissing=True)
-                        repo.dirstate.drop(f)
+                        repo.dirstate.update_file(
+                            f, p1_tracked=False, wc_tracked=False
+                        )
                     for f in m + r:
                         fctx = ctx[f]
                         repo.wwrite(f, fctx.data(), fctx.flags())
-                        repo.dirstate.normal(f)
-                    repo.setparents(qp, nullid)
+                        repo.dirstate.update_file(
+                            f, p1_tracked=True, wc_tracked=True
+                        )
+                    repo.setparents(qp, repo.nullid)
             for patch in reversed(self.applied[start:end]):
                 self.ui.status(_(b"popping %s\n") % patch.name)
             del self.applied[start:end]
@@ -2003,67 +1997,73 @@ class queue(object):
 
             bmlist = repo[top].bookmarks()
 
-            dsguard = None
-            try:
-                dsguard = dirstateguard.dirstateguard(repo, b'mq.refresh')
-                if diffopts.git or diffopts.upgrade:
-                    copies = {}
-                    for dst in a:
-                        src = repo.dirstate.copied(dst)
-                        # during qfold, the source file for copies may
-                        # be removed. Treat this as a simple add.
-                        if src is not None and src in repo.dirstate:
-                            copies.setdefault(src, []).append(dst)
-                        repo.dirstate.add(dst)
-                    # remember the copies between patchparent and qtip
-                    for dst in aaa:
-                        src = ctx[dst].copysource()
-                        if src:
-                            copies.setdefault(src, []).extend(
-                                copies.get(dst, [])
+            with repo.dirstate.parentchange():
+                # XXX do we actually need the dirstateguard
+                dsguard = None
+                try:
+                    dsguard = dirstateguard.dirstateguard(repo, b'mq.refresh')
+                    if diffopts.git or diffopts.upgrade:
+                        copies = {}
+                        for dst in a:
+                            src = repo.dirstate.copied(dst)
+                            # during qfold, the source file for copies may
+                            # be removed. Treat this as a simple add.
+                            if src is not None and src in repo.dirstate:
+                                copies.setdefault(src, []).append(dst)
+                            repo.dirstate.update_file(
+                                dst, p1_tracked=False, wc_tracked=True
                             )
-                            if dst in a:
-                                copies[src].append(dst)
-                        # we can't copy a file created by the patch itself
-                        if dst in copies:
-                            del copies[dst]
-                    for src, dsts in pycompat.iteritems(copies):
-                        for dst in dsts:
-                            repo.dirstate.copy(src, dst)
-                else:
-                    for dst in a:
-                        repo.dirstate.add(dst)
-                    # Drop useless copy information
-                    for f in list(repo.dirstate.copies()):
-                        repo.dirstate.copy(None, f)
-                for f in r:
-                    repo.dirstate.remove(f)
-                # if the patch excludes a modified file, mark that
-                # file with mtime=0 so status can see it.
-                mm = []
-                for i in pycompat.xrange(len(m) - 1, -1, -1):
-                    if not match1(m[i]):
-                        mm.append(m[i])
-                        del m[i]
-                for f in m:
-                    repo.dirstate.normal(f)
-                for f in mm:
-                    repo.dirstate.normallookup(f)
-                for f in forget:
-                    repo.dirstate.drop(f)
+                        # remember the copies between patchparent and qtip
+                        for dst in aaa:
+                            src = ctx[dst].copysource()
+                            if src:
+                                copies.setdefault(src, []).extend(
+                                    copies.get(dst, [])
+                                )
+                                if dst in a:
+                                    copies[src].append(dst)
+                            # we can't copy a file created by the patch itself
+                            if dst in copies:
+                                del copies[dst]
+                        for src, dsts in pycompat.iteritems(copies):
+                            for dst in dsts:
+                                repo.dirstate.copy(src, dst)
+                    else:
+                        for dst in a:
+                            repo.dirstate.update_file(
+                                dst, p1_tracked=False, wc_tracked=True
+                            )
+                        # Drop useless copy information
+                        for f in list(repo.dirstate.copies()):
+                            repo.dirstate.copy(None, f)
+                    for f in r:
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
+                    # if the patch excludes a modified file, mark that
+                    # file with mtime=0 so status can see it.
+                    mm = []
+                    for i in pycompat.xrange(len(m) - 1, -1, -1):
+                        if not match1(m[i]):
+                            mm.append(m[i])
+                            del m[i]
+                    for f in m:
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
+                    for f in mm:
+                        repo.dirstate.update_file_p1(f, p1_tracked=True)
+                    for f in forget:
+                        repo.dirstate.update_file_p1(f, p1_tracked=False)
 
-                user = ph.user or ctx.user()
+                    user = ph.user or ctx.user()
 
-                oldphase = repo[top].phase()
+                    oldphase = repo[top].phase()
 
-                # assumes strip can roll itself back if interrupted
-                repo.setparents(*cparents)
-                self.applied.pop()
-                self.applieddirty = True
-                strip(self.ui, repo, [top], update=False, backup=False)
-                dsguard.close()
-            finally:
-                release(dsguard)
+                    # assumes strip can roll itself back if interrupted
+                    repo.setparents(*cparents)
+                    self.applied.pop()
+                    self.applieddirty = True
+                    strip(self.ui, repo, [top], update=False, backup=False)
+                    dsguard.close()
+                finally:
+                    release(dsguard)
 
             try:
                 # might be nice to attempt to roll back strip after this
@@ -3639,8 +3639,8 @@ def rename(ui, repo, patch, name=None, **opts):
         wctx = r[None]
         with r.wlock():
             if r.dirstate[patch] == b'a':
-                r.dirstate.drop(patch)
-                r.dirstate.add(name)
+                r.dirstate.set_untracked(patch)
+                r.dirstate.set_tracked(name)
             else:
                 wctx.copy(patch, name)
                 wctx.forget([patch])

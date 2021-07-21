@@ -56,7 +56,7 @@ def _playback(
     unlink=True,
     checkambigfiles=None,
 ):
-    for f, o in entries:
+    for f, o in sorted(dict(entries).items()):
         if o or not unlink:
             checkambig = checkambigfiles and (f, b'') in checkambigfiles
             try:
@@ -94,8 +94,9 @@ def _playback(
                 try:
                     util.copyfile(backuppath, filepath, checkambig=checkambig)
                     backupfiles.append(b)
-                except IOError:
-                    report(_(b"failed to recover %s\n") % f)
+                except IOError as exc:
+                    e_msg = stringutil.forcebytestr(exc)
+                    report(_(b"failed to recover %s (%s)\n") % (f, e_msg))
             else:
                 target = f or b
                 try:
@@ -632,9 +633,9 @@ class transaction(util.transactional):
         """write transaction data for possible future undo call"""
         if self._undoname is None:
             return
-        undobackupfile = self._opener.open(
-            b"%s.backupfiles" % self._undoname, b'w'
-        )
+
+        undo_backup_path = b"%s.backupfiles" % self._undoname
+        undobackupfile = self._opener.open(undo_backup_path, b'w')
         undobackupfile.write(b'%d\n' % version)
         for l, f, b, c in self._backupentries:
             if not f:  # temporary file
@@ -701,6 +702,11 @@ class transaction(util.transactional):
             self._releasefn = None  # Help prevent cycles.
 
 
+BAD_VERSION_MSG = _(
+    b"journal was created by a different version of Mercurial\n"
+)
+
+
 def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file
 
@@ -720,9 +726,8 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     entries = []
     backupentries = []
 
-    fp = opener.open(file)
-    lines = fp.readlines()
-    fp.close()
+    with opener.open(file) as fp:
+        lines = fp.readlines()
     for l in lines:
         try:
             f, o = l.split(b'\0')
@@ -738,20 +743,15 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
         lines = fp.readlines()
         if lines:
             ver = lines[0][:-1]
-            if ver == (b'%d' % version):
+            if ver != (b'%d' % version):
+                report(BAD_VERSION_MSG)
+            else:
                 for line in lines[1:]:
                     if line:
                         # Shave off the trailing newline
                         line = line[:-1]
                         l, f, b, c = line.split(b'\0')
                         backupentries.append((l, f, b, bool(c)))
-            else:
-                report(
-                    _(
-                        b"journal was created by a different version of "
-                        b"Mercurial\n"
-                    )
-                )
 
     _playback(
         file,

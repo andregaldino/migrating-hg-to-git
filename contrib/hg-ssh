@@ -31,6 +31,7 @@ command="hg-ssh --read-only repos/*"
 from __future__ import absolute_import
 
 import os
+import re
 import shlex
 import sys
 
@@ -51,6 +52,12 @@ def main():
     dispatch.initstdio()
 
     cwd = os.getcwd()
+    if os.name == 'nt':
+        # os.getcwd() is inconsistent on the capitalization of the drive
+        # letter, so adjust it. see https://bugs.python.org/issue40368
+        if re.match('^[a-z]:', cwd):
+            cwd = cwd[0:1].upper() + cwd[1:]
+
     readonly = False
     args = sys.argv[1:]
     while len(args):

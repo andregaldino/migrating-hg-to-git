@@ -15,6 +15,7 @@ New repo should not use SQLite by default
   $ hg init empty-no-sqlite
   $ cat empty-no-sqlite/.hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -28,6 +29,7 @@ storage.new-repo-backend=sqlite is recognized
   $ hg --config storage.new-repo-backend=sqlite init empty-sqlite
   $ cat empty-sqlite/.hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
   exp-sqlite-comp-001=zstd (zstd !)
   exp-sqlite-comp-001=$BUNDLE2_COMPRESSIONS$ (no-zstd !)
@@ -49,6 +51,7 @@ Can force compression to zlib
   $ hg --config storage.sqlite.compression=zlib init empty-zlib
   $ cat empty-zlib/.hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
   exp-sqlite-comp-001=$BUNDLE2_COMPRESSIONS$
   fncache
@@ -64,6 +67,7 @@ Can force compression to none
   $ hg --config storage.sqlite.compression=none init empty-none
   $ cat empty-none/.hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
   exp-sqlite-comp-001=none
   fncache

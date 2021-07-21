@@ -156,7 +156,7 @@ impl<'a> NaiveMissingAncestors<'a> {
         if left == right {
             return;
         }
-        panic!(format!(
+        panic!(
             "Equality assertion failed (left != right)
                 left={:?}
                 right={:?}
@@ -171,7 +171,7 @@ impl<'a> NaiveMissingAncestors<'a> {
             self.bases,
             self.history,
             self.random_seed,
-        ));
+        );
     }
 }
 
@@ -231,7 +231,7 @@ fn parse_test_missing_ancestors_params(var: &str) -> (usize, usize, usize) {
         .map(|n| n.trim().parse().expect(err_msg))
         .collect();
     if params.len() != 3 {
-        panic!(err_msg);
+        panic!("{}", err_msg);
     }
     (params[0], params[1], params[2])
 }

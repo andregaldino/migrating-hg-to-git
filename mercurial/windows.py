@@ -202,7 +202,7 @@ def get_password():
     """
     pw = ""
     while True:
-        c = msvcrt.getwch()
+        c = msvcrt.getwch()  # pytype: disable=module-attr
         if c == '\r' or c == '\n':
             break
         if c == '\003':
@@ -211,8 +211,8 @@ def get_password():
             pw = pw[:-1]
         else:
             pw = pw + c
-    msvcrt.putwch('\r')
-    msvcrt.putwch('\n')
+    msvcrt.putwch('\r')  # pytype: disable=module-attr
+    msvcrt.putwch('\n')  # pytype: disable=module-attr
     return encoding.strtolocal(pw)
 
 
@@ -331,6 +331,25 @@ def normpath(path):
 
 def normcase(path):
     return encoding.upper(path)  # NTFS compares via upper()
+
+
+DRIVE_RE_B = re.compile(b'^[a-z]:')
+DRIVE_RE_S = re.compile('^[a-z]:')
+
+
+def abspath(path):
+    abs_path = os.path.abspath(path)  # re-exports
+    # Python on Windows is inconsistent regarding the capitalization of drive
+    # letter and this cause issue with various path comparison along the way.
+    # So we normalize the drive later to upper case here.
+    #
+    # See https://bugs.python.org/issue40368 for and example of this hell.
+    if isinstance(abs_path, bytes):
+        if DRIVE_RE_B.match(abs_path):
+            abs_path = abs_path[0:1].upper() + abs_path[1:]
+    elif DRIVE_RE_S.match(abs_path):
+        abs_path = abs_path[0:1].upper() + abs_path[1:]
+    return abs_path
 
 
 # see posix.py for definitions

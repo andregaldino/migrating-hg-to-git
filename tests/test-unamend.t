@@ -6,6 +6,7 @@ Test for command `hg unamend` which lives in uncommit extension
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [experimental]
   > evolution = createmarkers, allowunstable
+  > evolution.allowdivergence = true
   > [extensions]
   > rebase =
   > amend =
@@ -283,7 +284,8 @@ Unamending in middle of a stack
   
 
   $ hg --config experimental.evolution=createmarkers unamend
-  abort: cannot unamend changeset with children
+  abort: cannot unamend changeset, as that will orphan 3 descendants
+  (see 'hg help evolution.instability')
   [10]
 
   $ hg unamend
@@ -296,7 +298,7 @@ Trying to unamend a public changeset
   $ hg phase -r . -p
   1 new phase-divergent changesets
   $ hg unamend
-  abort: cannot unamend public changesets
+  abort: cannot unamend public changesets: 03ddd6fc5af1
   (see 'hg help phases' for details)
   [10]
 

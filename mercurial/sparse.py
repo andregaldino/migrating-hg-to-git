@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import os
 
 from .i18n import _
-from .node import (
-    hex,
-    nullid,
-)
+from .node import hex
 from . import (
     error,
     match as matchmod,
@@ -177,7 +174,7 @@ def activeconfig(repo):
     revs = [
         repo.changelog.rev(node)
         for node in repo.dirstate.parents()
-        if node != nullid
+        if node != repo.nullid
     ]
 
     allincludes = set()
@@ -286,7 +283,7 @@ def prunetemporaryincludes(repo):
 
     # Fix dirstate
     for file in dropped:
-        dirstate.drop(file)
+        dirstate.update_file(file, p1_tracked=False, wc_tracked=False)
 
     repo.vfs.unlink(b'tempsparse')
     repo._sparsesignaturecache.clear()
@@ -321,7 +318,7 @@ def matcher(repo, revs=None, includetemp=True):
         revs = [
             repo.changelog.rev(node)
             for node in repo.dirstate.parents()
-            if node != nullid
+            if node != repo.nullid
         ]
 
     signature = configsignature(repo, includetemp=includetemp)
@@ -442,13 +439,21 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
                     message,
                 )
 
-        mergemod.applyupdates(
-            repo, tmresult, repo[None], repo[b'.'], False, wantfiledata=False
-        )
+        with repo.dirstate.parentchange():
+            mergemod.applyupdates(
+                repo,
+                tmresult,
+                repo[None],
+                repo[b'.'],
+                False,
+                wantfiledata=False,
+            )
 
-        dirstate = repo.dirstate
-        for file, flags, msg in tmresult.getactions([mergestatemod.ACTION_GET]):
-            dirstate.normal(file)
+            dirstate = repo.dirstate
+            for file, flags, msg in tmresult.getactions(
+                [mergestatemod.ACTION_GET]
+            ):
+                dirstate.update_file(file, p1_tracked=True, wc_tracked=True)
 
     profiles = activeconfig(repo)[2]
     changedprofiles = profiles & files
@@ -560,14 +565,16 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
 
     # Fix dirstate
     for file in added:
-        dirstate.normal(file)
+        dirstate.update_file(file, p1_tracked=True, wc_tracked=True)
 
     for file in dropped:
-        dirstate.drop(file)
+        dirstate.update_file(file, p1_tracked=False, wc_tracked=False)
 
     for file in lookup:
         # File exists on disk, and we're bringing it back in an unknown state.
-        dirstate.normallookup(file)
+        dirstate.update_file(
+            file, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+        )
 
     return added, dropped, lookup
 
@@ -633,7 +640,7 @@ def clearrules(repo, force=False):
     The remaining sparse config only has profiles, if defined. The working
     directory is refreshed, as needed.
     """
-    with repo.wlock():
+    with repo.wlock(), repo.dirstate.parentchange():
         raw = repo.vfs.tryread(b'sparse')
         includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
 
@@ -649,7 +656,7 @@ def importfromfiles(repo, opts, paths, force=False):
     The updated sparse config is written out and the working directory
     is refreshed, as needed.
     """
-    with repo.wlock():
+    with repo.wlock(), repo.dirstate.parentchange():
         # read current configuration
         raw = repo.vfs.tryread(b'sparse')
         includes, excludes, profiles = parseconfig(repo.ui, raw, b'sparse')
@@ -711,7 +718,7 @@ def updateconfig(
 
     The new config is written out and a working directory refresh is performed.
     """
-    with repo.wlock():
+    with repo.wlock(), repo.dirstate.parentchange():
         raw = repo.vfs.tryread(b'sparse')
         oldinclude, oldexclude, oldprofiles = parseconfig(
             repo.ui, raw, b'sparse'

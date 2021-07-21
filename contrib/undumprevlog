@@ -15,6 +15,10 @@ from mercurial import (
 )
 from mercurial.utils import procutil
 
+from mercurial.revlogutils import (
+    constants as revlog_constants,
+)
+
 for fp in (sys.stdin, sys.stdout, sys.stderr):
     procutil.setbinary(fp)
 
@@ -28,7 +32,12 @@ while True:
         break
     if l.startswith("file:"):
         f = encoding.strtolocal(l[6:-1])
-        r = revlog.revlog(opener, f)
+        assert f.endswith(b'.i')
+        r = revlog.revlog(
+            opener,
+            target=(revlog_constants.KIND_OTHER, b'undump-revlog'),
+            radix=f[:-2],
+        )
         procutil.stdout.write(b'%s\n' % f)
     elif l.startswith("node:"):
         n = bin(l[6:-1])

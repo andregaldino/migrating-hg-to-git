@@ -1,4 +1,5 @@
 # repository.py - Interfaces and base classes for repositories and peers.
+# coding: utf-8
 #
 # Copyright 2017 Gregory Szorc <gregory.szorc@gmail.com>
 #
@@ -21,20 +22,20 @@ REPO_FEATURE_SHARED_STORAGE = b'sharedstore'
 REPO_FEATURE_LFS = b'lfs'
 # Repository supports being stream cloned.
 REPO_FEATURE_STREAM_CLONE = b'streamclone'
+# Repository supports (at least) some sidedata to be stored
+REPO_FEATURE_SIDE_DATA = b'side-data'
 # Files storage may lack data for all ancestors.
 REPO_FEATURE_SHALLOW_FILE_STORAGE = b'shallowfilestorage'
 
 REVISION_FLAG_CENSORED = 1 << 15
 REVISION_FLAG_ELLIPSIS = 1 << 14
 REVISION_FLAG_EXTSTORED = 1 << 13
-REVISION_FLAG_SIDEDATA = 1 << 12
-REVISION_FLAG_HASCOPIESINFO = 1 << 11
+REVISION_FLAG_HASCOPIESINFO = 1 << 12
 
 REVISION_FLAGS_KNOWN = (
     REVISION_FLAG_CENSORED
     | REVISION_FLAG_ELLIPSIS
     | REVISION_FLAG_EXTSTORED
-    | REVISION_FLAG_SIDEDATA
     | REVISION_FLAG_HASCOPIESINFO
 )
 
@@ -42,6 +43,54 @@ CG_DELTAMODE_STD = b'default'
 CG_DELTAMODE_PREV = b'previous'
 CG_DELTAMODE_FULL = b'fulltext'
 CG_DELTAMODE_P1 = b'p1'
+
+
+## Cache related constants:
+#
+# Used to control which cache should be warmed in a repo.updatecaches(…) call.
+
+# Warm branchmaps of all known repoview's filter-level
+CACHE_BRANCHMAP_ALL = b"branchmap-all"
+# Warm branchmaps of repoview's filter-level used by server
+CACHE_BRANCHMAP_SERVED = b"branchmap-served"
+# Warm internal changelog cache (eg: persistent nodemap)
+CACHE_CHANGELOG_CACHE = b"changelog-cache"
+# Warm full manifest cache
+CACHE_FULL_MANIFEST = b"full-manifest"
+# Warm file-node-tags cache
+CACHE_FILE_NODE_TAGS = b"file-node-tags"
+# Warm internal manifestlog cache (eg: persistent nodemap)
+CACHE_MANIFESTLOG_CACHE = b"manifestlog-cache"
+# Warn rev branch cache
+CACHE_REV_BRANCH = b"rev-branch-cache"
+# Warm tags' cache for default repoview'
+CACHE_TAGS_DEFAULT = b"tags-default"
+# Warm tags' cache for  repoview's filter-level used by server
+CACHE_TAGS_SERVED = b"tags-served"
+
+# the cache to warm by default after a simple transaction
+# (this is a mutable set to let extension update it)
+CACHES_DEFAULT = {
+    CACHE_BRANCHMAP_SERVED,
+}
+
+# the caches to warm when warming all of them
+# (this is a mutable set to let extension update it)
+CACHES_ALL = {
+    CACHE_BRANCHMAP_SERVED,
+    CACHE_BRANCHMAP_ALL,
+    CACHE_CHANGELOG_CACHE,
+    CACHE_FILE_NODE_TAGS,
+    CACHE_FULL_MANIFEST,
+    CACHE_MANIFESTLOG_CACHE,
+    CACHE_TAGS_DEFAULT,
+    CACHE_TAGS_SERVED,
+}
+
+# the cache to warm by default on simple call
+# (this is a mutable set to let extension update it)
+CACHES_POST_CLONE = CACHES_ALL.copy()
+CACHES_POST_CLONE.discard(CACHE_FILE_NODE_TAGS)
 
 
 class ipeerconnection(interfaceutil.Interface):
@@ -455,6 +504,13 @@ class irevisiondelta(interfaceutil.Interface):
 
     sidedata = interfaceutil.Attribute(
         """Raw sidedata bytes for the given revision."""
+    )
+
+    protocol_flags = interfaceutil.Attribute(
+        """Single byte of integer flags that can influence the protocol.
+
+        This is a bitwise composition of the ``storageutil.CG_FLAG*`` constants.
+        """
     )
 
 
@@ -1162,22 +1218,8 @@ class imanifeststorage(interfaceutil.Interface):
         """An ``ifilerevisionssequence`` instance."""
     )
 
-    indexfile = interfaceutil.Attribute(
-        """Path of revlog index file.
-
-        TODO this is revlog specific and should not be exposed.
-        """
-    )
-
     opener = interfaceutil.Attribute(
         """VFS opener to use to access underlying files used for storage.
-
-        TODO this is revlog specific and should not be exposed.
-        """
-    )
-
-    version = interfaceutil.Attribute(
-        """Revlog version number.
 
         TODO this is revlog specific and should not be exposed.
         """
@@ -1851,7 +1893,9 @@ class ilocalrepositorymain(interfaceutil.Interface):
     def savecommitmessage(text):
         pass
 
-    def register_sidedata_computer(kind, category, keys, computer):
+    def register_sidedata_computer(
+        kind, category, keys, computer, flags, replace=False
+    ):
         pass
 
     def register_wanted_sidedata(category):

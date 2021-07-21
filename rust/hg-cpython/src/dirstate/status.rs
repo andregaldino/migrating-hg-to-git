@@ -17,7 +17,7 @@ use cpython::{
 };
 use hg::{
     matchers::{AlwaysMatcher, FileMatcher, IncludeMatcher},
-    parse_pattern_syntax, status,
+    parse_pattern_syntax,
     utils::{
         files::{get_bytes_from_path, get_path_from_bytes},
         hg_path::{HgPath, HgPathBuf},
@@ -25,7 +25,7 @@ use hg::{
     BadMatch, DirstateStatus, IgnorePattern, PatternFileWarning, StatusError,
     StatusOptions,
 };
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
 
 /// This will be useless once trait impls for collection are added to `PyBytes`
 /// upstream.
@@ -112,7 +112,7 @@ pub fn status_wrapper(
     let root_dir = get_path_from_bytes(bytes.data(py));
 
     let dmap: DirstateMap = dmap.to_py_object(py);
-    let dmap = dmap.get_inner(py);
+    let mut dmap = dmap.get_inner_mut(py);
 
     let ignore_files: PyResult<Vec<_>> = ignore_files
         .iter(py)
@@ -126,22 +126,22 @@ pub fn status_wrapper(
     match matcher.get_type(py).name(py).borrow() {
         "alwaysmatcher" => {
             let matcher = AlwaysMatcher;
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, lookup, status_res, warnings)
+            let (status_res, warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
+            build_response(py, status_res, warnings)
         }
         "exactmatcher" => {
             let files = matcher.call_method(
@@ -163,22 +163,22 @@ pub fn status_wrapper(
             let files = files?;
             let matcher = FileMatcher::new(files.as_ref())
                 .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, lookup, status_res, warnings)
+            let (status_res, warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
+            build_response(py, status_res, warnings)
         }
         "includematcher" => {
             // Get the patterns from Python even though most of them are
@@ -211,32 +211,27 @@ pub fn status_wrapper(
                 .collect();
 
             let ignore_patterns = ignore_patterns?;
-            let mut all_warnings = vec![];
 
-            let (matcher, warnings) =
-                IncludeMatcher::new(ignore_patterns, &root_dir)
-                    .map_err(|e| handle_fallback(py, e.into()))?;
-            all_warnings.extend(warnings);
+            let matcher = IncludeMatcher::new(ignore_patterns)
+                .map_err(|e| handle_fallback(py, e.into()))?;
 
-            let ((lookup, status_res), warnings) = status(
-                &dmap,
-                &matcher,
-                root_dir.to_path_buf(),
-                ignore_files,
-                StatusOptions {
-                    check_exec,
-                    last_normal_time,
-                    list_clean,
-                    list_ignored,
-                    list_unknown,
-                    collect_traversed_dirs,
-                },
-            )
-            .map_err(|e| handle_fallback(py, e))?;
+            let (status_res, warnings) = dmap
+                .status(
+                    &matcher,
+                    root_dir.to_path_buf(),
+                    ignore_files,
+                    StatusOptions {
+                        check_exec,
+                        last_normal_time,
+                        list_clean,
+                        list_ignored,
+                        list_unknown,
+                        collect_traversed_dirs,
+                    },
+                )
+                .map_err(|e| handle_fallback(py, e))?;
 
-            all_warnings.extend(warnings);
-
-            build_response(py, lookup, status_res, all_warnings)
+            build_response(py, status_res, warnings)
         }
         e => Err(PyErr::new::<ValueError, _>(
             py,
@@ -247,7 +242,6 @@ pub fn status_wrapper(
 
 fn build_response(
     py: Python,
-    lookup: Vec<Cow<HgPath>>,
     status_res: DirstateStatus,
     warnings: Vec<PatternFileWarning>,
 ) -> PyResult<PyTuple> {
@@ -258,9 +252,10 @@ fn build_response(
     let clean = collect_pybytes_list(py, status_res.clean.as_ref());
     let ignored = collect_pybytes_list(py, status_res.ignored.as_ref());
     let unknown = collect_pybytes_list(py, status_res.unknown.as_ref());
-    let lookup = collect_pybytes_list(py, lookup.as_ref());
+    let unsure = collect_pybytes_list(py, status_res.unsure.as_ref());
     let bad = collect_bad_matches(py, status_res.bad.as_ref())?;
     let traversed = collect_pybytes_list(py, status_res.traversed.as_ref());
+    let dirty = status_res.dirty.to_py_object(py);
     let py_warnings = PyList::new(py, &[]);
     for warning in warnings.iter() {
         // We use duck-typing on the Python side for dispatch, good enough for
@@ -287,7 +282,7 @@ fn build_response(
     Ok(PyTuple::new(
         py,
         &[
-            lookup.into_object(),
+            unsure.into_object(),
             modified.into_object(),
             added.into_object(),
             removed.into_object(),
@@ -298,6 +293,7 @@ fn build_response(
             py_warnings.into_object(),
             bad.into_object(),
             traversed.into_object(),
+            dirty.into_object(),
         ][..],
     ))
 }

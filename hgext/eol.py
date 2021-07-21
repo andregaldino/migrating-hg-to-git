@@ -442,7 +442,7 @@ def reposetup(ui, repo):
                                 continue
                         # all normal files need to be looked at again since
                         # the new .hgeol file specify a different filter
-                        self.dirstate.normallookup(f)
+                        self.dirstate.set_possibly_dirty(f)
                     # Write the cache to update mtime and cache .hgeol
                     with self.vfs(b"eol.cache", b"w") as f:
                         f.write(hgeoldata)

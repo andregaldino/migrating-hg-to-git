@@ -150,10 +150,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, uipathfn, **opts):
                     executable=lfutil.getexecutable(repo.wjoin(f)),
                 )
                 standins.append(standinname)
-                if lfdirstate[f] == b'r':
-                    lfdirstate.normallookup(f)
-                else:
-                    lfdirstate.add(f)
+                lfdirstate.set_tracked(f)
             lfdirstate.write()
             bad += [
                 lfutil.splitstandin(f)
@@ -230,9 +227,7 @@ def removelargefiles(ui, repo, isaddremove, matcher, uipathfn, dryrun, **opts):
         repo[None].forget(remove)
 
         for f in remove:
-            lfutil.synclfdirstate(
-                repo, lfdirstate, lfutil.splitstandin(f), False
-            )
+            lfdirstate.set_untracked(lfutil.splitstandin(f))
 
         lfdirstate.write()
 
@@ -653,12 +648,17 @@ def overridecalculateupdates(
 def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
     if MERGE_ACTION_LARGEFILE_MARK_REMOVED in actions:
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        for lfile, args, msg in actions[MERGE_ACTION_LARGEFILE_MARK_REMOVED]:
-            # this should be executed before 'orig', to execute 'remove'
-            # before all other actions
-            repo.dirstate.remove(lfile)
-            # make sure lfile doesn't get synclfdirstate'd as normal
-            lfdirstate.add(lfile)
+        with lfdirstate.parentchange():
+            for lfile, args, msg in actions[
+                MERGE_ACTION_LARGEFILE_MARK_REMOVED
+            ]:
+                # this should be executed before 'orig', to execute 'remove'
+                # before all other actions
+                repo.dirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=False
+                )
+                # make sure lfile doesn't get synclfdirstate'd as normal
+                lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
         lfdirstate.write()
 
     return orig(repo, actions, branchmerge, getfiledata)
@@ -859,11 +859,11 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                     # The file is gone, but this deletes any empty parent
                     # directories as a side-effect.
                     repo.wvfs.unlinkpath(srclfile, ignoremissing=True)
-                    lfdirstate.remove(srclfile)
+                    lfdirstate.set_untracked(srclfile)
                 else:
                     util.copyfile(repo.wjoin(srclfile), repo.wjoin(destlfile))
 
-                lfdirstate.add(destlfile)
+                lfdirstate.set_tracked(destlfile)
         lfdirstate.write()
     except error.Abort as e:
         if e.message != _(b'no files to copy'):
@@ -1382,10 +1382,7 @@ def cmdutilforget(
     with repo.wlock():
         lfdirstate = lfutil.openlfdirstate(ui, repo)
         for f in forget:
-            if lfdirstate[f] == b'a':
-                lfdirstate.drop(f)
-            else:
-                lfdirstate.remove(f)
+            lfdirstate.set_untracked(f)
         lfdirstate.write()
         standins = [lfutil.standin(f) for f in forget]
         for f in standins:
@@ -1636,13 +1633,16 @@ def overriderollback(orig, ui, repo, **opts):
             repo.wvfs.unlinkpath(standin, ignoremissing=True)
 
         lfdirstate = lfutil.openlfdirstate(ui, repo)
-        orphans = set(lfdirstate)
-        lfiles = lfutil.listlfiles(repo)
-        for file in lfiles:
-            lfutil.synclfdirstate(repo, lfdirstate, file, True)
-            orphans.discard(file)
-        for lfile in orphans:
-            lfdirstate.drop(lfile)
+        with lfdirstate.parentchange():
+            orphans = set(lfdirstate)
+            lfiles = lfutil.listlfiles(repo)
+            for file in lfiles:
+                lfutil.synclfdirstate(repo, lfdirstate, file, True)
+                orphans.discard(file)
+            for lfile in orphans:
+                lfdirstate.update_file(
+                    lfile, p1_tracked=False, wc_tracked=False
+                )
         lfdirstate.write()
     return result
 
@@ -1787,7 +1787,9 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         # mark all clean largefiles as dirty, just in case the update gets
         # interrupted before largefiles and lfdirstate are synchronized
         for lfile in oldclean:
-            lfdirstate.normallookup(lfile)
+            entry = lfdirstate._map.get(lfile)
+            assert not (entry.merged_removed or entry.from_p2_removed)
+            lfdirstate.set_possibly_dirty(lfile)
         lfdirstate.write()
 
         oldstandins = lfutil.getstandinsstate(repo)
@@ -1798,23 +1800,24 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
             raise error.ProgrammingError(
                 b'largefiles is not compatible with in-memory merge'
             )
-        result = orig(repo, node, branchmerge, force, *args, **kwargs)
+        with lfdirstate.parentchange():
+            result = orig(repo, node, branchmerge, force, *args, **kwargs)
 
-        newstandins = lfutil.getstandinsstate(repo)
-        filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
+            newstandins = lfutil.getstandinsstate(repo)
+            filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
 
-        # to avoid leaving all largefiles as dirty and thus rehash them, mark
-        # all the ones that didn't change as clean
-        for lfile in oldclean.difference(filelist):
-            lfdirstate.normal(lfile)
-        lfdirstate.write()
+            # to avoid leaving all largefiles as dirty and thus rehash them, mark
+            # all the ones that didn't change as clean
+            for lfile in oldclean.difference(filelist):
+                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
+            lfdirstate.write()
 
-        if branchmerge or force or partial:
-            filelist.extend(s.deleted + s.removed)
+            if branchmerge or force or partial:
+                filelist.extend(s.deleted + s.removed)
 
-        lfcommands.updatelfiles(
-            repo.ui, repo, filelist=filelist, normallookup=partial
-        )
+            lfcommands.updatelfiles(
+                repo.ui, repo, filelist=filelist, normallookup=partial
+            )
 
         return result
 

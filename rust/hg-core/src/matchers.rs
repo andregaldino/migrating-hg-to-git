@@ -11,7 +11,7 @@ use crate::{
     dirstate::dirs_multiset::DirsChildrenMultiset,
     filepatterns::{
         build_single_regex, filter_subincludes, get_patterns_from_file,
-        PatternFileWarning, PatternResult, SubInclude,
+        PatternFileWarning, PatternResult,
     },
     utils::{
         files::find_dirs,
@@ -237,7 +237,7 @@ impl<'a> Matcher for FileMatcher<'a> {
 /// ///
 /// let ignore_patterns =
 /// vec![IgnorePattern::new(PatternSyntax::RootGlob, b"this*", Path::new(""))];
-/// let (matcher, _) = IncludeMatcher::new(ignore_patterns, "").unwrap();
+/// let matcher = IncludeMatcher::new(ignore_patterns).unwrap();
 /// ///
 /// assert_eq!(matcher.matches(HgPath::new(b"testing")), false);
 /// assert_eq!(matcher.matches(HgPath::new(b"this should work")), true);
@@ -341,8 +341,8 @@ fn re_matcher(
 
 /// Returns the regex pattern and a function that matches an `HgPath` against
 /// said regex formed by the given ignore patterns.
-fn build_regex_match<'a>(
-    ignore_patterns: &'a [&'a IgnorePattern],
+fn build_regex_match(
+    ignore_patterns: &[IgnorePattern],
 ) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + Sync>)> {
     let mut regexps = vec![];
     let mut exact_set = HashSet::new();
@@ -478,32 +478,25 @@ fn roots_dirs_and_parents(
 /// Returns a function that checks whether a given file (in the general sense)
 /// should be matched.
 fn build_match<'a, 'b>(
-    ignore_patterns: &'a [IgnorePattern],
-    root_dir: impl AsRef<Path>,
-) -> PatternResult<(
-    Vec<u8>,
-    Box<dyn Fn(&HgPath) -> bool + 'b + Sync>,
-    Vec<PatternFileWarning>,
-)> {
+    ignore_patterns: Vec<IgnorePattern>,
+) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + 'b + Sync>)> {
     let mut match_funcs: Vec<Box<dyn Fn(&HgPath) -> bool + Sync>> = vec![];
     // For debugging and printing
     let mut patterns = vec![];
-    let mut all_warnings = vec![];
 
-    let (subincludes, ignore_patterns) =
-        filter_subincludes(ignore_patterns, root_dir)?;
+    let (subincludes, ignore_patterns) = filter_subincludes(ignore_patterns)?;
 
     if !subincludes.is_empty() {
         // Build prefix-based matcher functions for subincludes
         let mut submatchers = FastHashMap::default();
         let mut prefixes = vec![];
 
-        for SubInclude { prefix, root, path } in subincludes.into_iter() {
-            let (match_fn, warnings) =
-                get_ignore_function(vec![path.to_path_buf()], root)?;
-            all_warnings.extend(warnings);
-            prefixes.push(prefix.to_owned());
-            submatchers.insert(prefix.to_owned(), match_fn);
+        for sub_include in subincludes {
+            let matcher = IncludeMatcher::new(sub_include.included_patterns)?;
+            let match_fn =
+                Box::new(move |path: &HgPath| matcher.matches(path));
+            prefixes.push(sub_include.prefix.clone());
+            submatchers.insert(sub_include.prefix.clone(), match_fn);
         }
 
         let match_subinclude = move |filename: &HgPath| {
@@ -556,14 +549,13 @@ fn build_match<'a, 'b>(
     }
 
     Ok(if match_funcs.len() == 1 {
-        (patterns, match_funcs.remove(0), all_warnings)
+        (patterns, match_funcs.remove(0))
     } else {
         (
             patterns,
             Box::new(move |f: &HgPath| -> bool {
                 match_funcs.iter().any(|match_func| match_func(f))
             }),
-            all_warnings,
         )
     })
 }
@@ -572,8 +564,9 @@ fn build_match<'a, 'b>(
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
 pub fn get_ignore_function<'a>(
-    all_pattern_files: Vec<PathBuf>,
-    root_dir: impl AsRef<Path>,
+    mut all_pattern_files: Vec<PathBuf>,
+    root_dir: &Path,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
 ) -> PatternResult<(
     Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>,
     Vec<PatternFileWarning>,
@@ -581,15 +574,25 @@ pub fn get_ignore_function<'a>(
     let mut all_patterns = vec![];
     let mut all_warnings = vec![];
 
-    for pattern_file in all_pattern_files.into_iter() {
-        let (patterns, warnings) =
-            get_patterns_from_file(pattern_file, &root_dir)?;
+    // Sort to make the ordering of calls to `inspect_pattern_bytes`
+    // deterministic even if the ordering of `all_pattern_files` is not (such
+    // as when a iteration order of a Python dict or Rust HashMap is involved).
+    // Sort by "string" representation instead of the default by component
+    // (with a Rust-specific definition of a component)
+    all_pattern_files
+        .sort_unstable_by(|a, b| a.as_os_str().cmp(b.as_os_str()));
+
+    for pattern_file in &all_pattern_files {
+        let (patterns, warnings) = get_patterns_from_file(
+            pattern_file,
+            root_dir,
+            inspect_pattern_bytes,
+        )?;
 
         all_patterns.extend(patterns.to_owned());
         all_warnings.extend(warnings);
     }
-    let (matcher, warnings) = IncludeMatcher::new(all_patterns, root_dir)?;
-    all_warnings.extend(warnings);
+    let matcher = IncludeMatcher::new(all_patterns)?;
     Ok((
         Box::new(move |path: &HgPath| matcher.matches(path)),
         all_warnings,
@@ -597,34 +600,26 @@ pub fn get_ignore_function<'a>(
 }
 
 impl<'a> IncludeMatcher<'a> {
-    pub fn new(
-        ignore_patterns: Vec<IgnorePattern>,
-        root_dir: impl AsRef<Path>,
-    ) -> PatternResult<(Self, Vec<PatternFileWarning>)> {
-        let (patterns, match_fn, warnings) =
-            build_match(&ignore_patterns, root_dir)?;
+    pub fn new(ignore_patterns: Vec<IgnorePattern>) -> PatternResult<Self> {
         let RootsDirsAndParents {
             roots,
             dirs,
             parents,
         } = roots_dirs_and_parents(&ignore_patterns)?;
-
         let prefix = ignore_patterns.iter().any(|k| match k.syntax {
             PatternSyntax::Path | PatternSyntax::RelPath => true,
             _ => false,
         });
+        let (patterns, match_fn) = build_match(ignore_patterns)?;
 
-        Ok((
-            Self {
-                patterns,
-                match_fn,
-                prefix,
-                roots,
-                dirs,
-                parents,
-            },
-            warnings,
-        ))
+        Ok(Self {
+            patterns,
+            match_fn,
+            prefix,
+            roots,
+            dirs,
+            parents,
+        })
     }
 
     fn get_all_parents_children(&self) -> DirsChildrenMultiset {
@@ -810,14 +805,11 @@ mod tests {
     #[test]
     fn test_includematcher() {
         // VisitchildrensetPrefix
-        let (matcher, _) = IncludeMatcher::new(
-            vec![IgnorePattern::new(
-                PatternSyntax::RelPath,
-                b"dir/subdir",
-                Path::new(""),
-            )],
-            "",
-        )
+        let matcher = IncludeMatcher::new(vec![IgnorePattern::new(
+            PatternSyntax::RelPath,
+            b"dir/subdir",
+            Path::new(""),
+        )])
         .unwrap();
 
         let mut set = HashSet::new();
@@ -848,14 +840,11 @@ mod tests {
         );
 
         // VisitchildrensetRootfilesin
-        let (matcher, _) = IncludeMatcher::new(
-            vec![IgnorePattern::new(
-                PatternSyntax::RootFiles,
-                b"dir/subdir",
-                Path::new(""),
-            )],
-            "",
-        )
+        let matcher = IncludeMatcher::new(vec![IgnorePattern::new(
+            PatternSyntax::RootFiles,
+            b"dir/subdir",
+            Path::new(""),
+        )])
         .unwrap();
 
         let mut set = HashSet::new();
@@ -886,14 +875,11 @@ mod tests {
         );
 
         // VisitchildrensetGlob
-        let (matcher, _) = IncludeMatcher::new(
-            vec![IgnorePattern::new(
-                PatternSyntax::Glob,
-                b"dir/z*",
-                Path::new(""),
-            )],
-            "",
-        )
+        let matcher = IncludeMatcher::new(vec![IgnorePattern::new(
+            PatternSyntax::Glob,
+            b"dir/z*",
+            Path::new(""),
+        )])
         .unwrap();
 
         let mut set = HashSet::new();

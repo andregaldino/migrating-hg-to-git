@@ -196,7 +196,8 @@ Amend in the middle of a stack
   $ hg update -q B
   $ echo 2 >> B
   $ hg amend
-  abort: cannot amend changeset with children
+  abort: cannot amend changeset, as that will orphan 1 descendants
+  (see 'hg help evolution.instability')
   [10]
 
 #if obsstore-on
@@ -231,6 +232,85 @@ Checking the note stored in the obsmarker
   $ hg debugobsolete -r .
   112478962961147124edd43549aedd1a335e44bf be169c7e8dbe21cd10b3d79691cbe7f241e3c21c 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   be169c7e8dbe21cd10b3d79691cbe7f241e3c21c 16084da537dd8f84cfdb3055c633772269d62e1b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'note': 'adding bar', 'operation': 'amend', 'user': 'test'}
+
+Cannot cause divergence by default
+
+  $ hg co --hidden 1
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg amend -m divergent
+  abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
+  (add --verbose for details or see 'hg help evolution.instability')
+  [10]
+  $ hg amend -m divergent --verbose
+  abort: cannot amend 112478962961, as that creates content-divergence with 16084da537dd
+      changeset 112478962961 already has a successor in changeset 16084da537dd
+      rewriting changeset 112478962961 would create "content-divergence"
+      set experimental.evolution.allowdivergence=True to skip this check
+  (see 'hg help evolution.instability' for details on content-divergence)
+  [10]
+  $ hg amend -m divergent --config experimental.evolution.allowdivergence=true
+  2 new content-divergent changesets
+
+Amending pruned part of split commit does not cause divergence (issue6262)
+
+  $ hg debugobsolete $(hg log  -T '{node}' -r .)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg co '.^'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ node_B=$(hg log -T '{node}' -r 4)
+  $ hg revert -r $node_B -a
+  adding B
+  adding bar
+  $ hg ci -m B-split1
+  created new head
+  $ node_B_split1=$(hg log -T '{node}' -r .)
+  $ hg co '.^'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg revert -r 4 -a
+  adding B
+  adding bar
+  $ hg ci -m B-split2
+  created new head
+  $ node_B_split2=$(hg log -T '{node}' -r .)
+  $ hg debugobsolete $node_B $node_B_split1 $node_B_split2
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg debugobsolete $node_B_split2
+  1 new obsolescence markers
+  obsoleted 1 changesets
+  $ hg co --hidden $node_B_split2
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg amend -m 'revived B-split2'
+  abort: cannot amend 809fe227532f, as that creates content-divergence with c68306a86921, from 16084da537dd (known-bad-output !)
+  (add --verbose for details or see 'hg help evolution.instability') (known-bad-output !)
+  [10]
+
+Hidden common predecessor of divergence does not cause crash
+
+First create C1 as a pruned successor of C
+  $ hg co C
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg amend -m C1
+  $ hg tag --local C1
+  $ hg debugobsolete $(hg log -T '{node}' -r C1)
+  1 new obsolescence markers
+  obsoleted 1 changesets
+Now create C2 as other side of divergence (not actually divergent because C1 is
+pruned)
+  $ hg co C
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg amend -m C2
+  1 new orphan changesets
+Make the common predecessor (C) pruned
+  $ hg tag --local --remove C
+  $ hg co C1
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+Try to cause divergence
+  $ hg amend -m C11
+  abort: cannot amend 2758767f5d17, as that creates content-divergence with bfcb433a0dea, from 26805aba1e60
+  (add --verbose for details or see 'hg help evolution.instability')
+  [10]
 #endif
 
 Cannot amend public changeset
@@ -238,7 +318,7 @@ Cannot amend public changeset
   $ hg phase -r A --public
   $ hg update -C -q A
   $ hg amend -m AMEND
-  abort: cannot amend public changesets
+  abort: cannot amend public changesets: 426bada5c675
   (see 'hg help phases' for details)
   [10]
 

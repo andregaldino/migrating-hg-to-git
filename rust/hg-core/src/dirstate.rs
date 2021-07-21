@@ -5,11 +5,13 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::errors::HgError;
+use crate::revlog::node::NULL_NODE;
 use crate::revlog::Node;
-use crate::{utils::hg_path::HgPathBuf, FastHashMap};
+use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::FastHashMap;
 use bytes_cast::{unaligned, BytesCast};
-use std::collections::hash_map;
 use std::convert::TryFrom;
 
 pub mod dirs_multiset;
@@ -24,6 +26,13 @@ pub struct DirstateParents {
     pub p2: Node,
 }
 
+impl DirstateParents {
+    pub const NULL: Self = Self {
+        p1: NULL_NODE,
+        p2: NULL_NODE,
+    };
+}
+
 /// The C implementation uses all signed types. This will be an issue
 /// either when 4GB+ source files are commonplace or in 2038, whichever
 /// comes first.
@@ -33,6 +42,35 @@ pub struct DirstateEntry {
     pub mode: i32,
     pub mtime: i32,
     pub size: i32,
+}
+
+impl DirstateEntry {
+    pub fn is_non_normal(&self) -> bool {
+        self.state != EntryState::Normal || self.mtime == MTIME_UNSET
+    }
+
+    pub fn is_from_other_parent(&self) -> bool {
+        self.state == EntryState::Normal && self.size == SIZE_FROM_OTHER_PARENT
+    }
+
+    // TODO: other platforms
+    #[cfg(unix)]
+    pub fn mode_changed(
+        &self,
+        filesystem_metadata: &std::fs::Metadata,
+    ) -> bool {
+        use std::os::unix::fs::MetadataExt;
+        const EXEC_BIT_MASK: u32 = 0o100;
+        let dirstate_exec_bit = (self.mode as u32) & EXEC_BIT_MASK;
+        let fs_exec_bit = filesystem_metadata.mode() & EXEC_BIT_MASK;
+        dirstate_exec_bit != fs_exec_bit
+    }
+
+    /// Returns a `(state, mode, size, mtime)` tuple as for
+    /// `DirstateMapMethods::debug_iter`.
+    pub fn debug_tuple(&self) -> (u8, i32, i32, i32) {
+        (self.state.into(), self.mode, self.size, self.mtime)
+    }
 }
 
 #[derive(BytesCast)]
@@ -45,16 +83,32 @@ struct RawEntry {
     length: unaligned::I32Be,
 }
 
+pub const V1_RANGEMASK: i32 = 0x7FFFFFFF;
+
+pub const MTIME_UNSET: i32 = -1;
+
 /// A `DirstateEntry` with a size of `-2` means that it was merged from the
 /// other parent. This allows revert to pick the right status back during a
 /// merge.
 pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
+/// A special value used for internal representation of special case in
+/// dirstate v1 format.
+pub const SIZE_NON_NORMAL: i32 = -1;
 
 pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
-pub type StateMapIter<'a> = hash_map::Iter<'a, HgPathBuf, DirstateEntry>;
+pub type StateMapIter<'a> = Box<
+    dyn Iterator<
+            Item = Result<(&'a HgPath, DirstateEntry), DirstateV2ParseError>,
+        > + Send
+        + 'a,
+>;
 
 pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
-pub type CopyMapIter<'a> = hash_map::Iter<'a, HgPathBuf, HgPathBuf>;
+pub type CopyMapIter<'a> = Box<
+    dyn Iterator<Item = Result<(&'a HgPath, &'a HgPath), DirstateV2ParseError>>
+        + Send
+        + 'a,
+>;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EntryState {
@@ -63,6 +117,16 @@ pub enum EntryState {
     Removed,
     Merged,
     Unknown,
+}
+
+impl EntryState {
+    pub fn is_tracked(self) -> bool {
+        use EntryState::*;
+        match self {
+            Normal | Added | Merged => true,
+            Removed | Unknown => false,
+        }
+    }
 }
 
 impl TryFrom<u8> for EntryState {

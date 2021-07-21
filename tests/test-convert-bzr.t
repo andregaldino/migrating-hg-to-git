@@ -6,7 +6,7 @@ create and rename on the same file in the same step
 
   $ mkdir test-createandrename
   $ cd test-createandrename
-  $ bzr init -q source
+  $ brz init -q source
 
 test empty repo conversion (issue3233)
 
@@ -22,18 +22,18 @@ back to the rename stuff
   $ echo a > a
   $ echo c > c
   $ echo e > e
-  $ bzr add -q a c e
-  $ bzr commit -q -m 'Initial add: a, c, e'
-  $ bzr mv a b
+  $ brz add -q a c e
+  $ brz commit -q -m 'Initial add: a, c, e'
+  $ brz mv a b
   a => b
-  $ bzr mv c d
+  $ brz mv c d
   c => d
-  $ bzr mv e f
+  $ brz mv e f
   e => f
   $ echo a2 >> a
   $ mkdir e
-  $ bzr add -q a e
-  $ bzr commit -q -m 'rename a into b, create a, rename c into d'
+  $ brz add -q a e
+  $ brz commit -q -m 'rename a into b, create a, rename c into d'
   $ cd ..
   $ hg convert source source-hg
   scanning source...
@@ -86,7 +86,7 @@ test with filemap
 
 convert from lightweight checkout
 
-  $ bzr checkout --lightweight source source-light
+  $ brz checkout --lightweight source source-light
   $ hg convert -s bzr source-light source-light-hg
   initializing destination source-light-hg repository
   warning: lightweight checkouts may cause conversion failures, try with a regular branch instead.
@@ -99,7 +99,7 @@ yyyy-mm-dd HH:MM zzzz (no seconds!)
 compare timestamps
 
   $ cd source
-  $ bzr log | \
+  $ brz log | \
   >   sed '/timestamp/!d;s/.\{15\}\([0-9: -]\{16\}\):.. \(.[0-9]\{4\}\)/\1 \2/' \
   >   > ../bzr-timestamps
   $ cd ..
@@ -113,20 +113,21 @@ merge
   $ cd test-merge
   $ cat > helper.py <<EOF
   > import sys
-  > from bzrlib import workingtree
+  > from breezy import workingtree
+  > import breezy.bzr.bzrdir
   > wt = workingtree.WorkingTree.open('.')
   > 
   > message, stamp = sys.argv[1:]
   > wt.commit(message, timestamp=int(stamp))
   > EOF
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ echo content > a
   $ echo content2 > b
-  $ bzr add -q a b
-  $ bzr commit -q -m 'Initial add'
+  $ brz add -q a b
+  $ brz commit -q -m 'Initial add'
   $ cd ..
-  $ bzr branch -q source source-improve
+  $ brz branch -q source source-improve
   $ cd source
   $ echo more >> a
   $ "$PYTHON" ../helper.py 'Editing a' 100
@@ -134,8 +135,8 @@ merge
   $ echo content3 >> b
   $ "$PYTHON" ../helper.py 'Editing b' 200
   $ cd ../source
-  $ bzr merge -q ../source-improve
-  $ bzr commit -q -m 'Merged improve branch'
+  $ brz merge -q ../source-improve
+  $ brz commit -q -m 'Merged improve branch'
   $ cd ..
   $ hg convert --datesort source source-hg
   initializing destination source-hg repository
@@ -163,7 +164,7 @@ symlinks and executable files
 
   $ mkdir test-symlinks
   $ cd test-symlinks
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ touch program
   $ chmod +x program
@@ -171,15 +172,15 @@ symlinks and executable files
   $ mkdir d
   $ echo a > d/a
   $ ln -s a syma
-  $ bzr add -q altname program syma d/a
-  $ bzr commit -q -m 'Initial setup'
+  $ brz add -q altname program syma d/a
+  $ brz commit -q -m 'Initial setup'
   $ touch newprog
   $ chmod +x newprog
   $ rm altname
   $ ln -s newprog altname
   $ chmod -x program
-  $ bzr add -q newprog
-  $ bzr commit -q -m 'Symlink changed, x bits changed'
+  $ brz add -q newprog
+  $ brz commit -q -m 'Symlink changed, x bits changed'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -215,30 +216,28 @@ test the symlinks can be recreated
 
 Multiple branches
 
-  $ bzr init-repo -q --no-trees repo
-  $ bzr init -q repo/trunk
-  $ bzr co repo/trunk repo-trunk
+  $ brz init-repo -q --no-trees repo
+  $ brz init -q repo/trunk
+  $ brz co repo/trunk repo-trunk
   $ cd repo-trunk
   $ echo a > a
-  $ bzr add -q a
-  $ bzr ci -qm adda
-  $ bzr tag trunk-tag
+  $ brz add -q a
+  $ brz ci -qm adda
+  $ brz tag trunk-tag
   Created tag trunk-tag.
-  $ bzr switch -b branch
+  $ brz switch -b branch
   Tree is up to date at revision 1.
   Switched to branch*repo/branch/ (glob)
-  $ sleep 1
   $ echo b > b
-  $ bzr add -q b
-  $ bzr ci -qm addb
-  $ bzr tag branch-tag
+  $ brz add -q b
+  $ brz ci -qm addb
+  $ brz tag branch-tag
   Created tag branch-tag.
-  $ bzr switch --force ../repo/trunk
+  $ brz switch --force ../repo/trunk
   Updated to revision 1.
   Switched to branch*/repo/trunk/ (glob)
-  $ sleep 1
   $ echo a >> a
-  $ bzr ci -qm changea
+  $ brz ci -qm changea
   $ cd ..
   $ hg convert --datesort repo repo-bzr
   initializing destination repo-bzr repository
@@ -269,13 +268,13 @@ not and get incorporated in extra fields).
 
 Nested repositories (issue3254)
 
-  $ bzr init-repo -q --no-trees repo/inner
-  $ bzr init -q repo/inner/trunk
-  $ bzr co repo/inner/trunk inner-trunk
+  $ brz init-repo -q --no-trees repo/inner
+  $ brz init -q repo/inner/trunk
+  $ brz co repo/inner/trunk inner-trunk
   $ cd inner-trunk
   $ echo b > b
-  $ bzr add -q b
-  $ bzr ci -qm addb
+  $ brz add -q b
+  $ brz ci -qm addb
   $ cd ..
   $ hg convert --datesort repo noinner-bzr
   initializing destination noinner-bzr repository

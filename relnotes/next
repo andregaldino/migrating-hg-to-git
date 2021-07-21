@@ -1,5 +1,8 @@
 == New Features ==
- 
+
+ * `hg config` now has a `--source` option to show where each
+   configuration value comes from.
+
 
 == Default Format Change ==
 
@@ -18,4 +21,31 @@ Mercurial 5.8.
 
 == Internal API Changes ==
 
+The Dirstate API have been updated as the previous function leaked some
+internal details and did not distinct between two important cases: "We are
+changing parent and need to adjust the dirstate" and "some command is changing
+which file is tracked". To clarify the situation:
 
+* the following functions have been deprecated,
+
+  - dirstate.add,
+  - dirstate.normal,
+  - dirstate.normallookup,
+  - dirstate.merge,
+  - dirstate.otherparent,
+  - dirstate.remove,
+  - dirstate.drop,
+
+* these new functions are added for the "adjusting parents" use-case:
+
+  - dirstate.update_file,
+  - dirstate.update_file_p1,
+
+* these new function are added for the "adjusting wc file" use-case":
+
+  - dirstate.set_tracked,
+  - dirstate.set_untracked,
+  - dirstate.set_clean,
+  - dirstate.set_possibly_dirty,
+
+See inline documentation of the new functions for details.

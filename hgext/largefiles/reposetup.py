@@ -222,7 +222,7 @@ def reposetup(ui, repo):
                             else:
                                 if listclean:
                                     clean.append(lfile)
-                                lfdirstate.normal(lfile)
+                                lfdirstate.set_clean(lfile)
                     else:
                         tocheck = unsure + modified + added + clean
                         modified, added, clean = [], [], []

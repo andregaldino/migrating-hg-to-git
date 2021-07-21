@@ -16,7 +16,6 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
-    pycompat,
     registrar,
 )
 
@@ -66,11 +65,10 @@ def amend(ui, repo, *pats, **opts):
 
     See :hg:`help commit` for more details.
     """
-    opts = pycompat.byteskwargs(opts)
-    cmdutil.checknotesize(ui, opts)
+    cmdutil.check_note_size(opts)
 
     with repo.wlock(), repo.lock():
-        if not opts.get(b'logfile'):
-            opts[b'message'] = opts.get(b'message') or repo[b'.'].description()
-        opts[b'amend'] = True
-        return commands._docommit(ui, repo, *pats, **pycompat.strkwargs(opts))
+        if not opts.get('logfile'):
+            opts['message'] = opts.get('message') or repo[b'.'].description()
+        opts['amend'] = True
+        return commands._docommit(ui, repo, *pats, **opts)

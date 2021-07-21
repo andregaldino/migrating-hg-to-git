@@ -139,7 +139,7 @@ widen the narrow checkout
   adding changesets
   adding manifests
   adding file changes
-  added 9 changesets with 6 changes to 6 files
+  added 9 changesets with 6 changes to 10 files
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -193,11 +193,12 @@ widen narrow spec again, but exclude a file in previously included spec
   deleting data/dir1/dirA/bar.i (reporevlogstore !)
   deleting data/dir1/dirA/bar/0eca1d0cbdaea4651d1d04d71976a6d2d9bfaae5 (reposimplestore !)
   deleting data/dir1/dirA/bar/index (reposimplestore !)
+  deleting unwanted files from working copy
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
-  added 11 changesets with 7 changes to 7 files
+  added 11 changesets with 7 changes to 12 files
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -249,11 +250,12 @@ widen narrow spec yet again, excluding a directory in previous spec
   deleting data/dir1/dirA/foo.i (reporevlogstore !)
   deleting data/dir1/dirA/foo/162caeb3d55dceb1fee793aa631ac8c73fcb8b5e (reposimplestore !)
   deleting data/dir1/dirA/foo/index (reposimplestore !)
+  deleting unwanted files from working copy
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
   adding manifests
   adding file changes
-  added 13 changesets with 8 changes to 8 files
+  added 13 changesets with 8 changes to 14 files
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -310,7 +312,7 @@ include a directory that was previously explicitly excluded
   adding changesets
   adding manifests
   adding file changes
-  added 13 changesets with 9 changes to 9 files
+  added 13 changesets with 9 changes to 17 files
   $ hg tracked
   I path:dir1
   I path:dir2
@@ -385,7 +387,7 @@ clone a narrow portion of the master, such that we can widen it later
   adding changesets
   adding manifests
   adding file changes
-  added 10 changesets with 6 changes to 6 files
+  added 10 changesets with 6 changes to 8 files
   $ find * | sort
   dir1
   dir1/bar

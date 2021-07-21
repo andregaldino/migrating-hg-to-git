@@ -5,11 +5,8 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullhex,
-    nullid,
     nullrev,
     sha1nodeconstants,
-    wdirhex,
 )
 from mercurial import (
     ancestor,
@@ -47,7 +44,7 @@ class baselog(object):  # revlog.revlog):
         )
 
     def rev(self, n):
-        if n == nullid:
+        if n == sha1nodeconstants.nullid:
             return -1
         t = self._db.execute(
             'SELECT rev FROM changelog WHERE node = ?', (gitutil.togitnode(n),)
@@ -58,7 +55,7 @@ class baselog(object):  # revlog.revlog):
 
     def node(self, r):
         if r == nullrev:
-            return nullid
+            return sha1nodeconstants.nullid
         t = self._db.execute(
             'SELECT node FROM changelog WHERE rev = ?', (r,)
         ).fetchone()
@@ -135,7 +132,7 @@ class changelog(baselog):
             bin(v[0]): v[1]
             for v in self._db.execute('SELECT node, rev FROM changelog')
         }
-        r[nullid] = nullrev
+        r[sha1nodeconstants.nullid] = nullrev
         return r
 
     def tip(self):
@@ -144,7 +141,7 @@ class changelog(baselog):
         ).fetchone()
         if t:
             return bin(t[0])
-        return nullid
+        return sha1nodeconstants.nullid
 
     def revs(self, start=0, stop=None):
         if stop is None:
@@ -167,7 +164,7 @@ class changelog(baselog):
         return -1
 
     def _partialmatch(self, id):
-        if wdirhex.startswith(id):
+        if sha1nodeconstants.wdirhex.startswith(id):
             raise error.WdirUnsupported
         candidates = [
             bin(x[0])
@@ -176,8 +173,8 @@ class changelog(baselog):
                 (pycompat.sysstr(id + b'%'),),
             )
         ]
-        if nullhex.startswith(id):
-            candidates.append(nullid)
+        if sha1nodeconstants.nullhex.startswith(id):
+            candidates.append(sha1nodeconstants.nullid)
         if len(candidates) > 1:
             raise error.AmbiguousPrefixLookupError(
                 id, b'00changelog.i', _(b'ambiguous identifier')
@@ -223,8 +220,10 @@ class changelog(baselog):
             n = nodeorrev
         extra = {b'branch': b'default'}
         # handle looking up nullid
-        if n == nullid:
-            return hgchangelog._changelogrevision(extra=extra, manifest=nullid)
+        if n == sha1nodeconstants.nullid:
+            return hgchangelog._changelogrevision(
+                extra=extra, manifest=sha1nodeconstants.nullid
+            )
         hn = gitutil.togitnode(n)
         # We've got a real commit!
         files = [
@@ -301,7 +300,7 @@ class changelog(baselog):
         not supplied, uses all of the revlog's heads.  If common is not
         supplied, uses nullid."""
         if common is None:
-            common = [nullid]
+            common = [sha1nodeconstants.nullid]
         if heads is None:
             heads = self.heads()
 
@@ -400,9 +399,9 @@ class changelog(baselog):
     ):
         parents = []
         hp1, hp2 = gitutil.togitnode(p1), gitutil.togitnode(p2)
-        if p1 != nullid:
+        if p1 != sha1nodeconstants.nullid:
             parents.append(hp1)
-        if p2 and p2 != nullid:
+        if p2 and p2 != sha1nodeconstants.nullid:
             parents.append(hp2)
         assert date is not None
         timestamp, tz = date
@@ -435,7 +434,7 @@ class manifestlog(baselog):
         return self.get(b'', node)
 
     def get(self, relpath, node):
-        if node == nullid:
+        if node == sha1nodeconstants.nullid:
             # TODO: this should almost certainly be a memgittreemanifestctx
             return manifest.memtreemanifestctx(self, relpath)
         commit = self.gitrepo[gitutil.togitnode(node)]
@@ -454,9 +453,10 @@ class filelog(baselog):
         super(filelog, self).__init__(gr, db)
         assert isinstance(path, bytes)
         self.path = path
+        self.nullid = sha1nodeconstants.nullid
 
     def read(self, node):
-        if node == nullid:
+        if node == sha1nodeconstants.nullid:
             return b''
         return self.gitrepo[gitutil.togitnode(node)].data
 

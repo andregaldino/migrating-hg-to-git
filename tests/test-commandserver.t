@@ -1,3 +1,13 @@
+#require no-rhg no-chg
+
+XXX-RHG this test hangs if `hg` is really `rhg`. This was hidden by the use of
+`alias hg=rhg` by run-tests.py. With such alias removed, this test is revealed
+buggy. This need to be resolved sooner than later.
+
+XXX-CHG this test hangs if `hg` is really `chg`. This was hidden by the use of
+`alias hg=chg` by run-tests.py. With such alias removed, this test is revealed
+buggy. This need to be resolved sooner than later.
+
 #if windows
   $ PYTHONPATH="$TESTDIR/../contrib;$PYTHONPATH"
 #else
@@ -207,6 +217,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)
+  format.exp-dirstate-v2=1 (dirstate-v2 !)
   largefiles.usercache=$TESTTMP/.cache/largefiles
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True

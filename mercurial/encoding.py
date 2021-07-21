@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function
 
 import locale
 import os
+import re
 import unicodedata
 
 from .pycompat import getattr
@@ -284,13 +285,75 @@ else:
 
     strmethod = pycompat.identity
 
+
+def lower(s):
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
+    try:
+        return asciilower(s)
+    except UnicodeDecodeError:
+        pass
+    try:
+        if isinstance(s, localstr):
+            u = s._utf8.decode("utf-8")
+        else:
+            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
+
+        lu = u.lower()
+        if u == lu:
+            return s  # preserve localstring
+        return lu.encode(_sysstr(encoding))
+    except UnicodeError:
+        return s.lower()  # we don't know how to fold this except in ASCII
+    except LookupError as k:
+        raise error.Abort(k, hint=b"please check your locale settings")
+
+
+def upper(s):
+    # type: (bytes) -> bytes
+    """best-effort encoding-aware case-folding of local string s"""
+    try:
+        return asciiupper(s)
+    except UnicodeDecodeError:
+        return upperfallback(s)
+
+
+def upperfallback(s):
+    # type: (Any) -> Any
+    try:
+        if isinstance(s, localstr):
+            u = s._utf8.decode("utf-8")
+        else:
+            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
+
+        uu = u.upper()
+        if u == uu:
+            return s  # preserve localstring
+        return uu.encode(_sysstr(encoding))
+    except UnicodeError:
+        return s.upper()  # we don't know how to fold this except in ASCII
+    except LookupError as k:
+        raise error.Abort(k, hint=b"please check your locale settings")
+
+
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
-    environ = {
-        tolocal(k.encode('utf-8')): tolocal(v.encode('utf-8'))
-        for k, v in os.environ.items()  # re-exports
-    }
+    if pycompat.iswindows and pycompat.ispy3:
+
+        class WindowsEnviron(dict):
+            """`os.environ` normalizes environment variables to uppercase on windows"""
+
+            def get(self, key, default=None):
+                return super().get(upper(key), default)
+
+        environ = WindowsEnviron()
+
+    for k, v in os.environ.items():  # re-exports
+        environ[tolocal(k.encode('utf-8'))] = tolocal(v.encode('utf-8'))
+
+
+DRIVE_RE = re.compile(b'^[a-z]:')
 
 if pycompat.ispy3:
     # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
@@ -303,7 +366,21 @@ if pycompat.ispy3:
         # os.path.realpath(), which is used on ``repo.root``.  Since those
         # strings are compared in various places as simple strings, also call
         # realpath here.  See https://bugs.python.org/issue40368
-        getcwd = lambda: strtolocal(os.path.realpath(os.getcwd()))  # re-exports
+        #
+        # However this is not reliable, so lets explicitly make this drive
+        # letter upper case.
+        #
+        # note: we should consider dropping realpath here since it seems to
+        # change the semantic of `getcwd`.
+
+        def getcwd():
+            cwd = os.getcwd()  # re-exports
+            cwd = os.path.realpath(cwd)
+            cwd = strtolocal(cwd)
+            if DRIVE_RE.match(cwd):
+                cwd = cwd[0:1].upper() + cwd[1:]
+            return cwd
+
     else:
         getcwd = os.getcwdb  # re-exports
 else:
@@ -439,56 +516,6 @@ def trim(s, width, ellipsis=b'', leftside=False):
         if ucolwidth(usub) <= width:
             return concat(usub.encode(_sysstr(encoding)))
     return ellipsis  # no enough room for multi-column characters
-
-
-def lower(s):
-    # type: (bytes) -> bytes
-    """best-effort encoding-aware case-folding of local string s"""
-    try:
-        return asciilower(s)
-    except UnicodeDecodeError:
-        pass
-    try:
-        if isinstance(s, localstr):
-            u = s._utf8.decode("utf-8")
-        else:
-            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
-
-        lu = u.lower()
-        if u == lu:
-            return s  # preserve localstring
-        return lu.encode(_sysstr(encoding))
-    except UnicodeError:
-        return s.lower()  # we don't know how to fold this except in ASCII
-    except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
-
-
-def upper(s):
-    # type: (bytes) -> bytes
-    """best-effort encoding-aware case-folding of local string s"""
-    try:
-        return asciiupper(s)
-    except UnicodeDecodeError:
-        return upperfallback(s)
-
-
-def upperfallback(s):
-    # type: (Any) -> Any
-    try:
-        if isinstance(s, localstr):
-            u = s._utf8.decode("utf-8")
-        else:
-            u = s.decode(_sysstr(encoding), _sysstr(encodingmode))
-
-        uu = u.upper()
-        if u == uu:
-            return s  # preserve localstring
-        return uu.encode(_sysstr(encoding))
-    except UnicodeError:
-        return s.upper()  # we don't know how to fold this except in ASCII
-    except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
 
 
 class normcasespecs(object):

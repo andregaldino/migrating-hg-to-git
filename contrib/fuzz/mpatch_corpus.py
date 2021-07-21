@@ -1,9 +1,14 @@
 from __future__ import absolute_import, print_function
 
 import argparse
+import os
 import struct
 import sys
 import zipfile
+
+# Add ../.. to sys.path as an absolute path so we can import hg modules
+hgloc = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path[0:0] = [hgloc]
 
 from mercurial import (
     hg,

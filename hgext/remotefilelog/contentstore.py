@@ -2,7 +2,10 @@ from __future__ import absolute_import
 
 import threading
 
-from mercurial.node import hex, nullid
+from mercurial.node import (
+    hex,
+    sha1nodeconstants,
+)
 from mercurial.pycompat import getattr
 from mercurial import (
     mdiff,
@@ -55,7 +58,7 @@ class unioncontentstore(basestore.baseunionstore):
         """
         chain = self.getdeltachain(name, node)
 
-        if chain[-1][ChainIndicies.BASENODE] != nullid:
+        if chain[-1][ChainIndicies.BASENODE] != sha1nodeconstants.nullid:
             # If we didn't receive a full chain, throw
             raise KeyError((name, hex(node)))
 
@@ -92,7 +95,7 @@ class unioncontentstore(basestore.baseunionstore):
         deltabasenode.
         """
         chain = self._getpartialchain(name, node)
-        while chain[-1][ChainIndicies.BASENODE] != nullid:
+        while chain[-1][ChainIndicies.BASENODE] != sha1nodeconstants.nullid:
             x, x, deltabasename, deltabasenode, x = chain[-1]
             try:
                 morechain = self._getpartialchain(deltabasename, deltabasenode)
@@ -187,7 +190,12 @@ class remotefilelogcontentstore(basestore.basestore):
         # Since remotefilelog content stores only contain full texts, just
         # return that.
         revision = self.get(name, node)
-        return revision, name, nullid, self.getmeta(name, node)
+        return (
+            revision,
+            name,
+            sha1nodeconstants.nullid,
+            self.getmeta(name, node),
+        )
 
     def getdeltachain(self, name, node):
         # Since remotefilelog content stores just contain full texts, we return
@@ -195,7 +203,7 @@ class remotefilelogcontentstore(basestore.basestore):
         # The nullid in the deltabasenode slot indicates that the revision is a
         # fulltext.
         revision = self.get(name, node)
-        return [(name, node, None, nullid, revision)]
+        return [(name, node, None, sha1nodeconstants.nullid, revision)]
 
     def getmeta(self, name, node):
         self._sanitizemetacache()
@@ -237,7 +245,12 @@ class remotecontentstore(object):
 
     def getdelta(self, name, node):
         revision = self.get(name, node)
-        return revision, name, nullid, self._shared.getmeta(name, node)
+        return (
+            revision,
+            name,
+            sha1nodeconstants.nullid,
+            self._shared.getmeta(name, node),
+        )
 
     def getdeltachain(self, name, node):
         # Since our remote content stores just contain full texts, we return a
@@ -245,7 +258,7 @@ class remotecontentstore(object):
         # The nullid in the deltabasenode slot indicates that the revision is a
         # fulltext.
         revision = self.get(name, node)
-        return [(name, node, None, nullid, revision)]
+        return [(name, node, None, sha1nodeconstants.nullid, revision)]
 
     def getmeta(self, name, node):
         self._fileservice.prefetch(
@@ -268,7 +281,7 @@ class manifestrevlogstore(object):
         self._store = repo.store
         self._svfs = repo.svfs
         self._revlogs = dict()
-        self._cl = revlog.revlog(self._svfs, b'00changelog.i')
+        self._cl = revlog.revlog(self._svfs, radix=b'00changelog.i')
         self._repackstartlinkrev = 0
 
     def get(self, name, node):
@@ -276,11 +289,11 @@ class manifestrevlogstore(object):
 
     def getdelta(self, name, node):
         revision = self.get(name, node)
-        return revision, name, nullid, self.getmeta(name, node)
+        return revision, name, self._cl.nullid, self.getmeta(name, node)
 
     def getdeltachain(self, name, node):
         revision = self.get(name, node)
-        return [(name, node, None, nullid, revision)]
+        return [(name, node, None, self._cl.nullid, revision)]
 
     def getmeta(self, name, node):
         rl = self._revlog(name)
@@ -304,9 +317,9 @@ class manifestrevlogstore(object):
             missing.discard(ancnode)
 
             p1, p2 = rl.parents(ancnode)
-            if p1 != nullid and p1 not in known:
+            if p1 != self._cl.nullid and p1 not in known:
                 missing.add(p1)
-            if p2 != nullid and p2 not in known:
+            if p2 != self._cl.nullid and p2 not in known:
                 missing.add(p2)
 
             linknode = self._cl.node(rl.linkrev(ancrev))
@@ -328,10 +341,10 @@ class manifestrevlogstore(object):
     def _revlog(self, name):
         rl = self._revlogs.get(name)
         if rl is None:
-            revlogname = b'00manifesttree.i'
+            revlogname = b'00manifesttree'
             if name != b'':
-                revlogname = b'meta/%s/00manifest.i' % name
-            rl = revlog.revlog(self._svfs, revlogname)
+                revlogname = b'meta/%s/00manifest' % name
+            rl = revlog.revlog(self._svfs, radix=revlogname)
             self._revlogs[name] = rl
         return rl
 
@@ -352,7 +365,7 @@ class manifestrevlogstore(object):
         if options and options.get(constants.OPTION_PACKSONLY):
             return
         treename = b''
-        rl = revlog.revlog(self._svfs, b'00manifesttree.i')
+        rl = revlog.revlog(self._svfs, radix=b'00manifesttree')
         startlinkrev = self._repackstartlinkrev
         endlinkrev = self._repackendlinkrev
         for rev in pycompat.xrange(len(rl) - 1, -1, -1):
@@ -369,9 +382,9 @@ class manifestrevlogstore(object):
             if path[:5] != b'meta/' or path[-2:] != b'.i':
                 continue
 
-            treename = path[5 : -len(b'/00manifest.i')]
+            treename = path[5 : -len(b'/00manifest')]
 
-            rl = revlog.revlog(self._svfs, path)
+            rl = revlog.revlog(self._svfs, indexfile=path[:-2])
             for rev in pycompat.xrange(len(rl) - 1, -1, -1):
                 linkrev = rl.linkrev(rev)
                 if linkrev < startlinkrev:

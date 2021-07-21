@@ -11,7 +11,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
 )
 from .thirdparty import attr
 
@@ -26,7 +25,10 @@ from .utils import (
     dateutil,
     stringutil,
 )
-from .revlogutils import flagutil
+from .revlogutils import (
+    constants as revlog_constants,
+    flagutil,
+)
 
 _defaultextra = {b'branch': b'default'}
 
@@ -221,7 +223,7 @@ class changelogrevision(object):
 
     def __new__(cls, cl, text, sidedata, cpsd):
         if not text:
-            return _changelogrevision(extra=_defaultextra, manifest=nullid)
+            return _changelogrevision(extra=_defaultextra, manifest=cl.nullid)
 
         self = super(changelogrevision, cls).__new__(cls)
         # We could return here and implement the following as an __init__.
@@ -393,27 +395,22 @@ class changelog(revlog.revlog):
         ``concurrencychecker`` will be passed to the revlog init function, see
         the documentation there.
         """
-        if trypending and opener.exists(b'00changelog.i.a'):
-            indexfile = b'00changelog.i.a'
-        else:
-            indexfile = b'00changelog.i'
-
-        datafile = b'00changelog.d'
         revlog.revlog.__init__(
             self,
             opener,
-            indexfile,
-            datafile=datafile,
+            target=(revlog_constants.KIND_CHANGELOG, None),
+            radix=b'00changelog',
             checkambig=True,
             mmaplargeindex=True,
             persistentnodemap=opener.options.get(b'persistent-nodemap', False),
             concurrencychecker=concurrencychecker,
+            trypending=trypending,
         )
 
-        if self._initempty and (self.version & 0xFFFF == revlog.REVLOGV1):
+        if self._initempty and (self._format_version == revlog.REVLOGV1):
             # changelogs don't benefit from generaldelta.
 
-            self.version &= ~revlog.FLAG_GENERALDELTA
+            self._format_flags &= ~revlog.FLAG_GENERALDELTA
             self._generaldelta = False
 
         # Delta chains for changelogs tend to be very small because entries
@@ -428,7 +425,6 @@ class changelog(revlog.revlog):
         self._filteredrevs = frozenset()
         self._filteredrevs_hashcache = {}
         self._copiesstorage = opener.options.get(b'copies-storage')
-        self.revlog_kind = b'changelog'
 
     @property
     def filteredrevs(self):
@@ -441,20 +437,25 @@ class changelog(revlog.revlog):
         self._filteredrevs = val
         self._filteredrevs_hashcache = {}
 
+    def _write_docket(self, tr):
+        if not self._delayed:
+            super(changelog, self)._write_docket(tr)
+
     def delayupdate(self, tr):
         """delay visibility of index updates to other readers"""
-
-        if not self._delayed:
+        if self._docket is None and not self._delayed:
             if len(self) == 0:
                 self._divert = True
-                if self._realopener.exists(self.indexfile + b'.a'):
-                    self._realopener.unlink(self.indexfile + b'.a')
-                self.opener = _divertopener(self._realopener, self.indexfile)
+                if self._realopener.exists(self._indexfile + b'.a'):
+                    self._realopener.unlink(self._indexfile + b'.a')
+                self.opener = _divertopener(self._realopener, self._indexfile)
             else:
                 self._delaybuf = []
                 self.opener = _delayopener(
-                    self._realopener, self.indexfile, self._delaybuf
+                    self._realopener, self._indexfile, self._delaybuf
                 )
+            self._segmentfile.opener = self.opener
+            self._segmentfile_sidedata.opener = self.opener
         self._delayed = True
         tr.addpending(b'cl-%i' % id(self), self._writepending)
         tr.addfinalize(b'cl-%i' % id(self), self._finalize)
@@ -463,15 +464,19 @@ class changelog(revlog.revlog):
         """finalize index updates"""
         self._delayed = False
         self.opener = self._realopener
+        self._segmentfile.opener = self.opener
+        self._segmentfile_sidedata.opener = self.opener
         # move redirected index data back into place
-        if self._divert:
+        if self._docket is not None:
+            self._write_docket(tr)
+        elif self._divert:
             assert not self._delaybuf
-            tmpname = self.indexfile + b".a"
+            tmpname = self._indexfile + b".a"
             nfile = self.opener.open(tmpname)
             nfile.close()
-            self.opener.rename(tmpname, self.indexfile, checkambig=True)
+            self.opener.rename(tmpname, self._indexfile, checkambig=True)
         elif self._delaybuf:
-            fp = self.opener(self.indexfile, b'a', checkambig=True)
+            fp = self.opener(self._indexfile, b'a', checkambig=True)
             fp.write(b"".join(self._delaybuf))
             fp.close()
             self._delaybuf = None
@@ -482,10 +487,12 @@ class changelog(revlog.revlog):
     def _writepending(self, tr):
         """create a file containing the unfinalized state for
         pretxnchangegroup"""
+        if self._docket:
+            return self._docket.write(tr, pending=True)
         if self._delaybuf:
             # make a temporary copy of the index
-            fp1 = self._realopener(self.indexfile)
-            pendingfilename = self.indexfile + b".a"
+            fp1 = self._realopener(self._indexfile)
+            pendingfilename = self._indexfile + b".a"
             # register as a temp file to ensure cleanup on failure
             tr.registertmp(pendingfilename)
             # write existing data
@@ -497,16 +504,18 @@ class changelog(revlog.revlog):
             # switch modes so finalize can simply rename
             self._delaybuf = None
             self._divert = True
-            self.opener = _divertopener(self._realopener, self.indexfile)
+            self.opener = _divertopener(self._realopener, self._indexfile)
+            self._segmentfile.opener = self.opener
+            self._segmentfile_sidedata.opener = self.opener
 
         if self._divert:
             return True
 
         return False
 
-    def _enforceinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr):
         if not self._delayed:
-            revlog.revlog._enforceinlinesize(self, tr, fp)
+            revlog.revlog._enforceinlinesize(self, tr)
 
     def read(self, nodeorrev):
         """Obtain data from a parsed changelog revision.
@@ -524,15 +533,16 @@ class changelog(revlog.revlog):
         ``changelogrevision`` instead, as it is faster for partial object
         access.
         """
-        d, s = self._revisiondata(nodeorrev)
-        c = changelogrevision(
-            self, d, s, self._copiesstorage == b'changeset-sidedata'
-        )
+        d = self._revisiondata(nodeorrev)
+        sidedata = self.sidedata(nodeorrev)
+        copy_sd = self._copiesstorage == b'changeset-sidedata'
+        c = changelogrevision(self, d, sidedata, copy_sd)
         return (c.manifest, c.user, c.date, c.files, c.description, c.extra)
 
     def changelogrevision(self, nodeorrev):
         """Obtain a ``changelogrevision`` for a node or revision."""
-        text, sidedata = self._revisiondata(nodeorrev)
+        text = self._revisiondata(nodeorrev)
+        sidedata = self.sidedata(nodeorrev)
         return changelogrevision(
             self, text, sidedata, self._copiesstorage == b'changeset-sidedata'
         )

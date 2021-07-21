@@ -18,7 +18,7 @@ from .py2exe import (
     build_py2exe,
     stage_install,
 )
-from .pyoxidizer import run_pyoxidizer
+from .pyoxidizer import create_pyoxidizer_install_layout
 from .util import (
     find_legacy_vc_runtime_files,
     normalize_windows_version,
@@ -136,7 +136,9 @@ def build_with_pyoxidizer(
     staging_dir = inno_build_dir / "stage"
 
     inno_build_dir.mkdir(parents=True, exist_ok=True)
-    run_pyoxidizer(source_dir, inno_build_dir, staging_dir, target_triple)
+    create_pyoxidizer_install_layout(
+        source_dir, inno_build_dir, staging_dir, target_triple
+    )
 
     process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
 

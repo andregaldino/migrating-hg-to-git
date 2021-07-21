@@ -1,4 +1,11 @@
-#require no-reposimplestore
+#require no-reposimplestore no-chg
+
+XXX-CHG this test hangs if `hg` is really `chg`. This was hidden by the use of
+`alias hg=chg` by run-tests.py. With such alias removed, this test is revealed
+buggy. This need to be resolved sooner than later.
+
+
+Testing infinipush extension and the confi options provided by it
 
 Create an ondisk bundlestore in .hg/scratchbranches
   $ . "$TESTDIR/library-infinitepush.sh"

@@ -8,10 +8,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import (
-    nullid,
-    nullrev,
-)
+from .node import nullrev
 from . import (
     error,
     revlog,
@@ -21,18 +18,24 @@ from .interfaces import (
     util as interfaceutil,
 )
 from .utils import storageutil
+from .revlogutils import (
+    constants as revlog_constants,
+)
 
 
 @interfaceutil.implementer(repository.ifilestorage)
 class filelog(object):
     def __init__(self, opener, path):
         self._revlog = revlog.revlog(
-            opener, b'/'.join((b'data', path + b'.i')), censorable=True
+            opener,
+            # XXX should use the unencoded path
+            target=(revlog_constants.KIND_FILELOG, path),
+            radix=b'/'.join((b'data', path)),
+            censorable=True,
         )
         # Full name of the user visible file, relative to the repository root.
         # Used by LFS.
         self._revlog.filename = path
-        self._revlog.revlog_kind = b'filelog'
         self.nullid = self._revlog.nullid
 
     def __len__(self):
@@ -42,7 +45,7 @@ class filelog(object):
         return self._revlog.__iter__()
 
     def hasnode(self, node):
-        if node in (nullid, nullrev):
+        if node in (self.nullid, nullrev):
             return False
 
         try:
@@ -68,7 +71,7 @@ class filelog(object):
 
     def lookup(self, node):
         return storageutil.fileidlookup(
-            self._revlog, node, self._revlog.indexfile
+            self._revlog, node, self._revlog.display_id
         )
 
     def linkrev(self, rev):
@@ -224,18 +227,6 @@ class filelog(object):
             trackedsize=trackedsize,
             storedsize=storedsize,
         )
-
-    # TODO these aren't part of the interface and aren't internal methods.
-    # Callers should be fixed to not use them.
-
-    # Used by bundlefilelog, unionfilelog.
-    @property
-    def indexfile(self):
-        return self._revlog.indexfile
-
-    @indexfile.setter
-    def indexfile(self, value):
-        self._revlog.indexfile = value
 
     # Used by repo upgrade.
     def clone(self, tr, destrevlog, **kwargs):

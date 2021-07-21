@@ -94,6 +94,7 @@ Narrow the share and check that the main repo's working copy gets updated
   deleting meta/d1/00manifest.i (tree !)
   deleting meta/d3/00manifest.i (tree !)
   deleting meta/d5/00manifest.i (tree !)
+  deleting unwanted files from working copy
   $ hg -R main tracked
   I path:d7
   $ hg -R main files

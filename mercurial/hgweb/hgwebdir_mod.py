@@ -70,7 +70,7 @@ def findrepos(paths):
         except KeyError:
             repos.append((prefix, root))
             continue
-        roothead = os.path.normpath(os.path.abspath(roothead))
+        roothead = os.path.normpath(util.abspath(roothead))
         paths = scmutil.walkrepos(roothead, followsym=True, recurse=recurse)
         repos.extend(urlrepos(prefix, roothead, paths))
     return repos

@@ -11,10 +11,7 @@ import binascii
 import os
 
 from .i18n import _
-from .node import (
-    hex,
-    nullid,
-)
+from .node import hex
 from .pycompat import getattr
 
 from . import (
@@ -470,7 +467,7 @@ def getbundle(repo, proto, others):
         clheads = set(repo.changelog.heads())
         heads = set(opts.get(b'heads', set()))
         common = set(opts.get(b'common', set()))
-        common.discard(nullid)
+        common.discard(repo.nullid)
         if (
             repo.ui.configbool(b'server', b'pullbundle')
             and b'partial-pull' in proto.getprotocaps()

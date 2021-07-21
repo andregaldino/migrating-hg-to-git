@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import errno
-import os
 import re
 import struct
 
@@ -19,6 +18,7 @@ from .. import (
     error,
     util,
 )
+from . import docket as docket_mod
 
 
 class NodeMap(dict):
@@ -28,9 +28,9 @@ class NodeMap(dict):
 
 def persisted_data(revlog):
     """read the nodemap for a revlog from disk"""
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return None
-    pdata = revlog.opener.tryread(revlog.nodemap_file)
+    pdata = revlog.opener.tryread(revlog._nodemap_file)
     if not pdata:
         return None
     offset = 0
@@ -77,11 +77,11 @@ def setup_persistent_nodemap(tr, revlog):
     """
     if revlog._inline:
         return  # inlined revlog are too small for this to be relevant
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return  # we do not use persistent_nodemap on this revlog
 
     # we need to happen after the changelog finalization, in that use "cl-"
-    callback_id = b"nm-revlog-persistent-nodemap-%s" % revlog.nodemap_file
+    callback_id = b"nm-revlog-persistent-nodemap-%s" % revlog._nodemap_file
     if tr.hasfinalize(callback_id):
         return  # no need to register again
     tr.addpending(
@@ -123,7 +123,7 @@ def update_persistent_nodemap(revlog):
     """
     if revlog._inline:
         return  # inlined revlog are too small for this to be relevant
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         return  # we do not use persistent_nodemap on this revlog
 
     notr = _NoTransaction()
@@ -134,10 +134,10 @@ def update_persistent_nodemap(revlog):
 
 def delete_nodemap(tr, repo, revlog):
     """Delete nodemap data on disk for a given revlog"""
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enabled"
         raise error.ProgrammingError(msg)
-    repo.svfs.unlink(revlog.nodemap_file)
+    repo.svfs.unlink(revlog._nodemap_file)
 
 
 def persist_nodemap(tr, revlog, pending=False, force=False):
@@ -146,11 +146,9 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
         raise error.ProgrammingError(
             "cannot persist nodemap of a filtered changelog"
         )
-    if revlog.nodemap_file is None:
+    if revlog._nodemap_file is None:
         if force:
-            revlog.nodemap_file = get_nodemap_file(
-                revlog.opener, revlog.indexfile
-            )
+            revlog._nodemap_file = get_nodemap_file(revlog)
         else:
             msg = "calling persist nodemap on a revlog without the feature enabled"
             raise error.ProgrammingError(msg)
@@ -227,7 +225,7 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
     target_docket.tip_node = revlog.node(target_docket.tip_rev)
     # EXP-TODO: if this is a cache, this should use a cache vfs, not a
     # store vfs
-    file_path = revlog.nodemap_file
+    file_path = revlog._nodemap_file
     if pending:
         file_path += b'.a'
         tr.registertmp(file_path)
@@ -250,7 +248,7 @@ def persist_nodemap(tr, revlog, pending=False, force=False):
             for oldfile in olds:
                 realvfs.tryunlink(oldfile)
 
-        callback_id = b"revlog-cleanup-nodemap-%s" % revlog.nodemap_file
+        callback_id = b"revlog-cleanup-nodemap-%s" % revlog._nodemap_file
         tr.addpostclose(callback_id, cleanup)
 
 
@@ -280,15 +278,6 @@ ONDISK_VERSION = 1
 S_VERSION = struct.Struct(">B")
 S_HEADER = struct.Struct(">BQQQQ")
 
-ID_SIZE = 8
-
-
-def _make_uid():
-    """return a new unique identifier.
-
-    The identifier is random and composed of ascii characters."""
-    return hex(os.urandom(ID_SIZE))
-
 
 class NodeMapDocket(object):
     """metadata associated with persistent nodemap data
@@ -298,7 +287,7 @@ class NodeMapDocket(object):
 
     def __init__(self, uid=None):
         if uid is None:
-            uid = _make_uid()
+            uid = docket_mod.make_uid()
         # a unique identifier for the data file:
         #   - When new data are appended, it is preserved.
         #   - When a new data file is created, a new identifier is generated.
@@ -365,15 +354,12 @@ class NodeMapDocket(object):
 
 def _rawdata_filepath(revlog, docket):
     """The (vfs relative) nodemap's rawdata file for a given uid"""
-    if revlog.nodemap_file.endswith(b'.n.a'):
-        prefix = revlog.nodemap_file[:-4]
-    else:
-        prefix = revlog.nodemap_file[:-2]
+    prefix = revlog.radix
     return b"%s-%s.nd" % (prefix, docket.uid)
 
 
 def _other_rawdata_filepath(revlog, docket):
-    prefix = revlog.nodemap_file[:-2]
+    prefix = revlog.radix
     pattern = re.compile(br"(^|/)%s-[0-9a-f]+\.nd$" % prefix)
     new_file_path = _rawdata_filepath(revlog, docket)
     new_file_name = revlog.opener.basename(new_file_path)
@@ -653,12 +639,9 @@ def _find_node(block, node):
     return entry
 
 
-def get_nodemap_file(opener, indexfile):
-    if indexfile.endswith(b'.a'):
-        pending_path = indexfile[:-4] + b".n.a"
-        if opener.exists(pending_path):
+def get_nodemap_file(revlog):
+    if revlog._trypending:
+        pending_path = revlog.radix + b".n.a"
+        if revlog.opener.exists(pending_path):
             return pending_path
-        else:
-            return indexfile[:-4] + b".n"
-    else:
-        return indexfile[:-2] + b".n"
+    return revlog.radix + b".n"

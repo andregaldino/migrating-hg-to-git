@@ -13,8 +13,11 @@ use cpython::{
 };
 use std::cell::RefCell;
 
+use crate::dirstate::dirstate_map::v2_error;
 use crate::dirstate::dirstate_map::DirstateMap;
-use hg::{utils::hg_path::HgPathBuf, CopyMapIter};
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
+use hg::utils::hg_path::HgPath;
+use hg::CopyMapIter;
 
 py_class!(pub class CopyMap |py| {
     data dirstate_map: DirstateMap;
@@ -87,15 +90,16 @@ impl CopyMap {
     }
     fn translate_key(
         py: Python,
-        res: (&HgPathBuf, &HgPathBuf),
+        res: Result<(&HgPath, &HgPath), DirstateV2ParseError>,
     ) -> PyResult<Option<PyBytes>> {
-        Ok(Some(PyBytes::new(py, res.0.as_bytes())))
+        let (k, _v) = res.map_err(|e| v2_error(py, e))?;
+        Ok(Some(PyBytes::new(py, k.as_bytes())))
     }
     fn translate_key_value(
         py: Python,
-        res: (&HgPathBuf, &HgPathBuf),
+        res: Result<(&HgPath, &HgPath), DirstateV2ParseError>,
     ) -> PyResult<Option<(PyBytes, PyBytes)>> {
-        let (k, v) = res;
+        let (k, v) = res.map_err(|e| v2_error(py, e))?;
         Ok(Some((
             PyBytes::new(py, k.as_bytes()),
             PyBytes::new(py, v.as_bytes()),

@@ -98,6 +98,15 @@ log template:
   expand: $TESTTMP/a/$SOMETHING/bar
   $ hg log -rnull -T '{get(peerurls, "dupe")}\n'
   $TESTTMP/b#tip
+#if windows
+  $ hg log -rnull -T '{peerurls % "{urls|json}\n"}'
+  [{"pushurl": "https://example.com/dupe", "url": "$STR_REPR_TESTTMP\\b#tip"}]
+  [{"url": "$STR_REPR_TESTTMP\\a\\$SOMETHING\\bar"}]
+#else
+  $ hg log -rnull -T '{peerurls % "{urls|json}\n"}'
+  [{"pushurl": "https://example.com/dupe", "url": "$TESTTMP/b#tip"}]
+  [{"url": "$TESTTMP/a/$SOMETHING/bar"}]
+#endif
 
  (sub options can be populated by map/dot operation)
 
@@ -172,7 +181,7 @@ unknown sub-options aren't displayed
   > EOF
 
   $ hg paths
-  (paths.default:pushurl not a URL; ignoring)
+  (paths.default:pushurl not a URL; ignoring: "/not/a/url")
   default = /path/to/nothing
 
 #fragment is not allowed in :pushurl
@@ -385,3 +394,128 @@ Test basic error cases
   abort: cannot use `path://unknown`, "unknown" is not a known path
   [255]
 
+Test path pointing to multiple urls
+===================================
+
+Simple cases
+------------
+- one layer
+- one list
+- no special option
+
+  $ cat << EOF > .hg/hgrc
+  > [paths]
+  > one-path=foo
+  > multiple-path=foo,bar,baz,https://example.org/
+  > multiple-path:multi-urls=yes
+  > EOF
+  $ hg path
+  gpath1 = http://hg.example.com/
+  multiple-path = $TESTTMP/chained_path/foo
+  multiple-path:multi-urls = yes
+  multiple-path = $TESTTMP/chained_path/bar
+  multiple-path:multi-urls = yes
+  multiple-path = $TESTTMP/chained_path/baz
+  multiple-path:multi-urls = yes
+  multiple-path = https://example.org/
+  multiple-path:multi-urls = yes
+  one-path = $TESTTMP/chained_path/foo
+
+Reference to a list
+-------------------
+
+  $ cat << EOF >> .hg/hgrc
+  > ref-to-multi=path://multiple-path
+  > EOF
+  $ hg path | grep ref-to-multi
+  ref-to-multi = $TESTTMP/chained_path/foo
+  ref-to-multi:multi-urls = yes
+  ref-to-multi = $TESTTMP/chained_path/bar
+  ref-to-multi:multi-urls = yes
+  ref-to-multi = $TESTTMP/chained_path/baz
+  ref-to-multi:multi-urls = yes
+  ref-to-multi = https://example.org/
+  ref-to-multi:multi-urls = yes
+
+List with a reference
+---------------------
+
+  $ cat << EOF >> .hg/hgrc
+  > multi-with-ref=path://one-path, ssh://babar@savannah/celeste-ville
+  > multi-with-ref:multi-urls=yes
+  > EOF
+  $ hg path | grep multi-with-ref
+  multi-with-ref = $TESTTMP/chained_path/foo
+  multi-with-ref:multi-urls = yes
+  multi-with-ref = ssh://babar@savannah/celeste-ville
+  multi-with-ref:multi-urls = yes
+
+List with a reference to a list
+-------------------------------
+
+  $ cat << EOF >> .hg/hgrc
+  > multi-to-multi-ref = path://multiple-path, ssh://celeste@savannah/celeste-ville
+  > multi-to-multi-ref:multi-urls = yes
+  > EOF
+  $ hg path | grep multi-to-multi-ref
+  multi-to-multi-ref = $TESTTMP/chained_path/foo
+  multi-to-multi-ref:multi-urls = yes
+  multi-to-multi-ref = $TESTTMP/chained_path/bar
+  multi-to-multi-ref:multi-urls = yes
+  multi-to-multi-ref = $TESTTMP/chained_path/baz
+  multi-to-multi-ref:multi-urls = yes
+  multi-to-multi-ref = https://example.org/
+  multi-to-multi-ref:multi-urls = yes
+  multi-to-multi-ref = ssh://celeste@savannah/celeste-ville
+  multi-to-multi-ref:multi-urls = yes
+
+individual suboptions are inherited
+-----------------------------------
+
+  $ cat << EOF >> .hg/hgrc
+  > with-pushurl = foo
+  > with-pushurl:pushurl = http://foo.bar/
+  > with-pushrev = bar
+  > with-pushrev:pushrev = draft()
+  > with-both = toto
+  > with-both:pushurl = http://ta.ta
+  > with-both:pushrev = secret()
+  > ref-all-no-opts = path://with-pushurl, path://with-pushrev, path://with-both
+  > ref-all-no-opts:multi-urls = yes
+  > with-overwrite = path://with-pushurl, path://with-pushrev, path://with-both
+  > with-overwrite:multi-urls = yes
+  > with-overwrite:pushrev = public()
+  > EOF
+  $ hg path | grep with-pushurl
+  with-pushurl = $TESTTMP/chained_path/foo
+  with-pushurl:pushurl = http://foo.bar/
+  $ hg path | grep with-pushrev
+  with-pushrev = $TESTTMP/chained_path/bar
+  with-pushrev:pushrev = draft()
+  $ hg path | grep with-both
+  with-both = $TESTTMP/chained_path/toto
+  with-both:pushrev = secret()
+  with-both:pushurl = http://ta.ta/
+  $ hg path | grep ref-all-no-opts
+  ref-all-no-opts = $TESTTMP/chained_path/foo
+  ref-all-no-opts:multi-urls = yes
+  ref-all-no-opts:pushurl = http://foo.bar/
+  ref-all-no-opts = $TESTTMP/chained_path/bar
+  ref-all-no-opts:multi-urls = yes
+  ref-all-no-opts:pushrev = draft()
+  ref-all-no-opts = $TESTTMP/chained_path/toto
+  ref-all-no-opts:multi-urls = yes
+  ref-all-no-opts:pushrev = secret()
+  ref-all-no-opts:pushurl = http://ta.ta/
+  $ hg path | grep with-overwrite
+  with-overwrite = $TESTTMP/chained_path/foo
+  with-overwrite:multi-urls = yes
+  with-overwrite:pushrev = public()
+  with-overwrite:pushurl = http://foo.bar/
+  with-overwrite = $TESTTMP/chained_path/bar
+  with-overwrite:multi-urls = yes
+  with-overwrite:pushrev = public()
+  with-overwrite = $TESTTMP/chained_path/toto
+  with-overwrite:multi-urls = yes
+  with-overwrite:pushrev = public()
+  with-overwrite:pushurl = http://ta.ta/

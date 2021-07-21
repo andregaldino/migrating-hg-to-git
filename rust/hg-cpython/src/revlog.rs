@@ -172,6 +172,16 @@ py_class!(pub class MixedIndex |py| {
         self.call_cindex(py, "clearcaches", args, kw)
     }
 
+    /// return the raw binary string representing a revision
+    def entry_binary(&self, *args, **kw) -> PyResult<PyObject> {
+        self.call_cindex(py, "entry_binary", args, kw)
+    }
+
+    /// return a binary packed version of the header
+    def pack_header(&self, *args, **kw) -> PyResult<PyObject> {
+        self.call_cindex(py, "pack_header", args, kw)
+    }
+
     /// get an index entry
     def get(&self, *args, **kw) -> PyResult<PyObject> {
         self.call_cindex(py, "get", args, kw)
@@ -288,6 +298,11 @@ py_class!(pub class MixedIndex |py| {
     @property
     def entry_size(&self) -> PyResult<PyInt> {
         self.cindex(py).borrow().inner().getattr(py, "entry_size")?.extract::<PyInt>(py)
+    }
+
+    @property
+    def rust_ext_compat(&self) -> PyResult<PyInt> {
+        self.cindex(py).borrow().inner().getattr(py, "rust_ext_compat")?.extract::<PyInt>(py)
     }
 
 });
@@ -454,7 +469,10 @@ fn revlog_error(py: Python) -> PyErr {
         .and_then(|m| m.get(py, "RevlogError"))
     {
         Err(e) => e,
-        Ok(cls) => PyErr::from_instance(py, cls),
+        Ok(cls) => PyErr::from_instance(
+            py,
+            cls.call(py, (py.None(),), None).ok().into_py_object(py),
+        ),
     }
 }
 

@@ -19,13 +19,33 @@ from .. import (
     metadata,
     pycompat,
     requirements,
-    revlog,
     scmutil,
     store,
     util,
     vfs as vfsmod,
 )
-from ..revlogutils import nodemap
+from ..revlogutils import (
+    constants as revlogconst,
+    flagutil,
+    nodemap,
+    sidedata as sidedatamod,
+)
+from . import actions as upgrade_actions
+
+
+def get_sidedata_helpers(srcrepo, dstrepo):
+    use_w = srcrepo.ui.configbool(b'experimental', b'worker.repository-upgrade')
+    sequential = pycompat.iswindows or not use_w
+    if not sequential:
+        srcrepo.register_sidedata_computer(
+            revlogconst.KIND_CHANGELOG,
+            sidedatamod.SD_FILES,
+            (sidedatamod.SD_FILES,),
+            metadata._get_worker_sidedata_adder(srcrepo, dstrepo),
+            flagutil.REVIDX_HASCOPIESINFO,
+            replace=True,
+        )
+    return sidedatamod.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def _revlogfrompath(repo, rl_type, path):
@@ -44,7 +64,12 @@ def _revlogfrompath(repo, rl_type, path):
         )
     else:
         # drop the extension and the `data/` prefix
-        path = path.rsplit(b'.', 1)[0].split(b'/', 1)[1]
+        path_part = path.rsplit(b'.', 1)[0].split(b'/', 1)
+        if len(path_part) < 2:
+            msg = _('cannot recognize revlog from filename: %s')
+            msg %= path
+            raise error.Abort(msg)
+        path = path_part[1]
         return filelog.filelog(repo.svfs, path)
 
 
@@ -61,16 +86,16 @@ def _copyrevlog(tr, destrepo, oldrl, rl_type, unencodedname):
 
     oldvfs = oldrl.opener
     newvfs = newrl.opener
-    oldindex = oldvfs.join(oldrl.indexfile)
-    newindex = newvfs.join(newrl.indexfile)
-    olddata = oldvfs.join(oldrl.datafile)
-    newdata = newvfs.join(newrl.datafile)
+    oldindex = oldvfs.join(oldrl._indexfile)
+    newindex = newvfs.join(newrl._indexfile)
+    olddata = oldvfs.join(oldrl._datafile)
+    newdata = newvfs.join(newrl._datafile)
 
-    with newvfs(newrl.indexfile, b'w'):
+    with newvfs(newrl._indexfile, b'w'):
         pass  # create all the directories
 
     util.copyfile(oldindex, newindex)
-    copydata = oldrl.opener.exists(oldrl.datafile)
+    copydata = oldrl.opener.exists(oldrl._datafile)
     if copydata:
         util.copyfile(olddata, newdata)
 
@@ -87,25 +112,6 @@ UPGRADE_FILELOGS = b"all-filelogs"
 UPGRADE_ALL_REVLOGS = frozenset(
     [UPGRADE_CHANGELOG, UPGRADE_MANIFEST, UPGRADE_FILELOGS]
 )
-
-
-def getsidedatacompanion(srcrepo, dstrepo):
-    sidedatacompanion = None
-    removedreqs = srcrepo.requirements - dstrepo.requirements
-    addedreqs = dstrepo.requirements - srcrepo.requirements
-    if requirements.SIDEDATA_REQUIREMENT in removedreqs:
-
-        def sidedatacompanion(rl, rev):
-            rl = getattr(rl, '_revlog', rl)
-            if rl.flags(rev) & revlog.REVIDX_SIDEDATA:
-                return True, (), {}, 0, 0
-            return False, (), {}, 0, 0
-
-    elif requirements.COPIESSDC_REQUIREMENT in addedreqs:
-        sidedatacompanion = metadata.getsidedataadder(srcrepo, dstrepo)
-    elif requirements.COPIESSDC_REQUIREMENT in removedreqs:
-        sidedatacompanion = metadata.getsidedataremover(srcrepo, dstrepo)
-    return sidedatacompanion
 
 
 def matchrevlog(revlogfilter, rl_type):
@@ -131,7 +137,7 @@ def _perform_clone(
     rl_type,
     unencoded,
     upgrade_op,
-    sidedatacompanion,
+    sidedata_helpers,
     oncopiedrevision,
 ):
     """returns the new revlog object created"""
@@ -147,7 +153,7 @@ def _perform_clone(
             addrevisioncb=oncopiedrevision,
             deltareuse=upgrade_op.delta_reuse_mode,
             forcedeltabothparents=upgrade_op.force_re_delta_both_parents,
-            sidedatacompanion=sidedatacompanion,
+            sidedata_helpers=sidedata_helpers,
         )
     else:
         msg = _(b'blindly copying %s containing %i revisions\n')
@@ -197,6 +203,17 @@ def _clonerevlogs(
     # source files and allows a unified progress bar to be displayed.
     for rl_type, unencoded, encoded, size in alldatafiles:
         if not rl_type & store.FILEFLAGS_REVLOG_MAIN:
+            continue
+
+        # the store.walk function will wrongly pickup transaction backup and
+        # get confused. As a quick fix for 5.9 release, we ignore those.
+        # (this is not a module constants because it seems better to keep the
+        # hack together)
+        skip_undo = (
+            b'undo.backup.00changelog.i',
+            b'undo.backup.00manifest.i',
+        )
+        if unencoded in skip_undo:
             continue
 
         rl = _revlogfrompath(srcrepo, rl_type, unencoded)
@@ -257,7 +274,7 @@ def _clonerevlogs(
     def oncopiedrevision(rl, rev, node):
         progress.increment()
 
-    sidedatacompanion = getsidedatacompanion(srcrepo, dstrepo)
+    sidedata_helpers = get_sidedata_helpers(srcrepo, dstrepo)
 
     # Migrating filelogs
     ui.status(
@@ -282,7 +299,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
@@ -322,7 +339,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
@@ -361,7 +378,7 @@ def _clonerevlogs(
             rl_type,
             unencoded,
             upgrade_op,
-            sidedatacompanion,
+            sidedata_helpers,
             oncopiedrevision,
         )
         info = newrl.storageinfo(storedsize=True)
@@ -458,6 +475,19 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         )
     )
 
+    if upgrade_actions.dirstatev2 in upgrade_op.upgrade_actions:
+        ui.status(_(b'upgrading to dirstate-v2 from v1\n'))
+        upgrade_dirstate(ui, srcrepo, upgrade_op, b'v1', b'v2')
+        upgrade_op.upgrade_actions.remove(upgrade_actions.dirstatev2)
+
+    if upgrade_actions.dirstatev2 in upgrade_op.removed_actions:
+        ui.status(_(b'downgrading from dirstate-v2 to v1\n'))
+        upgrade_dirstate(ui, srcrepo, upgrade_op, b'v2', b'v1')
+        upgrade_op.removed_actions.remove(upgrade_actions.dirstatev2)
+
+    if not (upgrade_op.upgrade_actions or upgrade_op.removed_actions):
+        return
+
     if upgrade_op.requirements_only:
         ui.status(_(b'upgrading repository requirements\n'))
         scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
@@ -466,7 +496,7 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
     # through the whole cloning process
     elif (
         len(upgrade_op.upgrade_actions) == 1
-        and b'persistent-nodemap' in upgrade_op._upgrade_actions_names
+        and b'persistent-nodemap' in upgrade_op.upgrade_actions_names
         and not upgrade_op.removed_actions
     ):
         ui.status(
@@ -591,3 +621,29 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
             backupvfs.unlink(b'store/lock')
 
     return backuppath
+
+
+def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
+    if upgrade_op.backup_store:
+        backuppath = pycompat.mkdtemp(
+            prefix=b'upgradebackup.', dir=srcrepo.path
+        )
+        ui.status(_(b'replaced files will be backed up at %s\n') % backuppath)
+        backupvfs = vfsmod.vfs(backuppath)
+        util.copyfile(
+            srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
+        )
+        util.copyfile(
+            srcrepo.vfs.join(b'dirstate'), backupvfs.join(b'dirstate')
+        )
+
+    assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
+    srcrepo.dirstate._map._use_dirstate_tree = True
+    srcrepo.dirstate._map.preload()
+    srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
+    srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2
+    srcrepo.dirstate._dirty = True
+    srcrepo.vfs.unlink(b'dirstate')
+    srcrepo.dirstate.write(None)
+
+    scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)

@@ -9,17 +9,17 @@ empty directory
 
   $ mkdir test-empty
   $ cd test-empty
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ echo content > a
-  $ bzr add -q a
-  $ bzr commit -q -m 'Initial add'
+  $ brz add -q a
+  $ brz commit -q -m 'Initial add'
   $ mkdir empty
-  $ bzr add -q empty
-  $ bzr commit -q -m 'Empty directory added'
+  $ brz add -q empty
+  $ brz commit -q -m 'Empty directory added'
   $ echo content > empty/something
-  $ bzr add -q empty/something
-  $ bzr commit -q -m 'Added file into directory'
+  $ brz add -q empty/something
+  $ brz commit -q -m 'Added file into directory'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -42,15 +42,15 @@ directory renames
 
   $ mkdir test-dir-rename
   $ cd test-dir-rename
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ mkdir tpyo
   $ echo content > tpyo/something
-  $ bzr add -q tpyo
-  $ bzr commit -q -m 'Added directory'
-  $ bzr mv tpyo typo
+  $ brz add -q tpyo
+  $ brz commit -q -m 'Added directory'
+  $ brz mv tpyo typo
   tpyo => typo
-  $ bzr commit -q -m 'Oops, typo'
+  $ brz commit -q -m 'Oops, typo'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -71,16 +71,16 @@ nested directory renames
 
   $ mkdir test-nested-dir-rename
   $ cd test-nested-dir-rename
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ mkdir -p firstlevel/secondlevel/thirdlevel
   $ echo content > firstlevel/secondlevel/file
   $ echo this_needs_to_be_there_too > firstlevel/secondlevel/thirdlevel/stuff
-  $ bzr add -q firstlevel
-  $ bzr commit -q -m 'Added nested directories'
-  $ bzr mv firstlevel/secondlevel secondlevel
+  $ brz add -q firstlevel
+  $ brz commit -q -m 'Added nested directories'
+  $ brz mv firstlevel/secondlevel secondlevel
   firstlevel/secondlevel => secondlevel
-  $ bzr commit -q -m 'Moved secondlevel one level up'
+  $ brz commit -q -m 'Moved secondlevel one level up'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -99,14 +99,14 @@ directory remove
 
   $ mkdir test-dir-remove
   $ cd test-dir-remove
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ mkdir src
   $ echo content > src/sourcecode
-  $ bzr add -q src
-  $ bzr commit -q -m 'Added directory'
-  $ bzr rm -q src
-  $ bzr commit -q -m 'Removed directory'
+  $ brz add -q src
+  $ brz commit -q -m 'Added directory'
+  $ brz rm -q src
+  $ brz commit -q -m 'Removed directory'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -126,19 +126,19 @@ directory replace
 
   $ mkdir test-dir-replace
   $ cd test-dir-replace
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ mkdir first second
   $ echo content > first/file
   $ echo morecontent > first/dummy
   $ echo othercontent > second/something
-  $ bzr add -q first second
-  $ bzr commit -q -m 'Initial layout'
-  $ bzr mv first/file second/file
+  $ brz add -q first second
+  $ brz commit -q -m 'Initial layout'
+  $ brz mv first/file second/file
   first/file => second/file
-  $ bzr mv first third
+  $ brz mv first third
   first => third
-  $ bzr commit -q -m 'Some conflicting moves'
+  $ brz commit -q -m 'Some conflicting moves'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository
@@ -158,27 +158,27 @@ divergent nested renames (issue3089)
 
   $ mkdir test-divergent-renames
   $ cd test-divergent-renames
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ mkdir -p a/c
   $ echo a > a/fa
   $ echo c > a/c/fc
-  $ bzr add -q a
-  $ bzr commit -q -m 'Initial layout'
-  $ bzr mv a b
+  $ brz add -q a
+  $ brz commit -q -m 'Initial layout'
+  $ brz mv a b
   a => b
   $ mkdir a
-  $ bzr add a
+  $ brz add a
   add(ed|ing) a (re)
-  $ bzr mv b/c a/c
+  $ brz mv b/c a/c
   b/c => a/c
-  $ bzr status
+  $ brz status
   added:
     a/
   renamed:
     a/? => b/? (re)
     a/c/? => a/c/? (re)
-  $ bzr commit -q -m 'Divergent renames'
+  $ brz commit -q -m 'Divergent renames'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository

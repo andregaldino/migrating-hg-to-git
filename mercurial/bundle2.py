@@ -158,7 +158,6 @@ import sys
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     short,
 )
 from . import (
@@ -181,6 +180,7 @@ from .utils import (
     stringutil,
     urlutil,
 )
+from .interfaces import repository
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -1730,8 +1730,8 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
             part.addparam(
                 b'targetphase', b'%d' % phases.secret, mandatory=False
             )
-        if b'exp-sidedata-flag' in repo.requirements:
-            part.addparam(b'exp-sidedata', b'1')
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
+        part.addparam(b'exp-sidedata', b'1')
 
     if opts.get(b'streamv2', False):
         addpartbundlestream2(bundler, repo, stream=True)
@@ -2013,13 +2013,6 @@ def handlechangegroup(op, inpart):
             op.repo.ui, op.repo.requirements, op.repo.features
         )
         scmutil.writereporequirements(op.repo)
-
-    bundlesidedata = bool(b'exp-sidedata' in inpart.params)
-    reposidedata = bool(b'exp-sidedata-flag' in op.repo.requirements)
-    if reposidedata and not bundlesidedata:
-        msg = b"repository is using sidedata but the bundle source do not"
-        hint = b'this is currently unsupported'
-        raise error.Abort(msg, hint=hint)
 
     extrakwargs = {}
     targetphase = inpart.params.get(b'targetphase')
@@ -2576,7 +2569,7 @@ def widen_bundle(
             fullnodes=commonnodes,
         )
         cgdata = packer.generate(
-            {nullid},
+            {repo.nullid},
             list(commonnodes),
             False,
             b'narrow_widen',
@@ -2587,9 +2580,9 @@ def widen_bundle(
         part.addparam(b'version', cgversion)
         if scmutil.istreemanifest(repo):
             part.addparam(b'treemanifest', b'1')
-        if b'exp-sidedata-flag' in repo.requirements:
-            part.addparam(b'exp-sidedata', b'1')
-            wanted = format_remote_wanted_sidedata(repo)
-            part.addparam(b'exp-wanted-sidedata', wanted)
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
+        part.addparam(b'exp-sidedata', b'1')
+        wanted = format_remote_wanted_sidedata(repo)
+        part.addparam(b'exp-wanted-sidedata', wanted)
 
     return bundler

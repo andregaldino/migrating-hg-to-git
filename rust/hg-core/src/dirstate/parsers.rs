@@ -13,7 +13,6 @@ use byteorder::{BigEndian, WriteBytesExt};
 use bytes_cast::BytesCast;
 use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
-use std::time::Duration;
 
 /// Parents are stored in the dirstate as byte hashes.
 pub const PARENT_SIZE: usize = 20;
@@ -35,10 +34,28 @@ pub fn parse_dirstate_parents(
 }
 
 #[timed]
-pub fn parse_dirstate(mut contents: &[u8]) -> Result<ParseResult, HgError> {
+pub fn parse_dirstate(contents: &[u8]) -> Result<ParseResult, HgError> {
     let mut copies = Vec::new();
     let mut entries = Vec::new();
+    let parents =
+        parse_dirstate_entries(contents, |path, entry, copy_source| {
+            if let Some(source) = copy_source {
+                copies.push((path, source));
+            }
+            entries.push((path, *entry));
+            Ok(())
+        })?;
+    Ok((parents, entries, copies))
+}
 
+pub fn parse_dirstate_entries<'a>(
+    mut contents: &'a [u8],
+    mut each_entry: impl FnMut(
+        &'a HgPath,
+        &DirstateEntry,
+        Option<&'a HgPath>,
+    ) -> Result<(), HgError>,
+) -> Result<&'a DirstateParents, HgError> {
     let (parents, rest) = DirstateParents::from_bytes(contents)
         .map_err(|_| HgError::corrupted("Too little data for dirstate."))?;
     contents = rest;
@@ -62,34 +79,98 @@ pub fn parse_dirstate(mut contents: &[u8]) -> Result<ParseResult, HgError> {
         let path = HgPath::new(
             iter.next().expect("splitn always yields at least one item"),
         );
-        if let Some(copy_source) = iter.next() {
-            copies.push((path, HgPath::new(copy_source)));
-        }
+        let copy_source = iter.next().map(HgPath::new);
+        each_entry(path, &entry, copy_source)?;
 
-        entries.push((path, entry));
         contents = rest;
     }
-    Ok((parents, entries, copies))
+    Ok(parents)
 }
 
-/// `now` is the duration in seconds since the Unix epoch
+fn packed_filename_and_copy_source_size(
+    filename: &HgPath,
+    copy_source: Option<&HgPath>,
+) -> usize {
+    filename.len()
+        + if let Some(source) = copy_source {
+            b"\0".len() + source.len()
+        } else {
+            0
+        }
+}
+
+pub fn packed_entry_size(
+    filename: &HgPath,
+    copy_source: Option<&HgPath>,
+) -> usize {
+    MIN_ENTRY_SIZE
+        + packed_filename_and_copy_source_size(filename, copy_source)
+}
+
+pub fn pack_entry(
+    filename: &HgPath,
+    entry: &DirstateEntry,
+    copy_source: Option<&HgPath>,
+    packed: &mut Vec<u8>,
+) {
+    let length = packed_filename_and_copy_source_size(filename, copy_source);
+
+    // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
+    packed.write_u8(entry.state.into()).unwrap();
+    packed.write_i32::<BigEndian>(entry.mode).unwrap();
+    packed.write_i32::<BigEndian>(entry.size).unwrap();
+    packed.write_i32::<BigEndian>(entry.mtime).unwrap();
+    packed.write_i32::<BigEndian>(length as i32).unwrap();
+    packed.extend(filename.as_bytes());
+    if let Some(source) = copy_source {
+        packed.push(b'\0');
+        packed.extend(source.as_bytes());
+    }
+}
+
+/// Seconds since the Unix epoch
+pub struct Timestamp(pub i64);
+
+impl DirstateEntry {
+    pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
+        self.state == EntryState::Normal && self.mtime == now
+    }
+
+    pub fn clear_ambiguous_mtime(&mut self, now: i32) -> bool {
+        let ambiguous = self.mtime_is_ambiguous(now);
+        if ambiguous {
+            // The file was last modified "simultaneously" with the current
+            // write to dirstate (i.e. within the same second for file-
+            // systems with a granularity of 1 sec). This commonly happens
+            // for at least a couple of files on 'update'.
+            // The user could change the file without changing its size
+            // within the same second. Invalidate the file's mtime in
+            // dirstate, forcing future 'status' calls to compare the
+            // contents of the file if the size is the same. This prevents
+            // mistakenly treating such files as clean.
+            self.clear_mtime()
+        }
+        ambiguous
+    }
+
+    pub fn clear_mtime(&mut self) {
+        self.mtime = -1;
+    }
+}
+
 pub fn pack_dirstate(
     state_map: &mut StateMap,
     copy_map: &CopyMap,
     parents: DirstateParents,
-    now: Duration,
+    now: Timestamp,
 ) -> Result<Vec<u8>, HgError> {
     // TODO move away from i32 before 2038.
-    let now: i32 = now.as_secs().try_into().expect("time overflow");
+    let now: i32 = now.0.try_into().expect("time overflow");
 
     let expected_size: usize = state_map
         .iter()
         .map(|(filename, _)| {
-            let mut length = MIN_ENTRY_SIZE + filename.len();
-            if let Some(copy) = copy_map.get(filename) {
-                length += copy.len() + 1;
-            }
-            length
+            packed_entry_size(filename, copy_map.get(filename).map(|p| &**p))
         })
         .sum();
     let expected_size = expected_size + PARENT_SIZE * 2;
@@ -100,39 +181,13 @@ pub fn pack_dirstate(
     packed.extend(parents.p2.as_bytes());
 
     for (filename, entry) in state_map.iter_mut() {
-        let new_filename = filename.to_owned();
-        let mut new_mtime: i32 = entry.mtime;
-        if entry.state == EntryState::Normal && entry.mtime == now {
-            // The file was last modified "simultaneously" with the current
-            // write to dirstate (i.e. within the same second for file-
-            // systems with a granularity of 1 sec). This commonly happens
-            // for at least a couple of files on 'update'.
-            // The user could change the file without changing its size
-            // within the same second. Invalidate the file's mtime in
-            // dirstate, forcing future 'status' calls to compare the
-            // contents of the file if the size is the same. This prevents
-            // mistakenly treating such files as clean.
-            new_mtime = -1;
-            *entry = DirstateEntry {
-                mtime: new_mtime,
-                ..*entry
-            };
-        }
-        let mut new_filename = new_filename.into_vec();
-        if let Some(copy) = copy_map.get(filename) {
-            new_filename.push(b'\0');
-            new_filename.extend(copy.bytes());
-        }
-
-        // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
-        packed.write_u8(entry.state.into()).unwrap();
-        packed.write_i32::<BigEndian>(entry.mode).unwrap();
-        packed.write_i32::<BigEndian>(entry.size).unwrap();
-        packed.write_i32::<BigEndian>(new_mtime).unwrap();
-        packed
-            .write_i32::<BigEndian>(new_filename.len() as i32)
-            .unwrap();
-        packed.extend(new_filename)
+        entry.clear_ambiguous_mtime(now);
+        pack_entry(
+            filename,
+            entry,
+            copy_map.get(filename).map(|p| &**p),
+            &mut packed,
+        )
     }
 
     if packed.len() != expected_size {
@@ -160,7 +215,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = b"1234567891011121314100000000000000000000".to_vec();
 
         assert_eq!(
@@ -191,7 +246,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = [
             49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
             51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -231,7 +286,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let expected = [
             49, 50, 51, 52, 53, 54, 55, 56, 57, 49, 48, 49, 49, 49, 50, 49,
             51, 49, 52, 49, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -271,7 +326,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
@@ -349,7 +404,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();
@@ -395,7 +450,7 @@ mod tests {
             p1: b"12345678910111213141".into(),
             p2: b"00000000000000000000".into(),
         };
-        let now = Duration::new(15000000, 0);
+        let now = Timestamp(15000000);
         let result =
             pack_dirstate(&mut state_map, &copymap, parents.clone(), now)
                 .unwrap();

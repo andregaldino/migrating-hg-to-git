@@ -5,8 +5,9 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-# This module is for handling 'bzr', that was formerly known as Bazaar-NG;
-# it cannot access 'bar' repositories, but they were never used very much
+# This module is for handling Breezy imports or `brz`, but it's also compatible
+# with Bazaar or `bzr`, that was formerly known as Bazaar-NG;
+# it cannot access `bar` repositories, but they were never used very much.
 from __future__ import absolute_import
 
 import os
@@ -16,34 +17,36 @@ from mercurial import (
     demandimport,
     error,
     pycompat,
+    util,
 )
 from . import common
+
 
 # these do not work with demandimport, blacklist
 demandimport.IGNORES.update(
     [
-        b'bzrlib.transactions',
-        b'bzrlib.urlutils',
+        b'breezy.transactions',
+        b'breezy.urlutils',
         b'ElementPath',
     ]
 )
 
 try:
     # bazaar imports
-    import bzrlib.bzrdir
-    import bzrlib.errors
-    import bzrlib.revision
-    import bzrlib.revisionspec
+    import breezy.bzr.bzrdir
+    import breezy.errors
+    import breezy.revision
+    import breezy.revisionspec
 
-    bzrdir = bzrlib.bzrdir
-    errors = bzrlib.errors
-    revision = bzrlib.revision
-    revisionspec = bzrlib.revisionspec
+    bzrdir = breezy.bzr.bzrdir
+    errors = breezy.errors
+    revision = breezy.revision
+    revisionspec = breezy.revisionspec
     revisionspec.RevisionSpec
 except ImportError:
     pass
 
-supportedkinds = (b'file', b'symlink')
+supportedkinds = ('file', 'symlink')
 
 
 class bzr_source(common.converter_source):
@@ -58,15 +61,16 @@ class bzr_source(common.converter_source):
             )
 
         try:
-            # access bzrlib stuff
+            # access breezy stuff
             bzrdir
         except NameError:
             raise common.NoRepo(_(b'Bazaar modules could not be loaded'))
 
-        path = os.path.abspath(path)
+        path = util.abspath(path)
         self._checkrepotype(path)
         try:
-            self.sourcerepo = bzrdir.BzrDir.open(path).open_repository()
+            bzr_dir = bzrdir.BzrDir.open(path.decode())
+            self.sourcerepo = bzr_dir.open_repository()
         except errors.NoRepositoryPresent:
             raise common.NoRepo(
                 _(b'%s does not look like a Bazaar repository') % path
@@ -78,7 +82,7 @@ class bzr_source(common.converter_source):
         # Lightweight checkouts detection is informational but probably
         # fragile at API level. It should not terminate the conversion.
         try:
-            dir = bzrdir.BzrDir.open_containing(path)[0]
+            dir = bzrdir.BzrDir.open_containing(path.decode())[0]
             try:
                 tree = dir.open_workingtree(recommend_upgrade=False)
                 branch = tree.branch
@@ -87,8 +91,8 @@ class bzr_source(common.converter_source):
                 branch = dir.open_branch()
             if (
                 tree is not None
-                and tree.bzrdir.root_transport.base
-                != branch.bzrdir.root_transport.base
+                and tree.controldir.root_transport.base
+                != branch.controldir.root_transport.base
             ):
                 self.ui.warn(
                     _(
@@ -127,7 +131,8 @@ class bzr_source(common.converter_source):
             revid = None
             for branch in self._bzrbranches():
                 try:
-                    r = revisionspec.RevisionSpec.from_string(self.revs[0])
+                    revspec = self.revs[0].decode()
+                    r = revisionspec.RevisionSpec.from_string(revspec)
                     info = r.in_history(branch)
                 except errors.BzrError:
                     pass
@@ -142,24 +147,26 @@ class bzr_source(common.converter_source):
         return heads
 
     def getfile(self, name, rev):
+        name = name.decode()
         revtree = self.sourcerepo.revision_tree(rev)
-        fileid = revtree.path2id(name.decode(self.encoding or b'utf-8'))
-        kind = None
-        if fileid is not None:
-            kind = revtree.kind(fileid)
+
+        try:
+            kind = revtree.kind(name)
+        except breezy.errors.NoSuchFile:
+            return None, None
         if kind not in supportedkinds:
             # the file is not available anymore - was deleted
             return None, None
-        mode = self._modecache[(name, rev)]
-        if kind == b'symlink':
-            target = revtree.get_symlink_target(fileid)
+        mode = self._modecache[(name.encode(), rev)]
+        if kind == 'symlink':
+            target = revtree.get_symlink_target(name)
             if target is None:
                 raise error.Abort(
                     _(b'%s.%s symlink has no target') % (name, rev)
                 )
-            return target, mode
+            return target.encode(), mode
         else:
-            sio = revtree.get_file(fileid)
+            sio = revtree.get_file(name)
             return sio.read(), mode
 
     def getchanges(self, version, full):
@@ -184,15 +191,15 @@ class bzr_source(common.converter_source):
             parents = self._filterghosts(rev.parent_ids)
             self._parentids[version] = parents
 
-        branch = self.recode(rev.properties.get(b'branch-nick', u'default'))
-        if branch == b'trunk':
-            branch = b'default'
+        branch = rev.properties.get('branch-nick', 'default')
+        if branch == 'trunk':
+            branch = 'default'
         return common.commit(
             parents=parents,
             date=b'%d %d' % (rev.timestamp, -rev.timezone),
             author=self.recode(rev.committer),
             desc=self.recode(rev.message),
-            branch=branch,
+            branch=branch.encode('utf8'),
             rev=version,
             saverev=self._saverev,
         )
@@ -234,35 +241,32 @@ class bzr_source(common.converter_source):
 
         # Process the entries by reverse lexicographic name order to
         # handle nested renames correctly, most specific first.
+
+        def key(c):
+            return c.path[0] or c.path[1] or ""
+
         curchanges = sorted(
             current.iter_changes(origin),
-            key=lambda c: c[1][0] or c[1][1],
+            key=key,
             reverse=True,
         )
-        for (
-            fileid,
-            paths,
-            changed_content,
-            versioned,
-            parent,
-            name,
-            kind,
-            executable,
-        ) in curchanges:
-
+        for change in curchanges:
+            paths = change.path
+            kind = change.kind
+            executable = change.executable
             if paths[0] == u'' or paths[1] == u'':
                 # ignore changes to tree root
                 continue
 
             # bazaar tracks directories, mercurial does not, so
             # we have to rename the directory contents
-            if kind[1] == b'directory':
-                if kind[0] not in (None, b'directory'):
+            if kind[1] == 'directory':
+                if kind[0] not in (None, 'directory'):
                     # Replacing 'something' with a directory, record it
                     # so it can be removed.
                     changes.append((self.recode(paths[0]), revid))
 
-                if kind[0] == b'directory' and None not in paths:
+                if kind[0] == 'directory' and None not in paths:
                     renaming = paths[0] != paths[1]
                     # neither an add nor an delete - a move
                     # rename all directory contents manually
@@ -270,9 +274,9 @@ class bzr_source(common.converter_source):
                     # get all child-entries of the directory
                     for name, entry in inventory.iter_entries(subdir):
                         # hg does not track directory renames
-                        if entry.kind == b'directory':
+                        if entry.kind == 'directory':
                             continue
-                        frompath = self.recode(paths[0] + b'/' + name)
+                        frompath = self.recode(paths[0] + '/' + name)
                         if frompath in seen:
                             # Already handled by a more specific change entry
                             # This is important when you have:
@@ -283,14 +287,14 @@ class bzr_source(common.converter_source):
                         seen.add(frompath)
                         if not renaming:
                             continue
-                        topath = self.recode(paths[1] + b'/' + name)
+                        topath = self.recode(paths[1] + '/' + name)
                         # register the files as changed
                         changes.append((frompath, revid))
                         changes.append((topath, revid))
                         # add to mode cache
                         mode = (
                             (entry.executable and b'x')
-                            or (entry.kind == b'symlink' and b's')
+                            or (entry.kind == 'symlink' and b's')
                             or b''
                         )
                         self._modecache[(topath, revid)] = mode
@@ -320,7 +324,7 @@ class bzr_source(common.converter_source):
 
             # populate the mode cache
             kind, executable = [e[1] for e in (kind, executable)]
-            mode = (executable and b'x') or (kind == b'symlink' and b'l') or b''
+            mode = (executable and b'x') or (kind == 'symlink' and b'l') or b''
             self._modecache[(topath, revid)] = mode
             changes.append((topath, revid))
 

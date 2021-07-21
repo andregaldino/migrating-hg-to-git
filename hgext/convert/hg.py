@@ -27,8 +27,7 @@ from mercurial.pycompat import open
 from mercurial.node import (
     bin,
     hex,
-    nullhex,
-    nullid,
+    sha1nodeconstants,
 )
 from mercurial import (
     bookmarks,
@@ -160,7 +159,7 @@ class mercurial_sink(common.converter_sink):
                 continue
             revid = revmap.get(source.lookuprev(s[0]))
             if not revid:
-                if s[0] == nullhex:
+                if s[0] == sha1nodeconstants.nullhex:
                     revid = s[0]
                 else:
                     # missing, but keep for hash stability
@@ -179,7 +178,7 @@ class mercurial_sink(common.converter_sink):
 
             revid = s[0]
             subpath = s[1]
-            if revid != nullhex:
+            if revid != sha1nodeconstants.nullhex:
                 revmap = self.subrevmaps.get(subpath)
                 if revmap is None:
                     revmap = mapfile(
@@ -304,9 +303,9 @@ class mercurial_sink(common.converter_sink):
             parent = parents[0]
 
         if len(parents) < 2:
-            parents.append(nullid)
+            parents.append(self.repo.nullid)
         if len(parents) < 2:
-            parents.append(nullid)
+            parents.append(self.repo.nullid)
         p2 = parents.pop(0)
 
         text = commit.desc
@@ -356,7 +355,7 @@ class mercurial_sink(common.converter_sink):
             p2 = parents.pop(0)
             p1ctx = self.repo[p1]
             p2ctx = None
-            if p2 != nullid:
+            if p2 != self.repo.nullid:
                 p2ctx = self.repo[p2]
             fileset = set(files)
             if full:
@@ -421,7 +420,7 @@ class mercurial_sink(common.converter_sink):
 
     def puttags(self, tags):
         tagparent = self.repo.branchtip(self.tagsbranch, ignoremissing=True)
-        tagparent = tagparent or nullid
+        tagparent = tagparent or self.repo.nullid
 
         oldlines = set()
         for branch, heads in pycompat.iteritems(self.repo.branchmap()):

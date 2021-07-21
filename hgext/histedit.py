@@ -575,9 +575,8 @@ class histeditaction(object):
         parentctx, but does not commit them."""
         repo = self.repo
         rulectx = repo[self.node]
-        repo.ui.pushbuffer(error=True, labeled=True)
-        hg.update(repo, self.state.parentctxnode, quietempty=True)
-        repo.ui.popbuffer()
+        with repo.ui.silent():
+            hg.update(repo, self.state.parentctxnode, quietempty=True)
         stats = applychanges(repo.ui, repo, rulectx, {})
         repo.dirstate.setbranch(rulectx.branch())
         if stats.unresolvedcount:
@@ -654,10 +653,9 @@ def applychanges(ui, repo, ctx, opts):
     if ctx.p1().node() == repo.dirstate.p1():
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
-        ui.pushbuffer()
-        cmdutil.revert(ui, repo, ctx, all=True)
-        stats = mergemod.updateresult(0, 0, 0, 0)
-        ui.popbuffer()
+        with ui.silent():
+            cmdutil.revert(ui, repo, ctx, all=True)
+            stats = mergemod.updateresult(0, 0, 0, 0)
     else:
         try:
             # ui.forcemerge is an internal variable, do not document

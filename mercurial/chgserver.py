@@ -320,7 +320,7 @@ class channeledsystem(object):
         self.channel = channel
 
     def __call__(self, cmd, environ, cwd=None, type=b'system', cmdtable=None):
-        args = [type, cmd, os.path.abspath(cwd or b'.')]
+        args = [type, cmd, util.abspath(cwd or b'.')]
         args.extend(b'%s=%s' % (k, v) for k, v in pycompat.iteritems(environ))
         data = b'\0'.join(args)
         self.out.write(struct.pack(b'>cI', self.channel, len(data)))
@@ -515,11 +515,9 @@ class chgcmdserver(commandserver.server):
             if inst.hint:
                 self.ui.error(_(b"(%s)\n") % inst.hint)
             errorraised = True
-        except error.Abort as inst:
-            if isinstance(inst, error.InputError):
-                detailed_exit_code = 10
-            elif isinstance(inst, error.ConfigError):
-                detailed_exit_code = 30
+        except error.Error as inst:
+            if inst.detailed_exit_code is not None:
+                detailed_exit_code = inst.detailed_exit_code
             self.ui.error(inst.format())
             errorraised = True
 

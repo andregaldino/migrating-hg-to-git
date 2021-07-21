@@ -11,7 +11,6 @@ import errno
 import struct
 
 from mercurial.i18n import _
-from mercurial.node import nullid
 from mercurial import (
     bundle2,
     changegroup,
@@ -94,7 +93,7 @@ def generateellipsesbundle2(
             raise error.Abort(_(b'depth must be positive, got %d') % depth)
 
     heads = set(heads or repo.heads())
-    common = set(common or [nullid])
+    common = set(common or [repo.nullid])
 
     visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
         repo, common, heads, set(), match, depth=depth
@@ -128,7 +127,7 @@ def generate_ellipses_bundle2_for_widening(
     common,
     known,
 ):
-    common = set(common or [nullid])
+    common = set(common or [repo.nullid])
     # Steps:
     # 1. Send kill for "$known & ::common"
     #
@@ -282,10 +281,10 @@ def handlechangegroup_widen(op, inpart):
     try:
         gen = exchange.readbundle(ui, f, chgrpfile, vfs)
         # silence internal shuffling chatter
-        override = {(b'ui', b'quiet'): True}
-        if ui.verbose:
-            override = {}
-        with ui.configoverride(override):
+        maybe_silent = (
+            ui.silent() if not ui.verbose else util.nullcontextmanager()
+        )
+        with maybe_silent:
             if isinstance(gen, bundle2.unbundle20):
                 with repo.transaction(b'strip') as tr:
                     bundle2.processbundle(repo, gen, lambda: tr)

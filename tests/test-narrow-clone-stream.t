@@ -64,6 +64,7 @@ Making sure we have the correct set of requirements
   $ cat .hg/requires
   dotencode (tree !)
   dotencode (flat-fncache !)
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache (tree !)
   fncache (flat-fncache !)
   generaldelta

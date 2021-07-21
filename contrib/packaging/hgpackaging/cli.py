@@ -64,6 +64,7 @@ def build_wix(
     extra_packages_script=None,
     extra_wxs=None,
     extra_features=None,
+    extra_pyoxidizer_vars=None,
 ):
     if not pyoxidizer_target and not python:
         raise Exception("--python required unless building with PyOxidizer")
@@ -105,7 +106,7 @@ def build_wix(
             "timestamp_url": sign_timestamp_url,
         }
 
-    fn(**kwargs)
+    fn(**kwargs, extra_pyoxidizer_vars=extra_pyoxidizer_vars)
 
 
 def get_parser():
@@ -168,6 +169,12 @@ def get_parser():
             "in the installer from the extra wxs files"
         ),
     )
+
+    sp.add_argument(
+        "--extra-pyoxidizer-vars",
+        help="json map of extra variables to pass to pyoxidizer",
+    )
+
     sp.set_defaults(func=build_wix)
 
     return parser

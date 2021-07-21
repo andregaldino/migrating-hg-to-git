@@ -21,7 +21,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     short,
 )
 from . import (
@@ -61,7 +60,7 @@ def _expandedabspath(path):
     expandedpath = urlutil.urllocalpath(util.expandpath(path))
     u = urlutil.url(expandedpath)
     if not u.scheme:
-        path = util.normpath(os.path.abspath(u.path))
+        path = util.normpath(util.abspath(u.path))
     return path
 
 
@@ -686,7 +685,7 @@ class hgsubrepo(abstractsubrepo):
         # we can't fully delete the repository as it may contain
         # local-only history
         self.ui.note(_(b'removing subrepo %s\n') % subrelpath(self))
-        hg.clean(self._repo, nullid, False)
+        hg.clean(self._repo, self._repo.nullid, False)
 
     def _get(self, state):
         source, revision, kind = state

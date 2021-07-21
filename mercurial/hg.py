@@ -16,8 +16,7 @@ import stat
 from .i18n import _
 from .node import (
     hex,
-    nullhex,
-    nullid,
+    sha1nodeconstants,
     short,
 )
 from .pycompat import getattr
@@ -25,7 +24,6 @@ from .pycompat import getattr
 from . import (
     bookmarks,
     bundlerepo,
-    cacheutil,
     cmdutil,
     destutil,
     discovery,
@@ -53,6 +51,7 @@ from . import (
     verify as verifymod,
     vfs as vfsmod,
 )
+from .interfaces import repository as repositorymod
 from .utils import (
     hashutil,
     stringutil,
@@ -568,7 +567,7 @@ def clonewithshare(
 
     # Resolve the value to put in [paths] section for the source.
     if islocal(source):
-        defaultpath = os.path.abspath(urlutil.urllocalpath(source))
+        defaultpath = util.abspath(urlutil.urllocalpath(source))
     else:
         defaultpath = source
 
@@ -772,7 +771,7 @@ def clone(
                             },
                         ).result()
 
-                    if rootnode != nullid:
+                    if rootnode != sha1nodeconstants.nullid:
                         sharepath = os.path.join(sharepool, hex(rootnode))
                     else:
                         ui.status(
@@ -822,10 +821,15 @@ def clone(
 
         abspath = origsource
         if islocal(origsource):
-            abspath = os.path.abspath(urlutil.urllocalpath(origsource))
+            abspath = util.abspath(urlutil.urllocalpath(origsource))
 
         if islocal(dest):
-            cleandir = dest
+            if os.path.exists(dest):
+                # only clean up directories we create ourselves
+                hgdir = os.path.realpath(os.path.join(dest, b".hg"))
+                cleandir = hgdir
+            else:
+                cleandir = dest
 
         copy = False
         if (
@@ -852,38 +856,26 @@ def clone(
 
         if copy:
             srcrepo.hook(b'preoutgoing', throw=True, source=b'clone')
-            hgdir = os.path.realpath(os.path.join(dest, b".hg"))
-            if not os.path.exists(dest):
-                util.makedirs(dest)
-            else:
-                # only clean up directories we create ourselves
-                cleandir = hgdir
-            try:
-                destpath = hgdir
-                util.makedir(destpath, notindexed=True)
-            except OSError as inst:
-                if inst.errno == errno.EEXIST:
-                    cleandir = None
-                    raise error.Abort(
-                        _(b"destination '%s' already exists") % dest
-                    )
-                raise
 
-            destlock = copystore(ui, srcrepo, destpath)
-            # copy bookmarks over
-            srcbookmarks = srcrepo.vfs.join(b'bookmarks')
-            dstbookmarks = os.path.join(destpath, b'bookmarks')
-            if os.path.exists(srcbookmarks):
-                util.copyfile(srcbookmarks, dstbookmarks)
+            destrootpath = urlutil.urllocalpath(dest)
+            dest_reqs = localrepo.clone_requirements(ui, createopts, srcrepo)
+            localrepo.createrepository(
+                ui,
+                destrootpath,
+                requirements=dest_reqs,
+            )
+            destrepo = localrepo.makelocalrepository(ui, destrootpath)
+            destlock = destrepo.lock()
+            from . import streamclone  # avoid cycle
 
-            dstcachedir = os.path.join(destpath, b'cache')
-            for cache in cacheutil.cachetocopy(srcrepo):
-                _copycache(srcrepo, dstcachedir, cache)
+            streamclone.local_copy(srcrepo, destrepo)
 
             # we need to re-init the repo after manually copying the data
             # into it
             destpeer = peer(srcrepo, peeropts, dest)
-            srcrepo.hook(b'outgoing', source=b'clone', node=nullhex)
+            srcrepo.hook(
+                b'outgoing', source=b'clone', node=srcrepo.nodeconstants.nullhex
+            )
         else:
             try:
                 # only pass ui when no srcrepo
@@ -1053,7 +1045,7 @@ def clone(
             # as the only "bad" outcome would be some slowness. That potential
             # slowness already affect reader.
             with destrepo.lock():
-                destrepo.updatecaches(full=b"post-clone")
+                destrepo.updatecaches(caches=repositorymod.CACHES_POST_CLONE)
     finally:
         release(srclock, destlock)
         if cleandir is not None:
@@ -1329,7 +1321,9 @@ def incoming(ui, repo, source, opts, subpath=None):
         for n in chlist:
             if limit is not None and count >= limit:
                 break
-            parents = [p for p in other.changelog.parents(n) if p != nullid]
+            parents = [
+                p for p in other.changelog.parents(n) if p != repo.nullid
+            ]
             if opts.get(b'no_merges') and len(parents) == 2:
                 continue
             count += 1
@@ -1406,7 +1400,7 @@ def _outgoing_filter(repo, revs, opts):
     for n in revs:
         if limit is not None and count >= limit:
             break
-        parents = [p for p in cl.parents(n) if p != nullid]
+        parents = [p for p in cl.parents(n) if p != repo.nullid]
         if no_merges and len(parents) == 2:
             continue
         count += 1

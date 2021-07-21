@@ -164,7 +164,7 @@ def geturl(path):
         # svn.client.url_from_path() fails with local repositories
         pass
     if os.path.isdir(path):
-        path = os.path.normpath(os.path.abspath(path))
+        path = os.path.normpath(util.abspath(path))
         if pycompat.iswindows:
             path = b'/' + util.normpath(path)
         # Module URL is later compared with the repository URL returned
@@ -431,7 +431,7 @@ def issvnurl(ui, url):
             path = unicodepath.encode(fsencoding)
     except ValueError:
         proto = b'file'
-        path = os.path.abspath(url)
+        path = util.abspath(url)
         try:
             path.decode(fsencoding)
         except UnicodeDecodeError:

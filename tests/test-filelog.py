@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
 Tests the behavior of filelog w.r.t. data starting with '\1\n'
 """
 from __future__ import absolute_import, print_function
 
-from mercurial.node import (
-    hex,
-    nullid,
-)
+from mercurial.node import hex
 from mercurial import (
     hg,
     ui as uimod,
@@ -22,7 +19,7 @@ fl = repo.file(b'foobar')
 def addrev(text, renamed=False):
     if renamed:
         # data doesn't matter. Just make sure filelog.renamed() returns True
-        meta = {b'copyrev': hex(nullid), b'copy': b'bar'}
+        meta = {b'copyrev': hex(repo.nullid), b'copy': b'bar'}
     else:
         meta = {}
 
@@ -30,7 +27,7 @@ def addrev(text, renamed=False):
     try:
         lock = repo.lock()
         t = repo.transaction(b'commit')
-        node = fl.add(text, meta, t, 0, nullid, nullid)
+        node = fl.add(text, meta, t, 0, repo.nullid, repo.nullid)
         return node
     finally:
         if t:

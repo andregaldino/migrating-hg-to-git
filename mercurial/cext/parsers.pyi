@@ -12,7 +12,7 @@ from typing import (
 version: int
 versionerrortext: str
 
-class dirstatetuple:
+class DirstateItem:
     __doc__: str
 
     def __len__(self) -> int: ...
@@ -29,7 +29,7 @@ class dirs:
 
 # From manifest.c
 class lazymanifest:
-    def __init__(self, data: bytes): ...
+    def __init__(self, nodelen: int, data: bytes): ...
     def __iter__(self) -> Iterator[bytes]: ...
 
     def __len__(self) -> int: ...

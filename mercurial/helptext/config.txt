@@ -5,7 +5,7 @@ Troubleshooting
 ===============
 
 If you're having problems with your configuration,
-:hg:`config --debug` can help you understand what is introducing
+:hg:`config --source` can help you understand what is introducing
 a setting into your environment.
 
 See :hg:`help config.syntax` and :hg:`help config.files`
@@ -1717,6 +1717,12 @@ Paths using the `path://otherpath` scheme will inherit the sub-options value fro
 the path they point to.
 
 The following sub-options can be defined:
+
+``multi-urls``
+   A boolean option. When enabled the value of the `[paths]` entry will be
+   parsed as a list and the alias will resolve to multiple destination. If some
+   of the list entry use the `path://` syntax, the suboption will be inherited
+   individually.
 
 ``pushurl``
    The URL to use for push operations. If not defined, the location

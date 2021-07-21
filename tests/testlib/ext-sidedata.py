@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import hashlib
 import struct
 
-from mercurial.node import (
-    nullid,
-    nullrev,
-)
+from mercurial.node import nullrev
 from mercurial import (
     extensions,
     requirements,
@@ -22,6 +19,7 @@ from mercurial import (
 
 from mercurial.upgrade_utils import engine as upgrade_engine
 
+from mercurial.revlogutils import constants
 from mercurial.revlogutils import sidedata
 
 
@@ -41,12 +39,13 @@ def wrapaddrevision(
 
 
 def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
-    text, sd = orig(self, nodeorrev, *args, **kwargs)
+    text = orig(self, nodeorrev, *args, **kwargs)
+    sd = self.sidedata(nodeorrev)
     if getattr(self, 'sidedatanocheck', False):
-        return text, sd
-    if self.version & 0xFFFF != 2:
-        return text, sd
-    if nodeorrev != nullrev and nodeorrev != nullid:
+        return text
+    if self.hassidedata:
+        return text
+    if nodeorrev != nullrev and nodeorrev != self.nullid:
         cat1 = sd.get(sidedata.SD_TEST1)
         if cat1 is not None and len(text) != struct.unpack('>I', cat1)[0]:
             raise RuntimeError('text size mismatch')
@@ -54,16 +53,18 @@ def wrap_revisiondata(orig, self, nodeorrev, *args, **kwargs):
         got = hashlib.sha256(text).digest()
         if expected is not None and got != expected:
             raise RuntimeError('sha256 mismatch')
-    return text, sd
+    return text
 
 
-def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
-    sidedatacompanion = orig(srcrepo, dstrepo)
+def wrapget_sidedata_helpers(orig, srcrepo, dstrepo):
+    repo, computers, removers = orig(srcrepo, dstrepo)
+    assert not computers and not removers  # deal with composition later
     addedreqs = dstrepo.requirements - srcrepo.requirements
-    if requirements.SIDEDATA_REQUIREMENT in addedreqs:
-        assert sidedatacompanion is None  # deal with composition later
 
-        def sidedatacompanion(revlog, rev):
+    if requirements.REVLOGV2_REQUIREMENT in addedreqs:
+
+        def computer(repo, revlog, rev, old_sidedata):
+            assert not old_sidedata  # not supported yet
             update = {}
             revlog.sidedatanocheck = True
             try:
@@ -76,16 +77,25 @@ def wrapgetsidedatacompanion(orig, srcrepo, dstrepo):
             # and sha2 hashes
             sha256 = hashlib.sha256(text).digest()
             update[sidedata.SD_TEST2] = struct.pack('>32s', sha256)
-            return False, (), update, 0, 0
+            return update, (0, 0)
 
-    return sidedatacompanion
+        srcrepo.register_sidedata_computer(
+            constants.KIND_CHANGELOG,
+            b"whatever",
+            (sidedata.SD_TEST1, sidedata.SD_TEST2),
+            computer,
+            0,
+        )
+        dstrepo.register_wanted_sidedata(b"whatever")
+
+    return sidedata.get_sidedata_helpers(srcrepo, dstrepo._wanted_sidedata)
 
 
 def extsetup(ui):
     extensions.wrapfunction(revlog.revlog, 'addrevision', wrapaddrevision)
     extensions.wrapfunction(revlog.revlog, '_revisiondata', wrap_revisiondata)
     extensions.wrapfunction(
-        upgrade_engine, 'getsidedatacompanion', wrapgetsidedatacompanion
+        upgrade_engine, 'get_sidedata_helpers', wrapget_sidedata_helpers
     )
 
 

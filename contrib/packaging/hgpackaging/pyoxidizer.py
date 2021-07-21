@@ -12,6 +12,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import typing
 
 from .downloads import download_entry
 from .util import (
@@ -53,17 +54,36 @@ STAGING_EXCLUDES_WINDOWS = [
 ]
 
 
+def build_docs_html(source_dir: pathlib.Path):
+    """Ensures HTML documentation is built.
+
+    This will fail if docutils isn't available.
+
+    (The HTML docs aren't built as part of `pip install` so we need to build them
+    out of band.)
+    """
+    subprocess.run(
+        [sys.executable, str(source_dir / "setup.py"), "build_doc", "--html"],
+        cwd=str(source_dir),
+        check=True,
+    )
+
+
 def run_pyoxidizer(
     source_dir: pathlib.Path,
     build_dir: pathlib.Path,
-    out_dir: pathlib.Path,
     target_triple: str,
-):
-    """Build Mercurial with PyOxidizer and copy additional files into place.
+    build_vars: typing.Optional[typing.Dict[str, str]] = None,
+    target: typing.Optional[str] = None,
+) -> pathlib.Path:
+    """Run `pyoxidizer` in an environment with access to build dependencies.
 
-    After successful completion, ``out_dir`` contains files constituting a
-    Mercurial install.
+    Returns the output directory that pyoxidizer would have used for build
+    artifacts. Actual build artifacts are likely in a sub-directory with the
+    name of the pyoxidizer build target that was built.
     """
+    build_vars = build_vars or {}
+
     # We need to make gettext binaries available for compiling i18n files.
     gettext_pkg, gettext_entry = download_entry('gettext', build_dir)
     gettext_dep_pkg = download_entry('gettext-dep', build_dir)[0]
@@ -91,7 +111,30 @@ def run_pyoxidizer(
         target_triple,
     ]
 
+    for k, v in sorted(build_vars.items()):
+        args.extend(["--var", k, v])
+
+    if target:
+        args.append(target)
+
     subprocess.run(args, env=env, check=True)
+
+    return source_dir / "build" / "pyoxidizer" / target_triple / "release"
+
+
+def create_pyoxidizer_install_layout(
+    source_dir: pathlib.Path,
+    build_dir: pathlib.Path,
+    out_dir: pathlib.Path,
+    target_triple: str,
+):
+    """Build Mercurial with PyOxidizer and copy additional files into place.
+
+    After successful completion, ``out_dir`` contains files constituting a
+    Mercurial install.
+    """
+
+    run_pyoxidizer(source_dir, build_dir, target_triple)
 
     if "windows" in target_triple:
         target = "app_windows"
@@ -113,14 +156,7 @@ def run_pyoxidizer(
     # is taught to use the importlib APIs for reading resources.
     process_install_rules(STAGING_RULES_APP, build_dir, out_dir)
 
-    # We also need to run setup.py build_doc to produce html files,
-    # as they aren't built as part of ``pip install``.
-    # This will fail if docutils isn't installed.
-    subprocess.run(
-        [sys.executable, str(source_dir / "setup.py"), "build_doc", "--html"],
-        cwd=str(source_dir),
-        check=True,
-    )
+    build_docs_html(source_dir)
 
     if "windows" in target_triple:
         process_install_rules(STAGING_RULES_WINDOWS, source_dir, out_dir)

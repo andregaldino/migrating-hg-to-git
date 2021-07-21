@@ -70,6 +70,8 @@ import unittest
 import uuid
 import xml.dom.minidom as minidom
 
+WINDOWS = os.name == r'nt'
+
 try:
     import Queue as queue
 except ImportError:
@@ -84,24 +86,35 @@ except (ImportError, AttributeError):
 
     shellquote = pipes.quote
 
+
 processlock = threading.Lock()
 
 pygmentspresent = False
-# ANSI color is unsupported prior to Windows 10
-if os.name != 'nt':
-    try:  # is pygments installed
-        import pygments
-        import pygments.lexers as lexers
-        import pygments.lexer as lexer
-        import pygments.formatters as formatters
-        import pygments.token as token
-        import pygments.style as style
+try:  # is pygments installed
+    import pygments
+    import pygments.lexers as lexers
+    import pygments.lexer as lexer
+    import pygments.formatters as formatters
+    import pygments.token as token
+    import pygments.style as style
 
-        pygmentspresent = True
-        difflexer = lexers.DiffLexer()
-        terminal256formatter = formatters.Terminal256Formatter()
-    except ImportError:
-        pass
+    if WINDOWS:
+        hgpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        sys.path.append(hgpath)
+        try:
+            from mercurial import win32  # pytype: disable=import-error
+
+            # Don't check the result code because it fails on heptapod, but
+            # something is able to convert to color anyway.
+            win32.enablevtmode()
+        finally:
+            sys.path = sys.path[:-1]
+
+    pygmentspresent = True
+    difflexer = lexers.DiffLexer()
+    terminal256formatter = formatters.Terminal256Formatter()
+except ImportError:
+    pass
 
 if pygmentspresent:
 
@@ -140,6 +153,7 @@ if pygmentspresent:
     runnerlexer = TestRunnerLexer()
 
 origenviron = os.environ.copy()
+
 
 if sys.version_info > (3, 5, 0):
     PYTHON3 = True
@@ -193,7 +207,7 @@ if sys.version_info > (3, 5, 0):
         osenvironb = environbytes(os.environ)
 
     getcwdb = getattr(os, 'getcwdb')
-    if not getcwdb or os.name == 'nt':
+    if not getcwdb or WINDOWS:
         getcwdb = lambda: _sys2bytes(os.getcwd())
 
 elif sys.version_info >= (3, 0, 0):
@@ -215,6 +229,18 @@ else:
     _bytes2sys = _sys2bytes
     osenvironb = os.environ
     getcwdb = os.getcwd
+
+if WINDOWS:
+    _getcwdb = getcwdb
+
+    def getcwdb():
+        cwd = _getcwdb()
+        if re.match(b'^[a-z]:', cwd):
+            # os.getcwd() is inconsistent on the capitalization of the drive
+            # letter, so adjust it. see https://bugs.python.org/issue40368
+            cwd = cwd[0:1].upper() + cwd[1:]
+        return cwd
+
 
 # For Windows support
 wifexited = getattr(os, "WIFEXITED", lambda x: False)
@@ -260,7 +286,7 @@ def checkportisavailable(port):
             s.bind(('localhost', port))
         return True
     except socket.error as exc:
-        if os.name == 'nt' and exc.errno == errno.WSAEACCES:
+        if WINDOWS and exc.errno == errno.WSAEACCES:
             return False
         elif PYTHON3:
             # TODO: make a proper exception handler after dropping py2.  This
@@ -343,6 +369,21 @@ defaults = default_defaults.copy()
 
 def canonpath(path):
     return os.path.realpath(os.path.expanduser(path))
+
+
+def which(exe):
+    if PYTHON3:
+        # shutil.which only accept bytes from 3.8
+        cmd = _bytes2sys(exe)
+        real_exec = shutil.which(cmd)
+        return _sys2bytes(real_exec)
+    else:
+        # let us do the os work
+        for p in osenvironb[b'PATH'].split(os.pathsep):
+            f = os.path.join(p, exe)
+            if os.path.isfile(f):
+                return f
+        return None
 
 
 def parselistfiles(files, listtype, warn=True):
@@ -699,7 +740,7 @@ def parseargs(args, parser):
             pathandattrs.append((b'rust/target/release/rhg', 'with_rhg'))
         for relpath, attr in pathandattrs:
             binpath = os.path.join(reporootdir, relpath)
-            if os.name != 'nt' and not os.access(binpath, os.X_OK):
+            if not (WINDOWS or os.access(binpath, os.X_OK)):
                 parser.error(
                     '--local specified, but %r not found or '
                     'not executable' % binpath
@@ -714,12 +755,14 @@ def parseargs(args, parser):
         ):
             parser.error('--with-hg must specify an executable hg script')
         if os.path.basename(options.with_hg) not in [b'hg', b'hg.exe']:
-            sys.stderr.write('warning: --with-hg should specify an hg script\n')
+            msg = 'warning: --with-hg should specify an hg script, not: %s\n'
+            msg %= _bytes2sys(os.path.basename(options.with_hg))
+            sys.stderr.write(msg)
             sys.stderr.flush()
 
-    if (options.chg or options.with_chg) and os.name == 'nt':
+    if (options.chg or options.with_chg) and WINDOWS:
         parser.error('chg does not work on %s' % os.name)
-    if (options.rhg or options.with_rhg) and os.name == 'nt':
+    if (options.rhg or options.with_rhg) and WINDOWS:
         parser.error('rhg does not work on %s' % os.name)
     if options.with_chg:
         options.chg = False  # no installation to temporary location
@@ -1298,6 +1341,11 @@ class Test(unittest.TestCase):
             (br'\bHG_TXNID=TXN:[a-f0-9]{40}\b', br'HG_TXNID=TXN:$ID$'),
         ]
         r.append((self._escapepath(self._testtmp), b'$TESTTMP'))
+        if WINDOWS:
+            # JSON output escapes backslashes in Windows paths, so also catch a
+            # double-escape.
+            replaced = self._testtmp.replace(b'\\', br'\\')
+            r.append((self._escapepath(replaced), b'$STR_REPR_TESTTMP'))
 
         replacementfile = os.path.join(self._testdir, b'common-pattern.py')
 
@@ -1316,7 +1364,7 @@ class Test(unittest.TestCase):
         return r
 
     def _escapepath(self, p):
-        if os.name == 'nt':
+        if WINDOWS:
             return b''.join(
                 c.isalpha()
                 and b'[%s%s]' % (c.lower(), c.upper())
@@ -1376,9 +1424,11 @@ class Test(unittest.TestCase):
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = _bytes2sys(self._testtmp)
+        uid_file = os.path.join(_bytes2sys(self._testtmp), 'UID')
+        env['HGTEST_UUIDFILE'] = uid_file
         env['TESTNAME'] = self.name
         env['HOME'] = _bytes2sys(self._testtmp)
-        if os.name == 'nt':
+        if WINDOWS:
             env['REALUSERPROFILE'] = env['USERPROFILE']
             # py3.8+ ignores HOME: https://bugs.python.org/issue36264
             env['USERPROFILE'] = env['HOME']
@@ -1427,7 +1477,7 @@ class Test(unittest.TestCase):
         # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
         # but this is needed for testing python instances like dummyssh,
         # dummysmtpd.py, and dumbhttp.py.
-        if PYTHON3 and os.name == 'nt':
+        if PYTHON3 and WINDOWS:
             env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
 
         # Modified HOME in test environment can confuse Rust tools. So set
@@ -1592,8 +1642,7 @@ class PythonTest(Test):
         # Quote the python(3) executable for Windows
         cmd = b'"%s" "%s"' % (PYTHON, self.path)
         vlog("# Running", cmd.decode("utf-8"))
-        normalizenewlines = os.name == 'nt'
-        result = self._runcommand(cmd, env, normalizenewlines=normalizenewlines)
+        result = self._runcommand(cmd, env, normalizenewlines=WINDOWS)
         if self._aborted:
             raise KeyboardInterrupt()
 
@@ -1807,8 +1856,6 @@ class TTest(Test):
 
         if self._debug:
             script.append(b'set -x\n')
-        if self._hgcommand != b'hg':
-            script.append(b'alias hg="%s"\n' % self._hgcommand)
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
 
@@ -2066,7 +2113,7 @@ class TTest(Test):
             flags = flags or b''
             el = flags + b'(?:' + el + b')'
             # use \Z to ensure that the regex matches to the end of the string
-            if os.name == 'nt':
+            if WINDOWS:
                 return re.match(el + br'\r?\n\Z', l)
             return re.match(el + br'\n\Z', l)
         except re.error:
@@ -2127,7 +2174,7 @@ class TTest(Test):
                 el = el.encode('latin-1')
             else:
                 el = el[:-7].decode('string-escape') + '\n'
-        if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
+        if el == l or WINDOWS and el[:-1] + b'\r\n' == l:
             return True, True
         if el.endswith(b" (re)\n"):
             return (TTest.rematch(el[:-6], l) or retry), False
@@ -2138,7 +2185,7 @@ class TTest(Test):
             return (TTest.globmatch(el[:-8], l) or retry), False
         if os.altsep:
             _l = l.replace(b'\\', b'/')
-            if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
+            if el == _l or WINDOWS and el[:-1] + b'\r\n' == _l:
                 return True, True
         return retry, True
 
@@ -2201,7 +2248,13 @@ class TestResult(unittest._TextTestResult):
         self.faildata = {}
 
         if options.color == 'auto':
-            self.color = pygmentspresent and self.stream.isatty()
+            isatty = self.stream.isatty()
+            # For some reason, redirecting stdout on Windows disables the ANSI
+            # color processing of stderr, which is what is used to print the
+            # output.  Therefore, both must be tty on Windows to enable color.
+            if WINDOWS:
+                isatty = isatty and sys.stdout.isatty()
+            self.color = pygmentspresent and isatty
         elif options.color == 'never':
             self.color = False
         else:  # 'always', for testing purposes
@@ -2995,8 +3048,11 @@ class TestRunner(object):
         self._hgtmp = None
         self._installdir = None
         self._bindir = None
-        self._tmpbindir = None
+        # a place for run-tests.py to generate executable it needs
+        self._custom_bin_dir = None
         self._pythondir = None
+        # True if we had to infer the pythondir from --with-hg
+        self._pythondir_inferred = False
         self._coveragefile = None
         self._createdfiles = []
         self._hgcommand = None
@@ -3034,7 +3090,6 @@ class TestRunner(object):
 
     def _run(self, testdescs):
         testdir = getcwdb()
-        self._testdir = osenvironb[b'TESTDIR'] = getcwdb()
         # assume all tests in same folder for now
         if testdescs:
             pathname = os.path.dirname(testdescs[0]['path'])
@@ -3076,7 +3131,7 @@ class TestRunner(object):
             os.makedirs(tmpdir)
         else:
             d = None
-            if os.name == 'nt':
+            if WINDOWS:
                 # without this, we get the default temp dir location, but
                 # in all lowercase, which causes troubles with paths (issue3490)
                 d = osenvironb.get(b'TMP', None)
@@ -3084,14 +3139,15 @@ class TestRunner(object):
 
         self._hgtmp = osenvironb[b'HGTMP'] = os.path.realpath(tmpdir)
 
+        self._custom_bin_dir = os.path.join(self._hgtmp, b'custom-bin')
+        os.makedirs(self._custom_bin_dir)
+
         if self.options.with_hg:
             self._installdir = None
             whg = self.options.with_hg
             self._bindir = os.path.dirname(os.path.realpath(whg))
             assert isinstance(self._bindir, bytes)
             self._hgcommand = os.path.basename(whg)
-            self._tmpbindir = os.path.join(self._hgtmp, b'install', b'bin')
-            os.makedirs(self._tmpbindir)
 
             normbin = os.path.normpath(os.path.abspath(whg))
             normbin = normbin.replace(_sys2bytes(os.sep), b'/')
@@ -3113,27 +3169,31 @@ class TestRunner(object):
             # Fall back to the legacy behavior.
             else:
                 self._pythondir = self._bindir
+            self._pythondir_inferred = True
 
         else:
             self._installdir = os.path.join(self._hgtmp, b"install")
             self._bindir = os.path.join(self._installdir, b"bin")
             self._hgcommand = b'hg'
-            self._tmpbindir = self._bindir
             self._pythondir = os.path.join(self._installdir, b"lib", b"python")
 
         # Force the use of hg.exe instead of relying on MSYS to recognize hg is
         # a python script and feed it to python.exe.  Legacy stdio is force
         # enabled by hg.exe, and this is a more realistic way to launch hg
         # anyway.
-        if os.name == 'nt' and not self._hgcommand.endswith(b'.exe'):
+        if WINDOWS and not self._hgcommand.endswith(b'.exe'):
             self._hgcommand += b'.exe'
 
+        real_hg = os.path.join(self._bindir, self._hgcommand)
+        osenvironb[b'HGTEST_REAL_HG'] = real_hg
         # set CHGHG, then replace "hg" command by "chg"
         chgbindir = self._bindir
         if self.options.chg or self.options.with_chg:
-            osenvironb[b'CHGHG'] = os.path.join(self._bindir, self._hgcommand)
+            osenvironb[b'CHG_INSTALLED_AS_HG'] = b'1'
+            osenvironb[b'CHGHG'] = real_hg
         else:
-            osenvironb.pop(b'CHGHG', None)  # drop flag for hghave
+            # drop flag for hghave
+            osenvironb.pop(b'CHG_INSTALLED_AS_HG', None)
         if self.options.chg:
             self._hgcommand = b'chg'
         elif self.options.with_chg:
@@ -3150,9 +3210,10 @@ class TestRunner(object):
             # `--config` but that disrupts tests that print command lines and check expected
             # output.
             osenvironb[b'RHG_ON_UNSUPPORTED'] = b'fallback'
-            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = os.path.join(
-                self._bindir, self._hgcommand
-            )
+            osenvironb[b'RHG_FALLBACK_EXECUTABLE'] = real_hg
+        else:
+            # drop flag for hghave
+            osenvironb.pop(b'RHG_INSTALLED_AS_HG', None)
         if self.options.rhg:
             self._hgcommand = b'rhg'
         elif self.options.with_rhg:
@@ -3181,8 +3242,7 @@ class TestRunner(object):
             path.insert(1, rhgbindir)
         if self._testdir != runtestdir:
             path = [self._testdir] + path
-        if self._tmpbindir != self._bindir:
-            path = [self._tmpbindir] + path
+        path = [self._custom_bin_dir] + path
         osenvironb[b"PATH"] = sepb.join(path)
 
         # Include TESTDIR in PYTHONPATH so that out-of-tree extensions
@@ -3390,17 +3450,17 @@ class TestRunner(object):
             if self.options.list_tests:
                 result = runner.listtests(suite)
             else:
+                self._usecorrectpython()
                 if self._installdir:
                     self._installhg()
                     self._checkhglib("Testing")
-                else:
-                    self._usecorrectpython()
                 if self.options.chg:
                     assert self._installdir
                     self._installchg()
                 if self.options.rhg:
                     assert self._installdir
                     self._installrhg()
+                self._use_correct_mercurial()
 
                 log(
                     'running %d tests using %d parallel processes'
@@ -3511,74 +3571,101 @@ class TestRunner(object):
     def _usecorrectpython(self):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
-        pyexename = sys.platform == 'win32' and b'python.exe' or b'python3'
+        if WINDOWS and PYTHON3:
+            pyexe_names = [b'python', b'python3', b'python.exe']
+        elif WINDOWS:
+            pyexe_names = [b'python', b'python.exe']
+        elif PYTHON3:
+            pyexe_names = [b'python', b'python3']
+        else:
+            pyexe_names = [b'python', b'python2']
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
-        if getattr(os, 'symlink', None) and os.name != 'nt':
-            vlog(
-                "# Making python executable in test path a symlink to '%s'"
-                % sysexecutable
-            )
-            mypython = os.path.join(self._tmpbindir, pyexename)
-            try:
-                if os.readlink(mypython) == sysexecutable:
-                    return
-                os.unlink(mypython)
-            except OSError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-            if self._findprogram(pyexename) != sysexecutable:
+        if not WINDOWS and getattr(os, 'symlink', None):
+            msg = "# Making python executable in test path a symlink to '%s'"
+            msg %= sysexecutable
+            vlog(msg)
+            for pyexename in pyexe_names:
+                mypython = os.path.join(self._custom_bin_dir, pyexename)
                 try:
-                    os.symlink(sysexecutable, mypython)
-                    self._createdfiles.append(mypython)
+                    if os.readlink(mypython) == sysexecutable:
+                        continue
+                    os.unlink(mypython)
                 except OSError as err:
-                    # child processes may race, which is harmless
-                    if err.errno != errno.EEXIST:
+                    if err.errno != errno.ENOENT:
                         raise
+                if self._findprogram(pyexename) != sysexecutable:
+                    try:
+                        os.symlink(sysexecutable, mypython)
+                        self._createdfiles.append(mypython)
+                    except OSError as err:
+                        # child processes may race, which is harmless
+                        if err.errno != errno.EEXIST:
+                            raise
+        elif WINDOWS and not os.getenv('MSYSTEM'):
+            raise AssertionError('cannot run test on Windows without MSYSTEM')
         else:
-            # Windows doesn't have `python3.exe`, and MSYS cannot understand the
-            # reparse point with that name provided by Microsoft.  Create a
-            # simple script on PATH with that name that delegates to the py3
-            # launcher so the shebang lines work.
-            if os.getenv('MSYSTEM'):
-                with open(osenvironb[b'RUNTESTDIR'] + b'/python3', 'wb') as f:
+            # Generate explicit file instead of symlink
+            #
+            # This is especially important as Windows doesn't have
+            # `python3.exe`, and MSYS cannot understand the reparse point with
+            # that name provided by Microsoft.  Create a simple script on PATH
+            # with that name that delegates to the py3 launcher so the shebang
+            # lines work.
+            esc_executable = _sys2bytes(shellquote(sysexecutable))
+            for pyexename in pyexe_names:
+                stub_exec_path = os.path.join(self._custom_bin_dir, pyexename)
+                with open(stub_exec_path, 'wb') as f:
                     f.write(b'#!/bin/sh\n')
-                    f.write(b'py -3 "$@"\n')
+                    f.write(b'%s "$@"\n' % esc_executable)
 
-            exedir, exename = os.path.split(sysexecutable)
-            vlog(
-                "# Modifying search path to find %s as %s in '%s'"
-                % (exename, pyexename, exedir)
-            )
-            path = os.environ['PATH'].split(os.pathsep)
-            while exedir in path:
-                path.remove(exedir)
+            if WINDOWS:
+                if not PYTHON3:
+                    # lets try to build a valid python3 executable for the
+                    # scrip that requires it.
+                    py3exe_name = os.path.join(self._custom_bin_dir, b'python3')
+                    with open(py3exe_name, 'wb') as f:
+                        f.write(b'#!/bin/sh\n')
+                        f.write(b'py -3 "$@"\n')
 
-            # Binaries installed by pip into the user area like pylint.exe may
-            # not be in PATH by default.
-            extra_paths = [exedir]
-            vi = sys.version_info
-            if 'APPDATA' in os.environ:
-                scripts_dir = os.path.join(
-                    os.environ['APPDATA'],
-                    'Python',
-                    'Python%d%d' % (vi[0], vi[1]),
-                    'Scripts',
-                )
+                # adjust the path to make sur the main python finds it own dll
+                path = os.environ['PATH'].split(os.pathsep)
+                main_exec_dir = os.path.dirname(sysexecutable)
+                extra_paths = [_bytes2sys(self._custom_bin_dir), main_exec_dir]
 
-                if vi.major == 2:
-                    scripts_dir = os.path.join(
-                        os.environ['APPDATA'],
-                        'Python',
-                        'Scripts',
-                    )
+                # Binaries installed by pip into the user area like pylint.exe may
+                # not be in PATH by default.
+                appdata = os.environ.get('APPDATA')
+                vi = sys.version_info
+                if appdata is not None:
+                    python_dir = 'Python%d%d' % (vi[0], vi[1])
+                    scripts_path = [appdata, 'Python', python_dir, 'Scripts']
+                    if not PYTHON3:
+                        scripts_path = [appdata, 'Python', 'Scripts']
+                    scripts_dir = os.path.join(*scripts_path)
+                    extra_paths.append(scripts_dir)
 
-                extra_paths.append(scripts_dir)
+                os.environ['PATH'] = os.pathsep.join(extra_paths + path)
 
-            os.environ['PATH'] = os.pathsep.join(extra_paths + path)
-            if not self._findprogram(pyexename):
-                print("WARNING: Cannot find %s in search path" % pyexename)
+    def _use_correct_mercurial(self):
+        target_exec = os.path.join(self._custom_bin_dir, b'hg')
+        if self._hgcommand != b'hg':
+            # shutil.which only accept bytes from 3.8
+            real_exec = which(self._hgcommand)
+            if real_exec is None:
+                raise ValueError('could not find exec path for "%s"', real_exec)
+            if real_exec == target_exec:
+                # do not overwrite something with itself
+                return
+            if WINDOWS:
+                with open(target_exec, 'wb') as f:
+                    f.write(b'#!/bin/sh\n')
+                    escaped_exec = shellquote(_bytes2sys(real_exec))
+                    f.write(b'%s "$@"\n' % _sys2bytes(escaped_exec))
+            else:
+                os.symlink(real_exec, target_exec)
+            self._createdfiles.append(target_exec)
 
     def _installhg(self):
         """Install hg into the test environment.
@@ -3609,7 +3696,7 @@ class TestRunner(object):
         self._hgroot = hgroot
         os.chdir(hgroot)
         nohome = b'--home=""'
-        if os.name == 'nt':
+        if WINDOWS:
             # The --home="" trick works only on OS where os.sep == '/'
             # because of a distutils convert_path() fast-path. Avoid it at
             # least on Windows for now, deal with .pydistutils.cfg bugs
@@ -3663,8 +3750,6 @@ class TestRunner(object):
             sys.exit(1)
         os.chdir(self._testdir)
 
-        self._usecorrectpython()
-
         hgbat = os.path.join(self._bindir, b'hg.bat')
         if os.path.isfile(hgbat):
             # hg.bat expects to be put in bin/scripts while run-tests.py
@@ -3703,9 +3788,7 @@ class TestRunner(object):
     def _checkhglib(self, verb):
         """Ensure that the 'mercurial' package imported by python is
         the one we expect it to be.  If not, print a warning to stderr."""
-        if (self._bindir == self._pythondir) and (
-            self._bindir != self._tmpbindir
-        ):
+        if self._pythondir_inferred:
             # The pythondir has been inferred from --with-hg flag.
             # We cannot expect anything sensible here.
             return
@@ -3828,14 +3911,14 @@ class TestRunner(object):
         sepb = _sys2bytes(os.pathsep)
         for p in osenvironb.get(b'PATH', dpb).split(sepb):
             name = os.path.join(p, program)
-            if os.name == 'nt' or os.access(name, os.X_OK):
+            if WINDOWS or os.access(name, os.X_OK):
                 return _bytes2sys(name)
         return None
 
     def _checktools(self):
         """Ensure tools required to run tests are present."""
         for p in self.REQUIREDTOOLS:
-            if os.name == 'nt' and not p.endswith(b'.exe'):
+            if WINDOWS and not p.endswith(b'.exe'):
                 p += b'.exe'
             found = self._findprogram(p)
             p = p.decode("utf-8")
@@ -3902,6 +3985,15 @@ def aggregateexceptions(path):
 
 
 if __name__ == '__main__':
+    if WINDOWS and not os.getenv('MSYSTEM'):
+        print('cannot run test on Windows without MSYSTEM', file=sys.stderr)
+        print(
+            '(if you need to do so contact the mercurial devs: '
+            'mercurial@mercurial-scm.org)',
+            file=sys.stderr,
+        )
+        sys.exit(255)
+
     runner = TestRunner()
 
     try:

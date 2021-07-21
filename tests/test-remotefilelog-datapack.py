@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import absolute_import, print_function
 
 import hashlib
@@ -16,7 +16,7 @@ import silenttestrunner
 
 # Load the local remotefilelog, not the system one
 sys.path[0:0] = [os.path.join(os.path.dirname(__file__), '..')]
-from mercurial.node import nullid
+from mercurial.node import sha1nodeconstants
 from mercurial import policy
 
 if not policy._packageprefs.get(policy.policy, (False, False))[1]:
@@ -63,7 +63,14 @@ class datapacktestsbase(object):
 
     def createPack(self, revisions=None, packdir=None):
         if revisions is None:
-            revisions = [(b"filename", self.getFakeHash(), nullid, b"content")]
+            revisions = [
+                (
+                    b"filename",
+                    self.getFakeHash(),
+                    sha1nodeconstants.nullid,
+                    b"content",
+                )
+            ]
 
         if packdir is None:
             packdir = self.makeTempDir()
@@ -86,7 +93,7 @@ class datapacktestsbase(object):
         filename = b"foo"
         node = self.getHash(content)
 
-        revisions = [(filename, node, nullid, content)]
+        revisions = [(filename, node, sha1nodeconstants.nullid, content)]
         pack = self.createPack(revisions)
         if self.paramsavailable:
             self.assertEqual(
@@ -126,7 +133,7 @@ class datapacktestsbase(object):
         """Test putting multiple delta blobs into a pack and read the chain."""
         revisions = []
         filename = b"foo"
-        lastnode = nullid
+        lastnode = sha1nodeconstants.nullid
         for i in range(10):
             content = b"abcdef%d" % i
             node = self.getHash(content)
@@ -157,7 +164,7 @@ class datapacktestsbase(object):
             for j in range(random.randint(1, 100)):
                 content = b"content-%d" % j
                 node = self.getHash(content)
-                lastnode = nullid
+                lastnode = sha1nodeconstants.nullid
                 if len(filerevs) > 0:
                     lastnode = filerevs[random.randint(0, len(filerevs) - 1)]
                 filerevs.append(node)
@@ -185,7 +192,9 @@ class datapacktestsbase(object):
                 b'Z': b'random_string',
                 b'_': b'\0' * i,
             }
-            revisions.append((filename, node, nullid, content, meta))
+            revisions.append(
+                (filename, node, sha1nodeconstants.nullid, content, meta)
+            )
         pack = self.createPack(revisions)
         for name, node, x, content, origmeta in revisions:
             parsedmeta = pack.getmeta(name, node)
@@ -198,7 +207,7 @@ class datapacktestsbase(object):
         """Test the getmissing() api."""
         revisions = []
         filename = b"foo"
-        lastnode = nullid
+        lastnode = sha1nodeconstants.nullid
         for i in range(10):
             content = b"abcdef%d" % i
             node = self.getHash(content)
@@ -225,7 +234,7 @@ class datapacktestsbase(object):
         pack = self.createPack()
 
         try:
-            pack.add(b'filename', nullid, b'contents')
+            pack.add(b'filename', sha1nodeconstants.nullid, b'contents')
             self.assertTrue(False, "datapack.add should throw")
         except RuntimeError:
             pass
@@ -264,7 +273,9 @@ class datapacktestsbase(object):
             content = filename
             node = self.getHash(content)
             blobs[(filename, node)] = content
-            revisions.append((filename, node, nullid, content))
+            revisions.append(
+                (filename, node, sha1nodeconstants.nullid, content)
+            )
 
         pack = self.createPack(revisions)
         if self.paramsavailable:
@@ -288,7 +299,12 @@ class datapacktestsbase(object):
 
         for i in range(numpacks):
             chain = []
-            revision = (b'%d' % i, self.getFakeHash(), nullid, b"content")
+            revision = (
+                b'%d' % i,
+                self.getFakeHash(),
+                sha1nodeconstants.nullid,
+                b"content",
+            )
 
             for _ in range(revisionsperpack):
                 chain.append(revision)
@@ -346,7 +362,9 @@ class datapacktestsbase(object):
                 filename = b"filename-%d" % i
                 content = b"content-%d" % i
                 node = self.getHash(content)
-                revisions.append((filename, node, nullid, content))
+                revisions.append(
+                    (filename, node, sha1nodeconstants.nullid, content)
+                )
 
             path = self.createPack(revisions).path
 

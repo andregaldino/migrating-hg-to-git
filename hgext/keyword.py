@@ -356,9 +356,9 @@ class kwtemplater(object):
                 fp.write(data)
                 fp.close()
                 if kwcmd:
-                    self.repo.dirstate.normal(f)
+                    self.repo.dirstate.set_clean(f)
                 elif self.postcommit:
-                    self.repo.dirstate.normallookup(f)
+                    self.repo.dirstate.update_file_p1(f, p1_tracked=True)
 
     def shrink(self, fname, text):
         '''Returns text with all keyword substitutions removed.'''
@@ -691,7 +691,7 @@ def kw_amend(orig, ui, repo, old, extra, pats, opts):
     kwt = getattr(repo, '_keywordkwt', None)
     if kwt is None:
         return orig(ui, repo, old, extra, pats, opts)
-    with repo.wlock():
+    with repo.wlock(), repo.dirstate.parentchange():
         kwt.postcommit = True
         newid = orig(ui, repo, old, extra, pats, opts)
         if newid != old.node():
@@ -757,8 +757,9 @@ def kw_dorecord(orig, ui, repo, commitfunc, *pats, **opts):
         if ctx != recctx:
             modified, added = _preselect(wstatus, recctx.files())
             kwt.restrict = False
-            kwt.overwrite(recctx, modified, False, True)
-            kwt.overwrite(recctx, added, False, True, True)
+            with repo.dirstate.parentchange():
+                kwt.overwrite(recctx, modified, False, True)
+                kwt.overwrite(recctx, added, False, True, True)
             kwt.restrict = True
         return ret
 

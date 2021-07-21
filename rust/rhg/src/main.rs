@@ -5,7 +5,8 @@ use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::{format_bytes, join};
-use hg::config::Config;
+use hg::config::{Config, ConfigSource};
+use hg::exit_codes;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
@@ -15,7 +16,6 @@ use std::process::Command;
 
 mod blackbox;
 mod error;
-mod exitcode;
 mod ui;
 use error::CommandError;
 
@@ -126,8 +126,8 @@ fn main() {
             })
     });
 
-    let non_repo_config =
-        Config::load(early_args.config).unwrap_or_else(|error| {
+    let mut non_repo_config =
+        Config::load_non_repo().unwrap_or_else(|error| {
             // Normally this is decided based on config, but we don’t have that
             // available. As of this writing config loading never returns an
             // "unsupported" error but that is not enforced by the type system.
@@ -139,6 +139,20 @@ fn main() {
                 on_unsupported,
                 Err(error.into()),
                 false,
+            )
+        });
+
+    non_repo_config
+        .load_cli_args_config(early_args.config)
+        .unwrap_or_else(|error| {
+            exit(
+                &initial_current_dir,
+                &ui,
+                OnUnsupported::from_config(&ui, &non_repo_config),
+                Err(error.into()),
+                non_repo_config
+                    .get_bool(b"ui", b"detailed-exit-code")
+                    .unwrap_or(false),
             )
         });
 
@@ -167,8 +181,73 @@ fn main() {
             )
         }
     }
-    let repo_path = early_args.repo.as_deref().map(get_path_from_bytes);
-    let repo_result = match Repo::find(&non_repo_config, repo_path) {
+    let repo_arg = early_args.repo.unwrap_or(Vec::new());
+    let repo_path: Option<PathBuf> = {
+        if repo_arg.is_empty() {
+            None
+        } else {
+            let local_config = {
+                if std::env::var_os("HGRCSKIPREPO").is_none() {
+                    // TODO: handle errors from find_repo_root
+                    if let Ok(current_dir_path) = Repo::find_repo_root() {
+                        let config_files = vec![
+                            ConfigSource::AbsPath(
+                                current_dir_path.join(".hg/hgrc"),
+                            ),
+                            ConfigSource::AbsPath(
+                                current_dir_path.join(".hg/hgrc-not-shared"),
+                            ),
+                        ];
+                        // TODO: handle errors from
+                        // `load_from_explicit_sources`
+                        Config::load_from_explicit_sources(config_files).ok()
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            };
+
+            let non_repo_config_val = {
+                let non_repo_val = non_repo_config.get(b"paths", &repo_arg);
+                match &non_repo_val {
+                    Some(val) if val.len() > 0 => home::home_dir()
+                        .unwrap_or_else(|| PathBuf::from("~"))
+                        .join(get_path_from_bytes(val))
+                        .canonicalize()
+                        // TODO: handle error and make it similar to python
+                        // implementation maybe?
+                        .ok(),
+                    _ => None,
+                }
+            };
+
+            let config_val = match &local_config {
+                None => non_repo_config_val,
+                Some(val) => {
+                    let local_config_val = val.get(b"paths", &repo_arg);
+                    match &local_config_val {
+                        Some(val) if val.len() > 0 => {
+                            // presence of a local_config assures that
+                            // current_dir
+                            // wont result in an Error
+                            let canpath = hg::utils::current_dir()
+                                .unwrap()
+                                .join(get_path_from_bytes(val))
+                                .canonicalize();
+                            canpath.ok().or(non_repo_config_val)
+                        }
+                        _ => non_repo_config_val,
+                    }
+                }
+            };
+            config_val.or(Some(get_path_from_bytes(&repo_arg).to_path_buf()))
+        }
+    };
+
+    let repo_result = match Repo::find(&non_repo_config, repo_path.to_owned())
+    {
         Ok(repo) => Ok(repo),
         Err(RepoError::NotFound { at }) if repo_path.is_none() => {
             // Not finding a repo is not fatal yet, if `-R` was not given
@@ -218,7 +297,7 @@ fn exit_code(
     use_detailed_exit_code: bool,
 ) -> i32 {
     match result {
-        Ok(()) => exitcode::OK,
+        Ok(()) => exit_codes::OK,
         Err(CommandError::Abort {
             message: _,
             detailed_exit_code,
@@ -226,15 +305,15 @@ fn exit_code(
             if use_detailed_exit_code {
                 *detailed_exit_code
             } else {
-                exitcode::ABORT
+                exit_codes::ABORT
             }
         }
-        Err(CommandError::Unsuccessful) => exitcode::UNSUCCESSFUL,
+        Err(CommandError::Unsuccessful) => exit_codes::UNSUCCESSFUL,
 
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
         Err(CommandError::UnsupportedFeature { .. }) => {
-            exitcode::UNIMPLEMENTED
+            exit_codes::UNIMPLEMENTED
         }
     }
 }
@@ -273,7 +352,7 @@ fn exit(
             let result = command.status();
             match result {
                 Ok(status) => std::process::exit(
-                    status.code().unwrap_or(exitcode::ABORT),
+                    status.code().unwrap_or(exit_codes::ABORT),
                 ),
                 Err(error) => {
                     let _ = ui.write_stderr(&format_bytes!(

@@ -159,7 +159,7 @@ Test config default of various types:
 
  true
 
-  $ hg config --config format.dotencode= format -Tjson
+  $ hg config --config format.dotencode= format.dotencode -Tjson
   [
    {
     "defaultvalue": true,
@@ -168,11 +168,11 @@ Test config default of various types:
     "value": ""
    }
   ]
-  $ hg config --config format.dotencode= format -T'json(defaultvalue)'
+  $ hg config --config format.dotencode= format.dotencode -T'json(defaultvalue)'
   [
    {"defaultvalue": true}
   ]
-  $ hg config --config format.dotencode= format -T'{defaultvalue}\n'
+  $ hg config --config format.dotencode= format.dotencode -T'{defaultvalue}\n'
   True
 
  bytes
@@ -277,8 +277,7 @@ Test empty config source:
   > emptysource = `pwd`/emptysource.py
   > EOF
 
-  $ hg config --debug empty.source
-  read config from: * (glob)
+  $ hg config --source empty.source
   none: value
   $ hg config empty.source -Tjson
   [
@@ -338,8 +337,14 @@ sub-options in [paths] aren't expanded
   > EOF
 
   $ hg showconfig paths
+  paths.foo=~/foo
   paths.foo:suboption=~/foo
-  paths.foo=$TESTTMP/foo
+
+note: The path expansion no longer happens at the config level, but the path is
+still expanded:
+
+  $ hg path | grep foo
+  foo = $TESTTMP/foo
 
 edit failure
 
@@ -349,16 +354,16 @@ edit failure
 
 config affected by environment variables
 
-  $ EDITOR=e1 VISUAL=e2 hg config --debug | grep 'ui\.editor'
+  $ EDITOR=e1 VISUAL=e2 hg config --source | grep 'ui\.editor'
   $VISUAL: ui.editor=e2
 
-  $ VISUAL=e2 hg config --debug --config ui.editor=e3 | grep 'ui\.editor'
+  $ VISUAL=e2 hg config --source --config ui.editor=e3 | grep 'ui\.editor'
   --config: ui.editor=e3
 
-  $ PAGER=p1 hg config --debug | grep 'pager\.pager'
+  $ PAGER=p1 hg config --source | grep 'pager\.pager'
   $PAGER: pager.pager=p1
 
-  $ PAGER=p1 hg config --debug --config pager.pager=p2 | grep 'pager\.pager'
+  $ PAGER=p1 hg config --source --config pager.pager=p2 | grep 'pager\.pager'
   --config: pager.pager=p2
 
 verify that aliases are evaluated as well
@@ -402,6 +407,32 @@ configs should be read in lexicographical order
   > done
   $ HGRCPATH=configs hg config section.key
   99
+
+Listing all config options
+==========================
+
+The feature is experimental and behavior may varies. This test exists to make sure the code is run. We grep it to avoid too much variability in its current experimental state.
+
+  $ hg config --exp-all-known | grep commit
+  commands.commit.interactive.git=False
+  commands.commit.interactive.ignoreblanklines=False
+  commands.commit.interactive.ignorews=False
+  commands.commit.interactive.ignorewsamount=False
+  commands.commit.interactive.ignorewseol=False
+  commands.commit.interactive.nobinary=False
+  commands.commit.interactive.nodates=False
+  commands.commit.interactive.noprefix=False
+  commands.commit.interactive.showfunc=False
+  commands.commit.interactive.unified=None
+  commands.commit.interactive.word-diff=False
+  commands.commit.post-status=False
+  convert.git.committeractions=[*'messagedifferent'] (glob)
+  convert.svn.dangerous-set-commit-dates=False
+  experimental.copytrace.sourcecommitlimit=100
+  phases.new-commit=draft
+  ui.allowemptycommit=False
+  ui.commitsubrepos=False
+
 
 Configuration priority
 ======================

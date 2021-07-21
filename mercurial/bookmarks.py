@@ -15,7 +15,6 @@ from .node import (
     bin,
     hex,
     short,
-    wdirid,
 )
 from .pycompat import getattr
 from . import (
@@ -601,11 +600,12 @@ def _diverge(ui, b, path, localmarks, remotenode):
     # if an @pathalias already exists, we overwrite (update) it
     if path.startswith(b"file:"):
         path = urlutil.url(path).path
-    for p, u in ui.configitems(b"paths"):
-        if u.startswith(b"file:"):
-            u = urlutil.url(u).path
-        if path == u:
-            return b'%s@%s' % (b, p)
+    for name, p in urlutil.list_paths(ui):
+        loc = p.rawloc
+        if loc.startswith(b"file:"):
+            loc = urlutil.url(loc).path
+        if path == loc:
+            return b'%s@%s' % (b, name)
 
     # assign a unique "@number" suffix newly
     for x in range(1, 100):
@@ -642,7 +642,7 @@ def binaryencode(repo, bookmarks):
     binarydata = []
     for book, node in bookmarks:
         if not node:  # None or ''
-            node = wdirid
+            node = repo.nodeconstants.wdirid
         binarydata.append(_binaryentry.pack(node, len(book)))
         binarydata.append(book)
     return b''.join(binarydata)
@@ -674,7 +674,7 @@ def binarydecode(repo, stream):
         if len(bookmark) < length:
             if entry:
                 raise error.Abort(_(b'bad bookmark stream'))
-        if node == wdirid:
+        if node == repo.nodeconstants.wdirid:
             node = None
         books.append((bookmark, node))
     return books

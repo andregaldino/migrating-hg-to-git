@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 
 import os
+import shlex
+import subprocess
 import sys
 
 os.chdir(os.getenv('TESTTMP'))
@@ -22,5 +24,12 @@ hgcmd = sys.argv[2]
 if os.name == 'nt':
     # hack to make simple unix single quote quoting work on windows
     hgcmd = hgcmd.replace("'", '"')
-r = os.system(hgcmd)
+    cmds = shlex.split(hgcmd)
+    if cmds[0].endswith('.py'):
+        python_exe = os.environ['PYTHON']
+        cmds.insert(0, python_exe)
+    hgcmd = shlex.join(cmds)
+    # shlex generate windows incompatible string...
+    hgcmd = hgcmd.replace("'", '"')
+r = subprocess.call(hgcmd, shell=True)
 sys.exit(bool(r))

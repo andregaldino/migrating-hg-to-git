@@ -904,6 +904,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'changegroup4',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
     b'cleanup-as-archived',
     default=False,
 )
@@ -950,6 +955,11 @@ coreconfigitem(
 coreconfigitem(
     b'experimental',
     b'directaccess.revnums',
+    default=False,
+)
+coreconfigitem(
+    b'experimental',
+    b'dirstate-tree.in-memory',
     default=False,
 )
 coreconfigitem(
@@ -1138,6 +1148,27 @@ coreconfigitem(
     b'revisions.prefixhexnode',
     default=False,
 )
+# "out of experimental" todo list.
+#
+# * include management of a persistent nodemap in the main docket
+# * enforce a "no-truncate" policy for mmap safety
+#      - for censoring operation
+#      - for stripping operation
+#      - for rollback operation
+# * proper streaming (race free) of the docket file
+# * track garbage data to evemtually allow rewriting -existing- sidedata.
+# * Exchange-wise, we will also need to do something more efficient than
+#   keeping references to the affected revlogs, especially memory-wise when
+#   rewriting sidedata.
+# * introduce a proper solution to reduce the number of filelog related files.
+# * use caching for reading sidedata (similar to what we do for data).
+# * no longer set offset=0 if sidedata_size=0 (simplify cutoff computation).
+# * Improvement to consider
+#   - avoid compression header in chunk using the default compression?
+#   - forbid "inline" compression mode entirely?
+#   - split the data offset and flag field (the 2 bytes save are mostly trouble)
+#   - keep track of uncompressed -chunk- size (to preallocate memory better)
+#   - keep track of chain base or size (probably not that useful anymore)
 coreconfigitem(
     b'experimental',
     b'revlogv2',
@@ -1272,6 +1303,14 @@ coreconfigitem(
     experimental=True,
 )
 coreconfigitem(
+    # Enable this dirstate format *when creating a new repository*.
+    # Which format to use for existing repos is controlled by .hg/requires
+    b'format',
+    b'exp-dirstate-v2',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
     b'format',
     b'dotencode',
     default=True,
@@ -1310,6 +1349,20 @@ coreconfigitem(
     default=lambda: [b'zstd', b'zlib'],
     alias=[(b'experimental', b'format.compression')],
 )
+# Experimental TODOs:
+#
+# * Same as for evlogv2 (but for the reduction of the number of files)
+# * Improvement to investigate
+#   - storing .hgtags fnode
+#   - storing `rank` of changesets
+#   - storing branch related identifier
+
+coreconfigitem(
+    b'format',
+    b'exp-use-changelog-v2',
+    default=None,
+    experimental=True,
+)
 coreconfigitem(
     b'format',
     b'usefncache',
@@ -1342,29 +1395,9 @@ coreconfigitem(
     b'use-persistent-nodemap',
     default=_persistent_nodemap_default,
 )
-# TODO needs to grow a docket file to at least store the last offset of the data
-# file when rewriting sidedata.
-# Will also need a way of dealing with garbage data if we allow rewriting
-# *existing* sidedata.
-# Exchange-wise, we will also need to do something more efficient than keeping
-# references to the affected revlogs, especially memory-wise when rewriting
-# sidedata.
-# Also... compress the sidedata? (this should be coming very soon)
-coreconfigitem(
-    b'format',
-    b'exp-revlogv2.2',
-    default=False,
-    experimental=True,
-)
 coreconfigitem(
     b'format',
     b'exp-use-copies-side-data-changeset',
-    default=False,
-    experimental=True,
-)
-coreconfigitem(
-    b'format',
-    b'exp-use-side-data',
     default=False,
     experimental=True,
 )

@@ -12,7 +12,7 @@ import zlib
 from mercurial.node import (
     bin,
     hex,
-    nullid,
+    sha1nodeconstants,
     short,
 )
 from mercurial.i18n import _
@@ -57,9 +57,9 @@ def debugremotefilelog(ui, path, **opts):
             _(b"%s => %s  %s  %s  %s\n")
             % (short(node), short(p1), short(p2), short(linknode), copyfrom)
         )
-        if p1 != nullid:
+        if p1 != sha1nodeconstants.nullid:
             queue.append(p1)
-        if p2 != nullid:
+        if p2 != sha1nodeconstants.nullid:
             queue.append(p2)
 
 
@@ -152,7 +152,7 @@ def debugindex(orig, ui, repo, file_=None, **opts):
             try:
                 pp = r.parents(node)
             except Exception:
-                pp = [nullid, nullid]
+                pp = [repo.nullid, repo.nullid]
             ui.write(
                 b"% 6d % 9d % 7d % 6d % 7d %s %s %s\n"
                 % (
@@ -197,7 +197,7 @@ def debugindexdot(orig, ui, repo, file_):
         node = r.node(i)
         pp = r.parents(node)
         ui.write(b"\t%d -> %d\n" % (r.rev(pp[0]), i))
-        if pp[1] != nullid:
+        if pp[1] != repo.nullid:
             ui.write(b"\t%d -> %d\n" % (r.rev(pp[1]), i))
     ui.write(b"}\n")
 
@@ -212,7 +212,7 @@ def verifyremotefilelog(ui, path, **opts):
             filepath = os.path.join(root, file)
             size, firstnode, mapping = parsefileblob(filepath, decompress)
             for p1, p2, linknode, copyfrom in pycompat.itervalues(mapping):
-                if linknode == nullid:
+                if linknode == sha1nodeconstants.nullid:
                     actualpath = os.path.relpath(root, path)
                     key = fileserverclient.getcachekey(
                         b"reponame", actualpath, file
@@ -371,7 +371,7 @@ def _sanitycheck(ui, nodes, bases):
         current = node
         deltabase = bases[current]
 
-        while deltabase != nullid:
+        while deltabase != sha1nodeconstants.nullid:
             if deltabase not in nodes:
                 ui.warn(
                     (
@@ -397,7 +397,7 @@ def _sanitycheck(ui, nodes, bases):
             deltabase = bases[current]
         # Since ``node`` begins a valid chain, reset/memoize its base to nullid
         # so we don't traverse it again.
-        bases[node] = nullid
+        bases[node] = sha1nodeconstants.nullid
     return failures
 
 

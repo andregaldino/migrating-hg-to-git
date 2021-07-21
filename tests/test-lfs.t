@@ -785,8 +785,8 @@ Repo with damaged lfs objects in any revision will fail verification.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
-   large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
+   l@1: unpacking 46a2f24864bc: integrity check failed on data/l:0
+   large@0: unpacking 2c531e0992ff: integrity check failed on data/large:0
   checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
@@ -895,9 +895,9 @@ store, and poison it.  (The verify with a good remote now works.)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
+   l@1: unpacking 46a2f24864bc: integrity check failed on data/l:0
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-   large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
+   large@0: unpacking 2c531e0992ff: integrity check failed on data/large:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   checked 5 changesets with 10 changes to 4 files
@@ -939,8 +939,8 @@ usercache or local store.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
-   large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
+   l@1: unpacking 46a2f24864bc: integrity check failed on data/l:0
+   large@0: unpacking 2c531e0992ff: integrity check failed on data/large:0
   checked 5 changesets with 10 changes to 4 files
   2 integrity errors encountered!
   (first damaged changeset appears to be 0)
@@ -965,9 +965,9 @@ avoids the corrupt lfs object in the original remote.)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-   l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
+   l@1: unpacking 46a2f24864bc: integrity check failed on data/l:0
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-   large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
+   large@0: unpacking 2c531e0992ff: integrity check failed on data/large:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   checked 5 changesets with 10 changes to 4 files
@@ -985,7 +985,7 @@ avoids the corrupt lfs object in the original remote.)
 Accessing a corrupt file will complain
 
   $ hg --cwd fromcorrupt2 cat -r 0 large
-  abort: integrity check failed on data/large.i:0
+  abort: integrity check failed on data/large:0
   [50]
 
 lfs -> normal -> lfs round trip conversions are possible.  The 'none()'

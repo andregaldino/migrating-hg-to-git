@@ -1,4 +1,4 @@
-#require bzr bzr114
+#require bzr
 
   $ . "$TESTDIR/bzr-definitions"
 
@@ -9,18 +9,18 @@ replace file with dir
 
   $ mkdir test-replace-file-with-dir
   $ cd test-replace-file-with-dir
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ echo d > d
-  $ bzr add -q d
-  $ bzr commit -q -m 'add d file'
+  $ brz add -q d
+  $ brz commit -q -m 'add d file'
   $ rm d
   $ mkdir d
-  $ bzr add -q d
-  $ bzr commit -q -m 'replace with d dir'
+  $ brz add -q d
+  $ brz commit -q -m 'replace with d dir'
   $ echo a > d/a
-  $ bzr add -q d/a
-  $ bzr commit -q -m 'add d/a'
+  $ brz add -q d/a
+  $ brz commit -q -m 'add d/a'
   $ cd ..
   $ hg convert source source-hg
   initializing destination source-hg repository

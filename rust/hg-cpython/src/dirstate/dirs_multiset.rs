@@ -20,7 +20,8 @@ use crate::dirstate::extract_dirstate;
 use hg::{
     errors::HgError,
     utils::hg_path::{HgPath, HgPathBuf},
-    DirsMultiset, DirsMultisetIter, DirstateMapError, EntryState,
+    DirsMultiset, DirsMultisetIter, DirstateError, DirstateMapError,
+    EntryState,
 };
 
 py_class!(pub class Dirs |py| {
@@ -45,8 +46,9 @@ py_class!(pub class Dirs |py| {
         }
         let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
             let dirstate = extract_dirstate(py, &map)?;
-            DirsMultiset::from_dirstate(&dirstate, skip_state)
-                .map_err(|e: DirstateMapError| {
+            let dirstate = dirstate.iter().map(|(k, v)| Ok((k, *v)));
+            DirsMultiset::from_dirstate(dirstate, skip_state)
+                .map_err(|e: DirstateError| {
                     PyErr::new::<exc::ValueError, _>(py, e.to_string())
                 })?
         } else {

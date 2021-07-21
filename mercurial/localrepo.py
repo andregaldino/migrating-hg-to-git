@@ -19,7 +19,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     sha1nodeconstants,
     short,
@@ -50,7 +49,6 @@ from . import (
     match as matchmod,
     mergestate as mergestatemod,
     mergeutil,
-    metadata as metadatamod,
     namespaces,
     narrowspec,
     obsolete,
@@ -91,6 +89,7 @@ from .utils import (
 from .revlogutils import (
     concurrency_checker as revlogchecker,
     constants as revlogconst,
+    sidedata as sidedatamod,
 )
 
 release = lockmod.release
@@ -738,6 +737,14 @@ def makelocalrepository(baseui, path, intents=None):
     storevfs = store.vfs
     storevfs.options = resolvestorevfsoptions(ui, requirements, features)
 
+    if (
+        requirementsmod.REVLOGV2_REQUIREMENT in requirements
+        or requirementsmod.CHANGELOGV2_REQUIREMENT in requirements
+    ):
+        features.add(repository.REPO_FEATURE_SIDE_DATA)
+        # the revlogv2 docket introduced race condition that we need to fix
+        features.discard(repository.REPO_FEATURE_STREAM_CLONE)
+
     # The cache vfs is used to manage cache files.
     cachevfs = vfsmod.vfs(cachepath, cacheaudited=True)
     cachevfs.createmode = store.createmode
@@ -880,6 +887,9 @@ def gathersupportedrequirements(ui):
     # Start with all requirements supported by this file.
     supported = set(localrepository._basesupported)
 
+    if dirstate.SUPPORTS_DIRSTATE_V2:
+        supported.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+
     # Execute ``featuresetupfuncs`` entries if they belong to an extension
     # relevant to this ui instance.
     modules = {m.__name__ for n, m in extensions.extensions(ui)}
@@ -1017,6 +1027,8 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         options[b'revlogv1'] = True
     if requirementsmod.REVLOGV2_REQUIREMENT in requirements:
         options[b'revlogv2'] = True
+    if requirementsmod.CHANGELOGV2_REQUIREMENT in requirements:
+        options[b'changelogv2'] = True
 
     if requirementsmod.GENERALDELTA_REQUIREMENT in requirements:
         options[b'generaldelta'] = True
@@ -1063,9 +1075,6 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     options[b'sparse-revlog'] = sparserevlog
     if sparserevlog:
         options[b'generaldelta'] = True
-
-    sidedata = requirementsmod.SIDEDATA_REQUIREMENT in requirements
-    options[b'side-data'] = sidedata
 
     maxchainlen = None
     if sparserevlog:
@@ -1219,7 +1228,7 @@ class localrepository(object):
         requirementsmod.TREEMANIFEST_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.REVLOGV2_REQUIREMENT,
-        requirementsmod.SIDEDATA_REQUIREMENT,
+        requirementsmod.CHANGELOGV2_REQUIREMENT,
         requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
@@ -1408,7 +1417,7 @@ class localrepository(object):
 
         self._wanted_sidedata = set()
         self._sidedata_computers = {}
-        metadatamod.set_sidedata_spec_for_repo(self)
+        sidedatamod.set_sidedata_spec_for_repo(self)
 
     def _getvfsward(self, origfunc):
         """build a ward for self.vfs"""
@@ -1681,6 +1690,8 @@ class localrepository(object):
     def _makedirstate(self):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
+        v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
+        use_dirstate_v2 = v2_req in self.requirements
 
         return dirstate.dirstate(
             self.vfs,
@@ -1689,6 +1700,7 @@ class localrepository(object):
             self._dirstatevalidate,
             sparsematchfn,
             self.nodeconstants,
+            use_dirstate_v2,
         )
 
     def _dirstatevalidate(self, node):
@@ -1702,7 +1714,7 @@ class localrepository(object):
                     _(b"warning: ignoring unknown working parent %s!\n")
                     % short(node)
                 )
-            return nullid
+            return self.nullid
 
     @storecache(narrowspec.FILENAME)
     def narrowpats(self):
@@ -1753,9 +1765,9 @@ class localrepository(object):
     @unfilteredpropertycache
     def _quick_access_changeid_null(self):
         return {
-            b'null': (nullrev, nullid),
-            nullrev: (nullrev, nullid),
-            nullid: (nullrev, nullid),
+            b'null': (nullrev, self.nodeconstants.nullid),
+            nullrev: (nullrev, self.nodeconstants.nullid),
+            self.nullid: (nullrev, self.nullid),
         }
 
     @unfilteredpropertycache
@@ -1765,7 +1777,7 @@ class localrepository(object):
         quick = self._quick_access_changeid_null.copy()
         cl = self.unfiltered().changelog
         for node in self.dirstate.parents():
-            if node == nullid:
+            if node == self.nullid:
                 continue
             rev = cl.index.get_rev(node)
             if rev is None:
@@ -1785,7 +1797,7 @@ class localrepository(object):
                 quick[r] = pair
                 quick[n] = pair
         p1node = self.dirstate.p1()
-        if p1node != nullid:
+        if p1node != self.nullid:
             quick[b'.'] = quick[p1node]
         return quick
 
@@ -1841,7 +1853,7 @@ class localrepository(object):
                 # when we know that '.' won't be hidden
                 node = self.dirstate.p1()
                 rev = self.unfiltered().changelog.rev(node)
-            elif len(changeid) == 20:
+            elif len(changeid) == self.nodeconstants.nodelen:
                 try:
                     node = changeid
                     rev = self.changelog.rev(changeid)
@@ -1862,7 +1874,7 @@ class localrepository(object):
                     changeid = hex(changeid)  # for the error message
                     raise
 
-            elif len(changeid) == 40:
+            elif len(changeid) == 2 * self.nodeconstants.nodelen:
                 node = bin(changeid)
                 rev = self.changelog.rev(node)
             else:
@@ -2037,7 +2049,7 @@ class localrepository(object):
         # local encoding.
         tags = {}
         for (name, (node, hist)) in pycompat.iteritems(alltags):
-            if node != nullid:
+            if node != self.nullid:
                 tags[encoding.tolocal(name)] = node
         tags[b'tip'] = self.changelog.tip()
         tagtypes = {
@@ -2161,7 +2173,9 @@ class localrepository(object):
     def wjoin(self, f, *insidef):
         return self.vfs.reljoin(self.root, f, *insidef)
 
-    def setparents(self, p1, p2=nullid):
+    def setparents(self, p1, p2=None):
+        if p2 is None:
+            p2 = self.nullid
         self[None].setparents(p1, p2)
         self._quick_access_changeid_invalidate()
 
@@ -2718,7 +2732,7 @@ class localrepository(object):
         return updater
 
     @unfilteredmethod
-    def updatecaches(self, tr=None, full=False):
+    def updatecaches(self, tr=None, full=False, caches=None):
         """warm appropriate caches
 
         If this function is called after a transaction closed. The transaction
@@ -2738,40 +2752,61 @@ class localrepository(object):
             # later call to `destroyed` will refresh them.
             return
 
-        if tr is None or tr.changes[b'origrepolen'] < len(self):
-            # accessing the 'served' branchmap should refresh all the others,
-            self.ui.debug(b'updating the branch cache\n')
-            self.filtered(b'served').branchmap()
-            self.filtered(b'served.hidden').branchmap()
+        unfi = self.unfiltered()
 
         if full:
-            unfi = self.unfiltered()
+            msg = (
+                "`full` argument for `repo.updatecaches` is deprecated\n"
+                "(use `caches=repository.CACHE_ALL` instead)"
+            )
+            self.ui.deprecwarn(msg, b"5.9")
+            caches = repository.CACHES_ALL
+            if full == b"post-clone":
+                caches = repository.CACHES_POST_CLONE
+            caches = repository.CACHES_ALL
+        elif caches is None:
+            caches = repository.CACHES_DEFAULT
 
+        if repository.CACHE_BRANCHMAP_SERVED in caches:
+            if tr is None or tr.changes[b'origrepolen'] < len(self):
+                # accessing the 'served' branchmap should refresh all the others,
+                self.ui.debug(b'updating the branch cache\n')
+                self.filtered(b'served').branchmap()
+                self.filtered(b'served.hidden').branchmap()
+
+        if repository.CACHE_CHANGELOG_CACHE in caches:
             self.changelog.update_caches(transaction=tr)
+
+        if repository.CACHE_MANIFESTLOG_CACHE in caches:
             self.manifestlog.update_caches(transaction=tr)
 
+        if repository.CACHE_REV_BRANCH in caches:
             rbc = unfi.revbranchcache()
             for r in unfi.changelog:
                 rbc.branchinfo(r)
             rbc.write()
 
+        if repository.CACHE_FULL_MANIFEST in caches:
             # ensure the working copy parents are in the manifestfulltextcache
             for ctx in self[b'.'].parents():
                 ctx.manifest()  # accessing the manifest is enough
 
-            if not full == b"post-clone":
-                # accessing fnode cache warms the cache
-                tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
+        if repository.CACHE_FILE_NODE_TAGS in caches:
+            # accessing fnode cache warms the cache
+            tagsmod.fnoderevs(self.ui, unfi, unfi.changelog.revs())
+
+        if repository.CACHE_TAGS_DEFAULT in caches:
             # accessing tags warm the cache
             self.tags()
+        if repository.CACHE_TAGS_SERVED in caches:
             self.filtered(b'served').tags()
 
-            # The `full` arg is documented as updating even the lazily-loaded
-            # caches immediately, so we're forcing a write to cause these caches
-            # to be warmed up even if they haven't explicitly been requested
-            # yet (if they've never been used by hg, they won't ever have been
-            # written, even if they're a subset of another kind of cache that
-            # *has* been used).
+        if repository.CACHE_BRANCHMAP_ALL in caches:
+            # The CACHE_BRANCHMAP_ALL updates lazily-loaded caches immediately,
+            # so we're forcing a write to cause these caches to be warmed up
+            # even if they haven't explicitly been requested yet (if they've
+            # never been used by hg, they won't ever have been written, even if
+            # they're a subset of another kind of cache that *has* been used).
             for filt in repoview.filtertable.keys():
                 filtered = self.filtered(filt)
                 filtered.branchmap().write(filtered)
@@ -3100,7 +3135,7 @@ class localrepository(object):
                 subrepoutil.writestate(self, newstate)
 
             p1, p2 = self.dirstate.parents()
-            hookp1, hookp2 = hex(p1), (p2 != nullid and hex(p2) or b'')
+            hookp1, hookp2 = hex(p1), (p2 != self.nullid and hex(p2) or b'')
             try:
                 self.hook(
                     b"precommit", throw=True, parent1=hookp1, parent2=hookp2
@@ -3273,7 +3308,7 @@ class localrepository(object):
             t = n
             while True:
                 p = self.changelog.parents(n)
-                if p[1] != nullid or p[0] == nullid:
+                if p[1] != self.nullid or p[0] == self.nullid:
                     b.append((t, n, p[0], p[1]))
                     break
                 n = p[0]
@@ -3286,7 +3321,7 @@ class localrepository(object):
             n, l, i = top, [], 0
             f = 1
 
-            while n != bottom and n != nullid:
+            while n != bottom and n != self.nullid:
                 p = self.changelog.parents(n)[0]
                 if i == f:
                     l.append(n)
@@ -3370,20 +3405,32 @@ class localrepository(object):
         return self.pathto(fp.name[len(self.root) + 1 :])
 
     def register_wanted_sidedata(self, category):
+        if repository.REPO_FEATURE_SIDE_DATA not in self.features:
+            # Only revlogv2 repos can want sidedata.
+            return
         self._wanted_sidedata.add(pycompat.bytestr(category))
 
-    def register_sidedata_computer(self, kind, category, keys, computer):
-        if kind not in (b"changelog", b"manifest", b"filelog"):
+    def register_sidedata_computer(
+        self, kind, category, keys, computer, flags, replace=False
+    ):
+        if kind not in revlogconst.ALL_KINDS:
             msg = _(b"unexpected revlog kind '%s'.")
             raise error.ProgrammingError(msg % kind)
         category = pycompat.bytestr(category)
-        if category in self._sidedata_computers.get(kind, []):
+        already_registered = category in self._sidedata_computers.get(kind, [])
+        if already_registered and not replace:
             msg = _(
                 b"cannot register a sidedata computer twice for category '%s'."
             )
             raise error.ProgrammingError(msg % category)
+        if replace and not already_registered:
+            msg = _(
+                b"cannot replace a sidedata computer that isn't registered "
+                b"for category '%s'."
+            )
+            raise error.ProgrammingError(msg % category)
         self._sidedata_computers.setdefault(kind, {})
-        self._sidedata_computers[kind][category] = (keys, computer)
+        self._sidedata_computers[kind][category] = (keys, computer, flags)
 
 
 # used to avoid circular references so destructors work
@@ -3398,8 +3445,9 @@ def aftertrans(files):
             vfs.tryunlink(dest)
             try:
                 vfs.rename(src, dest)
-            except OSError:  # journal file does not yet exist
-                pass
+            except OSError as exc:  # journal file does not yet exist
+                if exc.errno != errno.ENOENT:
+                    raise
 
     return a
 
@@ -3435,6 +3483,24 @@ def defaultcreateopts(ui, createopts=None):
         createopts[b'backend'] = ui.config(b'storage', b'new-repo-backend')
 
     return createopts
+
+
+def clone_requirements(ui, createopts, srcrepo):
+    """clone the requirements of a local repo for a local clone
+
+    The store requirements are unchanged while the working copy requirements
+    depends on the configuration
+    """
+    target_requirements = set()
+    createopts = defaultcreateopts(ui, createopts=createopts)
+    for r in newreporequirements(ui, createopts):
+        if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
+            target_requirements.add(r)
+
+    for r in srcrepo.requirements:
+        if r not in requirementsmod.WORKING_DIR_REQUIREMENTS:
+            target_requirements.add(r)
+    return target_requirements
 
 
 def newreporequirements(ui, createopts):
@@ -3507,25 +3573,33 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
-    # experimental config: format.exp-use-side-data
-    if ui.configbool(b'format', b'exp-use-side-data'):
-        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
-        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
+    # experimental config: format.exp-dirstate-v2
+    # Keep this logic in sync with `has_dirstate_v2()` in `tests/hghave.py`
+    if ui.configbool(b'format', b'exp-dirstate-v2'):
+        if dirstate.SUPPORTS_DIRSTATE_V2:
+            requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+        else:
+            raise error.Abort(
+                _(
+                    b"dirstate v2 format requested by config "
+                    b"but not supported (requires Rust extensions)"
+                )
+            )
+
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):
-        requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
-        requirements.add(requirementsmod.SIDEDATA_REQUIREMENT)
+        requirements.add(requirementsmod.CHANGELOGV2_REQUIREMENT)
         requirements.add(requirementsmod.COPIESSDC_REQUIREMENT)
     if ui.configbool(b'experimental', b'treemanifest'):
         requirements.add(requirementsmod.TREEMANIFEST_REQUIREMENT)
 
+    changelogv2 = ui.config(b'format', b'exp-use-changelog-v2')
+    if changelogv2 == b'enable-unstable-format-and-corrupt-my-data':
+        requirements.add(requirementsmod.CHANGELOGV2_REQUIREMENT)
+
     revlogv2 = ui.config(b'experimental', b'revlogv2')
     if revlogv2 == b'enable-unstable-format-and-corrupt-my-data':
         requirements.discard(requirementsmod.REVLOGV1_REQUIREMENT)
-        # generaldelta is implied by revlogv2.
-        requirements.discard(requirementsmod.GENERALDELTA_REQUIREMENT)
         requirements.add(requirementsmod.REVLOGV2_REQUIREMENT)
     # experimental config: format.internal-phase
     if ui.configbool(b'format', b'internal-phase'):
@@ -3621,11 +3695,13 @@ def filterknowncreateopts(ui, createopts):
     return {k: v for k, v in createopts.items() if k not in known}
 
 
-def createrepository(ui, path, createopts=None):
+def createrepository(ui, path, createopts=None, requirements=None):
     """Create a new repository in a vfs.
 
     ``path`` path to the new repo's working directory.
     ``createopts`` options for the new repository.
+    ``requirement`` predefined set of requirements.
+                    (incompatible with ``createopts``)
 
     The following keys for ``createopts`` are recognized:
 
@@ -3648,27 +3724,34 @@ def createrepository(ui, path, createopts=None):
        Indicates that storage for files should be shallow (not all ancestor
        revisions are known).
     """
-    createopts = defaultcreateopts(ui, createopts=createopts)
 
-    unknownopts = filterknowncreateopts(ui, createopts)
+    if requirements is not None:
+        if createopts is not None:
+            msg = b'cannot specify both createopts and requirements'
+            raise error.ProgrammingError(msg)
+        createopts = {}
+    else:
+        createopts = defaultcreateopts(ui, createopts=createopts)
 
-    if not isinstance(unknownopts, dict):
-        raise error.ProgrammingError(
-            b'filterknowncreateopts() did not return a dict'
-        )
+        unknownopts = filterknowncreateopts(ui, createopts)
 
-    if unknownopts:
-        raise error.Abort(
-            _(
-                b'unable to create repository because of unknown '
-                b'creation option: %s'
+        if not isinstance(unknownopts, dict):
+            raise error.ProgrammingError(
+                b'filterknowncreateopts() did not return a dict'
             )
-            % b', '.join(sorted(unknownopts)),
-            hint=_(b'is a required extension not loaded?'),
-        )
 
-    requirements = newreporequirements(ui, createopts=createopts)
-    requirements -= checkrequirementscompat(ui, requirements)
+        if unknownopts:
+            raise error.Abort(
+                _(
+                    b'unable to create repository because of unknown '
+                    b'creation option: %s'
+                )
+                % b', '.join(sorted(unknownopts)),
+                hint=_(b'is a required extension not loaded?'),
+            )
+
+        requirements = newreporequirements(ui, createopts=createopts)
+        requirements -= checkrequirementscompat(ui, requirements)
 
     wdirvfs = vfsmod.vfs(path, expandpath=True, realpath=True)
 

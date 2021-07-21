@@ -86,26 +86,22 @@ No update, with debug option:
 
 #if hardlink
   $ hg --debug clone -U . ../c --config progress.debug=true
-  linking: 1 files
-  linking: 2 files
-  linking: 3 files
-  linking: 4 files
-  linking: 5 files
-  linking: 6 files
-  linking: 7 files
-  linking: 8 files
-  linked 8 files (reporevlogstore !)
-  linking: 9 files (reposimplestore !)
-  linking: 10 files (reposimplestore !)
-  linking: 11 files (reposimplestore !)
-  linking: 12 files (reposimplestore !)
-  linking: 13 files (reposimplestore !)
-  linking: 14 files (reposimplestore !)
-  linking: 15 files (reposimplestore !)
-  linking: 16 files (reposimplestore !)
-  linking: 17 files (reposimplestore !)
-  linking: 18 files (reposimplestore !)
-  linked 18 files (reposimplestore !)
+  linking: 1/15 files (6.67%)
+  linking: 2/15 files (13.33%)
+  linking: 3/15 files (20.00%)
+  linking: 4/15 files (26.67%)
+  linking: 5/15 files (33.33%)
+  linking: 6/15 files (40.00%)
+  linking: 7/15 files (46.67%)
+  linking: 8/15 files (53.33%)
+  linking: 9/15 files (60.00%)
+  linking: 10/15 files (66.67%)
+  linking: 11/15 files (73.33%)
+  linking: 12/15 files (80.00%)
+  linking: 13/15 files (86.67%)
+  linking: 14/15 files (93.33%)
+  linking: 15/15 files (100.00%)
+  linked 15 files
   updating the branch cache
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
@@ -117,18 +113,6 @@ No update, with debug option:
   copying: 6 files
   copying: 7 files
   copying: 8 files
-  copied 8 files (reporevlogstore !)
-  copying: 9 files (reposimplestore !)
-  copying: 10 files (reposimplestore !)
-  copying: 11 files (reposimplestore !)
-  copying: 12 files (reposimplestore !)
-  copying: 13 files (reposimplestore !)
-  copying: 14 files (reposimplestore !)
-  copying: 15 files (reposimplestore !)
-  copying: 16 files (reposimplestore !)
-  copying: 17 files (reposimplestore !)
-  copying: 18 files (reposimplestore !)
-  copied 18 files (reposimplestore !)
 #endif
   $ cd ../c
 

@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import os
 
 from mercurial.i18n import _
-from mercurial.node import hex, nullid, nullrev
+from mercurial.node import hex, nullrev
 from mercurial import (
     encoding,
     error,
@@ -206,8 +206,8 @@ def wraprepo(repo):
                 m1 = ctx.p1().manifest()
                 files = []
                 for f in ctx.modified() + ctx.added():
-                    fparent1 = m1.get(f, nullid)
-                    if fparent1 != nullid:
+                    fparent1 = m1.get(f, self.nullid)
+                    if fparent1 != self.nullid:
                         files.append((f, hex(fparent1)))
                 self.fileservice.prefetch(files)
             return super(shallowrepository, self).commitctx(

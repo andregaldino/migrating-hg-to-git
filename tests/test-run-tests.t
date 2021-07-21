@@ -15,7 +15,7 @@ Define a helper to avoid the install step
 =============
   $ rt()
   > {
-  >     "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` -j1 "$@"
+  >     "$PYTHON" $TESTDIR/run-tests.py --with-hg=$HGTEST_REAL_HG -j1 "$@"
   > }
 
 error paths
@@ -23,7 +23,7 @@ error paths
 #if symlink
   $ ln -s `which true` hg
   $ "$PYTHON" $TESTDIR/run-tests.py --with-hg=./hg
-  warning: --with-hg should specify an hg script
+  warning: --with-hg should specify an hg script, not: true
   running 0 tests using 0 parallel processes 
   
   # Ran 0 tests, 0 skipped, 0 failed.
@@ -648,14 +648,12 @@ Running In Debug Mode
 
   $ rt --debug 2>&1 | grep -v pwd
   running 2 tests using 1 parallel processes 
-  + alias hg=hg.exe (windows !)
   + echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
   babar
   + echo *SALT* 10 0 (glob)
   *SALT* 10 0 (glob)
-  .+ alias hg=hg.exe (windows !)
   *+ echo *SALT* 0 0 (glob)
   *SALT* 0 0 (glob)
   + echo babar
@@ -1369,7 +1367,7 @@ Test globbing of local IP addresses
 Add support for external test formatter
 =======================================
 
-  $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=`which hg` -j1 "$@" test-success.t test-failure.t
+  $ CUSTOM_TEST_RESULT=basic_test_result "$PYTHON" $TESTDIR/run-tests.py --with-hg=$HGTEST_REAL_HG -j1 "$@" test-success.t test-failure.t
   running 2 tests using 1 parallel processes 
   
   # Ran 2 tests, 0 skipped, 0 failed.
@@ -1381,8 +1379,28 @@ Add support for external test formatter
 Test reusability for third party tools
 ======================================
 
-  $ mkdir "$TESTTMP"/anothertests
-  $ cd "$TESTTMP"/anothertests
+  $ THISTESTDIR="$TESTDIR"
+  $ export THISTESTDIR
+  $ THISTESTTMP="$TESTTMP"
+  $ export THISTESTTMP
+
+#if windows
+
+  $ NEWTESTDIR="$THISTESTTMP"\\anothertests
+
+#else
+
+  $ NEWTESTDIR="$THISTESTTMP"/anothertests
+
+#endif
+
+  $ export NEWTESTDIR
+
+  $ echo creating some new test in: $NEWTESTDIR
+  creating some new test in: $TESTTMP\anothertests (windows !)
+  creating some new test in: $TESTTMP/anothertests (no-windows !)
+  $ mkdir "$NEWTESTDIR"
+  $ cd "$NEWTESTDIR"
 
 test that `run-tests.py` can execute hghave, even if it runs not in
 Mercurial source tree.
@@ -1400,22 +1418,20 @@ Mercurial source tree.
 test that RUNTESTDIR refers the directory, in which `run-tests.py` now
 running is placed.
 
+
   $ cat > test-runtestdir.t <<EOF
-  > - $TESTDIR, in which test-run-tests.t is placed
-  > - \$TESTDIR, in which test-runtestdir.t is placed (expanded at runtime)
-  > - \$RUNTESTDIR, in which run-tests.py is placed (expanded at runtime)
+  > # \$THISTESTDIR, in which test-run-tests.t (this test file) is placed
+  > # \$THISTESTTMP, in which test-run-tests.t (this test file) is placed
+  > # \$TESTDIR, in which test-runtestdir.t is placed (expanded at runtime)
+  > # \$RUNTESTDIR, in which run-tests.py is placed (expanded at runtime)
   > 
-  > #if windows
-  >   $ test "\$TESTDIR" = "$TESTTMP\anothertests"
-  > #else
-  >   $ test "\$TESTDIR" = "$TESTTMP"/anothertests
-  > #endif
+  >   $ test "\$TESTDIR" = "\$NEWTESTDIR"
   > If this prints a path, that means RUNTESTDIR didn't equal
-  > TESTDIR as it should have.
-  >   $ test "\$RUNTESTDIR" = "$TESTDIR" || echo "\$RUNTESTDIR"
+  > THISTESTDIR as it should have.
+  >   $ test "\$RUNTESTDIR" = "\$THISTESTDIR" || echo "\$RUNTESTDIR"
   > This should print the start of check-code. If this passes but the
   > previous check failed, that means we found a copy of check-code at whatever
-  > RUNTESTSDIR ended up containing, even though it doesn't match TESTDIR.
+  > RUNTESTSDIR ended up containing, even though it doesn't match THISTESTDIR.
   >   $ head -n 3 "\$RUNTESTDIR"/../contrib/check-code.py | sed 's@.!.*python3@#!USRBINENVPY@'
   >   #!USRBINENVPY
   >   #
@@ -2036,3 +2052,34 @@ Test conditional output matching
   # Ran 2 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
+
+Test that a proper "python" has been set up
+===========================================
+
+(with a small check-code work around)
+  $ printf "#!/usr/bi" > test-py3.tmp
+  $ printf "n/en" >> test-py3.tmp
+  $ cat << EOF >> test-py3.tmp
+  > v python3
+  > import sys
+  > print('.'.join(str(x) for x in sys.version_info))
+  > EOF
+  $ mv test-py3.tmp test-py3.py
+  $ chmod +x test-py3.py
+
+(with a small check-code work around)
+  $ printf "#!/usr/bi" > test-py.tmp
+  $ printf "n/en" >> test-py.tmp
+  $ cat << EOF >> test-py.tmp
+  > v python
+  > import sys
+  > print('.'.join(str(x) for x in sys.version_info))
+  > EOF
+  $ mv test-py.tmp test-py.py
+  $ chmod +x test-py.py
+
+  $ ./test-py3.py
+  3.* (glob)
+  $ ./test-py.py
+  2.* (glob) (no-py3 !)
+  3.* (glob) (py3 !)

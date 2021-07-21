@@ -1592,6 +1592,26 @@ abort behavior
   (use --publish or adjust 'experimental.auto-publish' config)
   [255]
 
+trying to push a secret changeset doesn't confuse auto-publish
+
+  $ hg phase --secret --force
+  test-debug-phase: move rev 0: 1 -> 2
+  test-debug-phase: move rev 1: 1 -> 2
+
+  $ hg push --config experimental.auto-publish=abort
+  pushing to $TESTTMP/auto-publish-orig
+  abort: push would publish 1 changesets
+  (use --publish or adjust 'experimental.auto-publish' config)
+  [255]
+  $ hg push -r . --config experimental.auto-publish=abort
+  pushing to $TESTTMP/auto-publish-orig
+  abort: push would publish 1 changesets
+  (use --publish or adjust 'experimental.auto-publish' config)
+  [255]
+
+  $ hg phase --draft
+  test-debug-phase: move rev 1: 2 -> 1
+
 --publish flag makes push succeed
 
   $ hg push -r '.^' --publish --config experimental.auto-publish=abort

@@ -12,7 +12,6 @@ import os
 from mercurial.i18n import _
 from mercurial.node import (
     hex,
-    nullid,
     short,
 )
 from mercurial import (
@@ -193,7 +192,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
         kwargs[b'known'] = [
             hex(ctx.node())
             for ctx in repo.set(b'::%ln', pullop.common)
-            if ctx.node() != nullid
+            if ctx.node() != repo.nullid
         ]
         if not kwargs[b'known']:
             # Mercurial serializes an empty list as '' and deserializes it as
@@ -228,10 +227,17 @@ def _narrow(
     unfi = repo.unfiltered()
     outgoing = discovery.findcommonoutgoing(unfi, remote, commoninc=commoninc)
     ui.status(_(b'looking for local changes to affected paths\n'))
+    progress = ui.makeprogress(
+        topic=_(b'changesets'),
+        unit=_(b'changesets'),
+        total=len(outgoing.missing) + len(outgoing.excluded),
+    )
     localnodes = []
-    for n in itertools.chain(outgoing.missing, outgoing.excluded):
-        if any(oldmatch(f) and not newmatch(f) for f in unfi[n].files()):
-            localnodes.append(n)
+    with progress:
+        for n in itertools.chain(outgoing.missing, outgoing.excluded):
+            progress.increment()
+            if any(oldmatch(f) and not newmatch(f) for f in unfi[n].files()):
+                localnodes.append(n)
     revstostrip = unfi.revs(b'descendants(%ln)', localnodes)
     hiddenrevs = repoview.filterrevs(repo, b'visible')
     visibletostrip = list(
@@ -275,6 +281,10 @@ def _narrow(
                 )
                 hg.clean(repo, urev)
             overrides = {(b'devel', b'strip-obsmarkers'): False}
+            if backup:
+                ui.status(_(b'moving unwanted changesets to backup\n'))
+            else:
+                ui.status(_(b'deleting unwanted changesets\n'))
             with ui.configoverride(overrides, b'narrow'):
                 repair.strip(ui, unfi, tostrip, topic=b'narrow', backup=backup)
 
@@ -310,8 +320,10 @@ def _narrow(
                 util.unlinkpath(repo.svfs.join(f))
                 repo.store.markremoved(f)
 
-            narrowspec.updateworkingcopy(repo, assumeclean=True)
-            narrowspec.copytoworkingcopy(repo)
+            ui.status(_(b'deleting unwanted files from working copy\n'))
+            with repo.dirstate.parentchange():
+                narrowspec.updateworkingcopy(repo, assumeclean=True)
+                narrowspec.copytoworkingcopy(repo)
 
         repo.destroyed()
 
@@ -370,7 +382,7 @@ def _widen(
             ds = repo.dirstate
             p1, p2 = ds.p1(), ds.p2()
             with ds.parentchange():
-                ds.setparents(nullid, nullid)
+                ds.setparents(repo.nullid, repo.nullid)
         if isoldellipses:
             with wrappedextraprepare:
                 exchange.pull(repo, remote, heads=common)
@@ -380,7 +392,7 @@ def _widen(
                 known = [
                     ctx.node()
                     for ctx in repo.set(b'::%ln', common)
-                    if ctx.node() != nullid
+                    if ctx.node() != repo.nullid
                 ]
             with remote.commandexecutor() as e:
                 bundle = e.callcommand(
@@ -411,7 +423,7 @@ def _widen(
             with ds.parentchange():
                 ds.setparents(p1, p2)
 
-        with repo.transaction(b'widening'):
+        with repo.transaction(b'widening'), repo.dirstate.parentchange():
             repo.setnewnarrowpats()
             narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo)
@@ -578,7 +590,9 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
         return 0
 
     if update_working_copy:
-        with repo.wlock(), repo.lock(), repo.transaction(b'narrow-wc'):
+        with repo.wlock(), repo.lock(), repo.transaction(
+            b'narrow-wc'
+        ), repo.dirstate.parentchange():
             narrowspec.updateworkingcopy(repo)
             narrowspec.copytoworkingcopy(repo)
         return 0

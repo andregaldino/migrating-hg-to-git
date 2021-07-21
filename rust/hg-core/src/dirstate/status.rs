@@ -9,6 +9,7 @@
 //! It is currently missing a lot of functionality compared to the Python one
 //! and will only be triggered in narrow cases.
 
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::utils::path_auditor::PathAuditor;
 use crate::{
     dirstate::SIZE_FROM_OTHER_PARENT,
@@ -95,9 +96,10 @@ pub enum Dispatch {
 
 type IoResult<T> = std::io::Result<T>;
 
-/// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait, 'static>`, so add
+/// `Box<dyn Trait>` is syntactic sugar for `Box<dyn Trait + 'static>`, so add
 /// an explicit lifetime here to not fight `'static` bounds "out of nowhere".
-type IgnoreFnType<'a> = Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
+pub type IgnoreFnType<'a> =
+    Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>;
 
 /// We have a good mix of owned (from directory traversal) and borrowed (from
 /// the dirstate/explicit) paths, this comes up a lot.
@@ -254,18 +256,47 @@ pub struct StatusOptions {
     pub collect_traversed_dirs: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DirstateStatus<'a> {
+    /// Tracked files whose contents have changed since the parent revision
     pub modified: Vec<HgPathCow<'a>>,
+
+    /// Newly-tracked files that were not present in the parent
     pub added: Vec<HgPathCow<'a>>,
+
+    /// Previously-tracked files that have been (re)moved with an hg command
     pub removed: Vec<HgPathCow<'a>>,
+
+    /// (Still) tracked files that are missing, (re)moved with an non-hg
+    /// command
     pub deleted: Vec<HgPathCow<'a>>,
+
+    /// Tracked files that are up to date with the parent.
+    /// Only pupulated if `StatusOptions::list_clean` is true.
     pub clean: Vec<HgPathCow<'a>>,
+
+    /// Files in the working directory that are ignored with `.hgignore`.
+    /// Only pupulated if `StatusOptions::list_ignored` is true.
     pub ignored: Vec<HgPathCow<'a>>,
+
+    /// Files in the working directory that are neither tracked nor ignored.
+    /// Only pupulated if `StatusOptions::list_unknown` is true.
     pub unknown: Vec<HgPathCow<'a>>,
+
+    /// Was explicitly matched but cannot be found/accessed
     pub bad: Vec<(HgPathCow<'a>, BadMatch)>,
+
+    /// Either clean or modified, but we can’t tell from filesystem metadata
+    /// alone. The file contents need to be read and compared with that in
+    /// the parent.
+    pub unsure: Vec<HgPathCow<'a>>,
+
     /// Only filled if `collect_traversed_dirs` is `true`
-    pub traversed: Vec<HgPathBuf>,
+    pub traversed: Vec<HgPathCow<'a>>,
+
+    /// Whether `status()` made changed to the `DirstateMap` that should be
+    /// written back to disk
+    pub dirty: bool,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -276,6 +307,8 @@ pub enum StatusError {
     Path(HgPathError),
     /// An invalid "ignore" pattern was found
     Pattern(PatternError),
+    /// Corrupted dirstate
+    DirstateV2ParseError(DirstateV2ParseError),
 }
 
 pub type StatusResult<T> = Result<T, StatusError>;
@@ -286,13 +319,16 @@ impl fmt::Display for StatusError {
             StatusError::IO(error) => error.fmt(f),
             StatusError::Path(error) => error.fmt(f),
             StatusError::Pattern(error) => error.fmt(f),
+            StatusError::DirstateV2ParseError(_) => {
+                f.write_str("dirstate-v2 parse error")
+            }
         }
     }
 }
 
 /// Gives information about which files are changed in the working directory
 /// and how, compared to the revision we're based on
-pub struct Status<'a, M: Matcher + Sync> {
+pub struct Status<'a, M: ?Sized + Matcher + Sync> {
     dmap: &'a DirstateMap,
     pub(crate) matcher: &'a M,
     root_dir: PathBuf,
@@ -302,7 +338,7 @@ pub struct Status<'a, M: Matcher + Sync> {
 
 impl<'a, M> Status<'a, M>
 where
-    M: Matcher + Sync,
+    M: ?Sized + Matcher + Sync,
 {
     pub fn new(
         dmap: &'a DirstateMap,
@@ -315,7 +351,7 @@ where
 
         let (ignore_fn, warnings): (IgnoreFnType, _) =
             if options.list_ignored || options.list_unknown {
-                get_ignore_function(ignore_files, &root_dir)?
+                get_ignore_function(ignore_files, &root_dir, &mut |_| {})?
             } else {
                 (Box::new(|&_| true), vec![])
             };
@@ -848,9 +884,9 @@ where
 #[timed]
 pub fn build_response<'a>(
     results: impl IntoIterator<Item = DispatchedPath<'a>>,
-    traversed: Vec<HgPathBuf>,
-) -> (Vec<HgPathCow<'a>>, DirstateStatus<'a>) {
-    let mut lookup = vec![];
+    traversed: Vec<HgPathCow<'a>>,
+) -> DirstateStatus<'a> {
+    let mut unsure = vec![];
     let mut modified = vec![];
     let mut added = vec![];
     let mut removed = vec![];
@@ -863,7 +899,7 @@ pub fn build_response<'a>(
     for (filename, dispatch) in results.into_iter() {
         match dispatch {
             Dispatch::Unknown => unknown.push(filename),
-            Dispatch::Unsure => lookup.push(filename),
+            Dispatch::Unsure => unsure.push(filename),
             Dispatch::Modified => modified.push(filename),
             Dispatch::Added => added.push(filename),
             Dispatch::Removed => removed.push(filename),
@@ -876,20 +912,19 @@ pub fn build_response<'a>(
         }
     }
 
-    (
-        lookup,
-        DirstateStatus {
-            modified,
-            added,
-            removed,
-            deleted,
-            clean,
-            ignored,
-            unknown,
-            bad,
-            traversed,
-        },
-    )
+    DirstateStatus {
+        modified,
+        added,
+        removed,
+        deleted,
+        clean,
+        ignored,
+        unknown,
+        bad,
+        unsure,
+        traversed,
+        dirty: false,
+    }
 }
 
 /// Get the status of files in the working directory.
@@ -900,14 +935,11 @@ pub fn build_response<'a>(
 #[timed]
 pub fn status<'a>(
     dmap: &'a DirstateMap,
-    matcher: &'a (impl Matcher + Sync),
+    matcher: &'a (dyn Matcher + Sync),
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
-) -> StatusResult<(
-    (Vec<HgPathCow<'a>>, DirstateStatus<'a>),
-    Vec<PatternFileWarning>,
-)> {
+) -> StatusResult<(DirstateStatus<'a>, Vec<PatternFileWarning>)> {
     let (status, warnings) =
         Status::new(dmap, matcher, root_dir, ignore_files, options)?;
 

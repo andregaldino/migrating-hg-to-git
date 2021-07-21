@@ -66,6 +66,8 @@ import sys
 import tempfile
 import threading
 import time
+
+import mercurial.revlog
 from mercurial import (
     changegroup,
     cmdutil,
@@ -76,7 +78,6 @@ from mercurial import (
     hg,
     mdiff,
     merge,
-    revlog,
     util,
 )
 
@@ -118,6 +119,21 @@ try:
     from mercurial import profiling
 except ImportError:
     profiling = None
+
+try:
+    from mercurial.revlogutils import constants as revlog_constants
+
+    perf_rl_kind = (revlog_constants.KIND_OTHER, b'created-by-perf')
+
+    def revlog(opener, *args, **kwargs):
+        return mercurial.revlog.revlog(opener, perf_rl_kind, *args, **kwargs)
+
+
+except (ImportError, AttributeError):
+    perf_rl_kind = None
+
+    def revlog(opener, *args, **kwargs):
+        return mercurial.revlog.revlog(opener, *args, **kwargs)
 
 
 def identity(a):
@@ -1131,7 +1147,10 @@ def perfdirs(ui, repo, **opts):
 
     def d():
         dirstate.hasdir(b'a')
-        del dirstate._map._dirs
+        try:
+            del dirstate._map._dirs
+        except AttributeError:
+            pass
 
     timer(d)
     fm.end()
@@ -1209,7 +1228,10 @@ def perfdirstatedirs(ui, repo, **opts):
     repo.dirstate.hasdir(b"a")
 
     def setup():
-        del repo.dirstate._map._dirs
+        try:
+            del repo.dirstate._map._dirs
+        except AttributeError:
+            pass
 
     def d():
         repo.dirstate.hasdir(b"a")
@@ -1252,7 +1274,10 @@ def perfdirfoldmap(ui, repo, **opts):
 
     def setup():
         del dirstate._map.dirfoldmap
-        del dirstate._map._dirs
+        try:
+            del dirstate._map._dirs
+        except AttributeError:
+            pass
 
     def d():
         dirstate._map.dirfoldmap.get(b'a')
@@ -1809,7 +1834,11 @@ def perfnodelookup(ui, repo, rev, **opts):
 
     mercurial.revlog._prereadsize = 2 ** 24  # disable lazy parser in old hg
     n = scmutil.revsingle(repo, rev).node()
-    cl = mercurial.revlog.revlog(getsvfs(repo), b"00changelog.i")
+
+    try:
+        cl = revlog(getsvfs(repo), radix=b"00changelog")
+    except TypeError:
+        cl = revlog(getsvfs(repo), indexfile=b"00changelog.i")
 
     def d():
         cl.rev(n)
@@ -2592,16 +2621,24 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     rl = cmdutil.openrevlog(repo, b'perfrevlogindex', file_, opts)
 
     opener = getattr(rl, 'opener')  # trick linter
-    indexfile = rl.indexfile
+    # compat with hg <= 5.8
+    radix = getattr(rl, 'radix', None)
+    indexfile = getattr(rl, '_indexfile', None)
+    if indexfile is None:
+        # compatibility with <= hg-5.8
+        indexfile = getattr(rl, 'indexfile')
     data = opener.read(indexfile)
 
     header = struct.unpack(b'>I', data[0:4])[0]
     version = header & 0xFFFF
     if version == 1:
-        revlogio = revlog.revlogio()
         inline = header & (1 << 16)
     else:
         raise error.Abort(b'unsupported revlog version: %d' % version)
+
+    parse_index_v1 = getattr(mercurial.revlog, 'parse_index_v1', None)
+    if parse_index_v1 is None:
+        parse_index_v1 = mercurial.revlog.revlogio().parseindex
 
     rllen = len(rl)
 
@@ -2617,33 +2654,35 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
     allnodesrev = list(reversed(allnodes))
 
     def constructor():
-        revlog.revlog(opener, indexfile)
+        if radix is not None:
+            revlog(opener, radix=radix)
+        else:
+            # hg <= 5.8
+            revlog(opener, indexfile=indexfile)
 
     def read():
         with opener(indexfile) as fh:
             fh.read()
 
     def parseindex():
-        revlogio.parseindex(data, inline)
+        parse_index_v1(data, inline)
 
     def getentry(revornode):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         index[revornode]
 
     def getentries(revs, count=1):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
 
         for i in range(count):
             for rev in revs:
                 index[rev]
 
     def resolvenode(node):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         rev = getattr(index, 'rev', None)
         if rev is None:
-            nodemap = getattr(
-                revlogio.parseindex(data, inline)[0], 'nodemap', None
-            )
+            nodemap = getattr(parse_index_v1(data, inline)[0], 'nodemap', None)
             # This only works for the C code.
             if nodemap is None:
                 return
@@ -2655,12 +2694,10 @@ def perfrevlogindex(ui, repo, file_=None, **opts):
             pass
 
     def resolvenodes(nodes, count=1):
-        index = revlogio.parseindex(data, inline)[0]
+        index = parse_index_v1(data, inline)[0]
         rev = getattr(index, 'rev', None)
         if rev is None:
-            nodemap = getattr(
-                revlogio.parseindex(data, inline)[0], 'nodemap', None
-            )
+            nodemap = getattr(parse_index_v1(data, inline)[0], 'nodemap', None)
             # This only works for the C code.
             if nodemap is None:
                 return
@@ -3015,10 +3052,17 @@ def _temprevlog(ui, orig, truncaterev):
     if util.safehasattr(orig, k):
         revlogkwargs[k] = getattr(orig, k)
 
-    origindexpath = orig.opener.join(orig.indexfile)
-    origdatapath = orig.opener.join(orig.datafile)
-    indexname = 'revlog.i'
-    dataname = 'revlog.d'
+    indexfile = getattr(orig, '_indexfile', None)
+    if indexfile is None:
+        # compatibility with <= hg-5.8
+        indexfile = getattr(orig, 'indexfile')
+    origindexpath = orig.opener.join(indexfile)
+
+    datafile = getattr(orig, '_datafile', getattr(orig, 'datafile'))
+    origdatapath = orig.opener.join(datafile)
+    radix = b'revlog'
+    indexname = b'revlog.i'
+    dataname = b'revlog.d'
 
     tmpdir = tempfile.mkdtemp(prefix='tmp-hgperf-')
     try:
@@ -3043,9 +3087,12 @@ def _temprevlog(ui, orig, truncaterev):
         vfs = vfsmod.vfs(tmpdir)
         vfs.options = getattr(orig.opener, 'options', None)
 
-        dest = revlog.revlog(
-            vfs, indexfile=indexname, datafile=dataname, **revlogkwargs
-        )
+        try:
+            dest = revlog(vfs, radix=radix, **revlogkwargs)
+        except TypeError:
+            dest = revlog(
+                vfs, indexfile=indexname, datafile=dataname, **revlogkwargs
+            )
         if dest._inline:
             raise error.Abort('not supporting inline revlog (yet)')
         # make sure internals are initialized
@@ -3111,9 +3158,14 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
 
     def rlfh(rl):
         if rl._inline:
-            return getsvfs(repo)(rl.indexfile)
+            indexfile = getattr(rl, '_indexfile', None)
+            if indexfile is None:
+                # compatibility with <= hg-5.8
+                indexfile = getattr(rl, 'indexfile')
+            return getsvfs(repo)(indexfile)
         else:
-            return getsvfs(repo)(rl.datafile)
+            datafile = getattr(rl, 'datafile', getattr(rl, 'datafile'))
+            return getsvfs(repo)(datafile)
 
     def doread():
         rl.clearcaches()

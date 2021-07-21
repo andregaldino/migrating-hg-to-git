@@ -12,6 +12,8 @@ DOTENCODE_REQUIREMENT = b'dotencode'
 STORE_REQUIREMENT = b'store'
 FNCACHE_REQUIREMENT = b'fncache'
 
+DIRSTATE_V2_REQUIREMENT = b'exp-dirstate-v2'
+
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = b'narrowhg-experimental'
@@ -30,6 +32,10 @@ REVLOGV1_REQUIREMENT = b'revlogv1'
 
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
+CHANGELOGV2_REQUIREMENT = b'exp-changelog-v2'
+
+# Increment the sub-version when the revlog v2 format changes to lock out old
+# clients.
 REVLOGV2_REQUIREMENT = b'exp-revlogv2.2'
 
 # A repository with the sparserevlog feature will have delta chains that
@@ -40,10 +46,6 @@ REVLOGV2_REQUIREMENT = b'exp-revlogv2.2'
 # including all the intermediate revisions that aren't pertinent for the chain.
 # This is why once a repository has enabled sparse-read, it becomes required.
 SPARSEREVLOG_REQUIREMENT = b'sparserevlog'
-
-# A repository with the sidedataflag requirement will allow to store extra
-# information for revision without altering their original hashes.
-SIDEDATA_REQUIREMENT = b'exp-sidedata-flag'
 
 # A repository with the the copies-sidedata-changeset requirement will store
 # copies related information in changeset's sidedata.
@@ -74,9 +76,12 @@ SHARESAFE_REQUIREMENT = b'share-safe'
 #   repo. Hence both of them should be stored in working copy
 # * SHARESAFE_REQUIREMENT needs to be stored in working dir to mark that rest of
 #   the requirements are stored in store's requires
+# * DIRSTATE_V2_REQUIREMENT affects .hg/dirstate, of which there is one per
+#   working directory.
 WORKING_DIR_REQUIREMENTS = {
     SPARSE_REQUIREMENT,
     SHARED_REQUIREMENT,
     RELATIVE_SHARED_REQUIREMENT,
     SHARESAFE_REQUIREMENT,
+    DIRSTATE_V2_REQUIREMENT,
 }

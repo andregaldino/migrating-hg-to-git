@@ -304,8 +304,10 @@ push should succeed even though it has an unexpected response
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
+  remote: added 1 changesets with 1 changes to 1 files (py3 !)
+  remote: added 1 changesets with 1 changes to 1 files (no-py3 no-chg !)
   remote: KABOOM
+  remote: added 1 changesets with 1 changes to 1 files (no-py3 chg !)
   $ hg -R ../remote heads
   changeset:   5:1383141674ec
   tag:         tip
@@ -474,8 +476,10 @@ stderr from remote commands should be printed before stdout from local code (iss
   remote: adding changesets
   remote: adding manifests
   remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
+  remote: added 1 changesets with 1 changes to 1 files (py3 !)
+  remote: added 1 changesets with 1 changes to 1 files (no-py3 no-chg !)
   remote: KABOOM
+  remote: added 1 changesets with 1 changes to 1 files (no-py3 chg !)
   local stdout
 
 debug output

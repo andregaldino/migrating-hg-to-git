@@ -88,9 +88,7 @@ impl Config {
     /// Load system and user configuration from various files.
     ///
     /// This is also affected by some environment variables.
-    pub fn load(
-        cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
-    ) -> Result<Self, ConfigError> {
+    pub fn load_non_repo() -> Result<Self, ConfigError> {
         let mut config = Self { layers: Vec::new() };
         let opt_rc_path = env::var_os("HGRCPATH");
         // HGRCPATH replaces system config
@@ -133,10 +131,17 @@ impl Config {
                 }
             }
         }
-        if let Some(layer) = ConfigLayer::parse_cli_args(cli_config_args)? {
-            config.layers.push(layer)
-        }
         Ok(config)
+    }
+
+    pub fn load_cli_args_config(
+        &mut self,
+        cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+    ) -> Result<(), ConfigError> {
+        if let Some(layer) = ConfigLayer::parse_cli_args(cli_config_args)? {
+            self.layers.push(layer)
+        }
+        Ok(())
     }
 
     fn add_trusted_dir(&mut self, path: &Path) -> Result<(), ConfigError> {
@@ -361,10 +366,11 @@ impl Config {
     ///
     /// This is appropriate for new configuration keys. The value syntax is
     /// **not** the same as most existing list-valued config, which has Python
-    /// parsing implemented in `parselist()` in `mercurial/config.py`.
-    /// Faithfully porting that parsing algorithm to Rust (including behavior
-    /// that are arguably bugs) turned out to be non-trivial and hasn’t been
-    /// completed as of this writing.
+    /// parsing implemented in `parselist()` in
+    /// `mercurial/utils/stringutil.py`. Faithfully porting that parsing
+    /// algorithm to Rust (including behavior that are arguably bugs)
+    /// turned out to be non-trivial and hasn’t been completed as of this
+    /// writing.
     ///
     /// Instead, the "simple" syntax is: split on comma, then trim leading and
     /// trailing whitespace of each component. Quotes or backslashes are not

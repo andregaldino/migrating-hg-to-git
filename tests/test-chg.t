@@ -458,6 +458,7 @@ Test that chg works (sets to the user's actual LC_CTYPE) even when python
   LC_CTYPE=
   $ (unset LC_ALL; unset LANG; LC_CTYPE=unsupported_value chg \
   >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
+  *cannot change locale* (glob) (?)
   LC_CTYPE=unsupported_value
   $ (unset LC_ALL; unset LANG; LC_CTYPE= chg \
   >    --config extensions.debugenv=$TESTTMP/debugenv.py debugenv)
@@ -467,3 +468,72 @@ Test that chg works (sets to the user's actual LC_CTYPE) even when python
   LC_ALL=
   LC_CTYPE=
   LANG=
+
+Profiling isn't permanently enabled or carried over between chg invocations that
+share the same server
+  $ cp $HGRCPATH.orig $HGRCPATH
+  $ hg init $TESTTMP/profiling
+  $ cd $TESTTMP/profiling
+  $ filteredchg() {
+  >   CHGDEBUG=1 chg "$@" 2>&1 | egrep 'Sample count|start cmdserver' || true
+  > }
+  $ newchg() {
+  >   chg --kill-chg-daemon
+  >   filteredchg "$@" | egrep -v 'start cmdserver' || true
+  > }
+(--profile isn't permanently on just because it was specified when chg was
+started)
+  $ newchg log -r . --profile
+  Sample count: * (glob)
+  $ filteredchg log -r .
+(enabling profiling via config works, even on the first chg command that starts
+a cmdserver)
+  $ cat >> $HGRCPATH <<EOF
+  > [profiling]
+  > type=stat
+  > enabled=1
+  > EOF
+  $ newchg log -r .
+  Sample count: * (glob)
+  $ filteredchg log -r .
+  Sample count: * (glob)
+(test that we aren't accumulating more and more samples each run)
+  $ cat > $TESTTMP/debugsleep.py <<EOF
+  > import time
+  > from mercurial import registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'debugsleep', [], b'', norepo=True)
+  > def debugsleep(ui):
+  >   start = time.time()
+  >   x = 0
+  >   while time.time() < start + 0.5:
+  >     time.sleep(.1)
+  >     x += 1
+  >   ui.status(b'%d debugsleep iterations in %.03fs\n' % (x, time.time() - start))
+  > EOF
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > debugsleep = $TESTTMP/debugsleep.py
+  > EOF
+  $ newchg debugsleep > run_1
+  $ filteredchg debugsleep > run_2
+  $ filteredchg debugsleep > run_3
+  $ filteredchg debugsleep > run_4
+FIXME: Run 4 should not be >3x Run 1's number of samples.
+  $ "$PYTHON" <<EOF
+  > r1 = int(open("run_1", "r").read().split()[-1])
+  > r4 = int(open("run_4", "r").read().split()[-1])
+  > print("Run 1: %d samples\nRun 4: %d samples\nRun 4 > 3 * Run 1: %s" %
+  >       (r1, r4, r4 > (r1 * 3)))
+  > EOF
+  Run 1: * samples (glob)
+  Run 4: * samples (glob)
+  Run 4 > 3 * Run 1: False
+(Disabling with --no-profile on the commandline still works, but isn't permanent)
+  $ newchg log -r . --no-profile
+  $ filteredchg log -r .
+  Sample count: * (glob)
+  $ filteredchg log -r . --no-profile
+  $ filteredchg log -r .
+  Sample count: * (glob)

@@ -16,7 +16,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
 )
 from .pycompat import getattr
@@ -35,6 +34,9 @@ from .interfaces import (
     repository,
     util as interfaceutil,
 )
+from .revlogutils import (
+    constants as revlog_constants,
+)
 
 parsers = policy.importmod('parsers')
 propertycache = util.propertycache
@@ -43,7 +45,7 @@ propertycache = util.propertycache
 FASTDELTA_TEXTDIFF_THRESHOLD = 1000
 
 
-def _parse(data):
+def _parse(nodelen, data):
     # This method does a little bit of excessive-looking
     # precondition checking. This is so that the behavior of this
     # class exactly matches its C counterpart to try and help
@@ -64,7 +66,7 @@ def _parse(data):
             nl -= 1
         else:
             flags = b''
-        if nl not in (40, 64):
+        if nl != 2 * nodelen:
             raise ValueError(b'Invalid manifest line')
 
         yield f, bin(n), flags
@@ -132,7 +134,7 @@ class lazymanifestiterentries(object):
         else:
             hlen = nlpos - zeropos - 1
             flags = b''
-        if hlen not in (40, 64):
+        if hlen != 2 * self.lm._nodelen:
             raise error.StorageError(b'Invalid manifest line')
         hashval = unhexlify(
             data, self.lm.extrainfo[self.pos], zeropos + 1, hlen
@@ -177,12 +179,14 @@ class _lazymanifest(object):
 
     def __init__(
         self,
+        nodelen,
         data,
         positions=None,
         extrainfo=None,
         extradata=None,
         hasremovals=False,
     ):
+        self._nodelen = nodelen
         if positions is None:
             self.positions = self.findlines(data)
             self.extrainfo = [0] * len(self.positions)
@@ -289,7 +293,7 @@ class _lazymanifest(object):
             hlen -= 1
         else:
             flags = b''
-        if hlen not in (40, 64):
+        if hlen != 2 * self._nodelen:
             raise error.StorageError(b'Invalid manifest line')
         hashval = unhexlify(data, self.extrainfo[needle], zeropos + 1, hlen)
         return (hashval, flags)
@@ -345,6 +349,7 @@ class _lazymanifest(object):
     def copy(self):
         # XXX call _compact like in C?
         return _lazymanifest(
+            self._nodelen,
             self.data,
             self.positions,
             self.extrainfo,
@@ -455,7 +460,7 @@ class _lazymanifest(object):
 
     def filtercopy(self, filterfn):
         # XXX should be optimized
-        c = _lazymanifest(b'')
+        c = _lazymanifest(self._nodelen, b'')
         for f, n, fl in self.iterentries():
             if filterfn(f):
                 c[f] = n, fl
@@ -470,8 +475,9 @@ except AttributeError:
 
 @interfaceutil.implementer(repository.imanifestdict)
 class manifestdict(object):
-    def __init__(self, data=b''):
-        self._lm = _lazymanifest(data)
+    def __init__(self, nodelen, data=b''):
+        self._nodelen = nodelen
+        self._lm = _lazymanifest(nodelen, data)
 
     def __getitem__(self, key):
         return self._lm[key][0]
@@ -579,14 +585,14 @@ class manifestdict(object):
             return self.copy()
 
         if self._filesfastpath(match):
-            m = manifestdict()
+            m = manifestdict(self._nodelen)
             lm = self._lm
             for fn in match.files():
                 if fn in lm:
                     m._lm[fn] = lm[fn]
             return m
 
-        m = manifestdict()
+        m = manifestdict(self._nodelen)
         m._lm = self._lm.filtercopy(match)
         return m
 
@@ -629,7 +635,7 @@ class manifestdict(object):
             return b''
 
     def copy(self):
-        c = manifestdict()
+        c = manifestdict(self._nodelen)
         c._lm = self._lm.copy()
         return c
 
@@ -795,7 +801,8 @@ class treemanifest(object):
     def __init__(self, nodeconstants, dir=b'', text=b''):
         self._dir = dir
         self.nodeconstants = nodeconstants
-        self._node = nullid
+        self._node = self.nodeconstants.nullid
+        self._nodelen = self.nodeconstants.nodelen
         self._loadfunc = _noop
         self._copyfunc = _noop
         self._dirty = False
@@ -1323,7 +1330,7 @@ class treemanifest(object):
 
     def parse(self, text, readsubtree):
         selflazy = self._lazydirs
-        for f, n, fl in _parse(text):
+        for f, n, fl in _parse(self._nodelen, text):
             if fl == b't':
                 f = f + b'/'
                 # False below means "doesn't need to be copied" and can use the
@@ -1391,7 +1398,7 @@ class treemanifest(object):
                 continue
             subp1 = getnode(m1, d)
             subp2 = getnode(m2, d)
-            if subp1 == nullid:
+            if subp1 == self.nodeconstants.nullid:
                 subp1, subp2 = subp2, subp1
             writesubtree(subm, subp1, subp2, match)
 
@@ -1560,7 +1567,6 @@ class manifestrevlog(object):
         opener,
         tree=b'',
         dirlogcache=None,
-        indexfile=None,
         treemanifest=False,
     ):
         """Constructs a new manifest revlog
@@ -1591,10 +1597,9 @@ class manifestrevlog(object):
         if tree:
             assert self._treeondisk, b'opts is %r' % opts
 
-        if indexfile is None:
-            indexfile = b'00manifest.i'
-            if tree:
-                indexfile = b"meta/" + tree + indexfile
+        radix = b'00manifest'
+        if tree:
+            radix = b"meta/" + tree + radix
 
         self.tree = tree
 
@@ -1606,7 +1611,8 @@ class manifestrevlog(object):
 
         self._revlog = revlog.revlog(
             opener,
-            indexfile,
+            target=(revlog_constants.KIND_MANIFESTLOG, self.tree),
+            radix=radix,
             # only root indexfile is cached
             checkambig=not bool(tree),
             mmaplargeindex=True,
@@ -1615,9 +1621,7 @@ class manifestrevlog(object):
         )
 
         self.index = self._revlog.index
-        self.version = self._revlog.version
         self._generaldelta = self._revlog._generaldelta
-        self._revlog.revlog_kind = b'manifest'
 
     def _setupmanifestcachehooks(self, repo):
         """Persist the manifestfulltextcache on lock release"""
@@ -1901,14 +1905,6 @@ class manifestrevlog(object):
         )
 
     @property
-    def indexfile(self):
-        return self._revlog.indexfile
-
-    @indexfile.setter
-    def indexfile(self, value):
-        self._revlog.indexfile = value
-
-    @property
     def opener(self):
         return self._revlog.opener
 
@@ -1994,7 +1990,7 @@ class manifestlog(object):
             else:
                 m = manifestctx(self, node)
 
-        if node != nullid:
+        if node != self.nodeconstants.nullid:
             mancache = self._dirmancache.get(tree)
             if not mancache:
                 mancache = util.lrucachedict(self._cachesize)
@@ -2020,7 +2016,7 @@ class manifestlog(object):
 class memmanifestctx(object):
     def __init__(self, manifestlog):
         self._manifestlog = manifestlog
-        self._manifestdict = manifestdict()
+        self._manifestdict = manifestdict(manifestlog.nodeconstants.nodelen)
 
     def _storage(self):
         return self._manifestlog.getstorage(b'')
@@ -2082,8 +2078,9 @@ class manifestctx(object):
 
     def read(self):
         if self._data is None:
-            if self._node == nullid:
-                self._data = manifestdict()
+            nc = self._manifestlog.nodeconstants
+            if self._node == nc.nullid:
+                self._data = manifestdict(nc.nodelen)
             else:
                 store = self._storage()
                 if self._node in store.fulltextcache:
@@ -2092,7 +2089,7 @@ class manifestctx(object):
                     text = store.revision(self._node)
                     arraytext = bytearray(text)
                     store.fulltextcache[self._node] = arraytext
-                self._data = manifestdict(text)
+                self._data = manifestdict(nc.nodelen, text)
         return self._data
 
     def readfast(self, shallow=False):
@@ -2119,7 +2116,7 @@ class manifestctx(object):
         store = self._storage()
         r = store.rev(self._node)
         d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
-        return manifestdict(d)
+        return manifestdict(store.nodeconstants.nodelen, d)
 
     def find(self, key):
         return self.read().find(key)
@@ -2188,7 +2185,7 @@ class treemanifestctx(object):
     def read(self):
         if self._data is None:
             store = self._storage()
-            if self._node == nullid:
+            if self._node == self._manifestlog.nodeconstants.nullid:
                 self._data = treemanifest(self._manifestlog.nodeconstants)
             # TODO accessing non-public API
             elif store._treeondisk:
@@ -2245,7 +2242,7 @@ class treemanifestctx(object):
         if shallow:
             r = store.rev(self._node)
             d = mdiff.patchtext(store.revdiff(store.deltaparent(r), r))
-            return manifestdict(d)
+            return manifestdict(store.nodeconstants.nodelen, d)
         else:
             # Need to perform a slow delta
             r0 = store.deltaparent(store.rev(self._node))
@@ -2274,7 +2271,9 @@ class treemanifestctx(object):
             return self.readdelta(shallow=shallow)
 
         if shallow:
-            return manifestdict(store.revision(self._node))
+            return manifestdict(
+                store.nodeconstants.nodelen, store.revision(self._node)
+            )
         else:
             return self.read()
 

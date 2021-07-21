@@ -233,6 +233,8 @@ class ui(object):
         self._trustusers = set()
         self._trustgroups = set()
         self.callhooks = True
+        # hold the root to use for each [paths] entry
+        self._path_to_root = {}
         # Insecure server connections requested.
         self.insecureconnections = False
         # Blocked time
@@ -264,6 +266,7 @@ class ui(object):
             self._trustgroups = src._trustgroups.copy()
             self.environ = src.environ
             self.callhooks = src.callhooks
+            self._path_to_root = src._path_to_root
             self.insecureconnections = src.insecureconnections
             self._colormode = src._colormode
             self._terminfoparams = src._terminfoparams.copy()
@@ -545,22 +548,26 @@ class ui(object):
             root = root or encoding.getcwd()
             for c in self._tcfg, self._ucfg, self._ocfg:
                 for n, p in c.items(b'paths'):
+                    old_p = p
+                    s = self.configsource(b'paths', n) or b'none'
+                    root_key = (n, p, s)
+                    if root_key not in self._path_to_root:
+                        self._path_to_root[root_key] = root
                     # Ignore sub-options.
                     if b':' in n:
                         continue
                     if not p:
                         continue
                     if b'%%' in p:
-                        s = self.configsource(b'paths', n) or b'none'
+                        if s is None:
+                            s = 'none'
                         self.warn(
                             _(b"(deprecated '%%' in path %s=%s from %s)\n")
                             % (n, p, s)
                         )
                         p = p.replace(b'%%', b'%')
-                    p = util.expandpath(p)
-                    if not urlutil.hasscheme(p) and not os.path.isabs(p):
-                        p = os.path.normpath(os.path.join(root, p))
-                    c.alter(b"paths", n, p)
+                    if p != old_p:
+                        c.alter(b"paths", n, p)
 
         if section in (None, b'ui'):
             # update ui options
@@ -886,10 +893,10 @@ class ui(object):
         """
         # default is not always a list
         v = self.configwith(
-            config.parselist, section, name, default, b'list', untrusted
+            stringutil.parselist, section, name, default, b'list', untrusted
         )
         if isinstance(v, bytes):
-            return config.parselist(v)
+            return stringutil.parselist(v)
         elif v is None:
             return []
         return v
@@ -941,7 +948,48 @@ class ui(object):
                     )
         return items
 
-    def walkconfig(self, untrusted=False):
+    def walkconfig(self, untrusted=False, all_known=False):
+        defined = self._walk_config(untrusted)
+        if not all_known:
+            for d in defined:
+                yield d
+            return
+        known = self._walk_known()
+        current_defined = next(defined, None)
+        current_known = next(known, None)
+        while current_defined is not None or current_known is not None:
+            if current_defined is None:
+                yield current_known
+                current_known = next(known, None)
+            elif current_known is None:
+                yield current_defined
+                current_defined = next(defined, None)
+            elif current_known[0:2] == current_defined[0:2]:
+                yield current_defined
+                current_defined = next(defined, None)
+                current_known = next(known, None)
+            elif current_known[0:2] < current_defined[0:2]:
+                yield current_known
+                current_known = next(known, None)
+            else:
+                yield current_defined
+                current_defined = next(defined, None)
+
+    def _walk_known(self):
+        for section, items in sorted(self._knownconfig.items()):
+            for k, i in sorted(items.items()):
+                # We don't have a way to display generic well, so skip them
+                if i.generic:
+                    continue
+                if callable(i.default):
+                    default = i.default()
+                elif i.default is configitems.dynamicdefault:
+                    default = b'<DYNAMIC>'
+                else:
+                    default = i.default
+                yield section, i.name, default
+
+    def _walk_config(self, untrusted):
         cfg = self._data(untrusted)
         for section in cfg.sections():
             for name, value in self.configitems(section, untrusted):
@@ -1057,6 +1105,8 @@ class ui(object):
 
         This method exist as `getpath` need a ui for potential warning message.
         """
+        msg = b'ui.getpath is deprecated, use `get_*` functions from urlutil'
+        self.deprecwarn(msg, b'6.0')
         return self.paths.getpath(self, *args, **kwargs)
 
     @property
@@ -1095,6 +1145,14 @@ class ui(object):
     def fmsg(self, f):
         self._fmsg = f
         self._fmsgout, self._fmsgerr = _selectmsgdests(self)
+
+    @contextlib.contextmanager
+    def silent(self, error=False, subproc=False, labeled=False):
+        self.pushbuffer(error=error, subproc=subproc, labeled=labeled)
+        try:
+            yield
+        finally:
+            self.popbuffer()
 
     def pushbuffer(self, error=False, subproc=False, labeled=False):
         """install a buffer to capture standard output of the ui object

@@ -29,7 +29,8 @@ except ImportError:
 stdout = getattr(sys.stdout, 'buffer', sys.stdout)
 stderr = getattr(sys.stderr, 'buffer', sys.stderr)
 
-if sys.version_info[0] >= 3:
+is_not_python2 = sys.version_info[0] >= 3
+if is_not_python2:
 
     def _sys2bytes(p):
         if p is None:
@@ -104,8 +105,8 @@ def checkfeatures(features):
         check, desc = checks[feature]
         try:
             available = check()
-        except Exception:
-            result['error'].append('hghave check failed: %s' % feature)
+        except Exception as e:
+            result['error'].append('hghave check %s failed: %r' % (feature, e))
             continue
 
         if not negate and not available:
@@ -167,38 +168,30 @@ def has_baz():
     return matchoutput('baz --version 2>&1', br'baz Bazaar version')
 
 
-@check("bzr", "Canonical's Bazaar client")
+@check("bzr", "Breezy library and executable version >= 3.1")
 def has_bzr():
+    if not is_not_python2:
+        return False
     try:
-        import bzrlib
-        import bzrlib.bzrdir
-        import bzrlib.errors
-        import bzrlib.revision
-        import bzrlib.revisionspec
+        # Test the Breezy python lib
+        import breezy
+        import breezy.bzr.bzrdir
+        import breezy.errors
+        import breezy.revision
+        import breezy.revisionspec
 
-        bzrlib.revisionspec.RevisionSpec
-        return bzrlib.__doc__ is not None
+        breezy.revisionspec.RevisionSpec
+        if breezy.__doc__ is None or breezy.version_info[:2] < (3, 1):
+            return False
     except (AttributeError, ImportError):
         return False
-
-
-@checkvers("bzr", "Canonical's Bazaar client >= %s", (1.14,))
-def has_bzr_range(v):
-    major, minor = v.split('rc')[0].split('.')[0:2]
-    try:
-        import bzrlib
-
-        return bzrlib.__doc__ is not None and bzrlib.version_info[:2] >= (
-            int(major),
-            int(minor),
-        )
-    except ImportError:
-        return False
+    # Test the executable
+    return matchoutput('brz --version 2>&1', br'Breezy \(brz\) ')
 
 
 @check("chg", "running with chg")
 def has_chg():
-    return 'CHGHG' in os.environ
+    return 'CHG_INSTALLED_AS_HG' in os.environ
 
 
 @check("rhg", "running with rhg as 'hg'")
@@ -1045,6 +1038,14 @@ def has_repofncache():
     return 'fncache' in getrepofeatures()
 
 
+@check('dirstate-v2', 'using the v2 format of .hg/dirstate')
+def has_dirstate_v2():
+    # Keep this logic in sync with `newreporequirements()` in `mercurial/localrepo.py`
+    return has_rust() and matchoutput(
+        'hg config format.exp-dirstate-v2', b'(?i)1|yes|true|on|always'
+    )
+
+
 @check('sqlite', 'sqlite3 module and matching cli is available')
 def has_sqlite():
     try:
@@ -1121,3 +1122,8 @@ def has_lzma():
         return True
     except ImportError:
         return False
+
+
+@check("bash", "bash shell")
+def has_bash():
+    return matchoutput("bash -c 'echo hi'", b'^hi$')

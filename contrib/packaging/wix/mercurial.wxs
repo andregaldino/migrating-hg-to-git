@@ -135,9 +135,13 @@
     <UIRef Id="WixUI_FeatureTree" />
     <UIRef Id="WixUI_ErrorProgressText" />
 
+    <?ifdef PyOxidizer?>
+    <WixVariable Id="WixUILicenseRtf" Value="COPYING.rtf" />
+    <Icon Id="hgIcon.ico" SourceFile="mercurial.ico" />
+    <?else?>
     <WixVariable Id="WixUILicenseRtf" Value="contrib\packaging\wix\COPYING.rtf" />
-
     <Icon Id="hgIcon.ico" SourceFile="contrib/win32/mercurial.ico" />
+    <?endif?>
 
     <Upgrade Id='$(var.ProductUpgradeCode)'>
       <UpgradeVersion

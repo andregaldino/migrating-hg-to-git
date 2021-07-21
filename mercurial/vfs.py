@@ -307,7 +307,7 @@ class abstractvfs(object):
         # multiple instances puts us at risk of running out of file descriptors
         # only allow to use backgroundfilecloser when in main thread.
         if not isinstance(
-            threading.currentThread(),
+            threading.current_thread(),
             threading._MainThread,  # pytype: disable=module-attr
         ):
             yield
@@ -328,6 +328,9 @@ class abstractvfs(object):
                 vfs._backgroundfilecloser = (
                     None  # pytype: disable=attribute-error
                 )
+
+    def register_file(self, path):
+        """generic hook point to lets fncache steer its stew"""
 
 
 class vfs(abstractvfs):
@@ -483,7 +486,7 @@ class vfs(abstractvfs):
             fp = checkambigatclosing(fp)
 
         if backgroundclose and isinstance(
-            threading.currentThread(),
+            threading.current_thread(),
             threading._MainThread,  # pytype: disable=module-attr
         ):
             if (

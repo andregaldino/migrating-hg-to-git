@@ -37,8 +37,9 @@ Verify corrupt cache error message
   > EOF
   $ chmod u+w $CACHEDIR/master/11/f6ad8ec52a2984abaafd7c3b516503785c2072/1406e74118627694268417491f018a4a883152f0
   $ echo x > $CACHEDIR/master/11/f6ad8ec52a2984abaafd7c3b516503785c2072/1406e74118627694268417491f018a4a883152f0
-  $ hg up tip 2>&1 | egrep "^RuntimeError"
-  RuntimeError: unexpected remotefilelog header: illegal format
+  $ hg up tip 2>&1 | egrep "^[^ ].*unexpected remotefilelog"
+  abort: unexpected remotefilelog header: illegal format (no-py3 !)
+  hgext.remotefilelog.shallowutil.BadRemotefilelogHeader: unexpected remotefilelog header: illegal format (py3 !)
 
 Verify detection and remediation when remotefilelog.validatecachelog is set
 

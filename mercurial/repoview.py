@@ -333,7 +333,7 @@ class filteredchangelogmixin(object):
         r = super(filteredchangelogmixin, self).rev(node)
         if r in self.filteredrevs:
             raise error.FilteredLookupError(
-                hex(node), self.indexfile, _(b'filtered node')
+                hex(node), self.display_id, _(b'filtered node')
             )
         return r
 

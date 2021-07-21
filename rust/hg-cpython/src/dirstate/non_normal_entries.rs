@@ -7,14 +7,15 @@
 
 use cpython::{
     exc::NotImplementedError, CompareOp, ObjectProtocol, PyBytes, PyClone,
-    PyErr, PyList, PyObject, PyResult, PyString, Python, PythonObject,
-    ToPyObject, UnsafePyLeaked,
+    PyErr, PyObject, PyResult, PyString, Python, PythonObject, ToPyObject,
+    UnsafePyLeaked,
 };
 
+use crate::dirstate::dirstate_map::v2_error;
 use crate::dirstate::DirstateMap;
-use hg::utils::hg_path::HgPathBuf;
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
+use hg::utils::hg_path::HgPath;
 use std::cell::RefCell;
-use std::collections::hash_set;
 
 py_class!(pub class NonNormalEntries |py| {
     data dmap: DirstateMap;
@@ -25,8 +26,11 @@ py_class!(pub class NonNormalEntries |py| {
     def remove(&self, key: PyObject) -> PyResult<PyObject> {
         self.dmap(py).non_normal_entries_remove(py, key)
     }
-    def union(&self, other: PyObject) -> PyResult<PyList> {
-        self.dmap(py).non_normal_entries_union(py, other)
+    def add(&self, key: PyObject) -> PyResult<PyObject> {
+        self.dmap(py).non_normal_entries_add(py, key)
+    }
+    def discard(&self, key: PyObject) -> PyResult<PyObject> {
+        self.dmap(py).non_normal_entries_discard(py, key)
     }
     def __richcmp__(&self, other: PyObject, op: CompareOp) -> PyResult<bool> {
         match op {
@@ -60,13 +64,16 @@ impl NonNormalEntries {
 
     fn translate_key(
         py: Python,
-        key: &HgPathBuf,
+        key: Result<&HgPath, DirstateV2ParseError>,
     ) -> PyResult<Option<PyBytes>> {
+        let key = key.map_err(|e| v2_error(py, e))?;
         Ok(Some(PyBytes::new(py, key.as_bytes())))
     }
 }
 
-type NonNormalEntriesIter<'a> = hash_set::Iter<'a, HgPathBuf>;
+type NonNormalEntriesIter<'a> = Box<
+    dyn Iterator<Item = Result<&'a HgPath, DirstateV2ParseError>> + Send + 'a,
+>;
 
 py_shared_iterator!(
     NonNormalEntriesIterator,

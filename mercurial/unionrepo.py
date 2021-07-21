@@ -31,9 +31,13 @@ from . import (
     vfs as vfsmod,
 )
 
+from .revlogutils import (
+    constants as revlog_constants,
+)
+
 
 class unionrevlog(revlog.revlog):
-    def __init__(self, opener, indexfile, revlog2, linkmapper):
+    def __init__(self, opener, radix, revlog2, linkmapper):
         # How it works:
         # To retrieve a revision, we just need to know the node id so we can
         # look it up in revlog2.
@@ -41,7 +45,11 @@ class unionrevlog(revlog.revlog):
         # To differentiate a rev in the second revlog from a rev in the revlog,
         # we check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
-        revlog.revlog.__init__(self, opener, indexfile)
+        target = getattr(revlog2, 'target', None)
+        if target is None:
+            # a revlog wrapper, eg: the manifestlog that is not an actual revlog
+            target = revlog2._revlog.target
+        revlog.revlog.__init__(self, opener, target=target, radix=radix)
         self.revlog2 = revlog2
 
         n = len(self)
@@ -50,7 +58,20 @@ class unionrevlog(revlog.revlog):
         for rev2 in self.revlog2:
             rev = self.revlog2.index[rev2]
             # rev numbers - in revlog2, very different from self.rev
-            _start, _csize, rsize, base, linkrev, p1rev, p2rev, node = rev
+            (
+                _start,
+                _csize,
+                rsize,
+                base,
+                linkrev,
+                p1rev,
+                p2rev,
+                node,
+                _sdo,
+                _sds,
+                _dcm,
+                _sdcm,
+            ) = rev
             flags = _start & 0xFFFF
 
             if linkmapper is None:  # link is to same revlog
@@ -82,6 +103,10 @@ class unionrevlog(revlog.revlog):
                 self.rev(p1node),
                 self.rev(p2node),
                 node,
+                0,  # sidedata offset
+                0,  # sidedata size
+                revlog_constants.COMP_MODE_INLINE,
+                revlog_constants.COMP_MODE_INLINE,
             )
             self.index.append(e)
             self.bundlerevs.add(n)
@@ -147,9 +172,7 @@ class unionchangelog(unionrevlog, changelog.changelog):
         changelog.changelog.__init__(self, opener)
         linkmapper = None
         changelog2 = changelog.changelog(opener2)
-        unionrevlog.__init__(
-            self, opener, self.indexfile, changelog2, linkmapper
-        )
+        unionrevlog.__init__(self, opener, self.radix, changelog2, linkmapper)
 
 
 class unionmanifest(unionrevlog, manifest.manifestrevlog):
@@ -157,7 +180,7 @@ class unionmanifest(unionrevlog, manifest.manifestrevlog):
         manifest.manifestrevlog.__init__(self, nodeconstants, opener)
         manifest2 = manifest.manifestrevlog(nodeconstants, opener2)
         unionrevlog.__init__(
-            self, opener, self.indexfile, manifest2, linkmapper
+            self, opener, self._revlog.radix, manifest2, linkmapper
         )
 
 
@@ -166,7 +189,7 @@ class unionfilelog(filelog.filelog):
         filelog.filelog.__init__(self, opener, path)
         filelog2 = filelog.filelog(opener2, path)
         self._revlog = unionrevlog(
-            opener, self.indexfile, filelog2._revlog, linkmapper
+            opener, self._revlog.radix, filelog2._revlog, linkmapper
         )
         self._repo = repo
         self.repotiprev = self._revlog.repotiprev

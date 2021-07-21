@@ -177,6 +177,7 @@ class statichttprepository(
         self.filtername = None
         self._extrafilterid = None
         self._wanted_sidedata = set()
+        self.features = set()
 
         try:
             requirements = set(self.vfs.read(b'requires').splitlines())

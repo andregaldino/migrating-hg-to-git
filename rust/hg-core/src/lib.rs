@@ -8,8 +8,10 @@ mod ancestors;
 pub mod dagops;
 pub mod errors;
 pub use ancestors::{AncestorsIterator, LazyAncestors, MissingAncestors};
-mod dirstate;
+pub mod dirstate;
+pub mod dirstate_tree;
 pub mod discovery;
+pub mod exit_codes;
 pub mod requirements;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
@@ -80,6 +82,15 @@ impl fmt::Display for DirstateMapError {
 pub enum DirstateError {
     Map(DirstateMapError),
     Common(errors::HgError),
+}
+
+impl fmt::Display for DirstateError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            DirstateError::Map(error) => error.fmt(f),
+            DirstateError::Common(error) => error.fmt(f),
+        }
+    }
 }
 
 #[derive(Debug, derive_more::From)]

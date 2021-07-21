@@ -925,10 +925,15 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
     requirements3_path = (
         pathlib.Path(__file__).parent.parent / 'linux-requirements-py3.txt'
     )
+    requirements35_path = (
+        pathlib.Path(__file__).parent.parent / 'linux-requirements-py3.5.txt'
+    )
     with requirements2_path.open('r', encoding='utf-8') as fh:
         requirements2 = fh.read()
     with requirements3_path.open('r', encoding='utf-8') as fh:
         requirements3 = fh.read()
+    with requirements35_path.open('r', encoding='utf-8') as fh:
+        requirements35 = fh.read()
 
     # Compute a deterministic fingerprint to determine whether image needs to
     # be regenerated.
@@ -938,6 +943,7 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
             'bootstrap_script': BOOTSTRAP_DEBIAN,
             'requirements_py2': requirements2,
             'requirements_py3': requirements3,
+            'requirements_py35': requirements35,
         }
     )
 
@@ -977,6 +983,10 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
 
             with sftp.open('%s/requirements-py3.txt' % home, 'wb') as fh:
                 fh.write(requirements3)
+                fh.chmod(0o0700)
+
+            with sftp.open('%s/requirements-py3.5.txt' % home, 'wb') as fh:
+                fh.write(requirements35)
                 fh.chmod(0o0700)
 
             print('executing bootstrap')

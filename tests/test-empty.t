@@ -45,9 +45,11 @@ Poke at a clone:
   $ ls .hg
   00changelog.i
   cache
+  dirstate
   hgrc
   requires
   store
+  wcache
 
 Should be empty:
 

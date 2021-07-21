@@ -5,7 +5,9 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
+use crate::utils::SliceExt;
 use std::borrow::Borrow;
+use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
@@ -226,6 +228,20 @@ impl HgPath {
         inner.extend(other.as_ref().bytes());
         HgPathBuf::from_bytes(&inner)
     }
+
+    pub fn components(&self) -> impl Iterator<Item = &HgPath> {
+        self.inner.split(|&byte| byte == b'/').map(HgPath::new)
+    }
+
+    /// Returns the first (that is "root-most") slash-separated component of
+    /// the path, and the rest after the first slash if there is one.
+    pub fn split_first_component(&self) -> (&HgPath, Option<&HgPath>) {
+        match self.inner.split_2(b'/') {
+            Some((a, b)) => (HgPath::new(a), Some(HgPath::new(b))),
+            None => (self, None),
+        }
+    }
+
     pub fn parent(&self) -> &Self {
         let inner = self.as_bytes();
         HgPath::new(match inner.iter().rposition(|b| *b == b'/') {
@@ -527,6 +543,24 @@ impl TryFrom<PathBuf> for HgPathBuf {
     type Error = HgPathError;
     fn try_from(path: PathBuf) -> Result<Self, Self::Error> {
         path_to_hg_path_buf(path)
+    }
+}
+
+impl From<HgPathBuf> for Cow<'_, HgPath> {
+    fn from(path: HgPathBuf) -> Self {
+        Cow::Owned(path)
+    }
+}
+
+impl<'a> From<&'a HgPath> for Cow<'a, HgPath> {
+    fn from(path: &'a HgPath) -> Self {
+        Cow::Borrowed(path)
+    }
+}
+
+impl<'a> From<&'a HgPathBuf> for Cow<'a, HgPath> {
+    fn from(path: &'a HgPathBuf) -> Self {
+        Cow::Borrowed(&**path)
     }
 }
 

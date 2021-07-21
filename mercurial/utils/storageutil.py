@@ -13,8 +13,8 @@ import struct
 from ..i18n import _
 from ..node import (
     bin,
-    nullid,
     nullrev,
+    sha1nodeconstants,
 )
 from .. import (
     dagop,
@@ -26,7 +26,11 @@ from ..interfaces import repository
 from ..revlogutils import sidedata as sidedatamod
 from ..utils import hashutil
 
-_nullhash = hashutil.sha1(nullid)
+_nullhash = hashutil.sha1(sha1nodeconstants.nullid)
+
+# revision data contains extra metadata not part of the official digest
+# Only used in changegroup >= v4.
+CG_FLAG_SIDEDATA = 1
 
 
 def hashrevisionsha1(text, p1, p2):
@@ -37,7 +41,7 @@ def hashrevisionsha1(text, p1, p2):
     content in the revision graph.
     """
     # As of now, if one of the parent node is null, p2 is null
-    if p2 == nullid:
+    if p2 == sha1nodeconstants.nullid:
         # deep copy of a hash is faster than creating one
         s = _nullhash.copy()
         s.update(p1)
@@ -107,7 +111,7 @@ def filerevisioncopied(store, node):
     Returns ``False`` if the file has no copy metadata. Otherwise a
     2-tuple of the source filename and node.
     """
-    if store.parents(node)[0] != nullid:
+    if store.parents(node)[0] != sha1nodeconstants.nullid:
         return False
 
     meta = parsemeta(store.revision(node))[0]
@@ -360,19 +364,7 @@ def emitrevisions(
     ``assumehaveparentrevisions``
     ``sidedata_helpers`` (optional)
         If not None, means that sidedata should be included.
-        A dictionary of revlog type to tuples of `(repo, computers, removers)`:
-            * `repo` is used as an argument for computers
-            * `computers` is a list of `(category, (keys, computer)` that
-               compute the missing sidedata categories that were asked:
-               * `category` is the sidedata category
-               * `keys` are the sidedata keys to be affected
-               * `computer` is the function `(repo, store, rev, sidedata)` that
-                 returns a new sidedata dict.
-            * `removers` will remove the keys corresponding to the categories
-              that are present, but not needed.
-        If both `computers` and `removers` are empty, sidedata are simply not
-        transformed.
-        Revlog types are `changelog`, `manifest` or `filelog`.
+        See `revlogutil.sidedata.get_sidedata_helpers`.
     """
 
     fnode = store.node
@@ -486,49 +478,46 @@ def emitrevisions(
 
                 available.add(rev)
 
-        sidedata = None
+        serialized_sidedata = None
+        sidedata_flags = (0, 0)
         if sidedata_helpers:
-            sidedata = store.sidedata(rev)
-            sidedata = run_sidedata_helpers(
-                store=store,
-                sidedata_helpers=sidedata_helpers,
-                sidedata=sidedata,
-                rev=rev,
-            )
-            sidedata = sidedatamod.serialize_sidedata(sidedata)
+            try:
+                old_sidedata = store.sidedata(rev)
+            except error.CensoredNodeError:
+                # skip any potential sidedata of the censored revision
+                sidedata = {}
+            else:
+                sidedata, sidedata_flags = sidedatamod.run_sidedata_helpers(
+                    store=store,
+                    sidedata_helpers=sidedata_helpers,
+                    sidedata=old_sidedata,
+                    rev=rev,
+                )
+            if sidedata:
+                serialized_sidedata = sidedatamod.serialize_sidedata(sidedata)
+
+        flags = flagsfn(rev) if flagsfn else 0
+        protocol_flags = 0
+        if serialized_sidedata:
+            # Advertise that sidedata exists to the other side
+            protocol_flags |= CG_FLAG_SIDEDATA
+            # Computers and removers can return flags to add and/or remove
+            flags = flags | sidedata_flags[0] & ~sidedata_flags[1]
 
         yield resultcls(
             node=node,
             p1node=fnode(p1rev),
             p2node=fnode(p2rev),
             basenode=fnode(baserev),
-            flags=flagsfn(rev) if flagsfn else 0,
+            flags=flags,
             baserevisionsize=baserevisionsize,
             revision=revision,
             delta=delta,
-            sidedata=sidedata,
+            sidedata=serialized_sidedata,
+            protocol_flags=protocol_flags,
         )
 
         prevrev = rev
-
-
-def run_sidedata_helpers(store, sidedata_helpers, sidedata, rev):
-    """Returns the sidedata for the given revision after running through
-    the given helpers.
-    - `store`: the revlog this applies to (changelog, manifest, or filelog
-      instance)
-    - `sidedata_helpers`: see `storageutil.emitrevisions`
-    - `sidedata`: previous sidedata at the given rev, if any
-    - `rev`: affected rev of `store`
-    """
-    repo, sd_computers, sd_removers = sidedata_helpers
-    kind = store.revlog_kind
-    for _keys, sd_computer in sd_computers.get(kind, []):
-        sidedata = sd_computer(repo, store, rev, sidedata)
-    for keys, _computer in sd_removers.get(kind, []):
-        for key in keys:
-            sidedata.pop(key, None)
-    return sidedata
 
 
 def deltaiscensored(delta, baserev, baselenfn):

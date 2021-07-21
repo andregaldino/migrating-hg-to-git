@@ -10,13 +10,8 @@ from __future__ import absolute_import
 import os
 
 from .i18n import _
-from .node import (
-    nullid,
-    short,
-)
-from .utils import (
-    stringutil,
-)
+from .node import short
+from .utils import stringutil
 
 from . import (
     error,
@@ -43,6 +38,23 @@ def _normpath(f):
     return f
 
 
+HINT_FNCACHE = _(
+    b'hint: run "hg debugrebuildfncache" to recover from corrupt fncache\n'
+)
+
+WARN_PARENT_DIR_UNKNOWN_REV = _(
+    b"parent-directory manifest refers to unknown revision %s"
+)
+
+WARN_UNKNOWN_COPY_SOURCE = _(
+    b"warning: copy source of '%s' not in parents of %s"
+)
+
+WARN_NULLID_COPY_SOURCE = _(
+    b"warning: %s@%s: copy source revision is nullid %s:%s\n"
+)
+
+
 class verifier(object):
     def __init__(self, repo, level=None):
         self.repo = repo.unfiltered()
@@ -56,7 +68,7 @@ class verifier(object):
         self.warnings = 0
         self.havecl = len(repo.changelog) > 0
         self.havemf = len(repo.manifestlog.getstorage(b'')) > 0
-        self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
+        self.revlogv1 = repo.changelog._format_version != revlog.REVLOGV0
         self.lrugetctx = util.lrucachefunc(repo.unfiltered().__getitem__)
         self.refersmf = False
         self.fncachewarned = False
@@ -107,7 +119,7 @@ class verifier(object):
         if d[1]:
             self._err(None, _(b"index contains %d extra bytes") % d[1], name)
 
-        if obj.version != revlog.REVLOGV0:
+        if obj._format_version != revlog.REVLOGV0:
             if not self.revlogv1:
                 self._warn(_(b"warning: `%s' uses revlog format 1") % name)
         elif self.revlogv1:
@@ -119,7 +131,7 @@ class verifier(object):
         arguments are:
         - obj:      the source revlog
         - i:        the revision number
-        - node:        the revision node id
+        - node:     the revision node id
         - seen:     nodes previously seen for this revlog
         - linkrevs: [changelog-revisions] introducing "node"
         - f:        string label ("changelog", "manifest", or filename)
@@ -144,33 +156,25 @@ class verifier(object):
                 if f and len(linkrevs) > 1:
                     try:
                         # attempt to filter down to real linkrevs
-                        linkrevs = [
-                            l
-                            for l in linkrevs
-                            if self.lrugetctx(l)[f].filenode() == node
-                        ]
+                        linkrevs = []
+                        for lr in linkrevs:
+                            if self.lrugetctx(lr)[f].filenode() == node:
+                                linkrevs.append(lr)
                     except Exception:
                         pass
-                self._warn(
-                    _(b" (expected %s)")
-                    % b" ".join(map(pycompat.bytestr, linkrevs))
-                )
+                msg = _(b" (expected %s)")
+                msg %= b" ".join(map(pycompat.bytestr, linkrevs))
+                self._warn(msg)
             lr = None  # can't be trusted
 
         try:
             p1, p2 = obj.parents(node)
-            if p1 not in seen and p1 != nullid:
-                self._err(
-                    lr,
-                    _(b"unknown parent 1 %s of %s") % (short(p1), short(node)),
-                    f,
-                )
-            if p2 not in seen and p2 != nullid:
-                self._err(
-                    lr,
-                    _(b"unknown parent 2 %s of %s") % (short(p2), short(node)),
-                    f,
-                )
+            if p1 not in seen and p1 != self.repo.nullid:
+                msg = _(b"unknown parent 1 %s of %s") % (short(p1), short(node))
+                self._err(lr, msg, f)
+            if p2 not in seen and p2 != self.repo.nullid:
+                msg = _(b"unknown parent 2 %s of %s") % (short(p2), short(node))
+                self._err(lr, msg, f)
         except Exception as inst:
             self._exc(lr, _(b"checking parents of %s") % short(node), inst, f)
 
@@ -215,19 +219,13 @@ class verifier(object):
         if self.warnings:
             ui.warn(_(b"%d warnings encountered!\n") % self.warnings)
         if self.fncachewarned:
-            ui.warn(
-                _(
-                    b'hint: run "hg debugrebuildfncache" to recover from '
-                    b'corrupt fncache\n'
-                )
-            )
+            ui.warn(HINT_FNCACHE)
         if self.errors:
             ui.warn(_(b"%d integrity errors encountered!\n") % self.errors)
             if self.badrevs:
-                ui.warn(
-                    _(b"(first damaged changeset appears to be %d)\n")
-                    % min(self.badrevs)
-                )
+                msg = _(b"(first damaged changeset appears to be %d)\n")
+                msg %= min(self.badrevs)
+                ui.warn(msg)
             return 1
         return 0
 
@@ -267,7 +265,7 @@ class verifier(object):
 
             try:
                 changes = cl.read(n)
-                if changes[0] != nullid:
+                if changes[0] != self.repo.nullid:
                     mflinkrevs.setdefault(changes[0], []).append(i)
                     self.refersmf = True
                 for f in changes[3]:
@@ -331,7 +329,7 @@ class verifier(object):
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
-            self._checkrevlog(mf, label, 0)
+            self._checkrevlog(mf._revlog, label, 0)
         progress = ui.makeprogress(
             _(b'checking'), unit=_(b'manifests'), total=len(mf)
         )
@@ -343,11 +341,8 @@ class verifier(object):
             if n in mflinkrevs:
                 del mflinkrevs[n]
             elif dir:
-                self._err(
-                    lr,
-                    _(b"%s not in parent-directory manifest") % short(n),
-                    label,
-                )
+                msg = _(b"%s not in parent-directory manifest") % short(n)
+                self._err(lr, msg, label)
             else:
                 self._err(lr, _(b"%s not in changesets") % short(n), label)
 
@@ -362,9 +357,8 @@ class verifier(object):
                     if fl == b't':
                         if not match.visitdir(fullpath):
                             continue
-                        subdirnodes.setdefault(fullpath + b'/', {}).setdefault(
-                            fn, []
-                        ).append(lr)
+                        sdn = subdirnodes.setdefault(fullpath + b'/', {})
+                        sdn.setdefault(fn, []).append(lr)
                     else:
                         if not match(fullpath):
                             continue
@@ -378,12 +372,8 @@ class verifier(object):
                     # code (eg: hash verification, filename are ordered, etc.)
                     mfdelta = mfl.get(dir, n).read()
                 except Exception as inst:
-                    self._exc(
-                        lr,
-                        _(b"reading full manifest %s") % short(n),
-                        inst,
-                        label,
-                    )
+                    msg = _(b"reading full manifest %s") % short(n)
+                    self._exc(lr, msg, inst, label)
 
         if not dir:
             progress.complete()
@@ -394,22 +384,11 @@ class verifier(object):
             changesetpairs = [(c, m) for m in mflinkrevs for c in mflinkrevs[m]]
             for c, m in sorted(changesetpairs):
                 if dir:
-                    self._err(
-                        c,
-                        _(
-                            b"parent-directory manifest refers to unknown"
-                            b" revision %s"
-                        )
-                        % short(m),
-                        label,
-                    )
+                    self._err(c, WARN_PARENT_DIR_UNKNOWN_REV % short(m), label)
                 else:
-                    self._err(
-                        c,
-                        _(b"changeset refers to unknown revision %s")
-                        % short(m),
-                        label,
-                    )
+                    msg = _(b"changeset refers to unknown revision %s")
+                    msg %= short(m)
+                    self._err(c, msg, label)
 
         if not dir and subdirnodes:
             self.ui.status(_(b"checking directory manifests\n"))
@@ -488,7 +467,7 @@ class verifier(object):
 
         state = {
             # TODO this assumes revlog storage for changelog.
-            b'expectedversion': self.repo.changelog.version & 0xFFFF,
+            b'expectedversion': self.repo.changelog._format_version,
             b'skipflags': self.skipflags,
             # experimental config: censor.policy
             b'erroroncensored': ui.config(b'censor', b'policy') == b'abort',
@@ -523,9 +502,8 @@ class verifier(object):
                     storefiles.remove(ff)
                 except KeyError:
                     if self.warnorphanstorefiles:
-                        self._warn(
-                            _(b" warning: revlog '%s' not in fncache!") % ff
-                        )
+                        msg = _(b" warning: revlog '%s' not in fncache!")
+                        self._warn(msg % ff)
                         self.fncachewarned = True
 
             if not len(fl) and (self.havecl or self.havemf):
@@ -544,11 +522,8 @@ class verifier(object):
                     if problem.warning:
                         self._warn(problem.warning)
                     elif problem.error:
-                        self._err(
-                            linkrev if linkrev is not None else lr,
-                            problem.error,
-                            f,
-                        )
+                        linkrev_msg = linkrev if linkrev is not None else lr
+                        self._err(linkrev_msg, problem.error, f)
                     else:
                         raise error.ProgrammingError(
                             b'problem instance does not set warning or error '
@@ -580,32 +555,15 @@ class verifier(object):
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
                             if not any(rp[0] in pctx for pctx in ctx.parents()):
-                                self._warn(
-                                    _(
-                                        b"warning: copy source of '%s' not"
-                                        b" in parents of %s"
-                                    )
-                                    % (f, ctx)
-                                )
+                                self._warn(WARN_UNKNOWN_COPY_SOURCE % (f, ctx))
                         fl2 = repo.file(rp[0])
                         if not len(fl2):
-                            self._err(
-                                lr,
-                                _(
-                                    b"empty or missing copy source revlog "
-                                    b"%s:%s"
-                                )
-                                % (rp[0], short(rp[1])),
-                                f,
-                            )
-                        elif rp[1] == nullid:
-                            ui.note(
-                                _(
-                                    b"warning: %s@%s: copy source"
-                                    b" revision is nullid %s:%s\n"
-                                )
-                                % (f, lr, rp[0], short(rp[1]))
-                            )
+                            m = _(b"empty or missing copy source revlog %s:%s")
+                            self._err(lr, m % (rp[0], short(rp[1])), f)
+                        elif rp[1] == self.repo.nullid:
+                            msg = WARN_NULLID_COPY_SOURCE
+                            msg %= (f, lr, rp[0], short(rp[1]))
+                            ui.note(msg)
                         else:
                             fl2.rev(rp[1])
                 except Exception as inst:
@@ -617,12 +575,8 @@ class verifier(object):
             if f in filenodes:
                 fns = [(v, k) for k, v in pycompat.iteritems(filenodes[f])]
                 for lr, node in sorted(fns):
-                    self._err(
-                        lr,
-                        _(b"manifest refers to unknown revision %s")
-                        % short(node),
-                        f,
-                    )
+                    msg = _(b"manifest refers to unknown revision %s")
+                    self._err(lr, msg % short(node), f)
         progress.complete()
 
         if self.warnorphanstorefiles:

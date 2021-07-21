@@ -61,13 +61,13 @@ Prepare repo r1:
 Create hardlinked clone r2:
 
   $ hg clone -U --debug r1 r2 --config progress.debug=true
-  linking: 1 files
-  linking: 2 files
-  linking: 3 files
-  linking: 4 files
-  linking: 5 files
-  linking: 6 files
-  linking: 7 files
+  linking: 1/7 files (14.29%)
+  linking: 2/7 files (28.57%)
+  linking: 3/7 files (42.86%)
+  linking: 4/7 files (57.14%)
+  linking: 5/7 files (71.43%)
+  linking: 6/7 files (85.71%)
+  linking: 7/7 files (100.00%)
   linked 7 files
   updating the branch cache
 
@@ -91,7 +91,7 @@ Repos r1 and r2 should now contain hardlinked files:
   2 r1/.hg/store/00manifest.i
   2 r1/.hg/store/data/d1/f2.i
   2 r1/.hg/store/data/f1.i
-  2 r1/.hg/store/fncache (repofncache !)
+  1 r1/.hg/store/fncache (repofncache !)
   1 r1/.hg/store/phaseroots
   1 r1/.hg/store/undo
   1 r1/.hg/store/undo.backup.fncache (repofncache !)
@@ -103,7 +103,7 @@ Repos r1 and r2 should now contain hardlinked files:
   2 r2/.hg/store/00manifest.i
   2 r2/.hg/store/data/d1/f2.i
   2 r2/.hg/store/data/f1.i
-  2 r2/.hg/store/fncache (repofncache !)
+  1 r2/.hg/store/fncache (repofncache !)
 
 Repo r3 should not be hardlinked:
 
@@ -175,7 +175,7 @@ Push to repo r1 should break up most hardlinks in r2:
 
 #if hardlink-whitelisted repofncache
   $ nlinksdir r2/.hg/store/fncache
-  2 r2/.hg/store/fncache
+  1 r2/.hg/store/fncache
 #endif
 
   $ hg -R r2 verify
@@ -201,11 +201,11 @@ Committing a change to f1 in r1 must break up hardlink f1.i in r2:
   1 r2/.hg/store/00manifest.i
   1 r2/.hg/store/data/d1/f2.i
   1 r2/.hg/store/data/f1.i
-  [12] r2/\.hg/store/fncache (re) (repofncache !)
+  1 r2/.hg/store/fncache (repofncache !)
 
 #if hardlink-whitelisted repofncache
   $ nlinksdir r2/.hg/store/fncache
-  2 r2/.hg/store/fncache
+  1 r2/.hg/store/fncache
 #endif
 
 Create a file which exec permissions we will change

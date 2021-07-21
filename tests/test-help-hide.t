@@ -117,6 +117,7 @@ Test hiding some commands (which also happens to hide an entire category).
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -254,6 +255,7 @@ Test hiding some topics.
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories

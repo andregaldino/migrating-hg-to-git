@@ -93,6 +93,7 @@ Show debug commands if there are no other candidates
   debugdate
   debugdeltachain
   debugdirstate
+  debugdirstateignorepatternshash
   debugdiscovery
   debugdownload
   debugextensions
@@ -262,7 +263,7 @@ Show all commands + options
   cat: output, rev, decode, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, force-close-branch, interactive, include, exclude, message, logfile, date, user, subrepos
-  config: untrusted, edit, local, shared, non-shared, global, template
+  config: untrusted, exp-all-known, edit, local, source, shared, non-shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debugancestor: 
@@ -282,7 +283,8 @@ Show all commands + options
   debugdata: changelog, manifest, dir
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
-  debugdirstate: nodates, dates, datesort
+  debugdirstateignorepatternshash: 
+  debugdirstate: nodates, dates, datesort, all
   debugdiscovery: old, nonheads, rev, seed, local-as-revs, remote-as-revs, ssh, remotecmd, insecure, template
   debugdownload: output
   debugextensions: template

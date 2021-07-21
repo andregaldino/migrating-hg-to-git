@@ -12,12 +12,7 @@ import os
 import posixpath
 
 from .i18n import _
-from .node import (
-    nullid,
-    nullrev,
-    wdirid,
-    wdirrev,
-)
+from .node import nullrev, wdirrev
 
 from .thirdparty import attr
 
@@ -98,9 +93,8 @@ def diff_parent(ctx):
             },
             b"merge-diff",
         ):
-            repo.ui.pushbuffer()
-            merge.merge(ctx.p2(), wc=wctx)
-            repo.ui.popbuffer()
+            with repo.ui.silent():
+                merge.merge(ctx.p2(), wc=wctx)
         return wctx
     else:
         return ctx.p1()
@@ -357,7 +351,7 @@ class changesetprinter(object):
         if self.ui.debugflag:
             mnode = ctx.manifestnode()
             if mnode is None:
-                mnode = wdirid
+                mnode = self.repo.nodeconstants.wdirid
                 mrev = wdirrev
             else:
                 mrev = self.repo.manifestlog.rev(mnode)
@@ -505,7 +499,11 @@ class changesetformatter(changesetprinter):
         )
 
         if self.ui.debugflag or b'manifest' in datahint:
-            fm.data(manifest=fm.hexfunc(ctx.manifestnode() or wdirid))
+            fm.data(
+                manifest=fm.hexfunc(
+                    ctx.manifestnode() or self.repo.nodeconstants.wdirid
+                )
+            )
         if self.ui.debugflag or b'extra' in datahint:
             fm.data(extra=fm.formatdict(ctx.extra()))
 
@@ -991,7 +989,7 @@ def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
     if wopts.revspec:
         revs = scmutil.revrange(repo, wopts.revspec)
-    elif wopts.follow and repo.dirstate.p1() == nullid:
+    elif wopts.follow and repo.dirstate.p1() == repo.nullid:
         revs = smartset.baseset()
     elif wopts.follow:
         revs = repo.revs(b'.')

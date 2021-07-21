@@ -7,7 +7,7 @@
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial.node import bin, hex, nullid
+from mercurial.node import bin, hex
 from mercurial import (
     bundlerepo,
     changegroup,
@@ -143,7 +143,7 @@ class shallowcg1packer(changegroup.cgpacker):
 
     def nodechunk(self, revlog, node, prevnode, linknode):
         prefix = b''
-        if prevnode == nullid:
+        if prevnode == revlog.nullid:
             delta = revlog.rawdata(node)
             prefix = mdiff.trivialdiffheader(len(delta))
         else:
@@ -225,7 +225,17 @@ def addchangegroupfiles(
 
         chain = None
         while True:
-            # returns: (node, p1, p2, cs, deltabase, delta, flags) or None
+            # returns: None or (
+            #   node,
+            #   p1,
+            #   p2,
+            #   cs,
+            #   deltabase,
+            #   delta,
+            #   flags,
+            #   sidedata,
+            #   proto_flags
+            # )
             revisiondata = source.deltachunk(chain)
             if not revisiondata:
                 break
@@ -245,7 +255,7 @@ def addchangegroupfiles(
     processed = set()
 
     def available(f, node, depf, depnode):
-        if depnode != nullid and (depf, depnode) not in processed:
+        if depnode != repo.nullid and (depf, depnode) not in processed:
             if not (depf, depnode) in revisiondatas:
                 # It's not in the changegroup, assume it's already
                 # in the repo
@@ -263,11 +273,11 @@ def addchangegroupfiles(
     prefetchfiles = []
     for f, node in queue:
         revisiondata = revisiondatas[(f, node)]
-        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags)
+        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags, sdata, pfl)
         dependents = [revisiondata[1], revisiondata[2], revisiondata[4]]
 
         for dependent in dependents:
-            if dependent == nullid or (f, dependent) in revisiondatas:
+            if dependent == repo.nullid or (f, dependent) in revisiondatas:
                 continue
             prefetchfiles.append((f, hex(dependent)))
 
@@ -287,8 +297,18 @@ def addchangegroupfiles(
         fl = repo.file(f)
 
         revisiondata = revisiondatas[(f, node)]
-        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags)
-        node, p1, p2, linknode, deltabase, delta, flags, sidedata = revisiondata
+        # revisiondata: (node, p1, p2, cs, deltabase, delta, flags, sdata, pfl)
+        (
+            node,
+            p1,
+            p2,
+            linknode,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            proto_flags,
+        ) = revisiondata
 
         if not available(f, node, f, deltabase):
             continue
@@ -306,7 +326,7 @@ def addchangegroupfiles(
                 continue
 
         for p in [p1, p2]:
-            if p != nullid:
+            if p != repo.nullid:
                 if not available(f, node, f, p):
                     continue
 

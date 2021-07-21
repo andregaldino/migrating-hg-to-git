@@ -109,7 +109,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
     wdirrev,
@@ -862,7 +861,7 @@ def analyzeremotephases(repo, subset, roots):
         node = bin(nhex)
         phase = int(phase)
         if phase == public:
-            if node != nullid:
+            if node != repo.nullid:
                 repo.ui.warn(
                     _(
                         b'ignoring inconsistent public root'
@@ -919,10 +918,10 @@ def newheads(repo, heads, roots):
     rev = cl.index.get_rev
     if not roots:
         return heads
-    if not heads or heads == [nullid]:
+    if not heads or heads == [repo.nullid]:
         return []
     # The logic operated on revisions, convert arguments early for convenience
-    new_heads = {rev(n) for n in heads if n != nullid}
+    new_heads = {rev(n) for n in heads if n != repo.nullid}
     roots = [rev(n) for n in roots]
     # compute the area we need to remove
     affected_zone = repo.revs(b"(%ld::%ld)", roots, new_heads)

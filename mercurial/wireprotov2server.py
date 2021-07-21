@@ -10,10 +10,7 @@ import collections
 import contextlib
 
 from .i18n import _
-from .node import (
-    hex,
-    nullid,
-)
+from .node import hex
 from . import (
     discovery,
     encoding,
@@ -950,7 +947,7 @@ def resolvenodes(repo, revisions):
             if spec[b'roots']:
                 common = [n for n in spec[b'roots'] if clhasnode(n)]
             else:
-                common = [nullid]
+                common = [repo.nullid]
 
             for n in discovery.outgoing(repo, common, spec[b'heads']).missing:
                 if n not in seen:

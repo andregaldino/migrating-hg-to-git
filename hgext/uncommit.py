@@ -20,7 +20,6 @@ added and removed in the working directory.
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial.node import nullid
 
 from mercurial import (
     cmdutil,
@@ -113,7 +112,7 @@ def _commitfiltered(
 
     new = context.memctx(
         repo,
-        parents=[base.node(), nullid],
+        parents=[base.node(), repo.nullid],
         text=message,
         files=files,
         filectxfn=filectxfn,
@@ -154,10 +153,9 @@ def uncommit(ui, repo, *pats, **opts):
     If no files are specified, the commit will be pruned, unless --keep is
     given.
     """
+    cmdutil.check_note_size(opts)
+    cmdutil.resolve_commit_options(ui, opts)
     opts = pycompat.byteskwargs(opts)
-
-    cmdutil.checknotesize(ui, opts)
-    cmdutil.resolvecommitoptions(ui, opts)
 
     with repo.wlock(), repo.lock():
 

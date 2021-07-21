@@ -13,6 +13,7 @@ from mercurial import (
     util,
 )
 from mercurial.revlogutils import flagutil
+from mercurial.interfaces import repository
 
 # Test only: These flags are defined here only in the context of testing the
 # behavior of the flag processor. The canonical way to add flags is to get in
@@ -131,6 +132,7 @@ def extsetup(ui):
     # Teach revlog about our test flags
     flags = [REVIDX_NOOP, REVIDX_BASE64, REVIDX_GZIP, REVIDX_FAIL]
     flagutil.REVIDX_KNOWN_FLAGS |= util.bitsfrom(flags)
+    repository.REVISION_FLAGS_KNOWN |= util.bitsfrom(flags)
     revlog.REVIDX_FLAGS_ORDER.extend(flags)
 
     # Teach exchange to use changegroup 3

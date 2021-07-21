@@ -19,10 +19,8 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
-    wdirid,
     wdirrev,
 )
 from .pycompat import getattr
@@ -200,34 +198,13 @@ def callcatch(ui, func):
             ui.error(b"\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
         ui.error(_(b"abort: file censored %s\n") % inst)
-    except error.StorageError as inst:
-        ui.error(_(b"abort: %s\n") % inst)
-        if inst.hint:
-            ui.error(_(b"(%s)\n") % inst.hint)
-        detailed_exit_code = 50
-    except error.InterventionRequired as inst:
-        ui.error(b"%s\n" % inst)
-        if inst.hint:
-            ui.error(_(b"(%s)\n") % inst.hint)
-        detailed_exit_code = 240
-        coarse_exit_code = 1
     except error.WdirUnsupported:
         ui.error(_(b"abort: working directory revision cannot be specified\n"))
-    except error.Abort as inst:
-        if isinstance(inst, (error.InputError, error.ParseError)):
-            detailed_exit_code = 10
-        elif isinstance(inst, error.StateError):
-            detailed_exit_code = 20
-        elif isinstance(inst, error.ConfigError):
-            detailed_exit_code = 30
-        elif isinstance(inst, error.HookAbort):
-            detailed_exit_code = 40
-        elif isinstance(inst, error.RemoteError):
-            detailed_exit_code = 100
-        elif isinstance(inst, error.SecurityError):
-            detailed_exit_code = 150
-        elif isinstance(inst, error.CanceledError):
-            detailed_exit_code = 250
+    except error.Error as inst:
+        if inst.detailed_exit_code is not None:
+            detailed_exit_code = inst.detailed_exit_code
+        if inst.coarse_exit_code is not None:
+            coarse_exit_code = inst.coarse_exit_code
         ui.error(inst.format())
     except error.WorkerError as inst:
         # Don't print a message -- the worker already should have
@@ -450,7 +427,7 @@ def binnode(ctx):
     """Return binary node id for a given basectx"""
     node = ctx.node()
     if node is None:
-        return wdirid
+        return ctx.repo().nodeconstants.wdirid
     return node
 
 
@@ -645,7 +622,7 @@ def revsymbol(repo, symbol):
         except (ValueError, OverflowError, IndexError):
             pass
 
-        if len(symbol) == 40:
+        if len(symbol) == 2 * repo.nodeconstants.nodelen:
             try:
                 node = bin(symbol)
                 rev = repo.changelog.rev(node)
@@ -1108,7 +1085,7 @@ def cleanupnodes(
                     if roots:
                         newnode = roots[0].node()
                     else:
-                        newnode = nullid
+                        newnode = repo.nullid
                 else:
                     newnode = newnodes[0]
                 moves[oldnode] = newnode
@@ -1479,7 +1456,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     origsrc = repo.dirstate.copied(src) or src
     if dst == origsrc:  # copying back a copy?
         if repo.dirstate[dst] not in b'mn' and not dryrun:
-            repo.dirstate.normallookup(dst)
+            repo.dirstate.set_tracked(dst)
     else:
         if repo.dirstate[origsrc] == b'a' and origsrc == src:
             if not ui.quiet:
@@ -1506,27 +1483,17 @@ def movedirstate(repo, newctx, match=None):
     oldctx = repo[b'.']
     ds = repo.dirstate
     copies = dict(ds.copies())
-    ds.setparents(newctx.node(), nullid)
+    ds.setparents(newctx.node(), repo.nullid)
     s = newctx.status(oldctx, match=match)
+
     for f in s.modified:
-        if ds[f] == b'r':
-            # modified + removed -> removed
-            continue
-        ds.normallookup(f)
+        ds.update_file_p1(f, p1_tracked=True)
 
     for f in s.added:
-        if ds[f] == b'r':
-            # added + removed -> unknown
-            ds.drop(f)
-        elif ds[f] != b'a':
-            ds.add(f)
+        ds.update_file_p1(f, p1_tracked=False)
 
     for f in s.removed:
-        if ds[f] == b'a':
-            # removed + added -> normal
-            ds.normallookup(f)
-        elif ds[f] != b'r':
-            ds.remove(f)
+        ds.update_file_p1(f, p1_tracked=True)
 
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)

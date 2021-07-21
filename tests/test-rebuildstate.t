@@ -17,9 +17,9 @@
   >   try:
   >     for file in pats:
   >       if opts.get('normal_lookup'):
-  >         repo.dirstate.normallookup(file)
+  >         repo.dirstate._normallookup(file)
   >       else:
-  >         repo.dirstate.drop(file)
+  >         repo.dirstate._drop(file)
   > 
   >     repo.dirstate.write(repo.currenttransaction())
   >   finally:

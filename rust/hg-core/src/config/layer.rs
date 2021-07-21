@@ -8,6 +8,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::errors::HgError;
+use crate::exit_codes::CONFIG_PARSE_ERROR_ABORT;
 use crate::utils::files::{get_bytes_from_path, get_path_from_bytes};
 use format_bytes::{format_bytes, write_bytes, DisplayBytes};
 use lazy_static::lazy_static;
@@ -73,11 +74,14 @@ impl ConfigLayer {
             if let Some((section, item, value)) = parse_one(arg) {
                 layer.add(section, item, value, None);
             } else {
-                Err(HgError::abort(format!(
-                    "abort: malformed --config option: '{}' \
+                Err(HgError::abort(
+                    format!(
+                        "abort: malformed --config option: '{}' \
                     (use --config section.name=value)",
-                    String::from_utf8_lossy(arg),
-                )))?
+                        String::from_utf8_lossy(arg),
+                    ),
+                    CONFIG_PARSE_ERROR_ABORT,
+                ))?
             }
         }
         if layer.sections.is_empty() {

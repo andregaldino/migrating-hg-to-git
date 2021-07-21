@@ -10,8 +10,6 @@ from __future__ import absolute_import
 from .i18n import _
 from .node import (
     hex,
-    nullid,
-    wdirid,
     wdirrev,
 )
 
@@ -29,7 +27,10 @@ from . import (
     templateutil,
     util,
 )
-from .utils import stringutil
+from .utils import (
+    stringutil,
+    urlutil,
+)
 
 _hybrid = templateutil.hybrid
 hybriddict = templateutil.hybriddict
@@ -412,7 +413,7 @@ def getgraphnode(repo, ctx, cache):
 
 def getgraphnodecurrent(repo, ctx, cache):
     wpnodes = repo.dirstate.parents()
-    if wpnodes[1] == nullid:
+    if wpnodes[1] == repo.nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return b'@'
@@ -525,11 +526,12 @@ def showmanifest(context, mapping):
     ctx = context.resource(mapping, b'ctx')
     mnode = ctx.manifestnode()
     if mnode is None:
-        mnode = wdirid
+        mnode = repo.nodeconstants.wdirid
         mrev = wdirrev
+        mhex = repo.nodeconstants.wdirhex
     else:
         mrev = repo.manifestlog.rev(mnode)
-    mhex = hex(mnode)
+        mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {b'rev': mrev, b'node': mhex})
     f = context.process(b'manifest', mapping)
     return templateutil.hybriditem(
@@ -661,17 +663,29 @@ def showpeerurls(context, mapping):
     repo = context.resource(mapping, b'repo')
     # see commands.paths() for naming of dictionary keys
     paths = repo.ui.paths
-    urls = util.sortdict(
-        (k, p.rawloc) for k, p in sorted(pycompat.iteritems(paths))
-    )
+    all_paths = urlutil.list_paths(repo.ui)
+    urls = util.sortdict((k, p.rawloc) for k, p in all_paths)
 
     def makemap(k):
-        p = paths[k]
-        d = {b'name': k, b'url': p.rawloc}
-        d.update((o, v) for o, v in sorted(pycompat.iteritems(p.suboptions)))
+        ps = paths[k]
+        d = {b'name': k}
+        if len(ps) == 1:
+            d[b'url'] = ps[0].rawloc
+            sub_opts = pycompat.iteritems(ps[0].suboptions)
+            sub_opts = util.sortdict(sorted(sub_opts))
+            d.update(sub_opts)
+        path_dict = util.sortdict()
+        for p in ps:
+            sub_opts = util.sortdict(sorted(pycompat.iteritems(p.suboptions)))
+            path_dict[b'url'] = p.rawloc
+            path_dict.update(sub_opts)
+            d[b'urls'] = [path_dict]
         return d
 
-    return _hybrid(None, urls, makemap, lambda k: b'%s=%s' % (k, urls[k]))
+    def format_one(k):
+        return b'%s=%s' % (k, urls[k])
+
+    return _hybrid(None, urls, makemap, format_one)
 
 
 @templatekeyword(b"predecessors", requires={b'repo', b'ctx'})

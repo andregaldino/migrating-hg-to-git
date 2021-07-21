@@ -9,11 +9,12 @@ from __future__ import absolute_import
 import os
 
 from mercurial.i18n import _
-from mercurial.node import nullhex
+from mercurial.node import sha1nodeconstants
 from mercurial import (
     config,
     error,
     pycompat,
+    util,
 )
 
 from . import common
@@ -74,7 +75,7 @@ class convert_git(common.converter_source, common.commandline):
 
         # Pass an absolute path to git to prevent from ever being interpreted
         # as a URL
-        path = os.path.abspath(path)
+        path = util.abspath(path)
 
         if os.path.isdir(path + b"/.git"):
             path += b"/.git"
@@ -192,7 +193,7 @@ class convert_git(common.converter_source, common.commandline):
         return heads
 
     def catfile(self, rev, ftype):
-        if rev == nullhex:
+        if rev == sha1nodeconstants.nullhex:
             raise IOError
         self.catfilepipe[0].write(rev + b'\n')
         self.catfilepipe[0].flush()
@@ -214,7 +215,7 @@ class convert_git(common.converter_source, common.commandline):
         return data
 
     def getfile(self, name, rev):
-        if rev == nullhex:
+        if rev == sha1nodeconstants.nullhex:
             return None, None
         if name == b'.hgsub':
             data = b'\n'.join([m.hgsub() for m in self.submoditer()])
@@ -228,7 +229,7 @@ class convert_git(common.converter_source, common.commandline):
         return data, mode
 
     def submoditer(self):
-        null = nullhex
+        null = sha1nodeconstants.nullhex
         for m in sorted(self.submodules, key=lambda p: p.path):
             if m.node != null:
                 yield m
@@ -317,7 +318,7 @@ class convert_git(common.converter_source, common.commandline):
                 subexists[0] = True
                 if entry[4] == b'D' or renamesource:
                     subdeleted[0] = True
-                    changes.append((b'.hgsub', nullhex))
+                    changes.append((b'.hgsub', sha1nodeconstants.nullhex))
                 else:
                     changes.append((b'.hgsub', b''))
             elif entry[1] == b'160000' or entry[0] == b':160000':
@@ -325,7 +326,7 @@ class convert_git(common.converter_source, common.commandline):
                     subexists[0] = True
             else:
                 if renamesource:
-                    h = nullhex
+                    h = sha1nodeconstants.nullhex
                 self.modecache[(f, h)] = (p and b"x") or (s and b"l") or b""
                 changes.append((f, h))
 
@@ -362,7 +363,7 @@ class convert_git(common.converter_source, common.commandline):
 
         if subexists[0]:
             if subdeleted[0]:
-                changes.append((b'.hgsubstate', nullhex))
+                changes.append((b'.hgsubstate', sha1nodeconstants.nullhex))
             else:
                 self.retrievegitmodules(version)
                 changes.append((b'.hgsubstate', b''))

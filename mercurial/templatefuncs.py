@@ -10,10 +10,7 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
-from .node import (
-    bin,
-    wdirid,
-)
+from .node import bin
 from . import (
     color,
     dagop,
@@ -767,9 +764,10 @@ def shortest(context, mapping, args):
         )
 
     repo = context.resource(mapping, b'repo')
-    if len(hexnode) > 40:
+    hexnodelen = 2 * repo.nodeconstants.nodelen
+    if len(hexnode) > hexnodelen:
         return hexnode
-    elif len(hexnode) == 40:
+    elif len(hexnode) == hexnodelen:
         try:
             node = bin(hexnode)
         except TypeError:
@@ -778,7 +776,7 @@ def shortest(context, mapping, args):
         try:
             node = scmutil.resolvehexnodeidprefix(repo, hexnode)
         except error.WdirUnsupported:
-            node = wdirid
+            node = repo.nodeconstants.wdirid
         except error.LookupError:
             return hexnode
         if not node:

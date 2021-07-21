@@ -5,7 +5,8 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use crate::dirstate::parsers::parse_dirstate;
+use crate::dirstate::parsers::parse_dirstate_entries;
+use crate::dirstate_tree::on_disk::{for_each_tracked_path, read_docket};
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
@@ -13,7 +14,7 @@ use crate::revlog::manifest::{Manifest, ManifestEntry};
 use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::hg_path::HgPath;
-use crate::EntryState;
+use crate::DirstateError;
 use rayon::prelude::*;
 
 /// List files under Mercurial control in the working directory
@@ -21,23 +22,45 @@ use rayon::prelude::*;
 pub struct Dirstate {
     /// The `dirstate` content.
     content: Vec<u8>,
+    v2_metadata: Option<Vec<u8>>,
 }
 
 impl Dirstate {
     pub fn new(repo: &Repo) -> Result<Self, HgError> {
-        let content = repo.hg_vfs().read("dirstate")?;
-        Ok(Self { content })
+        let mut content = repo.hg_vfs().read("dirstate")?;
+        let v2_metadata = if repo.has_dirstate_v2() {
+            let docket = read_docket(&content)?;
+            let meta = docket.tree_metadata().to_vec();
+            content = repo.hg_vfs().read(docket.data_filename())?;
+            Some(meta)
+        } else {
+            None
+        };
+        Ok(Self {
+            content,
+            v2_metadata,
+        })
     }
 
-    pub fn tracked_files(&self) -> Result<Vec<&HgPath>, HgError> {
-        let (_, entries, _) = parse_dirstate(&self.content)?;
-        let mut files: Vec<&HgPath> = entries
-            .into_iter()
-            .filter_map(|(path, entry)| match entry.state {
-                EntryState::Removed => None,
-                _ => Some(path),
-            })
-            .collect();
+    pub fn tracked_files(&self) -> Result<Vec<&HgPath>, DirstateError> {
+        let mut files = Vec::new();
+        if !self.content.is_empty() {
+            if let Some(meta) = &self.v2_metadata {
+                for_each_tracked_path(&self.content, meta, |path| {
+                    files.push(path)
+                })?
+            } else {
+                let _parents = parse_dirstate_entries(
+                    &self.content,
+                    |path, entry, _copy_source| {
+                        if entry.state.is_tracked() {
+                            files.push(path)
+                        }
+                        Ok(())
+                    },
+                )?;
+            }
+        }
         files.par_sort_unstable();
         Ok(files)
     }

@@ -240,13 +240,8 @@ static void execcmdserver(const struct cmdserveropts *opts)
 	const char *hgcmd = gethgcmd();
 
 	const char *baseargv[] = {
-	    hgcmd,
-	    "serve",
-	    "--cmdserver",
-	    "chgunix",
-	    "--address",
-	    opts->initsockname,
-	    "--daemon-postexec",
+	    hgcmd,     "serve",     "--no-profile",     "--cmdserver",
+	    "chgunix", "--address", opts->initsockname, "--daemon-postexec",
 	    "chdir:/",
 	};
 	size_t baseargvsize = sizeof(baseargv) / sizeof(baseargv[0]);

@@ -35,6 +35,7 @@ Check that copies are recorded correctly
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -42,7 +43,8 @@ Check that copies are recorded correctly
   persistent-nodemap:  no     no      no (no-rust !)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
-  revlog-v2:          yes    yes      no
+  revlog-v2:           no     no      no
+  changelog-v2:       yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -51,6 +53,7 @@ Check that copies are recorded correctly
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -59,6 +62,7 @@ Check that copies are recorded correctly
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:           no     no      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -419,11 +423,12 @@ Test committing half a rename
 Test upgrading/downgrading to sidedata storage
 ==============================================
 
-downgrading (keeping some sidedata)
+downgrading
 
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -431,7 +436,8 @@ downgrading (keeping some sidedata)
   persistent-nodemap:  no     no      no (no-rust !)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
-  revlog-v2:          yes    yes      no
+  revlog-v2:           no     no      no
+  changelog-v2:       yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
@@ -445,13 +451,15 @@ downgrading (keeping some sidedata)
   $ hg debugsidedata -m -- 0
   $ cat << EOF > .hg/hgrc
   > [format]
-  > exp-use-side-data = yes
   > exp-use-copies-side-data-changeset = no
+  > [experimental]
+  > revlogv2 = enable-unstable-format-and-corrupt-my-data
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -460,16 +468,13 @@ downgrading (keeping some sidedata)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:          no     no      no
   revlog-v2:          yes    yes      no
+  changelog-v2:        no     no      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
   $ hg debugsidedata -c -- 0
-  1 sidedata entries
-   entry-0014 size 14
   $ hg debugsidedata -c -- 1
-  1 sidedata entries
-   entry-0014 size 14
   $ hg debugsidedata -m -- 0
 
 upgrading
@@ -482,6 +487,7 @@ upgrading
   $ hg debugformat -v
   format-variant     repo config default
   fncache:            yes    yes     yes
+  dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:          no     no      no
@@ -489,7 +495,8 @@ upgrading
   persistent-nodemap:  no     no      no (no-rust !)
   persistent-nodemap: yes    yes      no (rust !)
   copies-sdc:         yes    yes      no
-  revlog-v2:          yes    yes      no
+  revlog-v2:           no     no      no
+  changelog-v2:       yes    yes      no
   plain-cl-delta:     yes    yes     yes
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)

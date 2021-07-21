@@ -540,6 +540,12 @@ helptable = sorted(
             TOPIC_CATEGORY_CONCEPTS,
         ),
         (
+            [b"evolution"],
+            _(b"Safely rewriting history (EXPERIMENTAL)"),
+            loaddoc(b'evolution'),
+            TOPIC_CATEGORY_CONCEPTS,
+        ),
+        (
             [b'scripting'],
             _(b'Using Mercurial from scripts and automation'),
             loaddoc(b'scripting'),

@@ -21,6 +21,137 @@ the status call is to check for issue5130
   ...         fh.write(b"%d" % i) and None
   $ hg -q commit -A -m 'add a lot of files'
   $ hg st
+
+add files with "tricky" name:
+
+  $ echo foo > 00changelog.i
+  $ echo foo > 00changelog.d
+  $ echo foo > 00changelog.n
+  $ echo foo > 00changelog-ab349180a0405010.nd
+  $ echo foo > 00manifest.i
+  $ echo foo > 00manifest.d
+  $ echo foo > foo.i
+  $ echo foo > foo.d
+  $ echo foo > foo.n
+  $ echo foo > undo.py
+  $ echo foo > undo.i
+  $ echo foo > undo.d
+  $ echo foo > undo.n
+  $ echo foo > undo.foo.i
+  $ echo foo > undo.foo.d
+  $ echo foo > undo.foo.n
+  $ echo foo > undo.babar
+  $ mkdir savanah
+  $ echo foo > savanah/foo.i
+  $ echo foo > savanah/foo.d
+  $ echo foo > savanah/foo.n
+  $ echo foo > savanah/undo.py
+  $ echo foo > savanah/undo.i
+  $ echo foo > savanah/undo.d
+  $ echo foo > savanah/undo.n
+  $ echo foo > savanah/undo.foo.i
+  $ echo foo > savanah/undo.foo.d
+  $ echo foo > savanah/undo.foo.n
+  $ echo foo > savanah/undo.babar
+  $ mkdir data
+  $ echo foo > data/foo.i
+  $ echo foo > data/foo.d
+  $ echo foo > data/foo.n
+  $ echo foo > data/undo.py
+  $ echo foo > data/undo.i
+  $ echo foo > data/undo.d
+  $ echo foo > data/undo.n
+  $ echo foo > data/undo.foo.i
+  $ echo foo > data/undo.foo.d
+  $ echo foo > data/undo.foo.n
+  $ echo foo > data/undo.babar
+  $ mkdir meta
+  $ echo foo > meta/foo.i
+  $ echo foo > meta/foo.d
+  $ echo foo > meta/foo.n
+  $ echo foo > meta/undo.py
+  $ echo foo > meta/undo.i
+  $ echo foo > meta/undo.d
+  $ echo foo > meta/undo.n
+  $ echo foo > meta/undo.foo.i
+  $ echo foo > meta/undo.foo.d
+  $ echo foo > meta/undo.foo.n
+  $ echo foo > meta/undo.babar
+  $ mkdir store
+  $ echo foo > store/foo.i
+  $ echo foo > store/foo.d
+  $ echo foo > store/foo.n
+  $ echo foo > store/undo.py
+  $ echo foo > store/undo.i
+  $ echo foo > store/undo.d
+  $ echo foo > store/undo.n
+  $ echo foo > store/undo.foo.i
+  $ echo foo > store/undo.foo.d
+  $ echo foo > store/undo.foo.n
+  $ echo foo > store/undo.babar
+  $ hg add .
+  adding 00changelog-ab349180a0405010.nd
+  adding 00changelog.d
+  adding 00changelog.i
+  adding 00changelog.n
+  adding 00manifest.d
+  adding 00manifest.i
+  adding data/foo.d
+  adding data/foo.i
+  adding data/foo.n
+  adding data/undo.babar
+  adding data/undo.d
+  adding data/undo.foo.d
+  adding data/undo.foo.i
+  adding data/undo.foo.n
+  adding data/undo.i
+  adding data/undo.n
+  adding data/undo.py
+  adding foo.d
+  adding foo.i
+  adding foo.n
+  adding meta/foo.d
+  adding meta/foo.i
+  adding meta/foo.n
+  adding meta/undo.babar
+  adding meta/undo.d
+  adding meta/undo.foo.d
+  adding meta/undo.foo.i
+  adding meta/undo.foo.n
+  adding meta/undo.i
+  adding meta/undo.n
+  adding meta/undo.py
+  adding savanah/foo.d
+  adding savanah/foo.i
+  adding savanah/foo.n
+  adding savanah/undo.babar
+  adding savanah/undo.d
+  adding savanah/undo.foo.d
+  adding savanah/undo.foo.i
+  adding savanah/undo.foo.n
+  adding savanah/undo.i
+  adding savanah/undo.n
+  adding savanah/undo.py
+  adding store/foo.d
+  adding store/foo.i
+  adding store/foo.n
+  adding store/undo.babar
+  adding store/undo.d
+  adding store/undo.foo.d
+  adding store/undo.foo.i
+  adding store/undo.foo.n
+  adding store/undo.i
+  adding store/undo.n
+  adding store/undo.py
+  adding undo.babar
+  adding undo.d
+  adding undo.foo.d
+  adding undo.foo.i
+  adding undo.foo.n
+  adding undo.i
+  adding undo.n
+  adding undo.py
+  $ hg ci -m 'add files with "tricky" name'
   $ hg --config server.uncompressed=false serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
@@ -80,8 +211,8 @@ Cannot stream clone when server.uncompressed is set
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1025 changes to 1025 files
-  new changesets 96ee1d7354c4:c17445101a72
+  added 3 changesets with 1086 changes to 1086 files
+  new changesets 96ee1d7354c4:7406a3463c3d
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=getbundle' content-type --bodyfile body --hgproto 0.2 --requestheader "x-hgarg-1=bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=0000000000000000000000000000000000000000&heads=c17445101a72edac06facd130d14808dfbd5c7c2&stream=1"
   200 Script output follows
@@ -147,8 +278,8 @@ Cannot stream clone when server.uncompressed is set
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 1025 changes to 1025 files
-  new changesets 96ee1d7354c4:c17445101a72
+  added 3 changesets with 1086 changes to 1086 files
+  new changesets 96ee1d7354c4:7406a3463c3d
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=getbundle' content-type --bodyfile body --hgproto 0.2 --requestheader "x-hgarg-1=bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=0000000000000000000000000000000000000000&heads=c17445101a72edac06facd130d14808dfbd5c7c2&stream=1"
   200 Script output follows
@@ -178,10 +309,10 @@ Basic clone
 #if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
   $ cat server/errors.txt
@@ -189,10 +320,10 @@ Basic clone
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1030 files to transfer, 96.5 KB of data (no-zstd !)
-  transferred 96.5 KB in * seconds (*/sec) (glob) (no-zstd !)
-  1030 files to transfer, 93.6 KB of data (zstd !)
-  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
+  1091 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1091 files to transfer, 98.5 KB of data (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
 
   $ ls -1 clone1/.hg/cache
   branch2-base
@@ -215,69 +346,106 @@ getbundle requests with stream=1 are uncompressed
   content-type: application/mercurial-0.2
   
 
+#if no-zstd no-rust
   $ f --size --hex --bytes 256 body
-  body: size=112262 (no-zstd !)
-  body: size=109410 (zstd no-rust !)
-  body: size=109431 (rust !)
+  body: size=118551
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 7f 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (no-zstd !)
-  0020: 05 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 39 38 |....Dbytecount98| (no-zstd !)
-  0030: 37 37 35 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |775filecount1030| (no-zstd !)
-  0010: 99 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (zstd no-rust !)
-  0010: ae 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......| (rust !)
-  0020: 05 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 39 35 |....^bytecount95| (zstd no-rust !)
-  0020: 05 09 04 0c 73 62 79 74 65 63 6f 75 6e 74 39 35 |....sbytecount95| (rust !)
-  0030: 38 39 37 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |897filecount1030| (zstd !)
+  0010: 80 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
+  0020: 06 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 31 30 |....Dbytecount10|
+  0030: 33 36 39 35 66 69 6c 65 63 6f 75 6e 74 31 30 39 |3695filecount109|
+  0040: 31 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |1requirementsdot|
+  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
+  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
+  0070: 32 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 |2Crevlogv1%2Cspa|
+  0080: 72 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 |rserevlog%2Cstor|
+  0090: 65 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 |e....s.Bdata/0.i|
+  00a0: 00 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 |................|
+  00b0: 00 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff |................|
+  00c0: 80 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c |.)c.I.#....Vg.g,|
+  00d0: 69 d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 |i..9............|
+  00e0: 75 30 73 26 45 64 61 74 61 2f 30 30 63 68 61 6e |u0s&Edata/00chan|
+  00f0: 67 65 6c 6f 67 2d 61 62 33 34 39 31 38 30 61 30 |gelog-ab349180a0|
+#endif
+#if zstd no-rust
+  $ f --size --hex --bytes 256 body
+  body: size=115738
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: 9a 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
+  0020: 06 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 31 30 |....^bytecount10|
+  0030: 30 38 35 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |0856filecount109|
+  0040: 31 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |1requirementsdot|
+  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
+  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
+  0070: 32 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 |2Crevlog-compres|
+  0080: 73 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c |sion-zstd%2Crevl|
+  0090: 6f 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 |ogv1%2Csparserev|
+  00a0: 6c 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 |log%2Cstore....s|
+  00b0: 08 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 |.Bdata/0.i......|
+  00c0: 00 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 |................|
+  00d0: 00 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 |...........)c.I.|
+  00e0: 23 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 |#....Vg.g,i..9..|
+  00f0: 00 00 00 00 00 00 00 00 00 00 75 30 73 26 45 64 |..........u0s&Ed|
+#endif
+#if zstd rust no-dirstate-v2
+  $ f --size --hex --bytes 256 body
+  body: size=115759
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: af 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
+  0020: 06 09 04 0c 73 62 79 74 65 63 6f 75 6e 74 31 30 |....sbytecount10|
+  0030: 30 38 35 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |0856filecount109|
+  0040: 31 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |1requirementsdot|
+  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
+  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
+  0070: 32 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f 64 |2Cpersistent-nod|
+  0080: 65 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 6f |emap%2Crevlog-co|
+  0090: 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 32 |mpression-zstd%2|
+  00a0: 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 |Crevlogv1%2Cspar|
+  00b0: 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 |serevlog%2Cstore|
+  00c0: 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 |....s.Bdata/0.i.|
+  00d0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................|
+  00e0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 |................|
+  00f0: 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 |)c.I.#....Vg.g,i|
+#endif
+#if zstd dirstate-v2
+  $ f --size --hex --bytes 256 body
+  body: size=109449
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: c0 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
+  0020: 05 09 04 0c 85 62 79 74 65 63 6f 75 6e 74 39 35 |.....bytecount95|
+  0030: 38 39 37 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |897filecount1030|
   0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
-  0050: 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 25 |ncode%2Cfncache%|
-  0060: 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 32 |2Cgeneraldelta%2|
-  0070: 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 |Crevlogv1%2Cspar| (no-zstd !)
-  0080: 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 |serevlog%2Cstore| (no-zstd !)
-  0090: 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 |....s.Bdata/0.i.| (no-zstd !)
-  00a0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................| (no-zstd !)
-  00b0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 |................| (no-zstd !)
-  00c0: 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 |)c.I.#....Vg.g,i| (no-zstd !)
-  00d0: d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 75 |..9............u| (no-zstd !)
-  00e0: 30 73 08 42 64 61 74 61 2f 31 2e 69 00 03 00 01 |0s.Bdata/1.i....| (no-zstd !)
-  00f0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................| (no-zstd !)
-  0070: 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 73 |Crevlog-compress| (zstd no-rust !)
-  0070: 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f 64 65 |Cpersistent-node| (rust !)
-  0080: 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c 6f |ion-zstd%2Crevlo| (zstd no-rust !)
-  0080: 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 6f 6d |map%2Crevlog-com| (rust !)
-  0090: 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 6c |gv1%2Csparserevl| (zstd no-rust !)
-  0090: 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 32 43 |pression-zstd%2C| (rust !)
-  00a0: 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 08 |og%2Cstore....s.| (zstd no-rust !)
-  00a0: 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 73 |revlogv1%2Cspars| (rust !)
-  00b0: 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 00 |Bdata/0.i.......| (zstd no-rust !)
-  00b0: 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 00 |erevlog%2Cstore.| (rust !)
-  00c0: 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 |................| (zstd no-rust !)
-  00c0: 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 03 |...s.Bdata/0.i..| (rust !)
-  00d0: 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 23 |..........)c.I.#| (zstd no-rust !)
-  00d0: 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 00 |................| (rust !)
-  00e0: 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 |....Vg.g,i..9...| (zstd no-rust !)
-  00e0: 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 29 |...............)| (rust !)
-  00f0: 00 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 |.........u0s.Bda| (zstd no-rust !)
-  00f0: 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 d1 |c.I.#....Vg.g,i.| (rust !)
+  0050: 6e 63 6f 64 65 25 32 43 65 78 70 2d 64 69 72 73 |ncode%2Cexp-dirs|
+  0060: 74 61 74 65 2d 76 32 25 32 43 66 6e 63 61 63 68 |tate-v2%2Cfncach|
+  0070: 65 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 |e%2Cgeneraldelta|
+  0080: 25 32 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f |%2Cpersistent-no|
+  0090: 64 65 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 |demap%2Crevlog-c|
+  00a0: 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 |ompression-zstd%|
+  00b0: 32 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 |2Crevlogv1%2Cspa|
+  00c0: 72 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 |rserevlog%2Cstor|
+  00d0: 65 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 |e....s.Bdata/0.i|
+  00e0: 00 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 |................|
+  00f0: 00 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff |................|
+#endif
 
 --uncompressed is an alias to --stream
 
 #if stream-legacy
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
 #if stream-bundle2
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1030 files to transfer, 96.5 KB of data (no-zstd !)
-  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1030 files to transfer, 93.6 KB of data (zstd !)
-  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
+  1091 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1091 files to transfer, 98.5 KB of data (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
 #endif
 
 Clone with background file closing enabled
@@ -289,12 +457,12 @@ Clone with background file closing enabled
   sending branchmap command
   streaming all changes
   sending stream_out command
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   query 1; heads
   sending batch command
   searching for changes
@@ -321,15 +489,15 @@ Clone with background file closing enabled
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
-  1030 files to transfer, 96.5 KB of data (no-zstd !)
-  1030 files to transfer, 93.6 KB of data (zstd !)
+  1091 files to transfer, 101 KB of data (no-zstd !)
+  1091 files to transfer, 98.5 KB of data (zstd !)
   starting 4 threads for background file closing
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
-  bundle2-input-part: total payload size 112094 (no-zstd !)
-  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
-  bundle2-input-part: total payload size 109216 (zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  bundle2-input-part: total payload size 118382 (no-zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
+  bundle2-input-part: total payload size 115543 (zstd !)
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
@@ -346,8 +514,8 @@ Cannot stream clone when there are secret changesets
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 96ee1d7354c4
+  added 2 changesets with 1025 changes to 1025 files
+  new changesets 96ee1d7354c4:c17445101a72
 
   $ killdaemons.py
 
@@ -361,20 +529,20 @@ Streaming of secrets can be overridden by server config
 #if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (*/sec) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1030 files to transfer, 96.5 KB of data (no-zstd !)
-  transferred 96.5 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1030 files to transfer, 93.6 KB of data (zstd !)
-  transferred 93.6 KB in * seconds (* */sec) (glob) (zstd !)
+  1091 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1091 files to transfer, 98.5 KB of data (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
 #endif
 
   $ killdaemons.py
@@ -391,8 +559,8 @@ Verify interaction between preferuncompressed and secret presence
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 96ee1d7354c4
+  added 2 changesets with 1025 changes to 1025 files
+  new changesets 96ee1d7354c4:c17445101a72
 
   $ killdaemons.py
 
@@ -421,8 +589,8 @@ there is no security so it isn't important to prevent a clone here.)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 96ee1d7354c4
+  added 2 changesets with 1025 changes to 1025 files
+  new changesets 96ee1d7354c4:c17445101a72
 
 Stream clone while repo is changing:
 
@@ -513,27 +681,33 @@ clone it
 #if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (*) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
-  1033 files to transfer, 96.6 KB of data (no-zstd !)
-  transferred 96.6 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1033 files to transfer, 93.8 KB of data (zstd !)
-  transferred 93.8 KB in * seconds (* */sec) (glob) (zstd !)
+  1094 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1094 files to transfer, 98.7 KB of data (zstd !)
+  transferred 98.7 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
+  $ hg verify -R with-bookmarks
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1086 changes to 1086 files
   $ hg -R with-bookmarks bookmarks
-     some-bookmark             1:c17445101a72
+     some-bookmark             2:7406a3463c3d
 
 Stream repository with phases
 -----------------------------
@@ -543,32 +717,40 @@ Clone as publishing
   $ hg -R server phase -r 'all()'
   0: draft
   1: draft
+  2: draft
 
 #if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (*) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (*) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
-  1033 files to transfer, 96.6 KB of data (no-zstd !)
-  transferred 96.6 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1033 files to transfer, 93.8 KB of data (zstd !)
-  transferred 93.8 KB in * seconds (* */sec) (glob) (zstd !)
+  1094 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1094 files to transfer, 98.7 KB of data (zstd !)
+  transferred 98.7 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
+  $ hg verify -R phase-publish
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1086 changes to 1086 files
   $ hg -R phase-publish phase -r 'all()'
   0: public
   1: public
+  2: public
 
 Clone as non publishing
 
@@ -587,31 +769,39 @@ stream v1 unsuitable for non-publishing repository.
 
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data (no-zstd !)
-  transferred 96.3 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1027 files to transfer, 93.5 KB of data (zstd !)
-  transferred 93.5 KB in * seconds (* */sec) (glob) (zstd !)
+  1088 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1088 files to transfer, 98.4 KB of data (zstd !)
+  transferred 98.4 KB in * seconds (*/sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R phase-no-publish phase -r 'all()'
   0: public
   1: public
+  2: public
 #endif
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1034 files to transfer, 96.7 KB of data (no-zstd !)
-  transferred 96.7 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1034 files to transfer, 93.9 KB of data (zstd !)
-  transferred 93.9 KB in * seconds (* */sec) (glob) (zstd !)
+  1095 files to transfer, 101 KB of data (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1095 files to transfer, 98.7 KB of data (zstd !)
+  transferred 98.7 KB in * seconds (* */sec) (glob) (zstd !)
   updating to branch default
-  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R phase-no-publish phase -r 'all()'
   0: draft
   1: draft
+  2: draft
 #endif
+  $ hg verify -R phase-no-publish
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1086 changes to 1086 files
 
   $ killdaemons.py
 
@@ -641,6 +831,7 @@ Clone non-publishing with obsolescence
   obsoleted 1 changesets
   $ hg up null -q
   $ hg log -T '{rev}: {phase}\n'
+  2: draft
   1: draft
   0: draft
   $ hg serve -p $HGPORT -d --pid-file=hg.pid
@@ -649,15 +840,22 @@ Clone non-publishing with obsolescence
 
   $ hg clone -U --stream http://localhost:$HGPORT with-obsolescence
   streaming all changes
-  1035 files to transfer, 97.1 KB of data (no-zstd !)
-  transferred 97.1 KB in * seconds (* */sec) (glob) (no-zstd !)
-  1035 files to transfer, 94.3 KB of data (zstd !)
-  transferred 94.3 KB in * seconds (* */sec) (glob) (zstd !)
+  1096 files to transfer, 102 KB of data (no-zstd !)
+  transferred 102 KB in * seconds (* */sec) (glob) (no-zstd !)
+  1096 files to transfer, 99.1 KB of data (zstd !)
+  transferred 99.1 KB in * seconds (* */sec) (glob) (zstd !)
   $ hg -R with-obsolescence log -T '{rev}: {phase}\n'
+  2: draft
   1: draft
   0: draft
   $ hg debugobsolete -R with-obsolescence
-  50382b884f66690b7045cac93a540cba4d4c906f 0 {c17445101a72edac06facd130d14808dfbd5c7c2} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  aa82d3f59e13f41649d8ba3324e1ac8849ba78e7 0 {7406a3463c3de22c4288b4306d199705369a285a} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  $ hg verify -R with-obsolescence
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 4 changesets with 1087 changes to 1086 files
 
   $ hg clone -U --stream --config experimental.evolution=0 http://localhost:$HGPORT with-obsolescence-no-evolution
   streaming all changes

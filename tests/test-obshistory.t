@@ -13,6 +13,7 @@ Global setup
   > [experimental]
   > evolution.createmarkers = yes
   > evolution.effect-flags = yes
+  > evolution.allowdivergence=true
   > EOF
 
 Test output on amended commit

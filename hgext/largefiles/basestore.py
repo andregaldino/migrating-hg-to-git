@@ -11,7 +11,8 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 
-from mercurial import node, util
+from mercurial.node import short
+from mercurial import util
 from mercurial.utils import (
     urlutil,
 )
@@ -137,7 +138,7 @@ class basestore(object):
         filestocheck = []  # list of (cset, filename, expectedhash)
         for rev in revs:
             cctx = self.repo[rev]
-            cset = b"%d:%s" % (cctx.rev(), node.short(cctx.node()))
+            cset = b"%d:%s" % (cctx.rev(), short(cctx.node()))
 
             for standin in cctx:
                 filename = lfutil.splitstandin(standin)

@@ -12,7 +12,6 @@ import struct
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
 )
 from . import (
@@ -189,7 +188,7 @@ class branchcache(object):
         self,
         repo,
         entries=(),
-        tipnode=nullid,
+        tipnode=None,
         tiprev=nullrev,
         filteredhash=None,
         closednodes=None,
@@ -200,7 +199,10 @@ class branchcache(object):
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog"""
         self._repo = repo
-        self.tipnode = tipnode
+        if tipnode is None:
+            self.tipnode = repo.nullid
+        else:
+            self.tipnode = tipnode
         self.tiprev = tiprev
         self.filteredhash = filteredhash
         # closednodes is a set of nodes that close their branch. If the branch
@@ -536,7 +538,7 @@ class branchcache(object):
 
         if not self.validfor(repo):
             # cache key are not valid anymore
-            self.tipnode = nullid
+            self.tipnode = repo.nullid
             self.tiprev = nullrev
             for heads in self.iterheads():
                 tiprev = max(cl.rev(node) for node in heads)

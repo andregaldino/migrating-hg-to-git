@@ -15,10 +15,7 @@ import os
 import stat
 
 from mercurial.i18n import _
-from mercurial.node import (
-    hex,
-    nullid,
-)
+from mercurial.node import hex
 from mercurial.pycompat import open
 
 from mercurial import (
@@ -28,6 +25,7 @@ from mercurial import (
     httpconnection,
     match as matchmod,
     pycompat,
+    requirements,
     scmutil,
     sparse,
     util,
@@ -164,7 +162,15 @@ class largefilesdirstate(dirstate.dirstate):
     def __getitem__(self, key):
         return super(largefilesdirstate, self).__getitem__(unixpath(key))
 
-    def normal(self, f):
+    def set_tracked(self, f):
+        return super(largefilesdirstate, self).set_tracked(unixpath(f))
+
+    def set_untracked(self, f):
+        return super(largefilesdirstate, self).set_untracked(unixpath(f))
+
+    def normal(self, f, parentfiledata=None):
+        # not sure if we should pass the `parentfiledata` down or throw it
+        # away. So throwing it away to stay on the safe side.
         return super(largefilesdirstate, self).normal(unixpath(f))
 
     def remove(self, f):
@@ -200,6 +206,7 @@ def openlfdirstate(ui, repo, create=True):
     vfs = repo.vfs
     lfstoredir = longname
     opener = vfsmod.vfs(vfs.join(lfstoredir))
+    use_dirstate_v2 = requirements.DIRSTATE_V2_REQUIREMENT in repo.requirements
     lfdirstate = largefilesdirstate(
         opener,
         ui,
@@ -207,6 +214,7 @@ def openlfdirstate(ui, repo, create=True):
         repo.dirstate._validate,
         lambda: sparse.matcher(repo),
         repo.nodeconstants,
+        use_dirstate_v2,
     )
 
     # If the largefiles dirstate does not exist, populate and create
@@ -221,9 +229,12 @@ def openlfdirstate(ui, repo, create=True):
         if len(standins) > 0:
             vfs.makedirs(lfstoredir)
 
-        for standin in standins:
-            lfile = splitstandin(standin)
-            lfdirstate.normallookup(lfile)
+        with lfdirstate.parentchange():
+            for standin in standins:
+                lfile = splitstandin(standin)
+                lfdirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
     return lfdirstate
 
 
@@ -243,7 +254,7 @@ def lfdirstatestatus(lfdirstate, repo):
             modified.append(lfile)
         else:
             clean.append(lfile)
-            lfdirstate.normal(lfile)
+            lfdirstate.set_clean(lfile)
     return s
 
 
@@ -544,46 +555,49 @@ def getstandinsstate(repo):
 
 def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     lfstandin = standin(lfile)
-    if lfstandin in repo.dirstate:
-        stat = repo.dirstate._map[lfstandin]
-        state, mtime = stat[0], stat[3]
+    if lfstandin not in repo.dirstate:
+        lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=False)
     else:
-        state, mtime = b'?', -1
-    if state == b'n':
-        if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
-            # state 'n' doesn't ensure 'clean' in this case
-            lfdirstate.normallookup(lfile)
-        else:
-            lfdirstate.normal(lfile)
-    elif state == b'm':
-        lfdirstate.normallookup(lfile)
-    elif state == b'r':
-        lfdirstate.remove(lfile)
-    elif state == b'a':
-        lfdirstate.add(lfile)
-    elif state == b'?':
-        lfdirstate.drop(lfile)
+        stat = repo.dirstate._map[lfstandin]
+        state, mtime = stat.state, stat.mtime
+        if state == b'n':
+            if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
+                # state 'n' doesn't ensure 'clean' in this case
+                lfdirstate.update_file(
+                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
+            else:
+                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
+        elif state == b'm':
+            lfdirstate.update_file(
+                lfile, p1_tracked=True, wc_tracked=True, merged=True
+            )
+        elif state == b'r':
+            lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
+        elif state == b'a':
+            lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
 
 
 def markcommitted(orig, ctx, node):
     repo = ctx.repo()
 
-    orig(node)
-
-    # ATTENTION: "ctx.files()" may differ from "repo[node].files()"
-    # because files coming from the 2nd parent are omitted in the latter.
-    #
-    # The former should be used to get targets of "synclfdirstate",
-    # because such files:
-    # - are marked as "a" by "patch.patch()" (e.g. via transplant), and
-    # - have to be marked as "n" after commit, but
-    # - aren't listed in "repo[node].files()"
-
     lfdirstate = openlfdirstate(repo.ui, repo)
-    for f in ctx.files():
-        lfile = splitstandin(f)
-        if lfile is not None:
-            synclfdirstate(repo, lfdirstate, lfile, False)
+    with lfdirstate.parentchange():
+        orig(node)
+
+        # ATTENTION: "ctx.files()" may differ from "repo[node].files()"
+        # because files coming from the 2nd parent are omitted in the latter.
+        #
+        # The former should be used to get targets of "synclfdirstate",
+        # because such files:
+        # - are marked as "a" by "patch.patch()" (e.g. via transplant), and
+        # - have to be marked as "n" after commit, but
+        # - aren't listed in "repo[node].files()"
+
+        for f in ctx.files():
+            lfile = splitstandin(f)
+            if lfile is not None:
+                synclfdirstate(repo, lfdirstate, lfile, False)
     lfdirstate.write()
 
     # As part of committing, copy all of the largefiles into the cache.
@@ -613,7 +627,7 @@ def getlfilestoupload(repo, missing, addfunc):
     ) as progress:
         for i, n in enumerate(missing):
             progress.update(i)
-            parents = [p for p in repo[n].parents() if p != nullid]
+            parents = [p for p in repo[n].parents() if p != repo.nullid]
 
             with lfstatus(repo, value=False):
                 ctx = repo[n]

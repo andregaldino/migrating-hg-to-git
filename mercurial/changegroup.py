@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import os
 import struct
 import weakref
@@ -15,7 +14,6 @@ import weakref
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -34,10 +32,13 @@ from . import (
 
 from .interfaces import repository
 from .revlogutils import sidedata as sidedatamod
+from .revlogutils import constants as revlog_constants
+from .utils import storageutil
 
 _CHANGEGROUPV1_DELTA_HEADER = struct.Struct(b"20s20s20s20s")
 _CHANGEGROUPV2_DELTA_HEADER = struct.Struct(b"20s20s20s20s20s")
 _CHANGEGROUPV3_DELTA_HEADER = struct.Struct(b">20s20s20s20s20sH")
+_CHANGEGROUPV4_DELTA_HEADER = struct.Struct(b">B20s20s20s20s20sH")
 
 LFS_REQUIREMENT = b'lfs'
 
@@ -194,19 +195,20 @@ class cg1unpacker(object):
         else:
             deltabase = prevnode
         flags = 0
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def deltachunk(self, prevnode):
+        # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata, proto_flags)
         l = self._chunklength()
         if not l:
             return {}
         headerdata = readexactly(self._stream, self.deltaheadersize)
         header = self.deltaheader.unpack(headerdata)
         delta = readexactly(self._stream, l - self.deltaheadersize)
-        node, p1, p2, deltabase, cs, flags = self._deltaheader(header, prevnode)
-        # cg4 forward-compat
-        sidedata = {}
-        return (node, p1, p2, cs, deltabase, delta, flags, sidedata)
+        header = self._deltaheader(header, prevnode)
+        node, p1, p2, deltabase, cs, flags, protocol_flags = header
+        return node, p1, p2, cs, deltabase, delta, flags, {}, protocol_flags
 
     def getchunks(self):
         """returns all the chunks contains in the bundle
@@ -293,8 +295,16 @@ class cg1unpacker(object):
 
         # Only useful if we're adding sidedata categories. If both peers have
         # the same categories, then we simply don't do anything.
-        if self.version == b'04' and srctype == b'pull':
-            sidedata_helpers = get_sidedata_helpers(
+        adding_sidedata = (
+            (
+                requirements.REVLOGV2_REQUIREMENT in repo.requirements
+                or requirements.CHANGELOGV2_REQUIREMENT in repo.requirements
+            )
+            and self.version == b'04'
+            and srctype == b'pull'
+        )
+        if adding_sidedata:
+            sidedata_helpers = sidedatamod.get_sidedata_helpers(
                 repo,
                 sidedata_categories or set(),
                 pull=True,
@@ -386,15 +396,16 @@ class cg1unpacker(object):
                 _(b'manifests'), unit=_(b'chunks'), total=changesets
             )
             on_manifest_rev = None
-            if sidedata_helpers and b'manifest' in sidedata_helpers[1]:
+            if sidedata_helpers:
+                if revlog_constants.KIND_MANIFESTLOG in sidedata_helpers[1]:
 
-                def on_manifest_rev(manifest, rev):
-                    range = touched_manifests.get(manifest)
-                    if not range:
-                        touched_manifests[manifest] = (rev, rev)
-                    else:
-                        assert rev == range[1] + 1
-                        touched_manifests[manifest] = (range[0], rev)
+                    def on_manifest_rev(manifest, rev):
+                        range = touched_manifests.get(manifest)
+                        if not range:
+                            touched_manifests[manifest] = (rev, rev)
+                        else:
+                            assert rev == range[1] + 1
+                            touched_manifests[manifest] = (range[0], rev)
 
             self._unpackmanifests(
                 repo,
@@ -417,15 +428,16 @@ class cg1unpacker(object):
                         needfiles.setdefault(f, set()).add(n)
 
             on_filelog_rev = None
-            if sidedata_helpers and b'filelog' in sidedata_helpers[1]:
+            if sidedata_helpers:
+                if revlog_constants.KIND_FILELOG in sidedata_helpers[1]:
 
-                def on_filelog_rev(filelog, rev):
-                    range = touched_filelogs.get(filelog)
-                    if not range:
-                        touched_filelogs[filelog] = (rev, rev)
-                    else:
-                        assert rev == range[1] + 1
-                        touched_filelogs[filelog] = (range[0], rev)
+                    def on_filelog_rev(filelog, rev):
+                        range = touched_filelogs.get(filelog)
+                        if not range:
+                            touched_filelogs[filelog] = (rev, rev)
+                        else:
+                            assert rev == range[1] + 1
+                            touched_filelogs[filelog] = (range[0], rev)
 
             # process the files
             repo.ui.status(_(b"adding file changes\n"))
@@ -440,12 +452,14 @@ class cg1unpacker(object):
             )
 
             if sidedata_helpers:
-                if b'changelog' in sidedata_helpers[1]:
-                    cl.rewrite_sidedata(sidedata_helpers, clstart, clend - 1)
+                if revlog_constants.KIND_CHANGELOG in sidedata_helpers[1]:
+                    cl.rewrite_sidedata(
+                        trp, sidedata_helpers, clstart, clend - 1
+                    )
                 for mf, (startrev, endrev) in touched_manifests.items():
-                    mf.rewrite_sidedata(sidedata_helpers, startrev, endrev)
+                    mf.rewrite_sidedata(trp, sidedata_helpers, startrev, endrev)
                 for fl, (startrev, endrev) in touched_filelogs.items():
-                    fl.rewrite_sidedata(sidedata_helpers, startrev, endrev)
+                    fl.rewrite_sidedata(trp, sidedata_helpers, startrev, endrev)
 
             # making sure the value exists
             tr.changes.setdefault(b'changegroup-count-changesets', 0)
@@ -570,8 +584,8 @@ class cg1unpacker(object):
         """
         chain = None
         for chunkdata in iter(lambda: self.deltachunk(chain), {}):
-            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata)
-            yield chunkdata
+            # Chunkdata: (node, p1, p2, cs, deltabase, delta, flags, sidedata, proto_flags)
+            yield chunkdata[:8]
             chain = chunkdata[0]
 
 
@@ -590,7 +604,8 @@ class cg2unpacker(cg1unpacker):
     def _deltaheader(self, headertuple, prevnode):
         node, p1, p2, deltabase, cs = headertuple
         flags = 0
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
 
 class cg3unpacker(cg2unpacker):
@@ -608,7 +623,8 @@ class cg3unpacker(cg2unpacker):
 
     def _deltaheader(self, headertuple, prevnode):
         node, p1, p2, deltabase, cs, flags = headertuple
-        return node, p1, p2, deltabase, cs, flags
+        protocol_flags = 0
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def _unpackmanifests(self, repo, revmap, trp, prog, addrevisioncb=None):
         super(cg3unpacker, self)._unpackmanifests(
@@ -631,21 +647,48 @@ class cg4unpacker(cg3unpacker):
     cg4 streams add support for exchanging sidedata.
     """
 
+    deltaheader = _CHANGEGROUPV4_DELTA_HEADER
+    deltaheadersize = deltaheader.size
     version = b'04'
+
+    def _deltaheader(self, headertuple, prevnode):
+        protocol_flags, node, p1, p2, deltabase, cs, flags = headertuple
+        return node, p1, p2, deltabase, cs, flags, protocol_flags
 
     def deltachunk(self, prevnode):
         res = super(cg4unpacker, self).deltachunk(prevnode)
         if not res:
             return res
 
-        (node, p1, p2, cs, deltabase, delta, flags, _sidedata) = res
+        (
+            node,
+            p1,
+            p2,
+            cs,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            protocol_flags,
+        ) = res
+        assert not sidedata
 
-        sidedata_raw = getchunk(self._stream)
         sidedata = {}
-        if len(sidedata_raw) > 0:
+        if protocol_flags & storageutil.CG_FLAG_SIDEDATA:
+            sidedata_raw = getchunk(self._stream)
             sidedata = sidedatamod.deserialize_sidedata(sidedata_raw)
 
-        return node, p1, p2, cs, deltabase, delta, flags, sidedata
+        return (
+            node,
+            p1,
+            p2,
+            cs,
+            deltabase,
+            delta,
+            flags,
+            sidedata,
+            protocol_flags,
+        )
 
 
 class headerlessfixup(object):
@@ -673,7 +716,7 @@ def _revisiondeltatochunks(repo, delta, headerfn):
 
     if delta.delta is not None:
         prefix, data = b'', delta.delta
-    elif delta.basenode == nullid:
+    elif delta.basenode == repo.nullid:
         data = delta.revision
         prefix = mdiff.trivialdiffheader(len(data))
     else:
@@ -688,10 +731,10 @@ def _revisiondeltatochunks(repo, delta, headerfn):
         yield prefix
     yield data
 
-    sidedata = delta.sidedata
-    if sidedata is not None:
+    if delta.protocol_flags & storageutil.CG_FLAG_SIDEDATA:
         # Need a separate chunk for sidedata to be able to differentiate
         # "raw delta" length and sidedata length
+        sidedata = delta.sidedata
         yield chunkheader(len(sidedata))
         yield sidedata
 
@@ -787,9 +830,15 @@ def _resolvenarrowrevisioninfo(
                         return i
                 # We failed to resolve a parent for this node, so
                 # we crash the changegroup construction.
+                if util.safehasattr(store, 'target'):
+                    target = store.display_id
+                else:
+                    # some revlog not actually a revlog
+                    target = store._revlog.display_id
+
                 raise error.Abort(
                     b"unable to resolve parent while packing '%s' %r"
-                    b' for changeset %r' % (store.indexfile, rev, clrev)
+                    b' for changeset %r' % (target, rev, clrev)
                 )
 
         return nullrev
@@ -828,7 +877,8 @@ def deltagroup(
     If topic is not None, progress detail will be generated using this
     topic name (e.g. changesets, manifests, etc).
 
-    See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+    See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+    `sidedata_helpers`.
     """
     if not nodes:
         return
@@ -1056,7 +1106,9 @@ class cgpacker(object):
                 # TODO a better approach would be for the strip bundle to
                 # correctly advertise its sidedata categories directly.
                 remote_sidedata = repo._wanted_sidedata
-            sidedata_helpers = get_sidedata_helpers(repo, remote_sidedata)
+            sidedata_helpers = sidedatamod.get_sidedata_helpers(
+                repo, remote_sidedata
+            )
 
         clstate, deltas = self._generatechangelog(
             cl,
@@ -1194,7 +1246,8 @@ class cgpacker(object):
         if generate is False, the state will be fully populated and no chunk
         stream will be yielded
 
-        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+        See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+        `sidedata_helpers`.
         """
         clrevorder = {}
         manifests = {}
@@ -1299,7 +1352,8 @@ class cgpacker(object):
         `source` is unused here, but is used by extensions like remotefilelog to
         change what is sent based in pulls vs pushes, etc.
 
-        See `storageutil.emitrevisions` for the doc on `sidedata_helpers`.
+        See `revlogutil.sidedata.get_sidedata_helpers` for the doc on
+        `sidedata_helpers`.
         """
         repo = self._repo
         mfl = repo.manifestlog
@@ -1633,11 +1687,18 @@ def _makecg4packer(
     fullnodes=None,
     remote_sidedata=None,
 ):
-    # Same header func as cg3. Sidedata is in a separate chunk from the delta to
-    # differenciate "raw delta" and sidedata.
-    builddeltaheader = lambda d: _CHANGEGROUPV3_DELTA_HEADER.pack(
-        d.node, d.p1node, d.p2node, d.basenode, d.linknode, d.flags
-    )
+    # Sidedata is in a separate chunk from the delta to differentiate
+    # "raw delta" and sidedata.
+    def builddeltaheader(d):
+        return _CHANGEGROUPV4_DELTA_HEADER.pack(
+            d.protocol_flags,
+            d.node,
+            d.p1node,
+            d.p2node,
+            d.basenode,
+            d.linknode,
+            d.flags,
+        )
 
     return cgpacker(
         repo,
@@ -1682,11 +1743,15 @@ def allsupportedversions(repo):
         #
         # (or even to push subset of history)
         needv03 = True
-    has_revlogv2 = requirements.REVLOGV2_REQUIREMENT in repo.requirements
-    if not has_revlogv2:
-        versions.discard(b'04')
     if not needv03:
         versions.discard(b'03')
+    want_v4 = (
+        repo.ui.configbool(b'experimental', b'changegroup4')
+        or requirements.REVLOGV2_REQUIREMENT in repo.requirements
+        or requirements.CHANGELOGV2_REQUIREMENT in repo.requirements
+    )
+    if not want_v4:
+        versions.discard(b'04')
     return versions
 
 
@@ -1913,25 +1978,3 @@ def _addchangegroupfiles(
                 )
 
     return revisions, files
-
-
-def get_sidedata_helpers(repo, remote_sd_categories, pull=False):
-    # Computers for computing sidedata on-the-fly
-    sd_computers = collections.defaultdict(list)
-    # Computers for categories to remove from sidedata
-    sd_removers = collections.defaultdict(list)
-
-    to_generate = remote_sd_categories - repo._wanted_sidedata
-    to_remove = repo._wanted_sidedata - remote_sd_categories
-    if pull:
-        to_generate, to_remove = to_remove, to_generate
-
-    for revlog_kind, computers in repo._sidedata_computers.items():
-        for category, computer in computers.items():
-            if category in to_generate:
-                sd_computers[revlog_kind].append(computer)
-            if category in to_remove:
-                sd_removers[revlog_kind].append(computer)
-
-    sidedata_helpers = (repo, sd_computers, sd_removers)
-    return sidedata_helpers

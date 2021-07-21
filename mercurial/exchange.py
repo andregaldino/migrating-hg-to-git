@@ -13,7 +13,6 @@ import weakref
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
 )
 from . import (
@@ -44,6 +43,7 @@ from .utils import (
     stringutil,
     urlutil,
 )
+from .interfaces import repository
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -164,7 +164,7 @@ def _computeoutgoing(repo, heads, common):
         hasnode = cl.hasnode
         common = [n for n in common if hasnode(n)]
     else:
-        common = [nullid]
+        common = [repo.nullid]
     if not heads:
         heads = cl.heads()
     return discovery.outgoing(repo, common, heads)
@@ -184,6 +184,10 @@ def _checkpublish(pushop):
         published = repo.filtered(b'served').revs(b'not public()')
     else:
         published = repo.revs(b'::%ln - public()', pushop.revs)
+        # we want to use pushop.revs in the revset even if they themselves are
+        # secret, but we don't want to have anything that the server won't see
+        # in the result of this expression
+        published &= repo.filtered(b'served')
     if published:
         if behavior == b'warn':
             ui.warn(
@@ -894,7 +898,7 @@ def _pushb2ctx(pushop, bundler):
         cgpart.addparam(b'version', version)
     if scmutil.istreemanifest(pushop.repo):
         cgpart.addparam(b'treemanifest', b'1')
-    if b'exp-sidedata-flag' in pushop.repo.requirements:
+    if repository.REPO_FEATURE_SIDE_DATA in pushop.repo.features:
         cgpart.addparam(b'exp-sidedata', b'1')
 
     def handlereply(op):
@@ -1839,7 +1843,7 @@ def _pullbundle2(pullop):
     if (
         pullop.remote.capable(b'clonebundles')
         and pullop.heads is None
-        and list(pullop.common) == [nullid]
+        and list(pullop.common) == [pullop.repo.nullid]
     ):
         kwargs[b'cbattempted'] = pullop.clonebundleattempted
 
@@ -1849,7 +1853,7 @@ def _pullbundle2(pullop):
         pullop.repo.ui.status(_(b"no changes found\n"))
         pullop.cgresult = 0
     else:
-        if pullop.heads is None and list(pullop.common) == [nullid]:
+        if pullop.heads is None and list(pullop.common) == [pullop.repo.nullid]:
             pullop.repo.ui.status(_(b"requesting all changes\n"))
     if obsolete.isenabled(pullop.repo, obsolete.exchangeopt):
         remoteversions = bundle2.obsmarkersversion(pullop.remotebundle2caps)
@@ -1920,7 +1924,7 @@ def _pullchangeset(pullop):
         pullop.cgresult = 0
         return
     tr = pullop.gettransaction()
-    if pullop.heads is None and list(pullop.common) == [nullid]:
+    if pullop.heads is None and list(pullop.common) == [pullop.repo.nullid]:
         pullop.repo.ui.status(_(b"requesting all changes\n"))
     elif pullop.heads is None and pullop.remote.capable(b'changegroupsubset'):
         # issue1320, avoid a race if remote changed after discovery
@@ -2428,7 +2432,7 @@ def _getbundlechangegrouppart(
     if scmutil.istreemanifest(repo):
         part.addparam(b'treemanifest', b'1')
 
-    if b'exp-sidedata-flag' in repo.requirements:
+    if repository.REPO_FEATURE_SIDE_DATA in repo.features:
         part.addparam(b'exp-sidedata', b'1')
         sidedata = bundle2.format_remote_wanted_sidedata(repo)
         part.addparam(b'exp-wanted-sidedata', sidedata)

@@ -1,3 +1,23 @@
+#testcases dirstate-v1 dirstate-v1-tree dirstate-v2
+
+#if no-rust
+  $ hg init repo0 --config format.exp-dirstate-v2=1
+  abort: dirstate v2 format requested by config but not supported (requires Rust extensions)
+  [255]
+#endif
+
+#if dirstate-v1-tree
+#require rust
+  $ echo '[experimental]' >> $HGRCPATH
+  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
+#endif
+
+#if dirstate-v2
+#require rust
+  $ echo '[format]' >> $HGRCPATH
+  $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
+#endif
+
   $ hg init repo1
   $ cd repo1
   $ mkdir a b a/1 b/1 b/2
@@ -681,6 +701,32 @@ Make sure .hg doesn't show up even as a symlink
   $ ln -s ../repo0/.hg
   $ hg status
 
+If the size hasn’t changed but mtime has, status needs to read the contents
+of the file to check whether it has changed
+
+  $ echo 1 > a
+  $ echo 1 > b
+  $ touch -t 200102030000 a b
+  $ hg commit -Aqm '#0'
+  $ echo 2 > a
+  $ touch -t 200102040000 a b
+  $ hg status
+  M a
+
+Asking specifically for the status of a deleted/removed file
+
+  $ rm a
+  $ rm b
+  $ hg status a
+  ! a
+  $ hg rm a
+  $ hg rm b
+  $ hg status a
+  R a
+  $ hg commit -qm '#1'
+  $ hg status a
+  a: $ENOENT$
+
 Check using include flag with pattern when status does not need to traverse
 the working directory (issue6483)
 
@@ -691,6 +737,167 @@ the working directory (issue6483)
   $ hg add a.py b.rs
   $ hg st -aI "*.py"
   A a.py
+
+Also check exclude pattern
+
+  $ hg st -aX "*.rs"
+  A a.py
+
+issue6335
+When a directory containing a tracked file gets symlinked, as of 5.8
+`hg st` only gives the correct answer about clean (or deleted) files
+if also listing unknowns.
+The tree-based dirstate and status algorithm fix this:
+
+#if symlink no-dirstate-v1
+
+  $ cd ..
+  $ hg init issue6335
+  $ cd issue6335
+  $ mkdir foo
+  $ touch foo/a
+  $ hg ci -Ama
+  adding foo/a
+  $ mv foo bar
+  $ ln -s bar foo
+  $ hg status
+  ! foo/a
+  ? bar/a
+  ? foo
+
+  $ hg status -c  # incorrect output with `dirstate-v1`
+  $ hg status -cu
+  ? bar/a
+  ? foo
+  $ hg status -d  # incorrect output with `dirstate-v1`
+  ! foo/a
+  $ hg status -du
+  ! foo/a
+  ? bar/a
+  ? foo
+
+#endif
+
+
+Create a repo with files in each possible status
+
+  $ cd ..
+  $ hg init repo7
+  $ cd repo7
+  $ mkdir subdir
+  $ touch clean modified deleted removed
+  $ touch subdir/clean subdir/modified subdir/deleted subdir/removed
+  $ echo ignored > .hgignore
+  $ hg ci -Aqm '#0'
+  $ echo 1 > modified
+  $ echo 1 > subdir/modified
+  $ rm deleted
+  $ rm subdir/deleted
+  $ hg rm removed
+  $ hg rm subdir/removed
+  $ touch unknown ignored
+  $ touch subdir/unknown subdir/ignored
+
+Check the output
+
+  $ hg status
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+  ? subdir/unknown
+  ? unknown
+
+  $ hg status -mard
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+
+  $ hg status -A
+  M modified
+  M subdir/modified
+  R removed
+  R subdir/removed
+  ! deleted
+  ! subdir/deleted
+  ? subdir/unknown
+  ? unknown
+  I ignored
+  I subdir/ignored
+  C .hgignore
+  C clean
+  C subdir/clean
+
+Note: `hg status some-name` creates a patternmatcher which is not supported
+yet by the Rust implementation of status, but includematcher is supported.
+--include is used below for that reason
+
+#if unix-permissions
+
+Not having permission to read a directory that contains tracked files makes
+status emit a warning then behave as if the directory was empty or removed
+entirely:
+
+  $ chmod 0 subdir
+  $ hg status --include subdir
+  subdir: Permission denied
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+  $ chmod 755 subdir
+
+#endif
+
+Remove a directory that contains tracked files
+
+  $ rm -r subdir
+  $ hg status --include subdir
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+
+… and replace it by a file
+
+  $ touch subdir
+  $ hg status --include subdir
+  R subdir/removed
+  ! subdir/clean
+  ! subdir/deleted
+  ! subdir/modified
+  ? subdir
+
+Replaced a deleted or removed file with a directory
+
+  $ mkdir deleted removed
+  $ touch deleted/1 removed/1
+  $ hg status --include deleted --include removed
+  R removed
+  ! deleted
+  ? deleted/1
+  ? removed/1
+  $ hg add removed/1
+  $ hg status --include deleted --include removed
+  A removed/1
+  R removed
+  ! deleted
+  ? deleted/1
+
+Deeply nested files in an ignored directory are still listed on request
+
+  $ echo ignored-dir >> .hgignore
+  $ mkdir ignored-dir
+  $ mkdir ignored-dir/subdir
+  $ touch ignored-dir/subdir/1
+  $ hg status --ignored
+  I ignored
+  I ignored-dir/subdir/1
 
 Check using include flag while listing ignored composes correctly (issue6514)
 
@@ -708,3 +915,60 @@ Check using include flag while listing ignored composes correctly (issue6514)
   I A.hs
   I B.hs
   I ignored-folder/ctest.hs
+
+#if dirstate-v2
+
+Check read_dir caching
+
+  $ cd ..
+  $ hg init repo8
+  $ cd repo8
+  $ mkdir subdir
+  $ touch subdir/a subdir/b
+  $ hg ci -Aqm '#0'
+
+The cached mtime is initially unset
+
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
+
+It is still not set when there are unknown files
+
+  $ touch subdir/unknown
+  $ hg status
+  ? subdir/unknown
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
+
+Now the directory is eligible for caching, so its mtime is save in the dirstate
+
+  $ rm subdir/unknown
+  $ hg status
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 set                 subdir
+
+This time the command should be ever so slightly faster since it does not need `read_dir("subdir")`
+
+  $ hg status
+
+Creating a new file changes the directory’s mtime, invalidating the cache
+
+  $ touch subdir/unknown
+  $ hg status
+  ? subdir/unknown
+
+  $ rm subdir/unknown
+  $ hg status
+
+Removing a node from the dirstate resets the cache for its parent directory
+
+  $ hg forget subdir/a
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 set                 subdir
+  $ hg ci -qm '#1'
+  $ hg debugdirstate --all --no-dates | grep '^ '
+      0         -1 unset               subdir
+  $ hg status
+  ? subdir/a
+
+#endif

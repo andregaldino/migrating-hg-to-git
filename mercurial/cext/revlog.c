@@ -99,7 +99,12 @@ struct indexObjectStruct {
 	int ntlookups;          /* # lookups */
 	int ntmisses;           /* # lookups that miss the cache */
 	int inlined;
-	long hdrsize; /* size of index headers. Differs in v1 v.s. v2 format */
+	long entry_size; /* size of index headers. Differs in v1 v.s. v2 format
+	                  */
+	long rust_ext_compat; /* compatibility with being used in rust
+	                         extensions */
+	char format_version;  /* size of index headers. Differs in v1 v.s. v2
+	                         format */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -115,18 +120,21 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const v1_tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
-static const char *const v2_tuple_format = PY23("Kiiiiiis#Ki", "Kiiiiiiy#Ki");
+static const char *const tuple_format = PY23("Kiiiiiis#KiBB", "Kiiiiiiy#KiBB");
 #else
-static const char *const v1_tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
-static const char *const v2_tuple_format = PY23("kiiiiiis#ki", "kiiiiiiy#ki");
+static const char *const tuple_format = PY23("kiiiiiis#kiBB", "kiiiiiiy#kiBB");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
-static const long v1_hdrsize = 64;
+static const long v1_entry_size = 64;
 
 /* A Revlogv2 index entry is 96 bytes long. */
-static const long v2_hdrsize = 96;
+static const long v2_entry_size = 96;
+
+static const long format_v1 = 1; /* Internal only, could be any number */
+static const long format_v2 = 2; /* Internal only, could be any number */
+
+static const char comp_mode_inline = 2;
 
 static void raise_revlog_error(void)
 {
@@ -164,7 +172,7 @@ cleanup:
 static const char *index_deref(indexObject *self, Py_ssize_t pos)
 {
 	if (pos >= self->length)
-		return self->added + (pos - self->length) * self->hdrsize;
+		return self->added + (pos - self->length) * self->entry_size;
 
 	if (self->inlined && pos > 0) {
 		if (self->offsets == NULL) {
@@ -181,7 +189,7 @@ static const char *index_deref(indexObject *self, Py_ssize_t pos)
 		return self->offsets[pos];
 	}
 
-	return (const char *)(self->buf.buf) + pos * self->hdrsize;
+	return (const char *)(self->buf.buf) + pos * self->entry_size;
 }
 
 /*
@@ -290,6 +298,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	uint64_t offset_flags, sidedata_offset;
 	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2,
 	    sidedata_comp_len;
+	char data_comp_mode, sidedata_comp_mode;
 	const char *c_node_id;
 	const char *data;
 	Py_ssize_t length = index_length(self);
@@ -328,19 +337,70 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	parent_2 = getbe32(data + 28);
 	c_node_id = data + 32;
 
-	if (self->hdrsize == v1_hdrsize) {
-		return Py_BuildValue(v1_tuple_format, offset_flags, comp_len,
-		                     uncomp_len, base_rev, link_rev, parent_1,
-		                     parent_2, c_node_id, self->nodelen);
+	if (self->format_version == format_v1) {
+		sidedata_offset = 0;
+		sidedata_comp_len = 0;
+		data_comp_mode = comp_mode_inline;
+		sidedata_comp_mode = comp_mode_inline;
 	} else {
 		sidedata_offset = getbe64(data + 64);
 		sidedata_comp_len = getbe32(data + 72);
-
-		return Py_BuildValue(v2_tuple_format, offset_flags, comp_len,
-		                     uncomp_len, base_rev, link_rev, parent_1,
-		                     parent_2, c_node_id, self->nodelen,
-		                     sidedata_offset, sidedata_comp_len);
+		data_comp_mode = data[76] & 3;
+		sidedata_comp_mode = ((data[76] >> 2) & 3);
 	}
+
+	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
+	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
+	                     self->nodelen, sidedata_offset, sidedata_comp_len,
+	                     data_comp_mode, sidedata_comp_mode);
+}
+/*
+ * Pack header information in binary
+ */
+static PyObject *index_pack_header(indexObject *self, PyObject *args)
+{
+	int header;
+	char out[4];
+	if (!PyArg_ParseTuple(args, "I", &header)) {
+		return NULL;
+	}
+	if (self->format_version != format_v1) {
+		PyErr_Format(PyExc_RuntimeError,
+		             "version header should go in the docket, not the "
+		             "index: %lu",
+		             header);
+		return NULL;
+	}
+	putbe32(header, out);
+	return PyBytes_FromStringAndSize(out, 4);
+}
+/*
+ * Return the raw binary string representing a revision
+ */
+static PyObject *index_entry_binary(indexObject *self, PyObject *value)
+{
+	long rev;
+	const char *data;
+	Py_ssize_t length = index_length(self);
+
+	if (!pylong_to_long(value, &rev)) {
+		return NULL;
+	}
+	if (rev < 0 || rev >= length) {
+		PyErr_Format(PyExc_ValueError, "revlog index out of range: %ld",
+		             rev);
+		return NULL;
+	};
+
+	data = index_deref(self, rev);
+	if (data == NULL)
+		return NULL;
+	if (rev == 0 && self->format_version == format_v1) {
+		/* the header is eating the start of the first entry */
+		return PyBytes_FromStringAndSize(data + 4,
+		                                 self->entry_size - 4);
+	}
+	return PyBytes_FromStringAndSize(data, self->entry_size);
 }
 
 /*
@@ -393,46 +453,53 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 {
 	uint64_t offset_flags, sidedata_offset;
 	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
+	char data_comp_mode, sidedata_comp_mode;
 	Py_ssize_t c_node_id_len, sidedata_comp_len;
 	const char *c_node_id;
+	char comp_field;
 	char *data;
 
-	if (self->hdrsize == v1_hdrsize) {
-		if (!PyArg_ParseTuple(obj, v1_tuple_format, &offset_flags,
-		                      &comp_len, &uncomp_len, &base_rev,
-		                      &link_rev, &parent_1, &parent_2,
-		                      &c_node_id, &c_node_id_len)) {
-			PyErr_SetString(PyExc_TypeError, "8-tuple required");
-			return NULL;
-		}
-	} else {
-		if (!PyArg_ParseTuple(obj, v2_tuple_format, &offset_flags,
-		                      &comp_len, &uncomp_len, &base_rev,
-		                      &link_rev, &parent_1, &parent_2,
-		                      &c_node_id, &c_node_id_len,
-		                      &sidedata_offset, &sidedata_comp_len)) {
-			PyErr_SetString(PyExc_TypeError, "10-tuple required");
-			return NULL;
-		}
+	if (!PyArg_ParseTuple(obj, tuple_format, &offset_flags, &comp_len,
+	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
+	                      &parent_2, &c_node_id, &c_node_id_len,
+	                      &sidedata_offset, &sidedata_comp_len,
+	                      &data_comp_mode, &sidedata_comp_mode)) {
+		PyErr_SetString(PyExc_TypeError, "11-tuple required");
+		return NULL;
 	}
 
 	if (c_node_id_len != self->nodelen) {
 		PyErr_SetString(PyExc_TypeError, "invalid node");
 		return NULL;
 	}
+	if (self->format_version == format_v1) {
+
+		if (data_comp_mode != comp_mode_inline) {
+			PyErr_Format(PyExc_ValueError,
+			             "invalid data compression mode: %i",
+			             data_comp_mode);
+			return NULL;
+		}
+		if (sidedata_comp_mode != comp_mode_inline) {
+			PyErr_Format(PyExc_ValueError,
+			             "invalid sidedata compression mode: %i",
+			             sidedata_comp_mode);
+			return NULL;
+		}
+	}
 
 	if (self->new_length == self->added_length) {
 		size_t new_added_length =
 		    self->added_length ? self->added_length * 2 : 4096;
-		void *new_added = PyMem_Realloc(self->added, new_added_length *
-		                                                 self->hdrsize);
+		void *new_added = PyMem_Realloc(
+		    self->added, new_added_length * self->entry_size);
 		if (!new_added)
 			return PyErr_NoMemory();
 		self->added = new_added;
 		self->added_length = new_added_length;
 	}
 	rev = self->length + self->new_length;
-	data = self->added + self->hdrsize * self->new_length++;
+	data = self->added + self->entry_size * self->new_length++;
 	putbe32(offset_flags >> 32, data);
 	putbe32(offset_flags & 0xffffffffU, data + 4);
 	putbe32(comp_len, data + 8);
@@ -444,11 +511,14 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	memcpy(data + 32, c_node_id, c_node_id_len);
 	/* Padding since SHA-1 is only 20 bytes for now */
 	memset(data + 32 + c_node_id_len, 0, 32 - c_node_id_len);
-	if (self->hdrsize != v1_hdrsize) {
+	if (self->format_version == format_v2) {
 		putbe64(sidedata_offset, data + 64);
 		putbe32(sidedata_comp_len, data + 72);
+		comp_field = data_comp_mode & 3;
+		comp_field = comp_field | (sidedata_comp_mode & 3) << 2;
+		data[76] = comp_field;
 		/* Padding for 96 bytes alignment */
-		memset(data + 76, 0, self->hdrsize - 76);
+		memset(data + 77, 0, self->entry_size - 77);
 	}
 
 	if (self->ntinitialized)
@@ -463,17 +533,18 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
    inside the transaction that creates the given revision. */
 static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 {
-	uint64_t sidedata_offset;
+	uint64_t offset_flags, sidedata_offset;
 	int rev;
+	char comp_mode;
 	Py_ssize_t sidedata_comp_len;
 	char *data;
 #if LONG_MAX == 0x7fffffffL
-	const char *const sidedata_format = PY23("nKi", "nKi");
+	const char *const sidedata_format = PY23("nKiKB", "nKiKB");
 #else
-	const char *const sidedata_format = PY23("nki", "nki");
+	const char *const sidedata_format = PY23("nkikB", "nkikB");
 #endif
 
-	if (self->hdrsize == v1_hdrsize || self->inlined) {
+	if (self->entry_size == v1_entry_size || self->inlined) {
 		/*
 		 There is a bug in the transaction handling when going from an
 	   inline revlog to a separate index and data file. Turn it off until
@@ -485,7 +556,7 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	}
 
 	if (!PyArg_ParseTuple(args, sidedata_format, &rev, &sidedata_offset,
-	                      &sidedata_comp_len))
+	                      &sidedata_comp_len, &offset_flags, &comp_mode))
 		return NULL;
 
 	if (rev < 0 || rev >= index_length(self)) {
@@ -501,9 +572,11 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 
 	/* Find the newly added node, offset from the "already on-disk" length
 	 */
-	data = self->added + self->hdrsize * (rev - self->length);
+	data = self->added + self->entry_size * (rev - self->length);
+	putbe64(offset_flags, data);
 	putbe64(sidedata_offset, data + 64);
 	putbe32(sidedata_comp_len, data + 72);
+	data[76] = (data[76] & ~(3 << 2)) | ((comp_mode & 3) << 2);
 
 	Py_RETURN_NONE;
 }
@@ -2652,17 +2725,17 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 	const char *data = (const char *)self->buf.buf;
 	Py_ssize_t pos = 0;
 	Py_ssize_t end = self->buf.len;
-	long incr = self->hdrsize;
+	long incr = self->entry_size;
 	Py_ssize_t len = 0;
 
-	while (pos + self->hdrsize <= end && pos >= 0) {
+	while (pos + self->entry_size <= end && pos >= 0) {
 		uint32_t comp_len, sidedata_comp_len = 0;
 		/* 3rd element of header is length of compressed inline data */
 		comp_len = getbe32(data + pos + 8);
-		if (self->hdrsize == v2_hdrsize) {
+		if (self->entry_size == v2_entry_size) {
 			sidedata_comp_len = getbe32(data + pos + 72);
 		}
-		incr = self->hdrsize + comp_len + sidedata_comp_len;
+		incr = self->entry_size + comp_len + sidedata_comp_len;
 		if (offsets)
 			offsets[len] = data + pos;
 		len++;
@@ -2699,6 +2772,7 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	self->offsets = NULL;
 	self->nodelen = 20;
 	self->nullentry = NULL;
+	self->rust_ext_compat = 1;
 
 	revlogv2 = NULL;
 	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", kwlist,
@@ -2715,20 +2789,16 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	}
 
 	if (revlogv2 && PyObject_IsTrue(revlogv2)) {
-		self->hdrsize = v2_hdrsize;
+		self->format_version = format_v2;
+		self->entry_size = v2_entry_size;
 	} else {
-		self->hdrsize = v1_hdrsize;
+		self->format_version = format_v1;
+		self->entry_size = v1_entry_size;
 	}
 
-	if (self->hdrsize == v1_hdrsize) {
-		self->nullentry =
-		    Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0, -1,
-		                  -1, -1, -1, nullid, self->nodelen);
-	} else {
-		self->nullentry =
-		    Py_BuildValue(PY23("iiiiiiis#ii", "iiiiiiiy#ii"), 0, 0, 0,
-		                  -1, -1, -1, -1, nullid, self->nodelen, 0, 0);
-	}
+	self->nullentry = Py_BuildValue(
+	    PY23("iiiiiiis#iiBB", "iiiiiiiy#iiBB"), 0, 0, 0, -1, -1, -1, -1,
+	    nullid, self->nodelen, 0, 0, comp_mode_inline, comp_mode_inline);
 
 	if (!self->nullentry)
 		return -1;
@@ -2751,11 +2821,11 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 			goto bail;
 		self->length = len;
 	} else {
-		if (size % self->hdrsize) {
+		if (size % self->entry_size) {
 			PyErr_SetString(PyExc_ValueError, "corrupt index file");
 			goto bail;
 		}
-		self->length = size / self->hdrsize;
+		self->length = size / self->entry_size;
 	}
 
 	return 0;
@@ -2860,6 +2930,10 @@ static PyMethodDef index_methods[] = {
     {"shortest", (PyCFunction)index_shortest, METH_VARARGS,
      "find length of shortest hex nodeid of a binary ID"},
     {"stats", (PyCFunction)index_stats, METH_NOARGS, "stats for the index"},
+    {"entry_binary", (PyCFunction)index_entry_binary, METH_O,
+     "return an entry in binary form"},
+    {"pack_header", (PyCFunction)index_pack_header, METH_VARARGS,
+     "pack the revlog header information into binary"},
     {NULL} /* Sentinel */
 };
 
@@ -2869,7 +2943,9 @@ static PyGetSetDef index_getset[] = {
 };
 
 static PyMemberDef index_members[] = {
-    {"entry_size", T_LONG, offsetof(indexObject, hdrsize), 0,
+    {"entry_size", T_LONG, offsetof(indexObject, entry_size), 0,
+     "size of an index entry"},
+    {"rust_ext_compat", T_LONG, offsetof(indexObject, rust_ext_compat), 0,
      "size of an index entry"},
     {NULL} /* Sentinel */
 };

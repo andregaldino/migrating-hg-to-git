@@ -22,7 +22,6 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     hex,
-    nullid,
 )
 
 from mercurial import (
@@ -117,8 +116,8 @@ def recorddirstateparents(dirstate, old, new):
     new = list(new)
     if util.safehasattr(dirstate, 'journalstorage'):
         # only record two hashes if there was a merge
-        oldhashes = old[:1] if old[1] == nullid else old
-        newhashes = new[:1] if new[1] == nullid else new
+        oldhashes = old[:1] if old[1] == dirstate._nodeconstants.nullid else old
+        newhashes = new[:1] if new[1] == dirstate._nodeconstants.nullid else new
         dirstate.journalstorage.record(
             wdirparenttype, b'.', oldhashes, newhashes
         )
@@ -131,7 +130,7 @@ def recordbookmarks(orig, store, fp):
     if util.safehasattr(repo, 'journal'):
         oldmarks = bookmarks.bmstore(repo)
         for mark, value in pycompat.iteritems(store):
-            oldvalue = oldmarks.get(mark, nullid)
+            oldvalue = oldmarks.get(mark, repo.nullid)
             if value != oldvalue:
                 repo.journal.record(bookmarktype, mark, oldvalue, value)
     return orig(store, fp)

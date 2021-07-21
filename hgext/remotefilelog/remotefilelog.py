@@ -10,12 +10,7 @@ from __future__ import absolute_import
 import collections
 import os
 
-from mercurial.node import (
-    bin,
-    nullid,
-    wdirfilenodeids,
-    wdirid,
-)
+from mercurial.node import bin
 from mercurial.i18n import _
 from mercurial import (
     ancestor,
@@ -100,7 +95,7 @@ class remotefilelog(object):
 
         pancestors = {}
         queue = []
-        if realp1 != nullid:
+        if realp1 != self.repo.nullid:
             p1flog = self
             if copyfrom:
                 p1flog = remotefilelog(self.opener, copyfrom, self.repo)
@@ -108,7 +103,7 @@ class remotefilelog(object):
             pancestors.update(p1flog.ancestormap(realp1))
             queue.append(realp1)
             visited.add(realp1)
-        if p2 != nullid:
+        if p2 != self.repo.nullid:
             pancestors.update(self.ancestormap(p2))
             queue.append(p2)
             visited.add(p2)
@@ -129,10 +124,10 @@ class remotefilelog(object):
                 pacopyfrom,
             )
 
-            if pa1 != nullid and pa1 not in visited:
+            if pa1 != self.repo.nullid and pa1 not in visited:
                 queue.append(pa1)
                 visited.add(pa1)
-            if pa2 != nullid and pa2 not in visited:
+            if pa2 != self.repo.nullid and pa2 not in visited:
                 queue.append(pa2)
                 visited.add(pa2)
 
@@ -238,7 +233,7 @@ class remotefilelog(object):
         returns True if text is different than what is stored.
         """
 
-        if node == nullid:
+        if node == self.repo.nullid:
             return True
 
         nodetext = self.read(node)
@@ -275,13 +270,13 @@ class remotefilelog(object):
         return store.getmeta(self.filename, node).get(constants.METAKEYFLAG, 0)
 
     def parents(self, node):
-        if node == nullid:
-            return nullid, nullid
+        if node == self.repo.nullid:
+            return self.repo.nullid, self.repo.nullid
 
         ancestormap = self.repo.metadatastore.getancestors(self.filename, node)
         p1, p2, linknode, copyfrom = ancestormap[node]
         if copyfrom:
-            p1 = nullid
+            p1 = self.repo.nullid
 
         return p1, p2
 
@@ -317,8 +312,8 @@ class remotefilelog(object):
             if prevnode is None:
                 basenode = prevnode = p1
             if basenode == node:
-                basenode = nullid
-            if basenode != nullid:
+                basenode = self.repo.nullid
+            if basenode != self.repo.nullid:
                 revision = None
                 delta = self.revdiff(basenode, node)
             else:
@@ -336,6 +331,8 @@ class remotefilelog(object):
                 delta=delta,
                 # Sidedata is not supported yet
                 sidedata=None,
+                # Protocol flags are not used yet
+                protocol_flags=0,
             )
 
     def revdiff(self, node1, node2):
@@ -380,13 +377,16 @@ class remotefilelog(object):
         this is generally only used for bundling and communicating with vanilla
         hg clients.
         """
-        if node == nullid:
+        if node == self.repo.nullid:
             return b""
         if len(node) != 20:
             raise error.LookupError(
                 node, self.filename, _(b'invalid revision input')
             )
-        if node == wdirid or node in wdirfilenodeids:
+        if (
+            node == self.repo.nodeconstants.wdirid
+            or node in self.repo.nodeconstants.wdirfilenodeids
+        ):
             raise error.WdirUnsupported
 
         store = self.repo.contentstore
@@ -432,8 +432,8 @@ class remotefilelog(object):
         return self.repo.metadatastore.getancestors(self.filename, node)
 
     def ancestor(self, a, b):
-        if a == nullid or b == nullid:
-            return nullid
+        if a == self.repo.nullid or b == self.repo.nullid:
+            return self.repo.nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
         nodemap = {v: k for (k, v) in pycompat.iteritems(revmap)}
@@ -442,13 +442,13 @@ class remotefilelog(object):
         if ancs:
             # choose a consistent winner when there's a tie
             return min(map(nodemap.__getitem__, ancs))
-        return nullid
+        return self.repo.nullid
 
     def commonancestorsheads(self, a, b):
         """calculate all the heads of the common ancestors of nodes a and b"""
 
-        if a == nullid or b == nullid:
-            return nullid
+        if a == self.repo.nullid or b == self.repo.nullid:
+            return self.repo.nullid
 
         revmap, parentfunc = self._buildrevgraph(a, b)
         nodemap = {v: k for (k, v) in pycompat.iteritems(revmap)}
@@ -472,10 +472,10 @@ class remotefilelog(object):
                 p1, p2, linknode, copyfrom = pdata
                 # Don't follow renames (copyfrom).
                 # remotefilectx.ancestor does that.
-                if p1 != nullid and not copyfrom:
+                if p1 != self.repo.nullid and not copyfrom:
                     parents.append(p1)
                     allparents.add(p1)
-                if p2 != nullid:
+                if p2 != self.repo.nullid:
                     parents.append(p2)
                     allparents.add(p2)
 

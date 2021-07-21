@@ -51,13 +51,52 @@ class Hint(object):
         super(Hint, self).__init__(*args, **kw)
 
 
-class StorageError(Hint, Exception):
+class Error(Hint, Exception):
+    """Base class for Mercurial errors."""
+
+    coarse_exit_code = None
+    detailed_exit_code = None
+
+    def __init__(self, message, hint=None):
+        # type: (bytes, Optional[bytes]) -> None
+        self.message = message
+        self.hint = hint
+        # Pass the message into the Exception constructor to help extensions
+        # that look for exc.args[0].
+        Exception.__init__(self, message)
+
+    def __bytes__(self):
+        return self.message
+
+    if pycompat.ispy3:
+
+        def __str__(self):
+            # the output would be unreadable if the message was translated,
+            # but do not replace it with encoding.strfromlocal(), which
+            # may raise another exception.
+            return pycompat.sysstr(self.__bytes__())
+
+    def format(self):
+        # type: () -> bytes
+        from .i18n import _
+
+        message = _(b"abort: %s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
+
+
+class Abort(Error):
+    """Raised if a command needs to print an error and exit."""
+
+
+class StorageError(Error):
     """Raised when an error occurs in a storage layer.
 
     Usually subclassed by a storage-specific exception.
     """
 
-    __bytes__ = _tobytes
+    detailed_exit_code = 50
 
 
 class RevlogError(StorageError):
@@ -159,10 +198,20 @@ class WorkerError(Exception):
     __bytes__ = _tobytes
 
 
-class InterventionRequired(Hint, Exception):
+class InterventionRequired(Abort):
     """Exception raised when a command requires human intervention."""
 
-    __bytes__ = _tobytes
+    coarse_exit_code = 1
+    detailed_exit_code = 240
+
+    def format(self):
+        # type: () -> bytes
+        from .i18n import _
+
+        message = _(b"%s\n") % self.message
+        if self.hint:
+            message += _(b"(%s)\n") % self.hint
+        return message
 
 
 class ConflictResolutionRequired(InterventionRequired):
@@ -182,43 +231,13 @@ class ConflictResolutionRequired(InterventionRequired):
         )
 
 
-class Abort(Hint, Exception):
-    """Raised if a command needs to print an error and exit."""
-
-    def __init__(self, message, hint=None):
-        # type: (bytes, Optional[bytes]) -> None
-        self.message = message
-        self.hint = hint
-        # Pass the message into the Exception constructor to help extensions
-        # that look for exc.args[0].
-        Exception.__init__(self, message)
-
-    def __bytes__(self):
-        return self.message
-
-    if pycompat.ispy3:
-
-        def __str__(self):
-            # the output would be unreadable if the message was translated,
-            # but do not replace it with encoding.strfromlocal(), which
-            # may raise another exception.
-            return pycompat.sysstr(self.__bytes__())
-
-    def format(self):
-        # type: () -> bytes
-        from .i18n import _
-
-        message = _(b"abort: %s\n") % self.message
-        if self.hint:
-            message += _(b"(%s)\n") % self.hint
-        return message
-
-
 class InputError(Abort):
     """Indicates that the user made an error in their input.
 
     Examples: Invalid command, invalid flags, invalid revision.
     """
+
+    detailed_exit_code = 10
 
 
 class StateError(Abort):
@@ -227,12 +246,16 @@ class StateError(Abort):
     Examples: Unresolved merge conflicts, unfinished operations.
     """
 
+    detailed_exit_code = 20
+
 
 class CanceledError(Abort):
     """Indicates that the user canceled the operation.
 
     Examples: Close commit editor with error status, quit chistedit.
     """
+
+    detailed_exit_code = 250
 
 
 class SecurityError(Abort):
@@ -241,6 +264,8 @@ class SecurityError(Abort):
     Examples: Bad server credentials, expired local credentials for network
     filesystem, mismatched GPG signature, DoS protection.
     """
+
+    detailed_exit_code = 150
 
 
 class HookLoadError(Abort):
@@ -254,9 +279,13 @@ class HookAbort(Abort):
 
     Exists to allow more specialized catching."""
 
+    detailed_exit_code = 40
+
 
 class ConfigError(Abort):
     """Exception raised when parsing config files"""
+
+    detailed_exit_code = 30
 
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[bytes], Optional[bytes]) -> None
@@ -307,6 +336,8 @@ class ResponseExpected(Abort):
 class RemoteError(Abort):
     """Exception raised when interacting with a remote repo fails"""
 
+    detailed_exit_code = 100
+
 
 class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
@@ -324,6 +355,8 @@ class OutOfBandError(RemoteError):
 
 class ParseError(Abort):
     """Raised when parsing config files and {rev,file}sets (msg[, pos])"""
+
+    detailed_exit_code = 10
 
     def __init__(self, message, location=None, hint=None):
         # type: (bytes, Optional[Union[bytes, int]], Optional[bytes]) -> None

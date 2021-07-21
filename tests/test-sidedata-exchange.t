@@ -8,12 +8,12 @@ Check simple exchange behavior
 Pusher and pushed have sidedata enabled
 ---------------------------------------
 
-  $ hg init sidedata-source --config format.exp-use-side-data=yes
+  $ hg init sidedata-source --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-source/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
   > EOF
-  $ hg init sidedata-target --config format.exp-use-side-data=yes
+  $ hg init sidedata-target --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-target/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
@@ -71,12 +71,12 @@ Puller and pulled have sidedata enabled
 ---------------------------------------
 
   $ rm -rf sidedata-source sidedata-target
-  $ hg init sidedata-source --config format.exp-use-side-data=yes
+  $ hg init sidedata-source --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-source/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
   > EOF
-  $ hg init sidedata-target --config format.exp-use-side-data=yes
+  $ hg init sidedata-target --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-target/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
@@ -138,12 +138,12 @@ Pusher has sidedata enabled, pushed does not
 --------------------------------------------
 
   $ rm -rf sidedata-source sidedata-target
-  $ hg init sidedata-source --config format.exp-use-side-data=yes
+  $ hg init sidedata-source --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-source/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
   > EOF
-  $ hg init sidedata-target --config format.exp-use-side-data=no
+  $ hg init sidedata-target --config experimental.revlogv2=no
   $ cd sidedata-source
   $ echo a > a
   $ echo b > b
@@ -186,12 +186,12 @@ Pulled has sidedata enabled, puller does not
 --------------------------------------------
 
   $ rm -rf sidedata-source sidedata-target
-  $ hg init sidedata-source --config format.exp-use-side-data=yes
+  $ hg init sidedata-source --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> sidedata-source/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata-5.py
   > EOF
-  $ hg init sidedata-target --config format.exp-use-side-data=no
+  $ hg init sidedata-target --config experimental.revlogv2=no
   $ cd sidedata-source
   $ echo a > a
   $ echo b > b
@@ -239,8 +239,8 @@ Check sidedata exchange with on-the-fly generation and removal
 (Push) Target has strict superset of the source
 -----------------------------------------------
 
-  $ hg init source-repo --config format.exp-use-side-data=yes
-  $ hg init target-repo --config format.exp-use-side-data=yes
+  $ hg init source-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
+  $ hg init target-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> target-repo/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata.py
@@ -311,12 +311,12 @@ Source has one in common, one missing and one more sidedata category with the
 target.
 
   $ rm -rf source-repo target-repo
-  $ hg init source-repo --config format.exp-use-side-data=yes
+  $ hg init source-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> source-repo/.hg/hgrc
   > [extensions]
   > testsidedata3=$TESTDIR/testlib/ext-sidedata-3.py
   > EOF
-  $ hg init target-repo --config format.exp-use-side-data=yes
+  $ hg init target-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> target-repo/.hg/hgrc
   > [extensions]
   > testsidedata4=$TESTDIR/testlib/ext-sidedata-4.py
@@ -412,8 +412,8 @@ but not entry-0001.
 -----------------------------------------------
 
   $ rm -rf source-repo target-repo
-  $ hg init source-repo --config format.exp-use-side-data=yes
-  $ hg init target-repo --config format.exp-use-side-data=yes
+  $ hg init source-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
+  $ hg init target-repo --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
   $ cat << EOF >> target-repo/.hg/hgrc
   > [extensions]
   > testsidedata=$TESTDIR/testlib/ext-sidedata.py

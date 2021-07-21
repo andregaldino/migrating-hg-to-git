@@ -15,7 +15,6 @@ import re
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -60,6 +59,10 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+)
+
+from .revlogutils import (
+    constants as revlog_constants,
 )
 
 if pycompat.TYPE_CHECKING:
@@ -298,37 +301,37 @@ def check_incompatible_arguments(opts, first, others):
         check_at_most_one_arg(opts, first, other)
 
 
-def resolvecommitoptions(ui, opts):
+def resolve_commit_options(ui, opts):
     """modify commit options dict to handle related options
 
     The return value indicates that ``rewrite.update-timestamp`` is the reason
     the ``date`` option is set.
     """
-    check_at_most_one_arg(opts, b'date', b'currentdate')
-    check_at_most_one_arg(opts, b'user', b'currentuser')
+    check_at_most_one_arg(opts, 'date', 'currentdate')
+    check_at_most_one_arg(opts, 'user', 'currentuser')
 
     datemaydiffer = False  # date-only change should be ignored?
 
-    if opts.get(b'currentdate'):
-        opts[b'date'] = b'%d %d' % dateutil.makedate()
+    if opts.get('currentdate'):
+        opts['date'] = b'%d %d' % dateutil.makedate()
     elif (
-        not opts.get(b'date')
+        not opts.get('date')
         and ui.configbool(b'rewrite', b'update-timestamp')
-        and opts.get(b'currentdate') is None
+        and opts.get('currentdate') is None
     ):
-        opts[b'date'] = b'%d %d' % dateutil.makedate()
+        opts['date'] = b'%d %d' % dateutil.makedate()
         datemaydiffer = True
 
-    if opts.get(b'currentuser'):
-        opts[b'user'] = ui.username()
+    if opts.get('currentuser'):
+        opts['user'] = ui.username()
 
     return datemaydiffer
 
 
-def checknotesize(ui, opts):
+def check_note_size(opts):
     """make sure note is of valid format"""
 
-    note = opts.get(b'note')
+    note = opts.get('note')
     if not note:
         return
 
@@ -343,19 +346,18 @@ def ishunk(x):
     return isinstance(x, hunkclasses)
 
 
-def newandmodified(chunks, originalchunks):
+def isheader(x):
+    headerclasses = (crecordmod.uiheader, patch.header)
+    return isinstance(x, headerclasses)
+
+
+def newandmodified(chunks):
     newlyaddedandmodifiedfiles = set()
     alsorestore = set()
     for chunk in chunks:
-        if (
-            ishunk(chunk)
-            and chunk.header.isnewfile()
-            and chunk not in originalchunks
-        ):
-            newlyaddedandmodifiedfiles.add(chunk.header.filename())
-            alsorestore.update(
-                set(chunk.header.files()) - {chunk.header.filename()}
-            )
+        if isheader(chunk) and chunk.isnewfile():
+            newlyaddedandmodifiedfiles.add(chunk.filename())
+            alsorestore.update(set(chunk.files()) - {chunk.filename()})
     return newlyaddedandmodifiedfiles, alsorestore
 
 
@@ -514,12 +516,12 @@ def dorecord(
         diffopts.git = True
         diffopts.showfunc = True
         originaldiff = patch.diff(repo, changes=status, opts=diffopts)
-        originalchunks = patch.parsepatch(originaldiff)
+        original_headers = patch.parsepatch(originaldiff)
         match = scmutil.match(repo[None], pats)
 
         # 1. filter patch, since we are intending to apply subset of it
         try:
-            chunks, newopts = filterfn(ui, originalchunks, match)
+            chunks, newopts = filterfn(ui, original_headers, match)
         except error.PatchError as err:
             raise error.InputError(_(b'error parsing patch: %s') % err)
         opts.update(newopts)
@@ -529,15 +531,11 @@ def dorecord(
         # version without the edit in the workdir. We also will need to restore
         # files that were the sources of renames so that the patch application
         # works.
-        newlyaddedandmodifiedfiles, alsorestore = newandmodified(
-            chunks, originalchunks
-        )
+        newlyaddedandmodifiedfiles, alsorestore = newandmodified(chunks)
         contenders = set()
         for h in chunks:
-            try:
+            if isheader(h):
                 contenders.update(set(h.files()))
-            except AttributeError:
-                pass
 
         changed = status.modified + status.added + status.removed
         newfiles = [f for f in changed if f in contenders]
@@ -632,7 +630,19 @@ def dorecord(
                         # without normallookup, restoring timestamp
                         # may cause partially committed files
                         # to be treated as unmodified
-                        dirstate.normallookup(realname)
+
+                        # XXX-PENDINGCHANGE: We should clarify the context in
+                        # which this function is called  to make sure it
+                        # already called within a `pendingchange`, However we
+                        # are taking a shortcut here in order to be able to
+                        # quickly deprecated the older API.
+                        with dirstate.parentchange():
+                            dirstate.update_file(
+                                realname,
+                                p1_tracked=True,
+                                wc_tracked=True,
+                                possibly_dirty=True,
+                            )
 
                     # copystat=True here and above are a hack to trick any
                     # editors that have f open that we haven't modified them.
@@ -998,11 +1008,6 @@ def changebranch(ui, repo, revs, label, opts):
                 _(b"a branch of the same name already exists")
             )
 
-        if repo.revs(b'obsolete() and %ld', revs):
-            raise error.InputError(
-                _(b"cannot change branch of a obsolete changeset")
-            )
-
         # make sure only topological heads
         if repo.revs(b'heads(%ld) - head()', revs):
             raise error.InputError(
@@ -1097,7 +1102,7 @@ def bailifchanged(repo, merge=True, hint=None):
     'hint' is the usual hint given to Abort exception.
     """
 
-    if merge and repo.dirstate.p2() != nullid:
+    if merge and repo.dirstate.p2() != repo.nullid:
         raise error.StateError(_(b'outstanding uncommitted merge'), hint=hint)
     st = repo.status()
     if st.modified or st.added or st.removed or st.deleted:
@@ -1434,8 +1439,12 @@ def openstorage(repo, cmd, file_, opts, returnrevlog=False):
             raise error.CommandError(cmd, _(b'invalid arguments'))
         if not os.path.isfile(file_):
             raise error.InputError(_(b"revlog '%s' not found") % file_)
+
+        target = (revlog_constants.KIND_OTHER, b'free-form:%s' % file_)
         r = revlog.revlog(
-            vfsmod.vfs(encoding.getcwd(), audit=False), file_[:-2] + b".i"
+            vfsmod.vfs(encoding.getcwd(), audit=False),
+            target=target,
+            radix=file_[:-2],
         )
     return r
 
@@ -1849,7 +1858,10 @@ def copy(ui, repo, pats, opts, rename=False):
             continue
         copylist.append((tfn(pat, dest, srcs), srcs))
     if not copylist:
-        raise error.InputError(_(b'no files to copy'))
+        hint = None
+        if rename:
+            hint = _(b'maybe you meant to use --after --at-rev=.')
+        raise error.InputError(_(b'no files to copy'), hint=hint)
 
     errors = 0
     for targetpath, srcs in copylist:
@@ -2104,7 +2116,7 @@ def _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts):
     if parents:
         prev = parents[0]
     else:
-        prev = nullid
+        prev = repo.nullid
 
     fm.context(ctx=ctx)
     fm.plain(b'# HG changeset patch\n')
@@ -2810,7 +2822,8 @@ def amend(ui, repo, old, extra, pats, opts):
         extra.update(wctx.extra())
 
         # date-only change should be ignored?
-        datemaydiffer = resolvecommitoptions(ui, opts)
+        datemaydiffer = resolve_commit_options(ui, opts)
+        opts = pycompat.byteskwargs(opts)
 
         date = old.date()
         if opts.get(b'date'):
@@ -2966,29 +2979,32 @@ def amend(ui, repo, old, extra, pats, opts):
         newid = repo.commitctx(new)
         ms.reset()
 
-        # Reroute the working copy parent to the new changeset
-        repo.setparents(newid, nullid)
+        with repo.dirstate.parentchange():
+            # Reroute the working copy parent to the new changeset
+            repo.setparents(newid, repo.nullid)
 
-        # Fixing the dirstate because localrepo.commitctx does not update
-        # it. This is rather convenient because we did not need to update
-        # the dirstate for all the files in the new commit which commitctx
-        # could have done if it updated the dirstate. Now, we can
-        # selectively update the dirstate only for the amended files.
-        dirstate = repo.dirstate
+            # Fixing the dirstate because localrepo.commitctx does not update
+            # it. This is rather convenient because we did not need to update
+            # the dirstate for all the files in the new commit which commitctx
+            # could have done if it updated the dirstate. Now, we can
+            # selectively update the dirstate only for the amended files.
+            dirstate = repo.dirstate
 
-        # Update the state of the files which were added and modified in the
-        # amend to "normal" in the dirstate. We need to use "normallookup" since
-        # the files may have changed since the command started; using "normal"
-        # would mark them as clean but with uncommitted contents.
-        normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
-        for f in normalfiles:
-            dirstate.normallookup(f)
+            # Update the state of the files which were added and modified in the
+            # amend to "normal" in the dirstate. We need to use "normallookup" since
+            # the files may have changed since the command started; using "normal"
+            # would mark them as clean but with uncommitted contents.
+            normalfiles = set(wctx.modified() + wctx.added()) & filestoamend
+            for f in normalfiles:
+                dirstate.update_file(
+                    f, p1_tracked=True, wc_tracked=True, possibly_dirty=True
+                )
 
-        # Update the state of files which were removed in the amend
-        # to "removed" in the dirstate.
-        removedfiles = set(wctx.removed()) & filestoamend
-        for f in removedfiles:
-            dirstate.drop(f)
+            # Update the state of files which were removed in the amend
+            # to "removed" in the dirstate.
+            removedfiles = set(wctx.removed()) & filestoamend
+            for f in removedfiles:
+                dirstate.update_file(f, p1_tracked=False, wc_tracked=False)
 
         mapping = {old.node(): (newid,)}
         obsmetadata = None
@@ -3322,7 +3338,7 @@ def revert(ui, repo, ctx, *pats, **opts):
 
         # in case of merge, files that are actually added can be reported as
         # modified, we need to post process the result
-        if p2 != nullid:
+        if p2 != repo.nullid:
             mergeadd = set(dsmodified)
             for path in dsmodified:
                 if path in mf:
@@ -3548,7 +3564,7 @@ def _performrevert(
             repo.wvfs.unlinkpath(f, rmdir=rmdir)
         except OSError:
             pass
-        repo.dirstate.remove(f)
+        repo.dirstate.set_untracked(f)
 
     def prntstatusmsg(action, f):
         exact = names[f]
@@ -3563,12 +3579,12 @@ def _performrevert(
             )
             if choice == 0:
                 prntstatusmsg(b'forget', f)
-                repo.dirstate.drop(f)
+                repo.dirstate.set_untracked(f)
             else:
                 excluded_files.append(f)
         else:
             prntstatusmsg(b'forget', f)
-            repo.dirstate.drop(f)
+            repo.dirstate.set_untracked(f)
     for f in actions[b'remove'][0]:
         audit_path(f)
         if interactive:
@@ -3586,17 +3602,17 @@ def _performrevert(
     for f in actions[b'drop'][0]:
         audit_path(f)
         prntstatusmsg(b'drop', f)
-        repo.dirstate.remove(f)
+        repo.dirstate.set_untracked(f)
 
     normal = None
     if node == parent:
         # We're reverting to our parent. If possible, we'd like status
         # to report the file as clean. We have to use normallookup for
         # merges to avoid losing information about merged/dirty files.
-        if p2 != nullid:
-            normal = repo.dirstate.normallookup
+        if p2 != repo.nullid:
+            normal = repo.dirstate.set_tracked
         else:
-            normal = repo.dirstate.normal
+            normal = repo.dirstate.set_clean
 
     newlyaddedandmodifiedfiles = set()
     if interactive:
@@ -3624,12 +3640,12 @@ def _performrevert(
             diff = patch.diff(repo, None, ctx.node(), m, opts=diffopts)
         else:
             diff = patch.diff(repo, ctx.node(), None, m, opts=diffopts)
-        originalchunks = patch.parsepatch(diff)
+        original_headers = patch.parsepatch(diff)
 
         try:
 
             chunks, opts = recordfilter(
-                repo.ui, originalchunks, match, operation=operation
+                repo.ui, original_headers, match, operation=operation
             )
             if operation == b'discard':
                 chunks = patch.reversehunks(chunks)
@@ -3642,9 +3658,7 @@ def _performrevert(
         # "remove added file <name> (Yn)?", so we don't need to worry about the
         # alsorestore value. Ideally we'd be able to partially revert
         # copied/renamed files.
-        newlyaddedandmodifiedfiles, unusedalsorestore = newandmodified(
-            chunks, originalchunks
-        )
+        newlyaddedandmodifiedfiles, unusedalsorestore = newandmodified(chunks)
         if tobackup is None:
             tobackup = set()
         # Apply changes
@@ -3687,11 +3701,11 @@ def _performrevert(
         if f not in newlyaddedandmodifiedfiles:
             prntstatusmsg(b'add', f)
             checkout(f)
-            repo.dirstate.add(f)
+            repo.dirstate.set_tracked(f)
 
-    normal = repo.dirstate.normallookup
-    if node == parent and p2 == nullid:
-        normal = repo.dirstate.normal
+    normal = repo.dirstate.set_tracked
+    if node == parent and p2 == repo.nullid:
+        normal = repo.dirstate.set_clean
     for f in actions[b'undelete'][0]:
         if interactive:
             choice = repo.ui.promptchoice(

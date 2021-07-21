@@ -18,7 +18,6 @@ import io
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
     short,
 )
@@ -96,12 +95,12 @@ def fnoderevs(ui, repo, revs):
     return fnodes
 
 
-def _nulltonone(value):
+def _nulltonone(repo, value):
     """convert nullid to None
 
     For tag value, nullid means "deleted". This small utility function helps
     translating that to None."""
-    if value == nullid:
+    if value == repo.nullid:
         return None
     return value
 
@@ -123,14 +122,14 @@ def difftags(ui, repo, oldfnodes, newfnodes):
     # list of (tag, old, new): None means missing
     entries = []
     for tag, (new, __) in newtags.items():
-        new = _nulltonone(new)
+        new = _nulltonone(repo, new)
         old, __ = oldtags.pop(tag, (None, None))
-        old = _nulltonone(old)
+        old = _nulltonone(repo, old)
         if old != new:
             entries.append((tag, old, new))
     # handle deleted tags
     for tag, (old, __) in oldtags.items():
-        old = _nulltonone(old)
+        old = _nulltonone(repo, old)
         if old is not None:
             entries.append((tag, old, None))
     entries.sort()
@@ -452,7 +451,7 @@ def _readtagcache(ui, repo):
     repoheads = repo.heads()
     # Case 2 (uncommon): empty repo; get out quickly and don't bother
     # writing an empty cache.
-    if repoheads == [nullid]:
+    if repoheads == [repo.nullid]:
         return ([], {}, valid, {}, False)
 
     # Case 3 (uncommon): cache file missing or empty.
@@ -499,7 +498,7 @@ def _getfnodes(ui, repo, nodes):
     for node in nodes:
         fnode = fnodescache.getfnode(node)
         flog = repo.file(b'.hgtags')
-        if fnode != nullid:
+        if fnode != repo.nullid:
             if fnode not in validated_fnodes:
                 if flog.hasnode(fnode):
                     validated_fnodes.add(fnode)
@@ -510,7 +509,7 @@ def _getfnodes(ui, repo, nodes):
     if unknown_entries:
         fixed_nodemap = fnodescache.refresh_invalid_nodes(unknown_entries)
         for node, fnode in pycompat.iteritems(fixed_nodemap):
-            if fnode != nullid:
+            if fnode != repo.nullid:
                 cachefnode[node] = fnode
 
     fnodescache.write()
@@ -632,7 +631,7 @@ def _tag(
                 m = name
 
             if repo._tagscache.tagtypes and name in repo._tagscache.tagtypes:
-                old = repo.tags().get(name, nullid)
+                old = repo.tags().get(name, repo.nullid)
                 fp.write(b'%s %s\n' % (hex(old), m))
             fp.write(b'%s %s\n' % (hex(node), m))
         fp.close()
@@ -762,8 +761,8 @@ class hgtagsfnodescache(object):
         If an .hgtags does not exist at the specified revision, nullid is
         returned.
         """
-        if node == nullid:
-            return nullid
+        if node == self._repo.nullid:
+            return node
 
         ctx = self._repo[node]
         rev = ctx.rev()
@@ -826,7 +825,7 @@ class hgtagsfnodescache(object):
                 fnode = ctx.filenode(b'.hgtags')
             except error.LookupError:
                 # No .hgtags file on this revision.
-                fnode = nullid
+                fnode = self._repo.nullid
         return fnode
 
     def setfnode(self, node, fnode):

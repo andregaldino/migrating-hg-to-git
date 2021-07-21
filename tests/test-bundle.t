@@ -751,7 +751,7 @@ test that verify bundle does not traceback
 partial history bundle, fails w/ unknown parent
 
   $ hg -R bundle.hg verify
-  abort: 00changelog.i@bbd179dfa0a71671c253b3ae0aa1513b60d199fa: unknown parent
+  abort: 00changelog@bbd179dfa0a71671c253b3ae0aa1513b60d199fa: unknown parent
   [50]
 
 full history bundle, refuses to verify non-local repo

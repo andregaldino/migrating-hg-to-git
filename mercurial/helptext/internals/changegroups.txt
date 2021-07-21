@@ -2,12 +2,13 @@ Changegroups are representations of repository revlog data, specifically
 the changelog data, root/flat manifest data, treemanifest data, and
 filelogs.
 
-There are 3 versions of changegroups: ``1``, ``2``, and ``3``. From a
+There are 4 versions of changegroups: ``1``, ``2``, ``3`` and ``4``. From a
 high-level, versions ``1`` and ``2`` are almost exactly the same, with the
 only difference being an additional item in the *delta header*. Version
 ``3`` adds support for storage flags in the *delta header* and optionally
 exchanging treemanifests (enabled by setting an option on the
-``changegroup`` part in the bundle2).
+``changegroup`` part in the bundle2). Version ``4`` adds support for exchanging
+sidedata (additional revision metadata not part of the digest).
 
 Changegroups when not exchanging treemanifests consist of 3 logical
 segments::
@@ -74,8 +75,8 @@ The *delta data* is a series of *delta*s that describe a diff from an existing
 entry (either that the recipient already has, or previously specified in the
 bundle/changegroup).
 
-The *delta header* is different between versions ``1``, ``2``, and
-``3`` of the changegroup format.
+The *delta header* is different between versions ``1``, ``2``, ``3`` and ``4``
+of the changegroup format.
 
 Version 1 (headerlen=80)::
 
@@ -103,6 +104,15 @@ Version 3 (headerlen=102)::
    | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) |
    |            |             |             |            |            |           |
    +------------------------------------------------------------------------------+
+
+Version 4 (headerlen=103)::
+
+   +------------------------------------------------------------------------------+----------+
+   |            |             |             |            |            |           |          |
+   |    node    |   p1 node   |   p2 node   | base node  | link node  |   flags   |  pflags  |
+   | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) | (1 byte) |
+   |            |             |             |            |            |           |          |
+   +------------------------------------------------------------------------------+----------+
 
 The *delta data* consists of ``chunklen - 4 - headerlen`` bytes, which contain a
 series of *delta*s, densely packed (no separators). These deltas describe a diff
@@ -140,11 +150,23 @@ data. The following flags are defined:
    Externally stored. The revision fulltext contains ``key:value`` ``\n``
    delimited metadata defining an object stored elsewhere. Used by the LFS
    extension.
+4096
+   Contains copy information. This revision changes files in a way that could
+   affect copy tracing. This does *not* affect changegroup handling, but is
+   relevant for other parts of Mercurial.
 
 For historical reasons, the integer values are identical to revlog version 1
 per-revision storage flags and correspond to bits being set in this 2-byte
 field. Bits were allocated starting from the most-significant bit, hence the
 reverse ordering and allocation of these flags.
+
+The *pflags* (protocol flags) field holds bitwise flags affecting the protocol
+itself. They are first in the header since they may affect the handling of the
+rest of the fields in a future version. They are defined as such:
+
+1 indicates whether to read a chunk of sidedata (of variable length) right
+  after the revision flags.
+
 
 Changeset Segment
 =================
@@ -166,9 +188,9 @@ the boundary to the next segment (either the *treemanifests segment* or the
 Treemanifests Segment
 ---------------------
 
-The *treemanifests segment* only exists in changegroup version ``3``, and
-only if the 'treemanifest' param is part of the bundle2 changegroup part
-(it is not possible to use changegroup version 3 outside of bundle2).
+The *treemanifests segment* only exists in changegroup version ``3`` and ``4``,
+and only if the 'treemanifest' param is part of the bundle2 changegroup part
+(it is not possible to use changegroup version 3 or 4 outside of bundle2).
 Aside from the filenames in the *treemanifests segment* containing a
 trailing ``/`` character, it behaves identically to the *filelogs segment*
 (see below). The final sub-segment is followed by an *empty chunk* (logically,

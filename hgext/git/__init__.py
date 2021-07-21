@@ -284,7 +284,7 @@ class gitbmstore(object):
 
 def init(orig, ui, dest=b'.', **opts):
     if opts.get('git', False):
-        path = os.path.abspath(dest)
+        path = util.abspath(dest)
         # TODO: walk up looking for the git repo
         _setupdothg(ui, path)
         return 0

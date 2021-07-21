@@ -389,7 +389,15 @@ _data = [
 ]
 
 REVLOG_FILES_MAIN_EXT = (b'.i', b'i.tmpcensored')
-REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
+REVLOG_FILES_OTHER_EXT = (
+    b'.idx',
+    b'.d',
+    b'.dat',
+    b'.n',
+    b'.nd',
+    b'.sda',
+    b'd.tmpcensored',
+)
 # files that are "volatile" and might change between listing and streaming
 #
 # note: the ".nd" file are nodemap data and won't "change" but they might be
@@ -397,7 +405,9 @@ REVLOG_FILES_OTHER_EXT = (b'.d', b'.n', b'.nd', b'd.tmpcensored')
 REVLOG_FILES_VOLATILE_EXT = (b'.n', b'.nd')
 
 # some exception to the above matching
-EXCLUDED = re.compile(b'.*undo\.[^/]+\.nd?$')
+#
+# XXX This is currently not in use because of issue6542
+EXCLUDED = re.compile(b'.*undo\.[^/]+\.(nd?|i)$')
 
 
 def is_revlog(f, kind, st):
@@ -407,13 +417,17 @@ def is_revlog(f, kind, st):
 
 
 def revlog_type(f):
+    # XXX we need to filter `undo.` created by the transaction here, however
+    # being naive about it also filter revlog for `undo.*` files, leading to
+    # issue6542. So we no longer use EXCLUDED.
     if f.endswith(REVLOG_FILES_MAIN_EXT):
         return FILEFLAGS_REVLOG_MAIN
-    elif f.endswith(REVLOG_FILES_OTHER_EXT) and EXCLUDED.match(f) is None:
+    elif f.endswith(REVLOG_FILES_OTHER_EXT):
         t = FILETYPE_FILELOG_OTHER
         if f.endswith(REVLOG_FILES_VOLATILE_EXT):
             t |= FILEFLAGS_VOLATILE
         return t
+    return None
 
 
 # the file is part of changelog data
@@ -706,7 +720,7 @@ class _fncachevfs(vfsmod.proxyvfs):
             # do not trigger a fncache load when adding a file that already is
             # known to exist.
             notload = self.fncache.entries is None and self.vfs.exists(encoded)
-            if notload and b'a' in mode and not self.vfs.stat(encoded).st_size:
+            if notload and b'r+' in mode and not self.vfs.stat(encoded).st_size:
                 # when appending to an existing file, if the file has size zero,
                 # it should be considered as missing. Such zero-size files are
                 # the result of truncation when a transaction is aborted.
@@ -720,6 +734,11 @@ class _fncachevfs(vfsmod.proxyvfs):
             return self.vfs.join(self.encode(path))
         else:
             return self.vfs.join(path)
+
+    def register_file(self, path):
+        """generic hook point to lets fncache steer its stew"""
+        if path.startswith(b'data/') or path.startswith(b'meta/'):
+            self.fncache.add(path)
 
 
 class fncachestore(basicstore):
@@ -753,6 +772,7 @@ class fncachestore(basicstore):
             ef = self.encode(f)
             try:
                 t = revlog_type(f)
+                assert t is not None, f
                 t |= FILEFLAGS_FILELOG
                 yield t, f, ef, self.getsize(ef)
             except OSError as err:

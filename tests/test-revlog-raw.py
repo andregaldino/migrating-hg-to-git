@@ -6,7 +6,6 @@ import collections
 import hashlib
 import sys
 
-from mercurial.node import nullid
 from mercurial import (
     encoding,
     revlog,
@@ -15,9 +14,36 @@ from mercurial import (
 )
 
 from mercurial.revlogutils import (
+    constants,
     deltas,
     flagutil,
 )
+
+
+class _NoTransaction(object):
+    """transaction like object to update the nodemap outside a transaction"""
+
+    def __init__(self):
+        self._postclose = {}
+
+    def addpostclose(self, callback_id, callback_func):
+        self._postclose[callback_id] = callback_func
+
+    def registertmp(self, *args, **kwargs):
+        pass
+
+    def addbackup(self, *args, **kwargs):
+        pass
+
+    def add(self, *args, **kwargs):
+        pass
+
+    def addabort(self, *args, **kwargs):
+        pass
+
+    def _report(self, *args):
+        pass
+
 
 # TESTTMP is optional. This makes it convenient to run without run-tests.py
 tvfs = vfs.vfs(encoding.environ.get(b'TESTTMP', b'/tmp'))
@@ -79,10 +105,11 @@ def newtransaction():
     return transaction.transaction(report, tvfs, {'plain': tvfs}, b'journal')
 
 
-def newrevlog(name=b'_testrevlog.i', recreate=False):
+def newrevlog(name=b'_testrevlog', recreate=False):
     if recreate:
-        tvfs.tryunlink(name)
-    rlog = revlog.revlog(tvfs, name)
+        tvfs.tryunlink(name + b'.i')
+    target = (constants.KIND_OTHER, b'test')
+    rlog = revlog.revlog(tvfs, target=target, radix=name)
     return rlog
 
 
@@ -93,7 +120,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
     """
     nextrev = len(rlog)
     p1 = rlog.node(nextrev - 1)
-    p2 = nullid
+    p2 = rlog.nullid
     if isext:
         flags = revlog.REVIDX_EXTSTORED
     else:
@@ -110,7 +137,7 @@ def appendrev(rlog, text, tr, isext=False, isdelta=True):
         rlog._storedeltachains = True
 
 
-def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
+def addgroupcopy(rlog, tr, destname=b'_destrevlog', optimaldelta=True):
     """Copy revlog to destname using revlog.addgroup. Return the copied revlog.
 
     This emulates push or pull. They use changegroup. Changegroup requires
@@ -127,7 +154,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     class dummychangegroup(object):
         @staticmethod
         def deltachunk(pnode):
-            pnode = pnode or nullid
+            pnode = pnode or rlog.nullid
             parentrev = rlog.rev(pnode)
             r = parentrev + 1
             if r >= len(rlog):
@@ -142,7 +169,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
             return {
                 b'node': rlog.node(r),
                 b'p1': pnode,
-                b'p2': nullid,
+                b'p2': rlog.nullid,
                 b'cs': rlog.node(rlog.linkrev(r)),
                 b'flags': rlog.flags(r),
                 b'deltabase': rlog.node(deltaparent),
@@ -175,7 +202,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
     return dlog
 
 
-def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
+def lowlevelcopy(rlog, tr, destname=b'_destrevlog'):
     """Like addgroupcopy, but use the low level revlog._addrevision directly.
 
     It exercises some code paths that are hard to reach easily otherwise.
@@ -183,7 +210,7 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
     dlog = newrevlog(destname, recreate=True)
     for r in rlog:
         p1 = rlog.node(r - 1)
-        p2 = nullid
+        p2 = rlog.nullid
         if r == 0 or (rlog.flags(r) & revlog.REVIDX_EXTSTORED):
             text = rlog.rawdata(r)
             cachedelta = None
@@ -200,19 +227,17 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
             text = None
             cachedelta = (deltaparent, rlog.revdiff(deltaparent, r))
         flags = rlog.flags(r)
-        ifh = dfh = None
-        try:
-            ifh = dlog.opener(dlog.indexfile, b'a+')
-            if not dlog._inline:
-                dfh = dlog.opener(dlog.datafile, b'a+')
+        with dlog._writing(_NoTransaction()):
             dlog._addrevision(
-                rlog.node(r), text, tr, r, p1, p2, flags, cachedelta, ifh, dfh
+                rlog.node(r),
+                text,
+                tr,
+                r,
+                p1,
+                p2,
+                flags,
+                cachedelta,
             )
-        finally:
-            if dfh is not None:
-                dfh.close()
-            if ifh is not None:
-                ifh.close()
     return dlog
 
 
@@ -425,7 +450,7 @@ data = [
 
 
 def makesnapshot(tr):
-    rl = newrevlog(name=b'_snaprevlog3.i', recreate=True)
+    rl = newrevlog(name=b'_snaprevlog3', recreate=True)
     for i in data:
         appendrev(rl, i, tr)
     return rl
@@ -481,7 +506,7 @@ def maintest():
         checkrevlog(rl2, expected)
         print('addgroupcopy test passed')
         # Copy via revlog.clone
-        rl3 = newrevlog(name=b'_destrevlog3.i', recreate=True)
+        rl3 = newrevlog(name=b'_destrevlog3', recreate=True)
         rl.clone(tr, rl3)
         checkrevlog(rl3, expected)
         print('clone test passed')

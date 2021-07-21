@@ -282,6 +282,7 @@ def main():
         revision=b'',
         sidedata=b'',
         delta=None,
+        protocol_flags=b'',
     )
     checkzobject(rd)
 

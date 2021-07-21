@@ -7,7 +7,7 @@ Flags on revlog version 0 are rejected
   ...     fh.write(b'\x00\x01\x00\x00') and None
 
   $ hg log
-  abort: unknown flags (0x01) in version 0 revlog 00changelog.i
+  abort: unknown flags (0x01) in version 0 revlog 00changelog
   [50]
 
 Unknown flags on revlog version 1 are rejected
@@ -16,7 +16,7 @@ Unknown flags on revlog version 1 are rejected
   ...     fh.write(b'\x00\x04\x00\x01') and None
 
   $ hg log
-  abort: unknown flags (0x04) in version 1 revlog 00changelog.i
+  abort: unknown flags (0x04) in version 1 revlog 00changelog
   [50]
 
 Unknown version is rejected
@@ -25,7 +25,7 @@ Unknown version is rejected
   ...     fh.write(b'\x00\x00\xbe\xef') and None
 
   $ hg log
-  abort: unknown version (48879) in revlog 00changelog.i
+  abort: unknown version (48879) in revlog 00changelog
   [50]
 
   $ cd ..
@@ -45,9 +45,10 @@ Test for CVE-2016-3630
        0       2 99e0332bd498 000000000000 000000000000
        1       3 6674f57a23d8 99e0332bd498 000000000000
 
+  >>> from mercurial.revlogutils.constants import KIND_OTHER
   >>> from mercurial import revlog, vfs
   >>> tvfs = vfs.vfs(b'.')
   >>> tvfs.options = {b'revlogv1': True}
-  >>> rl = revlog.revlog(tvfs, b'a.i')
+  >>> rl = revlog.revlog(tvfs, target=(KIND_OTHER, b'test'), radix=b'a')
   >>> rl.revision(1)
   mpatchError(*'patch cannot be decoded'*) (glob)

@@ -1,4 +1,8 @@
-#require no-windows
+#require no-windows no-rhg
+
+XXX-RHG this test hangs if `hg` is really `rhg`. This was hidden by the use of
+`alias hg=rhg` by run-tests.py. With such alias removed, this test is revealed
+buggy. This need to be resolved sooner than later.
 
 Dummy extension simulating unsafe long running command
   $ cat > sleepext.py <<EOF

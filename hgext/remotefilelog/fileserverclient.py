@@ -14,7 +14,7 @@ import time
 import zlib
 
 from mercurial.i18n import _
-from mercurial.node import bin, hex, nullid
+from mercurial.node import bin, hex
 from mercurial import (
     error,
     pycompat,
@@ -272,7 +272,7 @@ def _getfiles_optimistic(
 def _getfiles_threaded(
     remote, receivemissing, progresstick, missed, idmap, step
 ):
-    remote._callstream(b"getfiles")
+    remote._callstream(b"x_rfl_getfiles")
     pipeo = remote._pipeo
     pipei = remote._pipei
 
@@ -599,9 +599,13 @@ class fileserverclient(object):
 
         # partition missing nodes into nullid and not-nullid so we can
         # warn about this filtering potentially shadowing bugs.
-        nullids = len([None for unused, id in missingids if id == nullid])
+        nullids = len(
+            [None for unused, id in missingids if id == self.repo.nullid]
+        )
         if nullids:
-            missingids = [(f, id) for f, id in missingids if id != nullid]
+            missingids = [
+                (f, id) for f, id in missingids if id != self.repo.nullid
+            ]
             repo.ui.develwarn(
                 (
                     b'remotefilelog not fetching %d null revs'

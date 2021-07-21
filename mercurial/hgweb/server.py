@@ -344,7 +344,7 @@ class _httprequesthandlerssl(_httprequesthandler):
 try:
     import threading
 
-    threading.activeCount()  # silence pyflakes and bypass demandimport
+    threading.active_count()  # silence pyflakes and bypass demandimport
     _mixin = socketserver.ThreadingMixIn
 except ImportError:
     if util.safehasattr(os, b"fork"):

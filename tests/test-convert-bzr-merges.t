@@ -10,37 +10,37 @@ test multiple merges at once
 
   $ mkdir test-multimerge
   $ cd test-multimerge
-  $ bzr init -q source
+  $ brz init -q source
   $ cd source
   $ echo content > file
   $ echo text > rename_me
-  $ bzr add -q file rename_me
-  $ bzr commit -q -m 'Initial add' '--commit-time=2009-10-10 08:00:00 +0100'
+  $ brz add -q file rename_me
+  $ brz commit -q -m 'Initial add' '--commit-time=2009-10-10 08:00:00 +0100'
   $ cd ..
-  $ bzr branch -q source source-branch1
+  $ brz branch -q source source-branch1
   $ cd source-branch1
   $ echo morecontent >> file
   $ echo evenmorecontent > file-branch1
-  $ bzr add -q file-branch1
-  $ bzr commit -q -m 'Added branch1 file' '--commit-time=2009-10-10 08:00:01 +0100'
+  $ brz add -q file-branch1
+  $ brz commit -q -m 'Added branch1 file' '--commit-time=2009-10-10 08:00:01 +0100'
   $ cd ../source
   $ sleep 1
   $ echo content > file-parent
-  $ bzr add -q file-parent
-  $ bzr commit -q -m 'Added parent file' '--commit-time=2009-10-10 08:00:02 +0100'
+  $ brz add -q file-parent
+  $ brz commit -q -m 'Added parent file' '--commit-time=2009-10-10 08:00:02 +0100'
   $ cd ..
-  $ bzr branch -q source source-branch2
+  $ brz branch -q source source-branch2
   $ cd source-branch2
   $ echo somecontent > file-branch2
-  $ bzr add -q file-branch2
-  $ bzr mv -q rename_me renamed
+  $ brz add -q file-branch2
+  $ brz mv -q rename_me renamed
   $ echo change > renamed
-  $ bzr commit -q -m 'Added brach2 file' '--commit-time=2009-10-10 08:00:03 +0100'
+  $ brz commit -q -m 'Added brach2 file' '--commit-time=2009-10-10 08:00:03 +0100'
   $ sleep 1
   $ cd ../source
-  $ bzr merge -q ../source-branch1
-  $ bzr merge -q --force ../source-branch2
-  $ bzr commit -q -m 'Merged branches' '--commit-time=2009-10-10 08:00:04 +0100'
+  $ brz merge -q ../source-branch1
+  $ brz merge -q --force ../source-branch2
+  $ brz commit -q -m 'Merged branches' '--commit-time=2009-10-10 08:00:04 +0100'
   $ cd ..
 
 BUG: file-branch2 should not be added in rev 4, and the rename_me -> renamed

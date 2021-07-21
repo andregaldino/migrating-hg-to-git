@@ -1724,7 +1724,7 @@ def named(repo, subset, x):
 def _node(repo, n):
     """process a node input"""
     rn = None
-    if len(n) == 40:
+    if len(n) == 2 * repo.nodeconstants.nodelen:
         try:
             rn = repo.changelog.rev(bin(n))
         except error.WdirUnsupported:
@@ -1842,6 +1842,9 @@ def origin(repo, subset, x):
 def outgoing(repo, subset, x):
     """Changesets not found in the specified destination repository, or the
     default push location.
+
+    If the location resolve to multiple repositories, the union of all
+    outgoing changeset will be used.
     """
     # Avoid cycles.
     from . import (
@@ -1869,9 +1872,10 @@ def outgoing(repo, subset, x):
             revs = [repo.lookup(rev) for rev in revs]
         other = hg.peer(repo, {}, dest)
         try:
-            repo.ui.pushbuffer()
-            outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
-            repo.ui.popbuffer()
+            with repo.ui.silent():
+                outgoing = discovery.findcommonoutgoing(
+                    repo, other, onlyheads=revs
+                )
         finally:
             other.close()
         missing.update(outgoing.missing)

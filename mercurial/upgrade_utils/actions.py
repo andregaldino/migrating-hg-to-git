@@ -30,6 +30,8 @@ if pycompat.TYPE_CHECKING:
 RECLONES_REQUIREMENTS = {
     requirements.GENERALDELTA_REQUIREMENT,
     requirements.SPARSEREVLOG_REQUIREMENT,
+    requirements.REVLOGV2_REQUIREMENT,
+    requirements.CHANGELOGV2_REQUIREMENT,
 }
 
 
@@ -42,92 +44,16 @@ OPTIMISATION = b'optimization'
 
 
 class improvement(object):
-    """Represents an improvement that can be made as part of an upgrade.
+    """Represents an improvement that can be made as part of an upgrade."""
 
-    The following attributes are defined on each instance:
+    ### The following attributes should be defined for each subclass:
 
-    name
-       Machine-readable string uniquely identifying this improvement. It
-       will be mapped to an action later in the upgrade process.
-
-    type
-       Either ``FORMAT_VARIANT`` or ``OPTIMISATION``.
-       A format variant is where we change the storage format. Not all format
-       variant changes are an obvious problem.
-       An optimization is an action (sometimes optional) that
-       can be taken to further improve the state of the repository.
-
-    description
-       Message intended for humans explaining the improvement in more detail,
-       including the implications of it. For ``FORMAT_VARIANT`` types, should be
-       worded in the present tense. For ``OPTIMISATION`` types, should be
-       worded in the future tense.
-
-    upgrademessage
-       Message intended for humans explaining what an upgrade addressing this
-       issue will do. Should be worded in the future tense.
-
-    postupgrademessage
-       Message intended for humans which will be shown post an upgrade
-       operation when the improvement will be added
-
-    postdowngrademessage
-       Message intended for humans which will be shown post an upgrade
-       operation in which this improvement was removed
-
-    touches_filelogs (bool)
-        Whether this improvement touches filelogs
-
-    touches_manifests (bool)
-        Whether this improvement touches manifests
-
-    touches_changelog (bool)
-        Whether this improvement touches changelog
-
-    touches_requirements (bool)
-        Whether this improvement changes repository requirements
-    """
-
-    def __init__(self, name, type, description, upgrademessage):
-        self.name = name
-        self.type = type
-        self.description = description
-        self.upgrademessage = upgrademessage
-        self.postupgrademessage = None
-        self.postdowngrademessage = None
-        # By default for now, we assume every improvement touches
-        # all the things
-        self.touches_filelogs = True
-        self.touches_manifests = True
-        self.touches_changelog = True
-        self.touches_requirements = True
-
-    def __eq__(self, other):
-        if not isinstance(other, improvement):
-            # This is what python tell use to do
-            return NotImplemented
-        return self.name == other.name
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def __hash__(self):
-        return hash(self.name)
-
-
-allformatvariant = []  # type: List[Type['formatvariant']]
-
-
-def registerformatvariant(cls):
-    allformatvariant.append(cls)
-    return cls
-
-
-class formatvariant(improvement):
-    """an improvement subclass dedicated to repository format"""
-
-    type = FORMAT_VARIANT
-    ### The following attributes should be defined for each class:
+    # Either ``FORMAT_VARIANT`` or ``OPTIMISATION``.
+    # A format variant is where we change the storage format. Not all format
+    # variant changes are an obvious problem.
+    # An optimization is an action (sometimes optional) that
+    # can be taken to further improve the state of the repository.
+    type = None
 
     # machine-readable string uniquely identifying this improvement. it will be
     # mapped to an action later in the upgrade process.
@@ -154,14 +80,36 @@ class formatvariant(improvement):
     # operation in which this improvement was removed
     postdowngrademessage = None
 
-    # By default for now, we assume every improvement touches all the things
+    # By default we assume that every improvement touches requirements and all revlogs
+
+    # Whether this improvement touches filelogs
     touches_filelogs = True
+
+    # Whether this improvement touches manifests
     touches_manifests = True
+
+    # Whether this improvement touches changelog
     touches_changelog = True
+
+    # Whether this improvement changes repository requirements
     touches_requirements = True
 
-    def __init__(self):
-        raise NotImplementedError()
+    # Whether this improvement touches the dirstate
+    touches_dirstate = False
+
+
+allformatvariant = []  # type: List[Type['formatvariant']]
+
+
+def registerformatvariant(cls):
+    allformatvariant.append(cls)
+    return cls
+
+
+class formatvariant(improvement):
+    """an improvement subclass dedicated to repository format"""
+
+    type = FORMAT_VARIANT
 
     @staticmethod
     def fromrepo(repo):
@@ -219,6 +167,27 @@ class fncache(requirementformatvariant):
         b'certain paths and performance of certain '
         b'operations should be improved'
     )
+
+
+@registerformatvariant
+class dirstatev2(requirementformatvariant):
+    name = b'dirstate-v2'
+    _requirement = requirements.DIRSTATE_V2_REQUIREMENT
+
+    default = False
+
+    description = _(
+        b'version 1 of the dirstate file format requires '
+        b'reading and parsing it all at once.'
+    )
+
+    upgrademessage = _(b'"hg status" will be faster')
+
+    touches_filelogs = False
+    touches_manifests = False
+    touches_changelog = False
+    touches_requirements = True
+    touches_dirstate = True
 
 
 @registerformatvariant
@@ -369,6 +338,15 @@ class revlogv2(requirementformatvariant):
     default = False
     description = _(b'Version 2 of the revlog.')
     upgrademessage = _(b'very experimental')
+
+
+@registerformatvariant
+class changelogv2(requirementformatvariant):
+    name = b'changelog-v2'
+    _requirement = requirements.CHANGELOGV2_REQUIREMENT
+    default = False
+    description = _(b'An iteration of the revlog focussed on changelog needs.')
+    upgrademessage = _(b'quite experimental')
 
 
 @registerformatvariant
@@ -534,87 +512,100 @@ def register_optimization(obj):
     return obj
 
 
-register_optimization(
-    improvement(
-        name=b're-delta-parent',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will be recalculated to '
-            b'choose an optimal base revision where this was not '
-            b'already done; the size of the repository may shrink and '
-            b'various operations may become faster; the first time '
-            b'this optimization is performed could slow down upgrade '
-            b'execution considerably; subsequent invocations should '
-            b'not run noticeably slower'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will choose a new '
-            b'base revision if needed'
-        ),
-    )
-)
+class optimization(improvement):
+    """an improvement subclass dedicated to optimizations"""
 
-register_optimization(
-    improvement(
-        name=b're-delta-multibase',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will be recalculated '
-            b'against multiple base revision and the smallest '
-            b'difference will be used; the size of the repository may '
-            b'shrink significantly when there are many merges; this '
-            b'optimization will slow down execution in proportion to '
-            b'the number of merges in the repository and the amount '
-            b'of files in the repository; this slow down should not '
-            b'be significant unless there are tens of thousands of '
-            b'files and thousands of merges'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will choose an '
-            b'optimal delta by computing deltas against multiple '
-            b'parents; may slow down execution time '
-            b'significantly'
-        ),
-    )
-)
+    type = OPTIMISATION
 
-register_optimization(
-    improvement(
-        name=b're-delta-all',
-        type=OPTIMISATION,
-        description=_(
-            b'deltas within internal storage will always be '
-            b'recalculated without reusing prior deltas; this will '
-            b'likely make execution run several times slower; this '
-            b'optimization is typically not needed'
-        ),
-        upgrademessage=_(
-            b'deltas within internal storage will be fully '
-            b'recomputed; this will likely drastically slow down '
-            b'execution time'
-        ),
-    )
-)
 
-register_optimization(
-    improvement(
-        name=b're-delta-fulladd',
-        type=OPTIMISATION,
-        description=_(
-            b'every revision will be re-added as if it was new '
-            b'content. It will go through the full storage '
-            b'mechanism giving extensions a chance to process it '
-            b'(eg. lfs). This is similar to "re-delta-all" but even '
-            b'slower since more logic is involved.'
-        ),
-        upgrademessage=_(
-            b'each revision will be added as new content to the '
-            b'internal storage; this will likely drastically slow '
-            b'down execution time, but some extensions might need '
-            b'it'
-        ),
+@register_optimization
+class redeltaparents(optimization):
+    name = b're-delta-parent'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will be recalculated to '
+        b'choose an optimal base revision where this was not '
+        b'already done; the size of the repository may shrink and '
+        b'various operations may become faster; the first time '
+        b'this optimization is performed could slow down upgrade '
+        b'execution considerably; subsequent invocations should '
+        b'not run noticeably slower'
     )
-)
+
+    upgrademessage = _(
+        b'deltas within internal storage will choose a new '
+        b'base revision if needed'
+    )
+
+
+@register_optimization
+class redeltamultibase(optimization):
+    name = b're-delta-multibase'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will be recalculated '
+        b'against multiple base revision and the smallest '
+        b'difference will be used; the size of the repository may '
+        b'shrink significantly when there are many merges; this '
+        b'optimization will slow down execution in proportion to '
+        b'the number of merges in the repository and the amount '
+        b'of files in the repository; this slow down should not '
+        b'be significant unless there are tens of thousands of '
+        b'files and thousands of merges'
+    )
+
+    upgrademessage = _(
+        b'deltas within internal storage will choose an '
+        b'optimal delta by computing deltas against multiple '
+        b'parents; may slow down execution time '
+        b'significantly'
+    )
+
+
+@register_optimization
+class redeltaall(optimization):
+    name = b're-delta-all'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'deltas within internal storage will always be '
+        b'recalculated without reusing prior deltas; this will '
+        b'likely make execution run several times slower; this '
+        b'optimization is typically not needed'
+    )
+
+    upgrademessage = _(
+        b'deltas within internal storage will be fully '
+        b'recomputed; this will likely drastically slow down '
+        b'execution time'
+    )
+
+
+@register_optimization
+class redeltafulladd(optimization):
+    name = b're-delta-fulladd'
+
+    type = OPTIMISATION
+
+    description = _(
+        b'every revision will be re-added as if it was new '
+        b'content. It will go through the full storage '
+        b'mechanism giving extensions a chance to process it '
+        b'(eg. lfs). This is similar to "re-delta-all" but even '
+        b'slower since more logic is involved.'
+    )
+
+    upgrademessage = _(
+        b'each revision will be added as new content to the '
+        b'internal storage; this will likely drastically slow '
+        b'down execution time, but some extensions might need '
+        b'it'
+    )
 
 
 def findoptimizations(repo):
@@ -642,7 +633,10 @@ def determine_upgrade_actions(
     newactions = []
 
     for d in format_upgrades:
-        name = d._requirement
+        if util.safehasattr(d, '_requirement'):
+            name = d._requirement
+        else:
+            name = None
 
         # If the action is a requirement that doesn't show up in the
         # destination requirements, prune the action.
@@ -677,7 +671,6 @@ class UpgradeOperation(object):
         self.current_requirements = current_requirements
         # list of upgrade actions the operation will perform
         self.upgrade_actions = upgrade_actions
-        self._upgrade_actions_names = set([a.name for a in upgrade_actions])
         self.removed_actions = removed_actions
         self.revlogs_to_process = revlogs_to_process
         # requirements which will be added by the operation
@@ -700,41 +693,42 @@ class UpgradeOperation(object):
         ]
 
         # delta reuse mode of this upgrade operation
+        upgrade_actions_names = self.upgrade_actions_names
         self.delta_reuse_mode = revlog.revlog.DELTAREUSEALWAYS
-        if b're-delta-all' in self._upgrade_actions_names:
+        if b're-delta-all' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSENEVER
-        elif b're-delta-parent' in self._upgrade_actions_names:
+        elif b're-delta-parent' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
-        elif b're-delta-multibase' in self._upgrade_actions_names:
+        elif b're-delta-multibase' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSESAMEREVS
-        elif b're-delta-fulladd' in self._upgrade_actions_names:
+        elif b're-delta-fulladd' in upgrade_actions_names:
             self.delta_reuse_mode = revlog.revlog.DELTAREUSEFULLADD
 
         # should this operation force re-delta of both parents
         self.force_re_delta_both_parents = (
-            b're-delta-multibase' in self._upgrade_actions_names
+            b're-delta-multibase' in upgrade_actions_names
         )
 
         # should this operation create a backup of the store
         self.backup_store = backup_store
 
-        # whether the operation touches different revlogs at all or not
-        self.touches_filelogs = self._touches_filelogs()
-        self.touches_manifests = self._touches_manifests()
-        self.touches_changelog = self._touches_changelog()
-        # whether the operation touches requirements file or not
-        self.touches_requirements = self._touches_requirements()
-        self.touches_store = (
-            self.touches_filelogs
-            or self.touches_manifests
-            or self.touches_changelog
-        )
+    @property
+    def upgrade_actions_names(self):
+        return set([a.name for a in self.upgrade_actions])
+
+    @property
+    def requirements_only(self):
         # does the operation only touches repository requirement
-        self.requirements_only = (
-            self.touches_requirements and not self.touches_store
+        return (
+            self.touches_requirements
+            and not self.touches_filelogs
+            and not self.touches_manifests
+            and not self.touches_changelog
+            and not self.touches_dirstate
         )
 
-    def _touches_filelogs(self):
+    @property
+    def touches_filelogs(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -746,7 +740,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_manifests(self):
+    @property
+    def touches_manifests(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -758,7 +753,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_changelog(self):
+    @property
+    def touches_changelog(self):
         for a in self.upgrade_actions:
             # in optimisations, we re-process the revlogs again
             if a.type == OPTIMISATION:
@@ -770,7 +766,8 @@ class UpgradeOperation(object):
                 return True
         return False
 
-    def _touches_requirements(self):
+    @property
+    def touches_requirements(self):
         for a in self.upgrade_actions:
             # optimisations are used to re-process revlogs and does not result
             # in a requirement being added or removed
@@ -780,6 +777,18 @@ class UpgradeOperation(object):
                 return True
         for a in self.removed_actions:
             if a.touches_requirements:
+                return True
+
+    @property
+    def touches_dirstate(self):
+        for a in self.upgrade_actions:
+            # revlog optimisations do not affect the dirstate
+            if a.type == OPTIMISATION:
+                pass
+            elif a.touches_dirstate:
+                return True
+        for a in self.removed_actions:
+            if a.touches_dirstate:
                 return True
 
         return False
@@ -935,12 +944,13 @@ def supportremovedrequirements(repo):
     """
     supported = {
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -966,11 +976,12 @@ def supporteddestrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,  # allowed in case of downgrade
         requirements.STORE_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -996,12 +1007,13 @@ def allowednewrequirements(repo):
         requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.SIDEDATA_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
         requirements.SHARESAFE_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
+        requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]

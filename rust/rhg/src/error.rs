@@ -1,10 +1,11 @@
-use crate::exitcode;
 use crate::ui::utf8_to_local;
 use crate::ui::UiError;
 use crate::NoRepoInCwdError;
 use format_bytes::format_bytes;
 use hg::config::{ConfigError, ConfigParseError, ConfigValueParseError};
+use hg::dirstate_tree::on_disk::DirstateV2ParseError;
 use hg::errors::HgError;
+use hg::exit_codes;
 use hg::repo::RepoError;
 use hg::revlog::revlog::RevlogError;
 use hg::utils::files::get_bytes_from_path;
@@ -17,7 +18,7 @@ pub enum CommandError {
     /// Exit with an error message and "standard" failure exit code.
     Abort {
         message: Vec<u8>,
-        detailed_exit_code: exitcode::ExitCode,
+        detailed_exit_code: exit_codes::ExitCode,
     },
 
     /// Exit with a failure exit code but no message.
@@ -32,12 +33,12 @@ pub enum CommandError {
 
 impl CommandError {
     pub fn abort(message: impl AsRef<str>) -> Self {
-        CommandError::abort_with_exit_code(message, exitcode::ABORT)
+        CommandError::abort_with_exit_code(message, exit_codes::ABORT)
     }
 
     pub fn abort_with_exit_code(
         message: impl AsRef<str>,
-        detailed_exit_code: exitcode::ExitCode,
+        detailed_exit_code: exit_codes::ExitCode,
     ) -> Self {
         CommandError::Abort {
             // TODO: bytes-based (instead of Unicode-based) formatting
@@ -69,6 +70,12 @@ impl From<HgError> for CommandError {
             HgError::UnsupportedFeature(message) => {
                 CommandError::unsupported(message)
             }
+            HgError::Abort {
+                message,
+                detailed_exit_code,
+            } => {
+                CommandError::abort_with_exit_code(message, detailed_exit_code)
+            }
             _ => CommandError::abort(error.to_string()),
         }
     }
@@ -78,7 +85,7 @@ impl From<ConfigValueParseError> for CommandError {
     fn from(error: ConfigValueParseError) -> Self {
         CommandError::abort_with_exit_code(
             error.to_string(),
-            exitcode::CONFIG_ERROR_ABORT,
+            exit_codes::CONFIG_ERROR_ABORT,
         )
     }
 }
@@ -100,7 +107,7 @@ impl From<RepoError> for CommandError {
                     b"abort: repository {} not found",
                     get_bytes_from_path(at)
                 ),
-                detailed_exit_code: exitcode::ABORT,
+                detailed_exit_code: exit_codes::ABORT,
             },
             RepoError::ConfigParseError(error) => error.into(),
             RepoError::Other(error) => error.into(),
@@ -116,7 +123,7 @@ impl<'a> From<&'a NoRepoInCwdError> for CommandError {
                 b"abort: no repository found in '{}' (.hg not found)!",
                 get_bytes_from_path(cwd)
             ),
-            detailed_exit_code: exitcode::ABORT,
+            detailed_exit_code: exit_codes::ABORT,
         }
     }
 }
@@ -149,7 +156,7 @@ impl From<ConfigParseError> for CommandError {
                 line_message,
                 message
             ),
-            detailed_exit_code: exitcode::CONFIG_ERROR_ABORT,
+            detailed_exit_code: exit_codes::CONFIG_ERROR_ABORT,
         }
     }
 }
@@ -191,5 +198,11 @@ impl From<DirstateError> for CommandError {
             DirstateError::Common(error) => error.into(),
             DirstateError::Map(error) => error.into(),
         }
+    }
+}
+
+impl From<DirstateV2ParseError> for CommandError {
+    fn from(error: DirstateV2ParseError) -> Self {
+        HgError::from(error).into()
     }
 }

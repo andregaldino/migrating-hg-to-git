@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import hashlib
 
 from mercurial.i18n import _
-from mercurial.node import bin, hex, nullid, short
+from mercurial.node import bin, hex, short
 from mercurial.pycompat import (
     getattr,
     setattr,
@@ -158,7 +158,7 @@ def _islfs(rlog, node=None, rev=None):
         rev = rlog.rev(node)
     else:
         node = rlog.node(rev)
-    if node == nullid:
+    if node == rlog.nullid:
         return False
     flags = rlog.flags(rev)
     return bool(flags & revlog.REVIDX_EXTSTORED)

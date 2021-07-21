@@ -34,6 +34,7 @@ import time
 import traceback
 import warnings
 
+from .node import hex
 from .thirdparty import attr
 from .pycompat import (
     delattr,
@@ -98,6 +99,7 @@ else:
 
 _ = i18n._
 
+abspath = platform.abspath
 bindunixsocket = platform.bindunixsocket
 cachestat = platform.cachestat
 checkexec = platform.checkexec
@@ -1908,7 +1910,16 @@ _hardlinkfswhitelist = {
 }
 
 
-def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
+def copyfile(
+    src,
+    dest,
+    hardlink=False,
+    copystat=False,
+    checkambig=False,
+    nb_bytes=None,
+    no_hardlink_cb=None,
+    check_fs_hardlink=True,
+):
     """copy a file, preserving mode and optionally other stat info like
     atime/mtime
 
@@ -1917,6 +1928,8 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
     repo.wlock).
 
     copystat and checkambig should be exclusive.
+
+    nb_bytes: if set only copy the first `nb_bytes` of the source file.
     """
     assert not (copystat and checkambig)
     oldstat = None
@@ -1924,7 +1937,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
         if checkambig:
             oldstat = checkambig and filestat.frompath(dest)
         unlink(dest)
-    if hardlink:
+    if hardlink and check_fs_hardlink:
         # Hardlinks are problematic on CIFS (issue4546), do not allow hardlinks
         # unless we are confident that dest is on a whitelisted filesystem.
         try:
@@ -1932,17 +1945,27 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
         except OSError:
             fstype = None
         if fstype not in _hardlinkfswhitelist:
+            if no_hardlink_cb is not None:
+                no_hardlink_cb()
             hardlink = False
     if hardlink:
         try:
             oslink(src, dest)
+            if nb_bytes is not None:
+                m = "the `nb_bytes` argument is incompatible with `hardlink`"
+                raise error.ProgrammingError(m)
             return
-        except (IOError, OSError):
-            pass  # fall back to normal copy
+        except (IOError, OSError) as exc:
+            if exc.errno != errno.EEXIST and no_hardlink_cb is not None:
+                no_hardlink_cb()
+            # fall back to normal copy
     if os.path.islink(src):
         os.symlink(os.readlink(src), dest)
         # copytime is ignored for symlinks, but in general copytime isn't needed
         # for them anyway
+        if nb_bytes is not None:
+            m = "cannot use `nb_bytes` on a symlink"
+            raise error.ProgrammingError(m)
     else:
         try:
             shutil.copyfile(src, dest)
@@ -1959,6 +1982,10 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
                             oldstat.stat[stat.ST_MTIME] + 1
                         ) & 0x7FFFFFFF
                         os.utime(dest, (advanced, advanced))
+            # We could do something smarter using `copy_file_range` call or similar
+            if nb_bytes is not None:
+                with open(dest, mode='r+') as f:
+                    f.truncate(nb_bytes)
         except shutil.Error as inst:
             raise error.Abort(stringutil.forcebytestr(inst))
 
@@ -1994,8 +2021,10 @@ def copyfiles(src, dst, hardlink=None, progress=None):
         if hardlink:
             try:
                 oslink(src, dst)
-            except (IOError, OSError):
-                hardlink = False
+            except (IOError, OSError) as exc:
+                if exc.errno != errno.EEXIST:
+                    hardlink = False
+                # XXX maybe try to relink if the file exist ?
                 shutil.copy(src, dst)
         else:
             shutil.copy(src, dst)
@@ -2604,7 +2633,7 @@ def makedirs(name, mode=None, notindexed=False):
             return
         if err.errno != errno.ENOENT or not name:
             raise
-        parent = os.path.dirname(os.path.abspath(name))
+        parent = os.path.dirname(abspath(name))
         if parent == name:
             raise
         makedirs(parent, mode, notindexed)

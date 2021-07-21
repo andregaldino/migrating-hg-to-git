@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import contextlib
+import errno
 import os
 import struct
 
@@ -15,6 +16,7 @@ from .i18n import _
 from .pycompat import open
 from .interfaces import repository
 from . import (
+    bookmarks,
     cacheutil,
     error,
     narrowspec,
@@ -24,6 +26,9 @@ from . import (
     scmutil,
     store,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 
@@ -613,6 +618,47 @@ def _test_sync_point_walk_2(repo):
     """a function for synchronisation during tests"""
 
 
+def _v2_walk(repo, includes, excludes, includeobsmarkers):
+    """emit a seris of files information useful to clone a repo
+
+    return (entries, totalfilesize)
+
+    entries is a list of tuple (vfs-key, file-path, file-type, size)
+
+    - `vfs-key`: is a key to the right vfs to write the file (see _makemap)
+    - `name`: file path of the file to copy (to be feed to the vfss)
+    - `file-type`: do this file need to be copied with the source lock ?
+    - `size`: the size of the file (or None)
+    """
+    assert repo._currentlock(repo._lockref) is not None
+    entries = []
+    totalfilesize = 0
+
+    matcher = None
+    if includes or excludes:
+        matcher = narrowspec.match(repo.root, includes, excludes)
+
+    for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
+        if size:
+            ft = _fileappend
+            if rl_type & store.FILEFLAGS_VOLATILE:
+                ft = _filefull
+            entries.append((_srcstore, name, ft, size))
+            totalfilesize += size
+    for name in _walkstreamfullstorefiles(repo):
+        if repo.svfs.exists(name):
+            totalfilesize += repo.svfs.lstat(name).st_size
+            entries.append((_srcstore, name, _filefull, None))
+    if includeobsmarkers and repo.svfs.exists(b'obsstore'):
+        totalfilesize += repo.svfs.lstat(b'obsstore').st_size
+        entries.append((_srcstore, b'obsstore', _filefull, None))
+    for name in cacheutil.cachetocopy(repo):
+        if repo.cachevfs.exists(name):
+            totalfilesize += repo.cachevfs.lstat(name).st_size
+            entries.append((_srccache, name, _filefull, None))
+    return entries, totalfilesize
+
+
 def generatev2(repo, includes, excludes, includeobsmarkers):
     """Emit content for version 2 of a streaming clone.
 
@@ -628,32 +674,14 @@ def generatev2(repo, includes, excludes, includeobsmarkers):
 
     with repo.lock():
 
-        entries = []
-        totalfilesize = 0
-
-        matcher = None
-        if includes or excludes:
-            matcher = narrowspec.match(repo.root, includes, excludes)
-
         repo.ui.debug(b'scanning\n')
-        for rl_type, name, ename, size in _walkstreamfiles(repo, matcher):
-            if size:
-                ft = _fileappend
-                if rl_type & store.FILEFLAGS_VOLATILE:
-                    ft = _filefull
-                entries.append((_srcstore, name, ft, size))
-                totalfilesize += size
-        for name in _walkstreamfullstorefiles(repo):
-            if repo.svfs.exists(name):
-                totalfilesize += repo.svfs.lstat(name).st_size
-                entries.append((_srcstore, name, _filefull, None))
-        if includeobsmarkers and repo.svfs.exists(b'obsstore'):
-            totalfilesize += repo.svfs.lstat(b'obsstore').st_size
-            entries.append((_srcstore, b'obsstore', _filefull, None))
-        for name in cacheutil.cachetocopy(repo):
-            if repo.cachevfs.exists(name):
-                totalfilesize += repo.cachevfs.lstat(name).st_size
-                entries.append((_srccache, name, _filefull, None))
+
+        entries, totalfilesize = _v2_walk(
+            repo,
+            includes=includes,
+            excludes=excludes,
+            includeobsmarkers=includeobsmarkers,
+        )
 
         chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
@@ -767,3 +795,112 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
         repo.ui, repo.requirements, repo.features
     )
     scmutil.writereporequirements(repo)
+
+
+def _copy_files(src_vfs_map, dst_vfs_map, entries, progress):
+    hardlink = [True]
+
+    def copy_used():
+        hardlink[0] = False
+        progress.topic = _(b'copying')
+
+    for k, path, size in entries:
+        src_vfs = src_vfs_map[k]
+        dst_vfs = dst_vfs_map[k]
+        src_path = src_vfs.join(path)
+        dst_path = dst_vfs.join(path)
+        dirname = dst_vfs.dirname(path)
+        if not dst_vfs.exists(dirname):
+            dst_vfs.makedirs(dirname)
+        dst_vfs.register_file(path)
+        # XXX we could use the #nb_bytes argument.
+        util.copyfile(
+            src_path,
+            dst_path,
+            hardlink=hardlink[0],
+            no_hardlink_cb=copy_used,
+            check_fs_hardlink=False,
+        )
+        progress.increment()
+    return hardlink[0]
+
+
+def local_copy(src_repo, dest_repo):
+    """copy all content from one local repository to another
+
+    This is useful for local clone"""
+    src_store_requirements = {
+        r
+        for r in src_repo.requirements
+        if r not in requirementsmod.WORKING_DIR_REQUIREMENTS
+    }
+    dest_store_requirements = {
+        r
+        for r in dest_repo.requirements
+        if r not in requirementsmod.WORKING_DIR_REQUIREMENTS
+    }
+    assert src_store_requirements == dest_store_requirements
+
+    with dest_repo.lock():
+        with src_repo.lock():
+
+            # bookmark is not integrated to the streaming as it might use the
+            # `repo.vfs` and they are too many sentitive data accessible
+            # through `repo.vfs` to expose it to streaming clone.
+            src_book_vfs = bookmarks.bookmarksvfs(src_repo)
+            srcbookmarks = src_book_vfs.join(b'bookmarks')
+            bm_count = 0
+            if os.path.exists(srcbookmarks):
+                bm_count = 1
+
+            entries, totalfilesize = _v2_walk(
+                src_repo,
+                includes=None,
+                excludes=None,
+                includeobsmarkers=True,
+            )
+            src_vfs_map = _makemap(src_repo)
+            dest_vfs_map = _makemap(dest_repo)
+            progress = src_repo.ui.makeprogress(
+                topic=_(b'linking'),
+                total=len(entries) + bm_count,
+                unit=_(b'files'),
+            )
+            # copy  files
+            #
+            # We could copy the full file while the source repository is locked
+            # and the other one without the lock. However, in the linking case,
+            # this would also requires checks that nobody is appending any data
+            # to the files while we do the clone, so this is not done yet. We
+            # could do this blindly when copying files.
+            files = ((k, path, size) for k, path, ftype, size in entries)
+            hardlink = _copy_files(src_vfs_map, dest_vfs_map, files, progress)
+
+            # copy bookmarks over
+            if bm_count:
+                dst_book_vfs = bookmarks.bookmarksvfs(dest_repo)
+                dstbookmarks = dst_book_vfs.join(b'bookmarks')
+                util.copyfile(srcbookmarks, dstbookmarks)
+        progress.complete()
+        if hardlink:
+            msg = b'linked %d files\n'
+        else:
+            msg = b'copied %d files\n'
+        src_repo.ui.debug(msg % (len(entries) + bm_count))
+
+        with dest_repo.transaction(b"localclone") as tr:
+            dest_repo.store.write(tr)
+
+        # clean up transaction file as they do not make sense
+        undo_files = [(dest_repo.svfs, b'undo.backupfiles')]
+        undo_files.extend(dest_repo.undofiles())
+        for undovfs, undofile in undo_files:
+            try:
+                undovfs.unlink(undofile)
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    msg = _(b'error removing %s: %s\n')
+                    path = undovfs.join(undofile)
+                    e_msg = stringutil.forcebytestr(e)
+                    msg %= (path, e_msg)
+                    dest_repo.ui.warn(msg)

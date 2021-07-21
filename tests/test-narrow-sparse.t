@@ -58,6 +58,7 @@ XXX: we should have a flag in `hg debugsparse` to list the sparse profile
 
   $ cat .hg/requires
   dotencode
+  exp-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   narrowhg-experimental
@@ -69,3 +70,28 @@ XXX: we should have a flag in `hg debugsparse` to list the sparse profile
   treemanifest (tree !)
 
   $ hg debugrebuilddirstate
+
+We only make the following assertions for the flat test case since in the
+treemanifest test case debugsparse fails with "path ends in directory
+separator: outside/" which seems like a bug unrelated to the regression this is
+testing for.
+
+#if flat
+widening with both sparse and narrow is possible
+
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > sparse = 
+  > narrow = 
+  > EOF
+
+  $ hg debugsparse -X outside/f -X widest/f
+  $ hg tracked -q --addinclude outside/f
+  $ find . -name .hg -prune -o -type f -print | sort
+  ./inside/f
+
+  $ hg debugsparse -d outside/f
+  $ find . -name .hg -prune -o -type f -print | sort
+  ./inside/f
+  ./outside/f
+#endif

@@ -1,5 +1,19 @@
 #require symlink
 
+#testcases dirstate-v1 dirstate-v1-tree dirstate-v2
+
+#if dirstate-v1-tree
+#require rust
+  $ echo '[experimental]' >> $HGRCPATH
+  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
+#endif
+
+#if dirstate-v2
+#require rust
+  $ echo '[format]' >> $HGRCPATH
+  $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
+#endif
+
 == tests added in 0.7 ==
 
   $ hg init test-symlinks-0.7; cd test-symlinks-0.7;

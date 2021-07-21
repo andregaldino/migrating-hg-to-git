@@ -757,7 +757,7 @@ def writeworkingdir(repo, ctx, filedata, replacements):
         fctx = ctx[path]
         fctx.write(data, fctx.flags())
         if repo.dirstate[path] == b'n':
-            repo.dirstate.normallookup(path)
+            repo.dirstate.set_possibly_dirty(path)
 
     oldparentnodes = repo.dirstate.parents()
     newparentnodes = [replacements.get(n, n) for n in oldparentnodes]

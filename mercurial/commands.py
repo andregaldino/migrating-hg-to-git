@@ -15,10 +15,8 @@ import sys
 from .i18n import _
 from .node import (
     hex,
-    nullid,
     nullrev,
     short,
-    wdirhex,
     wdirrev,
 )
 from .pycompat import open
@@ -486,7 +484,7 @@ def annotate(ui, repo, *pats, **opts):
                     return b'%d ' % rev
 
         def formathex(h):
-            if h == wdirhex:
+            if h == repo.nodeconstants.wdirhex:
                 return b'%s+' % shorthex(hex(ctx.p1().node()))
             else:
                 return b'%s ' % shorthex(h)
@@ -809,9 +807,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         )
 
     p1, p2 = repo.changelog.parents(node)
-    if p1 == nullid:
+    if p1 == repo.nullid:
         raise error.InputError(_(b'cannot backout a change with no parents'))
-    if p2 != nullid:
+    if p2 != repo.nullid:
         if not opts.get(b'parent'):
             raise error.InputError(_(b'cannot backout a merge changeset'))
         p = repo.lookup(opts[b'parent'])
@@ -1085,7 +1083,7 @@ def bisect(
                 )
         else:
             node, p2 = repo.dirstate.parents()
-            if p2 != nullid:
+            if p2 != repo.nullid:
                 raise error.StateError(_(b'current bisect revision is a merge'))
         if rev:
             if not nodes:
@@ -2079,9 +2077,8 @@ def _docommit(ui, repo, *pats, **opts):
         # commit(), 1 if nothing changed or None on success.
         return 1 if ret == 0 else ret
 
-    opts = pycompat.byteskwargs(opts)
-    if opts.get(b'subrepos'):
-        cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'amend'])
+    if opts.get('subrepos'):
+        cmdutil.check_incompatible_arguments(opts, 'subrepos', ['amend'])
         # Let --subrepos on the command line override config setting.
         ui.setconfig(b'ui', b'commitsubrepos', True, b'commit')
 
@@ -2092,7 +2089,7 @@ def _docommit(ui, repo, *pats, **opts):
     tip = repo.changelog.tip()
 
     extra = {}
-    if opts.get(b'close_branch') or opts.get(b'force_close_branch'):
+    if opts.get('close_branch') or opts.get('force_close_branch'):
         extra[b'close'] = b'1'
 
         if repo[b'.'].closesbranch():
@@ -2106,21 +2103,21 @@ def _docommit(ui, repo, *pats, **opts):
         elif (
             branch == repo[b'.'].branch()
             and repo[b'.'].node() not in bheads
-            and not opts.get(b'force_close_branch')
+            and not opts.get('force_close_branch')
         ):
             hint = _(
                 b'use --force-close-branch to close branch from a non-head'
                 b' changeset'
             )
             raise error.InputError(_(b'can only close branch heads'), hint=hint)
-        elif opts.get(b'amend'):
+        elif opts.get('amend'):
             if (
                 repo[b'.'].p1().branch() != branch
                 and repo[b'.'].p2().branch() != branch
             ):
                 raise error.InputError(_(b'can only close branch heads'))
 
-    if opts.get(b'amend'):
+    if opts.get('amend'):
         if ui.configbool(b'ui', b'commitsubrepos'):
             raise error.InputError(
                 _(b'cannot amend with ui.commitsubrepos enabled')
@@ -2139,6 +2136,7 @@ def _docommit(ui, repo, *pats, **opts):
             cmdutil.checkunfinished(repo)
 
         node = cmdutil.amend(ui, repo, old, extra, pats, opts)
+        opts = pycompat.byteskwargs(opts)
         if node == old.node():
             ui.status(_(b"nothing changed\n"))
             return 1
@@ -2167,6 +2165,7 @@ def _docommit(ui, repo, *pats, **opts):
                         extra=extra,
                     )
 
+        opts = pycompat.byteskwargs(opts)
         node = cmdutil.commit(ui, repo, commitfunc, pats, opts)
 
         if not node:
@@ -2202,8 +2201,24 @@ def _docommit(ui, repo, *pats, **opts):
     b'config|showconfig|debugconfig',
     [
         (b'u', b'untrusted', None, _(b'show untrusted configuration options')),
+        # This is experimental because we need
+        # * reasonable behavior around aliases,
+        # * decide if we display [debug] [experimental] and [devel] section par
+        #   default
+        # * some way to display "generic" config entry (the one matching
+        #   regexp,
+        # * proper display of the different value type
+        # * a better way to handle <DYNAMIC> values (and variable types),
+        # * maybe some type information ?
+        (
+            b'',
+            b'exp-all-known',
+            None,
+            _(b'show all known config option (EXPERIMENTAL)'),
+        ),
         (b'e', b'edit', None, _(b'edit user config')),
         (b'l', b'local', None, _(b'edit repository config')),
+        (b'', b'source', None, _(b'show source of configuration value')),
         (
             b'',
             b'shared',
@@ -2234,7 +2249,7 @@ def config(ui, repo, *values, **opts):
     --global, edit the system-wide config file. With --local, edit the
     repository-level config file.
 
-    With --debug, the source (filename and line number) is printed
+    With --source, the source (filename and line number) is printed
     for each config item.
 
     See :hg:`help config` for more information about config files.
@@ -2337,7 +2352,10 @@ def config(ui, repo, *values, **opts):
     selentries = set(selentries)
 
     matched = False
-    for section, name, value in ui.walkconfig(untrusted=untrusted):
+    all_known = opts[b'exp_all_known']
+    show_source = ui.debugflag or opts.get(b'source')
+    entries = ui.walkconfig(untrusted=untrusted, all_known=all_known)
+    for section, name, value in entries:
         source = ui.configsource(section, name, untrusted)
         value = pycompat.bytestr(value)
         defaultvalue = ui.configdefault(section, name)
@@ -2348,7 +2366,7 @@ def config(ui, repo, *values, **opts):
         if values and not (section in selsections or entryname in selentries):
             continue
         fm.startitem()
-        fm.condwrite(ui.debugflag, b'source', b'%s: ', source)
+        fm.condwrite(show_source, b'source', b'%s: ', source)
         if uniquesel:
             fm.data(name=entryname)
             fm.write(b'value', b'%s\n', value)
@@ -3071,8 +3089,7 @@ def graft(ui, repo, *revs, **opts):
 
 
 def _dograft(ui, repo, *revs, **opts):
-    opts = pycompat.byteskwargs(opts)
-    if revs and opts.get(b'rev'):
+    if revs and opts.get('rev'):
         ui.warn(
             _(
                 b'warning: inconsistent use of --rev might give unexpected '
@@ -3081,61 +3098,59 @@ def _dograft(ui, repo, *revs, **opts):
         )
 
     revs = list(revs)
-    revs.extend(opts.get(b'rev'))
+    revs.extend(opts.get('rev'))
     # a dict of data to be stored in state file
     statedata = {}
     # list of new nodes created by ongoing graft
     statedata[b'newnodes'] = []
 
-    cmdutil.resolvecommitoptions(ui, opts)
+    cmdutil.resolve_commit_options(ui, opts)
 
-    editor = cmdutil.getcommiteditor(
-        editform=b'graft', **pycompat.strkwargs(opts)
-    )
+    editor = cmdutil.getcommiteditor(editform=b'graft', **opts)
 
-    cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+    cmdutil.check_at_most_one_arg(opts, 'abort', 'stop', 'continue')
 
     cont = False
-    if opts.get(b'no_commit'):
+    if opts.get('no_commit'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'no_commit',
-            [b'edit', b'currentuser', b'currentdate', b'log'],
+            'no_commit',
+            ['edit', 'currentuser', 'currentdate', 'log'],
         )
 
     graftstate = statemod.cmdstate(repo, b'graftstate')
 
-    if opts.get(b'stop'):
+    if opts.get('stop'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'stop',
+            'stop',
             [
-                b'edit',
-                b'log',
-                b'user',
-                b'date',
-                b'currentdate',
-                b'currentuser',
-                b'rev',
+                'edit',
+                'log',
+                'user',
+                'date',
+                'currentdate',
+                'currentuser',
+                'rev',
             ],
         )
         return _stopgraft(ui, repo, graftstate)
-    elif opts.get(b'abort'):
+    elif opts.get('abort'):
         cmdutil.check_incompatible_arguments(
             opts,
-            b'abort',
+            'abort',
             [
-                b'edit',
-                b'log',
-                b'user',
-                b'date',
-                b'currentdate',
-                b'currentuser',
-                b'rev',
+                'edit',
+                'log',
+                'user',
+                'date',
+                'currentdate',
+                'currentuser',
+                'rev',
             ],
         )
         return cmdutil.abortgraft(ui, repo, graftstate)
-    elif opts.get(b'continue'):
+    elif opts.get('continue'):
         cont = True
         if revs:
             raise error.InputError(_(b"can't specify --continue and revisions"))
@@ -3143,15 +3158,15 @@ def _dograft(ui, repo, *revs, **opts):
         if graftstate.exists():
             statedata = cmdutil.readgraftstate(repo, graftstate)
             if statedata.get(b'date'):
-                opts[b'date'] = statedata[b'date']
+                opts['date'] = statedata[b'date']
             if statedata.get(b'user'):
-                opts[b'user'] = statedata[b'user']
+                opts['user'] = statedata[b'user']
             if statedata.get(b'log'):
-                opts[b'log'] = True
+                opts['log'] = True
             if statedata.get(b'no_commit'):
-                opts[b'no_commit'] = statedata.get(b'no_commit')
+                opts['no_commit'] = statedata.get(b'no_commit')
             if statedata.get(b'base'):
-                opts[b'base'] = statedata.get(b'base')
+                opts['base'] = statedata.get(b'base')
             nodes = statedata[b'nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
@@ -3165,8 +3180,8 @@ def _dograft(ui, repo, *revs, **opts):
 
     skipped = set()
     basectx = None
-    if opts.get(b'base'):
-        basectx = scmutil.revsingle(repo, opts[b'base'], None)
+    if opts.get('base'):
+        basectx = scmutil.revsingle(repo, opts['base'], None)
     if basectx is None:
         # check for merges
         for rev in repo.revs(b'%ld and merge()', revs):
@@ -3184,7 +3199,7 @@ def _dograft(ui, repo, *revs, **opts):
     # way to the graftstate. With --force, any revisions we would have otherwise
     # skipped would not have been filtered out, and if they hadn't been applied
     # already, they'd have been in the graftstate.
-    if not (cont or opts.get(b'force')) and basectx is None:
+    if not (cont or opts.get('force')) and basectx is None:
         # check for ancestors of dest branch
         ancestors = repo.revs(b'%ld & (::.)', revs)
         for rev in ancestors:
@@ -3257,10 +3272,10 @@ def _dograft(ui, repo, *revs, **opts):
         if not revs:
             return -1
 
-    if opts.get(b'no_commit'):
+    if opts.get('no_commit'):
         statedata[b'no_commit'] = True
-    if opts.get(b'base'):
-        statedata[b'base'] = opts[b'base']
+    if opts.get('base'):
+        statedata[b'base'] = opts['base']
     for pos, ctx in enumerate(repo.set(b"%ld", revs)):
         desc = b'%d:%s "%s"' % (
             ctx.rev(),
@@ -3271,7 +3286,7 @@ def _dograft(ui, repo, *revs, **opts):
         if names:
             desc += b' (%s)' % b' '.join(names)
         ui.status(_(b'grafting %s\n') % desc)
-        if opts.get(b'dry_run'):
+        if opts.get('dry_run'):
             continue
 
         source = ctx.extra().get(b'source')
@@ -3282,22 +3297,22 @@ def _dograft(ui, repo, *revs, **opts):
         else:
             extra[b'source'] = ctx.hex()
         user = ctx.user()
-        if opts.get(b'user'):
-            user = opts[b'user']
+        if opts.get('user'):
+            user = opts['user']
             statedata[b'user'] = user
         date = ctx.date()
-        if opts.get(b'date'):
-            date = opts[b'date']
+        if opts.get('date'):
+            date = opts['date']
             statedata[b'date'] = date
         message = ctx.description()
-        if opts.get(b'log'):
+        if opts.get('log'):
             message += b'\n(grafted from %s)' % ctx.hex()
             statedata[b'log'] = True
 
         # we don't merge the first commit when continuing
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
-            overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
+            overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
             base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, b'graft'):
                 stats = mergemod.graft(repo, ctx, base, [b'local', b'graft'])
@@ -3315,7 +3330,7 @@ def _dograft(ui, repo, *revs, **opts):
             cont = False
 
         # commit if --no-commit is false
-        if not opts.get(b'no_commit'):
+        if not opts.get('no_commit'):
             node = repo.commit(
                 text=message, user=user, date=date, extra=extra, editor=editor
             )
@@ -3330,7 +3345,7 @@ def _dograft(ui, repo, *revs, **opts):
                 nn.append(node)
 
     # remove state when we complete successfully
-    if not opts.get(b'dry_run'):
+    if not opts.get('dry_run'):
         graftstate.delete()
 
     return 0
@@ -4847,7 +4862,7 @@ def merge(ui, repo, node=None, **opts):
 
     opts = pycompat.byteskwargs(opts)
     abort = opts.get(b'abort')
-    if abort and repo.dirstate.p2() == nullid:
+    if abort and repo.dirstate.p2() == repo.nullid:
         cmdutil.wrongtooltocontinue(repo, _(b'merge'))
     cmdutil.check_incompatible_arguments(opts, b'abort', [b'rev', b'preview'])
     if abort:
@@ -5072,7 +5087,7 @@ def parents(ui, repo, file_=None, **opts):
 
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for n in p:
-        if n != nullid:
+        if n != repo.nullid:
             displayer.show(repo[n])
     displayer.close()
 
@@ -5128,15 +5143,9 @@ def paths(ui, repo, search=None, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+
+    pathitems = urlutil.list_paths(ui, search)
     ui.pager(b'paths')
-    if search:
-        pathitems = [
-            (name, path)
-            for name, path in pycompat.iteritems(ui.paths)
-            if name == search
-        ]
-    else:
-        pathitems = sorted(pycompat.iteritems(ui.paths))
 
     fm = ui.formatter(b'paths', opts)
     if fm.isplain():
@@ -5157,6 +5166,11 @@ def paths(ui, repo, search=None, **opts):
             assert subopt not in (b'name', b'url')
             if showsubopts:
                 fm.plain(b'%s:%s = ' % (name, subopt))
+            if isinstance(value, bool):
+                if value:
+                    value = b'yes'
+                else:
+                    value = b'no'
             fm.condwrite(showsubopts, subopt, b'%s\n', value)
 
     fm.end()
@@ -6105,7 +6119,7 @@ def resolve(ui, repo, *pats, **opts):
     with repo.wlock():
         ms = mergestatemod.mergestate.read(repo)
 
-        if not (ms.active() or repo.dirstate.p2() != nullid):
+        if not (ms.active() or repo.dirstate.p2() != repo.nullid):
             raise error.StateError(
                 _(b'resolve command not applicable when not merging')
             )
@@ -6223,8 +6237,21 @@ def resolve(ui, repo, *pats, **opts):
                     raise
 
         ms.commit()
-        branchmerge = repo.dirstate.p2() != nullid
-        mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
+        branchmerge = repo.dirstate.p2() != repo.nullid
+        # resolve is not doing a parent change here, however, `record updates`
+        # will call some dirstate API that at intended for parent changes call.
+        # Ideally we would not need this and could implement a lighter version
+        # of the recordupdateslogic that will not have to deal with the part
+        # related to parent changes. However this would requires that:
+        # - we are sure we passed around enough information at update/merge
+        #   time to no longer needs it at `hg resolve time`
+        # - we are sure we store that information well enough to be able to reuse it
+        # - we are the necessary logic to reuse it right.
+        #
+        # All this should eventually happens, but in the mean time, we use this
+        # context manager slightly out of the context it should be.
+        with repo.dirstate.parentchange():
+            mergestatemod.recordupdates(repo, ms.actions(), branchmerge, None)
 
         if not didwork and pats:
             hint = None
@@ -6315,7 +6342,7 @@ def revert(ui, repo, *pats, **opts):
         opts[b"rev"] = cmdutil.finddate(ui, repo, opts[b"date"])
 
     parent, p2 = repo.dirstate.parents()
-    if not opts.get(b'rev') and p2 != nullid:
+    if not opts.get(b'rev') and p2 != repo.nullid:
         # revert after merge is a trap for new users (issue2915)
         raise error.InputError(
             _(b'uncommitted merge with no revision specified'),
@@ -6335,7 +6362,7 @@ def revert(ui, repo, *pats, **opts):
         or opts.get(b'interactive')
     ):
         msg = _(b"no files or directories specified")
-        if p2 != nullid:
+        if p2 != repo.nullid:
             hint = _(
                 b"uncommitted merge, use --all to discard all changes,"
                 b" or 'hg update -C .' to abort the merge"
@@ -7227,9 +7254,8 @@ def summary(ui, repo, **opts):
         if revs:
             revs = [other.lookup(rev) for rev in revs]
         ui.debug(b'comparing with %s\n' % urlutil.hidepassword(source))
-        repo.ui.pushbuffer()
-        commoninc = discovery.findcommonincoming(repo, other, heads=revs)
-        repo.ui.popbuffer()
+        with repo.ui.silent():
+            commoninc = discovery.findcommonincoming(repo, other, heads=revs)
         return source, sbranch, other, commoninc, commoninc[1]
 
     if needsincoming:
@@ -7273,11 +7299,10 @@ def summary(ui, repo, **opts):
             common = commoninc
         if revs:
             revs = [repo.lookup(rev) for rev in revs]
-        repo.ui.pushbuffer()
-        outgoing = discovery.findcommonoutgoing(
-            repo, dother, onlyheads=revs, commoninc=common
-        )
-        repo.ui.popbuffer()
+        with repo.ui.silent():
+            outgoing = discovery.findcommonoutgoing(
+                repo, dother, onlyheads=revs, commoninc=common
+            )
         return dest, dbranch, dother, outgoing
 
     if needsoutgoing:
@@ -7396,7 +7421,7 @@ def tag(ui, repo, name1, *names, **opts):
             for n in names:
                 if repo.tagtype(n) == b'global':
                     alltags = tagsmod.findglobaltags(ui, repo)
-                    if alltags[n][0] == nullid:
+                    if alltags[n][0] == repo.nullid:
                         raise error.InputError(
                             _(b"tag '%s' is already removed") % n
                         )
@@ -7423,7 +7448,7 @@ def tag(ui, repo, name1, *names, **opts):
                     )
         if not opts.get(b'local'):
             p1, p2 = repo.dirstate.parents()
-            if p2 != nullid:
+            if p2 != repo.nullid:
                 raise error.StateError(_(b'uncommitted merge'))
             bheads = repo.branchheads()
             if not opts.get(b'force') and bheads and p1 not in bheads:

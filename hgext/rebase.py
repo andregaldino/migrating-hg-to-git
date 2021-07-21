@@ -190,18 +190,18 @@ class rebaseruntime(object):
         self.destmap = {}
         self.skipped = set()
 
-        self.collapsef = opts.get(b'collapse', False)
-        self.collapsemsg = cmdutil.logmessage(ui, opts)
-        self.date = opts.get(b'date', None)
+        self.collapsef = opts.get('collapse', False)
+        self.collapsemsg = cmdutil.logmessage(ui, pycompat.byteskwargs(opts))
+        self.date = opts.get('date', None)
 
-        e = opts.get(b'extrafn')  # internal, used by e.g. hgsubversion
+        e = opts.get('extrafn')  # internal, used by e.g. hgsubversion
         self.extrafns = [_savegraft]
         if e:
             self.extrafns = [e]
 
         self.backupf = ui.configbool(b'rewrite', b'backup-bundle')
-        self.keepf = opts.get(b'keep', False)
-        self.keepbranchesf = opts.get(b'keepbranches', False)
+        self.keepf = opts.get('keep', False)
+        self.keepbranchesf = opts.get('keepbranches', False)
         self.skipemptysuccessorf = rewriteutil.skip_empty_successor(
             repo.ui, b'rebase'
         )
@@ -446,8 +446,15 @@ class rebaseruntime(object):
             rebaseset = set(destmap.keys())
             rebaseset -= set(self.obsolete_with_successor_in_destination)
             rebaseset -= self.obsolete_with_successor_in_rebase_set
+            # We have our own divergence-checking in the rebase extension
+            overrides = {}
+            if obsolete.isenabled(self.repo, obsolete.createmarkersopt):
+                overrides = {
+                    (b'experimental', b'evolution.allowdivergence'): b'true'
+                }
             try:
-                rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
+                with self.ui.configoverride(overrides):
+                    rewriteutil.precheck(self.repo, rebaseset, action=b'rebase')
             except error.Abort as e:
                 if e.hint is None:
                     e.hint = _(b'use --keep to keep original changesets')
@@ -623,7 +630,7 @@ class rebaseruntime(object):
                 repo.ui.debug(b'resuming interrupted rebase\n')
                 self.resume = False
             else:
-                overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
+                overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
                 with ui.configoverride(overrides, b'rebase'):
                     try:
                         rebasenode(
@@ -670,9 +677,7 @@ class rebaseruntime(object):
             if not self.collapsef:
                 merging = p2 != nullrev
                 editform = cmdutil.mergeeditform(merging, b'rebase')
-                editor = cmdutil.getcommiteditor(
-                    editform=editform, **pycompat.strkwargs(opts)
-                )
+                editor = cmdutil.getcommiteditor(editform=editform, **opts)
                 # We need to set parents again here just in case we're continuing
                 # a rebase started with an old hg version (before 9c9cfecd4600),
                 # because those old versions would have left us with two dirstate
@@ -720,7 +725,7 @@ class rebaseruntime(object):
 
     def _finishrebase(self):
         repo, ui, opts = self.repo, self.ui, self.opts
-        fm = ui.formatter(b'rebase', opts)
+        fm = ui.formatter(b'rebase', pycompat.byteskwargs(opts))
         fm.startitem()
         if self.collapsef:
             p1, p2, _base = defineparents(
@@ -731,7 +736,7 @@ class rebaseruntime(object):
                 self.skipped,
                 self.obsolete_with_successor_in_destination,
             )
-            editopt = opts.get(b'edit')
+            editopt = opts.get('edit')
             editform = b'rebase.collapse'
             if self.collapsemsg:
                 commitmsg = self.collapsemsg
@@ -755,7 +760,7 @@ class rebaseruntime(object):
                     self.state[oldrev] = newrev
 
         if b'qtip' in repo.tags():
-            updatemq(repo, self.state, self.skipped, **pycompat.strkwargs(opts))
+            updatemq(repo, self.state, self.skipped, **opts)
 
         # restore original working directory
         # (we do this before stripping)
@@ -1056,18 +1061,17 @@ def rebase(ui, repo, **opts):
     unresolved conflicts.
 
     """
-    opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool(b'rebase', b'experimental.inmemory')
-    action = cmdutil.check_at_most_one_arg(opts, b'abort', b'stop', b'continue')
+    action = cmdutil.check_at_most_one_arg(opts, 'abort', 'stop', 'continue')
     if action:
         cmdutil.check_incompatible_arguments(
-            opts, action, [b'confirm', b'dry_run']
+            opts, action, ['confirm', 'dry_run']
         )
         cmdutil.check_incompatible_arguments(
-            opts, action, [b'rev', b'source', b'base', b'dest']
+            opts, action, ['rev', 'source', 'base', 'dest']
         )
-    cmdutil.check_at_most_one_arg(opts, b'confirm', b'dry_run')
-    cmdutil.check_at_most_one_arg(opts, b'rev', b'source', b'base')
+    cmdutil.check_at_most_one_arg(opts, 'confirm', 'dry_run')
+    cmdutil.check_at_most_one_arg(opts, 'rev', 'source', 'base')
 
     if action or repo.currenttransaction() is not None:
         # in-memory rebase is not compatible with resuming rebases.
@@ -1075,19 +1079,19 @@ def rebase(ui, repo, **opts):
         # fail the entire transaction.)
         inmemory = False
 
-    if opts.get(b'auto_orphans'):
-        disallowed_opts = set(opts) - {b'auto_orphans'}
+    if opts.get('auto_orphans'):
+        disallowed_opts = set(opts) - {'auto_orphans'}
         cmdutil.check_incompatible_arguments(
-            opts, b'auto_orphans', disallowed_opts
+            opts, 'auto_orphans', disallowed_opts
         )
 
-        userrevs = list(repo.revs(opts.get(b'auto_orphans')))
-        opts[b'rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
-        opts[b'dest'] = b'_destautoorphanrebase(SRC)'
+        userrevs = list(repo.revs(opts.get('auto_orphans')))
+        opts['rev'] = [revsetlang.formatspec(b'%ld and orphan()', userrevs)]
+        opts['dest'] = b'_destautoorphanrebase(SRC)'
 
-    if opts.get(b'dry_run') or opts.get(b'confirm'):
+    if opts.get('dry_run') or opts.get('confirm'):
         return _dryrunrebase(ui, repo, action, opts)
-    elif action == b'stop':
+    elif action == 'stop':
         rbsrt = rebaseruntime(repo, ui)
         with repo.wlock(), repo.lock():
             rbsrt.restorestatus()
@@ -1136,7 +1140,7 @@ def rebase(ui, repo, **opts):
 
 def _dryrunrebase(ui, repo, action, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, dryrun=True, opts=opts)
-    confirm = opts.get(b'confirm')
+    confirm = opts.get('confirm')
     if confirm:
         ui.status(_(b'starting in-memory rebase\n'))
     else:
@@ -1193,7 +1197,7 @@ def _dryrunrebase(ui, repo, action, opts):
                     isabort=True,
                     backup=False,
                     suppwarns=True,
-                    dryrun=opts.get(b'dry_run'),
+                    dryrun=opts.get('dry_run'),
                 )
 
 
@@ -1203,9 +1207,9 @@ def _dorebase(ui, repo, action, opts, inmemory=False):
 
 
 def _origrebase(ui, repo, action, opts, rbsrt):
-    assert action != b'stop'
+    assert action != 'stop'
     with repo.wlock(), repo.lock():
-        if opts.get(b'interactive'):
+        if opts.get('interactive'):
             try:
                 if extensions.find(b'histedit'):
                     enablehistedit = b''
@@ -1231,29 +1235,27 @@ def _origrebase(ui, repo, action, opts, rbsrt):
                 raise error.InputError(
                     _(b'cannot use collapse with continue or abort')
                 )
-            if action == b'abort' and opts.get(b'tool', False):
+            if action == 'abort' and opts.get('tool', False):
                 ui.warn(_(b'tool option will be ignored\n'))
-            if action == b'continue':
+            if action == 'continue':
                 ms = mergestatemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(
-                isabort=(action == b'abort')
-            )
+            retcode = rbsrt._prepareabortorcontinue(isabort=(action == 'abort'))
             if retcode is not None:
                 return retcode
         else:
             # search default destination in this space
             # used in the 'hg pull --rebase' case, see issue 5214.
-            destspace = opts.get(b'_destspace')
+            destspace = opts.get('_destspace')
             destmap = _definedestmap(
                 ui,
                 repo,
                 rbsrt.inmemory,
-                opts.get(b'dest', None),
-                opts.get(b'source', []),
-                opts.get(b'base', []),
-                opts.get(b'rev', []),
+                opts.get('dest', None),
+                opts.get('source', []),
+                opts.get('base', []),
+                opts.get('rev', []),
                 destspace=destspace,
             )
             retcode = rbsrt._preparenewrebase(destmap)

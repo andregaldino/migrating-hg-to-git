@@ -266,11 +266,11 @@ nothing happens, even to the working directory.
   $ hg commit -Aqm "hello"
   $ hg phase -r 0 --public
   $ hg fix -r 0
-  abort: cannot fix public changesets
+  abort: cannot fix public changesets: 6470986d2e7b
   (see 'hg help phases' for details)
   [10]
   $ hg fix -r 0 --working-dir
-  abort: cannot fix public changesets
+  abort: cannot fix public changesets: 6470986d2e7b
   (see 'hg help phases' for details)
   [10]
   $ hg cat -r tip hello.whole
@@ -1174,7 +1174,8 @@ an orphan. We must respect experimental.evolution.allowunstable.
   $ printf "two\n" > foo.whole
   $ hg commit -m "second"
   $ hg --config experimental.evolution.allowunstable=False fix -r '.^'
-  abort: cannot fix changeset with children
+  abort: cannot fix changeset, as that will orphan 1 descendants
+  (see 'hg help evolution.instability')
   [10]
   $ hg fix -r '.^'
   1 new orphan changesets

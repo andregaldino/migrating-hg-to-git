@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import collections
 import time
 
-from mercurial.node import bin, hex, nullid, nullrev
+from mercurial.node import bin, hex, nullrev
 from mercurial import (
     ancestor,
     context,
@@ -35,7 +35,7 @@ class remotefilectx(context.filectx):
         ancestormap=None,
     ):
         if fileid == nullrev:
-            fileid = nullid
+            fileid = repo.nullid
         if fileid and len(fileid) == 40:
             fileid = bin(fileid)
         super(remotefilectx, self).__init__(
@@ -78,7 +78,7 @@ class remotefilectx(context.filectx):
 
     @propertycache
     def _linkrev(self):
-        if self._filenode == nullid:
+        if self._filenode == self._repo.nullid:
             return nullrev
 
         ancestormap = self.ancestormap()
@@ -174,7 +174,7 @@ class remotefilectx(context.filectx):
 
         p1, p2, linknode, copyfrom = ancestormap[self._filenode]
         results = []
-        if p1 != nullid:
+        if p1 != repo.nullid:
             path = copyfrom or self._path
             flog = repo.file(path)
             p1ctx = remotefilectx(
@@ -183,7 +183,7 @@ class remotefilectx(context.filectx):
             p1ctx._descendantrev = self.rev()
             results.append(p1ctx)
 
-        if p2 != nullid:
+        if p2 != repo.nullid:
             path = self._path
             flog = repo.file(path)
             p2ctx = remotefilectx(
@@ -504,25 +504,25 @@ class remoteworkingfilectx(context.workingfilectx, remotefilectx):
             if renamed:
                 p1 = renamed
             else:
-                p1 = (path, pcl[0]._manifest.get(path, nullid))
+                p1 = (path, pcl[0]._manifest.get(path, self._repo.nullid))
 
-            p2 = (path, nullid)
+            p2 = (path, self._repo.nullid)
             if len(pcl) > 1:
-                p2 = (path, pcl[1]._manifest.get(path, nullid))
+                p2 = (path, pcl[1]._manifest.get(path, self._repo.nullid))
 
             m = {}
-            if p1[1] != nullid:
+            if p1[1] != self._repo.nullid:
                 p1ctx = self._repo.filectx(p1[0], fileid=p1[1])
                 m.update(p1ctx.filelog().ancestormap(p1[1]))
 
-            if p2[1] != nullid:
+            if p2[1] != self._repo.nullid:
                 p2ctx = self._repo.filectx(p2[0], fileid=p2[1])
                 m.update(p2ctx.filelog().ancestormap(p2[1]))
 
             copyfrom = b''
             if renamed:
                 copyfrom = renamed[0]
-            m[None] = (p1[1], p2[1], nullid, copyfrom)
+            m[None] = (p1[1], p2[1], self._repo.nullid, copyfrom)
             self._ancestormap = m
 
         return self._ancestormap

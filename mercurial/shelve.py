@@ -31,7 +31,6 @@ from .i18n import _
 from .node import (
     bin,
     hex,
-    nullid,
     nullrev,
 )
 from . import (
@@ -782,9 +781,7 @@ def mergefiles(ui, repo, wctx, shelvectx):
     dirstate."""
     with ui.configoverride({(b'ui', b'quiet'): True}):
         hg.update(repo, wctx.node())
-        ui.pushbuffer(True)
         cmdutil.revert(ui, repo, shelvectx)
-        ui.popbuffer()
 
 
 def restorebranch(ui, repo, branchtorestore):
@@ -822,7 +819,7 @@ def unshelvecontinue(ui, repo, state, opts):
         pendingctx = state.pendingctx
 
         with repo.dirstate.parentchange():
-            repo.setparents(state.pendingctx.node(), nullid)
+            repo.setparents(state.pendingctx.node(), repo.nullid)
             repo.dirstate.write(repo.currenttransaction())
 
         targetphase = phases.internal
@@ -831,7 +828,7 @@ def unshelvecontinue(ui, repo, state, opts):
         overrides = {(b'phases', b'new-commit'): targetphase}
         with repo.ui.configoverride(overrides, b'unshelve'):
             with repo.dirstate.parentchange():
-                repo.setparents(state.parents[0], nullid)
+                repo.setparents(state.parents[0], repo.nullid)
                 newnode, ispartialunshelve = _createunshelvectx(
                     ui, repo, shelvectx, basename, interactive, opts
                 )
@@ -1027,7 +1024,7 @@ def _rebaserestoredcommit(
             raise error.ConflictResolutionRequired(b'unshelve')
 
         with repo.dirstate.parentchange():
-            repo.setparents(tmpwctx.node(), nullid)
+            repo.setparents(tmpwctx.node(), repo.nullid)
             newnode, ispartialunshelve = _createunshelvectx(
                 ui, repo, shelvectx, basename, interactive, opts
             )

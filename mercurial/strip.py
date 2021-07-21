@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 from .i18n import _
 from .pycompat import getattr
-from .node import nullid
 from . import (
     bookmarks as bookmarksmod,
     cmdutil,
@@ -39,7 +38,7 @@ def _findupdatetarget(repo, nodes):
 
     if (
         util.safehasattr(repo, b'mq')
-        and p2 != nullid
+        and p2 != repo.nullid
         and p2 in [x.node for x in repo.mq.applied]
     ):
         unode = p2
@@ -218,7 +217,7 @@ def debugstrip(ui, repo, *revs, **opts):
         # if one of the wdir parent is stripped we'll need
         # to update away to an earlier revision
         update = any(
-            p != nullid and cl.rev(p) in strippedrevs
+            p != repo.nullid and cl.rev(p) in strippedrevs
             for p in repo.dirstate.parents()
         )
 

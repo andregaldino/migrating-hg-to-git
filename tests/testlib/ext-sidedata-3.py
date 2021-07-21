@@ -20,6 +20,9 @@ from mercurial import (
 )
 
 from mercurial.revlogutils import sidedata as sidedatamod
+from mercurial.revlogutils import constants
+
+NO_FLAGS = (0, 0)
 
 
 def compute_sidedata_1(repo, revlog, rev, sidedata, text=None):
@@ -27,7 +30,7 @@ def compute_sidedata_1(repo, revlog, rev, sidedata, text=None):
     if text is None:
         text = revlog.revision(rev)
     sidedata[sidedatamod.SD_TEST1] = struct.pack('>I', len(text))
-    return sidedata
+    return sidedata, NO_FLAGS
 
 
 def compute_sidedata_2(repo, revlog, rev, sidedata, text=None):
@@ -36,7 +39,7 @@ def compute_sidedata_2(repo, revlog, rev, sidedata, text=None):
         text = revlog.revision(rev)
     sha256 = hashlib.sha256(text).digest()
     sidedata[sidedatamod.SD_TEST2] = struct.pack('>32s', sha256)
-    return sidedata
+    return sidedata, NO_FLAGS
 
 
 def compute_sidedata_3(repo, revlog, rev, sidedata, text=None):
@@ -45,7 +48,7 @@ def compute_sidedata_3(repo, revlog, rev, sidedata, text=None):
         text = revlog.revision(rev)
     sha384 = hashlib.sha384(text).digest()
     sidedata[sidedatamod.SD_TEST3] = struct.pack('>48s', sha384)
-    return sidedata
+    return sidedata, NO_FLAGS
 
 
 def wrapaddrevision(
@@ -54,8 +57,8 @@ def wrapaddrevision(
     if kwargs.get('sidedata') is None:
         kwargs['sidedata'] = {}
     sd = kwargs['sidedata']
-    sd = compute_sidedata_1(None, self, None, sd, text=text)
-    kwargs['sidedata'] = compute_sidedata_2(None, self, None, sd, text=text)
+    sd, flags = compute_sidedata_1(None, self, None, sd, text=text)
+    kwargs['sidedata'] = compute_sidedata_2(None, self, None, sd, text=text)[0]
     return orig(self, text, transaction, link, p1, p2, *args, **kwargs)
 
 
@@ -65,24 +68,27 @@ def extsetup(ui):
 
 def reposetup(ui, repo):
     # Sidedata keys happen to be the same as the categories, easier for testing.
-    for kind in (b'changelog', b'manifest', b'filelog'):
+    for kind in constants.ALL_KINDS:
         repo.register_sidedata_computer(
             kind,
             sidedatamod.SD_TEST1,
             (sidedatamod.SD_TEST1,),
             compute_sidedata_1,
+            0,
         )
         repo.register_sidedata_computer(
             kind,
             sidedatamod.SD_TEST2,
             (sidedatamod.SD_TEST2,),
             compute_sidedata_2,
+            0,
         )
         repo.register_sidedata_computer(
             kind,
             sidedatamod.SD_TEST3,
             (sidedatamod.SD_TEST3,),
             compute_sidedata_3,
+            0,
         )
     repo.register_wanted_sidedata(sidedatamod.SD_TEST1)
     repo.register_wanted_sidedata(sidedatamod.SD_TEST2)

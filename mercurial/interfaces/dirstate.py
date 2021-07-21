@@ -2,13 +2,19 @@ from __future__ import absolute_import, print_function
 
 import contextlib
 
-from .. import node as nodemod
-
 from . import util as interfaceutil
 
 
 class idirstate(interfaceutil.Interface):
-    def __init__(opener, ui, root, validate, sparsematchfn, nodeconstants):
+    def __init__(
+        opener,
+        ui,
+        root,
+        validate,
+        sparsematchfn,
+        nodeconstants,
+        use_dirstate_v2,
+    ):
         """Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the
@@ -78,7 +84,7 @@ class idirstate(interfaceutil.Interface):
         """Iterate the dirstate's contained filenames as bytestrings."""
 
     def items():
-        """Iterate the dirstate's entries as (filename, dirstatetuple).
+        """Iterate the dirstate's entries as (filename, DirstateItem.
 
         As usual, filename is a bytestring.
         """
@@ -97,7 +103,7 @@ class idirstate(interfaceutil.Interface):
     def branch():
         pass
 
-    def setparents(p1, p2=nodemod.nullid):
+    def setparents(p1, p2=None):
         """Set dirstate parents to p1 and p2.
 
         When moving from two parents to one, 'm' merged entries a

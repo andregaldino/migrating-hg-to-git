@@ -57,7 +57,8 @@ Change on non-linear set of commits
 Change in middle of the stack (linear commits)
 
   $ hg branch -r 1::3 foo
-  abort: cannot change branch of changeset with children
+  abort: cannot change branch of changeset, as that will orphan 1 descendants
+  (see 'hg help evolution.instability')
   [10]
 
 Change with dirty working directory
@@ -128,7 +129,8 @@ Change branch name to an existing branch
 Changing on a branch head which is not topological head
 
   $ hg branch -r 2 stable
-  abort: cannot change branch of changeset with children
+  abort: cannot change branch of changeset, as that will orphan 2 descendants
+  (see 'hg help evolution.instability')
   [10]
 
 Enabling the allowunstable config and trying to change branch on a branch head
@@ -148,7 +150,8 @@ Changing branch of an obsoleted changeset
   [255]
 
   $ hg branch -r 4 --hidden foobar
-  abort: cannot change branch of a obsolete changeset
+  abort: cannot change branch of 3938acfb5c0f, as that creates content-divergence with 7c1991464886
+  (add --verbose for details or see 'hg help evolution.instability')
   [10]
 
 Make sure bookmark movement is correct
@@ -366,7 +369,7 @@ Changing branch on public changeset
 
   $ hg phase -r . -p
   $ hg branch -r . def
-  abort: cannot change branch of public changesets
+  abort: cannot change branch of public changesets: d1c2addda4a2
   (see 'hg help phases' for details)
   [10]
 

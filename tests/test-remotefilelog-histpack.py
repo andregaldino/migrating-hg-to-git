@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import absolute_import
 
 import hashlib
@@ -13,7 +13,7 @@ import unittest
 
 import silenttestrunner
 
-from mercurial.node import nullid
+from mercurial.node import sha1nodeconstants
 from mercurial import (
     pycompat,
     ui as uimod,
@@ -59,8 +59,8 @@ class histpacktests(unittest.TestCase):
                 (
                     b"filename",
                     self.getFakeHash(),
-                    nullid,
-                    nullid,
+                    sha1nodeconstants.nullid,
+                    sha1nodeconstants.nullid,
                     self.getFakeHash(),
                     None,
                 )
@@ -119,10 +119,19 @@ class histpacktests(unittest.TestCase):
         """
         revisions = []
         filename = b"foo"
-        lastnode = nullid
+        lastnode = sha1nodeconstants.nullid
         for i in range(10):
             node = self.getFakeHash()
-            revisions.append((filename, node, lastnode, nullid, nullid, None))
+            revisions.append(
+                (
+                    filename,
+                    node,
+                    lastnode,
+                    sha1nodeconstants.nullid,
+                    sha1nodeconstants.nullid,
+                    None,
+                )
+            )
             lastnode = node
 
         # revisions must be added in topological order, newest first
@@ -148,17 +157,17 @@ class histpacktests(unittest.TestCase):
         for i in range(100):
             filename = b"filename-%d" % i
             entries = []
-            p2 = nullid
-            linknode = nullid
+            p2 = sha1nodeconstants.nullid
+            linknode = sha1nodeconstants.nullid
             for j in range(random.randint(1, 100)):
                 node = self.getFakeHash()
-                p1 = nullid
+                p1 = sha1nodeconstants.nullid
                 if len(entries) > 0:
                     p1 = entries[random.randint(0, len(entries) - 1)]
                 entries.append(node)
                 revisions.append((filename, node, p1, p2, linknode, None))
                 allentries[(filename, node)] = (p1, p2, linknode)
-                if p1 == nullid:
+                if p1 == sha1nodeconstants.nullid:
                     ancestorcounts[(filename, node)] = 1
                 else:
                     newcount = ancestorcounts[(filename, p1)] + 1
@@ -182,10 +191,19 @@ class histpacktests(unittest.TestCase):
     def testGetNodeInfo(self):
         revisions = []
         filename = b"foo"
-        lastnode = nullid
+        lastnode = sha1nodeconstants.nullid
         for i in range(10):
             node = self.getFakeHash()
-            revisions.append((filename, node, lastnode, nullid, nullid, None))
+            revisions.append(
+                (
+                    filename,
+                    node,
+                    lastnode,
+                    sha1nodeconstants.nullid,
+                    sha1nodeconstants.nullid,
+                    None,
+                )
+            )
             lastnode = node
 
         pack = self.createPack(revisions)
@@ -233,7 +251,14 @@ class histpacktests(unittest.TestCase):
         pack = self.createPack()
 
         try:
-            pack.add(b'filename', nullid, nullid, nullid, nullid, None)
+            pack.add(
+                b'filename',
+                sha1nodeconstants.nullid,
+                sha1nodeconstants.nullid,
+                sha1nodeconstants.nullid,
+                sha1nodeconstants.nullid,
+                None,
+            )
             self.assertTrue(False, "historypack.add should throw")
         except RuntimeError:
             pass

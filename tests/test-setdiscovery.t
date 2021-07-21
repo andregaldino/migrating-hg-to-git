@@ -1536,7 +1536,7 @@ fixed in 86c35b7ae300:
   searching for changes
   101 102 103 104 105 106 107 108 109 110  (no-eol)
   $ hg -R r1 --config extensions.blackbox= blackbox --config blackbox.track=
-  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> serve --cmdserver chgunix * (glob) (chg !)
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> serve --no-profile --cmdserver chgunix * (glob) (chg !)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* (glob)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> found 101 common and 1 unknown server heads, 1 roundtrips in *.????s (glob)
   * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* exited 0 after *.?? seconds (glob)

@@ -169,6 +169,7 @@ the extension is unknown.
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -298,6 +299,7 @@ the extension is unknown.
   Concepts:
   
    bundlespec    Bundle File Formats
+   evolution     Safely rewriting history (EXPERIMENTAL)
    glossary      Glossary
    phases        Working with Phases
    subrepos      Subrepositories
@@ -1006,6 +1008,8 @@ Test list of internal help commands
                  dump information about delta chains in a revlog
    debugdirstate
                  show the contents of the current dirstate
+   debugdirstateignorepatternshash
+                 show the hash of ignore patterns stored in dirstate if v2,
    debugdiscovery
                  runs the changeset discovery protocol in isolation
    debugdownload
@@ -1134,12 +1138,13 @@ sub-topics can be accessed
       the changelog data, root/flat manifest data, treemanifest data, and
       filelogs.
   
-      There are 3 versions of changegroups: "1", "2", and "3". From a high-
+      There are 4 versions of changegroups: "1", "2", "3" and "4". From a high-
       level, versions "1" and "2" are almost exactly the same, with the only
       difference being an additional item in the *delta header*. Version "3"
       adds support for storage flags in the *delta header* and optionally
       exchanging treemanifests (enabled by setting an option on the
-      "changegroup" part in the bundle2).
+      "changegroup" part in the bundle2). Version "4" adds support for
+      exchanging sidedata (additional revision metadata not part of the digest).
   
       Changegroups when not exchanging treemanifests consist of 3 logical
       segments:
@@ -1206,8 +1211,8 @@ sub-topics can be accessed
       existing entry (either that the recipient already has, or previously
       specified in the bundle/changegroup).
   
-      The *delta header* is different between versions "1", "2", and "3" of the
-      changegroup format.
+      The *delta header* is different between versions "1", "2", "3" and "4" of
+      the changegroup format.
   
       Version 1 (headerlen=80):
   
@@ -1235,6 +1240,15 @@ sub-topics can be accessed
         | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) |
         |            |             |             |            |            |           |
         +------------------------------------------------------------------------------+
+  
+      Version 4 (headerlen=103):
+  
+        +------------------------------------------------------------------------------+----------+
+        |            |             |             |            |            |           |          |
+        |    node    |   p1 node   |   p2 node   | base node  | link node  |   flags   |  pflags  |
+        | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) | (1 byte) |
+        |            |             |             |            |            |           |          |
+        +------------------------------------------------------------------------------+----------+
   
       The *delta data* consists of "chunklen - 4 - headerlen" bytes, which
       contain a series of *delta*s, densely packed (no separators). These deltas
@@ -1276,10 +1290,23 @@ sub-topics can be accessed
          delimited metadata defining an object stored elsewhere. Used by the LFS
          extension.
   
+      4096
+         Contains copy information. This revision changes files in a way that
+         could affect copy tracing. This does *not* affect changegroup handling,
+         but is relevant for other parts of Mercurial.
+  
       For historical reasons, the integer values are identical to revlog version
       1 per-revision storage flags and correspond to bits being set in this
       2-byte field. Bits were allocated starting from the most-significant bit,
       hence the reverse ordering and allocation of these flags.
+  
+      The *pflags* (protocol flags) field holds bitwise flags affecting the
+      protocol itself. They are first in the header since they may affect the
+      handling of the rest of the fields in a future version. They are defined
+      as such:
+  
+      1 indicates whether to read a chunk of sidedata (of variable length) right
+        after the revision flags.
   
       Changeset Segment
       =================
@@ -1301,14 +1328,14 @@ sub-topics can be accessed
       Treemanifests Segment
       ---------------------
   
-      The *treemanifests segment* only exists in changegroup version "3", and
-      only if the 'treemanifest' param is part of the bundle2 changegroup part
-      (it is not possible to use changegroup version 3 outside of bundle2).
-      Aside from the filenames in the *treemanifests segment* containing a
-      trailing "/" character, it behaves identically to the *filelogs segment*
-      (see below). The final sub-segment is followed by an *empty chunk*
-      (logically, a sub-segment with filename size 0). This denotes the boundary
-      to the *filelogs segment*.
+      The *treemanifests segment* only exists in changegroup version "3" and
+      "4", and only if the 'treemanifest' param is part of the bundle2
+      changegroup part (it is not possible to use changegroup version 3 or 4
+      outside of bundle2). Aside from the filenames in the *treemanifests
+      segment* containing a trailing "/" character, it behaves identically to
+      the *filelogs segment* (see below). The final sub-segment is followed by
+      an *empty chunk* (logically, a sub-segment with filename size 0). This
+      denotes the boundary to the *filelogs segment*.
   
       Filelogs Segment
       ================
@@ -1847,6 +1874,12 @@ Test section lookup
   
       The following sub-options can be defined:
   
+      "multi-urls"
+         A boolean option. When enabled the value of the '[paths]' entry will be
+         parsed as a list and the alias will resolve to multiple destination. If
+         some of the list entry use the 'path://' syntax, the suboption will be
+         inherited individually.
+  
       "pushurl"
          The URL to use for push operations. If not defined, the location
          defined by the path's main entry is used.
@@ -2272,6 +2305,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   Environment Variables
+  </td></tr>
+  <tr><td>
+  <a href="/help/evolution">
+  evolution
+  </a>
+  </td><td>
+  Safely rewriting history (EXPERIMENTAL)
   </td></tr>
   <tr><td>
   <a href="/help/extensions">
@@ -3639,12 +3679,13 @@ Sub-topic topics rendered properly
   filelogs.
   </p>
   <p>
-  There are 3 versions of changegroups: &quot;1&quot;, &quot;2&quot;, and &quot;3&quot;. From a
+  There are 4 versions of changegroups: &quot;1&quot;, &quot;2&quot;, &quot;3&quot; and &quot;4&quot;. From a
   high-level, versions &quot;1&quot; and &quot;2&quot; are almost exactly the same, with the
   only difference being an additional item in the *delta header*. Version
   &quot;3&quot; adds support for storage flags in the *delta header* and optionally
   exchanging treemanifests (enabled by setting an option on the
-  &quot;changegroup&quot; part in the bundle2).
+  &quot;changegroup&quot; part in the bundle2). Version &quot;4&quot; adds support for exchanging
+  sidedata (additional revision metadata not part of the digest).
   </p>
   <p>
   Changegroups when not exchanging treemanifests consist of 3 logical
@@ -3724,8 +3765,8 @@ Sub-topic topics rendered properly
   bundle/changegroup).
   </p>
   <p>
-  The *delta header* is different between versions &quot;1&quot;, &quot;2&quot;, and
-  &quot;3&quot; of the changegroup format.
+  The *delta header* is different between versions &quot;1&quot;, &quot;2&quot;, &quot;3&quot; and &quot;4&quot;
+  of the changegroup format.
   </p>
   <p>
   Version 1 (headerlen=80):
@@ -3759,6 +3800,17 @@ Sub-topic topics rendered properly
   | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) |
   |            |             |             |            |            |           |
   +------------------------------------------------------------------------------+
+  </pre>
+  <p>
+  Version 4 (headerlen=103):
+  </p>
+  <pre>
+  +------------------------------------------------------------------------------+----------+
+  |            |             |             |            |            |           |          |
+  |    node    |   p1 node   |   p2 node   | base node  | link node  |   flags   |  pflags  |
+  | (20 bytes) |  (20 bytes) |  (20 bytes) | (20 bytes) | (20 bytes) | (2 bytes) | (1 byte) |
+  |            |             |             |            |            |           |          |
+  +------------------------------------------------------------------------------+----------+
   </pre>
   <p>
   The *delta data* consists of &quot;chunklen - 4 - headerlen&quot; bytes, which contain a
@@ -3799,6 +3851,8 @@ Sub-topic topics rendered properly
    <dd>Ellipsis revision. Revision hash does not match data (likely due to rewritten parents).
    <dt>8192
    <dd>Externally stored. The revision fulltext contains &quot;key:value&quot; &quot;\n&quot; delimited metadata defining an object stored elsewhere. Used by the LFS extension.
+   <dt>4096
+   <dd>Contains copy information. This revision changes files in a way that could affect copy tracing. This does *not* affect changegroup handling, but is relevant for other parts of Mercurial.
   </dl>
   <p>
   For historical reasons, the integer values are identical to revlog version 1
@@ -3806,6 +3860,15 @@ Sub-topic topics rendered properly
   field. Bits were allocated starting from the most-significant bit, hence the
   reverse ordering and allocation of these flags.
   </p>
+  <p>
+  The *pflags* (protocol flags) field holds bitwise flags affecting the protocol
+  itself. They are first in the header since they may affect the handling of the
+  rest of the fields in a future version. They are defined as such:
+  </p>
+  <dl>
+   <dt>1 indicates whether to read a chunk of sidedata (of variable length) right
+   <dd>after the revision flags.
+  </dl>
   <h2>Changeset Segment</h2>
   <p>
   The *changeset segment* consists of a single *delta group* holding
@@ -3823,9 +3886,9 @@ Sub-topic topics rendered properly
   </p>
   <h3>Treemanifests Segment</h3>
   <p>
-  The *treemanifests segment* only exists in changegroup version &quot;3&quot;, and
-  only if the 'treemanifest' param is part of the bundle2 changegroup part
-  (it is not possible to use changegroup version 3 outside of bundle2).
+  The *treemanifests segment* only exists in changegroup version &quot;3&quot; and &quot;4&quot;,
+  and only if the 'treemanifest' param is part of the bundle2 changegroup part
+  (it is not possible to use changegroup version 3 or 4 outside of bundle2).
   Aside from the filenames in the *treemanifests segment* containing a
   trailing &quot;/&quot; character, it behaves identically to the *filelogs segment*
   (see below). The final sub-segment is followed by an *empty chunk* (logically,

@@ -1,6 +1,7 @@
 Tests for experimental.removeemptydirs
 
   $ NO_RM=--config=experimental.removeemptydirs=0
+  $ DO_RM=--config=experimental.removeemptydirs=1
   $ isdir() { if [ -d $1 ]; then echo yes; else echo no; fi }
   $ isfile() { if [ -f $1 ]; then echo yes; else echo no; fi }
 
@@ -98,6 +99,12 @@ This should not output anything about current directory being removed:
 
 Histediting across a commit that doesn't have the directory, from inside the
 directory (reordering nodes):
+
+A directory with the right pass exists at the end of the run, but it is a
+different directory than the current one.
+
+Windows is not affected
+
   $ hg init hghistedit
   $ cd hghistedit
   $ echo hi > r0
@@ -116,21 +123,29 @@ directory (reordering nodes):
   > pick b550aa12d873 2 r2
   > EOF
   $ cd $TESTTMP/hghistedit/somedir
-  $ hg --config extensions.histedit= histedit -q --commands ../histedit_commands
+  $ hg $DO_RM --config extensions.histedit= histedit -q --commands ../histedit_commands
+  current directory was removed (no-windows !)
+  (consider changing to repo root: $TESTTMP/hghistedit) (no-windows !)
+  $ ls -1 $TESTTMP/hghistedit/
+  histedit_commands
+  r0
+  r1
+  r2
+  somedir
+  $ pwd
+  $TESTTMP/hghistedit/somedir
+  $ ls -1 $TESTTMP/hghistedit/somedir
+  foo
+  $ ls -1
+  foo (windows !)
 
-histedit doesn't output anything when the current diretory is removed. We rely
-on the tests being commonly run on machines where the current directory
-disappearing from underneath us actually has an observable effect, such as an
-error or no files listed
-#if linuxormacos
-  $ isfile foo
-  no
-#endif
-  $ cd $TESTTMP/hghistedit/somedir
-  $ isfile foo
-  yes
+Get out of the doomed directory
 
   $ cd $TESTTMP/hghistedit
+  $ hg files --rev . | grep somedir/
+  somedir/foo
+
+
   $ cat > histedit_commands <<EOF
   > pick 89079fab8aee 0 r0
   > pick 7c7a22c6009f 3 migrating_revision
@@ -181,6 +196,8 @@ Histedit doing 'pick, pick, fold':
   > pick ff70a87b588f 0 add foo
   > fold 9992bb0ac0db 2 add baz
   > EOF
+  current directory was removed
+  (consider changing to repo root: $TESTTMP/issue5826_withrm)
   abort: $ENOENT$
   [255]
 

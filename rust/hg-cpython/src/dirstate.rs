@@ -12,7 +12,9 @@
 mod copymap;
 mod dirs_multiset;
 mod dirstate_map;
+mod dispatch;
 mod non_normal_entries;
+mod owning;
 mod status;
 use crate::{
     dirstate::{
@@ -24,6 +26,7 @@ use cpython::{
     exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
     PySequence, Python,
 };
+use hg::dirstate_tree::on_disk::V2_FORMAT_MARKER;
 use hg::{utils::hg_path::HgPathBuf, DirstateEntry, EntryState, StateMap};
 use libc::{c_char, c_int};
 use std::convert::TryFrom;
@@ -35,8 +38,8 @@ use std::convert::TryFrom;
 // for a pure Python tuple of the same effective structure to be used,
 // rendering this type and the capsule below useless.
 py_capsule_fn!(
-    from mercurial.cext.parsers import make_dirstate_tuple_CAPI
-        as make_dirstate_tuple_capi
+    from mercurial.cext.parsers import make_dirstate_item_CAPI
+        as make_dirstate_item_capi
         signature (
             state: c_char,
             mode: c_int,
@@ -45,13 +48,10 @@ py_capsule_fn!(
         ) -> *mut RawPyObject
 );
 
-pub fn make_dirstate_tuple(
+pub fn make_dirstate_item(
     py: Python,
     entry: &DirstateEntry,
 ) -> PyResult<PyObject> {
-    // might be silly to retrieve capsule function in hot loop
-    let make = make_dirstate_tuple_capi::retrieve(py)?;
-
     let &DirstateEntry {
         state,
         mode,
@@ -62,9 +62,19 @@ pub fn make_dirstate_tuple(
     // because Into<u8> has a specific implementation while `as c_char` would
     // just do a naive enum cast.
     let state_code: u8 = state.into();
+    make_dirstate_item_raw(py, state_code, mode, size, mtime)
+}
 
+pub fn make_dirstate_item_raw(
+    py: Python,
+    state: u8,
+    mode: i32,
+    size: i32,
+    mtime: i32,
+) -> PyResult<PyObject> {
+    let make = make_dirstate_item_capi::retrieve(py)?;
     let maybe_obj = unsafe {
-        let ptr = make(state_code as c_char, mode, size, mtime);
+        let ptr = make(state as c_char, mode, size, mtime);
         PyObject::from_owned_ptr_opt(py, ptr)
     };
     maybe_obj.ok_or_else(|| PyErr::fetch(py))
@@ -115,6 +125,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     )?;
     m.add_class::<Dirs>(py)?;
     m.add_class::<DirstateMap>(py)?;
+    m.add(py, "V2_FORMAT_MARKER", PyBytes::new(py, V2_FORMAT_MARKER))?;
     m.add(
         py,
         "status",

@@ -10,7 +10,7 @@ Refuse to amend public csets:
 
   $ hg phase -r . -p
   $ hg ci --amend
-  abort: cannot amend public changesets
+  abort: cannot amend public changesets: ad120869acf0
   (see 'hg help phases' for details)
   [10]
   $ hg phase -r . -f -d
@@ -406,7 +406,7 @@ Refuse to amend during a merge:
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci --amend
-  abort: cannot amend while merging
+  abort: cannot amend changesets while merging
   [20]
   $ hg ci -m 'merge'
 
@@ -957,6 +957,7 @@ Test that "diff()" in committemplate works correctly for amending
   $ cat >> .hg/hgrc <<EOF
   > [committemplate]
   > changeset.commit.amend = {desc}\n
+  >     HG: {revset('parents()') % 'parent: {desc|firstline}\n'}
   >     HG: M: {file_mods}
   >     HG: A: {file_adds}
   >     HG: R: {file_dels}
@@ -971,6 +972,8 @@ Test that "diff()" in committemplate works correctly for amending
   $ HGEDITOR=cat hg commit --amend -e -m "expecting diff of foo"
   expecting diff of foo
   
+  HG: parent: editor should be suppressed
+  
   HG: M: 
   HG: A: foo
   HG: R: 
@@ -984,6 +987,8 @@ Test that "diff()" in committemplate works correctly for amending
   $ hg add y
   $ HGEDITOR=cat hg commit --amend -e -m "expecting diff of foo and y"
   expecting diff of foo and y
+  
+  HG: parent: expecting diff of foo
   
   HG: M: 
   HG: A: foo y
@@ -1002,6 +1007,8 @@ Test that "diff()" in committemplate works correctly for amending
   $ hg rm a
   $ HGEDITOR=cat hg commit --amend -e -m "expecting diff of a, foo and y"
   expecting diff of a, foo and y
+  
+  HG: parent: expecting diff of foo and y
   
   HG: M: 
   HG: A: foo y
@@ -1026,6 +1033,8 @@ Test that "diff()" in committemplate works correctly for amending
   $ hg rm x
   $ HGEDITOR=cat hg commit --amend -e -m "expecting diff of a, foo, x and y"
   expecting diff of a, foo, x and y
+  
+  HG: parent: expecting diff of a, foo and y
   
   HG: M: 
   HG: A: foo y
@@ -1057,6 +1066,8 @@ Test that "diff()" in committemplate works correctly for amending
   M cc
   $ HGEDITOR=cat hg commit --amend -e -m "cc should be excluded" -X cc
   cc should be excluded
+  
+  HG: parent: expecting diff of a, foo, x and y
   
   HG: M: 
   HG: A: foo y
