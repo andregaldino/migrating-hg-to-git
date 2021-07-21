@@ -66,7 +66,7 @@ def _revlogfrompath(repo, rl_type, path):
         # drop the extension and the `data/` prefix
         path_part = path.rsplit(b'.', 1)[0].split(b'/', 1)
         if len(path_part) < 2:
-            msg = _('cannot recognize revlog from filename: %s')
+            msg = _(b'cannot recognize revlog from filename: %s')
             msg %= path
             raise error.Abort(msg)
         path = path_part[1]
