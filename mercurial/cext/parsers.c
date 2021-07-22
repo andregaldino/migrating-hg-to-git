@@ -235,6 +235,23 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 	}
 }
 
+static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
+{
+	unsigned char flags = self->flags;
+	int mode = dirstate_item_c_v1_mode(self);
+	if ((mode & S_IXUSR) != 0) {
+		flags |= dirstate_flag_mode_exec_perm;
+	} else {
+		flags &= ~dirstate_flag_mode_exec_perm;
+	}
+	if (S_ISLNK(mode)) {
+		flags |= dirstate_flag_mode_is_symlink;
+	} else {
+		flags &= ~dirstate_flag_mode_is_symlink;
+	}
+	return Py_BuildValue("Bii", flags, self->size, self->mtime);
+};
+
 static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
 {
 	char state = dirstate_item_c_v1_state(self);
@@ -428,6 +445,8 @@ static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
 	Py_RETURN_NONE;
 }
 static PyMethodDef dirstate_item_methods[] = {
+    {"v2_data", (PyCFunction)dirstate_item_v2_data, METH_NOARGS,
+     "return data suitable for v2 serialization"},
     {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
     {"v1_mode", (PyCFunction)dirstate_item_v1_mode, METH_NOARGS,

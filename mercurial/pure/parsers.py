@@ -313,6 +313,25 @@ class DirstateItem(object):
         """True if the file has been removed"""
         return not self._wc_tracked and (self._p1_tracked or self._p2_info)
 
+    def v2_data(self):
+        """Returns (flags, mode, size, mtime) for v2 serialization"""
+        flags = 0
+        if self._wc_tracked:
+            flags |= DIRSTATE_V2_WDIR_TRACKED
+        if self._p1_tracked:
+            flags |= DIRSTATE_V2_P1_TRACKED
+        if self._p2_info:
+            flags |= DIRSTATE_V2_P2_INFO
+        if self.mode is not None and self.size is not None:
+            flags |= DIRSTATE_V2_HAS_MODE_AND_SIZE
+            if self.mode & stat.S_IXUSR:
+                flags |= DIRSTATE_V2_MODE_EXEC_PERM
+            if stat.S_ISLNK(self.mode):
+                flags |= DIRSTATE_V2_MODE_IS_SYMLINK
+        if self.mtime is not None:
+            flags |= DIRSTATE_V2_HAS_MTIME
+        return (flags, self.size or 0, self.mtime or 0)
+
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         if not self.any_tracked:
