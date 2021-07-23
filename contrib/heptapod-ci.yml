@@ -147,9 +147,7 @@ check-pytype-py3:
 .window_runtests_template: &windows_runtests
     stage: tests
     before_script:
-      # Temporary until this is adjusted in the environment
-      - $Env:TEMP="C:/Temp"
-      - $Env:TMP="C:/Temp"
+      - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && ls -1 tests/test-check-*.* > C:/Temp/check-tests.txt'
       # TODO: find/install cvs, bzr, perforce, gpg, sqlite3
 
     script:
@@ -158,6 +156,8 @@ check-pytype-py3:
         - Invoke-Expression "$Env:PYTHON -V"
         - Invoke-Expression "$Env:PYTHON -m black --version"
         - echo "$Env:RUNTEST_ARGS"
+        - echo "$Env:TMP"
+        - echo "$Env:TEMP"
 
         - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" $PYTHON tests/run-tests.py --color=always $RUNTEST_ARGS'
 
@@ -166,8 +166,7 @@ windows-py3:
     when: manual
     tags:
       - windows
-    timeout: 2h
     variables:
         TEST_HGMODULEPOLICY: "c"
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt"
+        RUNTEST_ARGS: "--blacklist C:/Temp/check-tests.txt"
         PYTHON: py -3
