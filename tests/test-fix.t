@@ -3,6 +3,7 @@ approximates the behavior of code formatters well enough for our tests.
 
   $ UPPERCASEPY="$TESTTMP/uppercase.py"
   $ cat > $UPPERCASEPY <<EOF
+  > import re
   > import sys
   > from mercurial.utils.procutil import setbinary
   > setbinary(sys.stdin)
@@ -10,16 +11,18 @@ approximates the behavior of code formatters well enough for our tests.
   > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
   > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
   > lines = set()
+  > def format(text):
+  >   return re.sub(b' +', b' ', text.upper())
   > for arg in sys.argv[1:]:
   >   if arg == 'all':
-  >     stdout.write(stdin.read().upper())
+  >     stdout.write(format(stdin.read()))
   >     sys.exit(0)
   >   else:
   >     first, last = arg.split('-')
   >     lines.update(range(int(first), int(last) + 1))
   > for i, line in enumerate(stdin.readlines()):
   >   if i + 1 in lines:
-  >     stdout.write(line.upper())
+  >     stdout.write(format(line))
   >   else:
   >     stdout.write(line)
   > EOF
@@ -351,6 +354,24 @@ Fixing the working directory should still work if there are no revisions.
   $ hg fix --working-dir
   $ cat something.whole
   SOMETHING
+
+  $ cd ..
+
+Test that the working copy is reported clean if formatting of the parent makes
+it clean.
+  $ hg init wc-already-formatted
+  $ cd wc-already-formatted
+
+  $ printf "hello   world\n" > hello.whole
+  $ hg commit -Am initial
+  adding hello.whole
+  $ hg fix -w *
+  $ hg st
+  M hello.whole
+  $ hg fix -s . *
+  $ hg st
+  M hello.whole (known-bad-output !)
+  $ hg diff
 
   $ cd ..
 
