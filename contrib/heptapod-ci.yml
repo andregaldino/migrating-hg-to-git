@@ -163,7 +163,6 @@ check-pytype-py3:
 
 windows-py3:
     <<: *windows_runtests
-    when: manual
     tags:
       - windows
     variables:
