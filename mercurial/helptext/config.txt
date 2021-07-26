@@ -906,7 +906,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     with the Rust part  might actually suffer some slowdown. For this reason,
     Such version will by default refuse to access such repositories. That
     behavior can be controlled by configuration. Check
-    :hg:`help config.storage.revlog.persistent-nodemap.slowpath` for details.
+    :hg:`help config.storage.revlog.persistent-nodemap.slow-path` for details.
 
     Repository with this on-disk format require Mercurial version 5.4 or above.
 
