@@ -265,7 +265,7 @@ impl<'on_disk> Docket<'on_disk> {
     }
 
     pub fn data_filename(&self) -> String {
-        String::from_utf8(format_bytes!(b"dirstate.{}.d", self.uuid)).unwrap()
+        String::from_utf8(format_bytes!(b"dirstate.{}", self.uuid)).unwrap()
     }
 }
 
