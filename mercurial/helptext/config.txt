@@ -913,6 +913,14 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     By default this format variant is disabled if fast implementation is not
     available and enabled by default if the fast implementation is available.
 
+    To accomodate install of Mercurial without the fast implementation you can
+    downgrade your repository. To do so run the following command:
+
+    $ hg debugupgraderepo \
+          --run \
+          --config format.use-persistent-nodemap=False \
+          --config storage.revlog.persistent-nodemap.slow-path=allow
+
 ``use-share-safe``
     Enforce "safe" behaviors for all "shares" that access this repository.
 
