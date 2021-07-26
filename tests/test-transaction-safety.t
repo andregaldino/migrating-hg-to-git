@@ -50,12 +50,12 @@ synchronisation+output script using the following schedule:
 [B2] "hg commit/pull" is ready to be committed
 [B3] "hg commit/pull" spawn "internal" using a pretxnclose hook (need [C4])
 [C1] "internal"       waits on EXT_WAITING (need [A2])
-[C2] "internal"       show the tipmost revision (inside of the transaction)
-[C3] "internal"       waits on EXT_DONE (need [A4])
-[C3] "internal"       + creates EXT_UNLOCK → unlocks [A2]
+[C2] "internal"       creates EXT_UNLOCK → unlocks [A2]
+[C3] "internal"       show the tipmost revision (inside of the transaction)
+[C4] "internal"       waits on EXT_DONE (need [A4])
 [A3] "external"       show the tipmost revision (outside of the transaction)
-[A4] "external"       creates EXT_DONE → unlocks [C3]
-[C4] "internal"       end of execution -> unlock [B3]
+[A4] "external"       creates EXT_DONE → unlocks [C4]
+[C5] "internal"       end of execution -> unlock [B3]
 [B4] "hg commit/pull" transaction is committed on disk
 
 
@@ -77,8 +77,9 @@ synchronisation+output script using the following schedule:
   $ cat << EOF > script/internal.sh
   > #!/bin/sh
   > "$RUNTESTDIR/testlib/wait-on-file" 5 "$HG_TEST_FILE_EXT_WAITING"
+  > touch "$HG_TEST_FILE_EXT_UNLOCK"
   > hg log --rev 'tip' -T 'internal: {rev} {desc}\n' > "$TESTTMP/output/internal.out"
-  > "$RUNTESTDIR/testlib/wait-on-file" 5 "$HG_TEST_FILE_EXT_DONE" "$HG_TEST_FILE_EXT_UNLOCK"
+  > "$RUNTESTDIR/testlib/wait-on-file" 5 "$HG_TEST_FILE_EXT_DONE"
   > EOF
 
 
