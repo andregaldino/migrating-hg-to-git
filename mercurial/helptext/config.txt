@@ -1846,7 +1846,7 @@ statistical text report generated from the profiling data.
     ``json``
       Render profiling data as JSON.
 
-``frequency``
+``freq``
     Sampling frequency.  Specific to the ``stat`` sampling profiler.
     (default: 1000)
 
