@@ -569,6 +569,11 @@ class encodedstore(basicstore):
         self.vfs = vfsmod.filtervfs(vfs, encodefilename)
         self.opener = self.vfs
 
+    # note: topfiles would also need a decode phase. It is just that in
+    # practice we do not have any file outside of `data/` that needs encoding.
+    # However that might change so we should probably add a test and encoding
+    # decoding for it too. see issue6548
+
     def datafiles(self, matcher=None):
         for t, a, b, size in super(encodedstore, self).datafiles():
             try:
