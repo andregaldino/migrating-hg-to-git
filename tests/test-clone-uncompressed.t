@@ -156,6 +156,19 @@ add files with "tricky" name:
   $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
 
+Check local clone
+==================
+
+The logic is close enough of uncompressed.
+This is present here to reuse the testing around file with "special" names.
+
+  $ hg clone server local-clone
+  updating to branch default
+  1086 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Check uncompressed
+==================
+
 Cannot stream clone when server.uncompressed is set
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=stream_out'
