@@ -3,7 +3,7 @@ Test non-regression on the corruption associated with issue6528
 ===============================================================
 
 Setup
------
+=====
 
   $ hg init base-repo
   $ cd base-repo
@@ -93,7 +93,7 @@ Check commit Graph
 
 
 Check the lack of corruption
-----------------------------
+============================
 
   $ hg clone --pull base-repo cloned
   requesting all changes
@@ -166,3 +166,249 @@ Check commit Graph
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     c_base_c - create a.txt
   
+
+Test the command that fixes the issue
+=====================================
+
+Restore a broken repository with multiple broken revisions and a filename that
+would get encoded to test the `report` options.
+It's a tarball because unbundle might magically fix the issue later.
+
+  $ cd ..
+  $ mkdir repo-to-fix
+  $ cd repo-to-fix
+#if windows
+tar interprets `:` in paths (like `C:`) as being remote, force local on Windows
+only since some versions of tar don't have this flag.
+
+  $ tar --force-local -xf $TESTDIR/bundles/issue6528.tar
+#else
+  $ tar xf $TESTDIR/bundles/issue6528.tar
+#endif
+
+Check that the issue is present
+  $ hg st
+  M D.txt
+  M b.txt
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
+Dry-run the fix
+  $ hg debug-repair-issue6528 --dry-run
+  found affected revision 1 for filelog 'data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+  $ hg st
+  M D.txt
+  M b.txt
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
+Run the fix
+  $ hg debug-repair-issue6528
+  found affected revision 1 for filelog 'data/D.txt.i'
+  repaired revision 1 of 'filelog data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+  repaired revision 1 of 'filelog data/b.txt.i'
+  repaired revision 3 of 'filelog data/b.txt.i'
+
+Check that the fix worked and that running it twice does nothing
+  $ hg st
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 000000000000 216a5fe8b8ed
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 000000000000 2a8d3833f2fb
+  $ hg debug-repair-issue6528
+  no affected revisions were found
+  $ hg st
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 000000000000 216a5fe8b8ed
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 000000000000 2a8d3833f2fb
+
+Try the using the report options
+--------------------------------
+
+  $ cd ..
+  $ mkdir repo-to-fix-report
+  $ cd repo-to-fix
+#if windows
+tar interprets `:` in paths (like `C:`) as being remote, force local on Windows
+only since some versions of tar don't have this flag.
+
+  $ tar --force-local -xf $TESTDIR/bundles/issue6528.tar
+#else
+  $ tar xf $TESTDIR/bundles/issue6528.tar
+#endif
+
+  $ hg debug-repair-issue6528 --to-report $TESTTMP/report.txt
+  found affected revision 1 for filelog 'data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+  $ cat $TESTTMP/report.txt
+  2a80419dfc31d7dfb308ac40f3f138282de7d73b D.txt
+  a58b36ad6b6545195952793099613c2116f3563b,ea4f2f2463cca5b29ddf3461012b8ce5c6dac175 b.txt
+
+  $ hg debug-repair-issue6528 --from-report $TESTTMP/report.txt --dry-run
+  loading report file '$TESTTMP/report.txt'
+  found affected revision 1 for filelog 'D.txt'
+  found affected revision 1 for filelog 'b.txt'
+  found affected revision 3 for filelog 'b.txt'
+  $ hg st
+  M D.txt
+  M b.txt
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
+  $ hg debug-repair-issue6528 --from-report $TESTTMP/report.txt
+  loading report file '$TESTTMP/report.txt'
+  found affected revision 1 for filelog 'D.txt'
+  repaired revision 1 of 'filelog data/D.txt.i'
+  found affected revision 1 for filelog 'b.txt'
+  found affected revision 3 for filelog 'b.txt'
+  repaired revision 1 of 'filelog data/b.txt.i'
+  repaired revision 3 of 'filelog data/b.txt.i'
+  $ hg st
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 000000000000 216a5fe8b8ed
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 000000000000 2a8d3833f2fb
+
+Check that the revision is not "fixed" again
+
+  $ hg debug-repair-issue6528 --from-report $TESTTMP/report.txt
+  loading report file '$TESTTMP/report.txt'
+  revision 2a80419dfc31d7dfb308ac40f3f138282de7d73b of file 'D.txt' is not affected
+  no affected revisions were found for 'D.txt'
+  revision a58b36ad6b6545195952793099613c2116f3563b of file 'b.txt' is not affected
+  revision ea4f2f2463cca5b29ddf3461012b8ce5c6dac175 of file 'b.txt' is not affected
+  no affected revisions were found for 'b.txt'
+  $ hg st
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 000000000000 216a5fe8b8ed
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 000000000000 2a8d3833f2fb
+
+Try it with a non-inline revlog
+-------------------------------
+
+  $ cd ..
+  $ mkdir $TESTTMP/ext
+  $ cat << EOF > $TESTTMP/ext/small_inline.py
+  > from mercurial import revlog
+  > revlog._maxinline = 8
+  > EOF
+
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > small_inline=$TESTTMP/ext/small_inline.py
+  > EOF
+
+  $ mkdir repo-to-fix-not-inline
+  $ cd repo-to-fix-not-inline
+#if windows
+tar interprets `:` in paths (like `C:`) as being remote, force local on Windows
+only since some versions of tar don't have this flag.
+
+  $ tar --force-local -xf $TESTDIR/bundles/issue6528.tar
+#else
+  $ tar xf $TESTDIR/bundles/issue6528.tar
+#endif
+  $ echo b >> b.txt
+  $ hg commit -qm "inline -> separate"
+  $ find .hg -name *b.txt.d
+  .hg/store/data/b.txt.d
+
+Status is correct, but the problem is still there, in the earlier revision
+  $ hg st
+  $ hg up 3
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg st
+  M b.txt
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+       4       8 db234885e2fe ea4f2f2463cc 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+       2       8 65aecc89bb5d 2a80419dfc31 000000000000
+
+Run the fix on the non-inline revlog
+  $ hg debug-repair-issue6528
+  found affected revision 1 for filelog 'data/D.txt.i'
+  repaired revision 1 of 'filelog data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+  repaired revision 1 of 'filelog data/b.txt.i'
+  repaired revision 3 of 'filelog data/b.txt.i'
+
+Check that it worked
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 000000000000 05b806ebe5ea
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 000000000000 216a5fe8b8ed
+       4       8 db234885e2fe ea4f2f2463cc 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 000000000000 2a8d3833f2fb
+       2       8 65aecc89bb5d 2a80419dfc31 000000000000
+  $ hg debug-repair-issue6528
+  no affected revisions were found
+  $ hg st

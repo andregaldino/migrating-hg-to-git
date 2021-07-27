@@ -7,6 +7,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+import binascii
 import contextlib
 import os
 
@@ -472,3 +473,224 @@ def _rewrite_censor(
     new_index_file.write(entry_bin)
     revlog._docket.index_end = new_index_file.tell()
     revlog._docket.data_end = new_data_file.tell()
+
+
+def _get_filename_from_filelog_index(path):
+    # Drop the extension and the `data/` prefix
+    path_part = path.rsplit(b'.', 1)[0].split(b'/', 1)
+    if len(path_part) < 2:
+        msg = _(b"cannot recognize filelog from filename: '%s'")
+        msg %= path
+        raise error.Abort(msg)
+
+    return path_part[1]
+
+
+def _filelog_from_filename(repo, path):
+    """Returns the filelog for the given `path`. Stolen from `engine.py`"""
+
+    from .. import filelog  # avoid cycle
+
+    fl = filelog.filelog(repo.svfs, path)
+    return fl
+
+
+def _write_swapped_parents(repo, rl, rev, offset, fp):
+    """Swaps p1 and p2 and overwrites the revlog entry for `rev` in `fp`"""
+    from ..pure import parsers  # avoid cycle
+
+    if repo._currentlock(repo._lockref) is None:
+        # Let's be paranoid about it
+        msg = "repo needs to be locked to rewrite parents"
+        raise error.ProgrammingError(msg)
+
+    index_format = parsers.IndexObject.index_format
+    entry = rl.index[rev]
+    new_entry = list(entry)
+    new_entry[5], new_entry[6] = entry[6], entry[5]
+    packed = index_format.pack(*new_entry[:8])
+    fp.seek(offset)
+    fp.write(packed)
+
+
+def _reorder_filelog_parents(repo, fl, to_fix):
+    """
+    Swaps p1 and p2 for all `to_fix` revisions of filelog `fl` and writes the
+    new version to disk, overwriting the old one with a rename.
+    """
+    from ..pure import parsers  # avoid cycle
+
+    ui = repo.ui
+    assert len(to_fix) > 0
+    rl = fl._revlog
+    if rl._format_version != constants.REVLOGV1:
+        msg = "expected version 1 revlog, got version '%d'" % rl._format_version
+        raise error.ProgrammingError(msg)
+
+    index_file = rl._indexfile
+    new_file_path = index_file + b'.tmp-parents-fix'
+    repaired_msg = _(b"repaired revision %d of 'filelog %s'\n")
+
+    with ui.uninterruptible():
+        try:
+            util.copyfile(
+                rl.opener.join(index_file),
+                rl.opener.join(new_file_path),
+                checkambig=rl._checkambig,
+            )
+
+            with rl.opener(new_file_path, mode=b"r+") as fp:
+                if rl._inline:
+                    index = parsers.InlinedIndexObject(fp.read())
+                    for rev in fl.revs():
+                        if rev in to_fix:
+                            offset = index._calculate_index(rev)
+                            _write_swapped_parents(repo, rl, rev, offset, fp)
+                            ui.write(repaired_msg % (rev, index_file))
+                else:
+                    index_format = parsers.IndexObject.index_format
+                    for rev in to_fix:
+                        offset = rev * index_format.size
+                        _write_swapped_parents(repo, rl, rev, offset, fp)
+                        ui.write(repaired_msg % (rev, index_file))
+
+            rl.opener.rename(new_file_path, index_file)
+            rl.clearcaches()
+            rl._loadindex()
+        finally:
+            util.tryunlink(new_file_path)
+
+
+def _is_revision_affected(ui, fl, filerev, path):
+    """Mercurial currently (5.9rc0) uses `p1 == nullrev and p2 != nullrev` as a
+    special meaning compared to the reverse in the context of filelog-based
+    copytracing. issue6528 exists because new code assumed that parent ordering
+    didn't matter, so this detects if the revision contains metadata (since
+    it's only used for filelog-based copytracing) and its parents are in the
+    "wrong" order."""
+    try:
+        raw_text = fl.rawdata(filerev)
+    except error.CensoredNodeError:
+        # We don't care about censored nodes as they never carry metadata
+        return False
+    has_meta = raw_text.startswith(b'\x01\n')
+    if has_meta:
+        (p1, p2) = fl.parentrevs(filerev)
+        if p1 != nullrev and p2 == nullrev:
+            return True
+    return False
+
+
+def _from_report(ui, repo, context, from_report, dry_run):
+    """
+    Fix the revisions given in the `from_report` file, but still checks if the
+    revisions are indeed affected to prevent an unfortunate cyclic situation
+    where we'd swap well-ordered parents again.
+
+    See the doc for `debug_fix_issue6528` for the format documentation.
+    """
+    ui.write(_(b"loading report file '%s'\n") % from_report)
+
+    with context(), open(from_report, mode='rb') as f:
+        for line in f.read().split(b'\n'):
+            if not line:
+                continue
+            filenodes, filename = line.split(b' ', 1)
+            fl = _filelog_from_filename(repo, filename)
+            to_fix = set(
+                fl.rev(binascii.unhexlify(n)) for n in filenodes.split(b',')
+            )
+            excluded = set()
+
+            for filerev in to_fix:
+                if _is_revision_affected(ui, fl, filerev, filename):
+                    msg = b"found affected revision %d for filelog '%s'\n"
+                    ui.warn(msg % (filerev, filename))
+                else:
+                    msg = _(b"revision %s of file '%s' is not affected\n")
+                    msg %= (binascii.hexlify(fl.node(filerev)), filename)
+                    ui.warn(msg)
+                    excluded.add(filerev)
+
+            to_fix = to_fix - excluded
+            if not to_fix:
+                msg = _(b"no affected revisions were found for '%s'\n")
+                ui.write(msg % filename)
+                continue
+            if not dry_run:
+                _reorder_filelog_parents(repo, fl, sorted(to_fix))
+
+
+def repair_issue6528(ui, repo, dry_run=False, to_report=None, from_report=None):
+    from .. import store  # avoid cycle
+
+    @contextlib.contextmanager
+    def context():
+        if dry_run or to_report:  # No need for locking
+            yield
+        else:
+            with repo.wlock(), repo.lock():
+                yield
+
+    if from_report:
+        return _from_report(ui, repo, context, from_report, dry_run)
+
+    report_entries = []
+
+    with context():
+        files = list(
+            (file_type, path)
+            for (file_type, path, _e, _s) in repo.store.datafiles()
+            if path.endswith(b'.i') and file_type & store.FILEFLAGS_FILELOG
+        )
+
+        progress = ui.makeprogress(
+            _(b"looking for affected revisions"),
+            unit=_(b"filelogs"),
+            total=len(files),
+        )
+        found_nothing = True
+
+        for file_type, path in files:
+            if (
+                not path.endswith(b'.i')
+                or not file_type & store.FILEFLAGS_FILELOG
+            ):
+                continue
+            progress.increment()
+            filename = _get_filename_from_filelog_index(path)
+            fl = _filelog_from_filename(repo, filename)
+
+            # Set of filerevs (or hex filenodes if `to_report`) that need fixing
+            to_fix = set()
+            for filerev in fl.revs():
+                # TODO speed up by looking at the start of the delta
+                # If it hasn't changed, it's not worth looking at the other revs
+                # in the same chain
+                affected = _is_revision_affected(ui, fl, filerev, path)
+                if affected:
+                    msg = b"found affected revision %d for filelog '%s'\n"
+                    ui.warn(msg % (filerev, path))
+                    found_nothing = False
+                    if not dry_run:
+                        if to_report:
+                            to_fix.add(binascii.hexlify(fl.node(filerev)))
+                        else:
+                            to_fix.add(filerev)
+
+            if to_fix:
+                to_fix = sorted(to_fix)
+                if to_report:
+                    report_entries.append((filename, to_fix))
+                else:
+                    _reorder_filelog_parents(repo, fl, to_fix)
+
+        if found_nothing:
+            ui.write(_(b"no affected revisions were found\n"))
+
+        if to_report and report_entries:
+            with open(to_report, mode="wb") as f:
+                for path, to_fix in report_entries:
+                    f.write(b"%s %s\n" % (b",".join(to_fix), path))
+
+        progress.complete()

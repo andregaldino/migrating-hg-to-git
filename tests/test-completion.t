@@ -74,6 +74,7 @@ Do not show debug commands if there are other candidates
 
 Show debug commands if there are no other candidates
   $ hg debugcomplete debug
+  debug-repair-issue6528
   debugancestor
   debugantivirusrunning
   debugapplystreamclonebundle
@@ -266,6 +267,7 @@ Show all commands + options
   config: untrusted, exp-all-known, edit, local, source, shared, non-shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
+  debug-repair-issue6528: to-report, from-report, dry-run
   debugancestor: 
   debugantivirusrunning: 
   debugapplystreamclonebundle: 
