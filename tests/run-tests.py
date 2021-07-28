@@ -1587,6 +1587,7 @@ class Test(unittest.TestCase):
             proc = subprocess.Popen(
                 _bytes2sys(cmd),
                 shell=True,
+                close_fds=closefds,
                 cwd=_bytes2sys(self._testtmp),
                 env=env,
             )
