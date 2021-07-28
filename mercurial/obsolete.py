@@ -144,20 +144,16 @@ def getoptions(repo):
     """Returns dicts showing state of obsolescence features."""
 
     createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
-    unstablevalue = _getoptionvalue(repo, allowunstableopt)
-    divergencevalue = _getoptionvalue(repo, allowdivergenceopt)
-    exchangevalue = _getoptionvalue(repo, exchangeopt)
-
-    # createmarkers must be enabled if other options are enabled
-    if (
-        unstablevalue or divergencevalue or exchangevalue
-    ) and not createmarkersvalue:
-        raise error.Abort(
-            _(
-                b"'createmarkers' obsolete option must be enabled "
-                b"if other obsolete options are enabled"
-            )
-        )
+    if createmarkersvalue:
+        unstablevalue = _getoptionvalue(repo, allowunstableopt)
+        divergencevalue = _getoptionvalue(repo, allowdivergenceopt)
+        exchangevalue = _getoptionvalue(repo, exchangeopt)
+    else:
+        # if we cannot create obsolescence markers, we shouldn't exchange them
+        # or perform operations that lead to instability or divergence
+        unstablevalue = False
+        divergencevalue = False
+        exchangevalue = False
 
     return {
         createmarkersopt: createmarkersvalue,
