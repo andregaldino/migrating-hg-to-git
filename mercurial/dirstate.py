@@ -828,7 +828,7 @@ class dirstate(object):
             )
         else:
             util.nouideprecwarn(
-                b"do not use `remove` outside of update/merge context."
+                b"do not use `add` outside of update/merge context."
                 b" Use `set_tracked`",
                 b'6.0',
                 stacklevel=2,
