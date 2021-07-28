@@ -362,10 +362,7 @@ class rebaseruntime(object):
         skippedset = set(self.obsolete_with_successor_in_destination)
         skippedset.update(self.obsolete_with_successor_in_rebase_set)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
-        allowdivergence = self.ui.configbool(
-            b'experimental', b'evolution.allowdivergence'
-        )
-        if allowdivergence:
+        if obsolete.isenabled(self.repo, obsolete.allowdivergenceopt):
             self.obsolete_with_successor_in_rebase_set = set()
         else:
             for rev in self.repo.revs(
@@ -1652,7 +1649,7 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
     successors in destination or no non-obsolete successor.
     """
     # Obsolete node with successors not in dest leads to divergence
-    divergenceok = ui.configbool(b'experimental', b'evolution.allowdivergence')
+    divergenceok = obsolete.isenabled(repo, obsolete.allowdivergenceopt)
     divergencebasecandidates = rebaseobsrevs - rebaseobsskipped
 
     if divergencebasecandidates and not divergenceok:
