@@ -580,6 +580,24 @@ iterable in addbranchrevs()
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ rm -r ua
 
+Local clones don't get confused by unusual experimental.evolution options
+
+  $ hg clone \
+  >   --config experimental.evolution=allowunstable,allowdivergence,exchange \
+  >   a ua
+  updating to branch default
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ rm -r ua
+
+  $ hg clone \
+  >   --config experimental.evolution.createmarkers=no \
+  >   --config experimental.evolution.allowunstable=yes \
+  >   --config experimental.evolution.allowdivergence=yes \
+  >   --config experimental.evolution.exchange=yes \
+  >   a ua
+  updating to branch default
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ rm -r ua
 
 Test clone with special '@' bookmark:
   $ cd a
