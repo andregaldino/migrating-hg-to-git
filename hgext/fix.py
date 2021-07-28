@@ -147,6 +147,7 @@ from mercurial import (
     mdiff,
     merge,
     mergestate as mergestatemod,
+    obsolete,
     pycompat,
     registrar,
     rewriteutil,
@@ -451,10 +452,7 @@ def checkfixablectx(ui, repo, ctx):
     """Aborts if the revision shouldn't be replaced with a fixed one."""
     if ctx.obsolete():
         # It would be better to actually check if the revision has a successor.
-        allowdivergence = ui.configbool(
-            b'experimental', b'evolution.allowdivergence'
-        )
-        if not allowdivergence:
+        if not obsolete.isenabled(repo, obsolete.allowdivergenceopt):
             raise error.Abort(
                 b'fixing obsolete revision could cause divergence'
             )
