@@ -1546,6 +1546,8 @@ class Test(unittest.TestCase):
             hgrc.write(b'mergemarkers = detailed\n')
             hgrc.write(b'promptecho = True\n')
             hgrc.write(b'timeout.warn=15\n')
+            hgrc.write(b'[chgserver]\n')
+            hgrc.write(b'idletimeout=60\n')
             hgrc.write(b'[defaults]\n')
             hgrc.write(b'[devel]\n')
             hgrc.write(b'all-warnings = true\n')
