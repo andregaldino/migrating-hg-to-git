@@ -599,7 +599,7 @@ class dirstate(object):
 
         This function must be called within a `dirstate.parentchange` context.
 
-        note: the API is at an early stage and we might need to ajust it
+        note: the API is at an early stage and we might need to adjust it
         depending of what information ends up being relevant and useful to
         other processing.
         """
