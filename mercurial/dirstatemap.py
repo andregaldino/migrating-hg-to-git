@@ -209,6 +209,9 @@ class dirstatemap(object):
         else:
             assert size != FROM_P2
             assert size != NONNORMAL
+            assert size is not None
+            assert mtime is not None
+
             state = b'n'
             size = size & rangemask
             mtime = mtime & rangemask
