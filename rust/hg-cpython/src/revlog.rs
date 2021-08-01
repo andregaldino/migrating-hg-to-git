@@ -59,12 +59,22 @@ py_class!(pub class MixedIndex |py| {
 
     /// Return Revision if found, raises a bare `error.RevlogError`
     /// in case of ambiguity, same as C version does
-    def get_rev(&self, node: PyBytes) -> PyResult<Option<Revision>> {
+    def get_rev(&self, pynode: PyBytes) -> PyResult<Option<Revision>> {
         let opt = self.get_nodetree(py)?.borrow();
         let nt = opt.as_ref().unwrap();
         let idx = &*self.cindex(py).borrow();
-        let node = node_from_py_bytes(py, &node)?;
-        nt.find_bin(idx, node.into()).map_err(|e| nodemap_error(py, e))
+        let node = node_from_py_bytes(py, &pynode)?;
+        match nt.find_bin(idx, node.into())
+        {
+            Ok(None) =>
+                // fallback to C implementation, remove once
+                // https://bz.mercurial-scm.org/show_bug.cgi?id=6554
+                // is fixed (a simple backout should do)
+                self.call_cindex(py, "get_rev", &PyTuple::new(py, &[pynode.into_object()]), None)?
+                .extract(py),
+            Ok(Some(rev)) => Ok(Some(rev)),
+            Err(e) => Err(nodemap_error(py, e)),
+        }
     }
 
     /// same as `get_rev()` but raises a bare `error.RevlogError` if node
@@ -94,27 +104,34 @@ py_class!(pub class MixedIndex |py| {
         }
     }
 
-    def partialmatch(&self, node: PyObject) -> PyResult<Option<PyBytes>> {
+    def partialmatch(&self, pynode: PyObject) -> PyResult<Option<PyBytes>> {
         let opt = self.get_nodetree(py)?.borrow();
         let nt = opt.as_ref().unwrap();
         let idx = &*self.cindex(py).borrow();
 
         let node_as_string = if cfg!(feature = "python3-sys") {
-            node.cast_as::<PyString>(py)?.to_string(py)?.to_string()
+            pynode.cast_as::<PyString>(py)?.to_string(py)?.to_string()
         }
         else {
-            let node = node.extract::<PyBytes>(py)?;
+            let node = pynode.extract::<PyBytes>(py)?;
             String::from_utf8_lossy(node.data(py)).to_string()
         };
 
         let prefix = NodePrefix::from_hex(&node_as_string).map_err(|_| PyErr::new::<ValueError, _>(py, "Invalid node or prefix"))?;
 
-        nt.find_bin(idx, prefix)
-            // TODO make an inner API returning the node directly
-            .map(|opt| opt.map(
-                |rev| PyBytes::new(py, idx.node(rev).unwrap().as_bytes())))
-            .map_err(|e| nodemap_error(py, e))
-
+        match nt.find_bin(idx, prefix) {
+            Ok(None) =>
+                // fallback to C implementation, remove once
+                // https://bz.mercurial-scm.org/show_bug.cgi?id=6554
+                // is fixed (a simple backout should do)
+                self.call_cindex(
+                    py, "partialmatch",
+                    &PyTuple::new(py, &[pynode]), None
+                )?.extract(py),
+            Ok(Some(rev)) =>
+                Ok(Some(PyBytes::new(py, idx.node(rev).unwrap().as_bytes()))),
+            Err(e) => Err(nodemap_error(py, e)),
+        }
     }
 
     /// append an index entry
