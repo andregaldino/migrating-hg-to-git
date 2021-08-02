@@ -200,20 +200,20 @@ def get_password():
     This shouldn't be called directly- use ``ui.getpass()`` instead, which
     checks if the session is interactive first.
     """
-    pw = ""
+    pw = u""
     while True:
         c = msvcrt.getwch()  # pytype: disable=module-attr
-        if c == '\r' or c == '\n':
+        if c == u'\r' or c == u'\n':
             break
-        if c == '\003':
+        if c == u'\003':
             raise KeyboardInterrupt
-        if c == '\b':
+        if c == u'\b':
             pw = pw[:-1]
         else:
             pw = pw + c
-    msvcrt.putwch('\r')  # pytype: disable=module-attr
-    msvcrt.putwch('\n')  # pytype: disable=module-attr
-    return encoding.strtolocal(pw)
+    msvcrt.putwch(u'\r')  # pytype: disable=module-attr
+    msvcrt.putwch(u'\n')  # pytype: disable=module-attr
+    return encoding.unitolocal(pw)
 
 
 class winstdout(object):
