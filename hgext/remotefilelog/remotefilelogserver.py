@@ -186,7 +186,7 @@ def onetimesetup(ui):
                         yield (t, u, e, s)
 
             for x in repo.store.topfiles():
-                if state.noflatmf and x[0][:11] == b'00manifest.':
+                if state.noflatmf and x[1][:11] == b'00manifest.':
                     continue
                 yield x
 
