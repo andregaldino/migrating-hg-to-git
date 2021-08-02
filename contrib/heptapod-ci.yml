@@ -128,7 +128,6 @@ test-py3-chg:
 
 check-pytype-py3:
     extends: .runtests_template
-    when: manual
     before_script:
       - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
       - hg -R /tmp/mercurial-ci/ update `hg log --rev '.' --template '{node}'`
