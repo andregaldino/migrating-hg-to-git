@@ -2116,6 +2116,8 @@ class revlog(object):
                         dfh = self._datafp(b"w+")
                     transaction.add(self._datafile, dsize)
                 if self._sidedatafile is not None:
+                    # revlog-v2 does not inline, help Pytype
+                    assert dfh is not None
                     try:
                         sdfh = self.opener(self._sidedatafile, mode=b"r+")
                         dfh.seek(self._docket.sidedata_end, os.SEEK_SET)
@@ -2578,6 +2580,8 @@ class revlog(object):
             assert not sidedata
             self._enforceinlinesize(transaction)
         if self._docket is not None:
+            # revlog-v2 always has 3 writing handles, help Pytype
+            assert self._writinghandles[2] is not None
             self._docket.index_end = self._writinghandles[0].tell()
             self._docket.data_end = self._writinghandles[1].tell()
             self._docket.sidedata_end = self._writinghandles[2].tell()
