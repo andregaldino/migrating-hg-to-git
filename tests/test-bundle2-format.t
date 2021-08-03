@@ -234,7 +234,6 @@ Create an extension to test bundle2 API
   > [experimental]
   > evolution.createmarkers=True
   > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > [command-templates]
   > log={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > [web]

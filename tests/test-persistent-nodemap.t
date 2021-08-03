@@ -868,7 +868,7 @@ Simple case
 
 No race condition
 
-  $ hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
+  $ hg clone -U --stream ssh://user@dummy/test-repo stream-clone --debug | egrep '00(changelog|manifest)'
   adding [s] 00manifest.n (62 bytes)
   adding [s] 00manifest-*.nd (118 KB) (glob)
   adding [s] 00changelog.n (62 bytes)
@@ -933,7 +933,7 @@ Prepare a commit
 
 Do a mix of clone and commit at the same time so that the file listed on disk differ at actual transfer time.
 
-  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-1 --debug 2>> clone-output | egrep '00(changelog|manifest)' >> clone-output; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ (hg clone -U --stream ssh://user@dummy/test-repo stream-clone-race-1 --debug 2>> clone-output | egrep '00(changelog|manifest)' >> clone-output; touch $HG_TEST_STREAM_WALKED_FILE_3) &
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
   $ hg -R test-repo/ commit -m foo
   $ touch $HG_TEST_STREAM_WALKED_FILE_2
@@ -1030,7 +1030,7 @@ Check the initial state
 Performe the mix of clone and full refresh of the nodemap, so that the files
 (and filenames) are different between listing time and actual transfer time.
 
-  $ (hg clone -U --stream --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/test-repo stream-clone-race-2 --debug 2>> clone-output-2 | egrep '00(changelog|manifest)' >> clone-output-2; touch $HG_TEST_STREAM_WALKED_FILE_3) &
+  $ (hg clone -U --stream ssh://user@dummy/test-repo stream-clone-race-2 --debug 2>> clone-output-2 | egrep '00(changelog|manifest)' >> clone-output-2; touch $HG_TEST_STREAM_WALKED_FILE_3) &
   $ $RUNTESTDIR/testlib/wait-on-file 10 $HG_TEST_STREAM_WALKED_FILE_1
   $ rm test-repo/.hg/store/00changelog.n
   $ rm test-repo/.hg/store/00changelog-*.nd

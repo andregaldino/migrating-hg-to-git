@@ -1143,7 +1143,6 @@ Check hook preventing push (issue4455)
   > ssh=ssh://user@dummy/issue4455-dest
   > http=http://localhost:$HGPORT/
   > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > EOF
   $ cat >> ../issue4455-dest/.hg/hgrc << EOF
   > [hooks]
@@ -1270,7 +1269,6 @@ Test that pre-pushkey compat for bookmark works as expected (issue5777)
 
   $ cat << EOF >> $HGRCPATH
   > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > [server]
   > bookmarks-pushkey-compat = yes
   > EOF

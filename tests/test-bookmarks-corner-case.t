@@ -17,7 +17,6 @@ global setup
 
   $ cat >> $HGRCPATH << EOF
   > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > [server]
   > concurrent-push-mode=check-related
   > EOF

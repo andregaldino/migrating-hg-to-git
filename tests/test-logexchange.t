@@ -3,7 +3,6 @@ Testing the functionality to pull remotenames
 
   $ cat >> $HGRCPATH << EOF
   > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [extensions]

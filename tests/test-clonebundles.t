@@ -208,7 +208,7 @@ by old clients.
 
 Feature works over SSH
 
-  $ hg clone -U -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/server ssh-full-clone
+  $ hg clone -U ssh://user@dummy/server ssh-full-clone
   applying clone bundle from http://localhost:$HGPORT1/full.hg
   adding changesets
   adding manifests

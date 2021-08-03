@@ -26,7 +26,6 @@ some capability (because it's running an older hg version, usually).
   > EOF
   $ cat >> .hg/hgrc <<EOF
   > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > EOF
 
   $ hg pull ssh://user@dummy/repo1 -r tip -B a

@@ -15,7 +15,6 @@ setupcommon() {
 [extensions]
 infinitepush=
 [ui]
-ssh = "$PYTHON" "$TESTDIR/dummyssh"
 [infinitepush]
 branchpattern=re:scratch/.*
 EOF
