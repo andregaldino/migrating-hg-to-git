@@ -2,7 +2,6 @@ Testing the functionality to pull remotenames
 =============================================
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
   > [alias]
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [extensions]

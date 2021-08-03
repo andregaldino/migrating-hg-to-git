@@ -7,7 +7,6 @@ debug=True
 remotefilelog=
 rebase=
 strip=
-[ui]
 [server]
 preferuncompressed=True
 [experimental]

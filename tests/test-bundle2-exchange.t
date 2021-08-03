@@ -28,7 +28,6 @@ enable obsolescence
   > evolution.createmarkers=True
   > evolution.exchange=True
   > bundle2-output-capture=True
-  > [ui]
   > [command-templates]
   > log={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > [web]
@@ -921,9 +920,6 @@ Check abort from mandatory pushkey
 
 Test lazily acquiring the lock during unbundle
   $ cp $TESTTMP/hgrc.orig $HGRCPATH
-  $ cat >> $HGRCPATH <<EOF
-  > [ui]
-  > EOF
 
   $ cat >> $TESTTMP/locktester.py <<EOF
   > import os

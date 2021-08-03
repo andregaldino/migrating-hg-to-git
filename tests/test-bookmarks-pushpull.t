@@ -1142,7 +1142,6 @@ Check hook preventing push (issue4455)
   > local=../issue4455-dest/
   > ssh=ssh://user@dummy/issue4455-dest
   > http=http://localhost:$HGPORT/
-  > [ui]
   > EOF
   $ cat >> ../issue4455-dest/.hg/hgrc << EOF
   > [hooks]

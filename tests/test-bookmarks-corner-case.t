@@ -16,7 +16,6 @@ global setup
 ------------
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
   > [server]
   > concurrent-push-mode=check-related
   > EOF

@@ -1,7 +1,3 @@
-  $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > EOF
-
 Set up repo
 
   $ hg --config experimental.treemanifest=True init repo

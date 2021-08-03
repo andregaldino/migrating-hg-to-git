@@ -28,7 +28,6 @@ protocols with inline conditional output is hard to read.
   > }
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
   > [devel]
   > debug.peer-request = true
   > [extensions]

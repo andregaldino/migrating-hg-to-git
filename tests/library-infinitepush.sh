@@ -14,7 +14,6 @@ setupcommon() {
   cat >> $HGRCPATH << EOF
 [extensions]
 infinitepush=
-[ui]
 [infinitepush]
 branchpattern=re:scratch/.*
 EOF

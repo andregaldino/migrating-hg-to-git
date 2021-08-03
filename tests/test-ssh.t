@@ -149,8 +149,6 @@ local change
 updating rc
 
   $ echo "default-push = ssh://user@dummy/remote" >> .hg/hgrc
-  $ echo "[ui]" >> .hg/hgrc
-  $ echo "ssh = \"$PYTHON\" \"$TESTDIR/dummyssh\"" >> .hg/hgrc
 
 find outgoing
 
@@ -515,7 +513,6 @@ stderr from remote commands should be printed before stdout from local code (iss
   $ cat >> .hg/hgrc << EOF
   > [paths]
   > default-push = ssh://user@dummy/remote
-  > [ui]
   > [extensions]
   > localwrite = localwrite.py
   > EOF

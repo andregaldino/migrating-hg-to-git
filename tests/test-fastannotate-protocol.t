@@ -1,5 +1,4 @@
   $ cat >> $HGRCPATH << EOF
-  > [ui]
   > [extensions]
   > fastannotate=
   > [fastannotate]
