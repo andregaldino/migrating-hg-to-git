@@ -413,7 +413,7 @@ Listing all config options
 
 The feature is experimental and behavior may varies. This test exists to make sure the code is run. We grep it to avoid too much variability in its current experimental state.
 
-  $ hg config --exp-all-known | grep commit
+  $ hg config --exp-all-known | grep commit | grep -v ssh
   commands.commit.interactive.git=False
   commands.commit.interactive.ignoreblanklines=False
   commands.commit.interactive.ignorews=False

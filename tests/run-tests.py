@@ -1554,6 +1554,8 @@ class Test(unittest.TestCase):
             hgrc.write(b'merge = internal:merge\n')
             hgrc.write(b'mergemarkers = detailed\n')
             hgrc.write(b'promptecho = True\n')
+            dummyssh = os.path.join(self._testdir, b'dummyssh')
+            hgrc.write(b'ssh = "%s" "%s"\n' % (PYTHON, dummyssh))
             hgrc.write(b'timeout.warn=15\n')
             hgrc.write(b'[chgserver]\n')
             hgrc.write(b'idletimeout=60\n')
