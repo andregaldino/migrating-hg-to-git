@@ -27,6 +27,8 @@ Dummy extension simulating unsafe long running command
   >     with ui.uninterruptible():
   >         testing.write_file(sync_file, b'%d' % os.getpid())
   >         testing.wait_file(done_file)
+  >         # make sure we get rescheduled and the signal get a chance to be handled
+  >         time.sleep(0.1)
   >         ui.warn(b"end of unsafe operation\n")
   >     ui.warn(b"%d second(s) passed\n" % int(time.time() - start))
   > EOF
@@ -40,6 +42,7 @@ Dummy extension simulating unsafe long running command
   > fi
   > "$RUNTESTDIR/testlib/wait-on-file" 10 "$SYNC_FILE" || exit 2
   > kill -s \$SIG \`cat "$SYNC_FILE"\`
+  > sleep 1
   > touch "$DONE_FILE"
   > EOF
 
