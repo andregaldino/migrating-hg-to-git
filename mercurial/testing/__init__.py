@@ -33,5 +33,11 @@ def wait_file(path, timeout=10):
 
 
 def write_file(path, content=b''):
-    with open(path, 'wb') as f:
+    if content:
+        write_path = b'%s.tmp' % path
+    else:
+        write_path = path
+    with open(write_path, 'wb') as f:
         f.write(content)
+    if path != write_path:
+        os.rename(write_path, path)
