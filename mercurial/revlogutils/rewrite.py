@@ -10,6 +10,7 @@
 import binascii
 import contextlib
 import os
+import struct
 
 from ..node import (
     nullrev,
@@ -561,7 +562,7 @@ def _reorder_filelog_parents(repo, fl, to_fix):
             util.tryunlink(new_file_path)
 
 
-def _is_revision_affected(ui, fl, filerev, path):
+def _is_revision_affected(fl, filerev, metadata_cache=None):
     """Mercurial currently (5.9rc0) uses `p1 == nullrev and p2 != nullrev` as a
     special meaning compared to the reverse in the context of filelog-based
     copytracing. issue6528 exists because new code assumed that parent ordering
@@ -574,11 +575,61 @@ def _is_revision_affected(ui, fl, filerev, path):
         # We don't care about censored nodes as they never carry metadata
         return False
     has_meta = raw_text.startswith(b'\x01\n')
+    if metadata_cache is not None:
+        metadata_cache[filerev] = has_meta
     if has_meta:
         (p1, p2) = fl.parentrevs(filerev)
         if p1 != nullrev and p2 == nullrev:
             return True
     return False
+
+
+def _is_revision_affected_fast(repo, fl, filerev, metadata_cache):
+    """Optimization fast-path for `_is_revision_affected`.
+
+    `metadata_cache` is a dict of `{rev: has_metadata}` which allows any
+    revision to check if its base has metadata, saving computation of the full
+    text, instead looking at the current delta.
+
+    This optimization only works if the revisions are looked at in order."""
+    rl = fl._revlog
+
+    if rl.iscensored(filerev):
+        # Censored revisions don't contain metadata, so they cannot be affected
+        metadata_cache[filerev] = False
+        return False
+
+    p1, p2 = rl.parentrevs(filerev)
+    if p1 == nullrev or p2 != nullrev:
+        return False
+
+    delta_parent = rl.deltaparent(filerev)
+    parent_has_metadata = metadata_cache.get(delta_parent)
+    if parent_has_metadata is None:
+        is_affected = _is_revision_affected(fl, filerev, metadata_cache)
+        return is_affected
+
+    chunk = rl._chunk(filerev)
+    if not len(chunk):
+        # No diff for this revision
+        return parent_has_metadata
+
+    header_length = 12
+    if len(chunk) < header_length:
+        raise error.Abort(_(b"patch cannot be decoded"))
+
+    start, _end, _length = struct.unpack(b">lll", chunk[:header_length])
+
+    if start < 2:  # len(b'\x01\n') == 2
+        # This delta does *something* to the metadata marker (if any).
+        # Check it the slow way
+        is_affected = _is_revision_affected(fl, filerev, metadata_cache)
+        return is_affected
+
+    # The diff did not remove or add the metadata header, it's then in the same
+    # situation as its parent
+    metadata_cache[filerev] = parent_has_metadata
+    return parent_has_metadata
 
 
 def _from_report(ui, repo, context, from_report, dry_run):
@@ -603,7 +654,7 @@ def _from_report(ui, repo, context, from_report, dry_run):
             excluded = set()
 
             for filerev in to_fix:
-                if _is_revision_affected(ui, fl, filerev, filename):
+                if _is_revision_affected(fl, filerev):
                     msg = b"found affected revision %d for filelog '%s'\n"
                     ui.warn(msg % (filerev, filename))
                 else:
@@ -663,11 +714,11 @@ def repair_issue6528(ui, repo, dry_run=False, to_report=None, from_report=None):
 
             # Set of filerevs (or hex filenodes if `to_report`) that need fixing
             to_fix = set()
+            metadata_cache = {}
             for filerev in fl.revs():
-                # TODO speed up by looking at the start of the delta
-                # If it hasn't changed, it's not worth looking at the other revs
-                # in the same chain
-                affected = _is_revision_affected(ui, fl, filerev, path)
+                affected = _is_revision_affected_fast(
+                    repo, fl, filerev, metadata_cache
+                )
                 if affected:
                     msg = b"found affected revision %d for filelog '%s'\n"
                     ui.warn(msg % (filerev, path))
