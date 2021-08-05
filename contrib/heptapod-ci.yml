@@ -142,6 +142,7 @@ check-pytype-py3:
       - $PYTHON -m pip install --user -U pytype==2021.04.15
     variables:
         RUNTEST_ARGS: " --allow-slow-tests tests/test-check-pytype.t"
+        HGTEST_TIMEOUT: "3600"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "c"
 
