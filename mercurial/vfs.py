@@ -50,6 +50,14 @@ def _avoidambig(path, oldstat):
 class abstractvfs(object):
     """Abstract base class; cannot be instantiated"""
 
+    # default directory separator for vfs
+    #
+    # Other vfs code always use `/` and this works fine because python file API
+    # abstract the use of `/` and make it work transparently. For consistency
+    # vfs will always use `/` when joining. This avoid some confusion in
+    # encoded vfs (see issue6546)
+    _dir_sep = b'/'
+
     def __init__(self, *args, **kwargs):
         '''Prevent instantiation; don't call this from subclasses.'''
         raise NotImplementedError('attempted instantiating ' + str(type(self)))
@@ -152,12 +160,22 @@ class abstractvfs(object):
         mode = st.st_mode
         return stat.S_ISREG(mode) or stat.S_ISLNK(mode)
 
+    def _join(self, *paths):
+        root_idx = 0
+        for idx, p in enumerate(paths):
+            if os.path.isabs(p) or p.startswith(self._dir_sep):
+                root_idx = idx
+        if root_idx != 0:
+            paths = paths[root_idx:]
+        paths = [p for p in paths if p]
+        return self._dir_sep.join(paths)
+
     def reljoin(self, *paths):
         """join various elements of a path together (as os.path.join would do)
 
         The vfs base is not injected so that path stay relative. This exists
         to allow handling of strange encoding if needed."""
-        return os.path.join(*paths)
+        return self._join(*paths)
 
     def split(self, path):
         """split top-most element of a path (as os.path.split would do)
@@ -528,7 +546,9 @@ class vfs(abstractvfs):
 
     def join(self, path, *insidef):
         if path:
-            return os.path.join(self.base, path, *insidef)
+            parts = [self.base, path]
+            parts.extend(insidef)
+            return self._join(*parts)
         else:
             return self.base
 
