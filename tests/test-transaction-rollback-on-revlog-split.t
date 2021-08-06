@@ -86,6 +86,10 @@ and the second file.i entry should match the first file.i entry.
    warning: revlog 'data/file.d' not in fncache!
   1 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
+  $ hg debugrebuildfncache --only-data
+  adding data/file.d
+  1 items added, 0 removed from fncache
+  $ hg verify -q
   $ cd ..
 
 

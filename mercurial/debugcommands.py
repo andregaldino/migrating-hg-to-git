@@ -2987,10 +2987,22 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
 
 
-@command(b'debugrebuildfncache', [], b'')
-def debugrebuildfncache(ui, repo):
+@command(
+    b'debugrebuildfncache',
+    [
+        (
+            b'',
+            b'only-data',
+            False,
+            _(b'only look for wrong .d files (much faster)'),
+        )
+    ],
+    b'',
+)
+def debugrebuildfncache(ui, repo, **opts):
     """rebuild the fncache file"""
-    repair.rebuildfncache(ui, repo)
+    opts = pycompat.byteskwargs(opts)
+    repair.rebuildfncache(ui, repo, opts.get(b"only_data"))
 
 
 @command(

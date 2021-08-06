@@ -316,7 +316,7 @@ Show all commands + options
   debugpushkey: 
   debugpvec: 
   debugrebuilddirstate: rev, minimal
-  debugrebuildfncache: 
+  debugrebuildfncache: only-data
   debugrename: rev
   debugrequires: 
   debugrevlog: changelog, manifest, dir, dump
