@@ -220,6 +220,25 @@ Dry-run the fix
        0       6 2a8d3833f2fb 000000000000 000000000000
        1       7 2a80419dfc31 2a8d3833f2fb 000000000000
 
+Test the --paranoid option
+  $ hg debug-repair-issue6528 --dry-run --paranoid
+  found affected revision 1 for filelog 'data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+  $ hg st
+  M D.txt
+  M b.txt
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
 Run the fix
   $ hg debug-repair-issue6528
   found affected revision 1 for filelog 'data/D.txt.i'

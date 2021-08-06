@@ -267,7 +267,7 @@ Show all commands + options
   config: untrusted, exp-all-known, edit, local, source, shared, non-shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
-  debug-repair-issue6528: to-report, from-report, dry-run
+  debug-repair-issue6528: to-report, from-report, paranoid, dry-run
   debugancestor: 
   debugantivirusrunning: 
   debugapplystreamclonebundle: 

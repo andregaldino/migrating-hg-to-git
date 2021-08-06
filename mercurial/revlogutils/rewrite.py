@@ -672,7 +672,9 @@ def _from_report(ui, repo, context, from_report, dry_run):
                 _reorder_filelog_parents(repo, fl, sorted(to_fix))
 
 
-def repair_issue6528(ui, repo, dry_run=False, to_report=None, from_report=None):
+def repair_issue6528(
+    ui, repo, dry_run=False, to_report=None, from_report=None, paranoid=False
+):
     from .. import store  # avoid cycle
 
     @contextlib.contextmanager
@@ -719,6 +721,12 @@ def repair_issue6528(ui, repo, dry_run=False, to_report=None, from_report=None):
                 affected = _is_revision_affected_fast(
                     repo, fl, filerev, metadata_cache
                 )
+                if paranoid:
+                    slow = _is_revision_affected(fl, filerev)
+                    if slow != affected:
+                        msg = _(b"paranoid check failed for '%s' at node %s")
+                        node = binascii.hexlify(fl.node(filerev))
+                        raise error.Abort(msg % (filename, node))
                 if affected:
                     msg = b"found affected revision %d for filelog '%s'\n"
                     ui.warn(msg % (filerev, path))
