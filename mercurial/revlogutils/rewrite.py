@@ -563,6 +563,19 @@ def _reorder_filelog_parents(repo, fl, to_fix):
 
 
 def _is_revision_affected(fl, filerev, metadata_cache=None):
+    full_text = lambda: fl._revlog.rawdata(filerev)
+    parent_revs = lambda: fl._revlog.parentrevs(filerev)
+    return _is_revision_affected_inner(
+        full_text, parent_revs, filerev, metadata_cache
+    )
+
+
+def _is_revision_affected_inner(
+    full_text,
+    parents_revs,
+    filerev,
+    metadata_cache=None,
+):
     """Mercurial currently (5.9rc0) uses `p1 == nullrev and p2 != nullrev` as a
     special meaning compared to the reverse in the context of filelog-based
     copytracing. issue6528 exists because new code assumed that parent ordering
@@ -570,7 +583,7 @@ def _is_revision_affected(fl, filerev, metadata_cache=None):
     it's only used for filelog-based copytracing) and its parents are in the
     "wrong" order."""
     try:
-        raw_text = fl.rawdata(filerev)
+        raw_text = full_text()
     except error.CensoredNodeError:
         # We don't care about censored nodes as they never carry metadata
         return False
@@ -578,7 +591,7 @@ def _is_revision_affected(fl, filerev, metadata_cache=None):
     if metadata_cache is not None:
         metadata_cache[filerev] = has_meta
     if has_meta:
-        (p1, p2) = fl.parentrevs(filerev)
+        (p1, p2) = parents_revs()
         if p1 != nullrev and p2 == nullrev:
             return True
     return False
