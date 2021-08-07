@@ -157,13 +157,14 @@ class filelog(object):
                 )
             )
 
-        return self._revlog.addgroup(
-            deltas,
-            linkmapper,
-            transaction,
-            addrevisioncb=addrevisioncb,
-            duplicaterevisioncb=duplicaterevisioncb,
-        )
+        with self._revlog._writing(transaction):
+            return self._revlog.addgroup(
+                deltas,
+                linkmapper,
+                transaction,
+                addrevisioncb=addrevisioncb,
+                duplicaterevisioncb=duplicaterevisioncb,
+            )
 
     def getstrippoint(self, minlink):
         return self._revlog.getstrippoint(minlink)
