@@ -598,6 +598,32 @@ def _is_revision_affected_inner(
 
 
 def _is_revision_affected_fast(repo, fl, filerev, metadata_cache):
+    rl = fl._revlog
+    is_censored = lambda: rl.iscensored(filerev)
+    delta_base = lambda: rl.deltaparent(filerev)
+    delta = lambda: rl._chunk(filerev)
+    full_text = lambda: rl.rawdata(filerev)
+    parent_revs = lambda: rl.parentrevs(filerev)
+    return _is_revision_affected_fast_inner(
+        is_censored,
+        delta_base,
+        delta,
+        full_text,
+        parent_revs,
+        filerev,
+        metadata_cache,
+    )
+
+
+def _is_revision_affected_fast_inner(
+    is_censored,
+    delta_base,
+    delta,
+    full_text,
+    parent_revs,
+    filerev,
+    metadata_cache,
+):
     """Optimization fast-path for `_is_revision_affected`.
 
     `metadata_cache` is a dict of `{rev: has_metadata}` which allows any
@@ -605,24 +631,27 @@ def _is_revision_affected_fast(repo, fl, filerev, metadata_cache):
     text, instead looking at the current delta.
 
     This optimization only works if the revisions are looked at in order."""
-    rl = fl._revlog
 
-    if rl.iscensored(filerev):
+    if is_censored():
         # Censored revisions don't contain metadata, so they cannot be affected
         metadata_cache[filerev] = False
         return False
 
-    p1, p2 = rl.parentrevs(filerev)
+    p1, p2 = parent_revs()
     if p1 == nullrev or p2 != nullrev:
         return False
 
-    delta_parent = rl.deltaparent(filerev)
+    delta_parent = delta_base()
     parent_has_metadata = metadata_cache.get(delta_parent)
     if parent_has_metadata is None:
-        is_affected = _is_revision_affected(fl, filerev, metadata_cache)
-        return is_affected
+        return _is_revision_affected_inner(
+            full_text,
+            parent_revs,
+            filerev,
+            metadata_cache,
+        )
 
-    chunk = rl._chunk(filerev)
+    chunk = delta()
     if not len(chunk):
         # No diff for this revision
         return parent_has_metadata
@@ -636,7 +665,12 @@ def _is_revision_affected_fast(repo, fl, filerev, metadata_cache):
     if start < 2:  # len(b'\x01\n') == 2
         # This delta does *something* to the metadata marker (if any).
         # Check it the slow way
-        is_affected = _is_revision_affected(fl, filerev, metadata_cache)
+        is_affected = _is_revision_affected_inner(
+            full_text,
+            parent_revs,
+            filerev,
+            metadata_cache,
+        )
         return is_affected
 
     # The diff did not remove or add the metadata header, it's then in the same
