@@ -20,6 +20,7 @@ from .interfaces import (
 from .utils import storageutil
 from .revlogutils import (
     constants as revlog_constants,
+    rewrite,
 )
 
 
@@ -158,6 +159,9 @@ class filelog(object):
             )
 
         with self._revlog._writing(transaction):
+
+            deltas = rewrite.filter_delta_issue6528(self._revlog, deltas)
+
             return self._revlog.addgroup(
                 deltas,
                 linkmapper,
