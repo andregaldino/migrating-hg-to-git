@@ -38,6 +38,8 @@ class filelog(object):
         # Used by LFS.
         self._revlog.filename = path
         self.nullid = self._revlog.nullid
+        opts = opener.options
+        self._fix_issue6528 = opts.get(b'issue6528.fix-incoming', True)
 
     def __len__(self):
         return len(self._revlog)
@@ -160,7 +162,8 @@ class filelog(object):
 
         with self._revlog._writing(transaction):
 
-            deltas = rewrite.filter_delta_issue6528(self._revlog, deltas)
+            if self._fix_issue6528:
+                deltas = rewrite.filter_delta_issue6528(self._revlog, deltas)
 
             return self._revlog.addgroup(
                 deltas,

@@ -524,3 +524,104 @@ And that the repair command does not find anything to fix
   no affected revisions were found
 
   $ cd ..
+
+A config option can disable the fixing of the bad bundle on the fly
+-------------------------------------------------------------------
+
+
+
+from a v1 bundle
+~~~~~~~~~~~~~~~~
+
+  $ hg debugbundle  --spec "$TESTDIR"/bundles/issue6528.hg-v1
+  bzip2-v1
+
+  $ hg init unbundle-v1-no-fix
+  $ cd unbundle-v1-no-fix
+
+  $ hg unbundle "$TESTDIR"/bundles/issue6528.hg-v1 --config storage.revlog.issue6528.fix-incoming=no
+  adding changesets
+  adding manifests
+  adding file changes
+  added 8 changesets with 12 changes to 4 files
+  new changesets f5a5a568022f:3beabb508514 (8 drafts)
+  (run 'hg update' to get a working copy)
+
+Check that revision were not fixed on the fly
+
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
+That we do see the symptoms of the bug
+
+  $ hg up -- -1
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg status
+  M D.txt (?)
+  M b.txt (?)
+
+And that the repair command find issue to fix.
+
+  $ hg debug-repair-issue6528 --dry-run
+  found affected revision 1 for filelog 'data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+
+  $ cd ..
+
+from a v2 bundle
+~~~~~~~~~~~~~~~~
+
+  $ hg debugbundle --spec "$TESTDIR"/bundles/issue6528.hg-v2
+  bzip2-v2
+
+  $ hg init unbundle-v2-no-fix
+  $ cd unbundle-v2-no-fix
+
+  $ hg unbundle "$TESTDIR"/bundles/issue6528.hg-v2 --config storage.revlog.issue6528.fix-incoming=no
+  adding changesets
+  adding manifests
+  adding file changes
+  added 8 changesets with 12 changes to 4 files
+  new changesets f5a5a568022f:3beabb508514 (8 drafts)
+  (run 'hg update' to get a working copy)
+
+Check that revision were not fixed on the fly
+
+  $ hg debugrevlogindex b.txt
+     rev linkrev nodeid       p1           p2
+       0       2 05b806ebe5ea 000000000000 000000000000
+       1       3 a58b36ad6b65 05b806ebe5ea 000000000000
+       2       6 216a5fe8b8ed 000000000000 000000000000
+       3       7 ea4f2f2463cc 216a5fe8b8ed 000000000000
+
+  $ hg debugrevlogindex D.txt
+     rev linkrev nodeid       p1           p2
+       0       6 2a8d3833f2fb 000000000000 000000000000
+       1       7 2a80419dfc31 2a8d3833f2fb 000000000000
+
+That we do see the symptoms of the bug
+
+  $ hg up -- -1
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg status
+  M D.txt (?)
+  M b.txt (?)
+
+And that the repair command find issue to fix.
+
+  $ hg debug-repair-issue6528 --dry-run
+  found affected revision 1 for filelog 'data/D.txt.i'
+  found affected revision 1 for filelog 'data/b.txt.i'
+  found affected revision 3 for filelog 'data/b.txt.i'
+
+  $ cd ..

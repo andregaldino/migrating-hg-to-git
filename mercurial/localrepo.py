@@ -1043,6 +1043,9 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
     )
     options[b'deltabothparents'] = deltabothparents
 
+    issue6528 = ui.configbool(b'storage', b'revlog.issue6528.fix-incoming')
+    options[b'issue6528.fix-incoming'] = issue6528
+
     lazydelta = ui.configbool(b'storage', b'revlog.reuse-external-delta')
     lazydeltabase = False
     if lazydelta:
