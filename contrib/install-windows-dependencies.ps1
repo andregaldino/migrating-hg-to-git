@@ -38,18 +38,15 @@ $PYTHON39_x64_SHA256 = "84d5243088ba00c11e51905c704dbe041040dfff044f4e1ce5476844
 $PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
 $PIP_SHA256 = "57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe"
 
-$VIRTUALENV_URL = "https://files.pythonhosted.org/packages/66/f0/6867af06d2e2f511e4e1d7094ff663acdebc4f15d4a0cb0fed1007395124/virtualenv-16.7.5.tar.gz"
-$VIRTUALENV_SHA256 = "f78d81b62d3147396ac33fc9d77579ddc42cc2a98dd9ea38886f616b33bc7fb2"
-
 $INNO_SETUP_URL = "http://files.jrsoftware.org/is/5/innosetup-5.6.1-unicode.exe"
 $INNO_SETUP_SHA256 = "27D49E9BC769E9D1B214C153011978DB90DC01C2ACD1DDCD9ED7B3FE3B96B538"
 
 $MINGW_BIN_URL = "https://osdn.net/frs/redir.php?m=constant&f=mingw%2F68260%2Fmingw-get-0.6.3-mingw32-pre-20170905-1-bin.zip"
 $MINGW_BIN_SHA256 = "2AB8EFD7C7D1FC8EAF8B2FA4DA4EEF8F3E47768284C021599BC7435839A046DF"
 
-$MERCURIAL_WHEEL_FILENAME = "mercurial-5.1.2-cp27-cp27m-win_amd64.whl"
-$MERCURIAL_WHEEL_URL = "https://files.pythonhosted.org/packages/6d/47/e031e47f7fe9b16e4e3383da47e2b0a7eae6e603996bc67a03ec4fa1b3f4/$MERCURIAL_WHEEL_FILENAME"
-$MERCURIAL_WHEEL_SHA256 = "1d18c7f6ca1456f0f62ee65c9a50c14cbba48ce6e924930cdb10537f5c9eaf5f"
+$MERCURIAL_WHEEL_FILENAME = "mercurial-5.8.1-cp39-cp39-win_amd64.whl"
+$MERCURIAL_WHEEL_URL = "https://files.pythonhosted.org/packages/5c/b5/a5fa664761eef29b6c90eb24cb09ab8fe2c9b4b86af41d42c17476aff29b/$MERCURIAL_WHEEL_FILENAME"
+$MERCURIAL_WHEEL_SHA256 = "cbf3efa68fd7ebf94691bd00d2c86bbd47ca73620c8faa4f18b6c394bf5f82b0"
 
 $RUSTUP_INIT_URL = "https://static.rust-lang.org/rustup/archive/1.21.1/x86_64-pc-windows-gnu/rustup-init.exe"
 $RUSTUP_INIT_SHA256 = "d17df34ba974b9b19cf5c75883a95475aa22ddc364591d75d174090d55711c72"
@@ -136,7 +133,6 @@ function Install-Dependencies($prefix) {
     Secure-Download $PYTHON39_x86_URL ${prefix}\assets\python39-x86.exe $PYTHON39_x86_SHA256
     Secure-Download $PYTHON39_x64_URL ${prefix}\assets\python39-x64.exe $PYTHON39_x64_SHA256
     Secure-Download $PIP_URL ${pip} $PIP_SHA256
-    Secure-Download $VIRTUALENV_URL ${prefix}\assets\virtualenv.tar.gz $VIRTUALENV_SHA256
     Secure-Download $VS_BUILD_TOOLS_URL ${prefix}\assets\vs_buildtools.exe $VS_BUILD_TOOLS_SHA256
     Secure-Download $INNO_SETUP_URL ${prefix}\assets\InnoSetup.exe $INNO_SETUP_SHA256
     Secure-Download $MINGW_BIN_URL ${prefix}\assets\mingw-get-bin.zip $MINGW_BIN_SHA256
@@ -174,7 +170,7 @@ function Install-Dependencies($prefix) {
     # Construct a virtualenv useful for bootstrapping. It conveniently contains a
     # Mercurial install.
     Write-Output "creating bootstrap virtualenv with Mercurial"
-    Invoke-Process "$prefix\python27-x64\Scripts\virtualenv.exe" "${prefix}\venv-bootstrap"
+    Invoke-Process "$prefix\python39-x64\python.exe" "-m venv ${prefix}\venv-bootstrap"
     Invoke-Process "${prefix}\venv-bootstrap\Scripts\pip.exe" "install ${prefix}\assets\${MERCURIAL_WHEEL_FILENAME}"
 }
 
@@ -182,7 +178,7 @@ function Clone-Mercurial-Repo($prefix, $repo_url, $dest) {
     Write-Output "cloning $repo_url to $dest"
     # TODO Figure out why CA verification isn't working in EC2 and remove
     # --insecure.
-    Invoke-Process "${prefix}\venv-bootstrap\Scripts\hg.exe" "clone --insecure $repo_url $dest"
+    Invoke-Process "${prefix}\venv-bootstrap\Scripts\python.exe" "${prefix}\venv-bootstrap\Scripts\hg clone --insecure $repo_url $dest"
 
     # Mark repo as non-publishing by default for convenience.
     Add-Content -Path "$dest\.hg\hgrc" -Value "`n[phases]`npublish = false"
