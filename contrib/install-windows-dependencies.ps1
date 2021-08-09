@@ -91,6 +91,8 @@ function Secure-Download($url, $path, $sha256) {
 }
 
 function Invoke-Process($path, $arguments) {
+    echo "$path $arguments"
+
     $p = Start-Process -FilePath $path -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
 
     if ($p.ExitCode -ne 0) {
