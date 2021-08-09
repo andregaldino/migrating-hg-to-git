@@ -19,14 +19,6 @@
 $VS_BUILD_TOOLS_URL = "https://download.visualstudio.microsoft.com/download/pr/a1603c02-8a66-4b83-b821-811e3610a7c4/aa2db8bb39e0cbd23e9940d8951e0bc3/vs_buildtools.exe"
 $VS_BUILD_TOOLS_SHA256 = "911E292B8E6E5F46CBC17003BDCD2D27A70E616E8D5E6E69D5D489A605CAA139"
 
-$VC9_PYTHON_URL = "https://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi"
-$VC9_PYTHON_SHA256 = "070474db76a2e625513a5835df4595df9324d820f9cc97eab2a596dcbc2f5cbf"
-
-$PYTHON27_x64_URL = "https://www.python.org/ftp/python/2.7.18/python-2.7.18.amd64.msi"
-$PYTHON27_x64_SHA256 = "b74a3afa1e0bf2a6fc566a7b70d15c9bfabba3756fb077797d16fffa27800c05"
-$PYTHON27_X86_URL = "https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi"
-$PYTHON27_X86_SHA256 = "d901802e90026e9bad76b8a81f8dd7e43c7d7e8269d9281c9e9df7a9c40480a9"
-
 $PYTHON37_x86_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9.exe"
 $PYTHON37_x86_SHA256 = "769bb7c74ad1df6d7d74071cc16a984ff6182e4016e11b8949b93db487977220"
 $PYTHON37_X64_URL = "https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe"
@@ -137,9 +129,6 @@ function Install-Dependencies($prefix) {
 
     $pip = "${prefix}\assets\get-pip.py"
 
-    Secure-Download $VC9_PYTHON_URL ${prefix}\assets\VCForPython27.msi $VC9_PYTHON_SHA256
-    Secure-Download $PYTHON27_x86_URL ${prefix}\assets\python27-x86.msi $PYTHON27_x86_SHA256
-    Secure-Download $PYTHON27_x64_URL ${prefix}\assets\python27-x64.msi $PYTHON27_x64_SHA256
     Secure-Download $PYTHON37_x86_URL ${prefix}\assets\python37-x86.exe $PYTHON37_x86_SHA256
     Secure-Download $PYTHON37_x64_URL ${prefix}\assets\python37-x64.exe $PYTHON37_x64_SHA256
     Secure-Download $PYTHON38_x86_URL ${prefix}\assets\python38-x86.exe $PYTHON38_x86_SHA256
@@ -155,16 +144,6 @@ function Install-Dependencies($prefix) {
     Secure-Download $RUSTUP_INIT_URL ${prefix}\assets\rustup-init.exe $RUSTUP_INIT_SHA256
     Secure-Download $PYOXIDIZER_URL ${prefix}\assets\PyOxidizer.msi $PYOXIDIZER_SHA256
 
-    Write-Output "installing Python 2.7 32-bit"
-    Invoke-Process msiexec.exe "/i ${prefix}\assets\python27-x86.msi /l* ${prefix}\assets\python27-x86.log /q TARGETDIR=${prefix}\python27-x86 ALLUSERS="
-    Invoke-Process ${prefix}\python27-x86\python.exe ${prefix}\assets\get-pip.py
-    Invoke-Process ${prefix}\python27-x86\Scripts\pip.exe "install ${prefix}\assets\virtualenv.tar.gz"
-
-    Write-Output "installing Python 2.7 64-bit"
-    Invoke-Process msiexec.exe "/i ${prefix}\assets\python27-x64.msi /l* ${prefix}\assets\python27-x64.log /q TARGETDIR=${prefix}\python27-x64 ALLUSERS="
-    Invoke-Process ${prefix}\python27-x64\python.exe ${prefix}\assets\get-pip.py
-    Invoke-Process ${prefix}\python27-x64\Scripts\pip.exe "install ${prefix}\assets\virtualenv.tar.gz"
-
     Install-Python3 "Python 3.7 32-bit" ${prefix}\assets\python37-x86.exe ${prefix}\python37-x86 ${pip}
     Install-Python3 "Python 3.7 64-bit" ${prefix}\assets\python37-x64.exe ${prefix}\python37-x64 ${pip}
     Install-Python3 "Python 3.8 32-bit" ${prefix}\assets\python38-x86.exe ${prefix}\python38-x86 ${pip}
@@ -179,9 +158,6 @@ function Install-Dependencies($prefix) {
     Invoke-Process msiexec.exe "/i ${prefix}\assets\PyOxidizer.msi /l* ${prefix}\assets\PyOxidizer.log /quiet"
 
     Install-Rust ${prefix}
-
-    Write-Output "installing Visual C++ 9.0 for Python 2.7"
-    Invoke-Process msiexec.exe "/i ${prefix}\assets\VCForPython27.msi /l* ${prefix}\assets\VCForPython27.log /q"
 
     Write-Output "installing Inno Setup"
     Invoke-Process ${prefix}\assets\InnoSetup.exe "/SP- /VERYSILENT /SUPPRESSMSGBOXES"
