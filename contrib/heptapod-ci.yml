@@ -176,3 +176,13 @@ windows-py3:
         TEST_HGMODULEPOLICY: "c"
         RUNTEST_ARGS: "--blacklist C:/Temp/check-tests.txt"
         PYTHON: py -3
+
+windows-py3-pyox:
+    <<: *windows_runtests
+    when: manual
+    tags:
+      - windows
+    variables:
+        TEST_HGMODULEPOLICY: "c"
+        RUNTEST_ARGS: "--blacklist C:/Temp/check-tests.txt --pyoxidized"
+        PYTHON: py -3
