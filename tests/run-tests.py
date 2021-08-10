@@ -594,6 +594,11 @@ def getparser():
         action="store_true",
         help="install and use rhg Rust implementation in place of hg",
     )
+    hgconf.add_argument(
+        "--pyoxidized",
+        action="store_true",
+        help="build the hg binary using pyoxidizer",
+    )
     hgconf.add_argument("--compiler", help="compiler to build with")
     hgconf.add_argument(
         '--extra-config-opt',
@@ -731,6 +736,8 @@ def parseargs(args, parser):
             parser.error(
                 '--local cannot be used with --with-hg or --with-rhg or --with-chg'
             )
+        if options.pyoxidized:
+            parser.error('--pyoxidized does not work with --local (yet)')
         testdir = os.path.dirname(_sys2bytes(canonpath(sys.argv[0])))
         reporootdir = os.path.dirname(testdir)
         pathandattrs = [(b'hg', 'with_hg')]
@@ -764,6 +771,8 @@ def parseargs(args, parser):
         parser.error('chg does not work on %s' % os.name)
     if (options.rhg or options.with_rhg) and WINDOWS:
         parser.error('rhg does not work on %s' % os.name)
+    if options.pyoxidized and not WINDOWS:
+        parser.error('--pyoxidized is currently Windows only')
     if options.with_chg:
         options.chg = False  # no installation to temporary location
         options.with_chg = canonpath(_sys2bytes(options.with_chg))
@@ -3223,6 +3232,16 @@ class TestRunner(object):
             rhgbindir = os.path.dirname(os.path.realpath(self.options.with_rhg))
             self._hgcommand = os.path.basename(self.options.with_rhg)
 
+        if self.options.pyoxidized:
+            testdir = os.path.dirname(_sys2bytes(canonpath(sys.argv[0])))
+            reporootdir = os.path.dirname(testdir)
+            # XXX we should ideally install stuff instead of using the local build
+            bin_path = (
+                b'build/pyoxidizer/x86_64-pc-windows-msvc/release/app/hg.exe'
+            )
+            full_path = os.path.join(reporootdir, bin_path)
+            self._hgcommand = full_path
+
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
 
@@ -3463,6 +3482,8 @@ class TestRunner(object):
                 if self.options.rhg:
                     assert self._installdir
                     self._installrhg()
+                elif self.options.pyoxidized:
+                    self._build_pyoxidized()
                 self._use_correct_mercurial()
 
                 log(
@@ -3863,6 +3884,37 @@ class TestRunner(object):
             cmd,
             shell=True,
             cwd=cwd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        out, _err = proc.communicate()
+        if proc.returncode != 0:
+            if PYTHON3:
+                sys.stdout.buffer.write(out)
+            else:
+                sys.stdout.write(out)
+            sys.exit(1)
+
+    def _build_pyoxidized(self):
+        """build a pyoxidized version of mercurial into the test environment
+
+        Ideally this function would be `install_pyoxidier` and would both build
+        and install pyoxidier. However we are starting small to get pyoxidizer
+        build binary to testing quickly.
+        """
+        vlog('# build a pyoxidized version of Mercurial')
+        assert os.path.dirname(self._bindir) == self._installdir
+        assert self._hgroot, 'must be called after _installhg()'
+        cmd = b'"%(make)s" pyoxidizer' % {
+            b'make': b'make',
+        }
+        cwd = self._hgroot
+        vlog("# Running", cmd)
+        proc = subprocess.Popen(
+            _bytes2sys(cmd),
+            shell=True,
+            cwd=_bytes2sys(cwd),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
