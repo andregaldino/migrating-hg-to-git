@@ -10,7 +10,11 @@ variables:
     HG_CI_IMAGE_TAG: "latest"
     TEST_HGTESTS_ALLOW_NETIO: "0"
 
+.all_template: &all
+  when: always
+
 .runtests_template: &runtests
+    <<: *all
     stage: tests
     # The runner made a clone as root.
     # We make a new clone owned by user used to run the step.
@@ -38,6 +42,7 @@ checks-py3:
         PYTHON: python3
 
 rust-cargo-test-py2: &rust_cargo_test
+    <<: *all
     stage: tests
     script:
         - echo "python used, $PYTHON"
@@ -50,6 +55,7 @@ rust-cargo-test-py3:
         PYTHON: python3
 
 phabricator-refresh:
+    <<: *all
     stage: phabricator
     variables:
       DEFAULT_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)"
@@ -145,6 +151,7 @@ check-pytype-py3:
 # run-tests.py- it is needed to make run-tests.py generate a `python3` script
 # that satisfies the various shebang lines and delegates to `py -3`.
 .window_runtests_template: &windows_runtests
+    <<: *all
     stage: tests
     before_script:
       - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && ls -1 tests/test-check-*.* > C:/Temp/check-tests.txt'
