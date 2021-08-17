@@ -1117,6 +1117,13 @@ def open_template(name, templatepath=None):
         return f, open(f, mode='rb')
 
     # Otherwise try to read it using the resources API
+    if pycompat.iswindows:
+        # quick hack to make sure we can process '/' in the code dealing with
+        # ressource. Ideally we would make sure we use `/` instead of `ossep`
+        # in the templater code, but that seems a bigger and less certain
+        # change that we better left for the default branch.
+        name_paths = name.split(pycompat.ossep)
+        name = b'/'.join(name_paths)
     name_parts = name.split(b'/')
     package_name = b'.'.join([b'mercurial', b'templates'] + name_parts[:-1])
     return (
