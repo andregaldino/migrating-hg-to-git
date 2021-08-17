@@ -668,7 +668,8 @@ Make sure a broken uisetup doesn't globally break hg:
 Even though the extension fails during uisetup, hg is still basically usable:
   $ hg --config extensions.baduisetup=$TESTTMP/baduisetup.py version
   Traceback (most recent call last):
-    File "*/mercurial/extensions.py", line *, in _runuisetup (glob)
+    File "*/mercurial/extensions.py", line *, in _runuisetup (glob) (no-pyoxidizer !)
+    File "mercurial.extensions", line *, in _runuisetup (glob) (pyoxidizer !)
       uisetup(ui)
     File "$TESTTMP/baduisetup.py", line 2, in uisetup
       1 / 0
