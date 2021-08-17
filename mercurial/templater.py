@@ -852,9 +852,12 @@ def _readmapfile(fp, mapfile):
         if not subresource:
             if pycompat.ossep not in rel:
                 abs = rel
-                subresource = resourceutil.open_resource(
-                    b'mercurial.templates', rel
-                )
+                try:
+                    subresource = resourceutil.open_resource(
+                        b'mercurial.templates', rel
+                    )
+                except resourceutil.FileNotFoundError:
+                    subresource = None
             else:
                 dir = templatedir()
                 if dir:

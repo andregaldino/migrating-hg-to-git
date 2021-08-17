@@ -64,6 +64,11 @@ try:
     # Force loading of the resources module
     resources.open_binary  # pytype: disable=module-attr
 
+    # pytype: disable=import-error
+    from importlib.resources import FileNotFoundError
+
+    # pytype: enable=import-error
+
     def open_resource(package, name):
         return resources.open_binary(  # pytype: disable=module-attr
             pycompat.sysstr(package), pycompat.sysstr(name)
@@ -84,6 +89,9 @@ try:
 except (ImportError, AttributeError):
     # importlib.resources was not found (almost definitely because we're on a
     # Python version before 3.7)
+
+    class FileNotFoundError(RuntimeError):
+        pass
 
     def open_resource(package, name):
         path = os.path.join(_package_path(package), name)
