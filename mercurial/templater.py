@@ -833,6 +833,13 @@ def _open_mapfile(mapfile):
 
 def _readmapfile(fp, mapfile):
     """Load template elements from the given map file"""
+    if pycompat.iswindows:
+        # quick hack to make sure we can process '/' in the code dealing with
+        # ressource. Ideally we would make sure we use `/` instead of `ossep`
+        # in the templater code, but that seems a bigger and less certain
+        # change that we better left for the default branch.
+        name_paths = mapfile.split(pycompat.ossep)
+        mapfile = b'/'.join(name_paths)
     base = os.path.dirname(mapfile)
     conf = config.config()
 
