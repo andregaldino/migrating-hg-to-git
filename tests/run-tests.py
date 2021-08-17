@@ -3241,6 +3241,10 @@ class TestRunner(object):
             )
             full_path = os.path.join(reporootdir, bin_path)
             self._hgcommand = full_path
+            # Affects hghave.py
+            osenvironb[b'PYOXIDIZED_INSTALLED_AS_HG'] = b'1'
+        else:
+            osenvironb.pop(b'PYOXIDIZED_INSTALLED_AS_HG', None)
 
         osenvironb[b"BINDIR"] = self._bindir
         osenvironb[b"PYTHON"] = PYTHON
