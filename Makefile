@@ -284,6 +284,8 @@ pyoxidizer-windows-tests: pyoxidizer
 	cp -ar $(PYOX_DIR)/lib/mercurial/defaultrc $(PYOX_DIR)/defaultrc
 	rm -rf $(PYOX_DIR)/contrib
 	cp -ar contrib $(PYOX_DIR)/contrib
+	rm -rf $(PYOX_DIR)/doc
+	cp -ar doc $(PYOX_DIR)/doc
 
 
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
