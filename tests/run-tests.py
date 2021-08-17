@@ -3910,7 +3910,7 @@ class TestRunner(object):
         vlog('# build a pyoxidized version of Mercurial')
         assert os.path.dirname(self._bindir) == self._installdir
         assert self._hgroot, 'must be called after _installhg()'
-        cmd = b'"%(make)s" pyoxidizer' % {
+        cmd = b'"%(make)s" pyoxidizer-windows-tests' % {
             b'make': b'make',
         }
         cwd = self._hgroot

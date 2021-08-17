@@ -270,9 +270,13 @@ osx:
 pyoxidizer:
 	$(PYOXIDIZER) build --path ./rust/hgcli --release
 
+# a temporary target to setup all we need for run-tests.py --pyoxidizer
+# (should go away as the run-tests implementation improves
+pyoxidizer-windows-tests: pyoxidizer
+
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests rust-tests check-code format-c \
-	update-pot pyoxidizer \
+	update-pot pyoxidizer pyoxidizer-windows-tests \
 	$(packaging_targets) \
 	osx
