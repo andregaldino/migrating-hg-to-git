@@ -67,6 +67,9 @@ dulwich==0.20.6 ; python_version >= "3" \
     --hash=sha256:e5871b86a079e9e290f52ab14559cea1b694a0b8ed2b9ebb898f6ced7f14a406 \
     --hash=sha256:e593f514b8ac740b4ceeb047745b4719bfc9f334904245c6edcb3a9d002f577b \
     # via -r contrib/packaging/requirements-windows.txt.in
+fuzzywuzzy==0.18.0 \
+    --hash=sha256:45016e92264780e58972dca1b3d939ac864b78437422beecebb3095f8efd00e8 \
+    # via -r contrib/packaging/requirements-windows.txt.in
 importlib-metadata==3.1.0 \
     --hash=sha256:590690d61efdd716ff82c39ca9a9d4209252adfe288a4b5721181050acbd4175 \
     --hash=sha256:d9b8a46a0885337627a6430db287176970fff18ad421becec1d64cfc763c2099 \
