@@ -184,7 +184,7 @@ On Python 2, we use the 3rd party virtualenv module, if available.
   $ cd $TESTTMP
   $ unset PYTHONPATH
 
-#if py3 ensurepip network-io
+#if py3 ensurepip network-io no-pyoxidizer
   $ "$PYTHON" -m venv installenv >> pip.log
 
 Hack: Debian does something a bit different in ensurepip.bootstrap. This makes
@@ -224,7 +224,7 @@ since it's bin on most platforms but Scripts on Windows.
   no problems detected
 #endif
 
-#if virtualenv no-py3 network-io
+#if virtualenv no-py3 network-io no-pyoxidizer
 
 Note: --no-site-packages is the default for all versions enabled by hghave
 
