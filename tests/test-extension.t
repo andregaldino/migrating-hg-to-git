@@ -1378,6 +1378,18 @@ Disabled extensions:
   (use 'hg help extensions' for information on enabling extensions)
 
 
+Help can find unimported extensions
+-----------------------------------
+
+XXX-PYOXIDIZER since the frozen binary does not have source directory tree,
+this make the checking for actual file under `hgext` a bit complicated. In
+addition these tests do some strange dance to ensure some other module are the
+first in `sys.path` (since the current install path is always in front
+otherwise) that are fragile and that does not match reality in the field. So
+for now we disable this test untill a deeper rework of that logic is done.
+
+#if no-pyoxidizer
+
 Broken disabled extension and command:
 
   $ mkdir hgext
@@ -1412,6 +1424,10 @@ Broken disabled extension and command:
   abort: no such help topic: foo
   (try 'hg help --keyword foo')
   [255]
+
+#endif
+
+---
 
   $ cat > throw.py <<EOF
   > from mercurial import commands, registrar, util
