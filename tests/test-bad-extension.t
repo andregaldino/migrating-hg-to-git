@@ -20,7 +20,8 @@ ensure that failing ui.atexit handlers report sensibly
   show help for a given topic or a help overview
   error in exit handlers:
   Traceback (most recent call last):
-    File "*/mercurial/dispatch.py", line *, in _runexithandlers (glob)
+    File "*/mercurial/dispatch.py", line *, in _runexithandlers (glob) (no-pyoxidizer !)
+    File "mercurial.dispatch", line *, in _runexithandlers (glob) (pyoxidizer !)
       func(*args, **kwargs)
     File "$TESTTMP/bailatexit.py", line *, in bail (glob)
       raise RuntimeError('ui.atexit handler exception')
