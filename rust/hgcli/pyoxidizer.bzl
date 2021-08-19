@@ -44,6 +44,17 @@ if extra_path is not None:
     # We do not prepend the values because the Mercurial library wants to be in
     # the front of the sys.path to avoid picking up other installations.
     sys.path.extend(extra_path.split(os.pathsep))
+# Add user site to sys.path to load extensions without the full path
+if os.name == 'nt':
+    vi = sys.version_info
+    sys.path.append(
+        os.path.join(
+            os.environ['APPDATA'],
+            'Python',
+            'Python%d%d' % (vi[0], vi[1]),
+            'site-packages',
+        )
+    )
 import hgdemandimport;
 hgdemandimport.enable();
 from mercurial import dispatch;
