@@ -71,7 +71,10 @@ import abc
 import os
 
 from .i18n import _
-from .pycompat import getattr
+from .pycompat import (
+    FileNotFoundError,
+    getattr,
+)
 from . import (
     config,
     encoding,
@@ -856,7 +859,7 @@ def _readmapfile(fp, mapfile):
                     subresource = resourceutil.open_resource(
                         b'mercurial.templates', rel
                     )
-                except resourceutil.FileNotFoundError:
+                except FileNotFoundError:
                     subresource = None
             else:
                 dir = templatedir()
