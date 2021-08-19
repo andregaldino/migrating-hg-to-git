@@ -340,11 +340,6 @@ commonpypats = [
         (r'[^\n]\Z', "no trailing newline"),
         (r'(\S[ \t]+|^[ \t]+)\n', "trailing whitespace"),
         (
-            r'^\s+(self\.)?[A-Za-z][a-z0-9]+[A-Z]\w* = ',
-            "don't use camelcase in identifiers",
-            r'#.*camelcase-required',
-        ),
-        (
             r'^\s*(if|while|def|class|except|try)\s[^[\n]*:\s*[^\\n]#\s]+',
             "linebreak after :",
         ),
