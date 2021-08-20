@@ -142,23 +142,6 @@ static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 	return PyInt_FromLong(self->mtime);
 };
 
-static PyObject *dm_nonnormal(dirstateItemObject *self)
-{
-	if (self->state != 'n' || self->mtime == ambiguous_time) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-static PyObject *dm_otherparent(dirstateItemObject *self)
-{
-	if (self->size == dirstate_v1_from_p2) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-
 static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
                                           PyObject *value)
 {
@@ -255,10 +238,6 @@ static PyMethodDef dirstate_item_methods[] = {
      METH_NOARGS, "mark a file as \"possibly dirty\""},
     {"set_untracked", (PyCFunction)dirstate_item_set_untracked, METH_NOARGS,
      "mark a file as \"untracked\""},
-    {"dm_nonnormal", (PyCFunction)dm_nonnormal, METH_NOARGS,
-     "True is the entry is non-normal in the dirstatemap sense"},
-    {"dm_otherparent", (PyCFunction)dm_otherparent, METH_NOARGS,
-     "True is the entry is `otherparent` in the dirstatemap sense"},
     {NULL} /* Sentinel */
 };
 
@@ -345,6 +324,23 @@ static PyObject *dirstate_item_get_removed(dirstateItemObject *self)
 	}
 };
 
+static PyObject *dm_nonnormal(dirstateItemObject *self)
+{
+	if (self->state != 'n' || self->mtime == ambiguous_time) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+static PyObject *dm_otherparent(dirstateItemObject *self)
+{
+	if (self->size == dirstate_v1_from_p2) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyGetSetDef dirstate_item_getset[] = {
     {"mode", (getter)dirstate_item_get_mode, NULL, "mode", NULL},
     {"size", (getter)dirstate_item_get_size, NULL, "size", NULL},
@@ -359,6 +355,8 @@ static PyGetSetDef dirstate_item_getset[] = {
      "from_p2_removed", NULL},
     {"from_p2", (getter)dirstate_item_get_from_p2, NULL, "from_p2", NULL},
     {"removed", (getter)dirstate_item_get_removed, NULL, "removed", NULL},
+    {"dm_nonnormal", (getter)dm_nonnormal, NULL, "dm_nonnormal", NULL},
+    {"dm_otherparent", (getter)dm_otherparent, NULL, "dm_otherparent", NULL},
     {NULL} /* Sentinel */
 };
 
