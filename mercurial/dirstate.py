@@ -502,7 +502,7 @@ class dirstate(object):
         else:
             self._dirty = True
             self._updatedfiles.add(filename)
-            self._map.removefile(filename, in_merge=self.in_merge)
+            self._map.set_untracked(filename)
             return True
 
     @requires_no_parents_change

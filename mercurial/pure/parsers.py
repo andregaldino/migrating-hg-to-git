@@ -89,6 +89,22 @@ class DirstateItem(object):
         """
         self._mtime = AMBIGUOUS_TIME
 
+    def set_untracked(self):
+        """mark a file as untracked in the working copy
+
+        This will ultimately be called by command like `hg remove`.
+        """
+        # backup the previous state (useful for merge)
+        size = 0
+        if self.merged:  # merge
+            size = NONNORMAL
+        elif self.from_p2:
+            size = FROM_P2
+        self._state = b'r'
+        self._mode = 0
+        self._size = size
+        self._mtime = 0
+
     def __getitem__(self, idx):
         if idx == 0 or idx == -4:
             msg = b"do not use item[x], use item.state"

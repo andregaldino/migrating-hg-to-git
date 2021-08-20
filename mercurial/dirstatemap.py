@@ -303,32 +303,15 @@ class dirstatemap(object):
         else:
             assert False, 'unreachable'
 
-    def removefile(self, f, in_merge=False):
-        """
-        Mark a file as removed in the dirstate.
-
-        The `size` parameter is used to store sentinel values that indicate
-        the file's previous state.  In the future, we should refactor this
-        to be more explicit about what that state is.
-        """
-        entry = self.get(f)
-        size = 0
-        if in_merge:
-            # XXX we should not be able to have 'm' state and 'FROM_P2' if not
-            # during a merge. So I (marmoute) am not sure we need the
-            # conditionnal at all. Adding double checking this with assert
-            # would be nice.
-            if entry is not None:
-                # backup the previous state
-                if entry.merged:  # merge
-                    size = NONNORMAL
-                elif entry.from_p2:
-                    size = FROM_P2
-                    self.otherparentset.add(f)
-        if entry is not None and not (entry.merged or entry.from_p2):
-            self.copymap.pop(f, None)
+    def set_untracked(self, f):
+        """Mark a file as no longer tracked in the dirstate map"""
+        entry = self[f]
         self._dirs_decr(f, old_entry=entry, remove_variant=True)
-        self._map[f] = DirstateItem(b'r', 0, size, 0)
+        if entry.from_p2:
+            self.otherparentset.add(f)
+        elif not entry.merged:
+            self.copymap.pop(f, None)
+        entry.set_untracked()
         self.nonnormalset.add(f)
 
     def dropfile(self, f):
@@ -663,6 +646,14 @@ if rustmod is not None:
                 self.nonnormalset.discard(filename)
             else:
                 assert False, 'unreachable'
+
+        def set_untracked(self, f):
+            """Mark a file as no longer tracked in the dirstate map"""
+            # in merge is only trigger more logic, so it "fine" to pass it.
+            #
+            # the inner rust dirstate map code need to be adjusted once the API
+            # for dirstate/dirstatemap/DirstateItem is a bit more settled
+            self._rustmap.removefile(f, in_merge=True)
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)

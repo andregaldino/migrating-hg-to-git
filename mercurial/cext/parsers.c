@@ -223,6 +223,21 @@ static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 	Py_RETURN_NONE;
 }
 
+static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
+{
+	if (self->state == 'm') {
+		self->size = dirstate_v1_nonnormal;
+	} else if (self->state == 'n' && self->size == dirstate_v1_from_p2) {
+		self->size = dirstate_v1_from_p2;
+	} else {
+		self->size = 0;
+	}
+	self->state = 'r';
+	self->mode = 0;
+	self->mtime = 0;
+	Py_RETURN_NONE;
+}
+
 static PyMethodDef dirstate_item_methods[] = {
     {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
@@ -238,6 +253,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "build a new DirstateItem object from V1 data"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
      METH_NOARGS, "mark a file as \"possibly dirty\""},
+    {"set_untracked", (PyCFunction)dirstate_item_set_untracked, METH_NOARGS,
+     "mark a file as \"untracked\""},
     {"dm_nonnormal", (PyCFunction)dm_nonnormal, METH_NOARGS,
      "True is the entry is non-normal in the dirstatemap sense"},
     {"dm_otherparent", (PyCFunction)dm_otherparent, METH_NOARGS,
