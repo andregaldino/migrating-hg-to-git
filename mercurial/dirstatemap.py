@@ -199,8 +199,12 @@ class dirstatemap(object):
         self._map[f] = new_entry
         if new_entry.dm_nonnormal:
             self.nonnormalset.add(f)
+        else:
+            self.nonnormalset.discard(f)
         if new_entry.dm_otherparent:
             self.otherparentset.add(f)
+        else:
+            self.otherparentset.discard(f)
 
     def reset_state(
         self,
