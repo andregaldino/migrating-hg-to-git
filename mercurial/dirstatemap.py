@@ -615,7 +615,7 @@ if rustmod is not None:
                 )
             elif (p1_tracked or p2_tracked) and not wc_tracked:
                 # XXX might be merged and removed ?
-                self[filename] = DirstateItem(b'r', 0, 0, 0)
+                self[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
                 self.nonnormalset.add(filename)
             elif clean_p2 and wc_tracked:
                 if p1_tracked or self.get(filename) is not None:
