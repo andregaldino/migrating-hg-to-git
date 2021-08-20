@@ -500,7 +500,9 @@ class dirstate(object):
             self._drop(filename)
             return True
         else:
-            self._remove(filename)
+            self._dirty = True
+            self._updatedfiles.add(filename)
+            self._map.removefile(filename, in_merge=self.in_merge)
             return True
 
     @requires_no_parents_change
