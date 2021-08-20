@@ -858,13 +858,14 @@ class dirstate(object):
                 b'6.0',
                 stacklevel=2,
             )
-        self._remove(f)
-
-    def _remove(self, filename):
-        """internal function to mark a file removed"""
         self._dirty = True
-        self._updatedfiles.add(filename)
-        self._map.removefile(filename, in_merge=self.in_merge)
+        self._updatedfiles.add(f)
+        entry = self._map.get(f)
+        if entry is None:
+            # Assuming we are in a update/merge case
+            self.update_file(f, p1_tracked=True, wc_tracked=False)
+        else:
+            self.set_untracked(f)
 
     def merge(self, f):
         '''Mark a file merged.'''
