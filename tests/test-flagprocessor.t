@@ -201,14 +201,17 @@ Ensure the data got to the server OK
   > EOF
   $ hg debugrebuilddirstate
   Traceback (most recent call last):
-    File "*/mercurial/extensions.py", line *, in _runextsetup (glob)
+    File "*/mercurial/extensions.py", line *, in _runextsetup (glob) (no-pyoxidizer !)
+    File "mercurial.extensions", line *, in _runextsetup (glob) (pyoxidizer !)
       extsetup(ui)
     File "*/tests/flagprocessorext.py", line *, in extsetup (glob)
       flagutil.addflagprocessor( (py38 !)
       validatehash, (no-py38 !)
-    File "*/mercurial/revlogutils/flagutil.py", line *, in addflagprocessor (glob)
+    File "*/mercurial/revlogutils/flagutil.py", line *, in addflagprocessor (glob) (no-pyoxidizer !)
+    File "mercurial.revlogutils.flagutil", line *, in addflagprocessor (glob) (pyoxidizer !)
       insertflagprocessor(flag, processor, flagprocessors)
-    File "*/mercurial/revlogutils/flagutil.py", line *, in insertflagprocessor (glob)
+    File "*/mercurial/revlogutils/flagutil.py", line *, in insertflagprocessor (glob) (no-pyoxidizer !)
+    File "mercurial.revlogutils.flagutil", line *, in insertflagprocessor (glob) (pyoxidizer !)
       raise error.Abort(msg)
   mercurial.error.Abort: cannot register multiple processors on flag '0x8'. (py3 !)
   Abort: cannot register multiple processors on flag '0x8'. (no-py3 !)

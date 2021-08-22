@@ -98,7 +98,7 @@
   > EOF
   $ hg buggylocking
   devel-warn: "wlock" acquired after "lock" at: $TESTTMP/buggylocking.py:* (buggylocking) (glob)
-#if no-chg
+#if no-chg no-pyoxidizer
   $ hg buggylocking --traceback
   devel-warn: "wlock" acquired after "lock" at:
    */hg:* in <module> (glob) (?)
@@ -115,7 +115,8 @@
    */mercurial/dispatch.py:* in <lambda> (glob)
    */mercurial/util.py:* in check (glob)
    $TESTTMP/buggylocking.py:* in buggylocking (glob)
-#else
+#endif
+#if chg no-pyoxidizer
   $ hg buggylocking --traceback
   devel-warn: "wlock" acquired after "lock" at:
    */hg:* in <module> (glob) (?)
@@ -154,6 +155,24 @@
    */mercurial/dispatch.py:* in _runcommand (glob)
    */mercurial/dispatch.py:* in <lambda> (glob)
    */mercurial/util.py:* in check (glob)
+   $TESTTMP/buggylocking.py:* in buggylocking (glob)
+#endif
+#if pyoxidizer
+  $ hg buggylocking --traceback
+  devel-warn: "wlock" acquired after "lock" at:
+   <string>:* (glob)
+   mercurial.dispatch:* in run (glob)
+   mercurial.dispatch:* in dispatch (glob)
+   mercurial.dispatch:* in _rundispatch (glob)
+   mercurial.dispatch:* in _runcatch (glob)
+   mercurial.dispatch:* in _callcatch (glob)
+   mercurial.scmutil:* in callcatch (glob)
+   mercurial.dispatch:* in _runcatchfunc (glob)
+   mercurial.dispatch:* in _dispatch (glob)
+   mercurial.dispatch:* in runcommand (glob)
+   mercurial.dispatch:* in _runcommand (glob)
+   mercurial.dispatch:* in <lambda> (glob)
+   mercurial.util:* in check (glob)
    $TESTTMP/buggylocking.py:* in buggylocking (glob)
 #endif
   $ hg properlocking
@@ -180,7 +199,7 @@ Stripping from a transaction
   devel-warn: foorbar is deprecated, go shopping
   (compatibility will be dropped after Mercurial-42.1337, update your code.) at: $TESTTMP/buggylocking.py:* (oldanddeprecated) (glob)
 
-#if no-chg
+#if no-chg no-pyoxidizer
   $ hg oldanddeprecated --traceback
   devel-warn: foorbar is deprecated, go shopping
   (compatibility will be dropped after Mercurial-42.1337, update your code.) at:
@@ -198,7 +217,8 @@ Stripping from a transaction
    */mercurial/dispatch.py:* in <lambda> (glob)
    */mercurial/util.py:* in check (glob)
    $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
-#else
+#endif
+#if chg no-pyoxidizer
   $ hg oldanddeprecated --traceback
   devel-warn: foorbar is deprecated, go shopping
   (compatibility will be dropped after Mercurial-42.1337, update your code.) at:
@@ -240,8 +260,27 @@ Stripping from a transaction
    */mercurial/util.py:* in check (glob)
    $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
 #endif
+#if pyoxidizer
+  $ hg oldanddeprecated --traceback
+  devel-warn: foorbar is deprecated, go shopping
+  (compatibility will be dropped after Mercurial-42.1337, update your code.) at:
+   <string>:* (glob)
+   mercurial.dispatch:* in run (glob)
+   mercurial.dispatch:* in dispatch (glob)
+   mercurial.dispatch:* in _rundispatch (glob)
+   mercurial.dispatch:* in _runcatch (glob)
+   mercurial.dispatch:* in _callcatch (glob)
+   mercurial.scmutil:* in callcatch (glob)
+   mercurial.dispatch:* in _runcatchfunc (glob)
+   mercurial.dispatch:* in _dispatch (glob)
+   mercurial.dispatch:* in runcommand (glob)
+   mercurial.dispatch:* in _runcommand (glob)
+   mercurial.dispatch:* in <lambda> (glob)
+   mercurial.util:* in check (glob)
+   $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
+#endif
 
-#if no-chg
+#if no-chg no-pyoxidizer
   $ hg blackbox -l 7
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> devel-warn: foorbar is deprecated, go shopping
@@ -266,7 +305,8 @@ Stripping from a transaction
    $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated --traceback exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> blackbox -l 7
-#else
+#endif
+#if chg no-pyoxidizer
   $ hg blackbox -l 7
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> devel-warn: foorbar is deprecated, go shopping
@@ -311,6 +351,32 @@ Stripping from a transaction
    */mercurial/dispatch.py:* in _runcommand (glob)
    */mercurial/dispatch.py:* in <lambda> (glob)
    */mercurial/util.py:* in check (glob)
+   $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated --traceback exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> blackbox -l 7
+#endif
+#if pyoxidizer
+  $ hg blackbox -l 7
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> devel-warn: foorbar is deprecated, go shopping
+  (compatibility will be dropped after Mercurial-42.1337, update your code.) at: $TESTTMP/buggylocking.py:* (oldanddeprecated) (glob)
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated --traceback
+  1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> devel-warn: foorbar is deprecated, go shopping
+  (compatibility will be dropped after Mercurial-42.1337, update your code.) at:
+   <string>:* in <module> (glob)
+   mercurial.dispatch:* in run (glob)
+   mercurial.dispatch:* in dispatch (glob)
+   mercurial.dispatch:* in _rundispatch (glob)
+   mercurial.dispatch:* in _runcatch (glob)
+   mercurial.dispatch:* in _callcatch (glob)
+   mercurial.scmutil* in callcatch (glob)
+   mercurial.dispatch:* in _runcatchfunc (glob)
+   mercurial.dispatch:* in _dispatch (glob)
+   mercurial.dispatch:* in runcommand (glob)
+   mercurial.dispatch:* in _runcommand (glob)
+   mercurial.dispatch:* in <lambda> (glob)
+   mercurial.util:* in check (glob)
    $TESTTMP/buggylocking.py:* in oldanddeprecated (glob)
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> oldanddeprecated --traceback exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b (5000)> blackbox -l 7
@@ -389,8 +455,10 @@ Test warning on config option access and registration
   > EOF
 
   $ hg --config "extensions.buggyconfig=${TESTTMP}/buggyconfig.py" buggyconfig
-  devel-warn: extension 'buggyconfig' overwrite config item 'ui.interactive' at: */mercurial/extensions.py:* (_loadextra) (glob)
-  devel-warn: extension 'buggyconfig' overwrite config item 'ui.quiet' at: */mercurial/extensions.py:* (_loadextra) (glob)
+  devel-warn: extension 'buggyconfig' overwrite config item 'ui.interactive' at: */mercurial/extensions.py:* (_loadextra) (glob) (no-pyoxidizer !)
+  devel-warn: extension 'buggyconfig' overwrite config item 'ui.quiet' at: */mercurial/extensions.py:* (_loadextra) (glob) (no-pyoxidizer !)
+  devel-warn: extension 'buggyconfig' overwrite config item 'ui.interactive' at: mercurial.extensions:* (_loadextra) (glob) (pyoxidizer !)
+  devel-warn: extension 'buggyconfig' overwrite config item 'ui.quiet' at: mercurial.extensions:* (_loadextra) (glob) (pyoxidizer !)
   devel-warn: specifying a mismatched default value for a registered config item: 'ui.quiet' 'True' at: $TESTTMP/buggyconfig.py:* (cmdbuggyconfig) (glob)
   devel-warn: specifying a mismatched default value for a registered config item: 'ui.interactive' 'False' at: $TESTTMP/buggyconfig.py:* (cmdbuggyconfig) (glob)
   devel-warn: specifying a mismatched default value for a registered config item: 'test.some' 'bar' at: $TESTTMP/buggyconfig.py:* (cmdbuggyconfig) (glob)

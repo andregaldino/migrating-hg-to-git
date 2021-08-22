@@ -278,6 +278,8 @@ def list_stdlib_modules():
         ):
             continue
         for top, dirs, files in os.walk(libpath):
+            if 'dist-packages' in top.split(os.path.sep):
+                continue
             for i, d in reversed(list(enumerate(dirs))):
                 if (
                     not os.path.exists(os.path.join(top, d, '__init__.py'))

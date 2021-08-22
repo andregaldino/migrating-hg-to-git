@@ -6,6 +6,7 @@ use crate::utils::files::get_path_from_bytes;
 use crate::utils::SliceExt;
 use memmap::{Mmap, MmapOptions};
 use std::collections::HashSet;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 /// A repository on disk
@@ -51,7 +52,7 @@ impl Repo {
         // ancestors() is inclusive: it first yields `current_directory`
         // as-is.
         for ancestor in current_directory.ancestors() {
-            if ancestor.join(".hg").is_dir() {
+            if is_dir(ancestor.join(".hg"))? {
                 return Ok(ancestor.to_path_buf());
             }
         }
@@ -73,9 +74,9 @@ impl Repo {
         explicit_path: Option<PathBuf>,
     ) -> Result<Self, RepoError> {
         if let Some(root) = explicit_path {
-            if root.join(".hg").is_dir() {
+            if is_dir(root.join(".hg"))? {
                 Self::new_at_path(root.to_owned(), config)
-            } else if root.is_file() {
+            } else if is_file(&root)? {
                 Err(HgError::unsupported("bundle repository").into())
             } else {
                 Err(RepoError::NotFound {
@@ -130,7 +131,7 @@ impl Repo {
             if relative {
                 shared_path = dot_hg.join(shared_path)
             }
-            if !shared_path.is_dir() {
+            if !is_dir(&shared_path)? {
                 return Err(HgError::corrupted(format!(
                     ".hg/sharedpath points to nonexistent directory {}",
                     shared_path.display()
@@ -285,4 +286,30 @@ impl Vfs<'_> {
         std::fs::rename(&from, &to)
             .with_context(|| IoErrorContext::RenamingFile { from, to })
     }
+}
+
+fn fs_metadata(
+    path: impl AsRef<Path>,
+) -> Result<Option<std::fs::Metadata>, HgError> {
+    let path = path.as_ref();
+    match std::fs::metadata(path) {
+        Ok(meta) => Ok(Some(meta)),
+        Err(error) => match error.kind() {
+            // TODO: when we require a Rust version where `NotADirectory` is
+            // stable, invert this logic and return None for it and `NotFound`
+            // and propagate any other error.
+            ErrorKind::PermissionDenied => Err(error).with_context(|| {
+                IoErrorContext::ReadingMetadata(path.to_owned())
+            }),
+            _ => Ok(None),
+        },
+    }
+}
+
+fn is_dir(path: impl AsRef<Path>) -> Result<bool, HgError> {
+    Ok(fs_metadata(path)?.map_or(false, |meta| meta.is_dir()))
+}
+
+fn is_file(path: impl AsRef<Path>) -> Result<bool, HgError> {
+    Ok(fs_metadata(path)?.map_or(false, |meta| meta.is_file()))
 }

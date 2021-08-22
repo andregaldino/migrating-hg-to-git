@@ -270,9 +270,27 @@ osx:
 pyoxidizer:
 	$(PYOXIDIZER) build --path ./rust/hgcli --release
 
+
+PYOX_DIR=build/pyoxidizer/x86_64-pc-windows-msvc/release/app
+
+# a temporary target to setup all we need for run-tests.py --pyoxidizer
+# (should go away as the run-tests implementation improves
+pyoxidizer-windows-tests: pyoxidizer
+	rm -rf $(PYOX_DIR)/templates
+	cp -ar $(PYOX_DIR)/lib/mercurial/templates $(PYOX_DIR)/templates
+	rm -rf $(PYOX_DIR)/helptext
+	cp -ar $(PYOX_DIR)/lib/mercurial/helptext $(PYOX_DIR)/helptext
+	rm -rf $(PYOX_DIR)/defaultrc
+	cp -ar $(PYOX_DIR)/lib/mercurial/defaultrc $(PYOX_DIR)/defaultrc
+	rm -rf $(PYOX_DIR)/contrib
+	cp -ar contrib $(PYOX_DIR)/contrib
+	rm -rf $(PYOX_DIR)/doc
+	cp -ar doc $(PYOX_DIR)/doc
+
+
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests rust-tests check-code format-c \
-	update-pot pyoxidizer \
+	update-pot pyoxidizer pyoxidizer-windows-tests \
 	$(packaging_targets) \
 	osx

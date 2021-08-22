@@ -44,13 +44,20 @@ With -v and -p HGPORT2
   listening at http://localhost/ (bound to *$LOCALIP*:HGPORT2) (glob) (?)
   % errors
 
-With -v and -p daytime (should fail because low port)
+With -v and -p daytime
 
-#if no-root no-windows
+# On some system this will fails because port < 1024 are not bindable by normal
+# users.
+#
+# On some others the kernel is configured to allow any user to bind them and
+# this will work fine
+
+#if no-windows
   $ KILLQUIETLY=Y
   $ hgserve -p daytime
-  abort: cannot start server at 'localhost:13': Permission denied
-  abort: child process failed to start
+  abort: cannot start server at 'localhost:13': Permission denied (?)
+  abort: child process failed to start (?)
+  listening at http://localhost/ (bound to $LOCALIP:13) (?)
   % errors
   $ KILLQUIETLY=N
 #endif

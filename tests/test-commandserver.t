@@ -214,6 +214,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ...     runcommand(server, [b'-R', b'foo', b'showconfig', b'ui', b'defaults'])
   *** runcommand showconfig
   bundle.mainreporoot=$TESTTMP/repo
+  chgserver.idletimeout=60
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)

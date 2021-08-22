@@ -31,5 +31,5 @@ if os.name == 'nt':
     hgcmd = shlex.join(cmds)
     # shlex generate windows incompatible string...
     hgcmd = hgcmd.replace("'", '"')
-r = subprocess.call(hgcmd, shell=True)
+r = subprocess.call(hgcmd, shell=True, close_fds=True)
 sys.exit(bool(r))

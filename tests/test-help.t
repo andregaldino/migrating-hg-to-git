@@ -975,6 +975,9 @@ Test list of internal help commands
   $ hg help debug
   debug commands (internal and unsupported):
   
+   debug-repair-issue6528
+                 find affected revisions and repair them. See issue6528 for more
+                 details.
    debugancestor
                  find the ancestor revision of two revisions in a given index
    debugantivirusrunning

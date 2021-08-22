@@ -179,7 +179,7 @@ has been emitted, just in a different order.
   
 
   $ hg log -T '{if(ellipsis,"...")}{node|short} {p1node|short} {p2node|short} {desc}\n' | sort
-  ...2a20009de83e 3ac1f5779de3 000000000000 outside 10
+  ...2a20009de83e 000000000000 3ac1f5779de3 outside 10
   ...3ac1f5779de3 bb96a08b062a 465567bdfb2d merge a/b/c/d 9
   ...8d874d57adea 7ef88b4dd4fa 000000000000 outside 12
   ...b844052e7b3b 000000000000 000000000000 outside 2c

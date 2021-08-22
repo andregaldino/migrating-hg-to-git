@@ -207,7 +207,12 @@ def update_hash_refs(repo, commitmsg, pending=None):
     hashes = re.findall(NODE_RE, commitmsg)
     unfi = repo.unfiltered()
     for h in hashes:
-        fullnode = scmutil.resolvehexnodeidprefix(unfi, h)
+        try:
+            fullnode = scmutil.resolvehexnodeidprefix(unfi, h)
+        except error.WdirUnsupported:
+            # Someone has an fffff... in a commit message we're
+            # rewriting. Don't try rewriting that.
+            continue
         if fullnode is None:
             continue
         ctx = unfi[fullnode]

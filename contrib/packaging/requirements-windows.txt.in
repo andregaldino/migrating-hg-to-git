@@ -2,9 +2,17 @@ docutils
 # Pinned to an old version because 0.20 drops Python 3 compatibility.
 dulwich < 0.20 ; python_version <= '2.7'
 dulwich ; python_version >= '3'
+
+# Needed by the release note tooling
+fuzzywuzzy
+
 keyring
 pygit2 ; python_version >= '3'
 pygments
+
+# Needed by the phabricator tests
+pytest-vcr
+
 # Need to list explicitly so dependency gets pulled in when
 # not running on Windows.
 pywin32-ctypes

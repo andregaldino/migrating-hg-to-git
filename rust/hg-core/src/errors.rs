@@ -47,6 +47,8 @@ pub enum HgError {
 /// Details about where an I/O error happened
 #[derive(Debug)]
 pub enum IoErrorContext {
+    /// `std::fs::metadata`
+    ReadingMetadata(std::path::PathBuf),
     ReadingFile(std::path::PathBuf),
     WritingFile(std::path::PathBuf),
     RemovingFile(std::path::PathBuf),
@@ -108,6 +110,9 @@ impl fmt::Display for HgError {
 impl fmt::Display for IoErrorContext {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            IoErrorContext::ReadingMetadata(path) => {
+                write!(f, "when reading metadata of {}", path.display())
+            }
             IoErrorContext::ReadingFile(path) => {
                 write!(f, "when reading {}", path.display())
             }

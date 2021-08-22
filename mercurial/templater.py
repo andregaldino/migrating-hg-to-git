@@ -71,7 +71,10 @@ import abc
 import os
 
 from .i18n import _
-from .pycompat import getattr
+from .pycompat import (
+    FileNotFoundError,
+    getattr,
+)
 from . import (
     config,
     encoding,
@@ -833,6 +836,13 @@ def _open_mapfile(mapfile):
 
 def _readmapfile(fp, mapfile):
     """Load template elements from the given map file"""
+    if pycompat.iswindows:
+        # quick hack to make sure we can process '/' in the code dealing with
+        # ressource. Ideally we would make sure we use `/` instead of `ossep`
+        # in the templater code, but that seems a bigger and less certain
+        # change that we better left for the default branch.
+        name_paths = mapfile.split(pycompat.ossep)
+        mapfile = b'/'.join(name_paths)
     base = os.path.dirname(mapfile)
     conf = config.config()
 
@@ -845,9 +855,12 @@ def _readmapfile(fp, mapfile):
         if not subresource:
             if pycompat.ossep not in rel:
                 abs = rel
-                subresource = resourceutil.open_resource(
-                    b'mercurial.templates', rel
-                )
+                try:
+                    subresource = resourceutil.open_resource(
+                        b'mercurial.templates', rel
+                    )
+                except FileNotFoundError:
+                    subresource = None
             else:
                 dir = templatedir()
                 if dir:
@@ -1117,6 +1130,13 @@ def open_template(name, templatepath=None):
         return f, open(f, mode='rb')
 
     # Otherwise try to read it using the resources API
+    if pycompat.iswindows:
+        # quick hack to make sure we can process '/' in the code dealing with
+        # ressource. Ideally we would make sure we use `/` instead of `ossep`
+        # in the templater code, but that seems a bigger and less certain
+        # change that we better left for the default branch.
+        name_paths = name.split(pycompat.ossep)
+        name = b'/'.join(name_paths)
     name_parts = name.split(b'/')
     package_name = b'.'.join([b'mercurial', b'templates'] + name_parts[:-1])
     return (

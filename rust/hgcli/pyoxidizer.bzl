@@ -35,7 +35,20 @@ TIME_STAMP_SERVER_URL = VARS.get("TIME_STAMP_SERVER_URL", "http://timestamp.digi
 IS_WINDOWS = "windows" in BUILD_TARGET_TRIPLE
 
 # Code to run in Python interpreter.
-RUN_CODE = "import hgdemandimport; hgdemandimport.enable(); from mercurial import dispatch; dispatch.run()"
+RUN_CODE = """
+import os
+import sys
+extra_path = os.environ.get('PYTHONPATH')
+if extra_path is not None:
+    # extensions and hooks expect a working python environment
+    # We do not prepend the values because the Mercurial library wants to be in
+    # the front of the sys.path to avoid picking up other installations.
+    sys.path.extend(extra_path.split(os.pathsep))
+import hgdemandimport;
+hgdemandimport.enable();
+from mercurial import dispatch;
+dispatch.run();
+"""
 
 set_build_path(ROOT + "/build/pyoxidizer")
 

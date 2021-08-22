@@ -897,10 +897,8 @@ class revlog(object):
             if rev == wdirrev:
                 raise error.WdirUnsupported
             raise
-        if entry[5] == nullrev:
-            return entry[6], entry[5]
-        else:
-            return entry[5], entry[6]
+
+        return entry[5], entry[6]
 
     # fast parentrevs(rev) where rev isn't filtered
     _uncheckedparentrevs = parentrevs
@@ -921,11 +919,7 @@ class revlog(object):
     def parents(self, node):
         i = self.index
         d = i[self.rev(node)]
-        # inline node() to avoid function call overhead
-        if d[5] == self.nullid:
-            return i[d[6]][7], i[d[5]][7]
-        else:
-            return i[d[5]][7], i[d[6]][7]
+        return i[d[5]][7], i[d[6]][7]  # map revisions to nodes inline
 
     def chainlen(self, rev):
         return self._chaininfo(rev)[0]
@@ -2122,6 +2116,8 @@ class revlog(object):
                         dfh = self._datafp(b"w+")
                     transaction.add(self._datafile, dsize)
                 if self._sidedatafile is not None:
+                    # revlog-v2 does not inline, help Pytype
+                    assert dfh is not None
                     try:
                         sdfh = self.opener(self._sidedatafile, mode=b"r+")
                         dfh.seek(self._docket.sidedata_end, os.SEEK_SET)
@@ -2584,6 +2580,8 @@ class revlog(object):
             assert not sidedata
             self._enforceinlinesize(transaction)
         if self._docket is not None:
+            # revlog-v2 always has 3 writing handles, help Pytype
+            assert self._writinghandles[2] is not None
             self._docket.index_end = self._writinghandles[0].tell()
             self._docket.data_end = self._writinghandles[1].tell()
             self._docket.sidedata_end = self._writinghandles[2].tell()

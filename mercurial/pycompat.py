@@ -40,6 +40,8 @@ if not ispy3:
     def future_set_exception_info(f, exc_info):
         f.set_exception_info(*exc_info)
 
+    # this is close enough for our usage
+    FileNotFoundError = OSError
 
 else:
     import concurrent.futures as futures
@@ -52,6 +54,8 @@ else:
 
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
+
+    FileNotFoundError = __builtins__['FileNotFoundError']
 
 
 def identity(a):

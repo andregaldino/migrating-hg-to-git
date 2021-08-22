@@ -75,12 +75,6 @@ from .utils import (
     urlutil,
 )
 
-if pycompat.TYPE_CHECKING:
-    from typing import (
-        List,
-    )
-
-
 table = {}
 table.update(debugcommandsmod.command._table)
 
@@ -3341,7 +3335,8 @@ def _dograft(ui, repo, *revs, **opts):
                 )
             # checking that newnodes exist because old state files won't have it
             elif statedata.get(b'newnodes') is not None:
-                nn = statedata[b'newnodes']  # type: List[bytes]
+                nn = statedata[b'newnodes']
+                assert isinstance(nn, list)  # list of bytes
                 nn.append(node)
 
     # remove state when we complete successfully

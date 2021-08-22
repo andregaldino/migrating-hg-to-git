@@ -963,6 +963,46 @@ definition.
   o  0: d20a80d4def3 'base'
   
 
+Test that update_hash_refs works.
+  $ hg co 0
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo update_hash_refs > update_hash_refs
+  $ hg add update_hash_refs
+  $ hg ci -m 'this will change hash'
+  created new head
+  $ echo changed >> update_hash_refs
+  $ hg ci -m "this starts as the child of `hg log -r . -T'{node|short}'` but not 506e2454484b. Also, ffffffffffffffff"
+  $ hg tglog
+  @  5: a8b42cbbde83 'this starts as the child of 98789aa60148 but not 506e2454484b. Also, ffffffffffffffff'
+  |
+  o  4: 98789aa60148 'this will change hash'
+  |
+  | o    3: 506e2454484b 'merge'
+  | |\
+  +---o  2: 531f80391e4a 'c'
+  | |
+  | o  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  
+  $ hg rebase -r '.^::' -d 3
+  rebasing 4:98789aa60148 "this will change hash"
+  rebasing 5:a8b42cbbde83 tip "this starts as the child of 98789aa60148 but not 506e2454484b. Also, ffffffffffffffff"
+  saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/98789aa60148-da3f4c2c-rebase.hg
+  $ hg tglog
+  @  5: 0fd2912e6cc1 'this starts as the child of c16c25696fe7 but not 506e2454484b. Also, ffffffffffffffff'
+  |
+  o  4: c16c25696fe7 'this will change hash'
+  |
+  o    3: 506e2454484b 'merge'
+  |\
+  | o  2: 531f80391e4a 'c'
+  | |
+  o |  1: 6f252845ea45 'a'
+  |/
+  o  0: d20a80d4def3 'base'
+  
+
   $ cd ..
 
 Test (virtual) working directory without changes, created by merge conflict

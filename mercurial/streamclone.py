@@ -565,6 +565,16 @@ def _makemap(repo):
 def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
+    # we keep repo.vfs out of the on purpose, ther are too many danger there
+    # (eg: .hg/hgrc),
+    #
+    # this assert is duplicated (from _makemap) as author might think this is
+    # fine, while this is really not fine.
+    if repo.vfs in vfsmap.values():
+        raise error.ProgrammingError(
+            b'repo.vfs must not be added to vfsmap for security reasons'
+        )
+
     progress = repo.ui.makeprogress(
         _(b'bundle'), total=totalfilesize, unit=_(b'bytes')
     )
@@ -573,7 +583,7 @@ def _emit2(repo, entries, totalfilesize):
         # copy is delayed until we are in the try
         entries = [_filterfull(e, copy, vfsmap) for e in entries]
         yield None  # this release the lock on the repository
-        seen = 0
+        totalbytecount = 0
 
         for src, name, ftype, data in entries:
             vfs = vfsmap[src]
@@ -585,6 +595,7 @@ def _emit2(repo, entries, totalfilesize):
             elif ftype == _filefull:
                 fp = open(data, b'rb')
                 size = util.fstat(fp).st_size
+            bytecount = 0
             try:
                 yield util.uvarintencode(size)
                 yield name
@@ -593,9 +604,20 @@ def _emit2(repo, entries, totalfilesize):
                 else:
                     chunks = util.filechunkiter(fp, limit=size)
                 for chunk in chunks:
-                    seen += len(chunk)
-                    progress.update(seen)
+                    bytecount += len(chunk)
+                    totalbytecount += len(chunk)
+                    progress.update(totalbytecount)
                     yield chunk
+                if bytecount != size:
+                    # Would most likely be caused by a race due to `hg strip` or
+                    # a revlog split
+                    raise error.Abort(
+                        _(
+                            b'clone could only read %d bytes from %s, but '
+                            b'expected %d bytes'
+                        )
+                        % (bytecount, name, size)
+                    )
             finally:
                 fp.close()
 
@@ -713,6 +735,15 @@ def consumev2(repo, fp, filecount, filesize):
         progress.update(0)
 
         vfsmap = _makemap(repo)
+        # we keep repo.vfs out of the on purpose, ther are too many danger
+        # there (eg: .hg/hgrc),
+        #
+        # this assert is duplicated (from _makemap) as author might think this
+        # is fine, while this is really not fine.
+        if repo.vfs in vfsmap.values():
+            raise error.ProgrammingError(
+                b'repo.vfs must not be added to vfsmap for security reasons'
+            )
 
         with repo.transaction(b'clone'):
             ctxs = (vfs.backgroundclosing(repo.ui) for vfs in vfsmap.values())

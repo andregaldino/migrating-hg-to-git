@@ -71,6 +71,7 @@ from . import (
     registrar,
     repair,
     repoview,
+    requirements,
     revlog,
     revset,
     revsetlang,
@@ -105,6 +106,7 @@ from .utils import (
 from .revlogutils import (
     deltas as deltautil,
     nodemap,
+    rewrite,
     sidedata,
 )
 
@@ -1449,6 +1451,80 @@ def debugfileset(ui, repo, expr, **opts):
         if not m(f):
             continue
         ui.write(b"%s\n" % f)
+
+
+@command(
+    b"debug-repair-issue6528",
+    [
+        (
+            b'',
+            b'to-report',
+            b'',
+            _(b'build a report of affected revisions to this file'),
+            _(b'FILE'),
+        ),
+        (
+            b'',
+            b'from-report',
+            b'',
+            _(b'repair revisions listed in this report file'),
+            _(b'FILE'),
+        ),
+        (
+            b'',
+            b'paranoid',
+            False,
+            _(b'check that both detection methods do the same thing'),
+        ),
+    ]
+    + cmdutil.dryrunopts,
+)
+def debug_repair_issue6528(ui, repo, **opts):
+    """find affected revisions and repair them. See issue6528 for more details.
+
+    The `--to-report` and `--from-report` flags allow you to cache and reuse the
+    computation of affected revisions for a given repository across clones.
+    The report format is line-based (with empty lines ignored):
+
+    ```
+    <ascii-hex of the affected revision>,... <unencoded filelog index filename>
+    ```
+
+    There can be multiple broken revisions per filelog, they are separated by
+    a comma with no spaces. The only space is between the revision(s) and the
+    filename.
+
+    Note that this does *not* mean that this repairs future affected revisions,
+    that needs a separate fix at the exchange level that hasn't been written yet
+    (as of 5.9rc0).
+
+    There is a `--paranoid` flag to test that the fast implementation is correct
+    by checking it against the slow implementation. Since this matter is quite
+    urgent and testing every edge-case is probably quite costly, we use this
+    method to test on large repositories as a fuzzing method of sorts.
+    """
+    cmdutil.check_incompatible_arguments(
+        opts, 'to_report', ['from_report', 'dry_run']
+    )
+    dry_run = opts.get('dry_run')
+    to_report = opts.get('to_report')
+    from_report = opts.get('from_report')
+    paranoid = opts.get('paranoid')
+    # TODO maybe add filelog pattern and revision pattern parameters to help
+    # narrow down the search for users that know what they're looking for?
+
+    if requirements.REVLOGV1_REQUIREMENT not in repo.requirements:
+        msg = b"can only repair revlogv1 repositories, v2 is not affected"
+        raise error.Abort(_(msg))
+
+    rewrite.repair_issue6528(
+        ui,
+        repo,
+        dry_run=dry_run,
+        to_report=to_report,
+        from_report=from_report,
+        paranoid=paranoid,
+    )
 
 
 @command(b'debugformat', [] + cmdutil.formatteropts)

@@ -199,6 +199,11 @@ def has_rhg():
     return 'RHG_INSTALLED_AS_HG' in os.environ
 
 
+@check("pyoxidizer", "running with pyoxidizer build as 'hg'")
+def has_rhg():
+    return 'PYOXIDIZED_INSTALLED_AS_HG' in os.environ
+
+
 @check("cvs", "cvs client/server")
 def has_cvs():
     re = br'Concurrent Versions System.*?server'

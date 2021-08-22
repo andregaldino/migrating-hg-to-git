@@ -2,6 +2,7 @@ Create a repository:
 
 #if no-extraextensions
   $ hg config
+  chgserver.idletimeout=60
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)

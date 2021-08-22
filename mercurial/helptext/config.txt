@@ -906,12 +906,20 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
     with the Rust part  might actually suffer some slowdown. For this reason,
     Such version will by default refuse to access such repositories. That
     behavior can be controlled by configuration. Check
-    :hg:`help config.storage.revlog.persistent-nodemap.slowpath` for details.
+    :hg:`help config.storage.revlog.persistent-nodemap.slow-path` for details.
 
     Repository with this on-disk format require Mercurial version 5.4 or above.
 
     By default this format variant is disabled if fast implementation is not
     available and enabled by default if the fast implementation is available.
+
+    To accomodate install of Mercurial without the fast implementation you can
+    downgrade your repository. To do so run the following command:
+
+    $ hg debugupgraderepo \
+          --run \
+          --config format.use-persistent-nodemap=False \
+          --config storage.revlog.persistent-nodemap.slow-path=allow
 
 ``use-share-safe``
     Enforce "safe" behaviors for all "shares" that access this repository.
@@ -1838,7 +1846,7 @@ statistical text report generated from the profiling data.
     ``json``
       Render profiling data as JSON.
 
-``frequency``
+``freq``
     Sampling frequency.  Specific to the ``stat`` sampling profiler.
     (default: 1000)
 
@@ -2034,6 +2042,21 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 
 Control the strategy Mercurial uses internally to store history. Options in this
 category impact performance and repository size.
+
+``revlog.issue6528.fix-incoming``
+    Version 5.8 of Mercurial had a bug leading to altering the parent of file
+    revision with copy information (or any other metadata) on exchange. This
+    leads to the copy metadata to be overlooked by various internal logic. The
+    issue was fixed in Mercurial 5.8.1.
+    (See https://bz.mercurial-scm.org/show_bug.cgi?id=6528 for details)
+
+    As a result Mercurial is now checking and fixing incoming file revisions to
+    make sure there parents are in the right order. This behavior can be
+    disabled by setting this option to `no`. This apply to revisions added
+    through push, pull, clone and unbundle.
+
+    To fix affected revisions that already exist within the repository, one can
+    use :hg:`debug-repair-issue-6528`.
 
 ``revlog.optimize-delta-parent-choice``
     When storing a merge revision, both parents will be equally considered as

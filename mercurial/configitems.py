@@ -1897,6 +1897,11 @@ coreconfigitem(
     default=True,
     alias=[(b'format', b'aggressivemergedeltas')],
 )
+coreconfigitem(
+    b'storage',
+    b'revlog.issue6528.fix-incoming',
+    default=True,
+)
 # experimental as long as rust is experimental (or a C version is implemented)
 coreconfigitem(
     b'storage',

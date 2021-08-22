@@ -599,7 +599,7 @@ class dirstate(object):
 
         This function must be called within a `dirstate.parentchange` context.
 
-        note: the API is at an early stage and we might need to ajust it
+        note: the API is at an early stage and we might need to adjust it
         depending of what information ends up being relevant and useful to
         other processing.
         """
@@ -828,7 +828,7 @@ class dirstate(object):
             )
         else:
             util.nouideprecwarn(
-                b"do not use `remove` outside of update/merge context."
+                b"do not use `add` outside of update/merge context."
                 b" Use `set_tracked`",
                 b'6.0',
                 stacklevel=2,

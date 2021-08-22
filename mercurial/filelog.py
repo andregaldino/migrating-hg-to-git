@@ -20,6 +20,7 @@ from .interfaces import (
 from .utils import storageutil
 from .revlogutils import (
     constants as revlog_constants,
+    rewrite,
 )
 
 
@@ -37,6 +38,8 @@ class filelog(object):
         # Used by LFS.
         self._revlog.filename = path
         self.nullid = self._revlog.nullid
+        opts = opener.options
+        self._fix_issue6528 = opts.get(b'issue6528.fix-incoming', True)
 
     def __len__(self):
         return len(self._revlog)
@@ -157,13 +160,18 @@ class filelog(object):
                 )
             )
 
-        return self._revlog.addgroup(
-            deltas,
-            linkmapper,
-            transaction,
-            addrevisioncb=addrevisioncb,
-            duplicaterevisioncb=duplicaterevisioncb,
-        )
+        with self._revlog._writing(transaction):
+
+            if self._fix_issue6528:
+                deltas = rewrite.filter_delta_issue6528(self._revlog, deltas)
+
+            return self._revlog.addgroup(
+                deltas,
+                linkmapper,
+                transaction,
+                addrevisioncb=addrevisioncb,
+                duplicaterevisioncb=duplicaterevisioncb,
+            )
 
     def getstrippoint(self, minlink):
         return self._revlog.getstrippoint(minlink)
