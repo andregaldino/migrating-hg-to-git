@@ -59,7 +59,6 @@ def extsetup(ui):
         if paranoid:
             # We don't do all these checks when paranoid is disable as it would
             # make the extension run very slowly on large repos
-            extensions.wrapfunction(dirstatecl, 'otherparent', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'write', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'add', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'remove', _checkdirstate)

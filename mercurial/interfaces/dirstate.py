@@ -132,9 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def otherparent(f):
-        '''Mark as coming from the other parent, always dirty.'''
-
     def add(f):
         '''Mark a file added.'''
 

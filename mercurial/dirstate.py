@@ -744,24 +744,6 @@ class dirstate(object):
         self._addpath(f, possibly_dirty=True)
         self._map.copymap.pop(f, None)
 
-    def otherparent(self, f):
-        '''Mark as coming from the other parent, always dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `otherparent` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `otherparent` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._otherparent(f)
-
     def _otherparent(self, f):
         if not self.in_merge:
             msg = _(b"setting %r to other parent only allowed in merges") % f
