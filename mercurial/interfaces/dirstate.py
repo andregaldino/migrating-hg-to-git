@@ -132,9 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def add(f):
-        '''Mark a file added.'''
-
     def remove(f):
         '''Mark a file removed.'''
 

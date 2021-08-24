@@ -757,24 +757,6 @@ class dirstate(object):
             self._addpath(f, from_p2=True)
         self._map.copymap.pop(f, None)
 
-    def add(self, f):
-        '''Mark a file added.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `add` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `add` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._add(f)
-
     def _add(self, filename):
         """internal function to mark a file as added"""
         self._addpath(filename, added=True)

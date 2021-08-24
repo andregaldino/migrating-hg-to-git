@@ -257,7 +257,6 @@ def _setupdirstate(ui):
     editfuncs = [
         b'set_tracked',
         b'set_untracked',
-        b'add',
         b'copy',
         b'remove',
         b'merge',
