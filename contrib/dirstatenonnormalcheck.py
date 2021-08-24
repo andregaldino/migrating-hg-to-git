@@ -61,7 +61,6 @@ def extsetup(ui):
             # make the extension run very slowly on large repos
             extensions.wrapfunction(dirstatecl, 'normallookup', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'otherparent', _checkdirstate)
-            extensions.wrapfunction(dirstatecl, 'normal', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'write', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'add', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'remove', _checkdirstate)

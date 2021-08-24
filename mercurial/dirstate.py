@@ -705,32 +705,6 @@ class dirstate(object):
         mtime = s[stat.ST_MTIME]
         return (mode, size, mtime)
 
-    def normal(self, f, parentfiledata=None):
-        """Mark a file normal and clean.
-
-        parentfiledata: (mode, size, mtime) of the clean file
-
-        parentfiledata should be computed from memory (for mode,
-        size), as or close as possible from the point where we
-        determined the file was clean, to limit the risk of the
-        file having been changed by an external process between the
-        moment where the file was determined to be clean and now."""
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normal` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normal` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normal(f, parentfiledata=parentfiledata)
-
     def _normal(self, f, parentfiledata=None):
         if parentfiledata:
             (mode, size, mtime) = parentfiledata
