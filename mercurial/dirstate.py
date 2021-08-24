@@ -510,7 +510,19 @@ class dirstate(object):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
         self._updatedfiles.add(filename)
-        self._normal(filename, parentfiledata=parentfiledata)
+        if parentfiledata:
+            (mode, size, mtime) = parentfiledata
+        else:
+            (mode, size, mtime) = self._get_filedata(filename)
+        self._addpath(filename, mode=mode, size=size, mtime=mtime)
+        self._map.copymap.pop(filename, None)
+        if filename in self._map.nonnormalset:
+            self._map.nonnormalset.remove(filename)
+        if mtime > self._lastnormaltime:
+            # Remember the most recent modification timeslot for status(),
+            # to make sure we won't miss future size-preserving file content
+            # modifications that happen within the same timeslot.
+            self._lastnormaltime = mtime
 
     @requires_no_parents_change
     def set_possibly_dirty(self, filename):
@@ -704,21 +716,6 @@ class dirstate(object):
         size = s.st_size
         mtime = s[stat.ST_MTIME]
         return (mode, size, mtime)
-
-    def _normal(self, f, parentfiledata=None):
-        if parentfiledata:
-            (mode, size, mtime) = parentfiledata
-        else:
-            (mode, size, mtime) = self._get_filedata(f)
-        self._addpath(f, mode=mode, size=size, mtime=mtime)
-        self._map.copymap.pop(f, None)
-        if f in self._map.nonnormalset:
-            self._map.nonnormalset.remove(f)
-        if mtime > self._lastnormaltime:
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = mtime
 
     def _normallookup(self, f):
         '''Mark a file normal, but possibly dirty.'''
