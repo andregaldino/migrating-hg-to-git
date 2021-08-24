@@ -258,7 +258,6 @@ def _setupdirstate(ui):
         b'set_tracked',
         b'set_untracked',
         b'copy',
-        b'remove',
         b'merge',
     ]
     hint = _(

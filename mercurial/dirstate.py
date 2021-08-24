@@ -762,31 +762,6 @@ class dirstate(object):
         self._addpath(filename, added=True)
         self._map.copymap.pop(filename, None)
 
-    def remove(self, f):
-        '''Mark a file removed'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `remove` insde of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `remove` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._dirty = True
-        self._updatedfiles.add(f)
-        entry = self._map.get(f)
-        if entry is None:
-            # Assuming we are in a update/merge case
-            self.update_file(f, p1_tracked=True, wc_tracked=False)
-        else:
-            self.set_untracked(f)
-
     def merge(self, f):
         '''Mark a file merged.'''
         if self.pendingparentchange():
