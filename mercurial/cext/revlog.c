@@ -535,7 +535,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 {
 	uint64_t offset_flags, sidedata_offset;
-	int rev, sidedata_comp_len;
+	Py_ssize_t rev;
+	int sidedata_comp_len;
 	char comp_mode;
 	char *data;
 #if LONG_MAX == 0x7fffffffL
