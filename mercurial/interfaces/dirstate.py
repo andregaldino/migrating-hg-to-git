@@ -132,9 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def normallookup(f):
-        '''Mark a file normal, but possibly dirty.'''
-
     def otherparent(f):
         '''Mark as coming from the other parent, always dirty.'''
 

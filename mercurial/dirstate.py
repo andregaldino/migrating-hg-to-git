@@ -720,24 +720,6 @@ class dirstate(object):
             # modifications that happen within the same timeslot.
             self._lastnormaltime = mtime
 
-    def normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normallookup` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normallookup` outside of update/merge context."
-                b" Use `set_possibly_dirty` or `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normallookup(f)
-
     def _normallookup(self, f):
         '''Mark a file normal, but possibly dirty.'''
         if self.in_merge:
