@@ -729,29 +729,14 @@ class dirstate(object):
                 # (see `merged_removed` and `from_p2_removed`)
                 if entry.merged_removed or entry.from_p2_removed:
                     source = self._map.copymap.get(f)
-                    if entry.merged_removed:
-                        self._otherparent(f)
-                    elif entry.from_p2_removed:
-                        self._otherparent(f)
+                    self._addpath(f, from_p2=True)
+                    self._map.copymap.pop(f, None)
                     if source is not None:
                         self.copy(source, f)
                     return
                 elif entry.merged or entry.from_p2:
                     return
         self._addpath(f, possibly_dirty=True)
-        self._map.copymap.pop(f, None)
-
-    def _otherparent(self, f):
-        if not self.in_merge:
-            msg = _(b"setting %r to other parent only allowed in merges") % f
-            raise error.Abort(msg)
-        entry = self._map.get(f)
-        if entry is not None and entry.tracked:
-            # merge-like
-            self._addpath(f, merged=True)
-        else:
-            # add-like
-            self._addpath(f, from_p2=True)
         self._map.copymap.pop(f, None)
 
     def _add(self, filename):
