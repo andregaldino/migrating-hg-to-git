@@ -67,3 +67,12 @@ def extsetup(ui):
             extensions.wrapfunction(dirstatecl, 'remove', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'merge', _checkdirstate)
             extensions.wrapfunction(dirstatecl, 'drop', _checkdirstate)
+            extensions.wrapfunction(dirstatecl, 'set_tracked', _checkdirstate)
+            extensions.wrapfunction(dirstatecl, 'set_untracked', _checkdirstate)
+            extensions.wrapfunction(
+                dirstatecl, 'set_possibly_dirty', _checkdirstate
+            )
+            extensions.wrapfunction(
+                dirstatecl, 'update_file_p1', _checkdirstate
+            )
+            extensions.wrapfunction(dirstatecl, 'update_file', _checkdirstate)
