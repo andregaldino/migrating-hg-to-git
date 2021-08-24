@@ -35,7 +35,7 @@ from .utils import hashutil
 urlreq = util.urlreq
 
 
-def batchable(f):
+def batchable_new_style(f):
     """annotation for batchable methods
 
     Such methods must implement a coroutine as follows:
@@ -44,13 +44,9 @@ def batchable(f):
     def sample(self, one, two=None):
         # Build list of encoded arguments suitable for your wire protocol:
         encoded_args = [('one', encode(one),), ('two', encode(two),)]
-        # Create future for injection of encoded result:
-        encoded_res_future = future()
-        # Return encoded arguments and future:
-        yield encoded_args, encoded_res_future
-        # Assuming the future to be filled with the result from the batched
-        # request now. Decode it:
-        yield decode(encoded_res_future.value)
+        # Return it, along with a function that will receive the result
+        # from the batched request.
+        return encoded_args, decode
 
     The decorator returns a function which wraps this coroutine as a plain
     method, but adds the original method as an attribute called "batchable",
@@ -59,18 +55,35 @@ def batchable(f):
     """
 
     def plain(*args, **opts):
-        batchable = f(*args, **opts)
-        encoded_args_or_res, encoded_res_future = next(batchable)
-        if not encoded_res_future:
+        encoded_args_or_res, decode = f(*args, **opts)
+        if not decode:
             return encoded_args_or_res  # a local result in this case
         self = args[0]
         cmd = pycompat.bytesurl(f.__name__)  # ensure cmd is ascii bytestr
-        encoded_res_future.set(self._submitone(cmd, encoded_args_or_res))
-        return next(batchable)
+        encoded_res = self._submitone(cmd, encoded_args_or_res)
+        return decode(encoded_res)
 
     setattr(plain, 'batchable', f)
     setattr(plain, '__name__', f.__name__)
     return plain
+
+
+def batchable(f):
+    def upgraded(*args, **opts):
+        batchable = f(*args, **opts)
+        encoded_args_or_res, encoded_res_future = next(batchable)
+        if not encoded_res_future:
+            decode = None
+        else:
+
+            def decode(d):
+                encoded_res_future.set(d)
+                return next(batchable)
+
+        return encoded_args_or_res, decode
+
+    setattr(upgraded, '__name__', f.__name__)
+    return batchable_new_style(upgraded)
 
 
 class future(object):
@@ -248,25 +261,18 @@ class peerexecutor(object):
                 continue
 
             try:
-                batchable = fn.batchable(
+                encoded_args_or_res, decode = fn.batchable(
                     fn.__self__, **pycompat.strkwargs(args)
                 )
             except Exception:
                 pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
-            # Encoded arguments and future holding remote result.
-            try:
-                encoded_args_or_res, fremote = next(batchable)
-            except Exception:
-                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
-                return
-
-            if not fremote:
+            if not decode:
                 f.set_result(encoded_args_or_res)
             else:
                 requests.append((command, encoded_args_or_res))
-                states.append((command, f, batchable, fremote))
+                states.append((command, f, batchable, decode))
 
         if not requests:
             return
@@ -319,7 +325,7 @@ class peerexecutor(object):
     def _readbatchresponse(self, states, wireresults):
         # Executes in a thread to read data off the wire.
 
-        for command, f, batchable, fremote in states:
+        for command, f, batchable, decode in states:
             # Grab raw result off the wire and teach the internal future
             # about it.
             try:
@@ -334,11 +340,8 @@ class peerexecutor(object):
                     )
                 )
             else:
-                fremote.set(remoteresult)
-
-                # And ask the coroutine to decode that value.
                 try:
-                    result = next(batchable)
+                    result = decode(remoteresult)
                 except Exception:
                     pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 else:
