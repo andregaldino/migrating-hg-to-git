@@ -452,9 +452,10 @@ static int node_check(Py_ssize_t nodelen, PyObject *obj, char **node)
 static PyObject *index_append(indexObject *self, PyObject *obj)
 {
 	uint64_t offset_flags, sidedata_offset;
-	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
+	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2,
+	    sidedata_comp_len;
 	char data_comp_mode, sidedata_comp_mode;
-	Py_ssize_t c_node_id_len, sidedata_comp_len;
+	Py_ssize_t c_node_id_len;
 	const char *c_node_id;
 	char comp_field;
 	char *data;
@@ -534,9 +535,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 {
 	uint64_t offset_flags, sidedata_offset;
-	int rev;
+	int rev, sidedata_comp_len;
 	char comp_mode;
-	Py_ssize_t sidedata_comp_len;
 	char *data;
 #if LONG_MAX == 0x7fffffffL
 	const char *const sidedata_format = PY23("nKiKB", "nKiKB");
