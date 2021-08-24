@@ -35,7 +35,7 @@ from .utils import hashutil
 urlreq = util.urlreq
 
 
-def batchable_new_style(f):
+def batchable(f):
     """annotation for batchable methods
 
     Such methods must implement a coroutine as follows:
@@ -66,33 +66,6 @@ def batchable_new_style(f):
     setattr(plain, 'batchable', f)
     setattr(plain, '__name__', f.__name__)
     return plain
-
-
-def batchable(f):
-    def upgraded(*args, **opts):
-        batchable = f(*args, **opts)
-        encoded_args_or_res, encoded_res_future = next(batchable)
-        if not encoded_res_future:
-            decode = None
-        else:
-
-            def decode(d):
-                encoded_res_future.set(d)
-                return next(batchable)
-
-        return encoded_args_or_res, decode
-
-    setattr(upgraded, '__name__', f.__name__)
-    return batchable_new_style(upgraded)
-
-
-class future(object):
-    '''placeholder for a value to be set later'''
-
-    def set(self, value):
-        if util.safehasattr(self, b'value'):
-            raise error.RepoError(b"future is already set")
-        self.value = value
 
 
 def encodebatchcmds(req):
@@ -372,87 +345,90 @@ class wirepeer(repository.peer):
     @batchable
     def lookup(self, key):
         self.requirecap(b'lookup', _(b'look up remote revision'))
-        f = future()
-        yield {b'key': encoding.fromlocal(key)}, f
-        d = f.value
-        success, data = d[:-1].split(b" ", 1)
-        if int(success):
-            yield bin(data)
-        else:
-            self._abort(error.RepoError(data))
+
+        def decode(d):
+            success, data = d[:-1].split(b" ", 1)
+            if int(success):
+                return bin(data)
+            else:
+                self._abort(error.RepoError(data))
+
+        return {b'key': encoding.fromlocal(key)}, decode
 
     @batchable
     def heads(self):
-        f = future()
-        yield {}, f
-        d = f.value
-        try:
-            yield wireprototypes.decodelist(d[:-1])
-        except ValueError:
-            self._abort(error.ResponseError(_(b"unexpected response:"), d))
+        def decode(d):
+            try:
+                return wireprototypes.decodelist(d[:-1])
+            except ValueError:
+                self._abort(error.ResponseError(_(b"unexpected response:"), d))
+
+        return {}, decode
 
     @batchable
     def known(self, nodes):
-        f = future()
-        yield {b'nodes': wireprototypes.encodelist(nodes)}, f
-        d = f.value
-        try:
-            yield [bool(int(b)) for b in pycompat.iterbytestr(d)]
-        except ValueError:
-            self._abort(error.ResponseError(_(b"unexpected response:"), d))
+        def decode(d):
+            try:
+                return [bool(int(b)) for b in pycompat.iterbytestr(d)]
+            except ValueError:
+                self._abort(error.ResponseError(_(b"unexpected response:"), d))
+
+        return {b'nodes': wireprototypes.encodelist(nodes)}, decode
 
     @batchable
     def branchmap(self):
-        f = future()
-        yield {}, f
-        d = f.value
-        try:
-            branchmap = {}
-            for branchpart in d.splitlines():
-                branchname, branchheads = branchpart.split(b' ', 1)
-                branchname = encoding.tolocal(urlreq.unquote(branchname))
-                branchheads = wireprototypes.decodelist(branchheads)
-                branchmap[branchname] = branchheads
-            yield branchmap
-        except TypeError:
-            self._abort(error.ResponseError(_(b"unexpected response:"), d))
+        def decode(d):
+            try:
+                branchmap = {}
+                for branchpart in d.splitlines():
+                    branchname, branchheads = branchpart.split(b' ', 1)
+                    branchname = encoding.tolocal(urlreq.unquote(branchname))
+                    branchheads = wireprototypes.decodelist(branchheads)
+                    branchmap[branchname] = branchheads
+                return branchmap
+            except TypeError:
+                self._abort(error.ResponseError(_(b"unexpected response:"), d))
+
+        return {}, decode
 
     @batchable
     def listkeys(self, namespace):
         if not self.capable(b'pushkey'):
-            yield {}, None
-        f = future()
+            return {}, None
         self.ui.debug(b'preparing listkeys for "%s"\n' % namespace)
-        yield {b'namespace': encoding.fromlocal(namespace)}, f
-        d = f.value
-        self.ui.debug(
-            b'received listkey for "%s": %i bytes\n' % (namespace, len(d))
-        )
-        yield pushkeymod.decodekeys(d)
+
+        def decode(d):
+            self.ui.debug(
+                b'received listkey for "%s": %i bytes\n' % (namespace, len(d))
+            )
+            return pushkeymod.decodekeys(d)
+
+        return {b'namespace': encoding.fromlocal(namespace)}, decode
 
     @batchable
     def pushkey(self, namespace, key, old, new):
         if not self.capable(b'pushkey'):
-            yield False, None
-        f = future()
+            return False, None
         self.ui.debug(b'preparing pushkey for "%s:%s"\n' % (namespace, key))
-        yield {
+
+        def decode(d):
+            d, output = d.split(b'\n', 1)
+            try:
+                d = bool(int(d))
+            except ValueError:
+                raise error.ResponseError(
+                    _(b'push failed (unexpected response):'), d
+                )
+            for l in output.splitlines(True):
+                self.ui.status(_(b'remote: '), l)
+            return d
+
+        return {
             b'namespace': encoding.fromlocal(namespace),
             b'key': encoding.fromlocal(key),
             b'old': encoding.fromlocal(old),
             b'new': encoding.fromlocal(new),
-        }, f
-        d = f.value
-        d, output = d.split(b'\n', 1)
-        try:
-            d = bool(int(d))
-        except ValueError:
-            raise error.ResponseError(
-                _(b'push failed (unexpected response):'), d
-            )
-        for l in output.splitlines(True):
-            self.ui.status(_(b'remote: '), l)
-        yield d
+        }, decode
 
     def stream_out(self):
         return self._callstream(b'stream_out')

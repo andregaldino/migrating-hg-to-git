@@ -63,12 +63,14 @@ def peersetup(ui, peer):
                 raise error.Abort(
                     b'configured remotefile server does not support getfile'
                 )
-            f = wireprotov1peer.future()
-            yield {b'file': file, b'node': node}, f
-            code, data = f.value.split(b'\0', 1)
-            if int(code):
-                raise error.LookupError(file, node, data)
-            yield data
+
+            def decode(d):
+                code, data = d.split(b'\0', 1)
+                if int(code):
+                    raise error.LookupError(file, node, data)
+                return data
+
+            return {b'file': file, b'node': node}, decode
 
         @wireprotov1peer.batchable
         def x_rfl_getflogheads(self, path):
@@ -77,10 +79,11 @@ def peersetup(ui, peer):
                     b'configured remotefile server does not '
                     b'support getflogheads'
                 )
-            f = wireprotov1peer.future()
-            yield {b'path': path}, f
-            heads = f.value.split(b'\n') if f.value else []
-            yield heads
+
+            def decode(d):
+                return d.split(b'\n') if d else []
+
+            return {b'path': path}, decode
 
         def _updatecallstreamopts(self, command, opts):
             if command != b'getbundle':
