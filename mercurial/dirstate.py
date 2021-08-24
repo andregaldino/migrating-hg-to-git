@@ -733,7 +733,7 @@ class dirstate(object):
                 if entry.merged_removed or entry.from_p2_removed:
                     source = self._map.copymap.get(f)
                     if entry.merged_removed:
-                        self._merge(f)
+                        self._otherparent(f)
                     elif entry.from_p2_removed:
                         self._otherparent(f)
                     if source is not None:
@@ -761,11 +761,6 @@ class dirstate(object):
         """internal function to mark a file as added"""
         self._addpath(filename, added=True)
         self._map.copymap.pop(filename, None)
-
-    def _merge(self, f):
-        if not self.in_merge:
-            return self._normallookup(f)
-        return self._otherparent(f)
 
     def _drop(self, filename):
         """internal function to drop a file from the dirstate"""
