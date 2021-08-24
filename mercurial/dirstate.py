@@ -762,24 +762,6 @@ class dirstate(object):
         self._addpath(filename, added=True)
         self._map.copymap.pop(filename, None)
 
-    def merge(self, f):
-        '''Mark a file merged.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `merge` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `merge` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._merge(f)
-
     def _merge(self, f):
         if not self.in_merge:
             return self._normallookup(f)

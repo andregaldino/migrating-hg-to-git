@@ -258,7 +258,6 @@ def _setupdirstate(ui):
         b'set_tracked',
         b'set_untracked',
         b'copy',
-        b'merge',
     ]
     hint = _(
         b'include file with `hg debugsparse --include <pattern>` or use '

@@ -132,9 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def merge(f):
-        '''Mark a file merged.'''
-
     def drop(f):
         '''Drop a file from the dirstate'''
 
