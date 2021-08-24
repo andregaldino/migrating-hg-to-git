@@ -132,9 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def drop(f):
-        '''Drop a file from the dirstate'''
-
     def normalize(path, isknown=False, ignoremissing=False):
         """
         normalize the case of a pathname when on a casefolding filesystem

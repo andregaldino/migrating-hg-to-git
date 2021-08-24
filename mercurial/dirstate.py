@@ -767,24 +767,6 @@ class dirstate(object):
             return self._normallookup(f)
         return self._otherparent(f)
 
-    def drop(self, f):
-        '''Drop a file from the dirstate'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `drop` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `drop` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._drop(f)
-
     def _drop(self, filename):
         """internal function to drop a file from the dirstate"""
         if self._map.dropfile(filename):
