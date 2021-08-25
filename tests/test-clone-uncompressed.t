@@ -174,6 +174,15 @@ This is present here to reuse the testing around file with "special" names.
   updating to branch default
   1087 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
+Check that the clone went well
+
+  $ hg verify -R local-clone
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1087 changes to 1087 files
+
 Check uncompressed
 ==================
 
