@@ -770,7 +770,7 @@ class DNSOutgoing(object):
 
     def writeString(self, value, length):
         """Writes a string to the packet"""
-        format = b'!' + str(length) + b's'
+        format = '!' + str(length) + 's'
         self.data.append(struct.pack(format, value))
         self.size += length
 

@@ -115,6 +115,14 @@ substitutions = [
         br'(.*file:/)/?(/\$TESTTMP.*)',
         lambda m: m.group(1) + b'*' + m.group(2) + b' (glob)',
     ),
+    # `hg clone --stream` output
+    (
+        br'transferred (\S+?) KB in \S+? seconds \(.+?/sec\)(?: \(glob\))?(.*)',
+        lambda m: (
+            br'transferred %s KB in * seconds (* */sec) (glob)%s'
+            % (m.group(1), m.group(2))
+        ),
+    ),
 ]
 
 # Various platform error strings, keyed on a common replacement string

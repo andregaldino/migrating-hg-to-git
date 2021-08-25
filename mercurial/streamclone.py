@@ -821,9 +821,11 @@ def _copy_files(src_vfs_map, dst_vfs_map, entries, progress):
         dst_vfs = dst_vfs_map[k]
         src_path = src_vfs.join(path)
         dst_path = dst_vfs.join(path)
-        dirname = dst_vfs.dirname(path)
-        if not dst_vfs.exists(dirname):
-            dst_vfs.makedirs(dirname)
+        # We cannot use dirname and makedirs of dst_vfs here because the store
+        # encoding confuses them. See issue 6581 for details.
+        dirname = os.path.dirname(dst_path)
+        if not os.path.exists(dirname):
+            util.makedirs(dirname)
         dst_vfs.register_file(path)
         # XXX we could use the #nb_bytes argument.
         util.copyfile(

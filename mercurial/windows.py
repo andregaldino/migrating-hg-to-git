@@ -616,7 +616,16 @@ def groupname(gid=None):
 
 
 def readlink(pathname):
-    return pycompat.fsencode(os.readlink(pycompat.fsdecode(pathname)))
+    path = pycompat.fsdecode(pathname)
+    try:
+        link = os.readlink(path)
+    except ValueError as e:
+        # On py2, os.readlink() raises an AttributeError since it is
+        # unsupported.  On py3, reading a non-link raises a ValueError.  Simply
+        # treat this as the error the locking code has been expecting up to now
+        # until an effort can be made to enable symlink support on Windows.
+        raise AttributeError(e)
+    return pycompat.fsencode(link)
 
 
 def removedirs(name):

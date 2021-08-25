@@ -385,7 +385,8 @@ disable pull-based clones
   $ hg clone --stream --noupdate http://localhost:$HGPORT1/ test-stream-clone
   streaming all changes
   * files to transfer, * of data (glob)
-  transferred * in * seconds (* KB/sec) (glob)
+  transferred 1.36 KB in * seconds (* */sec) (glob) (no-zstd !)
+  transferred 1.38 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif

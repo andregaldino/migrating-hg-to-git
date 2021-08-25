@@ -403,7 +403,7 @@ transaction)
   6 files to transfer, 2.60 KB of data
   pretxnopen: 000000000000
   pretxnclose: aa35859c02ea
-  transferred 2.60 KB in *.* seconds (* */sec) (glob)
+  transferred 2.60 KB in * seconds (* */sec) (glob)
   txnclose: aa35859c02ea
 
 (for safety, confirm visibility of streamclone-ed changes by another
