@@ -1149,3 +1149,8 @@ def has_lzma():
 @check("bash", "bash shell")
 def has_bash():
     return matchoutput("bash -c 'echo hi'", b'^hi$')
+
+
+@check("bigendian", "big-endian CPU")
+def has_bigendian():
+    return sys.byteorder == 'big'
