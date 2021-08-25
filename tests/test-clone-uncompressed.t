@@ -94,7 +94,7 @@ Name with special characters
 
   $ echo foo > store/CélesteVille_is_a_Capital_City
 
-All all that
+Add all that
 
   $ hg add .
   adding 00changelog-ab349180a0405010.nd
