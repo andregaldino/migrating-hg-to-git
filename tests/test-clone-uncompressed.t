@@ -177,21 +177,17 @@ The logic is close enough of uncompressed.
 This is present here to reuse the testing around file with "special" names.
 
   $ hg clone server local-clone
-  updating to branch default (missing-correct-output !)
-  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved (missing-correct-output !)
-  abort: $ENOENT$: '$TESTTMP/local-clone/.hg/store/dh/containe/isam-bui/bazel-coverage-generator-sandboxfs-compatibility-0758e3e4d94041277bcd011e1d54c247523c124b4a325686.i' (known-bad-output !)
-  [255]
+  updating to branch default
+  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Check that the clone went well
 
   $ hg verify -R local-clone
-  checking changesets (missing-correct-output !)
-  checking manifests (missing-correct-output !)
-  crosschecking files in changesets and manifests (missing-correct-output !)
-  checking files (missing-correct-output !)
-  checked 3 changesets with 1088 changes to 1088 files (missing-correct-output !)
-  abort: repository local-clone not found (known-bad-output !)
-  [255]
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1088 changes to 1088 files
 
 Check uncompressed
 ==================
