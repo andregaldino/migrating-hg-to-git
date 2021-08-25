@@ -331,9 +331,9 @@ Basic clone
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
   1089 files to transfer, 101 KB of data (no-zstd !)
-  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1089 files to transfer, 98.5 KB of data (zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   $ cat server/errors.txt
@@ -342,7 +342,7 @@ Basic clone
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
   1092 files to transfer, 101 KB of data (no-zstd !)
-  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1092 files to transfer, 98.6 KB of data (zstd !)
   transferred 98.6 KB in * seconds (* */sec) (glob) (zstd !)
 
@@ -454,9 +454,9 @@ getbundle requests with stream=1 are uncompressed
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
   1089 files to transfer, 101 KB of data (no-zstd !)
-  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1089 files to transfer, 98.5 KB of data (zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
@@ -482,8 +482,8 @@ Clone with background file closing enabled
   1089 files to transfer, 98.5 KB of data (zstd !)
   starting 4 threads for background file closing
   updating the branch cache
-  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   query 1; heads
   sending batch command
   searching for changes
@@ -551,9 +551,9 @@ Streaming of secrets can be overridden by server config
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
   1089 files to transfer, 101 KB of data (no-zstd !)
-  transferred 101 KB in * seconds (*/sec) (glob) (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1089 files to transfer, 98.5 KB of data (zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
 #endif
@@ -744,9 +744,9 @@ Clone as publishing
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
   1089 files to transfer, 101 KB of data (no-zstd !)
-  transferred 101 KB in * seconds (*) (glob) (no-zstd !)
+  transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1089 files to transfer, 98.5 KB of data (zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default
@@ -793,7 +793,7 @@ stream v1 unsuitable for non-publishing repository.
   1089 files to transfer, 101 KB of data (no-zstd !)
   transferred 101 KB in * seconds (* */sec) (glob) (no-zstd !)
   1089 files to transfer, 98.5 KB of data (zstd !)
-  transferred 98.5 KB in * seconds (*/sec) (glob) (zstd !)
+  transferred 98.5 KB in * seconds (* */sec) (glob) (zstd !)
   searching for changes
   no changes found
   updating to branch default

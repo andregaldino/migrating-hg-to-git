@@ -91,7 +91,7 @@ Test that we can apply the bundle as a stream clone bundle
   adding [c] branch2-served (94 bytes)
   adding [c] rbc-names-v1 (7 bytes)
   adding [c] rbc-revs-v1 (40 bytes)
-  transferred 1.65 KB in \d\.\d seconds \(.*/sec\) (re)
+  transferred 1.65 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 1840
   bundle2-input-bundle: 1 parts total
   updating the branch cache
@@ -148,7 +148,7 @@ Test that we can apply the bundle as a stream clone bundle
   adding [c] branch2-served (94 bytes)
   adding [c] rbc-names-v1 (7 bytes)
   adding [c] rbc-revs-v1 (40 bytes)
-  transferred 1.65 KB in *.* seconds (*/sec) (glob)
+  transferred 1.65 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 1840
   bundle2-input-bundle: 1 parts total
   updating the branch cache
