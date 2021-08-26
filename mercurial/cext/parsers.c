@@ -167,40 +167,6 @@ static void dirstate_item_dealloc(PyObject *o)
 	PyObject_Del(o);
 }
 
-static Py_ssize_t dirstate_item_length(PyObject *o)
-{
-	return 4;
-}
-
-static PyObject *dirstate_item_item(PyObject *o, Py_ssize_t i)
-{
-	dirstateItemObject *t = (dirstateItemObject *)o;
-	switch (i) {
-	case 0:
-		return PyBytes_FromStringAndSize(&t->state, 1);
-	case 1:
-		return PyInt_FromLong(t->mode);
-	case 2:
-		return PyInt_FromLong(t->size);
-	case 3:
-		return PyInt_FromLong(t->mtime);
-	default:
-		PyErr_SetString(PyExc_IndexError, "index out of range");
-		return NULL;
-	}
-}
-
-static PySequenceMethods dirstate_item_sq = {
-    dirstate_item_length, /* sq_length */
-    0,                    /* sq_concat */
-    0,                    /* sq_repeat */
-    dirstate_item_item,   /* sq_item */
-    0,                    /* sq_ass_item */
-    0,                    /* sq_contains */
-    0,                    /* sq_inplace_concat */
-    0                     /* sq_inplace_repeat */
-};
-
 static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
 {
 	return PyBytes_FromStringAndSize(&self->state, 1);
@@ -562,7 +528,7 @@ PyTypeObject dirstateItemType = {
     0,                                 /* tp_compare */
     0,                                 /* tp_repr */
     0,                                 /* tp_as_number */
-    &dirstate_item_sq,                 /* tp_as_sequence */
+    0,                                 /* tp_as_sequence */
     0,                                 /* tp_as_mapping */
     0,                                 /* tp_hash  */
     0,                                 /* tp_call */
