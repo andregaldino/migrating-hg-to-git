@@ -904,7 +904,7 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
                 'Ebs': {
                     'DeleteOnTermination': True,
                     'VolumeSize': 10,
-                    'VolumeType': 'gp2',
+                    'VolumeType': 'gp3',
                 },
             },
         ],
@@ -1048,7 +1048,7 @@ def temporary_linux_dev_instances(
             'Ebs': {
                 'DeleteOnTermination': True,
                 'VolumeSize': 12,
-                'VolumeType': 'gp2',
+                'VolumeType': 'gp3',
             },
         }
     ]
@@ -1075,7 +1075,7 @@ def temporary_linux_dev_instances(
                 'Ebs': {
                     'DeleteOnTermination': True,
                     'VolumeSize': 8,
-                    'VolumeType': 'gp2',
+                    'VolumeType': 'gp3',
                 },
             }
         )
@@ -1151,7 +1151,7 @@ def ensure_windows_dev_ami(
                 'Ebs': {
                     'DeleteOnTermination': True,
                     'VolumeSize': 32,
-                    'VolumeType': 'gp2',
+                    'VolumeType': 'gp3',
                 },
             }
         ],
@@ -1311,7 +1311,7 @@ def temporary_windows_dev_instances(
                 'Ebs': {
                     'DeleteOnTermination': True,
                     'VolumeSize': 32,
-                    'VolumeType': 'gp2',
+                    'VolumeType': 'gp3',
                 },
             }
         ],
