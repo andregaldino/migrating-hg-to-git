@@ -225,15 +225,15 @@ class DirstateItem(object):
 
     @property
     def mode(self):
-        return self._mode
+        return self.v1_mode()
 
     @property
     def size(self):
-        return self._size
+        return self.v1_size()
 
     @property
     def mtime(self):
-        return self._mtime
+        return self.v1_mtime()
 
     @property
     def state(self):
@@ -248,17 +248,17 @@ class DirstateItem(object):
         dirstatev1 format. It would make sense to ultimately deprecate it in
         favor of the more "semantic" attributes.
         """
-        return self._state
+        return self.v1_state()
 
     @property
     def tracked(self):
         """True is the file is tracked in the working copy"""
-        return self._state in b"nma"
+        return self.v1_state() in b"nma"
 
     @property
     def added(self):
         """True if the file has been added"""
-        return self._state == b'a'
+        return self.v1_state() == b'a'
 
     @property
     def merged(self):
@@ -266,7 +266,7 @@ class DirstateItem(object):
 
         Should only be set if a merge is in progress in the dirstate
         """
-        return self._state == b'm'
+        return self.v1_state() == b'm'
 
     @property
     def from_p2(self):
@@ -276,7 +276,7 @@ class DirstateItem(object):
 
         Should only be set if a merge is in progress in the dirstate
         """
-        return self._state == b'n' and self._size == FROM_P2
+        return self.v1_state() == b'n' and self.v1_size() == FROM_P2
 
     @property
     def from_p2_removed(self):
@@ -285,12 +285,12 @@ class DirstateItem(object):
         This property seems like an abstraction leakage and should probably be
         dealt in this class (or maybe the dirstatemap) directly.
         """
-        return self._state == b'r' and self._size == FROM_P2
+        return self.v1_state() == b'r' and self.v1_size() == FROM_P2
 
     @property
     def removed(self):
         """True if the file has been removed"""
-        return self._state == b'r'
+        return self.v1_state() == b'r'
 
     @property
     def merged_removed(self):
@@ -299,7 +299,7 @@ class DirstateItem(object):
         This property seems like an abstraction leakage and should probably be
         dealt in this class (or maybe the dirstatemap)  directly.
         """
-        return self._state == b'r' and self._size == NONNORMAL
+        return self.v1_state() == b'r' and self.v1_size() == NONNORMAL
 
     @property
     def dm_nonnormal(self):
@@ -307,7 +307,7 @@ class DirstateItem(object):
 
         There is no reason for any code, but the dirstatemap one to use this.
         """
-        return self.state != b'n' or self.mtime == AMBIGUOUS_TIME
+        return self.v1_state() != b'n' or self.v1_mtime() == AMBIGUOUS_TIME
 
     @property
     def dm_otherparent(self):
@@ -315,7 +315,7 @@ class DirstateItem(object):
 
         There is no reason for any code, but the dirstatemap one to use this.
         """
-        return self._size == FROM_P2
+        return self.v1_size() == FROM_P2
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
@@ -335,7 +335,7 @@ class DirstateItem(object):
 
     def need_delay(self, now):
         """True if the stored mtime would be ambiguous with the current time"""
-        return self._state == b'n' and self._mtime == now
+        return self.v1_state() == b'n' and self.v1_mtime() == now
 
 
 def gettype(q):
