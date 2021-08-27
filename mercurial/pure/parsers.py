@@ -335,22 +335,14 @@ class DirstateItem(object):
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
-        elif not self._wc_tracked:
+        elif self.removed:
             return b'r'
-        elif self._merged:
+        elif self.merged:
             return b'm'
-        elif not (self._p1_tracked or self._p2_tracked) and self._wc_tracked:
+        elif self.added:
             return b'a'
-        elif self._clean_p2 and self._wc_tracked:
-            return b'n'
-        elif not self._p1_tracked and self._p2_tracked and self._wc_tracked:
-            return b'n'
-        elif self._possibly_dirty:
-            return b'n'
-        elif self._wc_tracked:
-            return b'n'
         else:
-            raise RuntimeError('unreachable')
+            return b'n'
 
     def v1_mode(self):
         """return a "mode" suitable for v1 serialization"""
