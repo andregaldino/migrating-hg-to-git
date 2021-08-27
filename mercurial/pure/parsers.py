@@ -263,7 +263,7 @@ class DirstateItem(object):
     @property
     def tracked(self):
         """True is the file is tracked in the working copy"""
-        return self.v1_state() in b"nma"
+        return self._wc_tracked
 
     @property
     def added(self):
