@@ -295,7 +295,7 @@ class DirstateItem(object):
         This property seems like an abstraction leakage and should probably be
         dealt in this class (or maybe the dirstatemap) directly.
         """
-        return self.v1_state() == b'r' and self.v1_size() == FROM_P2
+        return self.removed and self._clean_p2
 
     @property
     def removed(self):
