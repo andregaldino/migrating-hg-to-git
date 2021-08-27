@@ -44,21 +44,6 @@ static PyObject *dict_new_presized(PyObject *self, PyObject *args)
 	return _dict_new_presized(expected_size);
 }
 
-static inline dirstateItemObject *make_dirstate_item(char state, int mode,
-                                                     int size, int mtime)
-{
-	dirstateItemObject *t =
-	    PyObject_New(dirstateItemObject, &dirstateItemType);
-	if (!t) {
-		return NULL;
-	}
-	t->state = state;
-	t->mode = mode;
-	t->size = size;
-	t->mtime = mtime;
-	return t;
-}
-
 static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
                                    PyObject *kwds)
 {
@@ -201,7 +186,7 @@ static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
 	}
 };
 
-/* This will never change since it's bound to V1, unlike `make_dirstate_item`
+/* This will never change since it's bound to V1
  */
 static inline dirstateItemObject *
 dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
@@ -795,7 +780,7 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 			/* See pure/parsers.py:pack_dirstate for why we do
 			 * this. */
 			mtime = -1;
-			mtime_unset = (PyObject *)make_dirstate_item(
+			mtime_unset = (PyObject *)dirstate_item_from_v1_data(
 			    state, mode, size, mtime);
 			if (!mtime_unset) {
 				goto bail;
@@ -1088,7 +1073,7 @@ static void module_init(PyObject *mod)
 	revlog_module_init(mod);
 
 	capsule = PyCapsule_New(
-	    make_dirstate_item,
+	    dirstate_item_from_v1_data,
 	    "mercurial.cext.parsers.make_dirstate_item_CAPI", NULL);
 	if (capsule != NULL)
 		PyModule_AddObject(mod, "make_dirstate_item_CAPI", capsule);
