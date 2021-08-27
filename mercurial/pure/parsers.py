@@ -354,32 +354,22 @@ class DirstateItem(object):
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
-        elif not self._wc_tracked:
-            # File was deleted
-            if self._merged:
-                return NONNORMAL
-            elif self._clean_p2:
-                return FROM_P2
-            else:
-                return 0
-        elif self._merged:
-            return FROM_P2
-        elif not (self._p1_tracked or self._p2_tracked) and self._wc_tracked:
-            # Added
+        elif self.merged_removed:
             return NONNORMAL
-        elif self._clean_p2 and self._wc_tracked:
+        elif self.from_p2_removed:
             return FROM_P2
-        elif not self._p1_tracked and self._p2_tracked and self._wc_tracked:
+        elif self.removed:
+            return 0
+        elif self.merged:
+            return FROM_P2
+        elif self.added:
+            return NONNORMAL
+        elif self.from_p2:
             return FROM_P2
         elif self._possibly_dirty:
-            if self._size is None:
-                return NONNORMAL
-            else:
-                return self._size
-        elif self._wc_tracked:
-            return self._size
+            return self._size if self._size is not None else NONNORMAL
         else:
-            raise RuntimeError('unreachable')
+            return self._size
 
     def v1_mtime(self):
         """return a "mtime" suitable for v1 serialization"""
