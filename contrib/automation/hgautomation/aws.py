@@ -1157,7 +1157,7 @@ def ensure_windows_dev_ami(
         ],
         'ImageId': image.id,
         'InstanceInitiatedShutdownBehavior': 'stop',
-        'InstanceType': 't3.medium',
+        'InstanceType': 'm6i.large',
         'KeyName': '%sautomation' % prefix,
         'MaxCount': 1,
         'MinCount': 1,
