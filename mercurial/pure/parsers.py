@@ -309,7 +309,7 @@ class DirstateItem(object):
         This property seems like an abstraction leakage and should probably be
         dealt in this class (or maybe the dirstatemap)  directly.
         """
-        return self.v1_state() == b'r' and self.v1_size() == NONNORMAL
+        return self.removed and self._merged
 
     @property
     def dm_nonnormal(self):
