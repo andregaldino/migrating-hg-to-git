@@ -276,7 +276,7 @@ class DirstateItem(object):
 
         Should only be set if a merge is in progress in the dirstate
         """
-        return self.v1_state() == b'm'
+        return self._wc_tracked and self._merged
 
     @property
     def from_p2(self):
