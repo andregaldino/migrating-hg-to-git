@@ -300,7 +300,7 @@ class DirstateItem(object):
     @property
     def removed(self):
         """True if the file has been removed"""
-        return self.v1_state() == b'r'
+        return not self._wc_tracked and (self._p1_tracked or self._p2_tracked)
 
     @property
     def merged_removed(self):
