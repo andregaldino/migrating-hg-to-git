@@ -268,7 +268,7 @@ class DirstateItem(object):
     @property
     def added(self):
         """True if the file has been added"""
-        return self.v1_state() == b'a'
+        return self._wc_tracked and not (self._p1_tracked or self._p2_tracked)
 
     @property
     def merged(self):
