@@ -209,23 +209,12 @@ static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
 {
 	/* We do all the initialization here and not a tp_init function because
 	 * dirstate_item is immutable. */
-	dirstateItemObject *t;
 	char state;
 	int size, mode, mtime;
 	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime)) {
 		return NULL;
 	}
-
-	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
-	if (!t) {
-		return NULL;
-	}
-	t->state = state;
-	t->mode = mode;
-	t->size = size;
-	t->mtime = mtime;
-
-	return (PyObject *)t;
+	return (PyObject *)dirstate_item_from_v1_data(state, mode, size, mtime);
 };
 
 /* constructor to help legacy API to build a new "added" item
