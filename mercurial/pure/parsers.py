@@ -377,25 +377,18 @@ class DirstateItem(object):
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
-        elif not self._wc_tracked:
+        elif self.removed:
             return 0
         elif self._possibly_dirty:
             return AMBIGUOUS_TIME
-        elif self._merged:
+        elif self.merged:
             return AMBIGUOUS_TIME
-        elif not (self._p1_tracked or self._p2_tracked) and self._wc_tracked:
+        elif self.added:
             return AMBIGUOUS_TIME
-        elif self._clean_p2 and self._wc_tracked:
+        elif self.from_p2:
             return AMBIGUOUS_TIME
-        elif not self._p1_tracked and self._p2_tracked and self._wc_tracked:
-            return AMBIGUOUS_TIME
-        elif self._wc_tracked:
-            if self._mtime is None:
-                return 0
-            else:
-                return self._mtime
         else:
-            raise RuntimeError('unreachable')
+            return self._mtime if self._mtime is not None else 0
 
     def need_delay(self, now):
         """True if the stored mtime would be ambiguous with the current time"""
