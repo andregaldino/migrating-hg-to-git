@@ -650,8 +650,7 @@ Test debugpeer
   pushable: yes
 
   $ hg --debug debugpeer ssh://user@dummy/debugrevlog
-  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
-  running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R debugrevlog serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
