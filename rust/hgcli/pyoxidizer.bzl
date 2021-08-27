@@ -255,7 +255,11 @@ def make_msi(manifest):
         path = "defaultrc/editor.rc",
     )
 
-    wix = WiXInstaller("hg", "%s-%s.msi" % (MSI_NAME, VERSION), arch = platform)
+    wix = WiXInstaller(
+        "hg",
+        "%s-%s-%s.msi" % (MSI_NAME, VERSION, platform),
+        arch = platform,
+    )
 
     # Materialize files in the manifest to the install layout.
     wix.add_install_files(manifest)
