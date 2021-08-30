@@ -24,12 +24,21 @@
 /* clang-format off */
 typedef struct {
 	PyObject_HEAD
-	char state;
+	char flags;
 	int mode;
 	int size;
 	int mtime;
 } dirstateItemObject;
 /* clang-format on */
+
+static const char dirstate_flag_wc_tracked = 1;
+static const char dirstate_flag_p1_tracked = 1 << 1;
+static const char dirstate_flag_p2_tracked = 1 << 2;
+static const char dirstate_flag_possibly_dirty = 1 << 3;
+static const char dirstate_flag_merged = 1 << 4;
+static const char dirstate_flag_clean_p1 = 1 << 5;
+static const char dirstate_flag_clean_p2 = 1 << 6;
+static const char dirstate_flag_rust_special = 1 << 7;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

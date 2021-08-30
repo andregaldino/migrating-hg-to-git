@@ -177,7 +177,8 @@ static int dirs_fromdict(PyObject *dirs, PyObject *source, bool only_tracked)
 				                "expected a dirstate tuple");
 				return -1;
 			}
-			if (((dirstateItemObject *)value)->state == 'r')
+			if (!(((dirstateItemObject *)value)->flags &
+			      dirstate_flag_wc_tracked))
 				continue;
 		}
 
