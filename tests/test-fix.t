@@ -871,6 +871,45 @@ prevents us from forgetting fixes made in either parent.
 
   $ cd ..
 
+We should be allowed to fix the working (and only the working copy) while
+merging.
+
+  $ hg init fixworkingcopywhilemerging
+  $ cd fixworkingcopywhilemerging
+
+  $ printf "a\nb\nc\n" > file.changed
+  $ hg commit -Aqm "ancestor"
+
+  $ printf "aa\nb\nc\n" > file.changed
+  $ hg commit -m "change a"
+
+  $ hg checkout '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ printf "a\nb\ncc\n" > file.changed
+  $ hg commit -m "change c"
+  created new head
+
+  $ hg merge
+  merging file.changed
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ cat file.changed
+  aa
+  b
+  cc
+Not allowed to fix a parent of the working copy while merging
+  $ hg fix -r . --working-dir
+  abort: outstanding uncommitted merge
+  (use 'hg commit' or 'hg merge --abort')
+  [20]
+  $ hg fix --working-dir
+  $ cat file.changed
+  AA
+  b
+  CC
+
+  $ cd ..
+
 Abort fixing revisions if there is an unfinished operation. We don't want to
 make things worse by editing files or stripping/obsoleting things. Also abort
 fixing the working directory if there are unresolved merge conflicts.

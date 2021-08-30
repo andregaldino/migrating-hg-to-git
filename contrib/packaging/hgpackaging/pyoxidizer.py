@@ -136,13 +136,8 @@ def create_pyoxidizer_install_layout(
 
     run_pyoxidizer(source_dir, build_dir, target_triple)
 
-    if "windows" in target_triple:
-        target = "app_windows"
-    else:
-        target = "app_posix"
-
     build_dir = (
-        source_dir / "build" / "pyoxidizer" / target_triple / "release" / target
+        source_dir / "build" / "pyoxidizer" / target_triple / "release" / "app"
     )
 
     if out_dir.exists():

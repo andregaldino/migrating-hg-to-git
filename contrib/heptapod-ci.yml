@@ -55,7 +55,6 @@ rust-cargo-test-py3:
         PYTHON: python3
 
 phabricator-refresh:
-    <<: *all
     stage: phabricator
     variables:
       DEFAULT_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)"

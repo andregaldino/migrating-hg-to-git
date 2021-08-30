@@ -28,14 +28,16 @@ if libdir != '@' 'LIBDIR' '@':
 # to the documentation.
 if getattr(sys, 'frozen', None) == 'console_exe':
     vi = sys.version_info
-    sys.path.append(
-        os.path.join(
-            os.environ['APPDATA'],
-            'Python',
-            'Python%d%d' % (vi[0], vi[1]),
-            'site-packages',
+    appdata = os.environ.get('APPDATA')
+    if appdata:
+        sys.path.append(
+            os.path.join(
+                appdata,
+                'Python',
+                'Python%d%d' % (vi[0], vi[1]),
+                'site-packages',
+            )
         )
-    )
 
 from hgdemandimport import tracing
 

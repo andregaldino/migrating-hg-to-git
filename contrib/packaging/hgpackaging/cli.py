@@ -80,6 +80,7 @@ def build_wix(
     if pyoxidizer_target:
         fn = wix.build_installer_pyoxidizer
         kwargs["target_triple"] = pyoxidizer_target
+        kwargs["extra_pyoxidizer_vars"] = extra_pyoxidizer_vars
     else:
         fn = wix.build_installer_py2exe
         kwargs["python_exe"] = pathlib.Path(python)
@@ -106,7 +107,7 @@ def build_wix(
             "timestamp_url": sign_timestamp_url,
         }
 
-    fn(**kwargs, extra_pyoxidizer_vars=extra_pyoxidizer_vars)
+    fn(**kwargs)
 
 
 def get_parser():

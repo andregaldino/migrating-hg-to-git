@@ -752,8 +752,6 @@ def writeworkingdir(repo, ctx, filedata, replacements):
 
     Directly updates the dirstate for the affected files.
     """
-    assert repo.dirstate.p2() == nullid
-
     for path, data in pycompat.iteritems(filedata):
         fctx = ctx[path]
         fctx.write(data, fctx.flags())
@@ -761,6 +759,7 @@ def writeworkingdir(repo, ctx, filedata, replacements):
     oldp1 = repo.dirstate.p1()
     newp1 = replacements.get(oldp1, oldp1)
     if newp1 != oldp1:
+        assert repo.dirstate.p2() == nullid
         with repo.dirstate.parentchange():
             scmutil.movedirstate(repo, repo[newp1])
 

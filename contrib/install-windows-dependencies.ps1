@@ -51,8 +51,8 @@ $MERCURIAL_WHEEL_SHA256 = "cbf3efa68fd7ebf94691bd00d2c86bbd47ca73620c8faa4f18b6c
 $RUSTUP_INIT_URL = "https://static.rust-lang.org/rustup/archive/1.21.1/x86_64-pc-windows-gnu/rustup-init.exe"
 $RUSTUP_INIT_SHA256 = "d17df34ba974b9b19cf5c75883a95475aa22ddc364591d75d174090d55711c72"
 
-$PYOXIDIZER_URL = "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.16.0/PyOxidizer-0.16.0-x64.msi"
-$PYOXIDIZER_SHA256 = "2a9c58add9161c272c418d5e6dec13fbe648f624b5d26770190357e4d664f24e"
+$PYOXIDIZER_URL = "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.17/PyOxidizer-0.17.0-x64.msi"
+$PYOXIDIZER_SHA256 = "85c3bc21a18eb5e2db4dad87cca29accf725c7d59dd364a853ab5099c272024b"
 
 # Writing progress slows down downloads substantially. So disable it.
 $progressPreference = 'silentlyContinue'

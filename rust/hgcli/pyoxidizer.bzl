@@ -47,14 +47,16 @@ if extra_path is not None:
 # Add user site to sys.path to load extensions without the full path
 if os.name == 'nt':
     vi = sys.version_info
-    sys.path.append(
-        os.path.join(
-            os.environ['APPDATA'],
-            'Python',
-            'Python%d%d' % (vi[0], vi[1]),
-            'site-packages',
+    appdata = os.environ.get('APPDATA')
+    if appdata:
+        sys.path.append(
+            os.path.join(
+                appdata,
+                'Python',
+                'Python%d%d' % (vi[0], vi[1]),
+                'site-packages',
+            )
         )
-    )
 import hgdemandimport;
 hgdemandimport.enable();
 from mercurial import dispatch;
@@ -253,7 +255,11 @@ def make_msi(manifest):
         path = "defaultrc/editor.rc",
     )
 
-    wix = WiXInstaller("hg", "%s-%s.msi" % (MSI_NAME, VERSION))
+    wix = WiXInstaller(
+        "hg",
+        "%s-%s-%s.msi" % (MSI_NAME, VERSION, platform),
+        arch = platform,
+    )
 
     # Materialize files in the manifest to the install layout.
     wix.add_install_files(manifest)
