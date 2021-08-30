@@ -334,7 +334,7 @@ impl DirstateMap {
         if self.all_dirs.is_none() {
             self.all_dirs = Some(DirsMultiset::from_dirstate(
                 self.state_map.iter().map(|(k, v)| Ok((k, *v))),
-                None,
+                false,
             )?);
         }
         Ok(())
@@ -344,7 +344,7 @@ impl DirstateMap {
         if self.dirs.is_none() {
             self.dirs = Some(DirsMultiset::from_dirstate(
                 self.state_map.iter().map(|(k, v)| Ok((k, *v))),
-                Some(EntryState::Removed),
+                true,
             )?);
         }
         Ok(())

@@ -377,7 +377,7 @@ class dirstatemap(object):
 
     @propertycache
     def _dirs(self):
-        return pathutil.dirs(self._map, b'r')
+        return pathutil.dirs(self._map, only_tracked=True)
 
     @propertycache
     def _alldirs(self):

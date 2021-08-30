@@ -33,7 +33,7 @@ impl DirsMultiset {
     /// If `skip_state` is provided, skips dirstate entries with equal state.
     pub fn from_dirstate<I, P>(
         dirstate: I,
-        skip_state: Option<EntryState>,
+        only_tracked: bool,
     ) -> Result<Self, DirstateError>
     where
         I: IntoIterator<
@@ -48,8 +48,8 @@ impl DirsMultiset {
             let (filename, entry) = item?;
             let filename = filename.as_ref();
             // This `if` is optimized out of the loop
-            if let Some(skip) = skip_state {
-                if skip != entry.state {
+            if only_tracked {
+                if entry.state != EntryState::Removed {
                     multiset.add_path(filename)?;
                 }
             } else {
@@ -343,7 +343,7 @@ mod tests {
 
         let new = DirsMultiset::from_dirstate(
             StateMap::default().into_iter().map(Ok),
-            None,
+            false,
         )
         .unwrap();
         let expected = DirsMultiset {
@@ -385,7 +385,7 @@ mod tests {
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
             .collect();
 
-        let new = DirsMultiset::from_dirstate(input_map, None).unwrap();
+        let new = DirsMultiset::from_dirstate(input_map, false).unwrap();
         let expected = DirsMultiset {
             inner: expected_inner,
         };
@@ -414,14 +414,12 @@ mod tests {
         });
 
         // "a" incremented with "a/c" and "a/d/"
-        let expected_inner = [("", 1), ("a", 2)]
+        let expected_inner = [("", 1), ("a", 3)]
             .iter()
             .map(|(k, v)| (HgPathBuf::from_bytes(k.as_bytes()), *v))
             .collect();
 
-        let new =
-            DirsMultiset::from_dirstate(input_map, Some(EntryState::Normal))
-                .unwrap();
+        let new = DirsMultiset::from_dirstate(input_map, true).unwrap();
         let expected = DirsMultiset {
             inner: expected_inner,
         };
