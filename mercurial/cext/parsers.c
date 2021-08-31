@@ -152,24 +152,80 @@ static void dirstate_item_dealloc(PyObject *o)
 	PyObject_Del(o);
 }
 
+static inline bool dirstate_item_c_tracked(dirstateItemObject *self)
+{
+	return (self->state == 'a' || self->state == 'm' || self->state == 'n');
+}
+
+static inline bool dirstate_item_c_added(dirstateItemObject *self)
+{
+	return (self->state == 'a');
+}
+
+static inline bool dirstate_item_c_removed(dirstateItemObject *self)
+{
+	return (self->state == 'r');
+}
+
+static inline bool dirstate_item_c_merged(dirstateItemObject *self)
+{
+	return (self->state == 'm');
+}
+
+static inline bool dirstate_item_c_merged_removed(dirstateItemObject *self)
+{
+	return (self->state == 'r' && self->size == dirstate_v1_nonnormal);
+}
+
+static inline bool dirstate_item_c_from_p2(dirstateItemObject *self)
+{
+	return (self->state == 'n' && self->size == dirstate_v1_from_p2);
+}
+
+static inline bool dirstate_item_c_from_p2_removed(dirstateItemObject *self)
+{
+	return (self->state == 'r' && self->size == dirstate_v1_from_p2);
+}
+
+static inline char dirstate_item_c_v1_state(dirstateItemObject *self)
+{
+	return self->state;
+}
+
+static inline int dirstate_item_c_v1_mode(dirstateItemObject *self)
+{
+	return self->mode;
+}
+
+static inline int dirstate_item_c_v1_size(dirstateItemObject *self)
+{
+	return self->size;
+}
+
+static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
+{
+	return self->mtime;
+}
+
 static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
 {
-	return PyBytes_FromStringAndSize(&self->state, 1);
+	char state = dirstate_item_c_v1_state(self);
+	return PyBytes_FromStringAndSize(&state, 1);
 };
 
 static PyObject *dirstate_item_v1_mode(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->mode);
+	return PyInt_FromLong(dirstate_item_c_v1_mode(self));
 };
 
 static PyObject *dirstate_item_v1_size(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->size);
+	return PyInt_FromLong(dirstate_item_c_v1_size(self));
 };
 
 static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->mtime);
+	return PyInt_FromLong(dirstate_item_c_v1_mtime(self));
 };
 
 static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
@@ -179,7 +235,8 @@ static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
 	if (!pylong_to_long(value, &now)) {
 		return NULL;
 	}
-	if (self->state == 'n' && self->mtime == now) {
+	if (dirstate_item_c_v1_state(self) == 'n' &&
+	    dirstate_item_c_v1_mtime(self) == now) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -373,27 +430,28 @@ static PyMethodDef dirstate_item_methods[] = {
 
 static PyObject *dirstate_item_get_mode(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->mode);
+	return PyInt_FromLong(dirstate_item_c_v1_mode(self));
 };
 
 static PyObject *dirstate_item_get_size(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->size);
+	return PyInt_FromLong(dirstate_item_c_v1_size(self));
 };
 
 static PyObject *dirstate_item_get_mtime(dirstateItemObject *self)
 {
-	return PyInt_FromLong(self->mtime);
+	return PyInt_FromLong(dirstate_item_c_v1_mtime(self));
 };
 
 static PyObject *dirstate_item_get_state(dirstateItemObject *self)
 {
-	return PyBytes_FromStringAndSize(&self->state, 1);
+	char state = dirstate_item_c_v1_state(self);
+	return PyBytes_FromStringAndSize(&state, 1);
 };
 
 static PyObject *dirstate_item_get_tracked(dirstateItemObject *self)
 {
-	if (self->state == 'a' || self->state == 'm' || self->state == 'n') {
+	if (dirstate_item_c_tracked(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -402,7 +460,7 @@ static PyObject *dirstate_item_get_tracked(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_added(dirstateItemObject *self)
 {
-	if (self->state == 'a') {
+	if (dirstate_item_c_added(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -411,7 +469,7 @@ static PyObject *dirstate_item_get_added(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_merged(dirstateItemObject *self)
 {
-	if (self->state == 'm') {
+	if (dirstate_item_c_merged(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -420,7 +478,7 @@ static PyObject *dirstate_item_get_merged(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_merged_removed(dirstateItemObject *self)
 {
-	if (self->state == 'r' && self->size == dirstate_v1_nonnormal) {
+	if (dirstate_item_c_merged_removed(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -429,7 +487,7 @@ static PyObject *dirstate_item_get_merged_removed(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_from_p2(dirstateItemObject *self)
 {
-	if (self->state == 'n' && self->size == dirstate_v1_from_p2) {
+	if (dirstate_item_c_from_p2(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -438,7 +496,7 @@ static PyObject *dirstate_item_get_from_p2(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_from_p2_removed(dirstateItemObject *self)
 {
-	if (self->state == 'r' && self->size == dirstate_v1_from_p2) {
+	if (dirstate_item_c_from_p2_removed(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -447,7 +505,7 @@ static PyObject *dirstate_item_get_from_p2_removed(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_removed(dirstateItemObject *self)
 {
-	if (self->state == 'r') {
+	if (dirstate_item_c_removed(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -456,7 +514,8 @@ static PyObject *dirstate_item_get_removed(dirstateItemObject *self)
 
 static PyObject *dm_nonnormal(dirstateItemObject *self)
 {
-	if (self->state != 'n' || self->mtime == ambiguous_time) {
+	if ((dirstate_item_c_v1_state(self) != 'n') ||
+	    (dirstate_item_c_v1_mtime(self) == ambiguous_time)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -464,7 +523,7 @@ static PyObject *dm_nonnormal(dirstateItemObject *self)
 };
 static PyObject *dm_otherparent(dirstateItemObject *self)
 {
-	if (self->size == dirstate_v1_from_p2) {
+	if (dirstate_item_c_v1_mtime(self) == dirstate_v1_from_p2) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
