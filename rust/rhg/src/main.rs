@@ -69,6 +69,14 @@ fn main_with_result(
 
     let (subcommand_name, subcommand_matches) = matches.subcommand();
 
+    // Mercurial allows users to define "defaults" for commands, fallback
+    // if a default is detected for the current command
+    let defaults = config.get_str(b"defaults", subcommand_name.as_bytes());
+    if defaults?.is_some() {
+        let msg = "`defaults` config set";
+        return Err(CommandError::unsupported(msg));
+    }
+
     for prefix in ["pre", "post", "fail"].iter() {
         // Mercurial allows users to define generic hooks for commands,
         // fallback if any are detected

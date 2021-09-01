@@ -228,6 +228,12 @@ Fallback with generic hooks
   unsupported feature: fail-cat hook defined
   [252]
 
+Fallback with [defaults]
+  $ $NO_FALLBACK rhg cat original --config "defaults.cat=-r null"
+  unsupported feature: `defaults` config set
+  [252]
+
+
 Requirements
   $ $NO_FALLBACK rhg debugrequirements
   dotencode
