@@ -199,6 +199,17 @@ Fallback to Python
   
   [252]
 
+Fallback with shell path segments
+  $ $NO_FALLBACK rhg cat .
+  unsupported feature: `..` or `.` path segment
+  [252]
+  $ $NO_FALLBACK rhg cat ..
+  unsupported feature: `..` or `.` path segment
+  [252]
+  $ $NO_FALLBACK rhg cat ../..
+  unsupported feature: `..` or `.` path segment
+  [252]
+
 Requirements
   $ $NO_FALLBACK rhg debugrequirements
   dotencode

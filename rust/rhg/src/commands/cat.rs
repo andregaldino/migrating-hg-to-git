@@ -46,8 +46,13 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 
     let mut files = vec![];
     for file in file_args.iter() {
-        // TODO: actually normalize `..` path segments etc?
         let normalized = cwd.join(&file);
+        // TODO: actually normalize `..` path segments etc?
+        let dotted = normalized.components().any(|c| c.as_os_str() == "..");
+        if file == &"." || dotted {
+            let message = "`..` or `.` path segment";
+            return Err(CommandError::unsupported(message));
+        }
         let stripped = normalized
             .strip_prefix(&working_directory)
             // TODO: error message for path arguments outside of the repo
