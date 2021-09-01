@@ -210,6 +210,11 @@ Fallback with shell path segments
   unsupported feature: `..` or `.` path segment
   [252]
 
+Fallback with filesets
+  $ $NO_FALLBACK rhg cat "set:c or b"
+  unsupported feature: fileset
+  [252]
+
 Requirements
   $ $NO_FALLBACK rhg debugrequirements
   dotencode

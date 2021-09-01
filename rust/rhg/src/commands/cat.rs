@@ -46,6 +46,11 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 
     let mut files = vec![];
     for file in file_args.iter() {
+        if file.starts_with("set:") {
+            let message = "fileset";
+            return Err(CommandError::unsupported(message));
+        }
+
         let normalized = cwd.join(&file);
         // TODO: actually normalize `..` path segments etc?
         let dotted = normalized.components().any(|c| c.as_os_str() == "..");
