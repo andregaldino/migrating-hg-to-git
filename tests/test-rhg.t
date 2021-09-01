@@ -215,6 +215,19 @@ Fallback with filesets
   unsupported feature: fileset
   [252]
 
+Fallback with generic hooks
+  $ $NO_FALLBACK rhg cat original --config hooks.pre-cat=something
+  unsupported feature: pre-cat hook defined
+  [252]
+
+  $ $NO_FALLBACK rhg cat original --config hooks.post-cat=something
+  unsupported feature: post-cat hook defined
+  [252]
+
+  $ $NO_FALLBACK rhg cat original --config hooks.fail-cat=something
+  unsupported feature: fail-cat hook defined
+  [252]
+
 Requirements
   $ $NO_FALLBACK rhg debugrequirements
   dotencode

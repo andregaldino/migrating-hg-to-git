@@ -68,6 +68,17 @@ fn main_with_result(
     let matches = app.clone().get_matches_safe()?;
 
     let (subcommand_name, subcommand_matches) = matches.subcommand();
+
+    for prefix in ["pre", "post", "fail"].iter() {
+        // Mercurial allows users to define generic hooks for commands,
+        // fallback if any are detected
+        let item = format!("{}-{}", prefix, subcommand_name);
+        let hook_for_command = config.get_str(b"hooks", item.as_bytes())?;
+        if hook_for_command.is_some() {
+            let msg = format!("{}-{} hook defined", prefix, subcommand_name);
+            return Err(CommandError::unsupported(msg));
+        }
+    }
     let run = subcommand_run_fn(subcommand_name)
         .expect("unknown subcommand name from clap despite AppSettings::SubcommandRequired");
     let subcommand_args = subcommand_matches
