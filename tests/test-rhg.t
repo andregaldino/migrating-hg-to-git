@@ -138,40 +138,65 @@ Cat files
   $ echo "original content" > original
   $ hg add original
   $ hg commit -m "add original" original
+Without `--rev`
+  $ $NO_FALLBACK rhg cat original
+  original content
+With `--rev`
   $ $NO_FALLBACK rhg cat -r 0 original
   original content
 Cat copied file should not display copy metadata
   $ hg copy original copy_of_original
   $ hg commit -m "add copy of original"
+  $ $NO_FALLBACK rhg cat original
+  original content
   $ $NO_FALLBACK rhg cat -r 1 copy_of_original
   original content
 
+
 Fallback to Python
-  $ $NO_FALLBACK rhg cat original
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  $ $NO_FALLBACK rhg cat original --exclude="*.rs"
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
-  $ rhg cat original
+  $ rhg cat original --exclude="*.rs"
   original content
 
   $ FALLBACK_EXE="$RHG_FALLBACK_EXECUTABLE"
   $ unset RHG_FALLBACK_EXECUTABLE
-  $ rhg cat original
+  $ rhg cat original --exclude="*.rs"
   abort: 'rhg.on-unsupported=fallback' without 'rhg.fallback-executable' set.
   [255]
   $ RHG_FALLBACK_EXECUTABLE="$FALLBACK_EXE"
   $ export RHG_FALLBACK_EXECUTABLE
 
-  $ rhg cat original --config rhg.fallback-executable=false
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=false
   [1]
 
-  $ rhg cat original --config rhg.fallback-executable=hg-non-existent
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=hg-non-existent
   tried to fall back to a 'hg-non-existent' sub-process but got error $ENOENT$
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
 
-  $ rhg cat original --config rhg.fallback-executable=rhg
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=rhg
   Blocking recursive fallback. The 'rhg.fallback-executable = rhg' config points to `rhg` itself.
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
 
 Requirements

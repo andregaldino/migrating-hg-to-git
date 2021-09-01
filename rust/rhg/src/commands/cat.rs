@@ -56,29 +56,28 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             .map_err(|e| CommandError::abort(e.to_string()))?;
         files.push(hg_file);
     }
+    // TODO probably move this to a util function like `repo.default_rev` or
+    // something when it's used somewhere else
+    let rev = match rev {
+        Some(r) => r.to_string(),
+        None => format!("{:x}", repo.dirstate_parents()?.p1),
+    };
 
-    match rev {
-        Some(rev) => {
-            let output = cat(&repo, rev, &files).map_err(|e| (e, rev))?;
-            invocation.ui.write_stdout(&output.concatenated)?;
-            if !output.missing.is_empty() {
-                let short = format!("{:x}", output.node.short()).into_bytes();
-                for path in &output.missing {
-                    invocation.ui.write_stderr(&format_bytes!(
-                        b"{}: no such file in rev {}\n",
-                        path.as_bytes(),
-                        short
-                    ))?;
-                }
-            }
-            if output.found_any {
-                Ok(())
-            } else {
-                Err(CommandError::Unsuccessful)
-            }
+    let output = cat(&repo, &rev, &files).map_err(|e| (e, rev.as_str()))?;
+    invocation.ui.write_stdout(&output.concatenated)?;
+    if !output.missing.is_empty() {
+        let short = format!("{:x}", output.node.short()).into_bytes();
+        for path in &output.missing {
+            invocation.ui.write_stderr(&format_bytes!(
+                b"{}: no such file in rev {}\n",
+                path.as_bytes(),
+                short
+            ))?;
         }
-        None => Err(CommandError::unsupported(
-            "`rhg cat` without `--rev` / `-r`",
-        )),
+    }
+    if output.found_any {
+        Ok(())
+    } else {
+        Err(CommandError::Unsuccessful)
     }
 }
