@@ -676,20 +676,7 @@ class dirstate(object):
     ):
         entry = self._map.get(f)
         if added or entry is not None and entry.removed:
-            scmutil.checkfilename(f)
-            if self._map.hastrackeddir(f):
-                msg = _(b'directory %r already in dirstate')
-                msg %= pycompat.bytestr(f)
-                raise error.Abort(msg)
-            # shadows
-            for d in pathutil.finddirs(f):
-                if self._map.hastrackeddir(d):
-                    break
-                entry = self._map.get(d)
-                if entry is not None and not entry.removed:
-                    msg = _(b'file %r in dirstate clashes with %r')
-                    msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
-                    raise error.Abort(msg)
+            self._check_new_tracked_filename(f)
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(
@@ -702,6 +689,22 @@ class dirstate(object):
             from_p2=from_p2,
             possibly_dirty=possibly_dirty,
         )
+
+    def _check_new_tracked_filename(self, filename):
+        scmutil.checkfilename(filename)
+        if self._map.hastrackeddir(filename):
+            msg = _(b'directory %r already in dirstate')
+            msg %= pycompat.bytestr(filename)
+            raise error.Abort(msg)
+        # shadows
+        for d in pathutil.finddirs(filename):
+            if self._map.hastrackeddir(d):
+                break
+            entry = self._map.get(d)
+            if entry is not None and not entry.removed:
+                msg = _(b'file %r in dirstate clashes with %r')
+                msg %= (pycompat.bytestr(d), pycompat.bytestr(filename))
+                raise error.Abort(msg)
 
     def _get_filedata(self, filename):
         """returns"""
