@@ -1797,7 +1797,56 @@ fixed.
   $ cat $LOGFILE | sort | uniq -c
         4 bar.log
         4 baz.log
-        4 foo.log
-        4 qux.log
+        3 foo.log
+        2 qux.log
+
+  $ cd ..
+
+For tools that support line ranges, it's wrong to blindly re-use fixed file
+content for the same file revision if it appears twice with different baserevs,
+because the line ranges could be different. Since computing line ranges is
+ambiguous, this isn't a matter of correctness, but it affects the usability of
+this extension. It could maybe be simpler if baserevs were computed on a
+per-file basis to make this situation impossible to construct.
+
+In the following example, we construct two subgraphs with the same file
+revisions, and fix different sub-subgraphs to get different baserevs and
+different changed line ranges. The key precondition is that revisions 1 and 4
+have the same file revision, and the key result is that their successors don't
+have the same file content, because we want to fix different areas of that same
+file revision's content.
+
+  $ hg init differentlineranges
+  $ cd differentlineranges
+
+  $ printf "a\nb\n" > file.changed
+  $ hg commit -Aqm "0 ab"
+  $ printf "a\nx\n" > file.changed
+  $ hg commit -Aqm "1 ax"
+  $ hg remove file.changed
+  $ hg commit -Aqm "2 removed"
+  $ hg revert file.changed -r 0
+  $ hg commit -Aqm "3 ab (reverted)"
+  $ hg revert file.changed -r 1
+  $ hg commit -Aqm "4 ax (reverted)"
+
+  $ hg manifest --debug --template "{hash}\n" -r 0; \
+  > hg manifest --debug --template "{hash}\n" -r 3
+  418f692145676128d2fb518b027ddbac624be76e
+  418f692145676128d2fb518b027ddbac624be76e
+  $ hg manifest --debug --template "{hash}\n" -r 1; \
+  > hg manifest --debug --template "{hash}\n" -r 4
+  09b8b3ce5a507caaa282f7262679e6d04091426c
+  09b8b3ce5a507caaa282f7262679e6d04091426c
+
+  $ hg fix --working-dir -r 1+3+4
+  3 new orphan changesets
+
+  $ hg cat file.changed -r "successors(1)" --hidden
+  a
+  X
+  $ hg cat file.changed -r "successors(4)" --hidden
+  A
+  X
 
   $ cd ..
