@@ -496,13 +496,13 @@ class dirstate(object):
         entry = self._map.get(filename)
         if entry is None:
             return False
-        elif entry.added:
-            self._drop(filename)
-            return True
         else:
             self._dirty = True
             self._updatedfiles.add(filename)
-            self._map.set_untracked(filename)
+            if entry.added:
+                self._map.dropfile(filename)
+            else:
+                self._map.set_untracked(filename)
             return True
 
     @requires_no_parents_change
