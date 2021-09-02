@@ -493,17 +493,11 @@ class dirstate(object):
 
         return True the file was previously tracked, False otherwise.
         """
-        entry = self._map.get(filename)
-        if entry is None:
-            return False
-        else:
+        ret = self._map.set_untracked(filename)
+        if ret:
             self._dirty = True
             self._updatedfiles.add(filename)
-            if entry.added:
-                self._map.dropfile(filename)
-            else:
-                self._map.set_untracked(filename)
-            return True
+        return ret
 
     @requires_no_parents_change
     def set_clean(self, filename, parentfiledata=None):

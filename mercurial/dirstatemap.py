@@ -299,14 +299,22 @@ class dirstatemap(object):
 
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
-        entry = self[f]
-        self._dirs_decr(f, old_entry=entry, remove_variant=True)
-        if entry.from_p2:
-            self.otherparentset.add(f)
-        elif not entry.merged:
-            self.copymap.pop(f, None)
-        entry.set_untracked()
-        self.nonnormalset.add(f)
+        entry = self.get(f)
+        if entry is None:
+            return False
+        else:
+            self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
+            if not entry.merged:
+                self.copymap.pop(f, None)
+            if entry.added:
+                self.nonnormalset.discard(f)
+                self._map.pop(f, None)
+            else:
+                self.nonnormalset.add(f)
+                if entry.from_p2:
+                    self.otherparentset.add(f)
+                entry.set_untracked()
+            return True
 
     def dropfile(self, f):
         """
@@ -648,7 +656,16 @@ if rustmod is not None:
             #
             # the inner rust dirstate map code need to be adjusted once the API
             # for dirstate/dirstatemap/DirstateItem is a bit more settled
-            self._rustmap.removefile(f, in_merge=True)
+            entry = self.get(f)
+            if entry is None:
+                return False
+            else:
+                if entry.added:
+                    self._rustmap.copymap().pop(f, None)
+                    self._rustmap.dropfile(f)
+                else:
+                    self._rustmap.removefile(f, in_merge=True)
+                return True
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
