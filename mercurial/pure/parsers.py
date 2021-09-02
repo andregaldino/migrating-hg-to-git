@@ -222,6 +222,24 @@ class DirstateItem(object):
         """
         self._possibly_dirty = True
 
+    def set_clean(self, mode, size, mtime):
+        """mark a file as "clean" cancelling potential "possibly dirty call"
+
+        Note: this function is a descendant of `dirstate.normal` and is
+        currently expected to be call on "normal" entry only. There are not
+        reason for this to not change in the future as long as the ccode is
+        updated to preserve the proper state of the non-normal files.
+        """
+        self._wc_tracked = True
+        self._p1_tracked = True
+        self._p2_tracked = False  # this might be wrong
+        self._merged = False
+        self._clean_p2 = False
+        self._possibly_dirty = False
+        self._mode = mode
+        self._size = size
+        self._mtime = mtime
+
     def set_untracked(self):
         """mark a file as untracked in the working copy
 

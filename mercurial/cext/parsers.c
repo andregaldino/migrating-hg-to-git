@@ -492,6 +492,21 @@ static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 	}
 }
 
+/* See docstring of the python implementation for details */
+static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
+                                         PyObject *args)
+{
+	int size, mode, mtime;
+	if (!PyArg_ParseTuple(args, "iii", &mode, &size, &mtime)) {
+		return NULL;
+	}
+	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked;
+	self->mode = mode;
+	self->size = size;
+	self->mtime = mtime;
+	Py_RETURN_NONE;
+}
+
 static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 {
 	self->flags &= ~dirstate_flag_wc_tracked;
@@ -531,6 +546,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "constructor to help legacy API to build a new \"normal\" item"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
      METH_NOARGS, "mark a file as \"possibly dirty\""},
+    {"set_clean", (PyCFunction)dirstate_item_set_clean, METH_VARARGS,
+     "mark a file as \"clean\""},
     {"set_untracked", (PyCFunction)dirstate_item_set_untracked, METH_NOARGS,
      "mark a file as \"untracked\""},
     {NULL} /* Sentinel */

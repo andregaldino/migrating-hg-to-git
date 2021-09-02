@@ -508,10 +508,9 @@ class dirstate(object):
             (mode, size, mtime) = parentfiledata
         else:
             (mode, size, mtime) = self._get_filedata(filename)
-        self._addpath(filename, mode=mode, size=size, mtime=mtime)
-        self._map.copymap.pop(filename, None)
-        if filename in self._map.nonnormalset:
-            self._map.nonnormalset.remove(filename)
+        if not self._map[filename].tracked:
+            self._check_new_tracked_filename(filename)
+        self._map.set_clean(filename, mode, size, mtime)
         if mtime > self._lastnormaltime:
             # Remember the most recent modification timeslot for status(),
             # to make sure we won't miss future size-preserving file content

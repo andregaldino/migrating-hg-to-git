@@ -162,6 +162,15 @@ class dirstatemap(object):
         """record that the current state of the file on disk is unknown"""
         self[filename].set_possibly_dirty()
 
+    def set_clean(self, filename, mode, size, mtime):
+        """mark a file as back to a clean state"""
+        entry = self[filename]
+        mtime = mtime & rangemask
+        size = size & rangemask
+        entry.set_clean(mode, size, mtime)
+        self.copymap.pop(filename, None)
+        self.nonnormalset.discard(filename)
+
     def addfile(
         self,
         f,
@@ -923,6 +932,15 @@ if rustmod is not None:
             entry = self[filename]
             entry.set_possibly_dirty()
             self._rustmap.set_v1(filename, entry)
+
+        def set_clean(self, filename, mode, size, mtime):
+            """mark a file as back to a clean state"""
+            entry = self[filename]
+            mtime = mtime & rangemask
+            size = size & rangemask
+            entry.set_clean(mode, size, mtime)
+            self._rustmap.set_v1(filename, entry)
+            self._rustmap.copymap().pop(filename, None)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
