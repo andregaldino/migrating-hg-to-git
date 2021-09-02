@@ -316,6 +316,7 @@ class dirstatemap(object):
         old_entry = self._map.pop(f, None)
         self._dirs_decr(f, old_entry=old_entry)
         self.nonnormalset.discard(f)
+        self.copymap.pop(f, None)
         return old_entry is not None
 
     def clearambiguoustimes(self, files, now):
@@ -652,8 +653,9 @@ if rustmod is not None:
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
 
-        def dropfile(self, *args, **kwargs):
-            return self._rustmap.dropfile(*args, **kwargs)
+        def dropfile(self, f, *args, **kwargs):
+            self._rustmap.copymap().pop(f, None)
+            return self._rustmap.dropfile(f, *args, **kwargs)
 
         def clearambiguoustimes(self, *args, **kwargs):
             return self._rustmap.clearambiguoustimes(*args, **kwargs)

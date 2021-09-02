@@ -749,7 +749,6 @@ class dirstate(object):
         if self._map.dropfile(filename):
             self._dirty = True
             self._updatedfiles.add(filename)
-            self._map.copymap.pop(filename, None)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
