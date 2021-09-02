@@ -1752,3 +1752,52 @@ middle of fix.
   r0.whole:
   hello
   
+
+We should execute the fixer tools as few times as possible, because they might
+be slow or expensive to execute. The inputs to each execution are effectively
+the file path, file content, and line ranges. So, we should be able to re-use
+results whenever those inputs are repeated. That saves a lot of work when
+fixing chains of commits that all have the same file revision for a path being
+fixed.
+
+  $ hg init numberofinvocations
+  $ cd numberofinvocations
+
+  $ printf "bar1" > bar.log
+  $ printf "baz1" > baz.log
+  $ printf "foo1" > foo.log
+  $ printf "qux1" > qux.log
+  $ hg commit -Aqm "commit1"
+
+  $ printf "bar2" > bar.log
+  $ printf "baz2" > baz.log
+  $ printf "foo2" > foo.log
+  $ hg commit -Aqm "commit2"
+
+  $ printf "bar3" > bar.log
+  $ printf "baz3" > baz.log
+  $ hg commit -Aqm "commit3"
+
+  $ printf "bar4" > bar.log
+
+  $ LOGFILE=$TESTTMP/log
+  $ LOGGER=$TESTTMP/log.py
+  $ cat >> $LOGGER <<EOF
+  > # Appends the input file's name to the log file.
+  > import sys
+  > with open('$LOGFILE', 'a') as f:
+  >     f.write(sys.argv[1] + '\n')
+  > sys.stdout.write(sys.stdin.read())
+  > EOF
+
+  $ hg fix --working-dir -r "all()" \
+  >        --config "fix.log:command=\"$PYTHON\" \"$LOGGER\" {rootpath}" \
+  >        --config "fix.log:pattern=glob:**.log"
+
+  $ cat $LOGFILE | sort | uniq -c
+        4 bar.log
+        4 baz.log
+        4 foo.log
+        4 qux.log
+
+  $ cd ..
