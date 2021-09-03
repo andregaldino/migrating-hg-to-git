@@ -567,11 +567,10 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
         unsupported.remove(supported);
     }
 
-    if let Some(ignored_list) =
-        config.get_simple_list(b"rhg", b"ignored-extensions")
+    if let Some(ignored_list) = config.get_list(b"rhg", b"ignored-extensions")
     {
         for ignored in ignored_list {
-            unsupported.remove(ignored);
+            unsupported.remove(ignored.as_slice());
         }
     }
 

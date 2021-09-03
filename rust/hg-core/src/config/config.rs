@@ -13,7 +13,6 @@ use crate::config::layer::{
     ConfigError, ConfigLayer, ConfigOrigin, ConfigValue,
 };
 use crate::utils::files::get_bytes_from_os_str;
-use crate::utils::SliceExt;
 use format_bytes::{write_bytes, DisplayBytes};
 use std::collections::HashSet;
 use std::env;
@@ -360,32 +359,6 @@ impl Config {
         item: &[u8],
     ) -> Result<bool, ConfigValueParseError> {
         Ok(self.get_option(section, item)?.unwrap_or(false))
-    }
-
-    /// Returns the corresponding list-value in the config if found, or `None`.
-    ///
-    /// This is appropriate for new configuration keys. The value syntax is
-    /// **not** the same as most existing list-valued config, which has Python
-    /// parsing implemented in `parselist()` in
-    /// `mercurial/utils/stringutil.py`. Faithfully porting that parsing
-    /// algorithm to Rust (including behavior that are arguably bugs)
-    /// turned out to be non-trivial and hasn’t been completed as of this
-    /// writing.
-    ///
-    /// Instead, the "simple" syntax is: split on comma, then trim leading and
-    /// trailing whitespace of each component. Quotes or backslashes are not
-    /// interpreted in any way. Commas are mandatory between values. Values
-    /// that contain a comma are not supported.
-    pub fn get_simple_list(
-        &self,
-        section: &[u8],
-        item: &[u8],
-    ) -> Option<impl Iterator<Item = &[u8]>> {
-        self.get(section, item).map(|value| {
-            value
-                .split(|&byte| byte == b',')
-                .map(|component| component.trim())
-        })
     }
 
     /// If there is an `item` value in `section`, parse and return a list of
