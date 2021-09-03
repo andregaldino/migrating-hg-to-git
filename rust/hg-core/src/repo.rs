@@ -127,7 +127,8 @@ impl Repo {
         } else {
             let bytes = hg_vfs.read("sharedpath")?;
             let mut shared_path =
-                get_path_from_bytes(bytes.trim_end_newlines()).to_owned();
+                get_path_from_bytes(bytes.trim_end_matches(|b| b == b'\n'))
+                    .to_owned();
             if relative {
                 shared_path = dot_hg.join(shared_path)
             }
