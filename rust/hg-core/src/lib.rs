@@ -36,6 +36,7 @@ pub mod logging;
 pub mod operations;
 pub mod revset;
 pub mod utils;
+pub mod vfs;
 
 use crate::utils::hg_path::{HgPathBuf, HgPathError};
 pub use filepatterns::{

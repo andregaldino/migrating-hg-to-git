@@ -1,6 +1,7 @@
 use crate::errors::{HgError, HgResultExt};
-use crate::repo::{Repo, Vfs};
+use crate::repo::Repo;
 use crate::utils::join_display;
+use crate::vfs::Vfs;
 use std::collections::HashSet;
 
 fn parse(bytes: &[u8]) -> Result<HashSet<String>, HgError> {
