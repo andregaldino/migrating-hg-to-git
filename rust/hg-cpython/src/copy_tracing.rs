@@ -13,58 +13,7 @@ use hg::copy_tracing::ChangedFiles;
 use hg::copy_tracing::CombineChangesetCopies;
 use hg::Revision;
 
-use self::pybytes_with_data::PyBytesWithData;
-
-// Module to encapsulate private fields
-mod pybytes_with_data {
-    use cpython::{PyBytes, Python};
-
-    /// Safe abstraction over a `PyBytes` together with the `&[u8]` slice
-    /// that borrows it.
-    ///
-    /// Calling `PyBytes::data` requires a GIL marker but we want to access the
-    /// data in a thread that (ideally) does not need to acquire the GIL.
-    /// This type allows separating the call an the use.
-    pub(super) struct PyBytesWithData {
-        #[allow(unused)]
-        keep_alive: PyBytes,
-
-        /// Borrows the buffer inside `self.keep_alive`,
-        /// but the borrow-checker cannot express self-referential structs.
-        data: *const [u8],
-    }
-
-    fn require_send<T: Send>() {}
-
-    #[allow(unused)]
-    fn static_assert_pybytes_is_send() {
-        require_send::<PyBytes>;
-    }
-
-    // Safety: PyBytes is Send. Raw pointers are not by default,
-    // but here sending one to another thread is fine since we ensure it stays
-    // valid.
-    unsafe impl Send for PyBytesWithData {}
-
-    impl PyBytesWithData {
-        pub fn new(py: Python, bytes: PyBytes) -> Self {
-            Self {
-                data: bytes.data(py),
-                keep_alive: bytes,
-            }
-        }
-
-        pub fn data(&self) -> &[u8] {
-            // Safety: the raw pointer is valid as long as the PyBytes is still
-            // alive, and the returned slice borrows `self`.
-            unsafe { &*self.data }
-        }
-
-        pub fn unwrap(self) -> PyBytes {
-            self.keep_alive
-        }
-    }
-}
+use crate::pybytes_deref::PyBytesDeref;
 
 /// Combines copies information contained into revision `revs` to build a copy
 /// map.
@@ -123,7 +72,7 @@ pub fn combine_changeset_copies_wrapper(
         //
         // TODO: tweak the bound?
         let (rev_info_sender, rev_info_receiver) =
-            crossbeam_channel::bounded::<RevInfo<PyBytesWithData>>(1000);
+            crossbeam_channel::bounded::<RevInfo<PyBytesDeref>>(1000);
 
         // This channel (going the other way around) however is unbounded.
         // If they were both bounded, there might potentially be deadlocks
@@ -143,7 +92,7 @@ pub fn combine_changeset_copies_wrapper(
                 CombineChangesetCopies::new(children_count);
             for (rev, p1, p2, opt_bytes) in rev_info_receiver {
                 let files = match &opt_bytes {
-                    Some(raw) => ChangedFiles::new(raw.data()),
+                    Some(raw) => ChangedFiles::new(raw.as_ref()),
                     // Python None was extracted to Option::None,
                     // meaning there was no copy data.
                     None => ChangedFiles::new_empty(),
@@ -169,7 +118,7 @@ pub fn combine_changeset_copies_wrapper(
 
         for rev_info in revs_info {
             let (rev, p1, p2, opt_bytes) = rev_info?;
-            let opt_bytes = opt_bytes.map(|b| PyBytesWithData::new(py, b));
+            let opt_bytes = opt_bytes.map(|b| PyBytesDeref::new(py, b));
 
             // We’d prefer to avoid the child thread calling into Python code,
             // but this avoids a potential deadlock on the GIL if it does:

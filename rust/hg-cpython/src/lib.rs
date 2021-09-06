@@ -36,6 +36,7 @@ pub mod dirstate;
 pub mod discovery;
 pub mod exceptions;
 pub mod parsers;
+mod pybytes_deref;
 pub mod revlog;
 pub mod utils;
 
