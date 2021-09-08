@@ -1474,8 +1474,8 @@ def debug_repair_issue6528(ui, repo, **opts):
     filename.
 
     Note that this does *not* mean that this repairs future affected revisions,
-    that needs a separate fix at the exchange level that hasn't been written yet
-    (as of 5.9rc0).
+    that needs a separate fix at the exchange level that was introduced in
+    Mercurial 5.9.1.
 
     There is a `--paranoid` flag to test that the fast implementation is correct
     by checking it against the slow implementation. Since this matter is quite
