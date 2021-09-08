@@ -1212,9 +1212,13 @@ def _onfilemergefailure(ui):
 
 
 def hasconflictmarkers(data):
+    # Detect lines starting with a string of 7 identical characters from the
+    # subset Mercurial uses for conflict markers, followed by either the end of
+    # line or a space and some text. Note that using [<>=+|-]{7} would detect
+    # `<><><><><` as a conflict marker, which we don't want.
     return bool(
         re.search(
-            br"^(<<<<<<<.*|=======.*|------- .*|\+\+\+\+\+\+\+ .*|>>>>>>>.*)$",
+            br"^([<>=+|-])\1{6}( .*)$",
             data,
             re.MULTILINE,
         )
