@@ -1,10 +1,16 @@
 use crate::config::{Config, ConfigError, ConfigParseError};
+use crate::dirstate::DirstateParents;
+use crate::dirstate_tree::dirstate_map::DirstateMap;
+use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgError;
+use crate::errors::HgResultExt;
 use crate::exit_codes;
 use crate::requirements;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
+use crate::DirstateError;
+use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -15,6 +21,9 @@ pub struct Repo {
     store: PathBuf,
     requirements: HashSet<String>,
     config: Config,
+    // None means not known/initialized yet
+    dirstate_parents: Cell<Option<DirstateParents>>,
+    dirstate_map: RefCell<Option<OwningDirstateMap>>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -186,6 +195,8 @@ impl Repo {
             store: store_path,
             dot_hg,
             config: repo_config,
+            dirstate_parents: Cell::new(None),
+            dirstate_map: RefCell::new(None),
         };
 
         requirements::check(&repo)?;
@@ -228,19 +239,101 @@ impl Repo {
             .contains(requirements::DIRSTATE_V2_REQUIREMENT)
     }
 
-    pub fn dirstate_parents(
-        &self,
-    ) -> Result<crate::dirstate::DirstateParents, HgError> {
-        let dirstate = self.hg_vfs().mmap_open("dirstate")?;
-        if dirstate.is_empty() {
-            return Ok(crate::dirstate::DirstateParents::NULL);
+    fn dirstate_file_contents(&self) -> Result<Vec<u8>, HgError> {
+        Ok(self
+            .hg_vfs()
+            .read("dirstate")
+            .io_not_found_as_none()?
+            .unwrap_or(Vec::new()))
+    }
+
+    pub fn dirstate_parents(&self) -> Result<DirstateParents, HgError> {
+        if let Some(parents) = self.dirstate_parents.get() {
+            return Ok(parents);
         }
-        let parents = if self.has_dirstate_v2() {
+        let dirstate = self.dirstate_file_contents()?;
+        let parents = if dirstate.is_empty() {
+            DirstateParents::NULL
+        } else if self.has_dirstate_v2() {
             crate::dirstate_tree::on_disk::read_docket(&dirstate)?.parents()
         } else {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
                 .clone()
         };
+        self.dirstate_parents.set(Some(parents));
         Ok(parents)
     }
+
+    fn new_dirstate_map(&self) -> Result<OwningDirstateMap, DirstateError> {
+        let dirstate_file_contents = self.dirstate_file_contents()?;
+        if dirstate_file_contents.is_empty() {
+            self.dirstate_parents.set(Some(DirstateParents::NULL));
+            Ok(OwningDirstateMap::new_empty(Vec::new()))
+        } else if self.has_dirstate_v2() {
+            let docket = crate::dirstate_tree::on_disk::read_docket(
+                &dirstate_file_contents,
+            )?;
+            self.dirstate_parents.set(Some(docket.parents()));
+            let data_size = docket.data_size();
+            let metadata = docket.tree_metadata();
+            let mut map = if let Some(data_mmap) = self
+                .hg_vfs()
+                .mmap_open(docket.data_filename())
+                .io_not_found_as_none()?
+            {
+                OwningDirstateMap::new_empty(MmapWrapper(data_mmap))
+            } else {
+                OwningDirstateMap::new_empty(Vec::new())
+            };
+            let (on_disk, placeholder) = map.get_mut_pair();
+            *placeholder = DirstateMap::new_v2(on_disk, data_size, metadata)?;
+            Ok(map)
+        } else {
+            let mut map = OwningDirstateMap::new_empty(dirstate_file_contents);
+            let (on_disk, placeholder) = map.get_mut_pair();
+            let (inner, parents) = DirstateMap::new_v1(on_disk)?;
+            self.dirstate_parents
+                .set(Some(parents.unwrap_or(DirstateParents::NULL)));
+            *placeholder = inner;
+            Ok(map)
+        }
+    }
+
+    pub fn dirstate_map(
+        &self,
+    ) -> Result<Ref<OwningDirstateMap>, DirstateError> {
+        let mut borrowed = self.dirstate_map.borrow();
+        if borrowed.is_none() {
+            drop(borrowed);
+            // Only use `borrow_mut` if it is really needed to avoid panic in
+            // case there is another outstanding borrow but mutation is not
+            // needed.
+            *self.dirstate_map.borrow_mut() = Some(self.new_dirstate_map()?);
+            borrowed = self.dirstate_map.borrow()
+        }
+        Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
+    }
+
+    pub fn dirstate_map_mut(
+        &self,
+    ) -> Result<RefMut<OwningDirstateMap>, DirstateError> {
+        let mut borrowed = self.dirstate_map.borrow_mut();
+        if borrowed.is_none() {
+            *borrowed = Some(self.new_dirstate_map()?);
+        }
+        Ok(RefMut::map(borrowed, |option| option.as_mut().unwrap()))
+    }
 }
+
+// TODO: remove this when https://github.com/RazrFalcon/memmap2-rs/pull/22 is on crates.io
+struct MmapWrapper(memmap2::Mmap);
+
+impl std::ops::Deref for MmapWrapper {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        self.0.deref()
+    }
+}
+
+unsafe impl stable_deref_trait::StableDeref for MmapWrapper {}

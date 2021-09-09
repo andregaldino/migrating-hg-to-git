@@ -19,7 +19,7 @@ pub mod dirstate_map;
 pub mod parsers;
 pub mod status;
 
-#[derive(Debug, PartialEq, Clone, BytesCast)]
+#[derive(Debug, PartialEq, Copy, Clone, BytesCast)]
 #[repr(C)]
 pub struct DirstateParents {
     pub p1: Node,

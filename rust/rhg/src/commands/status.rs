@@ -9,9 +9,7 @@ use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
-use hg::dirstate_tree::dirstate_map::DirstateMap;
-use hg::dirstate_tree::on_disk;
-use hg::errors::HgResultExt;
+use hg::dirstate_tree::dispatch::DirstateMapMethods;
 use hg::errors::IoResultExt;
 use hg::matchers::AlwaysMatcher;
 use hg::operations::cat;
@@ -166,40 +164,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     };
 
     let repo = invocation.repo?;
-    let dirstate_data_mmap;
-    let (mut dmap, parents) = if repo.has_dirstate_v2() {
-        let docket_data =
-            repo.hg_vfs().read("dirstate").io_not_found_as_none()?;
-        let parents;
-        let dirstate_data;
-        let data_size;
-        let docket;
-        let tree_metadata;
-        if let Some(docket_data) = &docket_data {
-            docket = on_disk::read_docket(docket_data)?;
-            tree_metadata = docket.tree_metadata();
-            parents = Some(docket.parents());
-            data_size = docket.data_size();
-            dirstate_data_mmap = repo
-                .hg_vfs()
-                .mmap_open(docket.data_filename())
-                .io_not_found_as_none()?;
-            dirstate_data = dirstate_data_mmap.as_deref().unwrap_or(b"");
-        } else {
-            parents = None;
-            tree_metadata = b"";
-            data_size = 0;
-            dirstate_data = b"";
-        }
-        let dmap =
-            DirstateMap::new_v2(dirstate_data, data_size, tree_metadata)?;
-        (dmap, parents)
-    } else {
-        dirstate_data_mmap =
-            repo.hg_vfs().mmap_open("dirstate").io_not_found_as_none()?;
-        let dirstate_data = dirstate_data_mmap.as_deref().unwrap_or(b"");
-        DirstateMap::new_v1(dirstate_data)?
-    };
+    let mut dmap = repo.dirstate_map_mut()?;
 
     let options = StatusOptions {
         // TODO should be provided by the dirstate parsing and
@@ -216,8 +181,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         collect_traversed_dirs: false,
     };
     let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
-    let (mut ds_status, pattern_warnings) = hg::dirstate_tree::status::status(
-        &mut dmap,
+    let (mut ds_status, pattern_warnings) = dmap.status(
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
         vec![ignore_file],
@@ -239,13 +203,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     if !ds_status.unsure.is_empty()
         && (display_states.modified || display_states.clean)
     {
-        let p1: Node = parents
-            .expect(
-                "Dirstate with no parents should not list any file to
-            be rechecked for modifications",
-            )
-            .p1
-            .into();
+        let p1: Node = repo.dirstate_parents()?.p1.into();
         let p1_hex = format!("{:x}", p1);
         for to_check in ds_status.unsure {
             if cat_file_is_modified(repo, &to_check, &p1_hex)? {
