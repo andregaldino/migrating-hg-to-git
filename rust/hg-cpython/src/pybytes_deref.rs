@@ -1,4 +1,5 @@
 use cpython::{PyBytes, Python};
+use stable_deref_trait::StableDeref;
 
 /// Safe abstraction over a `PyBytes` together with the `&[u8]` slice
 /// that borrows it. Implements `Deref<Target = [u8]>`.
@@ -39,6 +40,8 @@ impl std::ops::Deref for PyBytesDeref {
         unsafe { &*self.data }
     }
 }
+
+unsafe impl StableDeref for PyBytesDeref {}
 
 fn require_send<T: Send>() {}
 

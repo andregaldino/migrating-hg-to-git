@@ -12,9 +12,7 @@
 mod copymap;
 mod dirs_multiset;
 mod dirstate_map;
-mod dispatch;
 mod non_normal_entries;
-mod owning;
 mod status;
 use crate::{
     dirstate::{

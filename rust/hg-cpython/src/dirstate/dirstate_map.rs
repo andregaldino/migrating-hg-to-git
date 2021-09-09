@@ -24,15 +24,17 @@ use crate::{
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
-    dirstate::owning::OwningDirstateMap,
     parsers::dirstate_parents_to_pytuple,
+    pybytes_deref::PyBytesDeref,
 };
 use hg::{
     dirstate::parsers::Timestamp,
     dirstate::MTIME_UNSET,
     dirstate::SIZE_NON_NORMAL,
+    dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
     dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
+    dirstate_tree::owning::OwningDirstateMap,
     revlog::Node,
     utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
@@ -62,8 +64,13 @@ py_class!(pub class DirstateMap |py| {
         on_disk: PyBytes,
     ) -> PyResult<PyObject> {
         let (inner, parents) = if use_dirstate_tree {
-            let (map, parents) = OwningDirstateMap::new_v1(py, on_disk)
+            let on_disk = PyBytesDeref::new(py, on_disk);
+            let mut map = OwningDirstateMap::new_empty(on_disk);
+            let (on_disk, map_placeholder) = map.get_mut_pair();
+
+            let (actual_map, parents) = TreeDirstateMap::new_v1(on_disk)
                 .map_err(|e| dirstate_error(py, e))?;
+            *map_placeholder = actual_map;
             (Box::new(map) as _, parents)
         } else {
             let bytes = on_disk.data(py);
@@ -86,10 +93,13 @@ py_class!(pub class DirstateMap |py| {
         let dirstate_error = |e: DirstateError| {
             PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
         };
-        let inner = OwningDirstateMap::new_v2(
-            py, on_disk, data_size, tree_metadata,
+        let on_disk = PyBytesDeref::new(py, on_disk);
+        let mut map = OwningDirstateMap::new_empty(on_disk);
+        let (on_disk, map_placeholder) = map.get_mut_pair();
+        *map_placeholder = TreeDirstateMap::new_v2(
+            on_disk, data_size, tree_metadata.data(py),
         ).map_err(dirstate_error)?;
-        let map = Self::create_instance(py, Box::new(inner))?;
+        let map = Self::create_instance(py, Box::new(map))?;
         Ok(map.into_object())
     }
 

@@ -1,18 +1,18 @@
-use crate::dirstate::owning::OwningDirstateMap;
-use hg::dirstate::parsers::Timestamp;
-use hg::dirstate_tree::dispatch::DirstateMapMethods;
-use hg::dirstate_tree::on_disk::DirstateV2ParseError;
-use hg::matchers::Matcher;
-use hg::utils::hg_path::{HgPath, HgPathBuf};
-use hg::CopyMapIter;
-use hg::DirstateEntry;
-use hg::DirstateError;
-use hg::DirstateParents;
-use hg::DirstateStatus;
-use hg::PatternFileWarning;
-use hg::StateMapIter;
-use hg::StatusError;
-use hg::StatusOptions;
+use crate::dirstate::parsers::Timestamp;
+use crate::dirstate_tree::dispatch::DirstateMapMethods;
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
+use crate::dirstate_tree::owning::OwningDirstateMap;
+use crate::matchers::Matcher;
+use crate::utils::hg_path::{HgPath, HgPathBuf};
+use crate::CopyMapIter;
+use crate::DirstateEntry;
+use crate::DirstateError;
+use crate::DirstateParents;
+use crate::DirstateStatus;
+use crate::PatternFileWarning;
+use crate::StateMapIter;
+use crate::StatusError;
+use crate::StatusOptions;
 use std::path::PathBuf;
 
 impl DirstateMapMethods for OwningDirstateMap {

@@ -26,6 +26,7 @@ hg-core = { path = "../hg-core"}
 libc = '*'
 log = "0.4.8"
 env_logger = "0.7.1"
+stable_deref_trait = "1.2.0"
 
 [dependencies.cpython]
 version = "0.6.0"
