@@ -104,3 +104,15 @@ debugdirstate. If we don't do this, the test can be slightly flaky.
   $ hg status
   $ hg debugdirstate --no-dates
   n 644         10 set                 inside/f1
+
+Can't commit empty files
+
+  $ touch inside/c; hg add inside/c; hg commit -qm _; hg verify -q
+   warning: revlog 'data/inside/c.i' not in fncache!
+   4: empty or missing inside/c
+   inside/c@4: manifest refers to unknown revision 000000000000
+  1 warnings encountered!
+  hint: run "hg debugrebuildfncache" to recover from corrupt fncache
+  2 integrity errors encountered!
+  (first damaged changeset appears to be 4)
+  [1]
