@@ -389,6 +389,7 @@ def _filecommit(
     text = fctx.data()
     if (
         fparent2 != repo.nullid
+        or fparent1 == repo.nullid
         or meta
         or flog.cmp(fparent1, text)
         or force_new_node
