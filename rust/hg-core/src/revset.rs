@@ -19,6 +19,10 @@ pub fn resolve_single(
     let changelog = repo.changelog()?;
 
     match input {
+        "." => {
+            let p1 = repo.dirstate_parents()?.p1;
+            return Ok(changelog.revlog.rev_from_node(p1.into())?);
+        }
         "null" => return Ok(NULL_REVISION),
         _ => {}
     }
