@@ -18,21 +18,19 @@ pub fn resolve_single(
 ) -> Result<Revision, RevlogError> {
     let changelog = repo.changelog()?;
 
+    match input {
+        "null" => return Ok(NULL_REVISION),
+        _ => {}
+    }
+
     match resolve_rev_number_or_hex_prefix(input, &changelog.revlog) {
-        Err(RevlogError::InvalidRevision) => {} // Try other syntax
+        Err(RevlogError::InvalidRevision) => {
+            // TODO: support for the rest of the language here.
+            let msg = format!("cannot parse revset '{}'", input);
+            Err(HgError::unsupported(msg).into())
+        }
         result => return result,
     }
-
-    if input == "null" {
-        return Ok(NULL_REVISION);
-    }
-
-    // TODO: support for the rest of the language here.
-
-    Err(
-        HgError::unsupported(format!("cannot parse revset '{}'", input))
-            .into(),
-    )
 }
 
 /// Resolve the small subset of the language suitable for revlogs other than
