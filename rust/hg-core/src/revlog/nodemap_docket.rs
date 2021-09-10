@@ -1,7 +1,7 @@
 use crate::errors::{HgError, HgResultExt};
 use crate::requirements;
 use bytes_cast::{unaligned, BytesCast};
-use memmap::Mmap;
+use memmap2::Mmap;
 use std::path::{Path, PathBuf};
 
 use super::revlog::RevlogError;

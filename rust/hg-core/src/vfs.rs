@@ -1,5 +1,5 @@
 use crate::errors::{HgError, IoErrorContext, IoResultExt};
-use memmap::{Mmap, MmapOptions};
+use memmap2::{Mmap, MmapOptions};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 

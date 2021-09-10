@@ -5,7 +5,7 @@
 
 //! Minimal `RevlogIndex`, readable from standard Mercurial file format
 use hg::*;
-use memmap::*;
+use memmap2::*;
 use std::fs::File;
 use std::ops::Deref;
 use std::path::Path;
