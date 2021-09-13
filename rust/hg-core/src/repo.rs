@@ -23,7 +23,7 @@ pub struct Repo {
     config: Config,
     // None means not known/initialized yet
     dirstate_parents: Cell<Option<DirstateParents>>,
-    dirstate_map: RefCell<Option<OwningDirstateMap>>,
+    dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -196,7 +196,7 @@ impl Repo {
             dot_hg,
             config: repo_config,
             dirstate_parents: Cell::new(None),
-            dirstate_map: RefCell::new(None),
+            dirstate_map: LazyCell::new(Self::new_dirstate_map),
         };
 
         requirements::check(&repo)?;
@@ -302,24 +302,52 @@ impl Repo {
     pub fn dirstate_map(
         &self,
     ) -> Result<Ref<OwningDirstateMap>, DirstateError> {
-        let mut borrowed = self.dirstate_map.borrow();
-        if borrowed.is_none() {
-            drop(borrowed);
-            // Only use `borrow_mut` if it is really needed to avoid panic in
-            // case there is another outstanding borrow but mutation is not
-            // needed.
-            *self.dirstate_map.borrow_mut() = Some(self.new_dirstate_map()?);
-            borrowed = self.dirstate_map.borrow()
-        }
-        Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
+        self.dirstate_map.get_or_init(self)
     }
 
     pub fn dirstate_map_mut(
         &self,
     ) -> Result<RefMut<OwningDirstateMap>, DirstateError> {
-        let mut borrowed = self.dirstate_map.borrow_mut();
+        self.dirstate_map.get_mut_or_init(self)
+    }
+}
+
+/// Lazily-initialized component of `Repo` with interior mutability
+///
+/// This differs from `OnceCell` in that the value can still be "deinitialized"
+/// later by setting its inner `Option` to `None`.
+struct LazyCell<T, E> {
+    value: RefCell<Option<T>>,
+    // `Fn`s that don’t capture environment are zero-size, so this box does
+    // not allocate:
+    init: Box<dyn Fn(&Repo) -> Result<T, E>>,
+}
+
+impl<T, E> LazyCell<T, E> {
+    fn new(init: impl Fn(&Repo) -> Result<T, E> + 'static) -> Self {
+        Self {
+            value: RefCell::new(None),
+            init: Box::new(init),
+        }
+    }
+
+    fn get_or_init(&self, repo: &Repo) -> Result<Ref<T>, E> {
+        let mut borrowed = self.value.borrow();
         if borrowed.is_none() {
-            *borrowed = Some(self.new_dirstate_map()?);
+            drop(borrowed);
+            // Only use `borrow_mut` if it is really needed to avoid panic in
+            // case there is another outstanding borrow but mutation is not
+            // needed.
+            *self.value.borrow_mut() = Some((self.init)(repo)?);
+            borrowed = self.value.borrow()
+        }
+        Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
+    }
+
+    pub fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
+        let mut borrowed = self.value.borrow_mut();
+        if borrowed.is_none() {
+            *borrowed = Some((self.init)(repo)?);
         }
         Ok(RefMut::map(borrowed, |option| option.as_mut().unwrap()))
     }
