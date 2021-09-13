@@ -11,6 +11,7 @@ mod nodemap_docket;
 pub mod path_encode;
 pub use node::{FromHexError, Node, NodePrefix};
 pub mod changelog;
+pub mod filelog;
 pub mod index;
 pub mod manifest;
 pub mod patch;

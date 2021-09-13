@@ -7,8 +7,10 @@ use crate::errors::HgError;
 use crate::errors::HgResultExt;
 use crate::manifest::{Manifest, Manifestlog};
 use crate::requirements;
+use crate::revlog::filelog::Filelog;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::files::get_path_from_bytes;
+use crate::utils::hg_path::HgPath;
 use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
 use crate::{exit_codes, Node};
@@ -345,6 +347,10 @@ impl Repo {
         let manifest_node =
             Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
         manifest.get_node(manifest_node.into())
+    }
+
+    pub fn filelog(&self, path: &HgPath) -> Result<Filelog, RevlogError> {
+        Filelog::open(self, path)
     }
 }
 

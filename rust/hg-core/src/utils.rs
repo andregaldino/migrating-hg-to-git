@@ -74,6 +74,7 @@ pub trait SliceExt {
     fn trim(&self) -> &Self;
     fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
     fn split_2(&self, separator: u8) -> Option<(&[u8], &[u8])>;
+    fn split_2_by_slice(&self, separator: &[u8]) -> Option<(&[u8], &[u8])>;
 }
 
 impl SliceExt for [u8] {
@@ -133,6 +134,14 @@ impl SliceExt for [u8] {
         let a = iter.next()?;
         let b = iter.next()?;
         Some((a, b))
+    }
+
+    fn split_2_by_slice(&self, separator: &[u8]) -> Option<(&[u8], &[u8])> {
+        if let Some(pos) = find_slice_in_slice(self, separator) {
+            Some((&self[..pos], &self[pos + separator.len()..]))
+        } else {
+            None
+        }
     }
 }
 
