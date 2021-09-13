@@ -1,8 +1,8 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
-use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
+use crate::revlog::{Node, NodePrefix};
 use crate::utils::hg_path::HgPath;
 
 /// A specialized `Revlog` to work with `manifest` data format.
@@ -67,5 +67,18 @@ impl Manifest {
             let hash_end = hash_start + 40;
             (HgPath::new(&line[..pos]), &line[hash_start..hash_end])
         })
+    }
+
+    /// If the given path is in this manifest, return its filelog node ID
+    pub fn find_file(&self, path: &HgPath) -> Result<Option<Node>, HgError> {
+        // TODO: use binary search instead of linear scan. This may involve
+        // building (and caching) an index of the byte indicex of each manifest
+        // line.
+        for (manifest_path, node) in self.files_with_nodes() {
+            if manifest_path == path {
+                return Ok(Some(Node::from_hex_for_repo(node)?));
+            }
+        }
+        Ok(None)
     }
 }

@@ -34,7 +34,7 @@ pub fn cat<'a>(
     files: &'a [HgPathBuf],
 ) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let manifest = repo.manifest(rev)?;
+    let manifest = repo.manifest_for_rev(rev)?;
     let node = *repo
         .changelog()?
         .node_from_rev(rev)

@@ -70,7 +70,7 @@ pub fn list_rev_tracked_files(
     revset: &str,
 ) -> Result<FilesForRev, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    Ok(FilesForRev(repo.manifest(rev)?))
+    Ok(FilesForRev(repo.manifest_for_rev(rev)?))
 }
 
 pub struct FilesForRev(Manifest);

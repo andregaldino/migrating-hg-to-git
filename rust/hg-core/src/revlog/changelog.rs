@@ -57,9 +57,11 @@ impl ChangelogEntry {
 
     /// Return the node id of the `manifest` referenced by this `changelog`
     /// entry.
-    pub fn manifest_node(&self) -> Result<&[u8], RevlogError> {
-        self.lines()
-            .next()
-            .ok_or_else(|| HgError::corrupted("empty changelog entry").into())
+    pub fn manifest_node(&self) -> Result<Node, HgError> {
+        Node::from_hex_for_repo(
+            self.lines()
+                .next()
+                .ok_or_else(|| HgError::corrupted("empty changelog entry"))?,
+        )
     }
 }

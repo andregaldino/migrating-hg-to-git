@@ -10,13 +10,11 @@ use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
 use hg::dirstate_tree::dispatch::DirstateMapMethods;
-use hg::errors::IoResultExt;
+use hg::errors::{HgError, IoResultExt};
+use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
-use hg::operations::cat;
 use hg::repo::Repo;
-use hg::revlog::node::Node;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
-use hg::StatusError;
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
 use std::convert::TryInto;
@@ -203,10 +201,12 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     if !ds_status.unsure.is_empty()
         && (display_states.modified || display_states.clean)
     {
-        let p1: Node = repo.dirstate_parents()?.p1.into();
-        let p1_hex = format!("{:x}", p1);
+        let p1 = repo.dirstate_parents()?.p1;
+        let manifest = repo.manifest_for_node(p1).map_err(|e| {
+            CommandError::from((e, &*format!("{:x}", p1.short())))
+        })?;
         for to_check in ds_status.unsure {
-            if cat_file_is_modified(repo, &to_check, &p1_hex)? {
+            if cat_file_is_modified(repo, &manifest, &to_check)? {
                 if display_states.modified {
                     ds_status.modified.push(to_check);
                 }
@@ -267,21 +267,22 @@ fn display_status_paths(
 /// TODO: detect permission bits and similar metadata modifications
 fn cat_file_is_modified(
     repo: &Repo,
+    manifest: &Manifest,
     hg_path: &HgPath,
-    rev: &str,
-) -> Result<bool, CommandError> {
-    // TODO CatRev expects &[HgPathBuf], something like
-    // &[impl Deref<HgPath>] would be nicer and should avoid the copy
-    let path_bufs = [hg_path.into()];
-    // TODO IIUC CatRev returns a simple Vec<u8> for all files
-    //      being able to tell them apart as (path, bytes) would be nicer
-    //      and OPTIM would allow manifest resolution just once.
-    let output = cat(repo, rev, &path_bufs).map_err(|e| (e, rev))?;
+) -> Result<bool, HgError> {
+    let file_node = manifest
+        .find_file(hg_path)?
+        .expect("ambgious file not in p1");
+    let filelog = repo.filelog(hg_path)?;
+    let filelog_entry = filelog.get_node(file_node).map_err(|_| {
+        HgError::corrupted("filelog missing node from manifest")
+    })?;
+    let contents_in_p1 = filelog_entry.data()?;
 
     let fs_path = repo
         .working_directory_vfs()
         .join(hg_path_to_os_string(hg_path).expect("HgPath conversion"));
-    let hg_data_len: u64 = match output.concatenated.len().try_into() {
+    let hg_data_len: u64 = match contents_in_p1.len().try_into() {
         Ok(v) => v,
         Err(_) => {
             // conversion of data length to u64 failed,
@@ -290,14 +291,12 @@ fn cat_file_is_modified(
         }
     };
     let fobj = fs::File::open(&fs_path).when_reading_file(&fs_path)?;
-    if fobj.metadata().map_err(|e| StatusError::from(e))?.len() != hg_data_len
-    {
+    if fobj.metadata().when_reading_file(&fs_path)?.len() != hg_data_len {
         return Ok(true);
     }
-    for (fs_byte, hg_byte) in
-        BufReader::new(fobj).bytes().zip(output.concatenated)
+    for (fs_byte, &hg_byte) in BufReader::new(fobj).bytes().zip(contents_in_p1)
     {
-        if fs_byte.map_err(|e| StatusError::from(e))? != hg_byte {
+        if fs_byte.when_reading_file(&fs_path)? != hg_byte {
             return Ok(true);
         }
     }
