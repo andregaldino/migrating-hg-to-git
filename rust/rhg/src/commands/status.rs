@@ -10,17 +10,13 @@ use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
 use hg::dirstate_tree::dispatch::DirstateMapMethods;
-use hg::errors::{HgError, IoResultExt};
+use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
 use hg::repo::Repo;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
-use std::convert::TryInto;
-use std::fs;
-use std::io::BufReader;
-use std::io::Read;
 
 pub const HELP_TEXT: &str = "
 Show changed files in the working directory
@@ -279,26 +275,7 @@ fn cat_file_is_modified(
     })?;
     let contents_in_p1 = filelog_entry.data()?;
 
-    let fs_path = repo
-        .working_directory_vfs()
-        .join(hg_path_to_os_string(hg_path).expect("HgPath conversion"));
-    let hg_data_len: u64 = match contents_in_p1.len().try_into() {
-        Ok(v) => v,
-        Err(_) => {
-            // conversion of data length to u64 failed,
-            // good luck for any file to have this content
-            return Ok(true);
-        }
-    };
-    let fobj = fs::File::open(&fs_path).when_reading_file(&fs_path)?;
-    if fobj.metadata().when_reading_file(&fs_path)?.len() != hg_data_len {
-        return Ok(true);
-    }
-    for (fs_byte, &hg_byte) in BufReader::new(fobj).bytes().zip(contents_in_p1)
-    {
-        if fs_byte.when_reading_file(&fs_path)? != hg_byte {
-            return Ok(true);
-        }
-    }
-    Ok(false)
+    let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
+    let fs_contents = repo.working_directory_vfs().read(fs_path)?;
+    return Ok(contents_in_p1 == &*fs_contents);
 }
