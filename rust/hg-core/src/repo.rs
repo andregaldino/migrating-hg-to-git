@@ -1,3 +1,4 @@
+use crate::changelog::Changelog;
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::dirstate::DirstateParents;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
@@ -5,7 +6,9 @@ use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgError;
 use crate::errors::HgResultExt;
 use crate::exit_codes;
+use crate::manifest::Manifestlog;
 use crate::requirements;
+use crate::revlog::revlog::RevlogError;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
@@ -24,6 +27,8 @@ pub struct Repo {
     // None means not known/initialized yet
     dirstate_parents: Cell<Option<DirstateParents>>,
     dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
+    changelog: LazyCell<Changelog, RevlogError>,
+    manifestlog: LazyCell<Manifestlog, RevlogError>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -197,6 +202,8 @@ impl Repo {
             config: repo_config,
             dirstate_parents: Cell::new(None),
             dirstate_map: LazyCell::new(Self::new_dirstate_map),
+            changelog: LazyCell::new(Changelog::open),
+            manifestlog: LazyCell::new(Manifestlog::open),
         };
 
         requirements::check(&repo)?;
@@ -309,6 +316,22 @@ impl Repo {
         &self,
     ) -> Result<RefMut<OwningDirstateMap>, DirstateError> {
         self.dirstate_map.get_mut_or_init(self)
+    }
+
+    pub fn changelog(&self) -> Result<Ref<Changelog>, RevlogError> {
+        self.changelog.get_or_init(self)
+    }
+
+    pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, RevlogError> {
+        self.changelog.get_mut_or_init(self)
+    }
+
+    pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, RevlogError> {
+        self.manifestlog.get_or_init(self)
+    }
+
+    pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, RevlogError> {
+        self.manifestlog.get_mut_or_init(self)
     }
 }
 

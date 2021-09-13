@@ -4,7 +4,6 @@
 
 use crate::errors::HgError;
 use crate::repo::Repo;
-use crate::revlog::changelog::Changelog;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
 use crate::revlog::{Revision, NULL_REVISION, WORKING_DIRECTORY_HEX};
@@ -17,7 +16,7 @@ pub fn resolve_single(
     input: &str,
     repo: &Repo,
 ) -> Result<Revision, RevlogError> {
-    let changelog = Changelog::open(repo)?;
+    let changelog = repo.changelog()?;
 
     match resolve_rev_number_or_hex_prefix(input, &changelog.revlog) {
         Err(RevlogError::InvalidRevision) => {} // Try other syntax

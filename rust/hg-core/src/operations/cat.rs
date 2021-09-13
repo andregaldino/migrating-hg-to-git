@@ -8,8 +8,6 @@
 use std::path::PathBuf;
 
 use crate::repo::Repo;
-use crate::revlog::changelog::Changelog;
-use crate::revlog::manifest::Manifestlog;
 use crate::revlog::path_encode::path_encode;
 use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
@@ -42,8 +40,8 @@ pub fn cat<'a>(
     files: &'a [HgPathBuf],
 ) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let changelog = Changelog::open(repo)?;
-    let manifest = Manifestlog::open(repo)?;
+    let changelog = repo.changelog()?;
+    let manifest = repo.manifestlog()?;
     let changelog_entry = changelog.get_rev(rev)?;
     let node = *changelog
         .node_from_rev(rev)
