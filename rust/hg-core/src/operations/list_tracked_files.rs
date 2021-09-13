@@ -10,7 +10,7 @@ use crate::dirstate_tree::on_disk::{for_each_tracked_path, read_docket};
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::changelog::Changelog;
-use crate::revlog::manifest::{Manifest, ManifestEntry};
+use crate::revlog::manifest::{Manifest, Manifestlog};
 use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::hg_path::HgPath;
@@ -73,7 +73,7 @@ pub fn list_rev_tracked_files(
 ) -> Result<FilesForRev, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
     let changelog = Changelog::open(repo)?;
-    let manifest = Manifest::open(repo)?;
+    let manifest = Manifestlog::open(repo)?;
     let changelog_entry = changelog.get_rev(rev)?;
     let manifest_node =
         Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
@@ -81,7 +81,7 @@ pub fn list_rev_tracked_files(
     Ok(FilesForRev(manifest_entry))
 }
 
-pub struct FilesForRev(ManifestEntry);
+pub struct FilesForRev(Manifest);
 
 impl FilesForRev {
     pub fn iter(&self) -> impl Iterator<Item = &HgPath> {

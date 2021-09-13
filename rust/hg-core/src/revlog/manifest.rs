@@ -5,12 +5,12 @@ use crate::revlog::Revision;
 use crate::utils::hg_path::HgPath;
 
 /// A specialized `Revlog` to work with `manifest` data format.
-pub struct Manifest {
+pub struct Manifestlog {
     /// The generic `revlog` format.
     revlog: Revlog,
 }
 
-impl Manifest {
+impl Manifestlog {
     /// Open the `manifest` of a repository given by its root.
     pub fn open(repo: &Repo) -> Result<Self, RevlogError> {
         let revlog = Revlog::open(repo, "00manifest.i", None)?;
@@ -18,31 +18,25 @@ impl Manifest {
     }
 
     /// Return the `ManifestEntry` of a given node id.
-    pub fn get_node(
-        &self,
-        node: NodePrefix,
-    ) -> Result<ManifestEntry, RevlogError> {
+    pub fn get_node(&self, node: NodePrefix) -> Result<Manifest, RevlogError> {
         let rev = self.revlog.get_node_rev(node)?;
         self.get_rev(rev)
     }
 
     /// Return the `ManifestEntry` of a given node revision.
-    pub fn get_rev(
-        &self,
-        rev: Revision,
-    ) -> Result<ManifestEntry, RevlogError> {
+    pub fn get_rev(&self, rev: Revision) -> Result<Manifest, RevlogError> {
         let bytes = self.revlog.get_rev_data(rev)?;
-        Ok(ManifestEntry { bytes })
+        Ok(Manifest { bytes })
     }
 }
 
-/// `Manifest` entry which knows how to interpret the `manifest` data bytes.
+/// `Manifestlog` entry which knows how to interpret the `manifest` data bytes.
 #[derive(Debug)]
-pub struct ManifestEntry {
+pub struct Manifest {
     bytes: Vec<u8>,
 }
 
-impl ManifestEntry {
+impl Manifest {
     /// Return an iterator over the lines of the entry.
     pub fn lines(&self) -> impl Iterator<Item = &[u8]> {
         self.bytes
