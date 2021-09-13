@@ -4,7 +4,6 @@ use bytes_cast::{unaligned, BytesCast};
 use memmap2::Mmap;
 use std::path::{Path, PathBuf};
 
-use super::revlog::RevlogError;
 use crate::repo::Repo;
 use crate::utils::strip_suffix;
 
@@ -38,7 +37,7 @@ impl NodeMapDocket {
     pub fn read_from_file(
         repo: &Repo,
         index_path: &Path,
-    ) -> Result<Option<(Self, Mmap)>, RevlogError> {
+    ) -> Result<Option<(Self, Mmap)>, HgError> {
         if !repo
             .requirements()
             .contains(requirements::NODEMAP_REQUIREMENT)
@@ -65,10 +64,9 @@ impl NodeMapDocket {
         };
 
         /// Treat any error as a parse error
-        fn parse<T, E>(result: Result<T, E>) -> Result<T, RevlogError> {
-            result.map_err(|_| {
-                HgError::corrupted("nodemap docket parse error").into()
-            })
+        fn parse<T, E>(result: Result<T, E>) -> Result<T, HgError> {
+            result
+                .map_err(|_| HgError::corrupted("nodemap docket parse error"))
         }
 
         let (header, rest) = parse(DocketHeader::from_bytes(input))?;
@@ -94,7 +92,7 @@ impl NodeMapDocket {
             if mmap.len() >= data_length {
                 Ok(Some((docket, mmap)))
             } else {
-                Err(HgError::corrupted("persistent nodemap too short").into())
+                Err(HgError::corrupted("persistent nodemap too short"))
             }
         } else {
             // Even if .hg/requires opted in, some revlogs are deemed small

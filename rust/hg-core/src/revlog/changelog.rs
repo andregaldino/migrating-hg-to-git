@@ -12,7 +12,7 @@ pub struct Changelog {
 
 impl Changelog {
     /// Open the `changelog` of a repository given by its root.
-    pub fn open(repo: &Repo) -> Result<Self, RevlogError> {
+    pub fn open(repo: &Repo) -> Result<Self, HgError> {
         let revlog = Revlog::open(repo, "00changelog.i", None)?;
         Ok(Self { revlog })
     }

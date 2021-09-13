@@ -29,8 +29,8 @@ pub struct Repo {
     // None means not known/initialized yet
     dirstate_parents: Cell<Option<DirstateParents>>,
     dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
-    changelog: LazyCell<Changelog, RevlogError>,
-    manifestlog: LazyCell<Manifestlog, RevlogError>,
+    changelog: LazyCell<Changelog, HgError>,
+    manifestlog: LazyCell<Manifestlog, HgError>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -320,19 +320,19 @@ impl Repo {
         self.dirstate_map.get_mut_or_init(self)
     }
 
-    pub fn changelog(&self) -> Result<Ref<Changelog>, RevlogError> {
+    pub fn changelog(&self) -> Result<Ref<Changelog>, HgError> {
         self.changelog.get_or_init(self)
     }
 
-    pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, RevlogError> {
+    pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, HgError> {
         self.changelog.get_mut_or_init(self)
     }
 
-    pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, RevlogError> {
+    pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, HgError> {
         self.manifestlog.get_or_init(self)
     }
 
-    pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, RevlogError> {
+    pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, HgError> {
         self.manifestlog.get_mut_or_init(self)
     }
 
@@ -349,7 +349,7 @@ impl Repo {
         manifest.get_node(manifest_node.into())
     }
 
-    pub fn filelog(&self, path: &HgPath) -> Result<Filelog, RevlogError> {
+    pub fn filelog(&self, path: &HgPath) -> Result<Filelog, HgError> {
         Filelog::open(self, path)
     }
 }

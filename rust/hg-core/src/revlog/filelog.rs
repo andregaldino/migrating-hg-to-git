@@ -17,7 +17,7 @@ pub struct Filelog {
 }
 
 impl Filelog {
-    pub fn open(repo: &Repo, file_path: &HgPath) -> Result<Self, RevlogError> {
+    pub fn open(repo: &Repo, file_path: &HgPath) -> Result<Self, HgError> {
         let index_path = store_path(file_path, b".i");
         let data_path = store_path(file_path, b".d");
         let revlog = Revlog::open(repo, index_path, Some(&data_path))?;

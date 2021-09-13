@@ -68,14 +68,14 @@ impl Revlog {
         repo: &Repo,
         index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
-    ) -> Result<Self, RevlogError> {
+    ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
         let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
 
         let version = get_version(&index_mmap);
         if version != 1 {
             // A proper new version should have had a repo/store requirement.
-            return Err(RevlogError::corrupted());
+            return Err(HgError::corrupted("corrupted revlog"));
         }
 
         let index = Index::new(Box::new(index_mmap))?;

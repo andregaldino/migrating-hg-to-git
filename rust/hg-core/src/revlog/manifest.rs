@@ -1,3 +1,4 @@
+use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
@@ -12,7 +13,7 @@ pub struct Manifestlog {
 
 impl Manifestlog {
     /// Open the `manifest` of a repository given by its root.
-    pub fn open(repo: &Repo) -> Result<Self, RevlogError> {
+    pub fn open(repo: &Repo) -> Result<Self, HgError> {
         let revlog = Revlog::open(repo, "00manifest.i", None)?;
         Ok(Self { revlog })
     }
