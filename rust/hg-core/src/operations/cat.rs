@@ -40,20 +40,16 @@ pub fn cat<'a>(
     files: &'a [HgPathBuf],
 ) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let changelog = repo.changelog()?;
-    let manifest = repo.manifestlog()?;
-    let changelog_entry = changelog.get_rev(rev)?;
-    let node = *changelog
+    let manifest = repo.manifest(rev)?;
+    let node = *repo
+        .changelog()?
         .node_from_rev(rev)
-        .expect("should succeed when changelog.get_rev did");
-    let manifest_node =
-        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
-    let manifest_entry = manifest.get_node(manifest_node.into())?;
+        .expect("should succeed when repo.manifest did");
     let mut bytes = vec![];
     let mut matched = vec![false; files.len()];
     let mut found_any = false;
 
-    for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
+    for (manifest_file, node_bytes) in manifest.files_with_nodes() {
         for (cat_file, is_matched) in files.iter().zip(&mut matched) {
             if cat_file.as_bytes() == manifest_file.as_bytes() {
                 *is_matched = true;

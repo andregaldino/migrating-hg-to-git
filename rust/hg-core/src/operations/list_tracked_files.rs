@@ -10,7 +10,6 @@ use crate::dirstate_tree::on_disk::{for_each_tracked_path, read_docket};
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::manifest::Manifest;
-use crate::revlog::node::Node;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::hg_path::HgPath;
 use crate::DirstateError;
@@ -71,13 +70,7 @@ pub fn list_rev_tracked_files(
     revset: &str,
 ) -> Result<FilesForRev, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let changelog = repo.changelog()?;
-    let manifest = repo.manifestlog()?;
-    let changelog_entry = changelog.get_rev(rev)?;
-    let manifest_node =
-        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
-    let manifest_entry = manifest.get_node(manifest_node.into())?;
-    Ok(FilesForRev(manifest_entry))
+    Ok(FilesForRev(repo.manifest(rev)?))
 }
 
 pub struct FilesForRev(Manifest);

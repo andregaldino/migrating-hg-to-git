@@ -5,14 +5,14 @@ use crate::dirstate_tree::dirstate_map::DirstateMap;
 use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgError;
 use crate::errors::HgResultExt;
-use crate::exit_codes;
-use crate::manifest::Manifestlog;
+use crate::manifest::{Manifest, Manifestlog};
 use crate::requirements;
 use crate::revlog::revlog::RevlogError;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
-use crate::DirstateError;
+use crate::{exit_codes, Node};
+use crate::{DirstateError, Revision};
 use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -332,6 +332,19 @@ impl Repo {
 
     pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, RevlogError> {
         self.manifestlog.get_mut_or_init(self)
+    }
+
+    /// Returns the manifest of the given revision
+    pub fn manifest(
+        &self,
+        revision: Revision,
+    ) -> Result<Manifest, RevlogError> {
+        let changelog = self.changelog()?;
+        let manifest = self.manifestlog()?;
+        let changelog_entry = changelog.get_rev(revision)?;
+        let manifest_node =
+            Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
+        manifest.get_node(manifest_node.into())
     }
 }
 
