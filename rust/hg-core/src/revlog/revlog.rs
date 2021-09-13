@@ -18,6 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
+use crate::NULL_REVISION;
 
 #[derive(derive_more::From)]
 pub enum RevlogError {
@@ -124,6 +125,10 @@ impl Revlog {
         &self,
         node: NodePrefix,
     ) -> Result<Revision, RevlogError> {
+        if node.is_prefix_of(&NULL_NODE) {
+            return Ok(NULL_REVISION);
+        }
+
         if let Some(nodemap) = &self.nodemap {
             return nodemap
                 .find_bin(&self.index, node)?

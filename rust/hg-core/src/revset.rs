@@ -45,8 +45,14 @@ pub fn resolve_rev_number_or_hex_prefix(
     input: &str,
     revlog: &Revlog,
 ) -> Result<Revision, RevlogError> {
+    // The Python equivalent of this is part of `revsymbol` in
+    // `mercurial/scmutil.py`
+
     if let Ok(integer) = input.parse::<i32>() {
-        if integer >= 0 && revlog.has_rev(integer) {
+        if integer.to_string() == input
+            && integer >= 0
+            && revlog.has_rev(integer)
+        {
             return Ok(integer);
         }
     }
