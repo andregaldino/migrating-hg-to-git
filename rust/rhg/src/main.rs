@@ -98,6 +98,15 @@ fn main_with_result(
         config,
         repo,
     };
+
+    if let Ok(repo) = repo {
+        // We don't support subrepos, fallback if the subrepos file is present
+        if repo.working_directory_vfs().join(".hgsub").exists() {
+            let msg = "subrepos (.hgsub is present)";
+            return Err(CommandError::unsupported(msg));
+        }
+    }
+
     let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
     blackbox.log_command_start();
     let result = run(&invocation);

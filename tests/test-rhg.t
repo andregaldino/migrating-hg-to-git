@@ -370,3 +370,12 @@ The blackbox extension is supported
   $ cat .hg/blackbox.log.1
   ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files (glob)
 
+Subrepos are not supported
+
+  $ touch .hgsub
+  $ $NO_FALLBACK rhg files
+  unsupported feature: subrepos (.hgsub is present)
+  [252]
+  $ rhg files
+  a
+  $ rm .hgsub
