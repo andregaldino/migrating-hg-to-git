@@ -18,7 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
-use crate::NULL_REVISION;
+use crate::{Node, NULL_REVISION};
 
 #[derive(derive_more::From)]
 pub enum RevlogError {
@@ -51,7 +51,7 @@ pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.
     /// When index and data are interleaved: bytes of the revlog index and
     /// data.
-    pub(crate) index: Index,
+    index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
     /// When present on disk: the persistent nodemap for this revlog
@@ -117,6 +117,11 @@ impl Revlog {
     /// Returns `true` if the `Revlog` has zero `entries`.
     pub fn is_empty(&self) -> bool {
         self.index.is_empty()
+    }
+
+    /// Returns the node ID for the given revision number, if it exists in this revlog
+    pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        Some(self.index.get_entry(rev)?.hash())
     }
 
     /// Return the full data associated to a node.

@@ -36,7 +36,7 @@ impl Changelog {
     }
 
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
-        Some(self.revlog.index.get_entry(rev)?.hash())
+        self.revlog.node_from_rev(rev)
     }
 }
 
