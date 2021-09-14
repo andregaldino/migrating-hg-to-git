@@ -18,14 +18,31 @@ impl Manifestlog {
         Ok(Self { revlog })
     }
 
-    /// Return the `ManifestEntry` of a given node id.
-    pub fn get_node(&self, node: NodePrefix) -> Result<Manifest, RevlogError> {
+    /// Return the `Manifest` for the given node ID.
+    ///
+    /// Note: this is a node ID in the manifestlog, typically found through
+    /// `ChangelogEntry::manifest_node`. It is *not* the node ID of any
+    /// changeset.
+    ///
+    /// See also `Repo::manifest_for_node`
+    pub fn data_for_node(
+        &self,
+        node: NodePrefix,
+    ) -> Result<Manifest, RevlogError> {
         let rev = self.revlog.rev_from_node(node)?;
-        self.get_rev(rev)
+        self.data_for_rev(rev)
     }
 
-    /// Return the `ManifestEntry` of a given node revision.
-    pub fn get_rev(&self, rev: Revision) -> Result<Manifest, RevlogError> {
+    /// Return the `Manifest` of a given revision number.
+    ///
+    /// Note: this is a revision number in the manifestlog, *not* of any
+    /// changeset.
+    ///
+    /// See also `Repo::manifest_for_rev`
+    pub fn data_for_rev(
+        &self,
+        rev: Revision,
+    ) -> Result<Manifest, RevlogError> {
         let bytes = self.revlog.get_rev_data(rev)?;
         Ok(Manifest { bytes })
     }

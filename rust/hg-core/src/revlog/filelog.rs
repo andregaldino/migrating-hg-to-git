@@ -26,17 +26,17 @@ impl Filelog {
 
     /// The given node ID is that of the file as found in a manifest, not of a
     /// changeset.
-    pub fn get_node(
+    pub fn data_for_node(
         &self,
         file_node: impl Into<NodePrefix>,
     ) -> Result<FilelogEntry, RevlogError> {
         let file_rev = self.revlog.rev_from_node(file_node.into())?;
-        self.get_rev(file_rev)
+        self.data_for_rev(file_rev)
     }
 
     /// The given revision is that of the file as found in a manifest, not of a
     /// changeset.
-    pub fn get_rev(
+    pub fn data_for_rev(
         &self,
         file_rev: Revision,
     ) -> Result<FilelogEntry, RevlogError> {

@@ -336,26 +336,29 @@ impl Repo {
         self.manifestlog.get_mut_or_init(self)
     }
 
-    /// Returns the manifest of the given node ID
+    /// Returns the manifest of the *changeset* with the given node ID
     pub fn manifest_for_node(
         &self,
         node: impl Into<NodePrefix>,
     ) -> Result<Manifest, RevlogError> {
-        self.manifestlog()?.get_node(
+        self.manifestlog()?.data_for_node(
             self.changelog()?
-                .get_node(node.into())?
+                .data_for_node(node.into())?
                 .manifest_node()?
                 .into(),
         )
     }
 
-    /// Returns the manifest of the given revision
+    /// Returns the manifest of the *changeset* with the given revision number
     pub fn manifest_for_rev(
         &self,
         revision: Revision,
     ) -> Result<Manifest, RevlogError> {
-        self.manifestlog()?.get_node(
-            self.changelog()?.get_rev(revision)?.manifest_node()?.into(),
+        self.manifestlog()?.data_for_node(
+            self.changelog()?
+                .data_for_rev(revision)?
+                .manifest_node()?
+                .into(),
         )
     }
 

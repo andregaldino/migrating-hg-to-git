@@ -17,17 +17,17 @@ impl Changelog {
         Ok(Self { revlog })
     }
 
-    /// Return the `ChangelogEntry` a given node id.
-    pub fn get_node(
+    /// Return the `ChangelogEntry` for the given node ID.
+    pub fn data_for_node(
         &self,
         node: NodePrefix,
     ) -> Result<ChangelogEntry, RevlogError> {
         let rev = self.revlog.rev_from_node(node)?;
-        self.get_rev(rev)
+        self.data_for_rev(rev)
     }
 
-    /// Return the `ChangelogEntry` of a given node revision.
-    pub fn get_rev(
+    /// Return the `ChangelogEntry` of the given revision number.
+    pub fn data_for_rev(
         &self,
         rev: Revision,
     ) -> Result<ChangelogEntry, RevlogError> {

@@ -119,12 +119,14 @@ impl Revlog {
         self.index.is_empty()
     }
 
-    /// Returns the node ID for the given revision number, if it exists in this revlog
+    /// Returns the node ID for the given revision number, if it exists in this
+    /// revlog
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
         Some(self.index.get_entry(rev)?.hash())
     }
 
-    /// Return the revision number for the given node ID, if it exists in this revlog
+    /// Return the revision number for the given node ID, if it exists in this
+    /// revlog
     #[timed]
     pub fn rev_from_node(
         &self,

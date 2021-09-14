@@ -270,7 +270,7 @@ fn cat_file_is_modified(
         .find_file(hg_path)?
         .expect("ambgious file not in p1");
     let filelog = repo.filelog(hg_path)?;
-    let filelog_entry = filelog.get_node(file_node).map_err(|_| {
+    let filelog_entry = filelog.data_for_node(file_node).map_err(|_| {
         HgError::corrupted("filelog missing node from manifest")
     })?;
     let contents_in_p1 = filelog_entry.data()?;

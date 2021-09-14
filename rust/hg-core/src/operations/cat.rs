@@ -50,7 +50,7 @@ pub fn cat<'a>(
                 found_any = true;
                 let file_log = repo.filelog(manifest_file)?;
                 let file_node = Node::from_hex_for_repo(node_bytes)?;
-                let entry = file_log.get_node(file_node)?;
+                let entry = file_log.data_for_node(file_node)?;
                 bytes.extend(entry.data()?)
             }
         }
