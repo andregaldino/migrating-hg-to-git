@@ -61,7 +61,7 @@ pub fn resolve_rev_number_or_hex_prefix(
         {
             return Err(RevlogError::WDirUnsupported);
         }
-        return revlog.get_node_rev(prefix);
+        return revlog.rev_from_node(prefix);
     }
     Err(RevlogError::InvalidRevision)
 }

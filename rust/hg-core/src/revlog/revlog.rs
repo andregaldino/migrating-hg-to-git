@@ -124,9 +124,9 @@ impl Revlog {
         Some(self.index.get_entry(rev)?.hash())
     }
 
-    /// Return the full data associated to a node.
+    /// Return the revision number for the given node ID, if it exists in this revlog
     #[timed]
-    pub fn get_node_rev(
+    pub fn rev_from_node(
         &self,
         node: NodePrefix,
     ) -> Result<Revision, RevlogError> {

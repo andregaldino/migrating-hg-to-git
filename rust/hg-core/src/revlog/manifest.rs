@@ -20,7 +20,7 @@ impl Manifestlog {
 
     /// Return the `ManifestEntry` of a given node id.
     pub fn get_node(&self, node: NodePrefix) -> Result<Manifest, RevlogError> {
-        let rev = self.revlog.get_node_rev(node)?;
+        let rev = self.revlog.rev_from_node(node)?;
         self.get_rev(rev)
     }
 

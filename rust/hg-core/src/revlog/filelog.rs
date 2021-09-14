@@ -30,7 +30,7 @@ impl Filelog {
         &self,
         file_node: impl Into<NodePrefix>,
     ) -> Result<FilelogEntry, RevlogError> {
-        let file_rev = self.revlog.get_node_rev(file_node.into())?;
+        let file_rev = self.revlog.rev_from_node(file_node.into())?;
         self.get_rev(file_rev)
     }
 

@@ -22,7 +22,7 @@ impl Changelog {
         &self,
         node: NodePrefix,
     ) -> Result<ChangelogEntry, RevlogError> {
-        let rev = self.revlog.get_node_rev(node)?;
+        let rev = self.revlog.rev_from_node(node)?;
         self.get_rev(rev)
     }
 
