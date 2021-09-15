@@ -46,8 +46,14 @@ class dirstatemap(object):
     - the state map maps filenames to tuples of (state, mode, size, mtime),
       where state is a single character representing 'normal', 'added',
       'removed', or 'merged'. It is read by treating the dirstate as a
-      dict.  File state is updated by calling the `addfile`, `removefile` and
-      `dropfile` methods.
+      dict.  File state is updated by calling various methods (see each
+      documentation for details):
+
+      - `reset_state`,
+      - `set_tracked`
+      - `set_untracked`
+      - `set_clean`
+      - `set_possibly_dirty`
 
     - `copymap` maps destination filenames to their source filename.
 
