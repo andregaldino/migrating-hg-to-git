@@ -180,8 +180,8 @@ class dirstatemap(object):
     def reset_state(
         self,
         filename,
-        wc_tracked,
-        p1_tracked,
+        wc_tracked=False,
+        p1_tracked=False,
         p2_tracked=False,
         merged=False,
         clean_p1=False,
@@ -206,7 +206,10 @@ class dirstatemap(object):
         self.copymap.pop(filename, None)
 
         if not (p1_tracked or p2_tracked or wc_tracked):
-            self.dropfile(filename)
+            old_entry = self._map.pop(filename, None)
+            self._dirs_decr(filename, old_entry=old_entry)
+            self.nonnormalset.discard(filename)
+            self.copymap.pop(filename, None)
             return
         elif merged:
             # XXX might be merged and removed ?
@@ -576,8 +579,8 @@ if rustmod is not None:
         def reset_state(
             self,
             filename,
-            wc_tracked,
-            p1_tracked,
+            wc_tracked=False,
+            p1_tracked=False,
             p2_tracked=False,
             merged=False,
             clean_p1=False,
