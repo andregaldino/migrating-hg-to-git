@@ -734,7 +734,10 @@ class dirstate(object):
                 # (see `merged_removed` and `from_p2_removed`)
                 if entry.merged_removed or entry.from_p2_removed:
                     source = self._map.copymap.get(f)
-                    self._addpath(f, from_p2=True)
+                    if entry.merged_removed:
+                        self._addpath(f, merged=True)
+                    else:
+                        self._addpath(f, from_p2=True)
                     self._map.copymap.pop(f, None)
                     if source is not None:
                         self.copy(source, f)

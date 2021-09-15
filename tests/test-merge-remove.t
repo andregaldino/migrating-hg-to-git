@@ -55,8 +55,8 @@ Re-adding foo1 and bar:
   adding foo1
 
   $ hg debugstate --no-dates
-  n   0         -2 unset               bar
-  n   0         -2 unset               foo1
+  m   0         -2 unset               bar
+  m   0         -2 unset               foo1
   copy: foo -> foo1
 
   $ hg st -qC
@@ -74,8 +74,8 @@ Reverting foo1 and bar:
   reverting foo1
 
   $ hg debugstate --no-dates
-  n   0         -2 unset               bar
-  n   0         -2 unset               foo1
+  m   0         -2 unset               bar
+  m   0         -2 unset               foo1
   copy: foo -> foo1
 
   $ hg st -qC
