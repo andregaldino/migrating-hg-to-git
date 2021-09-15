@@ -409,7 +409,13 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self._add(f)
+                    self._check_new_tracked_filename(f)
+                    self._updatedfiles.add(f)
+                    self._map.reset_state(
+                        f,
+                        p1_tracked=False,
+                        wc_tracked=True,
+                    )
         return copies
 
     def setbranch(self, branch):
