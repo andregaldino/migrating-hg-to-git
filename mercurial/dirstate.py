@@ -387,10 +387,8 @@ class dirstate(object):
             self._origpl = self._pl
         self._map.setparents(p1, p2)
         copies = {}
-        if (
-            oldp2 != self._nodeconstants.nullid
-            and p2 == self._nodeconstants.nullid
-        ):
+        nullid = self._nodeconstants.nullid
+        if oldp2 != nullid and p2 == nullid:
             candidatefiles = self._map.non_normal_or_other_parent_paths()
 
             for f in candidatefiles:
