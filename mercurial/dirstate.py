@@ -667,33 +667,6 @@ class dirstate(object):
             # modifications that happen within the same timeslot.
             self._lastnormaltime = parentfiledata[2]
 
-    def _addpath(
-        self,
-        f,
-        mode=0,
-        size=None,
-        mtime=None,
-        added=False,
-        merged=False,
-        from_p2=False,
-        possibly_dirty=False,
-    ):
-        entry = self._map.get(f)
-        if added or entry is not None and not entry.tracked:
-            self._check_new_tracked_filename(f)
-        self._dirty = True
-        self._updatedfiles.add(f)
-        self._map.addfile(
-            f,
-            mode=mode,
-            size=size,
-            mtime=mtime,
-            added=added,
-            merged=merged,
-            from_p2=from_p2,
-            possibly_dirty=possibly_dirty,
-        )
-
     def _check_new_tracked_filename(self, filename):
         scmutil.checkfilename(filename)
         if self._map.hastrackeddir(filename):
