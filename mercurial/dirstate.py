@@ -401,7 +401,12 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self._normallookup(f)
+                    self._map.reset_state(
+                        f,
+                        wc_tracked=True,
+                        p1_tracked=True,
+                        possibly_dirty=True,
+                    )
                 # Also fix up otherparent markers
                 elif s.from_p2:
                     source = self._map.copymap.get(f)
