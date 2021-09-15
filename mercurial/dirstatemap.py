@@ -320,17 +320,6 @@ class dirstatemap(object):
                 entry.set_untracked()
             return True
 
-    def dropfile(self, f):
-        """
-        Remove a file from the dirstate.  Returns True if the file was
-        previously recorded.
-        """
-        old_entry = self._map.pop(f, None)
-        self._dirs_decr(f, old_entry=old_entry)
-        self.nonnormalset.discard(f)
-        self.copymap.pop(f, None)
-        return old_entry is not None
-
     def clearambiguoustimes(self, files, now):
         for f in files:
             e = self.get(f)
