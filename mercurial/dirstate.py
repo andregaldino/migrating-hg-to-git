@@ -556,7 +556,8 @@ class dirstate(object):
             possibly_dirty = True
         elif not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
-            if self._map.dropfile(filename):
+            if self._map.get(filename) is not None:
+                self._map.reset_state(filename)
                 self._dirty = True
                 self._updatedfiles.add(filename)
         elif (not p1_tracked) and wc_tracked:
