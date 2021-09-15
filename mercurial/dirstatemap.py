@@ -177,51 +177,6 @@ class dirstatemap(object):
         self.copymap.pop(filename, None)
         self.nonnormalset.discard(filename)
 
-    def addfile(
-        self,
-        f,
-        mode=0,
-        size=None,
-        mtime=None,
-        added=False,
-        merged=False,
-        from_p2=False,
-        possibly_dirty=False,
-    ):
-        """Add a tracked file to the dirstate."""
-        if added:
-            assert not merged
-            assert not possibly_dirty
-            assert not from_p2
-            new_entry = DirstateItem.new_added()
-            self.copymap.pop(f, None)
-        elif merged:
-            assert not possibly_dirty
-            assert not from_p2
-            new_entry = DirstateItem.new_merged()
-        elif from_p2:
-            assert not possibly_dirty
-            new_entry = DirstateItem.new_from_p2()
-        elif possibly_dirty:
-            new_entry = DirstateItem.new_possibly_dirty()
-        else:
-            assert size is not None
-            assert mtime is not None
-            size = size & rangemask
-            mtime = mtime & rangemask
-            new_entry = DirstateItem.new_normal(mode, size, mtime)
-        old_entry = self.get(f)
-        self._dirs_incr(f, old_entry)
-        self._map[f] = new_entry
-        if new_entry.dm_nonnormal:
-            self.nonnormalset.add(f)
-        else:
-            self.nonnormalset.discard(f)
-        if new_entry.dm_otherparent:
-            self.otherparentset.add(f)
-        else:
-            self.otherparentset.discard(f)
-
     def reset_state(
         self,
         filename,
