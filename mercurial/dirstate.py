@@ -718,31 +718,6 @@ class dirstate(object):
         mtime = s[stat.ST_MTIME]
         return (mode, size, mtime)
 
-    def _normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.in_merge:
-            # if there is a merge going on and the file was either
-            # "merged" or coming from other parent (-2) before
-            # being removed, restore that state.
-            entry = self._map.get(f)
-            if entry is not None:
-                # XXX this should probably be dealt with a a lower level
-                # (see `merged_removed` and `from_p2_removed`)
-                if entry.merged_removed or entry.from_p2_removed:
-                    source = self._map.copymap.get(f)
-                    if entry.merged_removed:
-                        self._addpath(f, merged=True)
-                    else:
-                        self._addpath(f, from_p2=True)
-                    self._map.copymap.pop(f, None)
-                    if source is not None:
-                        self.copy(source, f)
-                    return
-                elif entry.merged or entry.from_p2:
-                    return
-        self._addpath(f, possibly_dirty=True)
-        self._map.copymap.pop(f, None)
-
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
             exists = os.path.lexists(os.path.join(self._root, path))
