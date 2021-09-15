@@ -188,6 +188,7 @@ class dirstatemap(object):
             assert not possibly_dirty
             assert not from_p2
             new_entry = DirstateItem.new_added()
+            self.copymap.pop(f, None)
         elif merged:
             assert not possibly_dirty
             assert not from_p2
@@ -567,7 +568,7 @@ if rustmod is not None:
             from_p2=False,
             possibly_dirty=False,
         ):
-            return self._rustmap.addfile(
+            ret = self._rustmap.addfile(
                 f,
                 mode,
                 size,
@@ -577,6 +578,9 @@ if rustmod is not None:
                 from_p2,
                 possibly_dirty,
             )
+            if added:
+                self.copymap.pop(f, None)
+            return ret
 
         def reset_state(
             self,
