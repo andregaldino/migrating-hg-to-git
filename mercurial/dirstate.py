@@ -674,7 +674,7 @@ class dirstate(object):
         possibly_dirty=False,
     ):
         entry = self._map.get(f)
-        if added or entry is not None and entry.removed:
+        if added or entry is not None and not entry.tracked:
             self._check_new_tracked_filename(f)
         self._dirty = True
         self._updatedfiles.add(f)
