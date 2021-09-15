@@ -471,9 +471,12 @@ class dirstate(object):
 
         return True the file was previously untracked, False otherwise.
         """
+        self._dirty = True
+        self._updatedfiles.add(filename)
         entry = self._map.get(filename)
         if entry is None:
-            self._add(filename)
+            self._check_new_tracked_filename(filename)
+            self._map.addfile(filename, added=True)
             return True
         elif not entry.tracked:
             self._normallookup(filename)
