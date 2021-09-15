@@ -240,6 +240,18 @@ class DirstateItem(object):
         self._size = size
         self._mtime = mtime
 
+    def set_tracked(self):
+        """mark a file as tracked in the working copy
+
+        This will ultimately be called by command like `hg add`.
+        """
+        self._wc_tracked = True
+        # `set_tracked` is replacing various `normallookup` call. So we set
+        # "possibly dirty" to stay on the safe side.
+        #
+        # Consider dropping this in the future in favor of something less broad.
+        self._possibly_dirty = True
+
     def set_untracked(self):
         """mark a file as untracked in the working copy
 

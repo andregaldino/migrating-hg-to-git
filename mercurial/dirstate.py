@@ -478,18 +478,9 @@ class dirstate(object):
         self._dirty = True
         self._updatedfiles.add(filename)
         entry = self._map.get(filename)
-        if entry is None:
+        if entry is None or not entry.tracked:
             self._check_new_tracked_filename(filename)
-            self._map.addfile(filename, added=True)
-            return True
-        elif not entry.tracked:
-            self._normallookup(filename)
-            return True
-        # XXX This is probably overkill for more case, but we need this to
-        # fully replace the `normallookup` call with `set_tracked` one.
-        # Consider smoothing this in the future.
-        self.set_possibly_dirty(filename)
-        return False
+        return self._map.set_tracked(filename)
 
     @requires_no_parents_change
     def set_untracked(self, filename):

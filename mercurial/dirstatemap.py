@@ -307,6 +307,36 @@ class dirstatemap(object):
             self.otherparentset.discard(filename)
         self._map[filename] = entry
 
+    def set_tracked(self, filename):
+        new = False
+        entry = self.get(filename)
+        if entry is None:
+            self._dirs_incr(filename)
+            entry = DirstateItem(
+                p1_tracked=False,
+                p2_tracked=False,
+                wc_tracked=True,
+                merged=False,
+                clean_p1=False,
+                clean_p2=False,
+                possibly_dirty=False,
+                parentfiledata=None,
+            )
+            self._map[filename] = entry
+            if entry.dm_nonnormal:
+                self.nonnormalset.add(filename)
+            new = True
+        elif not entry.tracked:
+            self._dirs_incr(filename, entry)
+            entry.set_tracked()
+            new = True
+        else:
+            # XXX This is probably overkill for more case, but we need this to
+            # fully replace the `normallookup` call with `set_tracked` one.
+            # Consider smoothing this in the future.
+            self.set_possibly_dirty(filename)
+        return new
+
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
         entry = self.get(f)
@@ -662,6 +692,23 @@ if rustmod is not None:
                 self.nonnormalset.discard(filename)
             else:
                 assert False, 'unreachable'
+
+        def set_tracked(self, filename):
+            new = False
+            entry = self.get(filename)
+            if entry is None:
+                self.addfile(filename, added=True)
+                new = True
+            elif not entry.tracked:
+                entry.set_tracked()
+                self._rustmap.set_v1(filename, entry)
+                new = True
+            else:
+                # XXX This is probably overkill for more case, but we need this to
+                # fully replace the `normallookup` call with `set_tracked` one.
+                # Consider smoothing this in the future.
+                self.set_possibly_dirty(filename)
+            return new
 
         def set_untracked(self, f):
             """Mark a file as no longer tracked in the dirstate map"""

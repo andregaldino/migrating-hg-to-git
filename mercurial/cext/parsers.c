@@ -507,6 +507,17 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 	Py_RETURN_NONE;
 }
 
+static PyObject *dirstate_item_set_tracked(dirstateItemObject *self)
+{
+	self->flags |= dirstate_flag_wc_tracked;
+	self->flags |= dirstate_flag_possibly_dirty;
+	/* size = None on the python size turn into size = NON_NORMAL when
+	 * accessed. So the next line is currently required, but a some future
+	 * clean up would be welcome. */
+	self->size = dirstate_v1_nonnormal;
+	Py_RETURN_NONE;
+}
+
 static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 {
 	self->flags &= ~dirstate_flag_wc_tracked;
@@ -548,6 +559,8 @@ static PyMethodDef dirstate_item_methods[] = {
      METH_NOARGS, "mark a file as \"possibly dirty\""},
     {"set_clean", (PyCFunction)dirstate_item_set_clean, METH_VARARGS,
      "mark a file as \"clean\""},
+    {"set_tracked", (PyCFunction)dirstate_item_set_tracked, METH_NOARGS,
+     "mark a file as \"tracked\""},
     {"set_untracked", (PyCFunction)dirstate_item_set_untracked, METH_NOARGS,
      "mark a file as \"untracked\""},
     {NULL} /* Sentinel */
