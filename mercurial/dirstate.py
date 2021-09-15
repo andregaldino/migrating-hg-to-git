@@ -560,7 +560,9 @@ class dirstate(object):
             possibly_dirty = True
         elif not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
-            self._drop(filename)
+            if self._map.dropfile(filename):
+                self._dirty = True
+                self._updatedfiles.add(filename)
         elif (not p1_tracked) and wc_tracked:
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
@@ -742,12 +744,6 @@ class dirstate(object):
         self._addpath(f, possibly_dirty=True)
         self._map.copymap.pop(f, None)
 
-    def _drop(self, filename):
-        """internal function to drop a file from the dirstate"""
-        if self._map.dropfile(filename):
-            self._dirty = True
-            self._updatedfiles.add(filename)
-
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
             exists = os.path.lexists(os.path.join(self._root, path))
@@ -860,7 +856,8 @@ class dirstate(object):
         for f in to_lookup:
             self._normallookup(f)
         for f in to_drop:
-            self._drop(f)
+            if self._map.dropfile(f):
+                self._updatedfiles.add(f)
 
         self._dirty = True
 
