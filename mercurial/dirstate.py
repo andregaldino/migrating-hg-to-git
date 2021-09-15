@@ -744,10 +744,6 @@ class dirstate(object):
         self._addpath(f, possibly_dirty=True)
         self._map.copymap.pop(f, None)
 
-    def _add(self, filename):
-        """internal function to mark a file as added"""
-        self._addpath(filename, added=True)
-
     def _drop(self, filename):
         """internal function to drop a file from the dirstate"""
         if self._map.dropfile(filename):
