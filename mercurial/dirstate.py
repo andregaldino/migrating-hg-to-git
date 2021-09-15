@@ -853,7 +853,17 @@ class dirstate(object):
         self._map.setparents(parent, self._nodeconstants.nullid)
 
         for f in to_lookup:
-            self._normallookup(f)
+
+            if self.in_merge:
+                self.set_tracked(f)
+            else:
+                self._map.reset_state(
+                    f,
+                    wc_tracked=True,
+                    p1_tracked=True,
+                    possibly_dirty=True,
+                )
+            self._updatedfiles.add(f)
         for f in to_drop:
             if self._map.dropfile(f):
                 self._updatedfiles.add(f)
