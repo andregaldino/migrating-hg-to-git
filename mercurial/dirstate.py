@@ -814,8 +814,8 @@ class dirstate(object):
                 )
             self._updatedfiles.add(f)
         for f in to_drop:
-            if self._map.dropfile(f):
-                self._updatedfiles.add(f)
+            self._map.reset_state(f)
+            self._updatedfiles.add(f)
 
         self._dirty = True
 
