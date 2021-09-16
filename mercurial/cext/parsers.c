@@ -488,9 +488,8 @@ static PyObject *dirstate_item_new_normal(PyTypeObject *subtype, PyObject *args)
    to make sure it is correct. */
 static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 {
-	if (self->flags |= dirstate_flag_possibly_dirty) {
-		Py_RETURN_NONE;
-	}
+	self->flags |= dirstate_flag_possibly_dirty;
+	Py_RETURN_NONE;
 }
 
 /* See docstring of the python implementation for details */
