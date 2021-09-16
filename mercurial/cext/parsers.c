@@ -144,9 +144,10 @@ static inline bool dirstate_item_c_tracked(dirstateItemObject *self)
 
 static inline bool dirstate_item_c_added(dirstateItemObject *self)
 {
-	char mask = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	             dirstate_flag_p2_tracked);
-	char target = dirstate_flag_wc_tracked;
+	unsigned char mask =
+	    (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
+	     dirstate_flag_p2_tracked);
+	unsigned char target = dirstate_flag_wc_tracked;
 	return (self->flags & mask) == target;
 }
 
