@@ -25,7 +25,7 @@
   >                 possibly_dirty=True,
   >             )
   >       else:
-  >         repo.dirstate._map.dropfile(file)
+  >         repo.dirstate._map.reset_state(file)
   >         repo.dirstate._dirty = True
   > 
   >     repo.dirstate.write(repo.currenttransaction())
