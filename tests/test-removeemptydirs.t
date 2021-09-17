@@ -1,5 +1,13 @@
 Tests for experimental.removeemptydirs
 
+  $ cat >> pwd.py << EOF
+  > import os
+  > try:
+  >     print(os.getcwd())
+  > except OSError:
+  >     print("<directory is no longer accessible>")
+  > EOF
+
   $ NO_RM=--config=experimental.removeemptydirs=0
   $ DO_RM=--config=experimental.removeemptydirs=1
   $ isdir() { if [ -d $1 ]; then echo yes; else echo no; fi }
@@ -132,8 +140,15 @@ Windows is not affected
   r1
   r2
   somedir
-  $ pwd
+#if windows
+  $ "$PYTHON" "$TESTTMP/pwd.py"
   $TESTTMP/hghistedit/somedir
+#else
+  $ echo ${PWD} # no-pwd-check
+  $TESTTMP/hghistedit/somedir
+  $ "$PYTHON" "$TESTTMP/pwd.py"
+  <directory is no longer accessible>
+#endif
   $ ls -1 $TESTTMP/hghistedit/somedir
   foo
   $ ls -1
@@ -142,6 +157,7 @@ Windows is not affected
 Get out of the doomed directory
 
   $ cd $TESTTMP/hghistedit
+  chdir: error retrieving current directory: getcwd: cannot access parent directories: $ENOENT$ (?)
   $ hg files --rev . | grep somedir/
   somedir/foo
 
