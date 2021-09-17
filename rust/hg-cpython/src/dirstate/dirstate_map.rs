@@ -135,12 +135,12 @@ py_class!(pub class DirstateMap |py| {
         let filename = HgPath::new(f.data(py));
         let state = item.getattr(py, "state")?.extract::<PyBytes>(py)?;
         let state = state.data(py)[0];
-        let entry = DirstateEntry {
-            state: state.try_into().expect("state is always valid"),
-            mtime: item.getattr(py, "mtime")?.extract(py)?,
-            size: item.getattr(py, "size")?.extract(py)?,
-            mode: item.getattr(py, "mode")?.extract(py)?,
-        };
+        let entry = DirstateEntry::from_v1_data(
+            state.try_into().expect("state is always valid"),
+            item.getattr(py, "mode")?.extract(py)?,
+            item.getattr(py, "size")?.extract(py)?,
+            item.getattr(py, "mtime")?.extract(py)?,
+        );
         self.inner(py).borrow_mut().set_v1(filename, entry);
         Ok(py.None())
     }
@@ -176,13 +176,7 @@ py_class!(pub class DirstateMap |py| {
         } else {
             mtime.extract(py)?
         };
-        let entry = DirstateEntry {
-            // XXX Arbitrary default value since the value is determined later
-            state: EntryState::Normal,
-            mode: mode,
-            size: size,
-            mtime: mtime,
-        };
+        let entry = DirstateEntry::new_for_add_file(mode, size, mtime);
         let added = added.extract::<PyBool>(py)?.is_true();
         let merged = merged.extract::<PyBool>(py)?.is_true();
         let from_p2 = from_p2.extract::<PyBool>(py)?.is_true();
@@ -422,7 +416,7 @@ py_class!(pub class DirstateMap |py| {
         let dict = PyDict::new(py);
         for item in self.inner(py).borrow_mut().iter() {
             let (path, entry) = item.map_err(|e| v2_error(py, e))?;
-            if entry.state != EntryState::Removed {
+            if entry.state() != EntryState::Removed {
                 let key = normalize_case(path);
                 let value = path;
                 dict.set_item(

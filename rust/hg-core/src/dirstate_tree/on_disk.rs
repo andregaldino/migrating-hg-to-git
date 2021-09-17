@@ -403,12 +403,15 @@ impl Node {
     }
 
     fn entry_with_given_state(&self, state: EntryState) -> DirstateEntry {
-        DirstateEntry {
+        // For now, the on-disk representation of DirstateEntry in dirstate-v2
+        // format is equivalent to that of dirstate-v1. When that changes, add
+        // a new constructor.
+        DirstateEntry::from_v1_data(
             state,
-            mode: self.data.mode.get(),
-            mtime: self.data.mtime.get(),
-            size: self.data.size.get(),
-        }
+            self.data.mode.get(),
+            self.data.size.get(),
+            self.data.mtime.get(),
+        )
     }
 
     pub(super) fn entry(
@@ -640,11 +643,11 @@ impl Writer<'_, '_> {
                 NodeRef::InMemory(path, node) => {
                     let (state, data) = match &node.data {
                         dirstate_map::NodeData::Entry(entry) => (
-                            entry.state.into(),
+                            entry.state().into(),
                             Entry {
-                                mode: entry.mode.into(),
-                                mtime: entry.mtime.into(),
-                                size: entry.size.into(),
+                                mode: entry.mode().into(),
+                                mtime: entry.mtime().into(),
+                                size: entry.size().into(),
                             },
                         ),
                         dirstate_map::NodeData::CachedDirectory { mtime } => {

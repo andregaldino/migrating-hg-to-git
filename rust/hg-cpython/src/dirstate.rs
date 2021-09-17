@@ -48,17 +48,17 @@ pub fn make_dirstate_item(
     py: Python,
     entry: &DirstateEntry,
 ) -> PyResult<PyObject> {
-    let &DirstateEntry {
-        state,
-        mode,
-        size,
-        mtime,
-    } = entry;
     // Explicitly go through u8 first, then cast to platform-specific `c_char`
     // because Into<u8> has a specific implementation while `as c_char` would
     // just do a naive enum cast.
-    let state_code: u8 = state.into();
-    make_dirstate_item_raw(py, state_code, mode, size, mtime)
+    let state_code: u8 = entry.state().into();
+    make_dirstate_item_raw(
+        py,
+        state_code,
+        entry.mode(),
+        entry.size(),
+        entry.mtime(),
+    )
 }
 
 pub fn make_dirstate_item_raw(

@@ -79,36 +79,40 @@ impl DirstateMap {
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        let mut entry = entry;
+        let state;
+        let size;
+        let mtime;
         if added {
-            assert!(!merged);
             assert!(!possibly_dirty);
             assert!(!from_p2);
-            entry.state = EntryState::Added;
-            entry.size = SIZE_NON_NORMAL;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Added;
+            size = SIZE_NON_NORMAL;
+            mtime = MTIME_UNSET;
         } else if merged {
             assert!(!possibly_dirty);
             assert!(!from_p2);
-            entry.state = EntryState::Merged;
-            entry.size = SIZE_FROM_OTHER_PARENT;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Merged;
+            size = SIZE_FROM_OTHER_PARENT;
+            mtime = MTIME_UNSET;
         } else if from_p2 {
             assert!(!possibly_dirty);
-            entry.state = EntryState::Normal;
-            entry.size = SIZE_FROM_OTHER_PARENT;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Normal;
+            size = SIZE_FROM_OTHER_PARENT;
+            mtime = MTIME_UNSET;
         } else if possibly_dirty {
-            entry.state = EntryState::Normal;
-            entry.size = SIZE_NON_NORMAL;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Normal;
+            size = SIZE_NON_NORMAL;
+            mtime = MTIME_UNSET;
         } else {
-            entry.state = EntryState::Normal;
-            entry.size = entry.size & V1_RANGEMASK;
-            entry.mtime = entry.mtime & V1_RANGEMASK;
+            state = EntryState::Normal;
+            size = entry.size() & V1_RANGEMASK;
+            mtime = entry.mtime() & V1_RANGEMASK;
         }
+        let mode = entry.mode();
+        let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
+
         let old_state = match self.get(filename) {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
         if old_state == EntryState::Unknown || old_state == EntryState::Removed
@@ -150,7 +154,7 @@ impl DirstateMap {
     ) -> Result<(), DirstateError> {
         let old_entry_opt = self.get(filename);
         let old_state = match old_entry_opt {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
         let mut size = 0;
@@ -161,10 +165,10 @@ impl DirstateMap {
             // would be nice.
             if let Some(old_entry) = old_entry_opt {
                 // backup the previous state
-                if old_entry.state == EntryState::Merged {
+                if old_entry.state() == EntryState::Merged {
                     size = SIZE_NON_NORMAL;
-                } else if old_entry.state == EntryState::Normal
-                    && old_entry.size == SIZE_FROM_OTHER_PARENT
+                } else if old_entry.state() == EntryState::Normal
+                    && old_entry.size() == SIZE_FROM_OTHER_PARENT
                 {
                     // other parent
                     size = SIZE_FROM_OTHER_PARENT;
@@ -189,15 +193,8 @@ impl DirstateMap {
             self.copy_map.remove(filename);
         }
 
-        self.state_map.insert(
-            filename.to_owned(),
-            DirstateEntry {
-                state: EntryState::Removed,
-                mode: 0,
-                size,
-                mtime: 0,
-            },
-        );
+        self.state_map
+            .insert(filename.to_owned(), DirstateEntry::new_removed(size));
         self.get_non_normal_other_parent_entries()
             .0
             .insert(filename.to_owned());
@@ -211,7 +208,7 @@ impl DirstateMap {
         filename: &HgPath,
     ) -> Result<bool, DirstateError> {
         let old_state = match self.get(filename) {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
         let exists = self.state_map.remove(filename).is_some();
@@ -428,12 +425,7 @@ mod tests {
 
         map.add_file(
             HgPath::new(b"meh"),
-            DirstateEntry {
-                state: EntryState::Normal,
-                mode: 1337,
-                mtime: 1337,
-                size: 1337,
-            },
+            DirstateEntry::from_v1_data(EntryState::Normal, 1337, 1337, 1337),
             false,
             false,
             false,
@@ -465,12 +457,7 @@ mod tests {
         .map(|(fname, (state, mode, size, mtime))| {
             (
                 HgPathBuf::from_bytes(fname.as_ref()),
-                DirstateEntry {
-                    state: *state,
-                    mode: *mode,
-                    size: *size,
-                    mtime: *mtime,
-                },
+                DirstateEntry::from_v1_data(*state, *mode, *size, *mtime),
             )
         })
         .collect();

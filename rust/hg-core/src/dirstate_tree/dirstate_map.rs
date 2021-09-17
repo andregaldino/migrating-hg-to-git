@@ -328,7 +328,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
         match self {
             NodeRef::InMemory(_path, node) => {
-                Ok(node.data.as_entry().map(|entry| entry.state))
+                Ok(node.data.as_entry().map(|entry| entry.state()))
             }
             NodeRef::OnDisk(node) => node.state(),
         }
@@ -445,7 +445,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let parents = parse_dirstate_entries(
             map.on_disk,
             |path, entry, copy_source| {
-                let tracked = entry.state.is_tracked();
+                let tracked = entry.state().is_tracked();
                 let node = Self::get_or_insert_node(
                     map.on_disk,
                     &mut map.unreachable_bytes,
@@ -598,7 +598,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
     ) -> Result<(), DirstateV2ParseError> {
         let had_entry = old_state != EntryState::Unknown;
         let tracked_count_increment =
-            match (old_state.is_tracked(), new_entry.state.is_tracked()) {
+            match (old_state.is_tracked(), new_entry.state().is_tracked()) {
                 (false, true) => 1,
                 (true, false) => -1,
                 _ => 0,
@@ -776,36 +776,40 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         from_p2: bool,
         possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        let mut entry = entry;
+        let state;
+        let size;
+        let mtime;
         if added {
             assert!(!possibly_dirty);
             assert!(!from_p2);
-            entry.state = EntryState::Added;
-            entry.size = SIZE_NON_NORMAL;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Added;
+            size = SIZE_NON_NORMAL;
+            mtime = MTIME_UNSET;
         } else if merged {
             assert!(!possibly_dirty);
             assert!(!from_p2);
-            entry.state = EntryState::Merged;
-            entry.size = SIZE_FROM_OTHER_PARENT;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Merged;
+            size = SIZE_FROM_OTHER_PARENT;
+            mtime = MTIME_UNSET;
         } else if from_p2 {
             assert!(!possibly_dirty);
-            entry.state = EntryState::Normal;
-            entry.size = SIZE_FROM_OTHER_PARENT;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Normal;
+            size = SIZE_FROM_OTHER_PARENT;
+            mtime = MTIME_UNSET;
         } else if possibly_dirty {
-            entry.state = EntryState::Normal;
-            entry.size = SIZE_NON_NORMAL;
-            entry.mtime = MTIME_UNSET;
+            state = EntryState::Normal;
+            size = SIZE_NON_NORMAL;
+            mtime = MTIME_UNSET;
         } else {
-            entry.state = EntryState::Normal;
-            entry.size = entry.size & V1_RANGEMASK;
-            entry.mtime = entry.mtime & V1_RANGEMASK;
+            state = EntryState::Normal;
+            size = entry.size() & V1_RANGEMASK;
+            mtime = entry.mtime() & V1_RANGEMASK;
         }
+        let mode = entry.mode();
+        let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
 
         let old_state = match self.get(filename)? {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
 
@@ -819,7 +823,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     ) -> Result<(), DirstateError> {
         let old_entry_opt = self.get(filename)?;
         let old_state = match old_entry_opt {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
         let mut size = 0;
@@ -830,10 +834,10 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             // would be nice.
             if let Some(old_entry) = old_entry_opt {
                 // backup the previous state
-                if old_entry.state == EntryState::Merged {
+                if old_entry.state() == EntryState::Merged {
                     size = SIZE_NON_NORMAL;
-                } else if old_entry.state == EntryState::Normal
-                    && old_entry.size == SIZE_FROM_OTHER_PARENT
+                } else if old_entry.state() == EntryState::Normal
+                    && old_entry.size() == SIZE_FROM_OTHER_PARENT
                 {
                     // other parent
                     size = SIZE_FROM_OTHER_PARENT;
@@ -843,18 +847,13 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         if size == 0 {
             self.copy_map_remove(filename)?;
         }
-        let entry = DirstateEntry {
-            state: EntryState::Removed,
-            mode: 0,
-            size,
-            mtime: 0,
-        };
+        let entry = DirstateEntry::new_removed(size);
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }
 
     fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
         let old_state = match self.get(filename)? {
-            Some(e) => e.state,
+            Some(e) => e.state(),
             None => EntryState::Unknown,
         };
         struct Dropped {
@@ -921,7 +920,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
                     was_tracked: node
                         .data
                         .as_entry()
-                        .map_or(false, |entry| entry.state.is_tracked()),
+                        .map_or(false, |entry| entry.state().is_tracked()),
                     had_entry,
                     had_copy_source: node.copy_source.take().is_some(),
                 };

@@ -506,11 +506,9 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let mode_changed =
             || self.options.check_exec && entry.mode_changed(fs_metadata);
-        let size_changed = entry.size != truncate_u64(fs_metadata.len());
-        if entry.size >= 0
-            && size_changed
-            && fs_metadata.file_type().is_symlink()
-        {
+        let size = entry.size();
+        let size_changed = size != truncate_u64(fs_metadata.len());
+        if size >= 0 && size_changed && fs_metadata.file_type().is_symlink() {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
             self.outcome
@@ -520,7 +518,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 .push(hg_path.detach_from_tree())
         } else if dirstate_node.has_copy_source()
             || entry.is_from_other_parent()
-            || (entry.size >= 0 && (size_changed || mode_changed()))
+            || (size >= 0 && (size_changed || mode_changed()))
         {
             self.outcome
                 .lock()
@@ -529,7 +527,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 .push(hg_path.detach_from_tree())
         } else {
             let mtime = mtime_seconds(fs_metadata);
-            if truncate_i64(mtime) != entry.mtime
+            if truncate_i64(mtime) != entry.mtime()
                 || mtime == self.options.last_normal_time
             {
                 self.outcome

@@ -157,22 +157,19 @@ fn dispatch_found(
     copy_map: &CopyMap,
     options: StatusOptions,
 ) -> Dispatch {
-    let DirstateEntry {
-        state,
-        mode,
-        mtime,
-        size,
-    } = entry;
-
-    let HgMetadata {
-        st_mode,
-        st_size,
-        st_mtime,
-        ..
-    } = metadata;
-
-    match state {
+    match entry.state() {
         EntryState::Normal => {
+            let mode = entry.mode();
+            let size = entry.size();
+            let mtime = entry.mtime();
+
+            let HgMetadata {
+                st_mode,
+                st_size,
+                st_mtime,
+                ..
+            } = metadata;
+
             let size_changed = mod_compare(size, st_size as i32);
             let mode_changed =
                 (mode ^ st_mode as i32) & 0o100 != 0o000 && options.check_exec;
@@ -473,7 +470,7 @@ where
                         if let Some(entry) = in_dmap {
                             return Some((
                                 Cow::Borrowed(normalized),
-                                dispatch_missing(entry.state),
+                                dispatch_missing(entry.state()),
                             ));
                         }
                     }
@@ -605,7 +602,10 @@ where
                 || self.matcher.matches(&filename)
             {
                 files_sender
-                    .send((filename.to_owned(), dispatch_missing(entry.state)))
+                    .send((
+                        filename.to_owned(),
+                        dispatch_missing(entry.state()),
+                    ))
                     .unwrap();
             }
         }
@@ -635,7 +635,7 @@ where
                     files_sender
                         .send((
                             directory.to_owned(),
-                            dispatch_missing(entry.state),
+                            dispatch_missing(entry.state()),
                         ))
                         .unwrap();
                 }
@@ -767,7 +767,7 @@ where
                         {
                             (
                                 Cow::Borrowed(filename),
-                                dispatch_missing(entry.state),
+                                dispatch_missing(entry.state()),
                             )
                         }
                         Ok(m) => (
@@ -791,7 +791,7 @@ where
                             // directory
                             (
                                 Cow::Borrowed(filename),
-                                dispatch_missing(entry.state),
+                                dispatch_missing(entry.state()),
                             )
                         }
                         Err(e) => {
@@ -863,7 +863,7 @@ where
                                 )
                             }
                             // File doesn't exist
-                            Err(_) => dispatch_missing(entry.state),
+                            Err(_) => dispatch_missing(entry.state()),
                         },
                     ))
                 } else {
@@ -871,7 +871,7 @@ where
                     // we, in this case, report as missing.
                     Some((
                         Cow::Owned(filename.to_owned()),
-                        dispatch_missing(entry.state),
+                        dispatch_missing(entry.state()),
                     ))
                 }
             },

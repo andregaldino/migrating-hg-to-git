@@ -15,10 +15,10 @@ pub enum EntryState {
 /// comes first.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct DirstateEntry {
-    pub state: EntryState,
-    pub mode: i32,
-    pub mtime: i32,
-    pub size: i32,
+    state: EntryState,
+    mode: i32,
+    size: i32,
+    mtime: i32,
 }
 
 pub const V1_RANGEMASK: i32 = 0x7FFFFFFF;
@@ -34,6 +34,71 @@ pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 pub const SIZE_NON_NORMAL: i32 = -1;
 
 impl DirstateEntry {
+    pub fn from_v1_data(
+        state: EntryState,
+        mode: i32,
+        size: i32,
+        mtime: i32,
+    ) -> Self {
+        Self {
+            state,
+            mode,
+            size,
+            mtime,
+        }
+    }
+
+    /// Creates a new entry in "removed" state.
+    ///
+    /// `size` is expected to be zero, `SIZE_NON_NORMAL`, or
+    /// `SIZE_FROM_OTHER_PARENT`
+    pub fn new_removed(size: i32) -> Self {
+        Self {
+            state: EntryState::Removed,
+            mode: 0,
+            size,
+            mtime: 0,
+        }
+    }
+
+    /// TODO: refactor `DirstateMap::add_file` to not take a `DirstateEntry`
+    /// parameter and remove this constructor
+    pub fn new_for_add_file(mode: i32, size: i32, mtime: i32) -> Self {
+        Self {
+            // XXX Arbitrary default value since the value is determined later
+            state: EntryState::Normal,
+            mode,
+            size,
+            mtime,
+        }
+    }
+
+    pub fn state(&self) -> EntryState {
+        self.state
+    }
+
+    pub fn mode(&self) -> i32 {
+        self.mode
+    }
+
+    pub fn size(&self) -> i32 {
+        self.size
+    }
+
+    pub fn mtime(&self) -> i32 {
+        self.mtime
+    }
+
+    /// Returns `(state, mode, size, mtime)` for the puprose of serialization
+    /// in the dirstate-v1 format.
+    ///
+    /// This includes marker values such as `mtime == -1`. In the future we may
+    /// want to not represent these cases that way in memory, but serialization
+    /// will need to keep the same format.
+    pub fn v1_data(&self) -> (u8, i32, i32, i32) {
+        (self.state.into(), self.mode, self.size, self.mtime)
+    }
+
     pub fn is_non_normal(&self) -> bool {
         self.state != EntryState::Normal || self.mtime == MTIME_UNSET
     }

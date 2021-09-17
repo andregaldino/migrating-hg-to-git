@@ -49,7 +49,7 @@ impl DirsMultiset {
             let filename = filename.as_ref();
             // This `if` is optimized out of the loop
             if only_tracked {
-                if entry.state != EntryState::Removed {
+                if entry.state() != EntryState::Removed {
                     multiset.add_path(filename)?;
                 }
             } else {
@@ -372,12 +372,7 @@ mod tests {
         let input_map = ["b/x", "a/c", "a/d/x"].iter().map(|f| {
             Ok((
                 HgPathBuf::from_bytes(f.as_bytes()),
-                DirstateEntry {
-                    state: EntryState::Normal,
-                    mode: 0,
-                    mtime: 0,
-                    size: 0,
-                },
+                DirstateEntry::from_v1_data(EntryState::Normal, 0, 0, 0),
             ))
         });
         let expected_inner = [("", 2), ("a", 2), ("b", 1), ("a/d", 1)]
@@ -404,12 +399,7 @@ mod tests {
         .map(|(f, state)| {
             Ok((
                 HgPathBuf::from_bytes(f.as_bytes()),
-                DirstateEntry {
-                    state: *state,
-                    mode: 0,
-                    mtime: 0,
-                    size: 0,
-                },
+                DirstateEntry::from_v1_data(*state, 0, 0, 0),
             ))
         });
 
