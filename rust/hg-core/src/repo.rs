@@ -290,7 +290,7 @@ impl Repo {
                 .mmap_open(docket.data_filename())
                 .io_not_found_as_none()?
             {
-                OwningDirstateMap::new_empty(MmapWrapper(data_mmap))
+                OwningDirstateMap::new_empty(data_mmap)
             } else {
                 OwningDirstateMap::new_empty(Vec::new())
             };
@@ -407,16 +407,3 @@ impl<T, E> LazyCell<T, E> {
         Ok(RefMut::map(borrowed, |option| option.as_mut().unwrap()))
     }
 }
-
-// TODO: remove this when https://github.com/RazrFalcon/memmap2-rs/pull/22 is on crates.io
-struct MmapWrapper(memmap2::Mmap);
-
-impl std::ops::Deref for MmapWrapper {
-    type Target = [u8];
-
-    fn deref(&self) -> &[u8] {
-        self.0.deref()
-    }
-}
-
-unsafe impl stable_deref_trait::StableDeref for MmapWrapper {}
