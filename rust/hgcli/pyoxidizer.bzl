@@ -58,6 +58,20 @@ if os.name == 'nt':
                 'site-packages',
             )
         )
+elif sys.platform == "darwin":
+    vi = sys.version_info
+
+    def joinuser(*args):
+        return os.path.expanduser(os.path.join(*args))
+
+    # Note: site.py uses `sys._framework` instead of hardcoding "Python" as the
+    #   3rd arg, but that is set to an empty string in an oxidized binary.  It
+    #   has a fallback to ~/.local when `sys._framework` isn't set, but we want
+    #   to match what the system python uses, so it sees pip installed stuff.
+    usersite = joinuser("~", "Library", "Python",
+                        "%d.%d" % vi[:2], "lib/python/site-packages")
+
+    sys.path.append(usersite)
 import hgdemandimport;
 hgdemandimport.enable();
 from mercurial import dispatch;
