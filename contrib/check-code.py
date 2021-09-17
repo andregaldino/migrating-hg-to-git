@@ -195,7 +195,7 @@ testpats = [
     [
         (r'^function', "don't use 'function', use old style"),
         (r'^diff.*-\w*N', "don't use 'diff -N'"),
-        (r'\$PWD|\${PWD}', "don't use $PWD, use `pwd`"),
+        (r'\$PWD|\${PWD}', "don't use $PWD, use `pwd`", "no-pwd-check"),
         (r'^([^"\'\n]|("[^"\n]*")|(\'[^\'\n]*\'))*\^', "^ must be quoted"),
         (r'kill (`|\$\()', "don't use kill, use killdaemons.py"),
     ],
