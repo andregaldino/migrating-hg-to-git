@@ -344,9 +344,6 @@ class dirstate(object):
 
     iteritems = items
 
-    def directories(self):
-        return self._map.directories()
-
     def parents(self):
         return [self._validate(p) for p in self._pl]
 

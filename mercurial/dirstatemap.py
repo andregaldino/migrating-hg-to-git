@@ -700,9 +700,6 @@ if rustmod is not None:
         def copymap(self):
             return self._rustmap.copymap()
 
-        def directories(self):
-            return self._rustmap.directories()
-
         def debug_iter(self):
             return self._rustmap.debug_iter()
 
