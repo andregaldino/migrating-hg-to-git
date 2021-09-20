@@ -21,13 +21,11 @@ use crate::{
     exceptions,
 };
 use cpython::{
-    exc, PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult,
-    PySequence, Python,
+    PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult, Python,
 };
 use hg::dirstate_tree::on_disk::V2_FORMAT_MARKER;
-use hg::{utils::hg_path::HgPathBuf, DirstateEntry, EntryState, StateMap};
+use hg::DirstateEntry;
 use libc::{c_char, c_int};
-use std::convert::TryFrom;
 
 // C code uses a custom `dirstate_tuple` type, checks in multiple instances
 // for this type, and raises a Python `Exception` if the check does not pass.
@@ -76,34 +74,6 @@ pub fn make_dirstate_item_raw(
         PyObject::from_owned_ptr_opt(py, ptr)
     };
     maybe_obj.ok_or_else(|| PyErr::fetch(py))
-}
-
-pub fn extract_dirstate(py: Python, dmap: &PyDict) -> Result<StateMap, PyErr> {
-    dmap.items(py)
-        .iter()
-        .map(|(filename, stats)| {
-            let stats = stats.extract::<PySequence>(py)?;
-            let state = stats.get_item(py, 0)?.extract::<PyBytes>(py)?;
-            let state =
-                EntryState::try_from(state.data(py)[0]).map_err(|e| {
-                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                })?;
-            let mode = stats.get_item(py, 1)?.extract(py)?;
-            let size = stats.get_item(py, 2)?.extract(py)?;
-            let mtime = stats.get_item(py, 3)?.extract(py)?;
-            let filename = filename.extract::<PyBytes>(py)?;
-            let filename = filename.data(py);
-            Ok((
-                HgPathBuf::from(filename.to_owned()),
-                DirstateEntry {
-                    state,
-                    mode,
-                    size,
-                    mtime,
-                },
-            ))
-        })
-        .collect()
 }
 
 /// Create the module, with `__package__` given from parent

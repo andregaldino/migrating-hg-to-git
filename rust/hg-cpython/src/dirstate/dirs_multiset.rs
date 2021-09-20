@@ -11,14 +11,13 @@
 use std::cell::RefCell;
 
 use cpython::{
-    exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyObject,
-    PyResult, Python, UnsafePyLeaked,
+    exc, ObjectProtocol, PyBytes, PyClone, PyDict, PyErr, PyObject, PyResult,
+    Python, UnsafePyLeaked,
 };
 
-use crate::dirstate::extract_dirstate;
 use hg::{
     utils::hg_path::{HgPath, HgPathBuf},
-    DirsMultiset, DirsMultisetIter, DirstateError, DirstateMapError,
+    DirsMultiset, DirsMultisetIter, DirstateMapError,
 };
 
 py_class!(pub class Dirs |py| {
@@ -29,20 +28,11 @@ py_class!(pub class Dirs |py| {
     def __new__(
         _cls,
         map: PyObject,
-        only_tracked: Option<PyObject> = None
     ) -> PyResult<Self> {
-        let only_tracked_b = if let Some(only_tracked) = only_tracked {
-            only_tracked.extract::<PyBool>(py)?.is_true()
-        } else {
-            false
-        };
-        let inner = if let Ok(map) = map.cast_as::<PyDict>(py) {
-            let dirstate = extract_dirstate(py, &map)?;
-            let dirstate = dirstate.iter().map(|(k, v)| Ok((k, *v)));
-            DirsMultiset::from_dirstate(dirstate, only_tracked_b)
-                .map_err(|e: DirstateError| {
-                    PyErr::new::<exc::ValueError, _>(py, e.to_string())
-                })?
+        let inner = if map.cast_as::<PyDict>(py).is_ok() {
+            let err = "pathutil.dirs() with a dict should only be used by the Python dirstatemap \
+                and should not be used when Rust is enabled";
+            return Err(PyErr::new::<exc::TypeError, _>(py, err.to_string()))
         } else {
             let map: Result<Vec<HgPathBuf>, PyErr> = map
                 .iter(py)?
