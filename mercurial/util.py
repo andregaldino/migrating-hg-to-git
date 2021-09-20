@@ -449,8 +449,8 @@ def mmapread(fp, size=None):
         return b''
     elif size is None:
         size = 0
+    fd = getattr(fp, 'fileno', lambda: fp)()
     try:
-        fd = getattr(fp, 'fileno', lambda: fp)()
         return mmap.mmap(fd, size, access=mmap.ACCESS_READ)
     except ValueError:
         # Empty files cannot be mmapped, but mmapread should still work.  Check
