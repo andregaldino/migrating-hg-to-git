@@ -57,7 +57,7 @@ else:
 try:
     # importlib.resources exists from Python 3.7; see fallback in except clause
     # further down
-    from importlib import resources
+    from importlib import resources  # pytype: disable=import-error
 
     # Force loading of the resources module
     resources.open_binary  # pytype: disable=module-attr
