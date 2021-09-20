@@ -968,10 +968,7 @@ def debugstate(ui, repo, **opts):
         )  # sort by mtime, then by filename
     else:
         keyfunc = None  # sort by filename
-    if opts['all']:
-        entries = list(repo.dirstate._map.debug_iter())
-    else:
-        entries = list(pycompat.iteritems(repo.dirstate))
+    entries = list(repo.dirstate._map.debug_iter(all=opts['all']))
     entries.sort(key=keyfunc)
     for file_, ent in entries:
         if ent.v1_mtime() == -1:

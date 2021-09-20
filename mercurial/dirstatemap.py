@@ -118,7 +118,11 @@ class dirstatemap(object):
     # forward for python2,3 compat
     iteritems = items
 
-    debug_iter = items
+    def debug_iter(self, all):
+        """
+        `all` is unused when Rust is not enabled
+        """
+        return self.item()
 
     def __len__(self):
         return len(self._map)
@@ -700,8 +704,8 @@ if rustmod is not None:
         def copymap(self):
             return self._rustmap.copymap()
 
-        def debug_iter(self):
-            return self._rustmap.debug_iter()
+        def debug_iter(self, all):
+            return self._rustmap.debug_iter(all)
 
         def preload(self):
             self._rustmap

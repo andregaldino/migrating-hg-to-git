@@ -226,6 +226,7 @@ impl DirstateMapMethods for OwningDirstateMap {
 
     fn debug_iter(
         &self,
+        all: bool,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
@@ -235,6 +236,6 @@ impl DirstateMapMethods for OwningDirstateMap {
             > + Send
             + '_,
     > {
-        self.get().debug_iter()
+        self.get().debug_iter(all)
     }
 }

@@ -606,9 +606,9 @@ py_class!(pub class DirstateMap |py| {
         Ok(dirs)
     }
 
-    def debug_iter(&self) -> PyResult<PyList> {
+    def debug_iter(&self, all: bool) -> PyResult<PyList> {
         let dirs = PyList::new(py, &[]);
-        for item in self.inner(py).borrow().debug_iter() {
+        for item in self.inner(py).borrow().debug_iter(all) {
             let (path, (state, mode, size, mtime)) =
                 item.map_err(|e| v2_error(py, e))?;
             let path = PyBytes::new(py, path.as_bytes());

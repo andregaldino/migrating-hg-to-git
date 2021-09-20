@@ -1289,6 +1289,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
 
     fn debug_iter(
         &self,
+        all: bool,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
@@ -1298,16 +1299,17 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             > + Send
             + '_,
     > {
-        Box::new(self.iter_nodes().map(move |node| {
-            let node = node?;
+        Box::new(filter_map_results(self.iter_nodes(), move |node| {
             let debug_tuple = if let Some(entry) = node.entry()? {
                 entry.debug_tuple()
+            } else if !all {
+                return Ok(None);
             } else if let Some(mtime) = node.cached_directory_mtime() {
                 (b' ', 0, -1, mtime.seconds() as i32)
             } else {
                 (b' ', 0, -1, -1)
             };
-            Ok((node.full_path(self.on_disk)?, debug_tuple))
+            Ok(Some((node.full_path(self.on_disk)?, debug_tuple)))
         }))
     }
 }
