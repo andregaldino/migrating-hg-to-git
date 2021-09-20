@@ -631,7 +631,7 @@ downgrading
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo --run --no-backup
+  $ hg debugupgraderepo --run --no-backup --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -645,12 +645,6 @@ downgrading
     - changelog
     - manifest
   
-  beginning upgrade...
-  repository locked and read-only
-  creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
-  (it is safe to interrupt this process any time before data migration completes)
-  downgrading repository to not use persistent nodemap feature
-  removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00manifest-*.nd (glob)
@@ -681,7 +675,7 @@ upgrading
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ hg debugupgraderepo --run --no-backup
+  $ hg debugupgraderepo --run --no-backup --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -690,20 +684,11 @@ upgrading
      preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
      added: persistent-nodemap
   
-  persistent-nodemap
-     Speedup revision lookup by node id.
-  
   processed revlogs:
     - all-filelogs
     - changelog
     - manifest
   
-  beginning upgrade...
-  repository locked and read-only
-  creating temporary repository to stage upgraded data: $TESTTMP/test-repo/.hg/upgrade.* (glob)
-  (it is safe to interrupt this process any time before data migration completes)
-  upgrading repository to use persistent nodemap feature
-  removing temporary repository $TESTTMP/test-repo/.hg/upgrade.* (glob)
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
   00changelog-*.nd (glob)
   00changelog.n
