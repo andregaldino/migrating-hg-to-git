@@ -1225,6 +1225,8 @@ def versiontuple(v=None, n=4):
     if n == 4:
         return (vints[0], vints[1], vints[2], extra)
 
+    raise error.ProgrammingError(b"invalid version part request: %d" % n)
+
 
 def cachefunc(func):
     '''cache the result of function calls'''
