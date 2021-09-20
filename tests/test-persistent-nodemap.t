@@ -597,7 +597,7 @@ removing data with rollback
   $ hg id -r .
   90d5d3ba2fc4 tip
 
-roming data with strip
+removing data with strip
 
   $ echo aso > a
   $ hg ci -m a4
