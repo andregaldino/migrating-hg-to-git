@@ -175,7 +175,7 @@ def posixfile(name, mode=b'r', buffering=-1):
             return mixedfilemodewrapper(fp)
 
         return fp
-    except WindowsError as err:
+    except WindowsError as err:  # pytype: disable=name-error
         # convert to a friendlier exception
         raise IOError(
             err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
