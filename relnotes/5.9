@@ -1,0 +1,86 @@
+== New Features ==
+
+ * `hg config` now has a `--source` option to show where each
+   configuration value comes from.
+ * Introduced a command (debug-repair-issue6533) to repair repositories affected
+   by issue6528 where certain files would show up as modified even if they were
+   clean due to an issue in the copy-tracing code.
+
+== Default Format Change ==
+
+These changes affect newly created repositories (or new clone) done with
+Mercurial 5.9.
+
+
+== New Experimental Features ==
+
+ * A `changelogv2` format has been introduced. It is not ready for use yet, but
+   will be used later to address some of the weaknesses of the current revlog
+   format.
+ * Initial experiment and support for `dirstatev2`, a new dirstate format that
+   addresses some of the weaknesses of the current dirstate format. Python + C
+   and Rust support are being implemented, but the Rust solution is the one
+   currently getting the attention for performance.
+ * Initial support for `rhg status`. `rhg` is the Rust wrapper executable for hg
+   that shortcuts some commands for faster execution speed.
+
+== Bug Fixes ==
+
+ * Fixed a regression (in 5.9.1) introduced in 5.9 when cloning repos with
+   deep filenames
+ * Fixed detection of directories becoming symlinks, but only when using the
+   Rust extensions.
+ * Fixed ignore and include not composing in the Rust status
+ * `hg commit --interactive` now handles deselecting edits of a rename
+ * Fixed a case where `hg evolve` gives different results when interrupted
+ * Fixed a memory leak in phases computation
+ * `histedit` and `shelve` don't swallow errors when updating the working copy
+   anymore
+ * Improve error message when detecting content-divergence with a hidden
+   common predecessor
+ * No longer re-order parents in filelog, see issue6533
+ * Fix revisions affected by issue6533 on the fly during exchange
+ * Many Windows fixes for stability and py3 compatibility improvements
+ * Many other miscellaneous fixes
+
+== Backwards Compatibility Changes ==
+
+
+== Internal API Changes ==
+
+The Dirstate API have been updated as the previous function leaked some
+internal details and did not distinguish between two important cases: "We are
+changing parent and need to adjust the dirstate" and "some command is changing
+which file is tracked". To clarify the situation:
+
+* the following functions have been deprecated,
+
+  - `dirstate.add`,
+  - `dirstate.normal`,
+  - `dirstate.normallookup`,
+  - `dirstate.merge`,
+  - `dirstate.otherparent`,
+  - `dirstate.remove`,
+  - `dirstate.drop`,
+  - `dirstateitem.__getitem__`,
+
+* these new functions are added for the "adjusting parents" use-case:
+
+  - `dirstate.update_file`,
+  - `dirstate.update_file_p1`,
+
+* these new function are added for the "adjusting wc file" use-case":
+
+  - `dirstate.set_tracked`,
+  - `dirstate.set_untracked`,
+  - `dirstate.set_clean`,
+  - `dirstate.set_possibly_dirty`,
+
+See inline documentation of the new functions for details.
+
+* Additionally, the following have been deprecated:
+  - `urlutil.getpath` function
+  - `localrepository.updatecaches`' `full` argument
+
+* The following have been removed:
+  - `revlog.revlogio` has been removed
