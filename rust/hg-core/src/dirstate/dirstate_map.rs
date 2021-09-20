@@ -111,17 +111,13 @@ impl DirstateMap {
         let mode = entry.mode();
         let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
 
-        let old_state = match self.get(filename) {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
-        if old_state == EntryState::Unknown || old_state == EntryState::Removed
-        {
+        let old_state = self.get(filename).map(|e| e.state());
+        if old_state.is_none() || old_state == Some(EntryState::Removed) {
             if let Some(ref mut dirs) = self.dirs {
                 dirs.add_path(filename)?;
             }
         }
-        if old_state == EntryState::Unknown {
+        if old_state.is_none() {
             if let Some(ref mut all_dirs) = self.all_dirs {
                 all_dirs.add_path(filename)?;
             }
@@ -153,10 +149,7 @@ impl DirstateMap {
         in_merge: bool,
     ) -> Result<(), DirstateError> {
         let old_entry_opt = self.get(filename);
-        let old_state = match old_entry_opt {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
+        let old_state = old_entry_opt.map(|e| e.state());
         let mut size = 0;
         if in_merge {
             // XXX we should not be able to have 'm' state and 'FROM_P2' if not
@@ -178,13 +171,12 @@ impl DirstateMap {
                 }
             }
         }
-        if old_state != EntryState::Unknown && old_state != EntryState::Removed
-        {
+        if old_state.is_some() && old_state != Some(EntryState::Removed) {
             if let Some(ref mut dirs) = self.dirs {
                 dirs.delete_path(filename)?;
             }
         }
-        if old_state == EntryState::Unknown {
+        if old_state.is_none() {
             if let Some(ref mut all_dirs) = self.all_dirs {
                 all_dirs.add_path(filename)?;
             }
@@ -207,14 +199,11 @@ impl DirstateMap {
         &mut self,
         filename: &HgPath,
     ) -> Result<bool, DirstateError> {
-        let old_state = match self.get(filename) {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
+        let old_state = self.get(filename).map(|e| e.state());
         let exists = self.state_map.remove(filename).is_some();
 
         if exists {
-            if old_state != EntryState::Removed {
+            if old_state != Some(EntryState::Removed) {
                 if let Some(ref mut dirs) = self.dirs {
                     dirs.delete_path(filename)?;
                 }

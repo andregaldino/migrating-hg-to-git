@@ -593,12 +593,13 @@ impl<'on_disk> DirstateMap<'on_disk> {
     fn add_or_remove_file(
         &mut self,
         path: &HgPath,
-        old_state: EntryState,
+        old_state: Option<EntryState>,
         new_entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
-        let had_entry = old_state != EntryState::Unknown;
+        let had_entry = old_state.is_some();
+        let was_tracked = old_state.map_or(false, |s| s.is_tracked());
         let tracked_count_increment =
-            match (old_state.is_tracked(), new_entry.state().is_tracked()) {
+            match (was_tracked, new_entry.state().is_tracked()) {
                 (false, true) => 1,
                 (true, false) => -1,
                 _ => 0,
@@ -808,10 +809,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         let mode = entry.mode();
         let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
 
-        let old_state = match self.get(filename)? {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
+        let old_state = self.get(filename)?.map(|e| e.state());
 
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }
@@ -822,10 +820,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         in_merge: bool,
     ) -> Result<(), DirstateError> {
         let old_entry_opt = self.get(filename)?;
-        let old_state = match old_entry_opt {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
+        let old_state = old_entry_opt.map(|e| e.state());
         let mut size = 0;
         if in_merge {
             // XXX we should not be able to have 'm' state and 'FROM_P2' if not
@@ -852,10 +847,9 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
     }
 
     fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
-        let old_state = match self.get(filename)? {
-            Some(e) => e.state(),
-            None => EntryState::Unknown,
-        };
+        let was_tracked = self
+            .get(filename)?
+            .map_or(false, |e| e.state().is_tracked());
         struct Dropped {
             was_tracked: bool,
             had_entry: bool,
@@ -955,7 +949,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             }
             Ok(dropped.had_entry)
         } else {
-            debug_assert!(!old_state.is_tracked());
+            debug_assert!(!was_tracked);
             Ok(false)
         }
     }

@@ -7,7 +7,6 @@ pub enum EntryState {
     Added,
     Removed,
     Merged,
-    Unknown,
 }
 
 /// The C implementation uses all signed types. This will be an issue
@@ -157,7 +156,7 @@ impl EntryState {
         use EntryState::*;
         match self {
             Normal | Added | Merged => true,
-            Removed | Unknown => false,
+            Removed => false,
         }
     }
 }
@@ -171,7 +170,6 @@ impl TryFrom<u8> for EntryState {
             b'a' => Ok(EntryState::Added),
             b'r' => Ok(EntryState::Removed),
             b'm' => Ok(EntryState::Merged),
-            b'?' => Ok(EntryState::Unknown),
             _ => Err(HgError::CorruptedRepository(format!(
                 "Incorrect dirstate entry state {}",
                 value
@@ -187,7 +185,6 @@ impl Into<u8> for EntryState {
             EntryState::Added => b'a',
             EntryState::Removed => b'r',
             EntryState::Merged => b'm',
-            EntryState::Unknown => b'?',
         }
     }
 }

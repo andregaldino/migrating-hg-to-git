@@ -205,7 +205,6 @@ fn dispatch_found(
         EntryState::Merged => Dispatch::Modified,
         EntryState::Added => Dispatch::Added,
         EntryState::Removed => Dispatch::Removed,
-        EntryState::Unknown => Dispatch::Unknown,
     }
 }
 
@@ -218,8 +217,6 @@ fn dispatch_missing(state: EntryState) -> Dispatch {
         }
         // File was removed, everything is normal
         EntryState::Removed => Dispatch::Removed,
-        // File is unknown to Mercurial, everything is normal
-        EntryState::Unknown => Dispatch::Unknown,
     }
 }
 

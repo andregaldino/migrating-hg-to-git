@@ -394,9 +394,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                             .push(hg_path.detach_from_tree()),
                         EntryState::Normal => self
                             .handle_normal_file(&dirstate_node, fs_metadata)?,
-                        // This variant is not used in DirstateMap
-                        // nodes
-                        EntryState::Unknown => unreachable!(),
                     }
                 } else {
                     // `node.entry.is_none()` indicates a "directory"
