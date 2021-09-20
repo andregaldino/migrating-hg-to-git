@@ -18,6 +18,7 @@ Mercurial 6.0.
  * `hg fix --working-dir` now correctly works when in an uncommitted merge state
  * `rhg` (Rust fast-path for `hg`) now supports the full config list syntax
  * `rhg` now parses some corner-cases for revsets correctly
+ * `hg email -o` now works again when not mentioning a revision
  * Lots of Windows fixes
  * Lots of miscellaneous other fixes
 
