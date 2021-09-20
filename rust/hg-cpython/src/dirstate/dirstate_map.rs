@@ -24,7 +24,6 @@ use crate::{
     dirstate::non_normal_entries::{
         NonNormalEntries, NonNormalEntriesIterator,
     },
-    parsers::dirstate_parents_to_pytuple,
     pybytes_deref::PyBytesDeref,
 };
 use hg::{
@@ -79,7 +78,11 @@ py_class!(pub class DirstateMap |py| {
             (Box::new(map) as _, parents)
         };
         let map = Self::create_instance(py, inner)?;
-        let parents = parents.map(|p| dirstate_parents_to_pytuple(py, &p));
+        let parents = parents.map(|p| {
+            let p1 = PyBytes::new(py, p.p1.as_bytes());
+            let p2 = PyBytes::new(py, p.p2.as_bytes());
+            (p1, p2)
+        });
         Ok((map, parents).to_py_object(py).into_object())
     }
 

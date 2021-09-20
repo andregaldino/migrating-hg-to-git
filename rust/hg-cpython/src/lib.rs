@@ -35,7 +35,6 @@ pub mod debug;
 pub mod dirstate;
 pub mod discovery;
 pub mod exceptions;
-pub mod parsers;
 mod pybytes_deref;
 pub mod revlog;
 pub mod utils;
@@ -59,11 +58,6 @@ py_module_initializer!(rustext, initrustext, PyInit_rustext, |py, m| {
     m.add(py, "discovery", discovery::init_module(py, &dotted_name)?)?;
     m.add(py, "dirstate", dirstate::init_module(py, &dotted_name)?)?;
     m.add(py, "revlog", revlog::init_module(py, &dotted_name)?)?;
-    m.add(
-        py,
-        "parsers",
-        parsers::init_parsers_module(py, &dotted_name)?,
-    )?;
     m.add(py, "GraphError", py.get_type::<exceptions::GraphError>())?;
     Ok(())
 });
