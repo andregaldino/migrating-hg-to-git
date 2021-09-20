@@ -224,8 +224,12 @@ def load(ui, name, path, loadingtime=None):
     minver = getattr(mod, 'minimumhgversion', None)
     if minver:
         curver = util.versiontuple(n=2)
+        extmin = util.versiontuple(minver, 2)
 
-        if None in curver or util.versiontuple(minver, 2) > curver:
+        if None in extmin:
+            extmin = (extmin[0] or 0, extmin[1] or 0)
+
+        if None in curver or extmin > curver:
             msg = _(
                 b'(third party extension %s requires version %s or newer '
                 b'of Mercurial (current: %s); disabling)\n'
