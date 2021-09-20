@@ -452,7 +452,8 @@ mod tests {
         .collect();
 
         let mut non_normal = [
-            b"f1", b"f2", b"f5", b"f6", b"f7", b"f8", b"f9", b"fa", b"fb",
+            b"f1", b"f2", b"f4", b"f5", b"f6", b"f7", b"f8", b"f9", b"fa",
+            b"fb",
         ]
         .iter()
         .map(|x| HgPathBuf::from_bytes(x.as_ref()))
