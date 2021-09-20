@@ -120,9 +120,12 @@ class dirstatemap(object):
 
     def debug_iter(self, all):
         """
+        Return an iterator of (filename, state, mode, size, mtime) tuples
+
         `all` is unused when Rust is not enabled
         """
-        return self.item()
+        for (filename, item) in self.items():
+            yield (filename, item.state, item.mode, item.size, item.mtime)
 
     def __len__(self):
         return len(self._map)
@@ -705,6 +708,13 @@ if rustmod is not None:
             return self._rustmap.copymap()
 
         def debug_iter(self, all):
+            """
+            Return an iterator of (filename, state, mode, size, mtime) tuples
+
+            `all`: also include with `state == b' '` dirstate tree nodes that
+            don't have an associated `DirstateItem`.
+
+            """
             return self._rustmap.debug_iter(all)
 
         def preload(self):
