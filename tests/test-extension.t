@@ -1692,12 +1692,13 @@ Can load minimum version identical to current
   $ hg --config extensions.minversion=minversion3.py version 2>&1 | egrep '\(third'
   [1]
 
-Don't explode on py3 with a bad version number
+Don't explode on py3 with a bad version number (both str vs bytes, and not enough
+parts)
 
   $ cat > minversion4.py << EOF
   > from mercurial import util
   > util.version = lambda: b'3.5'
-  > minimumhgversion = b'3'
+  > minimumhgversion = '3'
   > EOF
   $ hg --config extensions.minversion=minversion4.py version -v
   Mercurial Distributed SCM (version 3.5)
