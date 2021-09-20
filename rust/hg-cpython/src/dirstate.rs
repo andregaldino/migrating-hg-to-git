@@ -52,25 +52,15 @@ pub fn make_dirstate_item(
     // because Into<u8> has a specific implementation while `as c_char` would
     // just do a naive enum cast.
     let state_code: u8 = entry.state().into();
-    make_dirstate_item_raw(
-        py,
-        state_code,
-        entry.mode(),
-        entry.size(),
-        entry.mtime(),
-    )
-}
 
-pub fn make_dirstate_item_raw(
-    py: Python,
-    state: u8,
-    mode: i32,
-    size: i32,
-    mtime: i32,
-) -> PyResult<PyObject> {
     let make = make_dirstate_item_capi::retrieve(py)?;
     let maybe_obj = unsafe {
-        let ptr = make(state as c_char, mode, size, mtime);
+        let ptr = make(
+            state_code as c_char,
+            entry.mode(),
+            entry.size(),
+            entry.mtime(),
+        );
         PyObject::from_owned_ptr_opt(py, ptr)
     };
     maybe_obj.ok_or_else(|| PyErr::fetch(py))

@@ -38,7 +38,6 @@ static const unsigned char dirstate_flag_possibly_dirty = 1 << 3;
 static const unsigned char dirstate_flag_merged = 1 << 4;
 static const unsigned char dirstate_flag_clean_p1 = 1 << 5;
 static const unsigned char dirstate_flag_clean_p2 = 1 << 6;
-static const unsigned char dirstate_flag_rust_special = 1 << 7;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

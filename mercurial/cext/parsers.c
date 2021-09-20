@@ -192,9 +192,7 @@ static inline bool dirstate_item_c_from_p2_removed(dirstateItemObject *self)
 
 static inline char dirstate_item_c_v1_state(dirstateItemObject *self)
 {
-	if (self->flags & dirstate_flag_rust_special) {
-		return ' ';
-	} else if (dirstate_item_c_removed(self)) {
+	if (dirstate_item_c_removed(self)) {
 		return 'r';
 	} else if (dirstate_item_c_merged(self)) {
 		return 'm';
@@ -212,9 +210,7 @@ static inline int dirstate_item_c_v1_mode(dirstateItemObject *self)
 
 static inline int dirstate_item_c_v1_size(dirstateItemObject *self)
 {
-	if (self->flags & dirstate_flag_rust_special) {
-		return self->size;
-	} else if (dirstate_item_c_merged_removed(self)) {
+	if (dirstate_item_c_merged_removed(self)) {
 		return dirstate_v1_nonnormal;
 	} else if (dirstate_item_c_from_p2_removed(self)) {
 		return dirstate_v1_from_p2;
@@ -235,9 +231,7 @@ static inline int dirstate_item_c_v1_size(dirstateItemObject *self)
 
 static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 {
-	if (self->flags & dirstate_flag_rust_special) {
-		return self->mtime;
-	} else if (dirstate_item_c_removed(self)) {
+	if (dirstate_item_c_removed(self)) {
 		return 0;
 	} else if (self->flags & dirstate_flag_possibly_dirty) {
 		return ambiguous_time;
@@ -354,13 +348,6 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 			t->size = size;
 			t->mtime = mtime;
 		}
-	} else if (state == ' ') {
-		/* XXX Rust is using this special case, it should be clean up
-		 * later. */
-		t->flags = dirstate_flag_rust_special;
-		t->mode = mode;
-		t->size = size;
-		t->mtime = mtime;
 	} else {
 		PyErr_Format(PyExc_RuntimeError,
 		             "unknown state: `%c` (%d, %d, %d)", state, mode,
