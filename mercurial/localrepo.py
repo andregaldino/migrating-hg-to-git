@@ -159,6 +159,21 @@ class changelogcache(storecache):
         return paths
 
 
+class manifestlogcache(storecache):
+    """filecache for the manifestlog"""
+
+    def __init__(self):
+        super(manifestlogcache, self).__init__()
+        _cachedfiles.add((b'00manifest.i', b''))
+        _cachedfiles.add((b'00manifest.n', b''))
+
+    def tracked_paths(self, obj):
+        paths = [self.join(obj, b'00manifest.i')]
+        if obj.store.opener.options.get(b'persistent-nodemap', False):
+            paths.append(self.join(obj, b'00manifest.n'))
+        return paths
+
+
 class mixedrepostorecache(_basefilecache):
     """filecache for a mix files in .hg/store and outside"""
 
@@ -1697,7 +1712,7 @@ class localrepository(object):
             concurrencychecker=revlogchecker.get_checker(repo.ui, b'changelog'),
         )
 
-    @storecache(b'00manifest.i')
+    @manifestlogcache()
     def manifestlog(self):
         return self.store.manifestlog(self, self._storenarrowmatch)
 
