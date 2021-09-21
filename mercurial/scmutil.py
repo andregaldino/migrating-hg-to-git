@@ -1662,6 +1662,9 @@ class filecache(object):
     def __init__(self, *paths):
         self.paths = paths
 
+    def tracked_paths(self, obj):
+        return [self.join(obj, path) for path in self.paths]
+
     def join(self, obj, fname):
         """Used to compute the runtime path of a cached file.
 
@@ -1690,7 +1693,7 @@ class filecache(object):
             if entry.changed():
                 entry.obj = self.func(obj)
         else:
-            paths = [self.join(obj, path) for path in self.paths]
+            paths = self.tracked_paths(obj)
 
             # We stat -before- creating the object so our cache doesn't lie if
             # a writer modified between the time we read and stat
@@ -1709,7 +1712,7 @@ class filecache(object):
         if self.name not in obj._filecache:
             # we add an entry for the missing value because X in __dict__
             # implies X in _filecache
-            paths = [self.join(obj, path) for path in self.paths]
+            paths = self.tracked_paths(obj)
             ce = filecacheentry(paths, False)
             obj._filecache[self.name] = ce
         else:
