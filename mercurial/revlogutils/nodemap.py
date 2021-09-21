@@ -26,6 +26,14 @@ class NodeMap(dict):
         raise error.RevlogError(b'unknown node: %s' % x)
 
 
+def test_race_hook_1():
+    """hook point for test
+
+    This let tests to have things happens between the docket reading and the
+    data reading"""
+    pass
+
+
 def persisted_data(revlog):
     """read the nodemap for a revlog from disk"""
     if revlog._nodemap_file is None:
@@ -50,6 +58,8 @@ def persisted_data(revlog):
 
     filename = _rawdata_filepath(revlog, docket)
     use_mmap = revlog.opener.options.get(b"persistent-nodemap.mmap")
+
+    test_race_hook_1()
     try:
         with revlog.opener(filename) as fd:
             if use_mmap:

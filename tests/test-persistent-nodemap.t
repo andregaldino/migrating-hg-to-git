@@ -613,8 +613,206 @@ removing data with strip
   $ hg id -r . --traceback
   90d5d3ba2fc4 tip
 
+(be a good citizen and regenerate the nodemap)
+  $ hg debugupdatecaches
+  $ hg debugnodemap --metadata
+  uid: * (glob)
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+
+Check race condition when multiple process write new data to the repository
+---------------------------------------------------------------------------
+
+In this test, we check that two writers touching the repositories will not
+overwrite each other data. This test is prompted by the existent of issue6554.
+Where a writer ended up using and outdated docket to update the repository. See
+the dedicated extension for details on the race windows and read/write schedule
+necessary to end up in this situation: testlib/persistent-nodemap-race-ext.py
+
+The issue was initially observed on a server with a high push trafic, but it
+can be reproduced using a share and two commiting process which seems simpler.
+
+The test is Rust only as the other implementation does not use the same
+read/write patterns.
+
+  $ cd ..
+
+#if rust
+
+  $ cp -R test-repo race-repo
+  $ hg share race-repo ./other-wc --config format.use-share-safe=yes
+  updating working directory
+  5001 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugformat -R ./race-repo | egrep 'share-safe|persistent-nodemap'
+  share-safe:         yes
+  persistent-nodemap: yes
+  $ hg debugformat -R ./other-wc/ | egrep 'share-safe|persistent-nodemap'
+  share-safe:         yes
+  persistent-nodemap: yes
+  $ hg -R ./other-wc update 'min(head())'
+  3 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ hg -R ./race-repo debugnodemap --metadata
+  uid: 43c37dde
+  tip-rev: 5005
+  tip-node: 90d5d3ba2fc47db50f712570487cb261a68c8ffe
+  data-length: 121088
+  data-unused: 0
+  data-unused: 0.000%
+  $ hg -R ./race-repo log -G -r 'head()'
+  @  changeset:   5005:90d5d3ba2fc4
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     a2
+  
+  o  changeset:   5001:16395c3cf7e2
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     foo
+  
+  $ hg -R ./other-wc log -G -r 'head()'
+  o  changeset:   5005:90d5d3ba2fc4
+  |  tag:         tip
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     a2
+  
+  @  changeset:   5001:16395c3cf7e2
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     foo
+  
+  $ echo left-side-race > race-repo/left-side-race
+  $ hg -R ./race-repo/ add race-repo/left-side-race
+
+  $ echo right-side-race > ./other-wc/right-side-race
+  $ hg -R ./other-wc/ add ./other-wc/right-side-race
+
+  $ mkdir sync-files
+  $ mkdir outputs
+  $ (
+  >    hg -R ./race-repo/ commit -m left-side-commit \
+  >    --config "extensions.race=${RUNTESTDIR}/testlib/persistent-nodemap-race-ext.py" \
+  >    --config 'devel.nodemap-race.role=left';
+  >    touch sync-files/left-done
+  > ) > outputs/left.txt 2>&1 &
+  $ (
+  >    hg -R ./other-wc/ commit -m right-side-commit \
+  >    --config "extensions.race=${RUNTESTDIR}/testlib/persistent-nodemap-race-ext.py" \
+  >    --config 'devel.nodemap-race.role=right';
+  >    touch sync-files/right-done
+  > ) > outputs/right.txt 2>&1 &
+  $ (
+  >    hg -R ./race-repo/ check-nodemap-race \
+  >    --config "extensions.race=${RUNTESTDIR}/testlib/persistent-nodemap-race-ext.py" \
+  >    --config 'devel.nodemap-race.role=reader';
+  >    touch sync-files/reader-done
+  > ) > outputs/reader.txt 2>&1 &
+  $ sh "$RUNTESTDIR"/testlib/wait-on-file 10 sync-files/left-done
+  $ cat outputs/left.txt
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5005
+    tip-rev:     5005
+    data-length: 121088
+  nodemap-race: left side locked and ready to commit
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5005
+    tip-rev:     5005
+    data-length: 121088
+  finalized changelog write
+  persisting changelog nodemap
+    new data start at 121088
+  persisted changelog nodemap
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5006
+    tip-rev:     5006
+    data-length: 121280
+  $ sh "$RUNTESTDIR"/testlib/wait-on-file 10 sync-files/right-done
+  $ cat outputs/right.txt
+  nodemap-race: right side start of the locking sequence
+  nodemap-race: right side reading changelog
+  nodemap-race: right side reading of changelog is done
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5006
+    tip-rev:     5005
+    data-length: 121088
+  nodemap-race: right side ready to wait for the lock
+  nodemap-race: right side locked and ready to commit
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5006
+    tip-rev:     5005
+    data-length: 121088
+  right ready to write, waiting for reader
+  right proceeding with writing its changelog index and nodemap
+  finalized changelog write
+  persisting changelog nodemap
+    new data start at 121088
+  persisted changelog nodemap
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5007
+    tip-rev:     5007
+    data-length: 121472
+  $ sh "$RUNTESTDIR"/testlib/wait-on-file 10 sync-files/reader-done
+  $ cat outputs/reader.txt
+  reader: reading changelog
+  reader ready to read the changelog, waiting for right
+  reader: nodemap docket read
+  record-data-length: 121280
+  actual-data-length: 121280
+  file-actual-length: 121472
+  reader: changelog read
+  docket-details:
+    uid:         43c37dde
+    actual-tip:  5006
+    tip-rev:     5006
+    data-length: 121280
+  tip-rev:  5006
+  tip-node: 492901161367
+  node-rev: 5006
+  error while checking revision: 18 (known-bad-output !)
+    Inconsistency: Revision 5007 found in nodemap is not in revlog indexi (known-bad-output !)
+
+  $ hg -R ./race-repo log -G -r 'head()'
+  o  changeset:   5007:ac4a2abde241
+  |  tag:         tip
+  ~  parent:      5001:16395c3cf7e2
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     right-side-commit
+  
+  @  changeset:   5006:492901161367
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     left-side-commit
+  
+  $ hg -R ./other-wc log -G -r 'head()'
+  @  changeset:   5007:ac4a2abde241
+  |  tag:         tip
+  ~  parent:      5001:16395c3cf7e2
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     right-side-commit
+  
+  o  changeset:   5006:492901161367
+  |  user:        test
+  ~  date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     left-side-commit
+  
+#endif
+
 Test upgrade / downgrade
 ========================
+
+  $ cd ./test-repo/
 
 downgrading
 
