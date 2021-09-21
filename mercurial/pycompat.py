@@ -222,6 +222,15 @@ if ispy3:
         >>> assert type(t) is bytes
         """
 
+        # Trick pytype into not demanding Iterable[int] be passed to __new__(),
+        # since the appropriate bytes format is done internally.
+        #
+        # https://github.com/google/pytype/issues/500
+        if TYPE_CHECKING:
+
+            def __init__(self, s=b''):
+                pass
+
         def __new__(cls, s=b''):
             if isinstance(s, bytestr):
                 return s
