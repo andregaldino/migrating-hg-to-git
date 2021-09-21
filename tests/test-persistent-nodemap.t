@@ -3,6 +3,13 @@ Test the persistent on-disk nodemap
 ===================================
 
 
+  $ cat << EOF >> $HGRCPATH
+  > [format]
+  > use-share-safe=yes
+  > [extensions]
+  > share=
+  > EOF
+
 #if no-rust
 
   $ cat << EOF >> $HGRCPATH
@@ -60,7 +67,7 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   dirstate-v2:         no
   dotencode:          yes
   generaldelta:       yes
-  share-safe:          no
+  share-safe:         yes
   sparserevlog:       yes
   persistent-nodemap: yes
   copies-sdc:          no
@@ -621,7 +628,7 @@ downgrading
   dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
+  share-safe:         yes    yes      no
   sparserevlog:       yes    yes     yes
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
@@ -635,9 +642,9 @@ downgrading
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
      removed: persistent-nodemap
   
   processed revlogs:
@@ -665,7 +672,7 @@ upgrading
   dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
+  share-safe:         yes    yes      no
   sparserevlog:       yes    yes     yes
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no
@@ -679,9 +686,9 @@ upgrading
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
-     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
      added: persistent-nodemap
   
   processed revlogs:
@@ -711,9 +718,9 @@ Running unrelated upgrade
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (no-zstd no-dirstate-v2 !)
-     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog, store (zstd dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, share-safe, sparserevlog, store (no-zstd no-dirstate-v2 !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd no-dirstate-v2 !)
+     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
   
   optimisations: re-delta-all
   
