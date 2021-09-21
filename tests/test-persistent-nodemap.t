@@ -748,19 +748,19 @@ read/write patterns.
   docket-details:
     uid:         43c37dde
     actual-tip:  5006
-    tip-rev:     5005
-    data-length: 121088
+    tip-rev:     5006
+    data-length: 121280
   right ready to write, waiting for reader
   right proceeding with writing its changelog index and nodemap
   finalized changelog write
   persisting changelog nodemap
-    new data start at 121088
+    new data start at 121280
   persisted changelog nodemap
   docket-details:
     uid:         43c37dde
     actual-tip:  5007
     tip-rev:     5007
-    data-length: 121472
+    data-length: 121536
   $ sh "$RUNTESTDIR"/testlib/wait-on-file 10 sync-files/reader-done
   $ cat outputs/reader.txt
   reader: reading changelog
@@ -768,7 +768,7 @@ read/write patterns.
   reader: nodemap docket read
   record-data-length: 121280
   actual-data-length: 121280
-  file-actual-length: 121472
+  file-actual-length: 121536
   reader: changelog read
   docket-details:
     uid:         43c37dde
@@ -778,8 +778,6 @@ read/write patterns.
   tip-rev:  5006
   tip-node: 492901161367
   node-rev: 5006
-  error while checking revision: 18 (known-bad-output !)
-    Inconsistency: Revision 5007 found in nodemap is not in revlog indexi (known-bad-output !)
 
   $ hg -R ./race-repo log -G -r 'head()'
   o  changeset:   5007:ac4a2abde241

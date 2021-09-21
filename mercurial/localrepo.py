@@ -144,6 +144,21 @@ class storecache(_basefilecache):
         return obj.sjoin(fname)
 
 
+class changelogcache(storecache):
+    """filecache for the changelog"""
+
+    def __init__(self):
+        super(changelogcache, self).__init__()
+        _cachedfiles.add((b'00changelog.i', b''))
+        _cachedfiles.add((b'00changelog.n', b''))
+
+    def tracked_paths(self, obj):
+        paths = [self.join(obj, b'00changelog.i')]
+        if obj.store.opener.options.get(b'persistent-nodemap', False):
+            paths.append(self.join(obj, b'00changelog.n'))
+        return paths
+
+
 class mixedrepostorecache(_basefilecache):
     """filecache for a mix files in .hg/store and outside"""
 
@@ -1673,13 +1688,13 @@ class localrepository(object):
     def obsstore(self):
         return obsolete.makestore(self.ui, self)
 
-    @storecache(b'00changelog.i')
-    def changelog(self):
+    @changelogcache()
+    def changelog(repo):
         # load dirstate before changelog to avoid race see issue6303
-        self.dirstate.prefetch_parents()
-        return self.store.changelog(
-            txnutil.mayhavepending(self.root),
-            concurrencychecker=revlogchecker.get_checker(self.ui, b'changelog'),
+        repo.dirstate.prefetch_parents()
+        return repo.store.changelog(
+            txnutil.mayhavepending(repo.root),
+            concurrencychecker=revlogchecker.get_checker(repo.ui, b'changelog'),
         )
 
     @storecache(b'00manifest.i')
