@@ -12,8 +12,10 @@
 mod copymap;
 mod dirs_multiset;
 mod dirstate_map;
+mod item;
 mod non_normal_entries;
 mod status;
+use self::item::DirstateItem;
 use crate::{
     dirstate::{
         dirs_multiset::Dirs, dirstate_map::DirstateMap, status::status_wrapper,
@@ -83,6 +85,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     )?;
     m.add_class::<Dirs>(py)?;
     m.add_class::<DirstateMap>(py)?;
+    m.add_class::<DirstateItem>(py)?;
     m.add(py, "V2_FORMAT_MARKER", PyBytes::new(py, V2_FORMAT_MARKER))?;
     m.add(
         py,
