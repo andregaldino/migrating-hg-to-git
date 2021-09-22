@@ -408,7 +408,6 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self._check_new_tracked_filename(f)
                     self._map.reset_state(
                         f,
                         p1_tracked=False,
