@@ -441,26 +441,11 @@ class dirstatemap(object):
                     continue
 
                 # Discard "merged" markers when moving away from a merge state
-                if s.merged:
-                    source = self.copymap.get(f)
+                if s.merged or s.from_p2:
+                    source = self.copymap.pop(f, None)
                     if source:
                         copies[f] = source
-                    self.reset_state(
-                        f,
-                        wc_tracked=True,
-                        p1_tracked=True,
-                        possibly_dirty=True,
-                    )
-                # Also fix up otherparent markers
-                elif s.from_p2:
-                    source = self.copymap.get(f)
-                    if source:
-                        copies[f] = source
-                    self.reset_state(
-                        f,
-                        p1_tracked=False,
-                        wc_tracked=True,
-                    )
+                    s.drop_merge_data()
         return copies
 
     def read(self):

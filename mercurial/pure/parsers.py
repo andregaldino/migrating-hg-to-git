@@ -263,6 +263,24 @@ class DirstateItem(object):
         self._size = None
         self._mtime = None
 
+    def drop_merge_data(self):
+        """remove all "merge-only" from a DirstateItem
+
+        This is to be call by the dirstatemap code when the second parent is dropped
+        """
+        if not (self.merged or self.from_p2):
+            return
+        self._p1_tracked = self.merged  # why is this not already properly set ?
+
+        self._merged = False
+        self._clean_p1 = False
+        self._clean_p2 = False
+        self._p2_tracked = False
+        self._possibly_dirty = True
+        self._mode = None
+        self._size = None
+        self._mtime = None
+
     @property
     def mode(self):
         return self.v1_mode()

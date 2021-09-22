@@ -515,6 +515,27 @@ static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 	Py_RETURN_NONE;
 }
 
+static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
+{
+	if (dirstate_item_c_merged(self) || dirstate_item_c_from_p2(self)) {
+		if (dirstate_item_c_merged(self)) {
+			self->flags |= dirstate_flag_p1_tracked;
+		} else {
+			self->flags &= ~dirstate_flag_p1_tracked;
+		}
+		self->flags &=
+		    ~(dirstate_flag_merged | dirstate_flag_clean_p1 |
+		      dirstate_flag_clean_p2 | dirstate_flag_p2_tracked);
+		self->flags |= dirstate_flag_possibly_dirty;
+		self->mode = 0;
+		self->mtime = 0;
+		/* size = None on the python size turn into size = NON_NORMAL
+		 * when accessed. So the next line is currently required, but a
+		 * some future clean up would be welcome. */
+		self->size = dirstate_v1_nonnormal;
+	}
+	Py_RETURN_NONE;
+}
 static PyMethodDef dirstate_item_methods[] = {
     {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
      "return a \"state\" suitable for v1 serialization"},
@@ -551,6 +572,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "mark a file as \"tracked\""},
     {"set_untracked", (PyCFunction)dirstate_item_set_untracked, METH_NOARGS,
      "mark a file as \"untracked\""},
+    {"drop_merge_data", (PyCFunction)dirstate_item_drop_merge_data, METH_NOARGS,
+     "remove all \"merge-only\" from a DirstateItem"},
     {NULL} /* Sentinel */
 };
 
