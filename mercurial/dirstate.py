@@ -130,7 +130,6 @@ class dirstate(object):
         self._pendingfilename = b'%s.pending' % self._filename
         self._plchangecallbacks = {}
         self._origpl = None
-        self._updatedfiles = set()
         self._mapcls = dirstatemap.dirstatemap
         # Access and cache cwd early, so we don't access it for the first time
         # after a working-copy update caused it to not exist (accessing it then
@@ -410,7 +409,6 @@ class dirstate(object):
                     if source:
                         copies[f] = source
                     self._check_new_tracked_filename(f)
-                    self._updatedfiles.add(f)
                     self._map.reset_state(
                         f,
                         p1_tracked=False,
@@ -446,7 +444,6 @@ class dirstate(object):
                 delattr(self, a)
         self._lastnormaltime = 0
         self._dirty = False
-        self._updatedfiles.clear()
         self._parentwriters = 0
         self._origpl = None
 
@@ -457,10 +454,8 @@ class dirstate(object):
         self._dirty = True
         if source is not None:
             self._map.copymap[dest] = source
-            self._updatedfiles.add(source)
-            self._updatedfiles.add(dest)
-        elif self._map.copymap.pop(dest, None):
-            self._updatedfiles.add(dest)
+        else:
+            self._map.copymap.pop(dest, None)
 
     def copied(self, file):
         return self._map.copymap.get(file, None)
@@ -478,7 +473,6 @@ class dirstate(object):
         return True the file was previously untracked, False otherwise.
         """
         self._dirty = True
-        self._updatedfiles.add(filename)
         entry = self._map.get(filename)
         if entry is None or not entry.tracked:
             self._check_new_tracked_filename(filename)
@@ -496,14 +490,12 @@ class dirstate(object):
         ret = self._map.set_untracked(filename)
         if ret:
             self._dirty = True
-            self._updatedfiles.add(filename)
         return ret
 
     @requires_no_parents_change
     def set_clean(self, filename, parentfiledata=None):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
-        self._updatedfiles.add(filename)
         if parentfiledata:
             (mode, size, mtime) = parentfiledata
         else:
@@ -521,7 +513,6 @@ class dirstate(object):
     def set_possibly_dirty(self, filename):
         """record that the current state of the file on disk is unknown"""
         self._dirty = True
-        self._updatedfiles.add(filename)
         self._map.set_possibly_dirty(filename)
 
     @requires_parents_change
@@ -556,7 +547,6 @@ class dirstate(object):
             if self._map.get(filename) is not None:
                 self._map.reset_state(filename)
                 self._dirty = True
-                self._updatedfiles.add(filename)
         elif (not p1_tracked) and wc_tracked:
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
@@ -572,7 +562,6 @@ class dirstate(object):
         if wc_tracked:
             parentfiledata = self._get_filedata(filename)
 
-        self._updatedfiles.add(filename)
         self._map.reset_state(
             filename,
             wc_tracked,
@@ -622,7 +611,6 @@ class dirstate(object):
         # this. The test agrees
 
         self._dirty = True
-        self._updatedfiles.add(filename)
 
         need_parent_file_data = (
             not (possibly_dirty or clean_p2 or merged)
@@ -768,7 +756,6 @@ class dirstate(object):
     def clear(self):
         self._map.clear()
         self._lastnormaltime = 0
-        self._updatedfiles.clear()
         self._dirty = True
 
     def rebuild(self, parent, allfiles, changedfiles=None):
@@ -809,10 +796,8 @@ class dirstate(object):
                     p1_tracked=True,
                     possibly_dirty=True,
                 )
-            self._updatedfiles.add(f)
         for f in to_drop:
             self._map.reset_state(f)
-            self._updatedfiles.add(f)
 
         self._dirty = True
 
@@ -838,9 +823,6 @@ class dirstate(object):
 
             # record when mtime start to be ambiguous
             now = _getfsnow(self._opener)
-
-            # emulate that all 'dirstate.normal' results are written out
-            self._updatedfiles.clear()
 
             # delay writing in-memory changes out
             tr.addfilegenerator(
