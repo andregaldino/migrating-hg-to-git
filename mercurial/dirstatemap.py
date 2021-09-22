@@ -428,9 +428,40 @@ class dirstatemap(object):
 
         return self._parents
 
-    def setparents(self, p1, p2):
+    def setparents(self, p1, p2, fold_p2=False):
         self._parents = (p1, p2)
         self._dirtyparents = True
+        copies = {}
+        if fold_p2:
+            candidatefiles = self.non_normal_or_other_parent_paths()
+
+            for f in candidatefiles:
+                s = self.get(f)
+                if s is None:
+                    continue
+
+                # Discard "merged" markers when moving away from a merge state
+                if s.merged:
+                    source = self.copymap.get(f)
+                    if source:
+                        copies[f] = source
+                    self.reset_state(
+                        f,
+                        wc_tracked=True,
+                        p1_tracked=True,
+                        possibly_dirty=True,
+                    )
+                # Also fix up otherparent markers
+                elif s.from_p2:
+                    source = self.copymap.get(f)
+                    if source:
+                        copies[f] = source
+                    self.reset_state(
+                        f,
+                        p1_tracked=False,
+                        wc_tracked=True,
+                    )
+        return copies
 
     def read(self):
         # ignore HG_PENDING because identity is used only for writing
@@ -769,9 +800,40 @@ if rustmod is not None:
                 # File doesn't exist, so the current state is empty
                 return b''
 
-        def setparents(self, p1, p2):
+        def setparents(self, p1, p2, fold_p2=False):
             self._parents = (p1, p2)
             self._dirtyparents = True
+            copies = {}
+            if fold_p2:
+                candidatefiles = self.non_normal_or_other_parent_paths()
+
+                for f in candidatefiles:
+                    s = self.get(f)
+                    if s is None:
+                        continue
+
+                    # Discard "merged" markers when moving away from a merge state
+                    if s.merged:
+                        source = self.copymap.get(f)
+                        if source:
+                            copies[f] = source
+                        self.reset_state(
+                            f,
+                            wc_tracked=True,
+                            p1_tracked=True,
+                            possibly_dirty=True,
+                        )
+                    # Also fix up otherparent markers
+                    elif s.from_p2:
+                        source = self.copymap.get(f)
+                        if source:
+                            copies[f] = source
+                        self.reset_state(
+                            f,
+                            p1_tracked=False,
+                            wc_tracked=True,
+                        )
+            return copies
 
         def parents(self):
             if not self._parents:

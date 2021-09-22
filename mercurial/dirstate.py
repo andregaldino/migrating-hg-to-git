@@ -381,39 +381,10 @@ class dirstate(object):
         oldp2 = self._pl[1]
         if self._origpl is None:
             self._origpl = self._pl
-        self._map.setparents(p1, p2)
-        copies = {}
         nullid = self._nodeconstants.nullid
-        if oldp2 != nullid and p2 == nullid:
-            candidatefiles = self._map.non_normal_or_other_parent_paths()
-
-            for f in candidatefiles:
-                s = self._map.get(f)
-                if s is None:
-                    continue
-
-                # Discard "merged" markers when moving away from a merge state
-                if s.merged:
-                    source = self._map.copymap.get(f)
-                    if source:
-                        copies[f] = source
-                    self._map.reset_state(
-                        f,
-                        wc_tracked=True,
-                        p1_tracked=True,
-                        possibly_dirty=True,
-                    )
-                # Also fix up otherparent markers
-                elif s.from_p2:
-                    source = self._map.copymap.get(f)
-                    if source:
-                        copies[f] = source
-                    self._map.reset_state(
-                        f,
-                        p1_tracked=False,
-                        wc_tracked=True,
-                    )
-        return copies
+        # True if we need to fold p2 related state back to a linear case
+        fold_p2 = oldp2 != nullid and p2 == nullid
+        return self._map.setparents(p1, p2, fold_p2=fold_p2)
 
     def setbranch(self, branch):
         self.__class__._branch.set(self, encoding.fromlocal(branch))
