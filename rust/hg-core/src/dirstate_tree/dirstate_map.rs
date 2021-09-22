@@ -762,10 +762,6 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         let node =
             self.get_or_insert(&filename).expect("no parse error in v1");
         node.data = NodeData::Entry(entry);
-        node.children = ChildNodes::default();
-        node.copy_source = None;
-        node.descendants_with_entry_count = 0;
-        node.tracked_descendants_count = 0;
     }
 
     fn add_file(
