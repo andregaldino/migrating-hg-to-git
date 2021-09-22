@@ -51,14 +51,6 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().drop_entry_and_copy_source(filename)
     }
 
-    fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) -> Result<(), DirstateV2ParseError> {
-        self.get_mut().clear_ambiguous_times(filenames, now)
-    }
-
     fn non_normal_entries_contains(
         &mut self,
         key: &HgPath,

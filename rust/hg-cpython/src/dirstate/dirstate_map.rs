@@ -12,9 +12,9 @@ use std::cell::{RefCell, RefMut};
 use std::convert::TryInto;
 
 use cpython::{
-    exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
-    PyNone, PyObject, PyResult, PySet, PyString, Python, PythonObject,
-    ToPyObject, UnsafePyLeaked,
+    exc, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList, PyNone, PyObject,
+    PyResult, PySet, PyString, Python, PythonObject, ToPyObject,
+    UnsafePyLeaked,
 };
 
 use crate::{
@@ -183,26 +183,6 @@ py_class!(pub class DirstateMap |py| {
             .drop_entry_and_copy_source(HgPath::new(f.data(py)))
             .map_err(|e |dirstate_error(py, e))?;
         Ok(PyNone)
-    }
-
-    def clearambiguoustimes(
-        &self,
-        files: PyObject,
-        now: PyObject
-    ) -> PyResult<PyObject> {
-        let files: PyResult<Vec<HgPathBuf>> = files
-            .iter(py)?
-            .map(|filename| {
-                Ok(HgPathBuf::from_bytes(
-                    filename?.extract::<PyBytes>(py)?.data(py),
-                ))
-            })
-            .collect();
-        self.inner(py)
-            .borrow_mut()
-            .clear_ambiguous_times(files?, now.extract(py)?)
-            .map_err(|e| v2_error(py, e))?;
-        Ok(py.None())
     }
 
     def other_parent_entries(&self) -> PyResult<PyObject> {

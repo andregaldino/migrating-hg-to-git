@@ -182,22 +182,6 @@ impl DirstateMap {
         Ok(())
     }
 
-    pub fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) {
-        for filename in filenames {
-            if let Some(entry) = self.state_map.get_mut(&filename) {
-                if entry.clear_ambiguous_mtime(now) {
-                    self.get_non_normal_other_parent_entries()
-                        .0
-                        .insert(filename.to_owned());
-                }
-            }
-        }
-    }
-
     pub fn non_normal_entries_remove(
         &mut self,
         key: impl AsRef<HgPath>,

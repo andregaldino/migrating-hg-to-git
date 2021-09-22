@@ -330,13 +330,6 @@ class dirstatemap(object):
                 entry.set_untracked()
             return True
 
-    def clearambiguoustimes(self, files, now):
-        for f in files:
-            e = self.get(f)
-            if e is not None and e.need_delay(now):
-                e.set_possibly_dirty()
-                self.nonnormalset.add(f)
-
     def nonnormalentries(self):
         '''Compute the nonnormal dirstate entries from the dmap'''
         try:
@@ -700,9 +693,6 @@ if rustmod is not None:
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
-
-        def clearambiguoustimes(self, *args, **kwargs):
-            return self._rustmap.clearambiguoustimes(*args, **kwargs)
 
         def nonnormalentries(self):
             return self._rustmap.nonnormalentries()

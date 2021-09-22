@@ -917,26 +917,6 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Ok(())
     }
 
-    fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) -> Result<(), DirstateV2ParseError> {
-        for filename in filenames {
-            if let Some(node) = Self::get_node_mut(
-                self.on_disk,
-                &mut self.unreachable_bytes,
-                &mut self.root,
-                &filename,
-            )? {
-                if let NodeData::Entry(entry) = &mut node.data {
-                    entry.clear_ambiguous_mtime(now);
-                }
-            }
-        }
-        Ok(())
-    }
-
     fn non_normal_entries_contains(
         &mut self,
         key: &HgPath,

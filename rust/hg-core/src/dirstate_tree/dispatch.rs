@@ -67,15 +67,6 @@ pub trait DirstateMapMethods {
         filename: &HgPath,
     ) -> Result<(), DirstateError>;
 
-    /// Among given files, mark the stored `mtime` as ambiguous if there is one
-    /// (if `state == EntryState::Normal`) equal to the given current Unix
-    /// timestamp.
-    fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) -> Result<(), DirstateV2ParseError>;
-
     /// Return whether the map has an "non-normal" entry for the given
     /// filename. That is, any entry with a `state` other than
     /// `EntryState::Normal` or with an ambiguous `mtime`.
@@ -165,20 +156,18 @@ pub trait DirstateMapMethods {
     /// file with a dirstate entry.
     fn has_dir(&mut self, directory: &HgPath) -> Result<bool, DirstateError>;
 
-    /// Clear mtimes that are ambigous with `now` (similar to
-    /// `clear_ambiguous_times` but for all files in the dirstate map), and
-    /// serialize bytes to write the `.hg/dirstate` file to disk in dirstate-v1
-    /// format.
+    /// Clear mtimes equal to `now` in entries with `state ==
+    /// EntryState::Normal`, and serialize bytes to write the `.hg/dirstate`
+    /// file to disk in dirstate-v1 format.
     fn pack_v1(
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError>;
 
-    /// Clear mtimes that are ambigous with `now` (similar to
-    /// `clear_ambiguous_times` but for all files in the dirstate map), and
-    /// serialize bytes to write a dirstate data file to disk in dirstate-v2
-    /// format.
+    /// Clear mtimes equal to `now` in entries with `state ==
+    /// EntryState::Normal`, and serialize  bytes to write a dirstate data file
+    /// to disk in dirstate-v2 format.
     ///
     /// Returns new data and metadata together with whether that data should be
     /// appended to the existing data file whose content is at
@@ -339,14 +328,6 @@ impl DirstateMapMethods for DirstateMap {
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
         self.drop_entry_and_copy_source(filename)
-    }
-
-    fn clear_ambiguous_times(
-        &mut self,
-        filenames: Vec<HgPathBuf>,
-        now: i32,
-    ) -> Result<(), DirstateV2ParseError> {
-        Ok(self.clear_ambiguous_times(filenames, now))
     }
 
     fn non_normal_entries_contains(
