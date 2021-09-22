@@ -136,7 +136,10 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let f = path.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
-        self.inner(py).borrow_mut().set_entry(filename, item.get_entry(py));
+        self.inner(py)
+            .borrow_mut()
+            .set_entry(filename, item.get_entry(py))
+            .map_err(|e| v2_error(py, e))?;
         Ok(py.None())
     }
 
