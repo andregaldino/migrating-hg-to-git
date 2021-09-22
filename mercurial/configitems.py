@@ -207,6 +207,11 @@ coreconfigitem(
     b'pushing',
     default=list,
 )
+coreconfigitem(
+    b'bookmarks',
+    b'mirror',
+    default=False,
+)
 # bundle.mainreporoot: internal hack for bundlerepo
 coreconfigitem(
     b'bundle',

@@ -680,8 +680,25 @@ def binarydecode(repo, stream):
     return books
 
 
-def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
-    ui.debug(b"checking for updated bookmarks\n")
+def mirroring_remote(ui, repo, remotemarks):
+    """computes the bookmark changes that set the local bookmarks to
+    remotemarks"""
+    changed = []
+    localmarks = repo._bookmarks
+    for (b, id) in pycompat.iteritems(remotemarks):
+        if id != localmarks.get(b, None) and id in repo:
+            changed.append((b, id, ui.debug, _(b"updating bookmark %s\n") % b))
+    for b in localmarks:
+        if b not in remotemarks:
+            changed.append(
+                (b, None, ui.debug, _(b"removing bookmark %s\n") % b)
+            )
+    return changed
+
+
+def merging_from_remote(ui, repo, remotemarks, path, explicit=()):
+    """computes the bookmark changes that merge remote bookmarks into the
+    local bookmarks, based on comparebookmarks"""
     localmarks = repo._bookmarks
     (
         addsrc,
@@ -752,6 +769,15 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
                 _(b"remote bookmark %s points to locally missing %s\n")
                 % (b, hex(scid)[:12])
             )
+    return changed
+
+
+def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
+    ui.debug(b"checking for updated bookmarks\n")
+    if ui.configbool(b'bookmarks', b'mirror'):
+        changed = mirroring_remote(ui, repo, remotemarks)
+    else:
+        changed = merging_from_remote(ui, repo, remotemarks, path, explicit)
 
     if changed:
         tr = trfunc()
@@ -760,7 +786,7 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
         for b, node, writer, msg in sorted(changed, key=key):
             changes.append((b, node))
             writer(msg)
-        localmarks.applychanges(repo, tr, changes)
+        repo._bookmarks.applychanges(repo, tr, changes)
 
 
 def incoming(ui, repo, peer):
