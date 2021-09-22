@@ -758,7 +758,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         self.nodes_with_copy_source_count = 0;
     }
 
-    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry) {
+    fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry) {
         let node =
             self.get_or_insert(&filename).expect("no parse error in v1");
         node.data = NodeData::Entry(entry);

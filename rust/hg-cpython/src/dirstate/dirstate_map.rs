@@ -129,18 +129,14 @@ py_class!(pub class DirstateMap |py| {
         }
     }
 
-    def set_v1(&self, path: PyObject, item: PyObject) -> PyResult<PyObject> {
+    def set_dirstate_item(
+        &self,
+        path: PyObject,
+        item: DirstateItem
+    ) -> PyResult<PyObject> {
         let f = path.extract::<PyBytes>(py)?;
         let filename = HgPath::new(f.data(py));
-        let state = item.getattr(py, "state")?.extract::<PyBytes>(py)?;
-        let state = state.data(py)[0];
-        let entry = DirstateEntry::from_v1_data(
-            state.try_into().expect("state is always valid"),
-            item.getattr(py, "mode")?.extract(py)?,
-            item.getattr(py, "size")?.extract(py)?,
-            item.getattr(py, "mtime")?.extract(py)?,
-        );
-        self.inner(py).borrow_mut().set_v1(filename, entry);
+        self.inner(py).borrow_mut().set_entry(filename, item.get_entry(py));
         Ok(py.None())
     }
 

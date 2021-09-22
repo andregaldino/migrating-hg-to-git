@@ -664,7 +664,7 @@ if rustmod is not None:
                 new = True
             elif not entry.tracked:
                 entry.set_tracked()
-                self._rustmap.set_v1(filename, entry)
+                self._rustmap.set_dirstate_item(filename, entry)
                 new = True
             else:
                 # XXX This is probably overkill for more case, but we need this to
@@ -949,7 +949,7 @@ if rustmod is not None:
             """record that the current state of the file on disk is unknown"""
             entry = self[filename]
             entry.set_possibly_dirty()
-            self._rustmap.set_v1(filename, entry)
+            self._rustmap.set_dirstate_item(filename, entry)
 
         def set_clean(self, filename, mode, size, mtime):
             """mark a file as back to a clean state"""
@@ -957,9 +957,9 @@ if rustmod is not None:
             mtime = mtime & rangemask
             size = size & rangemask
             entry.set_clean(mode, size, mtime)
-            self._rustmap.set_v1(filename, entry)
+            self._rustmap.set_dirstate_item(filename, entry)
             self._rustmap.copymap().pop(filename, None)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
-            self._rustmap.set_v1(key, value)
+            self._rustmap.set_dirstate_item(key, value)

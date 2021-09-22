@@ -180,6 +180,10 @@ impl DirstateItem {
         Ok(DirstateItem::create_instance(py, Cell::new(entry))?.into_object())
     }
 
+    pub fn get_entry(&self, py: Python<'_>) -> DirstateEntry {
+        self.entry(py).get()
+    }
+
     // TODO: Use https://doc.rust-lang.org/std/cell/struct.Cell.html#method.update instead when it’s stable
     pub fn update(&self, py: Python<'_>, f: impl FnOnce(&mut DirstateEntry)) {
         let mut entry = self.entry(py).get();

@@ -20,8 +20,8 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().clear()
     }
 
-    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry) {
-        self.get_mut().set_v1(filename, entry)
+    fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry) {
+        self.get_mut().set_entry(filename, entry)
     }
 
     fn add_file(

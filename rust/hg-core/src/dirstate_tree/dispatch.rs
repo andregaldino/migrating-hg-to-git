@@ -37,7 +37,9 @@ pub trait DirstateMapMethods {
     /// Remove information about all files in this map
     fn clear(&mut self);
 
-    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry);
+    /// Add the given filename to the map if it is not already there, and
+    /// associate the given entry with it.
+    fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry);
 
     /// Add or change the information associated to a given file.
     ///
@@ -319,8 +321,8 @@ impl DirstateMapMethods for DirstateMap {
     ///
     /// XXX Is temporary during a refactor of V1 dirstate and will disappear
     /// shortly.
-    fn set_v1(&mut self, filename: &HgPath, entry: DirstateEntry) {
-        self.set_v1_inner(&filename, entry)
+    fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry) {
+        self.set_entry(&filename, entry)
     }
 
     fn add_file(

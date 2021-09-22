@@ -64,7 +64,7 @@ impl DirstateMap {
         self.other_parent_set = None;
     }
 
-    pub fn set_v1_inner(&mut self, filename: &HgPath, entry: DirstateEntry) {
+    pub fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry) {
         self.state_map.insert(filename.to_owned(), entry);
     }
 
