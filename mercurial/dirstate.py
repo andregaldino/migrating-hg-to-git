@@ -836,19 +836,17 @@ class dirstate(object):
             # See also the wiki page below for detail:
             # https://www.mercurial-scm.org/wiki/DirstateTransactionPlan
 
-            # emulate dropping timestamp in 'parsers.pack_dirstate'
+            # record when mtime start to be ambiguous
             now = _getfsnow(self._opener)
-            self._map.clearambiguoustimes(self._updatedfiles, now)
 
             # emulate that all 'dirstate.normal' results are written out
-            self._lastnormaltime = 0
             self._updatedfiles.clear()
 
             # delay writing in-memory changes out
             tr.addfilegenerator(
                 b'dirstate',
                 (self._filename,),
-                lambda f: self._writedirstate(tr, f),
+                lambda f: self._writedirstate(tr, f, now=now),
                 location=b'plain',
             )
             return
@@ -867,7 +865,7 @@ class dirstate(object):
         """
         self._plchangecallbacks[category] = callback
 
-    def _writedirstate(self, tr, st):
+    def _writedirstate(self, tr, st, now=None):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
             for c, callback in sorted(
@@ -875,9 +873,11 @@ class dirstate(object):
             ):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
-        # use the modification time of the newly created temporary file as the
-        # filesystem's notion of 'now'
-        now = util.fstat(st)[stat.ST_MTIME] & _rangemask
+
+        if now is None:
+            # use the modification time of the newly created temporary file as the
+            # filesystem's notion of 'now'
+            now = util.fstat(st)[stat.ST_MTIME] & _rangemask
 
         # enough 'delaywrite' prevents 'pack_dirstate' from dropping
         # timestamp of each entries in dirstate, because of 'now > mtime'
