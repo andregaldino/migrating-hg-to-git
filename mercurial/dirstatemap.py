@@ -27,7 +27,10 @@ rustmod = policy.importrust('dirstate')
 
 propertycache = util.propertycache
 
-DirstateItem = parsers.DirstateItem
+if rustmod is None:
+    DirstateItem = parsers.DirstateItem
+else:
+    DirstateItem = rustmod.DirstateItem
 
 rangemask = 0x7FFFFFFF
 

@@ -45,7 +45,7 @@ propertycache = util.propertycache
 filecache = scmutil.filecache
 _rangemask = dirstatemap.rangemask
 
-DirstateItem = parsers.DirstateItem
+DirstateItem = dirstatemap.DirstateItem
 
 
 class repocache(filecache):

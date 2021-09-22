@@ -22,51 +22,8 @@ use crate::{
     },
     exceptions,
 };
-use cpython::{
-    PyBytes, PyDict, PyErr, PyList, PyModule, PyObject, PyResult, Python,
-};
+use cpython::{PyBytes, PyDict, PyList, PyModule, PyObject, PyResult, Python};
 use hg::dirstate_tree::on_disk::V2_FORMAT_MARKER;
-use hg::DirstateEntry;
-use libc::{c_char, c_int};
-
-// C code uses a custom `dirstate_tuple` type, checks in multiple instances
-// for this type, and raises a Python `Exception` if the check does not pass.
-// Because this type differs only in name from the regular Python tuple, it
-// would be a good idea in the near future to remove it entirely to allow
-// for a pure Python tuple of the same effective structure to be used,
-// rendering this type and the capsule below useless.
-py_capsule_fn!(
-    from mercurial.cext.parsers import make_dirstate_item_CAPI
-        as make_dirstate_item_capi
-        signature (
-            state: c_char,
-            mode: c_int,
-            size: c_int,
-            mtime: c_int,
-        ) -> *mut RawPyObject
-);
-
-pub fn make_dirstate_item(
-    py: Python,
-    entry: &DirstateEntry,
-) -> PyResult<PyObject> {
-    // Explicitly go through u8 first, then cast to platform-specific `c_char`
-    // because Into<u8> has a specific implementation while `as c_char` would
-    // just do a naive enum cast.
-    let state_code: u8 = entry.state().into();
-
-    let make = make_dirstate_item_capi::retrieve(py)?;
-    let maybe_obj = unsafe {
-        let ptr = make(
-            state_code as c_char,
-            entry.mode(),
-            entry.size(),
-            entry.mtime(),
-        );
-        PyObject::from_owned_ptr_opt(py, ptr)
-    };
-    maybe_obj.ok_or_else(|| PyErr::fetch(py))
-}
 
 /// Create the module, with `__package__` given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
