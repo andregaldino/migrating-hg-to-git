@@ -46,11 +46,6 @@ pub trait DirstateMapMethods {
     ) -> Result<(), DirstateV2ParseError>;
 
     /// Add or change the information associated to a given file.
-    ///
-    /// `old_state` is the state in the entry that `get` would have returned
-    /// before this call, or `EntryState::Unknown` if there was no such entry.
-    ///
-    /// `entry.state` should never be `EntryState::Unknown`.
     fn add_file(
         &mut self,
         filename: &HgPath,
@@ -62,25 +57,15 @@ pub trait DirstateMapMethods {
     ) -> Result<(), DirstateError>;
 
     /// Mark a file as "removed" (as in `hg rm`).
-    ///
-    /// `old_state` is the state in the entry that `get` would have returned
-    /// before this call, or `EntryState::Unknown` if there was no such entry.
-    ///
-    /// `size` is not actually a size but the 0 or -1 or -2 value that would be
-    /// put in the size field in the dirstate-v1 format.
     fn remove_file(
         &mut self,
         filename: &HgPath,
         in_merge: bool,
     ) -> Result<(), DirstateError>;
 
-    /// Drop information about this file from the map if any, and return
-    /// whether there was any.
+    /// Drop information about this file from the map if any.
     ///
     /// `get` will now return `None` for this filename.
-    ///
-    /// `old_state` is the state in the entry that `get` would have returned
-    /// before this call, or `EntryState::Unknown` if there was no such entry.
     fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError>;
 
     /// Among given files, mark the stored `mtime` as ambiguous if there is one
