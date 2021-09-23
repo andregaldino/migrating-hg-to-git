@@ -526,7 +526,7 @@ def annotate(ui, repo, *pats, **opts):
     )
 
     def bad(x, y):
-        raise error.Abort(b"%s: %s" % (x, y))
+        raise error.InputError(b"%s: %s" % (x, y))
 
     m = scmutil.match(ctx, pats, opts, badfn=bad)
 
