@@ -352,6 +352,7 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 		PyErr_Format(PyExc_RuntimeError,
 		             "unknown state: `%c` (%d, %d, %d)", state, mode,
 		             size, mtime, NULL);
+		Py_DECREF(t);
 		return NULL;
 	}
 
