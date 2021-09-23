@@ -770,6 +770,8 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 
 		entry = (PyObject *)dirstate_item_from_v1_data(state, mode,
 		                                               size, mtime);
+		if (!entry)
+			goto quit;
 		cpos = memchr(cur, 0, flen);
 		if (cpos) {
 			fname = PyBytes_FromStringAndSize(cur, cpos - cur);
