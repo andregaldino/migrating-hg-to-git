@@ -66,7 +66,10 @@ pub trait DirstateMapMethods {
     /// Drop information about this file from the map if any.
     ///
     /// `get` will now return `None` for this filename.
-    fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError>;
+    fn drop_entry_and_copy_source(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<(), DirstateError>;
 
     /// Among given files, mark the stored `mtime` as ambiguous if there is one
     /// (if `state == EntryState::Normal`) equal to the given current Unix
@@ -339,8 +342,11 @@ impl DirstateMapMethods for DirstateMap {
         self.remove_file(filename, in_merge)
     }
 
-    fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError> {
-        self.drop_file(filename)
+    fn drop_entry_and_copy_source(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<(), DirstateError> {
+        self.drop_entry_and_copy_source(filename)
     }
 
     fn clear_ambiguous_times(

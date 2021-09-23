@@ -195,7 +195,7 @@ impl DirstateMap {
 
     /// Remove a file from the dirstate.
     /// Returns `true` if the file was previously recorded.
-    pub fn drop_file(
+    pub fn drop_entry_and_copy_source(
         &mut self,
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
@@ -215,6 +215,8 @@ impl DirstateMap {
         self.get_non_normal_other_parent_entries()
             .0
             .remove(filename);
+
+        self.copy_map.remove(filename);
 
         Ok(())
     }

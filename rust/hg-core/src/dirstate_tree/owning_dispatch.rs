@@ -55,8 +55,11 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().remove_file(filename, in_merge)
     }
 
-    fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError> {
-        self.get_mut().drop_file(filename)
+    fn drop_entry_and_copy_source(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<(), DirstateError> {
+        self.get_mut().drop_entry_and_copy_source(filename)
     }
 
     fn clear_ambiguous_times(

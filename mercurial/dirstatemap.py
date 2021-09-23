@@ -606,7 +606,7 @@ if rustmod is not None:
             self.copymap.pop(filename, None)
 
             if not (p1_tracked or p2_tracked or wc_tracked):
-                self.dropfile(filename)
+                self._rustmap.drop_item_and_copy_source(filename)
             elif merged:
                 # XXX might be merged and removed ?
                 entry = self.get(filename)
@@ -684,18 +684,13 @@ if rustmod is not None:
                 return False
             else:
                 if entry.added:
-                    self._rustmap.copymap().pop(f, None)
-                    self._rustmap.dropfile(f)
+                    self._rustmap.drop_item_and_copy_source(f)
                 else:
                     self._rustmap.removefile(f, in_merge=True)
                 return True
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
-
-        def dropfile(self, f, *args, **kwargs):
-            self._rustmap.copymap().pop(f, None)
-            self._rustmap.dropfile(f, *args, **kwargs)
 
         def clearambiguoustimes(self, *args, **kwargs):
             return self._rustmap.clearambiguoustimes(*args, **kwargs)

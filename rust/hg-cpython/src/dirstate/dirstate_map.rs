@@ -210,13 +210,13 @@ py_class!(pub class DirstateMap |py| {
         Ok(py.None())
     }
 
-    def dropfile(
+    def drop_item_and_copy_source(
         &self,
         f: PyBytes,
     ) -> PyResult<PyNone> {
         self.inner(py)
             .borrow_mut()
-            .drop_file(HgPath::new(f.data(py)))
+            .drop_entry_and_copy_source(HgPath::new(f.data(py)))
             .map_err(|e |dirstate_error(py, e))?;
         Ok(PyNone)
     }
