@@ -689,7 +689,7 @@ def revsingle(repo, revspec, default=b'.', localalias=None):
 
     l = revrange(repo, [revspec], localalias=localalias)
     if not l:
-        raise error.Abort(_(b'empty revision set'))
+        raise error.InputError(_(b'empty revision set'))
     return repo[l.last()]
 
 
@@ -710,7 +710,7 @@ def revpair(repo, revs):
     l = revrange(repo, revs)
 
     if not l:
-        raise error.Abort(_(b'empty revision range'))
+        raise error.InputError(_(b'empty revision range'))
 
     first = l.first()
     second = l.last()
@@ -720,7 +720,7 @@ def revpair(repo, revs):
         and len(revs) >= 2
         and not all(revrange(repo, [r]) for r in revs)
     ):
-        raise error.Abort(_(b'empty revision on one side of range'))
+        raise error.InputError(_(b'empty revision on one side of range'))
 
     # if top-level is range expression, the result must always be a pair
     if first == second and len(revs) == 1 and not _pairspec(revs[0]):

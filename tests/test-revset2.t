@@ -840,7 +840,7 @@ test usage in revpair (with "+")
 
   $ hg diff -r 'author("babar") or author("celeste")'
   abort: empty revision range
-  [255]
+  [10]
 
 aliases:
 
