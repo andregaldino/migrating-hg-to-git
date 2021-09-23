@@ -55,7 +55,7 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().remove_file(filename, in_merge)
     }
 
-    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
+    fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError> {
         self.get_mut().drop_file(filename)
     }
 

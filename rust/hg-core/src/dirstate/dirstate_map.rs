@@ -198,7 +198,7 @@ impl DirstateMap {
     pub fn drop_file(
         &mut self,
         filename: &HgPath,
-    ) -> Result<bool, DirstateError> {
+    ) -> Result<(), DirstateError> {
         let old_state = self.get(filename).map(|e| e.state());
         let exists = self.state_map.remove(filename).is_some();
 
@@ -216,7 +216,7 @@ impl DirstateMap {
             .0
             .remove(filename);
 
-        Ok(exists)
+        Ok(())
     }
 
     pub fn clear_ambiguous_times(

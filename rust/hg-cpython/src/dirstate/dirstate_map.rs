@@ -13,8 +13,8 @@ use std::convert::TryInto;
 
 use cpython::{
     exc, ObjectProtocol, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList,
-    PyObject, PyResult, PySet, PyString, Python, PythonObject, ToPyObject,
-    UnsafePyLeaked,
+    PyNone, PyObject, PyResult, PySet, PyString, Python, PythonObject,
+    ToPyObject, UnsafePyLeaked,
 };
 
 use crate::{
@@ -212,19 +212,13 @@ py_class!(pub class DirstateMap |py| {
 
     def dropfile(
         &self,
-        f: PyObject,
-    ) -> PyResult<PyBool> {
-        self.inner(py).borrow_mut()
-            .drop_file(
-                HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
-            )
-            .and_then(|b| Ok(b.to_py_object(py)))
-            .or_else(|e| {
-                Err(PyErr::new::<exc::OSError, _>(
-                    py,
-                    format!("Dirstate error: {}", e.to_string()),
-                ))
-            })
+        f: PyBytes,
+    ) -> PyResult<PyNone> {
+        self.inner(py)
+            .borrow_mut()
+            .drop_file(HgPath::new(f.data(py)))
+            .map_err(|e |dirstate_error(py, e))?;
+        Ok(PyNone)
     }
 
     def clearambiguoustimes(

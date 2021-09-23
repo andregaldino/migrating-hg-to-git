@@ -845,7 +845,7 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
         Ok(self.add_or_remove_file(filename, old_state, entry)?)
     }
 
-    fn drop_file(&mut self, filename: &HgPath) -> Result<bool, DirstateError> {
+    fn drop_file(&mut self, filename: &HgPath) -> Result<(), DirstateError> {
         let was_tracked = self
             .get(filename)?
             .map_or(false, |e| e.state().is_tracked());
@@ -946,11 +946,10 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             if dropped.had_copy_source {
                 self.nodes_with_copy_source_count -= 1
             }
-            Ok(dropped.had_entry)
         } else {
             debug_assert!(!was_tracked);
-            Ok(false)
         }
+        Ok(())
     }
 
     fn clear_ambiguous_times(

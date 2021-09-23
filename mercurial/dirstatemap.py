@@ -695,7 +695,7 @@ if rustmod is not None:
 
         def dropfile(self, f, *args, **kwargs):
             self._rustmap.copymap().pop(f, None)
-            return self._rustmap.dropfile(f, *args, **kwargs)
+            self._rustmap.dropfile(f, *args, **kwargs)
 
         def clearambiguoustimes(self, *args, **kwargs):
             return self._rustmap.clearambiguoustimes(*args, **kwargs)
