@@ -1211,9 +1211,9 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
     try:
         similarity = float(opts.get(b'similarity') or 0)
     except ValueError:
-        raise error.Abort(_(b'similarity must be a number'))
+        raise error.InputError(_(b'similarity must be a number'))
     if similarity < 0 or similarity > 100:
-        raise error.Abort(_(b'similarity must be between 0 and 100'))
+        raise error.InputError(_(b'similarity must be between 0 and 100'))
     similarity /= 100.0
 
     ret = 0

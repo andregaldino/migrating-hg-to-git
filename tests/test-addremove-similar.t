@@ -131,13 +131,13 @@ should all fail
 
   $ hg addremove -s foo
   abort: similarity must be a number
-  [255]
+  [10]
   $ hg addremove -s -1
   abort: similarity must be between 0 and 100
-  [255]
+  [10]
   $ hg addremove -s 1e6
   abort: similarity must be between 0 and 100
-  [255]
+  [10]
 
   $ cd ..
 
