@@ -2626,6 +2626,45 @@ test outgoing:
   o  0:8580ff50825a a
   
   $ hg phase --force --secret -r 10
+
+Test without revisions specified
+  $ hg email --date '1980-1-1 0:1' -n -o -t foo
+  comparing with $TESTTMP/t
+  From [test]: test
+  this patch series consists of 1 patches.
+  
+  Cc: 
+  
+  displaying [PATCH] d ...
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  Subject: [PATCH] d
+  X-Mercurial-Node: 2f9fa9b998c5fe3ac2bd9a2b14bfcbeecbc7c268
+  X-Mercurial-Series-Index: 1
+  X-Mercurial-Series-Total: 1
+  Message-Id: <2f9fa9b998c5fe3ac2bd.315532860@test-hostname>
+  X-Mercurial-Series-Id: <2f9fa9b998c5fe3ac2bd.315532860@test-hostname>
+  User-Agent: Mercurial-patchbomb/* (glob)
+  Date: Tue, 01 Jan 1980 00:01:00 +0000
+  From: test
+  To: foo
+  
+  # HG changeset patch
+  # User test
+  # Date 4 0
+  #      Thu Jan 01 00:00:04 1970 +0000
+  # Branch test
+  # Node ID 2f9fa9b998c5fe3ac2bd9a2b14bfcbeecbc7c268
+  # Parent  97d72e5f12c7e84f85064aa72e5a297142c36ed9
+  d
+  
+  diff -r 97d72e5f12c7 -r 2f9fa9b998c5 d
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/d	Thu Jan 01 00:00:04 1970 +0000
+  @@ -0,0 +1,1 @@
+  +d
+  
   $ hg email --date '1980-1-1 0:1' -n -t foo -s test -o ../t -r 'rev(10) or rev(6)'
   comparing with ../t
   From [test]: test
