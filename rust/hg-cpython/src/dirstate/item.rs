@@ -146,6 +146,36 @@ py_class!(pub class DirstateItem |py| {
         DirstateItem::create_instance(py, Cell::new(entry))
     }
 
+    @classmethod
+    def new_added(_cls) -> PyResult<Self> {
+        let entry = DirstateEntry::new_added();
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    @classmethod
+    def new_merged(_cls) -> PyResult<Self> {
+        let entry = DirstateEntry::new_merged();
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    @classmethod
+    def new_from_p2(_cls) -> PyResult<Self> {
+        let entry = DirstateEntry::new_from_p2();
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    @classmethod
+    def new_possibly_dirty(_cls) -> PyResult<Self> {
+        let entry = DirstateEntry::new_possibly_dirty();
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    @classmethod
+    def new_normal(_cls, mode: i32, size: i32, mtime: i32) -> PyResult<Self> {
+        let entry = DirstateEntry::new_normal(mode, size, mtime);
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
     def set_clean(
         &self,
         mode: i32,

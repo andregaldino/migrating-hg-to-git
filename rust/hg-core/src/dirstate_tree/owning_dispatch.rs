@@ -32,19 +32,8 @@ impl DirstateMapMethods for OwningDirstateMap {
         &mut self,
         filename: &HgPath,
         entry: DirstateEntry,
-        added: bool,
-        merged: bool,
-        from_p2: bool,
-        possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        self.get_mut().add_file(
-            filename,
-            entry,
-            added,
-            merged,
-            from_p2,
-            possibly_dirty,
-        )
+        self.get_mut().add_file(filename, entry)
     }
 
     fn remove_file(

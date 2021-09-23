@@ -8,10 +8,8 @@
 use crate::dirstate::parsers::Timestamp;
 use crate::{
     dirstate::EntryState,
-    dirstate::MTIME_UNSET,
     dirstate::SIZE_FROM_OTHER_PARENT,
     dirstate::SIZE_NON_NORMAL,
-    dirstate::V1_RANGEMASK,
     pack_dirstate, parse_dirstate,
     utils::hg_path::{HgPath, HgPathBuf},
     CopyMap, DirsMultiset, DirstateEntry, DirstateError, DirstateParents,
@@ -73,44 +71,7 @@ impl DirstateMap {
         &mut self,
         filename: &HgPath,
         entry: DirstateEntry,
-        // XXX once the dust settle this should probably become an enum
-        added: bool,
-        merged: bool,
-        from_p2: bool,
-        possibly_dirty: bool,
     ) -> Result<(), DirstateError> {
-        let state;
-        let size;
-        let mtime;
-        if added {
-            assert!(!possibly_dirty);
-            assert!(!from_p2);
-            state = EntryState::Added;
-            size = SIZE_NON_NORMAL;
-            mtime = MTIME_UNSET;
-        } else if merged {
-            assert!(!possibly_dirty);
-            assert!(!from_p2);
-            state = EntryState::Merged;
-            size = SIZE_FROM_OTHER_PARENT;
-            mtime = MTIME_UNSET;
-        } else if from_p2 {
-            assert!(!possibly_dirty);
-            state = EntryState::Normal;
-            size = SIZE_FROM_OTHER_PARENT;
-            mtime = MTIME_UNSET;
-        } else if possibly_dirty {
-            state = EntryState::Normal;
-            size = SIZE_NON_NORMAL;
-            mtime = MTIME_UNSET;
-        } else {
-            state = EntryState::Normal;
-            size = entry.size() & V1_RANGEMASK;
-            mtime = entry.mtime() & V1_RANGEMASK;
-        }
-        let mode = entry.mode();
-        let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
-
         let old_state = self.get(filename).map(|e| e.state());
         if old_state.is_none() || old_state == Some(EntryState::Removed) {
             if let Some(ref mut dirs) = self.dirs {
@@ -417,10 +378,6 @@ mod tests {
         map.add_file(
             HgPath::new(b"meh"),
             DirstateEntry::from_v1_data(EntryState::Normal, 1337, 1337, 1337),
-            false,
-            false,
-            false,
-            false,
         )
         .unwrap();
 

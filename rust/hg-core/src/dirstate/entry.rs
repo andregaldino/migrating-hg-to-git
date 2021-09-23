@@ -83,12 +83,7 @@ impl DirstateEntry {
                         mtime: 0,
                     }
                 } else {
-                    Self {
-                        flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
-                        mode,
-                        size,
-                        mtime,
-                    }
+                    Self::new_normal(mode, size, mtime)
                 }
             }
             EntryState::Added => Self::new_added(),
@@ -111,7 +106,7 @@ impl DirstateEntry {
         }
     }
 
-    fn new_from_p2() -> Self {
+    pub fn new_from_p2() -> Self {
         Self {
             // might be missing P1_TRACKED
             flags: Flags::WDIR_TRACKED | Flags::P2_TRACKED | Flags::CLEAN_P2,
@@ -121,7 +116,7 @@ impl DirstateEntry {
         }
     }
 
-    fn new_possibly_dirty() -> Self {
+    pub fn new_possibly_dirty() -> Self {
         Self {
             flags: Flags::WDIR_TRACKED
                 | Flags::P1_TRACKED
@@ -132,7 +127,7 @@ impl DirstateEntry {
         }
     }
 
-    fn new_added() -> Self {
+    pub fn new_added() -> Self {
         Self {
             flags: Flags::WDIR_TRACKED,
             mode: 0,
@@ -141,7 +136,7 @@ impl DirstateEntry {
         }
     }
 
-    fn new_merged() -> Self {
+    pub fn new_merged() -> Self {
         Self {
             flags: Flags::WDIR_TRACKED
                 | Flags::P1_TRACKED // might not be true because of rename ?
@@ -153,20 +148,21 @@ impl DirstateEntry {
         }
     }
 
+    pub fn new_normal(mode: i32, size: i32, mtime: i32) -> Self {
+        Self {
+            flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
+            mode,
+            size,
+            mtime,
+        }
+    }
+
     /// Creates a new entry in "removed" state.
     ///
     /// `size` is expected to be zero, `SIZE_NON_NORMAL`, or
     /// `SIZE_FROM_OTHER_PARENT`
     pub fn new_removed(size: i32) -> Self {
         Self::from_v1_data(EntryState::Removed, 0, size, 0)
-    }
-
-    /// TODO: refactor `DirstateMap::add_file` to not take a `DirstateEntry`
-    /// parameter and remove this constructor
-    pub fn new_for_add_file(mode: i32, size: i32, mtime: i32) -> Self {
-        // XXX Arbitrary default value since the value is determined later
-        let state = EntryState::Normal;
-        Self::from_v1_data(state, mode, size, mtime)
     }
 
     pub fn tracked(&self) -> bool {

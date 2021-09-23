@@ -561,19 +561,26 @@ if rustmod is not None:
             from_p2=False,
             possibly_dirty=False,
         ):
-            ret = self._rustmap.addfile(
-                f,
-                mode,
-                size,
-                mtime,
-                added,
-                merged,
-                from_p2,
-                possibly_dirty,
-            )
+            if added:
+                assert not possibly_dirty
+                assert not from_p2
+                item = DirstateItem.new_added()
+            elif merged:
+                assert not possibly_dirty
+                assert not from_p2
+                item = DirstateItem.new_merged()
+            elif from_p2:
+                assert not possibly_dirty
+                item = DirstateItem.new_from_p2()
+            elif possibly_dirty:
+                item = DirstateItem.new_possibly_dirty()
+            else:
+                size = size & rangemask
+                mtime = mtime & rangemask
+                item = DirstateItem.new_normal(mode, size, mtime)
+            self._rustmap.addfile(f, item)
             if added:
                 self.copymap.pop(f, None)
-            return ret
 
         def reset_state(
             self,

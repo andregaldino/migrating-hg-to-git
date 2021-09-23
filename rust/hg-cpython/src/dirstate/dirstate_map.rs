@@ -27,8 +27,6 @@ use crate::{
 };
 use hg::{
     dirstate::parsers::Timestamp,
-    dirstate::MTIME_UNSET,
-    dirstate::SIZE_NON_NORMAL,
     dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
     dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
@@ -145,50 +143,16 @@ py_class!(pub class DirstateMap |py| {
 
     def addfile(
         &self,
-        f: PyObject,
-        mode: PyObject,
-        size: PyObject,
-        mtime: PyObject,
-        added: PyObject,
-        merged: PyObject,
-        from_p2: PyObject,
-        possibly_dirty: PyObject,
-    ) -> PyResult<PyObject> {
-        let f = f.extract::<PyBytes>(py)?;
+        f: PyBytes,
+        item: DirstateItem,
+    ) -> PyResult<PyNone> {
         let filename = HgPath::new(f.data(py));
-        let mode = if mode.is_none(py) {
-            // fallback default value
-            0
-        } else {
-            mode.extract(py)?
-        };
-        let size = if size.is_none(py) {
-            // fallback default value
-            SIZE_NON_NORMAL
-        } else {
-            size.extract(py)?
-        };
-        let mtime = if mtime.is_none(py) {
-            // fallback default value
-            MTIME_UNSET
-        } else {
-            mtime.extract(py)?
-        };
-        let entry = DirstateEntry::new_for_add_file(mode, size, mtime);
-        let added = added.extract::<PyBool>(py)?.is_true();
-        let merged = merged.extract::<PyBool>(py)?.is_true();
-        let from_p2 = from_p2.extract::<PyBool>(py)?.is_true();
-        let possibly_dirty = possibly_dirty.extract::<PyBool>(py)?.is_true();
-        self.inner(py).borrow_mut().add_file(
-            filename,
-            entry,
-            added,
-            merged,
-            from_p2,
-            possibly_dirty
-        ).and(Ok(py.None())).or_else(|e: DirstateError| {
-            Err(PyErr::new::<exc::ValueError, _>(py, e.to_string()))
-        })
+        let entry = item.get_entry(py);
+        self.inner(py)
+            .borrow_mut()
+            .add_file(filename, entry)
+            .map_err(|e |dirstate_error(py, e))?;
+        Ok(PyNone)
     }
 
     def removefile(
