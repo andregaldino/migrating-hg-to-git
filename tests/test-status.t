@@ -1,15 +1,9 @@
-#testcases dirstate-v1 dirstate-v1-tree dirstate-v2
+#testcases dirstate-v1 dirstate-v2
 
 #if no-rust
   $ hg init repo0 --config format.exp-dirstate-v2=1
   abort: dirstate v2 format requested by config but not supported (requires Rust extensions)
   [255]
-#endif
-
-#if dirstate-v1-tree
-#require rust
-  $ echo '[experimental]' >> $HGRCPATH
-  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
 #endif
 
 #if dirstate-v2

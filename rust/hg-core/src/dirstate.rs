@@ -8,12 +8,10 @@
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::revlog::node::NULL_NODE;
 use crate::revlog::Node;
-use crate::utils::hg_path::{HgPath, HgPathBuf};
-use crate::FastHashMap;
+use crate::utils::hg_path::HgPath;
 use bytes_cast::BytesCast;
 
 pub mod dirs_multiset;
-pub mod dirstate_map;
 pub mod entry;
 pub mod parsers;
 pub mod status;
@@ -34,7 +32,6 @@ impl DirstateParents {
     };
 }
 
-pub type StateMap = FastHashMap<HgPathBuf, DirstateEntry>;
 pub type StateMapIter<'a> = Box<
     dyn Iterator<
             Item = Result<(&'a HgPath, DirstateEntry), DirstateV2ParseError>,
@@ -42,7 +39,6 @@ pub type StateMapIter<'a> = Box<
         + 'a,
 >;
 
-pub type CopyMap = FastHashMap<HgPathBuf, HgPathBuf>;
 pub type CopyMapIter<'a> = Box<
     dyn Iterator<Item = Result<(&'a HgPath, &'a HgPath), DirstateV2ParseError>>
         + Send

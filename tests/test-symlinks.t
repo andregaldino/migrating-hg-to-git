@@ -1,12 +1,6 @@
 #require symlink
 
-#testcases dirstate-v1 dirstate-v1-tree dirstate-v2
-
-#if dirstate-v1-tree
-#require rust
-  $ echo '[experimental]' >> $HGRCPATH
-  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
-#endif
+#testcases dirstate-v1 dirstate-v2
 
 #if dirstate-v2
 #require rust

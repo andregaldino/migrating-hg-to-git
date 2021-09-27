@@ -493,12 +493,6 @@ if rustmod is not None:
             # for consistent view between _pl() and _read() invocations
             self._pendingmode = None
 
-            self._use_dirstate_tree = self._ui.configbool(
-                b"experimental",
-                b"dirstate-tree.in-memory",
-                False,
-            )
-
         def addfile(
             self,
             f,
@@ -818,7 +812,7 @@ if rustmod is not None:
                 parents = self.docket.parents
             else:
                 self._rustmap, parents = rustmod.DirstateMap.new_v1(
-                    self._use_dirstate_tree, self._readdirstatefile()
+                    self._readdirstatefile()
                 )
 
             if parents and not self._dirtyparents:

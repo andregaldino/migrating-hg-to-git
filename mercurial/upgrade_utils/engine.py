@@ -638,7 +638,6 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
         )
 
     assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
-    srcrepo.dirstate._map._use_dirstate_tree = True
     srcrepo.dirstate._map.preload()
     srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
     srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2

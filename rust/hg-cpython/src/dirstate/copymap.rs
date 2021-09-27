@@ -15,9 +15,9 @@ use std::cell::RefCell;
 
 use crate::dirstate::dirstate_map::v2_error;
 use crate::dirstate::dirstate_map::DirstateMap;
+use hg::dirstate::CopyMapIter;
 use hg::dirstate_tree::on_disk::DirstateV2ParseError;
 use hg::utils::hg_path::HgPath;
-use hg::CopyMapIter;
 
 py_class!(pub class CopyMap |py| {
     data dirstate_map: DirstateMap;

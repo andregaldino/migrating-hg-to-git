@@ -23,6 +23,7 @@ use crate::{
 };
 use hg::{
     dirstate::parsers::Timestamp,
+    dirstate::StateMapIter,
     dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
     dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
@@ -30,8 +31,7 @@ use hg::{
     revlog::Node,
     utils::files::normalize_case,
     utils::hg_path::{HgPath, HgPathBuf},
-    DirstateEntry, DirstateError, DirstateMap as RustDirstateMap,
-    DirstateParents, EntryState, StateMapIter,
+    DirstateEntry, DirstateError, DirstateParents, EntryState,
 };
 
 // TODO
@@ -52,25 +52,16 @@ py_class!(pub class DirstateMap |py| {
     /// Returns a `(dirstate_map, parents)` tuple
     @staticmethod
     def new_v1(
-        use_dirstate_tree: bool,
         on_disk: PyBytes,
     ) -> PyResult<PyObject> {
-        let (inner, parents) = if use_dirstate_tree {
-            let on_disk = PyBytesDeref::new(py, on_disk);
-            let mut map = OwningDirstateMap::new_empty(on_disk);
-            let (on_disk, map_placeholder) = map.get_mut_pair();
+        let on_disk = PyBytesDeref::new(py, on_disk);
+        let mut map = OwningDirstateMap::new_empty(on_disk);
+        let (on_disk, map_placeholder) = map.get_mut_pair();
 
-            let (actual_map, parents) = TreeDirstateMap::new_v1(on_disk)
-                .map_err(|e| dirstate_error(py, e))?;
-            *map_placeholder = actual_map;
-            (Box::new(map) as _, parents)
-        } else {
-            let bytes = on_disk.data(py);
-            let mut map = RustDirstateMap::default();
-            let parents = map.read(bytes).map_err(|e| dirstate_error(py, e))?;
-            (Box::new(map) as _, parents)
-        };
-        let map = Self::create_instance(py, inner)?;
+        let (actual_map, parents) = TreeDirstateMap::new_v1(on_disk)
+            .map_err(|e| dirstate_error(py, e))?;
+        *map_placeholder = actual_map;
+        let map = Self::create_instance(py, Box::new(map))?;
         let parents = parents.map(|p| {
             let p1 = PyBytes::new(py, p.p1.as_bytes());
             let p2 = PyBytes::new(py, p.p2.as_bytes());

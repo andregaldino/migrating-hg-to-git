@@ -1,17 +1,16 @@
 use std::path::PathBuf;
 
 use crate::dirstate::parsers::Timestamp;
+use crate::dirstate::CopyMapIter;
+use crate::dirstate::StateMapIter;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
-use crate::CopyMapIter;
 use crate::DirstateEntry;
 use crate::DirstateError;
-use crate::DirstateMap;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::PatternFileWarning;
-use crate::StateMapIter;
 use crate::StatusError;
 use crate::StatusOptions;
 
@@ -211,191 +210,4 @@ pub trait DirstateMapMethods {
             > + Send
             + '_,
     >;
-}
-
-impl DirstateMapMethods for DirstateMap {
-    fn clear(&mut self) {
-        self.clear()
-    }
-
-    /// Used to set a value directory.
-    ///
-    /// XXX Is temporary during a refactor of V1 dirstate and will disappear
-    /// shortly.
-    fn set_entry(
-        &mut self,
-        filename: &HgPath,
-        entry: DirstateEntry,
-    ) -> Result<(), DirstateV2ParseError> {
-        self.set_entry(&filename, entry);
-        Ok(())
-    }
-
-    fn add_file(
-        &mut self,
-        filename: &HgPath,
-        entry: DirstateEntry,
-    ) -> Result<(), DirstateError> {
-        self.add_file(filename, entry)
-    }
-
-    fn remove_file(
-        &mut self,
-        filename: &HgPath,
-        in_merge: bool,
-    ) -> Result<(), DirstateError> {
-        self.remove_file(filename, in_merge)
-    }
-
-    fn drop_entry_and_copy_source(
-        &mut self,
-        filename: &HgPath,
-    ) -> Result<(), DirstateError> {
-        self.drop_entry_and_copy_source(filename)
-    }
-
-    fn has_tracked_dir(
-        &mut self,
-        directory: &HgPath,
-    ) -> Result<bool, DirstateError> {
-        self.has_tracked_dir(directory)
-    }
-
-    fn has_dir(&mut self, directory: &HgPath) -> Result<bool, DirstateError> {
-        self.has_dir(directory)
-    }
-
-    fn pack_v1(
-        &mut self,
-        parents: DirstateParents,
-        now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError> {
-        Ok(self.pack(parents, now)?)
-    }
-
-    fn pack_v2(
-        &mut self,
-        _now: Timestamp,
-        _can_append: bool,
-    ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
-        panic!(
-            "should have used dirstate_tree::DirstateMap to use the v2 format"
-        )
-    }
-
-    fn status<'a>(
-        &'a mut self,
-        matcher: &'a (dyn Matcher + Sync),
-        root_dir: PathBuf,
-        ignore_files: Vec<PathBuf>,
-        options: StatusOptions,
-    ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>
-    {
-        crate::status(self, matcher, root_dir, ignore_files, options)
-    }
-
-    fn copy_map_len(&self) -> usize {
-        self.copy_map.len()
-    }
-
-    fn copy_map_iter(&self) -> CopyMapIter<'_> {
-        Box::new(
-            self.copy_map
-                .iter()
-                .map(|(key, value)| Ok((&**key, &**value))),
-        )
-    }
-
-    fn copy_map_contains_key(
-        &self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError> {
-        Ok(self.copy_map.contains_key(key))
-    }
-
-    fn copy_map_get(
-        &self,
-        key: &HgPath,
-    ) -> Result<Option<&HgPath>, DirstateV2ParseError> {
-        Ok(self.copy_map.get(key).map(|p| &**p))
-    }
-
-    fn copy_map_remove(
-        &mut self,
-        key: &HgPath,
-    ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
-        Ok(self.copy_map.remove(key))
-    }
-
-    fn copy_map_insert(
-        &mut self,
-        key: HgPathBuf,
-        value: HgPathBuf,
-    ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
-        Ok(self.copy_map.insert(key, value))
-    }
-
-    fn len(&self) -> usize {
-        (&**self).len()
-    }
-
-    fn contains_key(
-        &self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError> {
-        Ok((&**self).contains_key(key))
-    }
-
-    fn get(
-        &self,
-        key: &HgPath,
-    ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
-        Ok((&**self).get(key).cloned())
-    }
-
-    fn iter(&self) -> StateMapIter<'_> {
-        Box::new((&**self).iter().map(|(key, value)| Ok((&**key, *value))))
-    }
-
-    fn iter_tracked_dirs(
-        &mut self,
-    ) -> Result<
-        Box<
-            dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>>
-                + Send
-                + '_,
-        >,
-        DirstateError,
-    > {
-        self.set_all_dirs()?;
-        Ok(Box::new(
-            self.all_dirs
-                .as_ref()
-                .unwrap()
-                .iter()
-                .map(|path| Ok(&**path)),
-        ))
-    }
-
-    fn debug_iter(
-        &self,
-        all: bool,
-    ) -> Box<
-        dyn Iterator<
-                Item = Result<
-                    (&HgPath, (u8, i32, i32, i32)),
-                    DirstateV2ParseError,
-                >,
-            > + Send
-            + '_,
-    > {
-        // Not used for the flat (not tree-based) DirstateMap
-        let _ = all;
-
-        Box::new(
-            (&**self)
-                .iter()
-                .map(|(path, entry)| Ok((&**path, entry.debug_tuple()))),
-        )
-    }
 }

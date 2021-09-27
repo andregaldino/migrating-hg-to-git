@@ -1,16 +1,16 @@
 use crate::dirstate::parsers::Timestamp;
+use crate::dirstate::CopyMapIter;
+use crate::dirstate::StateMapIter;
 use crate::dirstate_tree::dispatch::DirstateMapMethods;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
-use crate::CopyMapIter;
 use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::PatternFileWarning;
-use crate::StateMapIter;
 use crate::StatusError;
 use crate::StatusOptions;
 use std::path::PathBuf;

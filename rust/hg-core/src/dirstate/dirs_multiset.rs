@@ -216,7 +216,6 @@ impl<'a> DirsChildrenMultiset<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::StateMap;
 
     #[test]
     fn test_delete_path_path_not_found() {
@@ -341,8 +340,8 @@ mod tests {
         };
         assert_eq!(expected, new);
 
-        let new = DirsMultiset::from_dirstate(
-            StateMap::default().into_iter().map(Ok),
+        let new = DirsMultiset::from_dirstate::<_, HgPathBuf>(
+            std::iter::empty(),
             false,
         )
         .unwrap();

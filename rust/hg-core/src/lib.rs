@@ -16,14 +16,11 @@ pub mod requirements;
 pub mod testing; // unconditionally built, for use from integration tests
 pub use dirstate::{
     dirs_multiset::{DirsMultiset, DirsMultisetIter},
-    dirstate_map::DirstateMap,
-    parsers::{pack_dirstate, parse_dirstate, PARENT_SIZE},
     status::{
-        status, BadMatch, BadType, DirstateStatus, HgPathCow, StatusError,
+        BadMatch, BadType, DirstateStatus, HgPathCow, StatusError,
         StatusOptions,
     },
-    CopyMap, CopyMapIter, DirstateEntry, DirstateParents, EntryState,
-    StateMap, StateMapIter,
+    DirstateEntry, DirstateParents, EntryState,
 };
 pub mod copy_tracing;
 mod filepatterns;
