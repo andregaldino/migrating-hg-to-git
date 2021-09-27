@@ -25,7 +25,6 @@ use hg::{
     dirstate::parsers::Timestamp,
     dirstate::StateMapIter,
     dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
-    dirstate_tree::dispatch::DirstateMapMethods,
     dirstate_tree::on_disk::DirstateV2ParseError,
     dirstate_tree::owning::OwningDirstateMap,
     revlog::Node,
@@ -47,7 +46,7 @@ use hg::{
 //     All attributes also have to have a separate refcount data attribute for
 //     leaks, with all methods that go along for reference sharing.
 py_class!(pub class DirstateMap |py| {
-    @shared data inner: Box<dyn DirstateMapMethods + Send>;
+    @shared data inner: OwningDirstateMap;
 
     /// Returns a `(dirstate_map, parents)` tuple
     @staticmethod
@@ -56,12 +55,12 @@ py_class!(pub class DirstateMap |py| {
     ) -> PyResult<PyObject> {
         let on_disk = PyBytesDeref::new(py, on_disk);
         let mut map = OwningDirstateMap::new_empty(on_disk);
-        let (on_disk, map_placeholder) = map.get_mut_pair();
+        let (on_disk, map_placeholder) = map.get_pair_mut();
 
         let (actual_map, parents) = TreeDirstateMap::new_v1(on_disk)
             .map_err(|e| dirstate_error(py, e))?;
         *map_placeholder = actual_map;
-        let map = Self::create_instance(py, Box::new(map))?;
+        let map = Self::create_instance(py, map)?;
         let parents = parents.map(|p| {
             let p1 = PyBytes::new(py, p.p1.as_bytes());
             let p2 = PyBytes::new(py, p.p2.as_bytes());
@@ -82,11 +81,11 @@ py_class!(pub class DirstateMap |py| {
         };
         let on_disk = PyBytesDeref::new(py, on_disk);
         let mut map = OwningDirstateMap::new_empty(on_disk);
-        let (on_disk, map_placeholder) = map.get_mut_pair();
+        let (on_disk, map_placeholder) = map.get_pair_mut();
         *map_placeholder = TreeDirstateMap::new_v2(
             on_disk, data_size, tree_metadata.data(py),
         ).map_err(dirstate_error)?;
-        let map = Self::create_instance(py, Box::new(map))?;
+        let map = Self::create_instance(py, map)?;
         Ok(map.into_object())
     }
 
@@ -452,7 +451,7 @@ impl DirstateMap {
     pub fn get_inner_mut<'a>(
         &'a self,
         py: Python<'a>,
-    ) -> RefMut<'a, Box<dyn DirstateMapMethods + Send>> {
+    ) -> RefMut<'a, OwningDirstateMap> {
         self.inner(py).borrow_mut()
     }
     fn translate_key(

@@ -294,12 +294,12 @@ impl Repo {
             } else {
                 OwningDirstateMap::new_empty(Vec::new())
             };
-            let (on_disk, placeholder) = map.get_mut_pair();
+            let (on_disk, placeholder) = map.get_pair_mut();
             *placeholder = DirstateMap::new_v2(on_disk, data_size, metadata)?;
             Ok(map)
         } else {
             let mut map = OwningDirstateMap::new_empty(dirstate_file_contents);
-            let (on_disk, placeholder) = map.get_mut_pair();
+            let (on_disk, placeholder) = map.get_pair_mut();
             let (inner, parents) = DirstateMap::new_v1(on_disk)?;
             self.dirstate_parents
                 .set(Some(parents.unwrap_or(DirstateParents::NULL)));

@@ -44,7 +44,7 @@ impl OwningDirstateMap {
         Self { on_disk, ptr }
     }
 
-    pub fn get_mut_pair<'a>(
+    pub fn get_pair_mut<'a>(
         &'a mut self,
     ) -> (&'a [u8], &'a mut DirstateMap<'a>) {
         // SAFETY: We cast the type-erased pointer back to the same type it had
@@ -60,11 +60,11 @@ impl OwningDirstateMap {
         (&self.on_disk, unsafe { &mut *ptr })
     }
 
-    pub fn get_mut<'a>(&'a mut self) -> &'a mut DirstateMap<'a> {
-        self.get_mut_pair().1
+    pub fn get_map_mut<'a>(&'a mut self) -> &'a mut DirstateMap<'a> {
+        self.get_pair_mut().1
     }
 
-    pub fn get<'a>(&'a self) -> &'a DirstateMap<'a> {
+    pub fn get_map<'a>(&'a self) -> &'a DirstateMap<'a> {
         // SAFETY: same reasoning as in `get_mut` above.
         let ptr: *mut DirstateMap<'a> = self.ptr.cast();
         unsafe { &*ptr }

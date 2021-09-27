@@ -9,7 +9,6 @@ use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::{Arg, SubCommand};
 use hg;
-use hg::dirstate_tree::dispatch::DirstateMapMethods;
 use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
