@@ -214,7 +214,7 @@ impl DirstateEntry {
     pub fn size(&self) -> i32 {
         if self.removed() && self.flags.contains(Flags::MERGED) {
             SIZE_NON_NORMAL
-        } else if self.from_p2_removed() {
+        } else if self.removed() && self.flags.contains(Flags::CLEAN_P2) {
             SIZE_FROM_OTHER_PARENT
         } else if self.removed() {
             0

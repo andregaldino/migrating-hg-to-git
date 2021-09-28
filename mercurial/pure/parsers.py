@@ -379,7 +379,7 @@ class DirstateItem(object):
             raise RuntimeError('untracked item')
         elif self.removed and self._merged:
             return NONNORMAL
-        elif self.from_p2_removed:
+        elif self.removed and self._clean_p2:
             return FROM_P2
         elif self.removed:
             return 0
