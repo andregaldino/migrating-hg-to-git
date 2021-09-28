@@ -48,12 +48,28 @@ AMBIGUOUS_TIME = -1
 class DirstateItem(object):
     """represent a dirstate entry
 
-    It contains:
+    It hold multiple attributes
 
-    - state (one of 'n', 'a', 'r', 'm')
-    - mode,
-    - size,
-    - mtime,
+    # about file tracking
+    - wc_tracked: is the file tracked by the working copy
+    - p1_tracked: is the file tracked in working copy first parent
+    - p2_tracked: is the file tracked in working copy second parent
+
+    # about what possible merge action related to this file
+    - clean_p1: merge picked the file content from p1
+    - clean_p2: merge picked the file content from p2
+    - merged: file gather changes from both side.
+
+    # about the file state expected from p1 manifest:
+    - mode: the file mode in p1
+    - size: the file size in p1
+
+    # about the file state on disk last time we saw it:
+    - mtime: the last known clean mtime for the file.
+
+    The last three item (mode, size and mtime) can be None if no meaningful (or
+    trusted) value exists.
+
     """
 
     _wc_tracked = attr.ib()
