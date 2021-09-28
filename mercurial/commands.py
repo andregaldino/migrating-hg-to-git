@@ -5219,12 +5219,12 @@ def phase(ui, repo, *revs, **opts):
     # look for specified revision
     revs = list(revs)
     revs.extend(opts[b'rev'])
-    if not revs:
+    if revs:
+        revs = scmutil.revrange(repo, revs)
+    else:
         # display both parents as the second parent phase can influence
         # the phase of a merge commit
         revs = [c.rev() for c in repo[None].parents()]
-
-    revs = scmutil.revrange(repo, revs)
 
     ret = 0
     if targetphase is None:
