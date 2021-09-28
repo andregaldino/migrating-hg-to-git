@@ -575,6 +575,8 @@ if rustmod is not None:
             elif possibly_dirty:
                 item = DirstateItem.new_possibly_dirty()
             else:
+                assert size is not None
+                assert mtime is not None
                 size = size & rangemask
                 mtime = mtime & rangemask
                 item = DirstateItem.new_normal(mode, size, mtime)
