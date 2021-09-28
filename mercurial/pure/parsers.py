@@ -386,7 +386,7 @@ class DirstateItem(object):
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
-        elif self.merged_removed:
+        elif self.removed and self._merged:
             return NONNORMAL
         elif self.from_p2_removed:
             return FROM_P2

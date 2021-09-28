@@ -210,7 +210,8 @@ static inline int dirstate_item_c_v1_mode(dirstateItemObject *self)
 
 static inline int dirstate_item_c_v1_size(dirstateItemObject *self)
 {
-	if (dirstate_item_c_merged_removed(self)) {
+	if (dirstate_item_c_removed(self) &&
+	    (self->flags & dirstate_flag_merged)) {
 		return dirstate_v1_nonnormal;
 	} else if (dirstate_item_c_from_p2_removed(self)) {
 		return dirstate_v1_from_p2;
