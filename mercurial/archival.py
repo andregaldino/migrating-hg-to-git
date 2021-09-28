@@ -29,6 +29,8 @@ from . import (
     vfs as vfsmod,
 )
 
+from .utils import stringutil
+
 stringio = util.stringio
 
 # from unzip source code:
@@ -196,7 +198,7 @@ class tarit(object):
                         name, pycompat.sysstr(mode + kind), fileobj
                     )
                 except tarfile.CompressionError as e:
-                    raise error.Abort(pycompat.bytestr(e))
+                    raise error.Abort(stringutil.forcebytestr(e))
 
         if isinstance(dest, bytes):
             self.z = taropen(b'w:', name=dest)

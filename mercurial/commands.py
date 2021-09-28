@@ -526,7 +526,7 @@ def annotate(ui, repo, *pats, **opts):
     )
 
     def bad(x, y):
-        raise error.Abort(b"%s: %s" % (x, y))
+        raise error.InputError(b"%s: %s" % (x, y))
 
     m = scmutil.match(ctx, pats, opts, badfn=bad)
 
@@ -1081,7 +1081,7 @@ def bisect(
                 raise error.StateError(_(b'current bisect revision is a merge'))
         if rev:
             if not nodes:
-                raise error.Abort(_(b'empty revision set'))
+                raise error.InputError(_(b'empty revision set'))
             node = repo[nodes[-1]].node()
         with hbisect.restore_state(repo, state, node):
             while changesets:

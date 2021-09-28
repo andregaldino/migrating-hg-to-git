@@ -5,17 +5,11 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use std::path::PathBuf;
-
 use crate::repo::Repo;
-use crate::revlog::changelog::Changelog;
-use crate::revlog::manifest::Manifest;
-use crate::revlog::path_encode::path_encode;
-use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::Node;
-use crate::utils::files::get_path_from_bytes;
-use crate::utils::hg_path::{HgPath, HgPathBuf};
+
+use crate::utils::hg_path::HgPathBuf;
 
 pub struct CatOutput {
     /// Whether any file in the manifest matched the paths given as CLI
@@ -29,8 +23,6 @@ pub struct CatOutput {
     pub node: Node,
 }
 
-const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
-
 /// Output the given revision of files
 ///
 /// * `root`: Repository root
@@ -42,44 +34,24 @@ pub fn cat<'a>(
     files: &'a [HgPathBuf],
 ) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let changelog = Changelog::open(repo)?;
-    let manifest = Manifest::open(repo)?;
-    let changelog_entry = changelog.get_rev(rev)?;
-    let node = *changelog
+    let manifest = repo.manifest_for_rev(rev)?;
+    let node = *repo
+        .changelog()?
         .node_from_rev(rev)
-        .expect("should succeed when changelog.get_rev did");
-    let manifest_node =
-        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
-    let manifest_entry = manifest.get_node(manifest_node.into())?;
+        .expect("should succeed when repo.manifest did");
     let mut bytes = vec![];
     let mut matched = vec![false; files.len()];
     let mut found_any = false;
 
-    for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
+    for (manifest_file, node_bytes) in manifest.files_with_nodes() {
         for (cat_file, is_matched) in files.iter().zip(&mut matched) {
             if cat_file.as_bytes() == manifest_file.as_bytes() {
                 *is_matched = true;
                 found_any = true;
-                let index_path = store_path(manifest_file, b".i");
-                let data_path = store_path(manifest_file, b".d");
-
-                let file_log =
-                    Revlog::open(repo, &index_path, Some(&data_path))?;
+                let file_log = repo.filelog(manifest_file)?;
                 let file_node = Node::from_hex_for_repo(node_bytes)?;
-                let file_rev = file_log.get_node_rev(file_node.into())?;
-                let data = file_log.get_rev_data(file_rev)?;
-                if data.starts_with(&METADATA_DELIMITER) {
-                    let end_delimiter_position = data
-                        [METADATA_DELIMITER.len()..]
-                        .windows(METADATA_DELIMITER.len())
-                        .position(|bytes| bytes == METADATA_DELIMITER);
-                    if let Some(position) = end_delimiter_position {
-                        let offset = METADATA_DELIMITER.len() * 2;
-                        bytes.extend(data[position + offset..].iter());
-                    }
-                } else {
-                    bytes.extend(data);
-                }
+                let entry = file_log.data_for_node(file_node)?;
+                bytes.extend(entry.data()?)
             }
         }
     }
@@ -96,10 +68,4 @@ pub fn cat<'a>(
         missing,
         node,
     })
-}
-
-fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
-    let encoded_bytes =
-        path_encode(&[b"data/", hg_path.as_bytes(), suffix].concat());
-    get_path_from_bytes(&encoded_bytes).into()
 }

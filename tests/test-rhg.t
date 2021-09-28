@@ -126,6 +126,9 @@ Specifying revisions by changeset ID
   [255]
   $ $NO_FALLBACK rhg cat -r d file-2
   2
+  $ $NO_FALLBACK rhg cat -r 0000 file-2
+  abort: invalid revision identifier: 0000
+  [255]
 
 Cat files
   $ cd $TESTTMP

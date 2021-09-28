@@ -34,7 +34,7 @@ HEADER = struct.Struct(
 
 
 class DirstateDocket(object):
-    data_filename_pattern = b'dirstate.%s.d'
+    data_filename_pattern = b'dirstate.%s'
 
     def __init__(self, parents, data_size, tree_metadata, uuid):
         self.parents = parents

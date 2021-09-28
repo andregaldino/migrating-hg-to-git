@@ -1,12 +1,22 @@
+use crate::changelog::Changelog;
 use crate::config::{Config, ConfigError, ConfigParseError};
-use crate::errors::{HgError, IoErrorContext, IoResultExt};
+use crate::dirstate::DirstateParents;
+use crate::dirstate_tree::dirstate_map::DirstateMap;
+use crate::dirstate_tree::owning::OwningDirstateMap;
+use crate::errors::HgError;
+use crate::errors::HgResultExt;
 use crate::exit_codes;
-use crate::requirements;
+use crate::manifest::{Manifest, Manifestlog};
+use crate::revlog::filelog::Filelog;
+use crate::revlog::revlog::RevlogError;
 use crate::utils::files::get_path_from_bytes;
+use crate::utils::hg_path::HgPath;
 use crate::utils::SliceExt;
-use memmap::{Mmap, MmapOptions};
+use crate::vfs::{is_dir, is_file, Vfs};
+use crate::{requirements, NodePrefix};
+use crate::{DirstateError, Revision};
+use std::cell::{Cell, Ref, RefCell, RefMut};
 use std::collections::HashSet;
-use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 /// A repository on disk
@@ -16,6 +26,11 @@ pub struct Repo {
     store: PathBuf,
     requirements: HashSet<String>,
     config: Config,
+    // None means not known/initialized yet
+    dirstate_parents: Cell<Option<DirstateParents>>,
+    dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
+    changelog: LazyCell<Changelog, HgError>,
+    manifestlog: LazyCell<Manifestlog, HgError>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -36,12 +51,6 @@ impl From<ConfigError> for RepoError {
             ConfigError::Other(error) => error.into(),
         }
     }
-}
-
-/// Filesystem access abstraction for the contents of a given "base" diretory
-#[derive(Clone, Copy)]
-pub struct Vfs<'a> {
-    pub(crate) base: &'a Path,
 }
 
 impl Repo {
@@ -127,7 +136,8 @@ impl Repo {
         } else {
             let bytes = hg_vfs.read("sharedpath")?;
             let mut shared_path =
-                get_path_from_bytes(bytes.trim_end_newlines()).to_owned();
+                get_path_from_bytes(bytes.trim_end_matches(|b| b == b'\n'))
+                    .to_owned();
             if relative {
                 shared_path = dot_hg.join(shared_path)
             }
@@ -192,6 +202,10 @@ impl Repo {
             store: store_path,
             dot_hg,
             config: repo_config,
+            dirstate_parents: Cell::new(None),
+            dirstate_map: LazyCell::new(Self::new_dirstate_map),
+            changelog: LazyCell::new(Changelog::open),
+            manifestlog: LazyCell::new(Manifestlog::open),
         };
 
         requirements::check(&repo)?;
@@ -234,82 +248,162 @@ impl Repo {
             .contains(requirements::DIRSTATE_V2_REQUIREMENT)
     }
 
-    pub fn dirstate_parents(
-        &self,
-    ) -> Result<crate::dirstate::DirstateParents, HgError> {
-        let dirstate = self.hg_vfs().mmap_open("dirstate")?;
-        if dirstate.is_empty() {
-            return Ok(crate::dirstate::DirstateParents::NULL);
+    fn dirstate_file_contents(&self) -> Result<Vec<u8>, HgError> {
+        Ok(self
+            .hg_vfs()
+            .read("dirstate")
+            .io_not_found_as_none()?
+            .unwrap_or(Vec::new()))
+    }
+
+    pub fn dirstate_parents(&self) -> Result<DirstateParents, HgError> {
+        if let Some(parents) = self.dirstate_parents.get() {
+            return Ok(parents);
         }
-        let parents = if self.has_dirstate_v2() {
+        let dirstate = self.dirstate_file_contents()?;
+        let parents = if dirstate.is_empty() {
+            DirstateParents::NULL
+        } else if self.has_dirstate_v2() {
             crate::dirstate_tree::on_disk::read_docket(&dirstate)?.parents()
         } else {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
                 .clone()
         };
+        self.dirstate_parents.set(Some(parents));
         Ok(parents)
     }
-}
 
-impl Vfs<'_> {
-    pub fn join(&self, relative_path: impl AsRef<Path>) -> PathBuf {
-        self.base.join(relative_path)
+    fn new_dirstate_map(&self) -> Result<OwningDirstateMap, DirstateError> {
+        let dirstate_file_contents = self.dirstate_file_contents()?;
+        if dirstate_file_contents.is_empty() {
+            self.dirstate_parents.set(Some(DirstateParents::NULL));
+            Ok(OwningDirstateMap::new_empty(Vec::new()))
+        } else if self.has_dirstate_v2() {
+            let docket = crate::dirstate_tree::on_disk::read_docket(
+                &dirstate_file_contents,
+            )?;
+            self.dirstate_parents.set(Some(docket.parents()));
+            let data_size = docket.data_size();
+            let metadata = docket.tree_metadata();
+            let mut map = if let Some(data_mmap) = self
+                .hg_vfs()
+                .mmap_open(docket.data_filename())
+                .io_not_found_as_none()?
+            {
+                OwningDirstateMap::new_empty(data_mmap)
+            } else {
+                OwningDirstateMap::new_empty(Vec::new())
+            };
+            let (on_disk, placeholder) = map.get_mut_pair();
+            *placeholder = DirstateMap::new_v2(on_disk, data_size, metadata)?;
+            Ok(map)
+        } else {
+            let mut map = OwningDirstateMap::new_empty(dirstate_file_contents);
+            let (on_disk, placeholder) = map.get_mut_pair();
+            let (inner, parents) = DirstateMap::new_v1(on_disk)?;
+            self.dirstate_parents
+                .set(Some(parents.unwrap_or(DirstateParents::NULL)));
+            *placeholder = inner;
+            Ok(map)
+        }
     }
 
-    pub fn read(
+    pub fn dirstate_map(
         &self,
-        relative_path: impl AsRef<Path>,
-    ) -> Result<Vec<u8>, HgError> {
-        let path = self.join(relative_path);
-        std::fs::read(&path).when_reading_file(&path)
+    ) -> Result<Ref<OwningDirstateMap>, DirstateError> {
+        self.dirstate_map.get_or_init(self)
     }
 
-    pub fn mmap_open(
+    pub fn dirstate_map_mut(
         &self,
-        relative_path: impl AsRef<Path>,
-    ) -> Result<Mmap, HgError> {
-        let path = self.base.join(relative_path);
-        let file = std::fs::File::open(&path).when_reading_file(&path)?;
-        // TODO: what are the safety requirements here?
-        let mmap = unsafe { MmapOptions::new().map(&file) }
-            .when_reading_file(&path)?;
-        Ok(mmap)
+    ) -> Result<RefMut<OwningDirstateMap>, DirstateError> {
+        self.dirstate_map.get_mut_or_init(self)
     }
 
-    pub fn rename(
+    pub fn changelog(&self) -> Result<Ref<Changelog>, HgError> {
+        self.changelog.get_or_init(self)
+    }
+
+    pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, HgError> {
+        self.changelog.get_mut_or_init(self)
+    }
+
+    pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, HgError> {
+        self.manifestlog.get_or_init(self)
+    }
+
+    pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, HgError> {
+        self.manifestlog.get_mut_or_init(self)
+    }
+
+    /// Returns the manifest of the *changeset* with the given node ID
+    pub fn manifest_for_node(
         &self,
-        relative_from: impl AsRef<Path>,
-        relative_to: impl AsRef<Path>,
-    ) -> Result<(), HgError> {
-        let from = self.join(relative_from);
-        let to = self.join(relative_to);
-        std::fs::rename(&from, &to)
-            .with_context(|| IoErrorContext::RenamingFile { from, to })
+        node: impl Into<NodePrefix>,
+    ) -> Result<Manifest, RevlogError> {
+        self.manifestlog()?.data_for_node(
+            self.changelog()?
+                .data_for_node(node.into())?
+                .manifest_node()?
+                .into(),
+        )
+    }
+
+    /// Returns the manifest of the *changeset* with the given revision number
+    pub fn manifest_for_rev(
+        &self,
+        revision: Revision,
+    ) -> Result<Manifest, RevlogError> {
+        self.manifestlog()?.data_for_node(
+            self.changelog()?
+                .data_for_rev(revision)?
+                .manifest_node()?
+                .into(),
+        )
+    }
+
+    pub fn filelog(&self, path: &HgPath) -> Result<Filelog, HgError> {
+        Filelog::open(self, path)
     }
 }
 
-fn fs_metadata(
-    path: impl AsRef<Path>,
-) -> Result<Option<std::fs::Metadata>, HgError> {
-    let path = path.as_ref();
-    match std::fs::metadata(path) {
-        Ok(meta) => Ok(Some(meta)),
-        Err(error) => match error.kind() {
-            // TODO: when we require a Rust version where `NotADirectory` is
-            // stable, invert this logic and return None for it and `NotFound`
-            // and propagate any other error.
-            ErrorKind::PermissionDenied => Err(error).with_context(|| {
-                IoErrorContext::ReadingMetadata(path.to_owned())
-            }),
-            _ => Ok(None),
-        },
+/// Lazily-initialized component of `Repo` with interior mutability
+///
+/// This differs from `OnceCell` in that the value can still be "deinitialized"
+/// later by setting its inner `Option` to `None`.
+struct LazyCell<T, E> {
+    value: RefCell<Option<T>>,
+    // `Fn`s that don’t capture environment are zero-size, so this box does
+    // not allocate:
+    init: Box<dyn Fn(&Repo) -> Result<T, E>>,
+}
+
+impl<T, E> LazyCell<T, E> {
+    fn new(init: impl Fn(&Repo) -> Result<T, E> + 'static) -> Self {
+        Self {
+            value: RefCell::new(None),
+            init: Box::new(init),
+        }
     }
-}
 
-fn is_dir(path: impl AsRef<Path>) -> Result<bool, HgError> {
-    Ok(fs_metadata(path)?.map_or(false, |meta| meta.is_dir()))
-}
+    fn get_or_init(&self, repo: &Repo) -> Result<Ref<T>, E> {
+        let mut borrowed = self.value.borrow();
+        if borrowed.is_none() {
+            drop(borrowed);
+            // Only use `borrow_mut` if it is really needed to avoid panic in
+            // case there is another outstanding borrow but mutation is not
+            // needed.
+            *self.value.borrow_mut() = Some((self.init)(repo)?);
+            borrowed = self.value.borrow()
+        }
+        Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
+    }
 
-fn is_file(path: impl AsRef<Path>) -> Result<bool, HgError> {
-    Ok(fs_metadata(path)?.map_or(false, |meta| meta.is_file()))
+    pub fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
+        let mut borrowed = self.value.borrow_mut();
+        if borrowed.is_none() {
+            *borrowed = Some((self.init)(repo)?);
+        }
+        Ok(RefMut::map(borrowed, |option| option.as_mut().unwrap()))
+    }
 }

@@ -214,14 +214,11 @@ class remotething(thing):
                 mangle(two),
             ),
         ]
-        encoded_res_future = wireprotov1peer.future()
-        yield encoded_args, encoded_res_future
-        yield unmangle(encoded_res_future.value)
+        return encoded_args, unmangle
 
     @wireprotov1peer.batchable
     def bar(self, b, a):
-        encresref = wireprotov1peer.future()
-        yield [
+        return [
             (
                 b'b',
                 mangle(b),
@@ -230,8 +227,7 @@ class remotething(thing):
                 b'a',
                 mangle(a),
             ),
-        ], encresref
-        yield unmangle(encresref.value)
+        ], unmangle
 
     # greet is coded directly. It therefore does not support batching. If it
     # does appear in a batch, the batch is split around greet, and the call to

@@ -15,6 +15,7 @@ Create a repository:
   ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.promptecho=True
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   web.address=localhost
   web\.ipv6=(?:True|False) (re)

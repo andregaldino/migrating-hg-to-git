@@ -207,6 +207,11 @@ coreconfigitem(
     b'pushing',
     default=list,
 )
+coreconfigitem(
+    b'bookmarks',
+    b'mirror',
+    default=False,
+)
 # bundle.mainreporoot: internal hack for bundlerepo
 coreconfigitem(
     b'bundle',
@@ -1263,6 +1268,11 @@ coreconfigitem(
     b'experimental',
     b'web.api.debugreflect',
     default=False,
+)
+coreconfigitem(
+    b'experimental',
+    b'web.full-garbage-collection-rate',
+    default=1,  # still forcing a full collection on each request
 )
 coreconfigitem(
     b'experimental',

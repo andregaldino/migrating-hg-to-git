@@ -1,11 +1,9 @@
-use cpython::PyBytes;
-use cpython::Python;
-use hg::dirstate_tree::dirstate_map::DirstateMap;
-use hg::DirstateError;
-use hg::DirstateParents;
+use super::dirstate_map::DirstateMap;
+use stable_deref_trait::StableDeref;
+use std::ops::Deref;
 
 /// Keep a `DirstateMap<'on_disk>` next to the `on_disk` buffer that it
-/// borrows. This is similar to the owning-ref crate.
+/// borrows.
 ///
 /// This is similar to [`OwningRef`] which is more limited because it
 /// represents exactly one `&T` reference next to the value it borrows, as
@@ -13,11 +11,11 @@ use hg::DirstateParents;
 /// arbitrarily-nested data structures.
 ///
 /// [`OwningRef`]: https://docs.rs/owning_ref/0.4.1/owning_ref/struct.OwningRef.html
-pub(super) struct OwningDirstateMap {
+pub struct OwningDirstateMap {
     /// Owned handle to a bytes buffer with a stable address.
     ///
     /// See <https://docs.rs/owning_ref/0.4.1/owning_ref/trait.StableAddress.html>.
-    on_disk: PyBytes,
+    on_disk: Box<dyn Deref<Target = [u8]> + Send>,
 
     /// Pointer for `Box<DirstateMap<'on_disk>>`, typed-erased because the
     /// language cannot represent a lifetime referencing a sibling field.
@@ -28,12 +26,13 @@ pub(super) struct OwningDirstateMap {
 }
 
 impl OwningDirstateMap {
-    pub fn new_v1(
-        py: Python,
-        on_disk: PyBytes,
-    ) -> Result<(Self, Option<DirstateParents>), DirstateError> {
-        let bytes: &'_ [u8] = on_disk.data(py);
-        let (map, parents) = DirstateMap::new_v1(bytes)?;
+    pub fn new_empty<OnDisk>(on_disk: OnDisk) -> Self
+    where
+        OnDisk: Deref<Target = [u8]> + StableDeref + Send + 'static,
+    {
+        let on_disk = Box::new(on_disk);
+        let bytes: &'_ [u8] = &on_disk;
+        let map = DirstateMap::empty(bytes);
 
         // Like in `bytes` above, this `'_` lifetime parameter borrows from
         // the bytes buffer owned by `on_disk`.
@@ -42,30 +41,12 @@ impl OwningDirstateMap {
         // Erase the pointed type entirely in order to erase the lifetime.
         let ptr: *mut () = ptr.cast();
 
-        Ok((Self { on_disk, ptr }, parents))
+        Self { on_disk, ptr }
     }
 
-    pub fn new_v2(
-        py: Python,
-        on_disk: PyBytes,
-        data_size: usize,
-        tree_metadata: PyBytes,
-    ) -> Result<Self, DirstateError> {
-        let bytes: &'_ [u8] = on_disk.data(py);
-        let map =
-            DirstateMap::new_v2(bytes, data_size, tree_metadata.data(py))?;
-
-        // Like in `bytes` above, this `'_` lifetime parameter borrows from
-        // the bytes buffer owned by `on_disk`.
-        let ptr: *mut DirstateMap<'_> = Box::into_raw(Box::new(map));
-
-        // Erase the pointed type entirely in order to erase the lifetime.
-        let ptr: *mut () = ptr.cast();
-
-        Ok(Self { on_disk, ptr })
-    }
-
-    pub fn get_mut<'a>(&'a mut self) -> &'a mut DirstateMap<'a> {
+    pub fn get_mut_pair<'a>(
+        &'a mut self,
+    ) -> (&'a [u8], &'a mut DirstateMap<'a>) {
         // SAFETY: We cast the type-erased pointer back to the same type it had
         // in `new`, except with a different lifetime parameter. This time we
         // connect the lifetime to that of `self`. This cast is valid because
@@ -76,13 +57,21 @@ impl OwningDirstateMap {
         // SAFETY: we dereference that pointer, connecting the lifetime of the
         // new   `&mut` to that of `self`. This is valid because the
         // raw pointer is   to a boxed value, and `self` owns that box.
-        unsafe { &mut *ptr }
+        (&self.on_disk, unsafe { &mut *ptr })
+    }
+
+    pub fn get_mut<'a>(&'a mut self) -> &'a mut DirstateMap<'a> {
+        self.get_mut_pair().1
     }
 
     pub fn get<'a>(&'a self) -> &'a DirstateMap<'a> {
         // SAFETY: same reasoning as in `get_mut` above.
         let ptr: *mut DirstateMap<'a> = self.ptr.cast();
         unsafe { &*ptr }
+    }
+
+    pub fn on_disk<'a>(&'a self) -> &'a [u8] {
+        &self.on_disk
     }
 }
 
@@ -105,13 +94,12 @@ impl Drop for OwningDirstateMap {
 fn _static_assert_is_send<T: Send>() {}
 
 fn _static_assert_fields_are_send() {
-    _static_assert_is_send::<PyBytes>();
     _static_assert_is_send::<Box<DirstateMap<'_>>>();
 }
 
 // SAFETY: we don’t get this impl implicitly because `*mut (): !Send` because
 // thread-safety of raw pointers is unknown in the general case. However this
 // particular raw pointer represents a `Box<DirstateMap<'on_disk>>` that we
-// own. Since that `Box` and `PyBytes` are both `Send` as shown in above, it
-// is sound to mark this struct as `Send` too.
+// own. Since that `Box` is `Send` as shown in above, it is sound to mark
+// this struct as `Send` too.
 unsafe impl Send for OwningDirstateMap {}

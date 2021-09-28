@@ -226,6 +226,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.detailed-exit-code=True
   ui.merge=internal:merge
   ui.mergemarkers=detailed
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   ui.foo=bar
   ui.nontty=true
@@ -239,6 +240,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.detailed-exit-code=True
   ui.merge=internal:merge
   ui.mergemarkers=detailed
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   ui.nontty=true
 #endif

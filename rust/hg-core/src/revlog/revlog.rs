@@ -18,6 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
+use crate::{Node, NULL_REVISION};
 
 #[derive(derive_more::From)]
 pub enum RevlogError {
@@ -50,7 +51,7 @@ pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.
     /// When index and data are interleaved: bytes of the revlog index and
     /// data.
-    pub(crate) index: Index,
+    index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
     /// When present on disk: the persistent nodemap for this revlog
@@ -67,14 +68,14 @@ impl Revlog {
         repo: &Repo,
         index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
-    ) -> Result<Self, RevlogError> {
+    ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
         let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
 
         let version = get_version(&index_mmap);
         if version != 1 {
             // A proper new version should have had a repo/store requirement.
-            return Err(RevlogError::corrupted());
+            return Err(HgError::corrupted("corrupted revlog"));
         }
 
         let index = Index::new(Box::new(index_mmap))?;
@@ -118,12 +119,23 @@ impl Revlog {
         self.index.is_empty()
     }
 
-    /// Return the full data associated to a node.
+    /// Returns the node ID for the given revision number, if it exists in this
+    /// revlog
+    pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        Some(self.index.get_entry(rev)?.hash())
+    }
+
+    /// Return the revision number for the given node ID, if it exists in this
+    /// revlog
     #[timed]
-    pub fn get_node_rev(
+    pub fn rev_from_node(
         &self,
         node: NodePrefix,
     ) -> Result<Revision, RevlogError> {
+        if node.is_prefix_of(&NULL_NODE) {
+            return Ok(NULL_REVISION);
+        }
+
         if let Some(nodemap) = &self.nodemap {
             return nodemap
                 .find_bin(&self.index, node)?

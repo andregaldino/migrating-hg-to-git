@@ -577,7 +577,7 @@ def updatelfiles(
                 repo.wvfs.unlinkpath(lfutil.standin(f))
                 # This needs to happen for dropped files, otherwise they stay in
                 # the M state.
-                lfdirstate._drop(f)
+                lfdirstate._map.reset_state(f)
 
             statuswriter(_(b'getting changed largefiles\n'))
             cachelfiles(ui, repo, None, lfiles)

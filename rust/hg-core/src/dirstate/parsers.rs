@@ -6,11 +6,11 @@
 use crate::errors::HgError;
 use crate::utils::hg_path::HgPath;
 use crate::{
-    dirstate::{CopyMap, EntryState, RawEntry, StateMap},
+    dirstate::{CopyMap, EntryState, StateMap},
     DirstateEntry, DirstateParents,
 };
 use byteorder::{BigEndian, WriteBytesExt};
-use bytes_cast::BytesCast;
+use bytes_cast::{unaligned, BytesCast};
 use micro_timer::timed;
 use std::convert::{TryFrom, TryInto};
 
@@ -48,6 +48,16 @@ pub fn parse_dirstate(contents: &[u8]) -> Result<ParseResult, HgError> {
     Ok((parents, entries, copies))
 }
 
+#[derive(BytesCast)]
+#[repr(C)]
+struct RawEntry {
+    state: u8,
+    mode: unaligned::I32Be,
+    size: unaligned::I32Be,
+    mtime: unaligned::I32Be,
+    length: unaligned::I32Be,
+}
+
 pub fn parse_dirstate_entries<'a>(
     mut contents: &'a [u8],
     mut each_entry: impl FnMut(
@@ -63,12 +73,12 @@ pub fn parse_dirstate_entries<'a>(
         let (raw_entry, rest) = RawEntry::from_bytes(contents)
             .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
 
-        let entry = DirstateEntry {
-            state: EntryState::try_from(raw_entry.state)?,
-            mode: raw_entry.mode.get(),
-            mtime: raw_entry.mtime.get(),
-            size: raw_entry.size.get(),
-        };
+        let entry = DirstateEntry::from_v1_data(
+            EntryState::try_from(raw_entry.state)?,
+            raw_entry.mode.get(),
+            raw_entry.size.get(),
+            raw_entry.mtime.get(),
+        );
         let (paths, rest) =
             u8::slice_from_bytes(rest, raw_entry.length.get() as usize)
                 .map_err(|_| HgError::corrupted("Overflow in dirstate."))?;
@@ -114,12 +124,13 @@ pub fn pack_entry(
     packed: &mut Vec<u8>,
 ) {
     let length = packed_filename_and_copy_source_size(filename, copy_source);
+    let (state, mode, size, mtime) = entry.v1_data();
 
     // Unwrapping because `impl std::io::Write for Vec<u8>` never errors
-    packed.write_u8(entry.state.into()).unwrap();
-    packed.write_i32::<BigEndian>(entry.mode).unwrap();
-    packed.write_i32::<BigEndian>(entry.size).unwrap();
-    packed.write_i32::<BigEndian>(entry.mtime).unwrap();
+    packed.write_u8(state).unwrap();
+    packed.write_i32::<BigEndian>(mode).unwrap();
+    packed.write_i32::<BigEndian>(size).unwrap();
+    packed.write_i32::<BigEndian>(mtime).unwrap();
     packed.write_i32::<BigEndian>(length as i32).unwrap();
     packed.extend(filename.as_bytes());
     if let Some(source) = copy_source {
@@ -130,33 +141,6 @@ pub fn pack_entry(
 
 /// Seconds since the Unix epoch
 pub struct Timestamp(pub i64);
-
-impl DirstateEntry {
-    pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
-        self.state == EntryState::Normal && self.mtime == now
-    }
-
-    pub fn clear_ambiguous_mtime(&mut self, now: i32) -> bool {
-        let ambiguous = self.mtime_is_ambiguous(now);
-        if ambiguous {
-            // The file was last modified "simultaneously" with the current
-            // write to dirstate (i.e. within the same second for file-
-            // systems with a granularity of 1 sec). This commonly happens
-            // for at least a couple of files on 'update'.
-            // The user could change the file without changing its size
-            // within the same second. Invalidate the file's mtime in
-            // dirstate, forcing future 'status' calls to compare the
-            // contents of the file if the size is the same. This prevents
-            // mistakenly treating such files as clean.
-            self.clear_mtime()
-        }
-        ambiguous
-    }
-
-    pub fn clear_mtime(&mut self) {
-        self.mtime = -1;
-    }
-}
 
 pub fn pack_dirstate(
     state_map: &mut StateMap,
@@ -229,12 +213,12 @@ mod tests {
     fn test_pack_dirstate_one_entry() {
         let expected_state_map: StateMap = [(
             HgPathBuf::from_bytes(b"f1"),
-            DirstateEntry {
-                state: EntryState::Normal,
-                mode: 0o644,
-                size: 0,
-                mtime: 791231220,
-            },
+            DirstateEntry::from_v1_data(
+                EntryState::Normal,
+                0o644,
+                0,
+                791231220,
+            ),
         )]
         .iter()
         .cloned()
@@ -266,12 +250,12 @@ mod tests {
     fn test_pack_dirstate_one_entry_with_copy() {
         let expected_state_map: StateMap = [(
             HgPathBuf::from_bytes(b"f1"),
-            DirstateEntry {
-                state: EntryState::Normal,
-                mode: 0o644,
-                size: 0,
-                mtime: 791231220,
-            },
+            DirstateEntry::from_v1_data(
+                EntryState::Normal,
+                0o644,
+                0,
+                791231220,
+            ),
         )]
         .iter()
         .cloned()
@@ -307,12 +291,12 @@ mod tests {
     fn test_parse_pack_one_entry_with_copy() {
         let mut state_map: StateMap = [(
             HgPathBuf::from_bytes(b"f1"),
-            DirstateEntry {
-                state: EntryState::Normal,
-                mode: 0o644,
-                size: 0,
-                mtime: 791231220,
-            },
+            DirstateEntry::from_v1_data(
+                EntryState::Normal,
+                0o644,
+                0,
+                791231220,
+            ),
         )]
         .iter()
         .cloned()
@@ -353,39 +337,34 @@ mod tests {
         let mut state_map: StateMap = [
             (
                 HgPathBuf::from_bytes(b"f1"),
-                DirstateEntry {
-                    state: EntryState::Normal,
-                    mode: 0o644,
-                    size: 0,
-                    mtime: 791231220,
-                },
+                DirstateEntry::from_v1_data(
+                    EntryState::Normal,
+                    0o644,
+                    0,
+                    791231220,
+                ),
             ),
             (
                 HgPathBuf::from_bytes(b"f2"),
-                DirstateEntry {
-                    state: EntryState::Merged,
-                    mode: 0o777,
-                    size: 1000,
-                    mtime: 791231220,
-                },
+                DirstateEntry::from_v1_data(
+                    EntryState::Merged,
+                    0o777,
+                    1000,
+                    791231220,
+                ),
             ),
             (
                 HgPathBuf::from_bytes(b"f3"),
-                DirstateEntry {
-                    state: EntryState::Removed,
-                    mode: 0o644,
-                    size: 234553,
-                    mtime: 791231220,
-                },
+                DirstateEntry::from_v1_data(
+                    EntryState::Removed,
+                    0o644,
+                    234553,
+                    791231220,
+                ),
             ),
             (
                 HgPathBuf::from_bytes(b"f4\xF6"),
-                DirstateEntry {
-                    state: EntryState::Added,
-                    mode: 0o644,
-                    size: -1,
-                    mtime: -1,
-                },
+                DirstateEntry::from_v1_data(EntryState::Added, 0o644, -1, -1),
             ),
         ]
         .iter()
@@ -431,12 +410,12 @@ mod tests {
     fn test_parse_pack_one_entry_with_copy_and_time_conflict() {
         let mut state_map: StateMap = [(
             HgPathBuf::from_bytes(b"f1"),
-            DirstateEntry {
-                state: EntryState::Normal,
-                mode: 0o644,
-                size: 0,
-                mtime: 15000000,
-            },
+            DirstateEntry::from_v1_data(
+                EntryState::Normal,
+                0o644,
+                0,
+                15000000,
+            ),
         )]
         .iter()
         .cloned()
@@ -471,12 +450,12 @@ mod tests {
                 &parents,
                 [(
                     HgPathBuf::from_bytes(b"f1"),
-                    DirstateEntry {
-                        state: EntryState::Normal,
-                        mode: 0o644,
-                        size: 0,
-                        mtime: -1
-                    }
+                    DirstateEntry::from_v1_data(
+                        EntryState::Normal,
+                        0o644,
+                        0,
+                        -1
+                    )
                 )]
                 .iter()
                 .cloned()

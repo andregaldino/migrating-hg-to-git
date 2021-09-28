@@ -431,18 +431,19 @@ def localrepolistkeys(orig, self, namespace, patterns=None):
 @wireprotov1peer.batchable
 def listkeyspatterns(self, namespace, patterns):
     if not self.capable(b'pushkey'):
-        yield {}, None
-    f = wireprotov1peer.future()
+        return {}, None
     self.ui.debug(b'preparing listkeys for "%s"\n' % namespace)
-    yield {
+
+    def decode(d):
+        self.ui.debug(
+            b'received listkey for "%s": %i bytes\n' % (namespace, len(d))
+        )
+        return pushkey.decodekeys(d)
+
+    return {
         b'namespace': encoding.fromlocal(namespace),
         b'patterns': wireprototypes.encodelist(patterns),
-    }, f
-    d = f.value
-    self.ui.debug(
-        b'received listkey for "%s": %i bytes\n' % (namespace, len(d))
-    )
-    yield pushkey.decodekeys(d)
+    }, decode
 
 
 def _readbundlerevs(bundlerepo):

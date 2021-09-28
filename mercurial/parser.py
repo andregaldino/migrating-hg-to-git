@@ -21,7 +21,6 @@ from __future__ import absolute_import, print_function
 from .i18n import _
 from . import (
     error,
-    pycompat,
     util,
 )
 from .utils import stringutil
@@ -216,7 +215,11 @@ def unescapestr(s):
         return stringutil.unescapestr(s)
     except ValueError as e:
         # mangle Python's exception into our format
-        raise error.ParseError(pycompat.bytestr(e).lower())
+        # TODO: remove this suppression.  For some reason, pytype 2021.09.09
+        #   thinks .lower() is being called on Union[ValueError, bytes].
+        # pytype: disable=attribute-error
+        raise error.ParseError(stringutil.forcebytestr(e).lower())
+        # pytype: enable=attribute-error
 
 
 def _prettyformat(tree, leafnodes, level, lines):

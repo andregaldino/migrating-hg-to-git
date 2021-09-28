@@ -57,29 +57,10 @@ else:
 try:
     # importlib.resources exists from Python 3.7; see fallback in except clause
     # further down
-    from importlib import resources
-
-    from .. import encoding
+    from importlib import resources  # pytype: disable=import-error
 
     # Force loading of the resources module
     resources.open_binary  # pytype: disable=module-attr
-
-    def open_resource(package, name):
-        return resources.open_binary(  # pytype: disable=module-attr
-            pycompat.sysstr(package), pycompat.sysstr(name)
-        )
-
-    def is_resource(package, name):
-        return resources.is_resource(  # pytype: disable=module-attr
-            pycompat.sysstr(package), encoding.strfromlocal(name)
-        )
-
-    def contents(package):
-        # pytype: disable=module-attr
-        for r in resources.contents(pycompat.sysstr(package)):
-            # pytype: enable=module-attr
-            yield encoding.strtolocal(r)
-
 
 except (ImportError, AttributeError):
     # importlib.resources was not found (almost definitely because we're on a
@@ -102,3 +83,23 @@ except (ImportError, AttributeError):
 
         for p in os.listdir(path):
             yield pycompat.fsencode(p)
+
+
+else:
+    from .. import encoding
+
+    def open_resource(package, name):
+        return resources.open_binary(  # pytype: disable=module-attr
+            pycompat.sysstr(package), pycompat.sysstr(name)
+        )
+
+    def is_resource(package, name):
+        return resources.is_resource(  # pytype: disable=module-attr
+            pycompat.sysstr(package), encoding.strfromlocal(name)
+        )
+
+    def contents(package):
+        # pytype: disable=module-attr
+        for r in resources.contents(pycompat.sysstr(package)):
+            # pytype: enable=module-attr
+            yield encoding.strtolocal(r)

@@ -166,24 +166,24 @@ def onetimesetup(ui):
                                 n = util.pconvert(fp[striplen:])
                                 d = store.decodedir(n)
                                 t = store.FILETYPE_OTHER
-                                yield (t, d, n, st.st_size)
+                                yield (t, d, st.st_size)
                         if kind == stat.S_IFDIR:
                             visit.append(fp)
 
             if scmutil.istreemanifest(repo):
-                for (t, u, e, s) in repo.store.datafiles():
+                for (t, u, s) in repo.store.datafiles():
                     if u.startswith(b'meta/') and (
                         u.endswith(b'.i') or u.endswith(b'.d')
                     ):
-                        yield (t, u, e, s)
+                        yield (t, u, s)
 
             # Return .d and .i files that do not match the shallow pattern
             match = state.match
             if match and not match.always():
-                for (t, u, e, s) in repo.store.datafiles():
+                for (t, u, s) in repo.store.datafiles():
                     f = u[5:-2]  # trim data/...  and .i/.d
                     if not state.match(f):
-                        yield (t, u, e, s)
+                        yield (t, u, s)
 
             for x in repo.store.topfiles():
                 if state.noflatmf and x[1][:11] == b'00manifest.':

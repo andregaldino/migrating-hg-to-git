@@ -28,8 +28,6 @@ protocols with inline conditional output is hard to read.
   > }
 
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > [devel]
   > debug.peer-request = true
   > [extensions]
@@ -65,8 +63,7 @@ Test a normal behaving server, for sanity
   $ cd ..
 
   $ hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
@@ -178,8 +175,7 @@ SSH banner is not printed by default, ignored by clients
 --debug will print the banner
 
   $ SSHSERVERMODE=banner hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
@@ -269,8 +265,7 @@ The client should refuse, as we dropped support for connecting to such
 servers.
 
   $ SSHSERVERMODE=no-hello hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
@@ -315,8 +310,7 @@ Sending an unknown command to the server results in an empty response to that co
   o>     1\n
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-no-args --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   sending no-args command
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
@@ -385,8 +379,7 @@ Send multiple unknown commands before hello
   o>     \n
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-multiple-no-args --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   sending unknown1 command
   sending unknown2 command
   sending unknown3 command
@@ -961,8 +954,7 @@ Send an upgrade request to a server that doesn't support that command
   $ cd ..
 
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
@@ -1019,8 +1011,7 @@ Send an upgrade request to a server that supports upgrade
   $ cd ..
 
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
@@ -1038,8 +1029,7 @@ Send an upgrade request to a server that supports upgrade
 Verify the peer has capabilities
 
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
-  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R server serve --stdio['"] (re)
   sending upgrade request: * proto=exp-ssh-v2-0003 (glob)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes

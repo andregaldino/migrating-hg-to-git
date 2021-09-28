@@ -87,7 +87,7 @@ Specifying an empty revision should abort.
 
   $ hg extdiff -p diff --patch --rev 'ancestor()' --rev 1
   abort: empty revision on one side of range
-  [255]
+  [10]
 
 Test diff during merge:
 

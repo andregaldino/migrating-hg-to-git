@@ -240,7 +240,9 @@ def fromlocal(s):
             b"decoding near '%s': %s!" % (sub, pycompat.bytestr(inst))
         )
     except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
+        raise error.Abort(
+            pycompat.bytestr(k), hint=b"please check your locale settings"
+        )
 
 
 def unitolocal(u):
@@ -306,7 +308,9 @@ def lower(s):
     except UnicodeError:
         return s.lower()  # we don't know how to fold this except in ASCII
     except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
+        raise error.Abort(
+            pycompat.bytestr(k), hint=b"please check your locale settings"
+        )
 
 
 def upper(s):
@@ -333,7 +337,9 @@ def upperfallback(s):
     except UnicodeError:
         return s.upper()  # we don't know how to fold this except in ASCII
     except LookupError as k:
-        raise error.Abort(k, hint=b"please check your locale settings")
+        raise error.Abort(
+            pycompat.bytestr(k), hint=b"please check your locale settings"
+        )
 
 
 if not _nativeenviron:

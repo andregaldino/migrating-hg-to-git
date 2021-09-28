@@ -7,8 +7,6 @@ debug=True
 remotefilelog=
 rebase=
 strip=
-[ui]
-ssh="$PYTHON" "$TESTDIR/dummyssh"
 [server]
 preferuncompressed=True
 [experimental]

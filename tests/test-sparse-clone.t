@@ -2,7 +2,6 @@ test sparse
 
   $ cat >> $HGRCPATH << EOF
   > [ui]
-  > ssh = "$PYTHON" "$RUNTESTDIR/dummyssh"
   > username = nobody <no.reply@fb.com>
   > [extensions]
   > sparse=

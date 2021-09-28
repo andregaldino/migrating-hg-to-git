@@ -14,7 +14,6 @@ Test creating a consuming stream bundle v2
   > evolution.exchange=True
   > bundle2-output-capture=True
   > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > [web]
   > push_ssl = false

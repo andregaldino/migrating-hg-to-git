@@ -140,12 +140,10 @@ def peersetup(ui, peer):
         def getannotate(self, path, lastnode=None):
             if not self.capable(b'getannotate'):
                 ui.warn(_(b'remote peer cannot provide annotate cache\n'))
-                yield None, None
+                return None, None
             else:
                 args = {b'path': path, b'lastnode': lastnode or b''}
-                f = wireprotov1peer.future()
-                yield args, f
-                yield _parseresponse(f.value)
+                return args, _parseresponse
 
     peer.__class__ = fastannotatepeer
 

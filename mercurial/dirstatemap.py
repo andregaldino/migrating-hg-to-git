@@ -29,16 +29,6 @@ propertycache = util.propertycache
 
 DirstateItem = parsers.DirstateItem
 
-
-# a special value used internally for `size` if the file come from the other parent
-FROM_P2 = -2
-
-# a special value used internally for `size` if the file is modified/merged/added
-NONNORMAL = -1
-
-# a special value used internally for `time` if the time is ambigeous
-AMBIGUOUS_TIME = -1
-
 rangemask = 0x7FFFFFFF
 
 
@@ -56,8 +46,14 @@ class dirstatemap(object):
     - the state map maps filenames to tuples of (state, mode, size, mtime),
       where state is a single character representing 'normal', 'added',
       'removed', or 'merged'. It is read by treating the dirstate as a
-      dict.  File state is updated by calling the `addfile`, `removefile` and
-      `dropfile` methods.
+      dict.  File state is updated by calling various methods (see each
+      documentation for details):
+
+      - `reset_state`,
+      - `set_tracked`
+      - `set_untracked`
+      - `set_clean`
+      - `set_possibly_dirty`
 
     - `copymap` maps destination filenames to their source filename.
 
@@ -122,7 +118,14 @@ class dirstatemap(object):
     # forward for python2,3 compat
     iteritems = items
 
-    debug_iter = items
+    def debug_iter(self, all):
+        """
+        Return an iterator of (filename, state, mode, size, mtime) tuples
+
+        `all` is unused when Rust is not enabled
+        """
+        for (filename, item) in self.items():
+            yield (filename, item.state, item.mode, item.size, item.mtime)
 
     def __len__(self):
         return len(self._map)
@@ -172,65 +175,20 @@ class dirstatemap(object):
         """record that the current state of the file on disk is unknown"""
         self[filename].set_possibly_dirty()
 
-    def addfile(
-        self,
-        f,
-        mode=0,
-        size=None,
-        mtime=None,
-        added=False,
-        merged=False,
-        from_p2=False,
-        possibly_dirty=False,
-    ):
-        """Add a tracked file to the dirstate."""
-        if added:
-            assert not merged
-            assert not possibly_dirty
-            assert not from_p2
-            state = b'a'
-            size = NONNORMAL
-            mtime = AMBIGUOUS_TIME
-        elif merged:
-            assert not possibly_dirty
-            assert not from_p2
-            state = b'm'
-            size = FROM_P2
-            mtime = AMBIGUOUS_TIME
-        elif from_p2:
-            assert not possibly_dirty
-            state = b'n'
-            size = FROM_P2
-            mtime = AMBIGUOUS_TIME
-        elif possibly_dirty:
-            state = b'n'
-            size = NONNORMAL
-            mtime = AMBIGUOUS_TIME
-        else:
-            assert size != FROM_P2
-            assert size != NONNORMAL
-            assert size is not None
-            assert mtime is not None
-
-            state = b'n'
-            size = size & rangemask
-            mtime = mtime & rangemask
-        assert state is not None
-        assert size is not None
-        assert mtime is not None
-        old_entry = self.get(f)
-        self._dirs_incr(f, old_entry)
-        e = self._map[f] = DirstateItem(state, mode, size, mtime)
-        if e.dm_nonnormal:
-            self.nonnormalset.add(f)
-        if e.dm_otherparent:
-            self.otherparentset.add(f)
+    def set_clean(self, filename, mode, size, mtime):
+        """mark a file as back to a clean state"""
+        entry = self[filename]
+        mtime = mtime & rangemask
+        size = size & rangemask
+        entry.set_clean(mode, size, mtime)
+        self.copymap.pop(filename, None)
+        self.nonnormalset.discard(filename)
 
     def reset_state(
         self,
         filename,
-        wc_tracked,
-        p1_tracked,
+        wc_tracked=False,
+        p1_tracked=False,
         p2_tracked=False,
         merged=False,
         clean_p1=False,
@@ -255,26 +213,25 @@ class dirstatemap(object):
         self.copymap.pop(filename, None)
 
         if not (p1_tracked or p2_tracked or wc_tracked):
-            self.dropfile(filename)
+            old_entry = self._map.pop(filename, None)
+            self._dirs_decr(filename, old_entry=old_entry)
+            self.nonnormalset.discard(filename)
+            self.copymap.pop(filename, None)
+            return
         elif merged:
             # XXX might be merged and removed ?
             entry = self.get(filename)
-            if entry is not None and entry.tracked:
+            if entry is None or not entry.tracked:
                 # XXX mostly replicate dirstate.other parent.  We should get
                 # the higher layer to pass us more reliable data where `merged`
-                # actually mean merged. Dropping the else clause will show
-                # failure in `test-graft.t`
-                self.addfile(filename, merged=True)
-            else:
-                self.addfile(filename, from_p2=True)
+                # actually mean merged. Dropping this clause will show failure
+                # in `test-graft.t`
+                merged = False
+                clean_p2 = True
         elif not (p1_tracked or p2_tracked) and wc_tracked:
-            self.addfile(filename, added=True, possibly_dirty=possibly_dirty)
+            pass  # file is added, nothing special to adjust
         elif (p1_tracked or p2_tracked) and not wc_tracked:
-            # XXX might be merged and removed ?
-            old_entry = self._map.get(filename)
-            self._dirs_decr(filename, old_entry=old_entry, remove_variant=True)
-            self._map[filename] = DirstateItem(b'r', 0, 0, 0)
-            self.nonnormalset.add(filename)
+            pass
         elif clean_p2 and wc_tracked:
             if p1_tracked or self.get(filename) is not None:
                 # XXX the `self.get` call is catching some case in
@@ -284,62 +241,91 @@ class dirstatemap(object):
                 # In addition, this seems to be a case where the file is marked
                 # as merged without actually being the result of a merge
                 # action. So thing are not ideal here.
-                self.addfile(filename, merged=True)
-            else:
-                self.addfile(filename, from_p2=True)
+                merged = True
+                clean_p2 = False
         elif not p1_tracked and p2_tracked and wc_tracked:
-            self.addfile(filename, from_p2=True, possibly_dirty=possibly_dirty)
+            clean_p2 = True
         elif possibly_dirty:
-            self.addfile(filename, possibly_dirty=possibly_dirty)
+            pass
         elif wc_tracked:
             # this is a "normal" file
             if parentfiledata is None:
                 msg = b'failed to pass parentfiledata for a normal file: %s'
                 msg %= filename
                 raise error.ProgrammingError(msg)
-            mode, size, mtime = parentfiledata
-            self.addfile(filename, mode=mode, size=size, mtime=mtime)
-            self.nonnormalset.discard(filename)
         else:
             assert False, 'unreachable'
 
-    def removefile(self, f, in_merge=False):
-        """
-        Mark a file as removed in the dirstate.
+        old_entry = self._map.get(filename)
+        self._dirs_incr(filename, old_entry)
+        entry = DirstateItem(
+            wc_tracked=wc_tracked,
+            p1_tracked=p1_tracked,
+            p2_tracked=p2_tracked,
+            merged=merged,
+            clean_p1=clean_p1,
+            clean_p2=clean_p2,
+            possibly_dirty=possibly_dirty,
+            parentfiledata=parentfiledata,
+        )
+        if entry.dm_nonnormal:
+            self.nonnormalset.add(filename)
+        else:
+            self.nonnormalset.discard(filename)
+        if entry.dm_otherparent:
+            self.otherparentset.add(filename)
+        else:
+            self.otherparentset.discard(filename)
+        self._map[filename] = entry
 
-        The `size` parameter is used to store sentinel values that indicate
-        the file's previous state.  In the future, we should refactor this
-        to be more explicit about what that state is.
-        """
+    def set_tracked(self, filename):
+        new = False
+        entry = self.get(filename)
+        if entry is None:
+            self._dirs_incr(filename)
+            entry = DirstateItem(
+                p1_tracked=False,
+                p2_tracked=False,
+                wc_tracked=True,
+                merged=False,
+                clean_p1=False,
+                clean_p2=False,
+                possibly_dirty=False,
+                parentfiledata=None,
+            )
+            self._map[filename] = entry
+            if entry.dm_nonnormal:
+                self.nonnormalset.add(filename)
+            new = True
+        elif not entry.tracked:
+            self._dirs_incr(filename, entry)
+            entry.set_tracked()
+            new = True
+        else:
+            # XXX This is probably overkill for more case, but we need this to
+            # fully replace the `normallookup` call with `set_tracked` one.
+            # Consider smoothing this in the future.
+            self.set_possibly_dirty(filename)
+        return new
+
+    def set_untracked(self, f):
+        """Mark a file as no longer tracked in the dirstate map"""
         entry = self.get(f)
-        size = 0
-        if in_merge:
-            # XXX we should not be able to have 'm' state and 'FROM_P2' if not
-            # during a merge. So I (marmoute) am not sure we need the
-            # conditionnal at all. Adding double checking this with assert
-            # would be nice.
-            if entry is not None:
-                # backup the previous state
-                if entry.merged:  # merge
-                    size = NONNORMAL
-                elif entry.from_p2:
-                    size = FROM_P2
+        if entry is None:
+            return False
+        else:
+            self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
+            if not entry.merged:
+                self.copymap.pop(f, None)
+            if entry.added:
+                self.nonnormalset.discard(f)
+                self._map.pop(f, None)
+            else:
+                self.nonnormalset.add(f)
+                if entry.from_p2:
                     self.otherparentset.add(f)
-        if entry is not None and not (entry.merged or entry.from_p2):
-            self.copymap.pop(f, None)
-        self._dirs_decr(f, old_entry=entry, remove_variant=True)
-        self._map[f] = DirstateItem(b'r', 0, size, 0)
-        self.nonnormalset.add(f)
-
-    def dropfile(self, f):
-        """
-        Remove a file from the dirstate.  Returns True if the file was
-        previously recorded.
-        """
-        old_entry = self._map.pop(f, None)
-        self._dirs_decr(f, old_entry=old_entry)
-        self.nonnormalset.discard(f)
-        return old_entry is not None
+                entry.set_untracked()
+            return True
 
     def clearambiguoustimes(self, files, now):
         for f in files:
@@ -400,7 +386,7 @@ class dirstatemap(object):
 
     @propertycache
     def _dirs(self):
-        return pathutil.dirs(self._map, b'r')
+        return pathutil.dirs(self._map, only_tracked=True)
 
     @propertycache
     def _alldirs(self):
@@ -572,7 +558,7 @@ if rustmod is not None:
             from_p2=False,
             possibly_dirty=False,
         ):
-            return self._rustmap.addfile(
+            ret = self._rustmap.addfile(
                 f,
                 mode,
                 size,
@@ -582,12 +568,15 @@ if rustmod is not None:
                 from_p2,
                 possibly_dirty,
             )
+            if added:
+                self.copymap.pop(f, None)
+            return ret
 
         def reset_state(
             self,
             filename,
-            wc_tracked,
-            p1_tracked,
+            wc_tracked=False,
+            p1_tracked=False,
             p2_tracked=False,
             merged=False,
             clean_p1=False,
@@ -632,7 +621,7 @@ if rustmod is not None:
                 )
             elif (p1_tracked or p2_tracked) and not wc_tracked:
                 # XXX might be merged and removed ?
-                self[filename] = DirstateItem(b'r', 0, 0, 0)
+                self[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
                 self.nonnormalset.add(filename)
             elif clean_p2 and wc_tracked:
                 if p1_tracked or self.get(filename) is not None:
@@ -664,11 +653,46 @@ if rustmod is not None:
             else:
                 assert False, 'unreachable'
 
+        def set_tracked(self, filename):
+            new = False
+            entry = self.get(filename)
+            if entry is None:
+                self.addfile(filename, added=True)
+                new = True
+            elif not entry.tracked:
+                entry.set_tracked()
+                self._rustmap.set_v1(filename, entry)
+                new = True
+            else:
+                # XXX This is probably overkill for more case, but we need this to
+                # fully replace the `normallookup` call with `set_tracked` one.
+                # Consider smoothing this in the future.
+                self.set_possibly_dirty(filename)
+            return new
+
+        def set_untracked(self, f):
+            """Mark a file as no longer tracked in the dirstate map"""
+            # in merge is only trigger more logic, so it "fine" to pass it.
+            #
+            # the inner rust dirstate map code need to be adjusted once the API
+            # for dirstate/dirstatemap/DirstateItem is a bit more settled
+            entry = self.get(f)
+            if entry is None:
+                return False
+            else:
+                if entry.added:
+                    self._rustmap.copymap().pop(f, None)
+                    self._rustmap.dropfile(f)
+                else:
+                    self._rustmap.removefile(f, in_merge=True)
+                return True
+
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
 
-        def dropfile(self, *args, **kwargs):
-            return self._rustmap.dropfile(*args, **kwargs)
+        def dropfile(self, f, *args, **kwargs):
+            self._rustmap.copymap().pop(f, None)
+            return self._rustmap.dropfile(f, *args, **kwargs)
 
         def clearambiguoustimes(self, *args, **kwargs):
             return self._rustmap.clearambiguoustimes(*args, **kwargs)
@@ -683,11 +707,15 @@ if rustmod is not None:
         def copymap(self):
             return self._rustmap.copymap()
 
-        def directories(self):
-            return self._rustmap.directories()
+        def debug_iter(self, all):
+            """
+            Return an iterator of (filename, state, mode, size, mtime) tuples
 
-        def debug_iter(self):
-            return self._rustmap.debug_iter()
+            `all`: also include with `state == b' '` dirstate tree nodes that
+            don't have an associated `DirstateItem`.
+
+            """
+            return self._rustmap.debug_iter(all)
 
         def preload(self):
             self._rustmap
@@ -919,6 +947,15 @@ if rustmod is not None:
             entry = self[filename]
             entry.set_possibly_dirty()
             self._rustmap.set_v1(filename, entry)
+
+        def set_clean(self, filename, mode, size, mtime):
+            """mark a file as back to a clean state"""
+            entry = self[filename]
+            mtime = mtime & rangemask
+            size = size & rangemask
+            entry.set_clean(mode, size, mtime)
+            self._rustmap.set_v1(filename, entry)
+            self._rustmap.copymap().pop(filename, None)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)

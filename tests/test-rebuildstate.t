@@ -17,9 +17,16 @@
   >   try:
   >     for file in pats:
   >       if opts.get('normal_lookup'):
-  >         repo.dirstate._normallookup(file)
+  >         with repo.dirstate.parentchange():
+  >             repo.dirstate.update_file(
+  >                 file,
+  >                 p1_tracked=True,
+  >                 wc_tracked=True,
+  >                 possibly_dirty=True,
+  >             )
   >       else:
-  >         repo.dirstate._drop(file)
+  >         repo.dirstate._map.reset_state(file)
+  >         repo.dirstate._dirty = True
   > 
   >     repo.dirstate.write(repo.currenttransaction())
   >   finally:

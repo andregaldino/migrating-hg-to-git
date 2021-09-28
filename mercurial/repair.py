@@ -433,7 +433,7 @@ def manifestrevlogs(repo):
     if scmutil.istreemanifest(repo):
         # This logic is safe if treemanifest isn't enabled, but also
         # pointless, so we skip it if treemanifest isn't enabled.
-        for t, unencoded, encoded, size in repo.store.datafiles():
+        for t, unencoded, size in repo.store.datafiles():
             if unencoded.startswith(b'meta/') and unencoded.endswith(
                 b'00manifest.i'
             ):
@@ -441,7 +441,7 @@ def manifestrevlogs(repo):
                 yield repo.manifestlog.getstorage(dir)
 
 
-def rebuildfncache(ui, repo):
+def rebuildfncache(ui, repo, only_data=False):
     """Rebuilds the fncache file from repo history.
 
     Missing entries will be added. Extra entries will be removed.
@@ -465,28 +465,40 @@ def rebuildfncache(ui, repo):
         newentries = set()
         seenfiles = set()
 
-        progress = ui.makeprogress(
-            _(b'rebuilding'), unit=_(b'changesets'), total=len(repo)
-        )
-        for rev in repo:
-            progress.update(rev)
+        if only_data:
+            # Trust the listing of .i from the fncache, but not the .d. This is
+            # much faster, because we only need to stat every possible .d files,
+            # instead of reading the full changelog
+            for f in fnc:
+                if f[:5] == b'data/' and f[-2:] == b'.i':
+                    seenfiles.add(f[5:-2])
+                    newentries.add(f)
+                    dataf = f[:-2] + b'.d'
+                    if repo.store._exists(dataf):
+                        newentries.add(dataf)
+        else:
+            progress = ui.makeprogress(
+                _(b'rebuilding'), unit=_(b'changesets'), total=len(repo)
+            )
+            for rev in repo:
+                progress.update(rev)
 
-            ctx = repo[rev]
-            for f in ctx.files():
-                # This is to minimize I/O.
-                if f in seenfiles:
-                    continue
-                seenfiles.add(f)
+                ctx = repo[rev]
+                for f in ctx.files():
+                    # This is to minimize I/O.
+                    if f in seenfiles:
+                        continue
+                    seenfiles.add(f)
 
-                i = b'data/%s.i' % f
-                d = b'data/%s.d' % f
+                    i = b'data/%s.i' % f
+                    d = b'data/%s.d' % f
 
-                if repo.store._exists(i):
-                    newentries.add(i)
-                if repo.store._exists(d):
-                    newentries.add(d)
+                    if repo.store._exists(i):
+                        newentries.add(i)
+                    if repo.store._exists(d):
+                        newentries.add(d)
 
-        progress.complete()
+            progress.complete()
 
         if requirements.TREEMANIFEST_REQUIREMENT in repo.requirements:
             # This logic is safe if treemanifest isn't enabled, but also

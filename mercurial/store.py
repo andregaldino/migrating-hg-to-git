@@ -472,7 +472,7 @@ class basicstore(object):
         return self.path + b'/' + encodedir(f)
 
     def _walk(self, relpath, recurse):
-        '''yields (unencoded, encoded, size)'''
+        '''yields (revlog_type, unencoded, size)'''
         path = self.path
         if relpath:
             path += b'/' + relpath
@@ -488,7 +488,7 @@ class basicstore(object):
                     rl_type = is_revlog(f, kind, st)
                     if rl_type is not None:
                         n = util.pconvert(fp[striplen:])
-                        l.append((rl_type, decodedir(n), n, st.st_size))
+                        l.append((rl_type, decodedir(n), st.st_size))
                     elif kind == stat.S_IFDIR and recurse:
                         visit.append(fp)
         l.sort()
@@ -505,26 +505,32 @@ class basicstore(object):
         rootstore = manifest.manifestrevlog(repo.nodeconstants, self.vfs)
         return manifest.manifestlog(self.vfs, repo, rootstore, storenarrowmatch)
 
-    def datafiles(self, matcher=None):
+    def datafiles(self, matcher=None, undecodable=None):
+        """Like walk, but excluding the changelog and root manifest.
+
+        When [undecodable] is None, revlogs names that can't be
+        decoded cause an exception. When it is provided, it should
+        be a list and the filenames that can't be decoded are added
+        to it instead. This is very rarely needed."""
         files = self._walk(b'data', True) + self._walk(b'meta', True)
-        for (t, u, e, s) in files:
-            yield (FILEFLAGS_FILELOG | t, u, e, s)
+        for (t, u, s) in files:
+            yield (FILEFLAGS_FILELOG | t, u, s)
 
     def topfiles(self):
         # yield manifest before changelog
         files = reversed(self._walk(b'', False))
-        for (t, u, e, s) in files:
+        for (t, u, s) in files:
             if u.startswith(b'00changelog'):
-                yield (FILEFLAGS_CHANGELOG | t, u, e, s)
+                yield (FILEFLAGS_CHANGELOG | t, u, s)
             elif u.startswith(b'00manifest'):
-                yield (FILEFLAGS_MANIFESTLOG | t, u, e, s)
+                yield (FILEFLAGS_MANIFESTLOG | t, u, s)
             else:
-                yield (FILETYPE_OTHER | t, u, e, s)
+                yield (FILETYPE_OTHER | t, u, s)
 
     def walk(self, matcher=None):
         """return file related to data storage (ie: revlogs)
 
-        yields (file_type, unencoded, encoded, size)
+        yields (file_type, unencoded, size)
 
         if a matcher is passed, storage files of only those tracked paths
         are passed with matches the matcher
@@ -574,15 +580,20 @@ class encodedstore(basicstore):
     # However that might change so we should probably add a test and encoding
     # decoding for it too. see issue6548
 
-    def datafiles(self, matcher=None):
-        for t, a, b, size in super(encodedstore, self).datafiles():
+    def datafiles(self, matcher=None, undecodable=None):
+        for t, f1, size in super(encodedstore, self).datafiles():
             try:
-                a = decodefilename(a)
+                f2 = decodefilename(f1)
             except KeyError:
-                a = None
-            if a is not None and not _matchtrackedpath(a, matcher):
+                if undecodable is None:
+                    msg = _(b'undecodable revlog name %s') % f1
+                    raise error.StorageError(msg)
+                else:
+                    undecodable.append(f1)
+                    continue
+            if not _matchtrackedpath(f2, matcher):
                 continue
-            yield t, a, b, size
+            yield t, f2, size
 
     def join(self, f):
         return self.path + b'/' + encodefilename(f)
@@ -770,7 +781,7 @@ class fncachestore(basicstore):
     def getsize(self, path):
         return self.rawvfs.stat(path).st_size
 
-    def datafiles(self, matcher=None):
+    def datafiles(self, matcher=None, undecodable=None):
         for f in sorted(self.fncache):
             if not _matchtrackedpath(f, matcher):
                 continue
@@ -779,7 +790,7 @@ class fncachestore(basicstore):
                 t = revlog_type(f)
                 assert t is not None, f
                 t |= FILEFLAGS_FILELOG
-                yield t, f, ef, self.getsize(ef)
+                yield t, f, self.getsize(ef)
             except OSError as err:
                 if err.errno != errno.ENOENT:
                     raise

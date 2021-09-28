@@ -5,7 +5,6 @@ use byteorder::{BigEndian, ByteOrder};
 
 use crate::errors::HgError;
 use crate::revlog::node::Node;
-use crate::revlog::revlog::RevlogError;
 use crate::revlog::{Revision, NULL_REVISION};
 
 pub const INDEX_ENTRY_SIZE: usize = 64;
@@ -23,7 +22,7 @@ impl Index {
     /// Calculate the start of each entry when is_inline is true.
     pub fn new(
         bytes: Box<dyn Deref<Target = [u8]> + Send>,
-    ) -> Result<Self, RevlogError> {
+    ) -> Result<Self, HgError> {
         if is_inline(&bytes) {
             let mut offset: usize = 0;
             let mut offsets = Vec::new();

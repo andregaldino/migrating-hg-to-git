@@ -24,10 +24,6 @@ some capability (because it's running an older hg version, usually).
   > [extensions]
   > disable-lookup = $TESTTMP/disable-lookup.py
   > EOF
-  $ cat >> .hg/hgrc <<EOF
-  > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
-  > EOF
 
   $ hg pull ssh://user@dummy/repo1 -r tip -B a
   pulling from ssh://user@dummy/repo1

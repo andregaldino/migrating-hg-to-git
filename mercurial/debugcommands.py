@@ -962,35 +962,29 @@ def debugstate(ui, repo, **opts):
     datesort = opts.get('datesort')
 
     if datesort:
-        keyfunc = lambda x: (
-            x[1].v1_mtime(),
-            x[0],
-        )  # sort by mtime, then by filename
+
+        def keyfunc(entry):
+            filename, _state, _mode, _size, mtime = entry
+            return (mtime, filename)
+
     else:
         keyfunc = None  # sort by filename
-    if opts['all']:
-        entries = list(repo.dirstate._map.debug_iter())
-    else:
-        entries = list(pycompat.iteritems(repo.dirstate))
+    entries = list(repo.dirstate._map.debug_iter(all=opts['all']))
     entries.sort(key=keyfunc)
-    for file_, ent in entries:
-        if ent.v1_mtime() == -1:
+    for entry in entries:
+        filename, state, mode, size, mtime = entry
+        if mtime == -1:
             timestr = b'unset               '
         elif nodates:
             timestr = b'set                 '
         else:
-            timestr = time.strftime(
-                "%Y-%m-%d %H:%M:%S ", time.localtime(ent.v1_mtime())
-            )
+            timestr = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime(mtime))
             timestr = encoding.strtolocal(timestr)
-        if ent.mode & 0o20000:
+        if mode & 0o20000:
             mode = b'lnk'
         else:
-            mode = b'%3o' % (ent.v1_mode() & 0o777 & ~util.umask)
-        ui.write(
-            b"%c %s %10d %s%s\n"
-            % (ent.v1_state(), mode, ent.v1_size(), timestr, file_)
-        )
+            mode = b'%3o' % (mode & 0o777 & ~util.umask)
+        ui.write(b"%c %s %10d %s%s\n" % (state, mode, size, timestr, filename))
     for f in repo.dirstate.copies():
         ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
 
@@ -2987,10 +2981,22 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
 
 
-@command(b'debugrebuildfncache', [], b'')
-def debugrebuildfncache(ui, repo):
+@command(
+    b'debugrebuildfncache',
+    [
+        (
+            b'',
+            b'only-data',
+            False,
+            _(b'only look for wrong .d files (much faster)'),
+        )
+    ],
+    b'',
+)
+def debugrebuildfncache(ui, repo, **opts):
     """rebuild the fncache file"""
-    repair.rebuildfncache(ui, repo)
+    opts = pycompat.byteskwargs(opts)
+    repair.rebuildfncache(ui, repo, opts.get(b"only_data"))
 
 
 @command(

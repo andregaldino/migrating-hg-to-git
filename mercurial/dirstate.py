@@ -344,9 +344,6 @@ class dirstate(object):
 
     iteritems = items
 
-    def directories(self):
-        return self._map.directories()
-
     def parents(self):
         return [self._validate(p) for p in self._pl]
 
@@ -387,10 +384,8 @@ class dirstate(object):
             self._origpl = self._pl
         self._map.setparents(p1, p2)
         copies = {}
-        if (
-            oldp2 != self._nodeconstants.nullid
-            and p2 == self._nodeconstants.nullid
-        ):
+        nullid = self._nodeconstants.nullid
+        if oldp2 != nullid and p2 == nullid:
             candidatefiles = self._map.non_normal_or_other_parent_paths()
 
             for f in candidatefiles:
@@ -403,13 +398,24 @@ class dirstate(object):
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self._normallookup(f)
+                    self._map.reset_state(
+                        f,
+                        wc_tracked=True,
+                        p1_tracked=True,
+                        possibly_dirty=True,
+                    )
                 # Also fix up otherparent markers
                 elif s.from_p2:
                     source = self._map.copymap.get(f)
                     if source:
                         copies[f] = source
-                    self._add(f)
+                    self._check_new_tracked_filename(f)
+                    self._updatedfiles.add(f)
+                    self._map.reset_state(
+                        f,
+                        p1_tracked=False,
+                        wc_tracked=True,
+                    )
         return copies
 
     def setbranch(self, branch):
@@ -471,18 +477,12 @@ class dirstate(object):
 
         return True the file was previously untracked, False otherwise.
         """
+        self._dirty = True
+        self._updatedfiles.add(filename)
         entry = self._map.get(filename)
-        if entry is None:
-            self._add(filename)
-            return True
-        elif not entry.tracked:
-            self._normallookup(filename)
-            return True
-        # XXX This is probably overkill for more case, but we need this to
-        # fully replace the `normallookup` call with `set_tracked` one.
-        # Consider smoothing this in the future.
-        self.set_possibly_dirty(filename)
-        return False
+        if entry is None or not entry.tracked:
+            self._check_new_tracked_filename(filename)
+        return self._map.set_tracked(filename)
 
     @requires_no_parents_change
     def set_untracked(self, filename):
@@ -493,22 +493,29 @@ class dirstate(object):
 
         return True the file was previously tracked, False otherwise.
         """
-        entry = self._map.get(filename)
-        if entry is None:
-            return False
-        elif entry.added:
-            self._drop(filename)
-            return True
-        else:
-            self._remove(filename)
-            return True
+        ret = self._map.set_untracked(filename)
+        if ret:
+            self._dirty = True
+            self._updatedfiles.add(filename)
+        return ret
 
     @requires_no_parents_change
     def set_clean(self, filename, parentfiledata=None):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
         self._updatedfiles.add(filename)
-        self._normal(filename, parentfiledata=parentfiledata)
+        if parentfiledata:
+            (mode, size, mtime) = parentfiledata
+        else:
+            (mode, size, mtime) = self._get_filedata(filename)
+        if not self._map[filename].tracked:
+            self._check_new_tracked_filename(filename)
+        self._map.set_clean(filename, mode, size, mtime)
+        if mtime > self._lastnormaltime:
+            # Remember the most recent modification timeslot for status(),
+            # to make sure we won't miss future size-preserving file content
+            # modifications that happen within the same timeslot.
+            self._lastnormaltime = mtime
 
     @requires_no_parents_change
     def set_possibly_dirty(self, filename):
@@ -546,7 +553,10 @@ class dirstate(object):
             possibly_dirty = True
         elif not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
-            self._drop(filename)
+            if self._map.get(filename) is not None:
+                self._map.reset_state(filename)
+                self._dirty = True
+                self._updatedfiles.add(filename)
         elif (not p1_tracked) and wc_tracked:
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
@@ -655,45 +665,21 @@ class dirstate(object):
             # modifications that happen within the same timeslot.
             self._lastnormaltime = parentfiledata[2]
 
-    def _addpath(
-        self,
-        f,
-        mode=0,
-        size=None,
-        mtime=None,
-        added=False,
-        merged=False,
-        from_p2=False,
-        possibly_dirty=False,
-    ):
-        entry = self._map.get(f)
-        if added or entry is not None and entry.removed:
-            scmutil.checkfilename(f)
-            if self._map.hastrackeddir(f):
-                msg = _(b'directory %r already in dirstate')
-                msg %= pycompat.bytestr(f)
+    def _check_new_tracked_filename(self, filename):
+        scmutil.checkfilename(filename)
+        if self._map.hastrackeddir(filename):
+            msg = _(b'directory %r already in dirstate')
+            msg %= pycompat.bytestr(filename)
+            raise error.Abort(msg)
+        # shadows
+        for d in pathutil.finddirs(filename):
+            if self._map.hastrackeddir(d):
+                break
+            entry = self._map.get(d)
+            if entry is not None and not entry.removed:
+                msg = _(b'file %r in dirstate clashes with %r')
+                msg %= (pycompat.bytestr(d), pycompat.bytestr(filename))
                 raise error.Abort(msg)
-            # shadows
-            for d in pathutil.finddirs(f):
-                if self._map.hastrackeddir(d):
-                    break
-                entry = self._map.get(d)
-                if entry is not None and not entry.removed:
-                    msg = _(b'file %r in dirstate clashes with %r')
-                    msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
-                    raise error.Abort(msg)
-        self._dirty = True
-        self._updatedfiles.add(f)
-        self._map.addfile(
-            f,
-            mode=mode,
-            size=size,
-            mtime=mtime,
-            added=added,
-            merged=merged,
-            from_p2=from_p2,
-            possibly_dirty=possibly_dirty,
-        )
 
     def _get_filedata(self, filename):
         """returns"""
@@ -702,215 +688,6 @@ class dirstate(object):
         size = s.st_size
         mtime = s[stat.ST_MTIME]
         return (mode, size, mtime)
-
-    def normal(self, f, parentfiledata=None):
-        """Mark a file normal and clean.
-
-        parentfiledata: (mode, size, mtime) of the clean file
-
-        parentfiledata should be computed from memory (for mode,
-        size), as or close as possible from the point where we
-        determined the file was clean, to limit the risk of the
-        file having been changed by an external process between the
-        moment where the file was determined to be clean and now."""
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normal` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normal` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normal(f, parentfiledata=parentfiledata)
-
-    def _normal(self, f, parentfiledata=None):
-        if parentfiledata:
-            (mode, size, mtime) = parentfiledata
-        else:
-            (mode, size, mtime) = self._get_filedata(f)
-        self._addpath(f, mode=mode, size=size, mtime=mtime)
-        self._map.copymap.pop(f, None)
-        if f in self._map.nonnormalset:
-            self._map.nonnormalset.remove(f)
-        if mtime > self._lastnormaltime:
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = mtime
-
-    def normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normallookup` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normallookup` outside of update/merge context."
-                b" Use `set_possibly_dirty` or `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normallookup(f)
-
-    def _normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.in_merge:
-            # if there is a merge going on and the file was either
-            # "merged" or coming from other parent (-2) before
-            # being removed, restore that state.
-            entry = self._map.get(f)
-            if entry is not None:
-                # XXX this should probably be dealt with a a lower level
-                # (see `merged_removed` and `from_p2_removed`)
-                if entry.merged_removed or entry.from_p2_removed:
-                    source = self._map.copymap.get(f)
-                    if entry.merged_removed:
-                        self._merge(f)
-                    elif entry.from_p2_removed:
-                        self._otherparent(f)
-                    if source is not None:
-                        self.copy(source, f)
-                    return
-                elif entry.merged or entry.from_p2:
-                    return
-        self._addpath(f, possibly_dirty=True)
-        self._map.copymap.pop(f, None)
-
-    def otherparent(self, f):
-        '''Mark as coming from the other parent, always dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `otherparent` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `otherparent` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._otherparent(f)
-
-    def _otherparent(self, f):
-        if not self.in_merge:
-            msg = _(b"setting %r to other parent only allowed in merges") % f
-            raise error.Abort(msg)
-        entry = self._map.get(f)
-        if entry is not None and entry.tracked:
-            # merge-like
-            self._addpath(f, merged=True)
-        else:
-            # add-like
-            self._addpath(f, from_p2=True)
-        self._map.copymap.pop(f, None)
-
-    def add(self, f):
-        '''Mark a file added.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `add` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `add` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._add(f)
-
-    def _add(self, filename):
-        """internal function to mark a file as added"""
-        self._addpath(filename, added=True)
-        self._map.copymap.pop(filename, None)
-
-    def remove(self, f):
-        '''Mark a file removed'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `remove` insde of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `remove` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._remove(f)
-
-    def _remove(self, filename):
-        """internal function to mark a file removed"""
-        self._dirty = True
-        self._updatedfiles.add(filename)
-        self._map.removefile(filename, in_merge=self.in_merge)
-
-    def merge(self, f):
-        '''Mark a file merged.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `merge` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `merge` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._merge(f)
-
-    def _merge(self, f):
-        if not self.in_merge:
-            return self._normallookup(f)
-        return self._otherparent(f)
-
-    def drop(self, f):
-        '''Drop a file from the dirstate'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `drop` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `drop` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._drop(f)
-
-    def _drop(self, filename):
-        """internal function to drop a file from the dirstate"""
-        if self._map.dropfile(filename):
-            self._dirty = True
-            self._updatedfiles.add(filename)
-            self._map.copymap.pop(filename, None)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
@@ -1022,9 +799,20 @@ class dirstate(object):
         self._map.setparents(parent, self._nodeconstants.nullid)
 
         for f in to_lookup:
-            self._normallookup(f)
+
+            if self.in_merge:
+                self.set_tracked(f)
+            else:
+                self._map.reset_state(
+                    f,
+                    wc_tracked=True,
+                    p1_tracked=True,
+                    possibly_dirty=True,
+                )
+            self._updatedfiles.add(f)
         for f in to_drop:
-            self._drop(f)
+            self._map.reset_state(f)
+            self._updatedfiles.add(f)
 
         self._dirty = True
 

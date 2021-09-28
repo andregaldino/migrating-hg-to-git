@@ -290,13 +290,15 @@ pub trait DirstateMapMethods {
     /// node stored in this dirstate map, for the purpose of the `hg
     /// debugdirstate` command.
     ///
-    /// For nodes that don’t have an entry, `state` is the ASCII space.
+    /// If `all` is true, include  nodes that don’t have an entry.
+    /// For such nodes `state` is the ASCII space.
     /// An `mtime` may still be present. It is used to optimize `status`.
     ///
     /// Because parse errors can happen during iteration, the iterated items
     /// are `Result`s.
     fn debug_iter(
         &self,
+        all: bool,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
@@ -538,6 +540,7 @@ impl DirstateMapMethods for DirstateMap {
 
     fn debug_iter(
         &self,
+        all: bool,
     ) -> Box<
         dyn Iterator<
                 Item = Result<
@@ -547,6 +550,9 @@ impl DirstateMapMethods for DirstateMap {
             > + Send
             + '_,
     > {
+        // Not used for the flat (not tree-based) DirstateMap
+        let _ = all;
+
         Box::new(
             (&**self)
                 .iter()

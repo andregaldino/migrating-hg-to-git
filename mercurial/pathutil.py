@@ -315,20 +315,19 @@ def finddirs(path):
 class dirs(object):
     '''a multiset of directory names from a set of file paths'''
 
-    def __init__(self, map, skip=None):
+    def __init__(self, map, only_tracked=False):
         """
         a dict map indicates a dirstate while a list indicates a manifest
         """
         self._dirs = {}
         addpath = self.addpath
-        if isinstance(map, dict) and skip is not None:
+        if isinstance(map, dict) and only_tracked:
             for f, s in pycompat.iteritems(map):
-                if s.state != skip:
+                if s.state != b'r':
                     addpath(f)
-        elif skip is not None:
-            raise error.ProgrammingError(
-                b"skip character is only supported with a dict source"
-            )
+        elif only_tracked:
+            msg = b"`only_tracked` is only supported with a dict source"
+            raise error.ProgrammingError(msg)
         else:
             for f in map:
                 addpath(f)
