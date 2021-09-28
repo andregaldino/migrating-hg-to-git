@@ -51,56 +51,6 @@ impl DirstateMapMethods for OwningDirstateMap {
         self.get_mut().drop_entry_and_copy_source(filename)
     }
 
-    fn non_normal_entries_contains(
-        &mut self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError> {
-        self.get_mut().non_normal_entries_contains(key)
-    }
-
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
-        self.get_mut().non_normal_entries_remove(key)
-    }
-
-    fn non_normal_entries_add(&mut self, key: &HgPath) {
-        self.get_mut().non_normal_entries_add(key)
-    }
-
-    fn non_normal_or_other_parent_paths(
-        &mut self,
-    ) -> Box<dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + '_>
-    {
-        self.get_mut().non_normal_or_other_parent_paths()
-    }
-
-    fn set_non_normal_other_parent_entries(&mut self, force: bool) {
-        self.get_mut().set_non_normal_other_parent_entries(force)
-    }
-
-    fn iter_non_normal_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        self.get_mut().iter_non_normal_paths()
-    }
-
-    fn iter_non_normal_paths_panic(
-        &self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        self.get().iter_non_normal_paths_panic()
-    }
-
-    fn iter_other_parent_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        self.get_mut().iter_other_parent_paths()
-    }
-
     fn has_tracked_dir(
         &mut self,
         directory: &HgPath,

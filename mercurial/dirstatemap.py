@@ -62,12 +62,6 @@ class dirstatemap(object):
 
     The dirstate also provides the following views onto the state:
 
-    - `nonnormalset` is a set of the filenames that have state other
-      than 'normal', or are normal but have an mtime of -1 ('normallookup').
-
-    - `otherparentset` is a set of the filenames that are marked as coming
-      from the second parent when the dirstate is currently being merged.
-
     - `filefoldmap` is a dict mapping normalized filenames to the denormalized
       form that they appear as in the dirstate.
 
@@ -112,8 +106,6 @@ class dirstatemap(object):
         util.clearcachedproperty(self, b"_alldirs")
         util.clearcachedproperty(self, b"filefoldmap")
         util.clearcachedproperty(self, b"dirfoldmap")
-        util.clearcachedproperty(self, b"nonnormalset")
-        util.clearcachedproperty(self, b"otherparentset")
 
     def items(self):
         return pycompat.iteritems(self._map)
@@ -185,7 +177,6 @@ class dirstatemap(object):
         size = size & rangemask
         entry.set_clean(mode, size, mtime)
         self.copymap.pop(filename, None)
-        self.nonnormalset.discard(filename)
 
     def reset_state(
         self,
@@ -218,7 +209,6 @@ class dirstatemap(object):
         if not (p1_tracked or p2_tracked or wc_tracked):
             old_entry = self._map.pop(filename, None)
             self._dirs_decr(filename, old_entry=old_entry)
-            self.nonnormalset.discard(filename)
             self.copymap.pop(filename, None)
             return
         elif merged:
@@ -271,14 +261,6 @@ class dirstatemap(object):
             possibly_dirty=possibly_dirty,
             parentfiledata=parentfiledata,
         )
-        if entry.dm_nonnormal:
-            self.nonnormalset.add(filename)
-        else:
-            self.nonnormalset.discard(filename)
-        if entry.dm_otherparent:
-            self.otherparentset.add(filename)
-        else:
-            self.otherparentset.discard(filename)
         self._map[filename] = entry
 
     def set_tracked(self, filename):
@@ -297,8 +279,6 @@ class dirstatemap(object):
                 parentfiledata=None,
             )
             self._map[filename] = entry
-            if entry.dm_nonnormal:
-                self.nonnormalset.add(filename)
             new = True
         elif not entry.tracked:
             self._dirs_incr(filename, entry)
@@ -321,28 +301,10 @@ class dirstatemap(object):
             if not entry.merged:
                 self.copymap.pop(f, None)
             if entry.added:
-                self.nonnormalset.discard(f)
                 self._map.pop(f, None)
             else:
-                self.nonnormalset.add(f)
-                if entry.from_p2:
-                    self.otherparentset.add(f)
                 entry.set_untracked()
             return True
-
-    def nonnormalentries(self):
-        '''Compute the nonnormal dirstate entries from the dmap'''
-        try:
-            return parsers.nonnormalotherparententries(self._map)
-        except AttributeError:
-            nonnorm = set()
-            otherparent = set()
-            for fname, e in pycompat.iteritems(self._map):
-                if e.dm_nonnormal:
-                    nonnorm.add(fname)
-                if e.from_p2:
-                    otherparent.add(fname)
-            return nonnorm, otherparent
 
     @propertycache
     def filefoldmap(self):
@@ -433,13 +395,7 @@ class dirstatemap(object):
         self._dirtyparents = True
         copies = {}
         if fold_p2:
-            candidatefiles = self.non_normal_or_other_parent_paths()
-
-            for f in candidatefiles:
-                s = self.get(f)
-                if s is None:
-                    continue
-
+            for f, s in pycompat.iteritems(self._map):
                 # Discard "merged" markers when moving away from a merge state
                 if s.merged or s.from_p2:
                     source = self.copymap.pop(f, None)
@@ -504,22 +460,6 @@ class dirstatemap(object):
         )
         st.close()
         self._dirtyparents = False
-        self.nonnormalset, self.otherparentset = self.nonnormalentries()
-
-    @propertycache
-    def nonnormalset(self):
-        nonnorm, otherparents = self.nonnormalentries()
-        self.otherparentset = otherparents
-        return nonnorm
-
-    @propertycache
-    def otherparentset(self):
-        nonnorm, otherparents = self.nonnormalentries()
-        self.nonnormalset = nonnorm
-        return otherparents
-
-    def non_normal_or_other_parent_paths(self):
-        return self.nonnormalset.union(self.otherparentset)
 
     @propertycache
     def identity(self):
@@ -643,7 +583,6 @@ if rustmod is not None:
             elif (p1_tracked or p2_tracked) and not wc_tracked:
                 # XXX might be merged and removed ?
                 self[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
-                self.nonnormalset.add(filename)
             elif clean_p2 and wc_tracked:
                 if p1_tracked or self.get(filename) is not None:
                     # XXX the `self.get` call is catching some case in
@@ -670,7 +609,6 @@ if rustmod is not None:
                     raise error.ProgrammingError(msg)
                 mode, size, mtime = parentfiledata
                 self.addfile(filename, mode=mode, size=size, mtime=mtime)
-                self.nonnormalset.discard(filename)
             else:
                 assert False, 'unreachable'
 
@@ -709,9 +647,6 @@ if rustmod is not None:
 
         def removefile(self, *args, **kwargs):
             return self._rustmap.removefile(*args, **kwargs)
-
-        def nonnormalentries(self):
-            return self._rustmap.nonnormalentries()
 
         def get(self, *args, **kwargs):
             return self._rustmap.get(*args, **kwargs)
@@ -790,13 +725,17 @@ if rustmod is not None:
             self._dirtyparents = True
             copies = {}
             if fold_p2:
-                candidatefiles = self.non_normal_or_other_parent_paths()
-
-                for f in candidatefiles:
-                    s = self.get(f)
-                    if s is None:
-                        continue
-
+                # Collect into an intermediate list to avoid a `RuntimeError`
+                # exception due to mutation during iteration.
+                # TODO: move this the whole loop to Rust where `iter_mut`
+                # enables in-place mutation of elements of a collection while
+                # iterating it, without mutating the collection itself.
+                candidatefiles = [
+                    (f, s)
+                    for f, s in self._rustmap.items()
+                    if s.merged or s.from_p2
+                ]
+                for f, s in candidatefiles:
                     # Discard "merged" markers when moving away from a merge state
                     if s.merged:
                         source = self.copymap.get(f)
@@ -964,19 +903,6 @@ if rustmod is not None:
         def identity(self):
             self._rustmap
             return self.identity
-
-        @property
-        def nonnormalset(self):
-            nonnorm = self._rustmap.non_normal_entries()
-            return nonnorm
-
-        @propertycache
-        def otherparentset(self):
-            otherparents = self._rustmap.other_parent_entries()
-            return otherparents
-
-        def non_normal_or_other_parent_paths(self):
-            return self._rustmap.non_normal_or_other_parent_paths()
 
         @propertycache
         def dirfoldmap(self):

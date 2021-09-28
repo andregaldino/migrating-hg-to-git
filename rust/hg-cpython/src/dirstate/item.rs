@@ -95,16 +95,6 @@ py_class!(pub class DirstateItem |py| {
         Ok(self.entry(py).get().from_p2_removed())
     }
 
-    @property
-    def dm_nonnormal(&self) -> PyResult<bool> {
-        Ok(self.entry(py).get().is_non_normal())
-    }
-
-    @property
-    def dm_otherparent(&self) -> PyResult<bool> {
-        Ok(self.entry(py).get().is_from_other_parent())
-    }
-
     def v1_state(&self) -> PyResult<PyBytes> {
         let (state, _mode, _size, _mtime) = self.entry(py).get().v1_data();
         let state_byte: u8 = state.into();

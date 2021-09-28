@@ -661,24 +661,6 @@ static PyObject *dirstate_item_get_removed(dirstateItemObject *self)
 	}
 };
 
-static PyObject *dm_nonnormal(dirstateItemObject *self)
-{
-	if ((dirstate_item_c_v1_state(self) != 'n') ||
-	    (dirstate_item_c_v1_mtime(self) == ambiguous_time)) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-static PyObject *dm_otherparent(dirstateItemObject *self)
-{
-	if (dirstate_item_c_v1_mtime(self) == dirstate_v1_from_p2) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-
 static PyGetSetDef dirstate_item_getset[] = {
     {"mode", (getter)dirstate_item_get_mode, NULL, "mode", NULL},
     {"size", (getter)dirstate_item_get_size, NULL, "size", NULL},
@@ -693,8 +675,6 @@ static PyGetSetDef dirstate_item_getset[] = {
      "from_p2_removed", NULL},
     {"from_p2", (getter)dirstate_item_get_from_p2, NULL, "from_p2", NULL},
     {"removed", (getter)dirstate_item_get_removed, NULL, "removed", NULL},
-    {"dm_nonnormal", (getter)dm_nonnormal, NULL, "dm_nonnormal", NULL},
-    {"dm_otherparent", (getter)dm_otherparent, NULL, "dm_otherparent", NULL},
     {NULL} /* Sentinel */
 };
 
@@ -828,70 +808,6 @@ quit:
 	Py_XDECREF(entry);
 	Py_XDECREF(parents);
 	return ret;
-}
-
-/*
- * Build a set of non-normal and other parent entries from the dirstate dmap
- */
-static PyObject *nonnormalotherparententries(PyObject *self, PyObject *args)
-{
-	PyObject *dmap, *fname, *v;
-	PyObject *nonnset = NULL, *otherpset = NULL, *result = NULL;
-	Py_ssize_t pos;
-
-	if (!PyArg_ParseTuple(args, "O!:nonnormalentries", &PyDict_Type,
-	                      &dmap)) {
-		goto bail;
-	}
-
-	nonnset = PySet_New(NULL);
-	if (nonnset == NULL) {
-		goto bail;
-	}
-
-	otherpset = PySet_New(NULL);
-	if (otherpset == NULL) {
-		goto bail;
-	}
-
-	pos = 0;
-	while (PyDict_Next(dmap, &pos, &fname, &v)) {
-		dirstateItemObject *t;
-		if (!dirstate_tuple_check(v)) {
-			PyErr_SetString(PyExc_TypeError,
-			                "expected a dirstate tuple");
-			goto bail;
-		}
-		t = (dirstateItemObject *)v;
-
-		if (dirstate_item_c_from_p2(t)) {
-			if (PySet_Add(otherpset, fname) == -1) {
-				goto bail;
-			}
-		}
-		if (!(t->flags & dirstate_flag_wc_tracked) ||
-		    !(t->flags &
-		      (dirstate_flag_p1_tracked | dirstate_flag_p2_tracked)) ||
-		    (t->flags &
-		     (dirstate_flag_possibly_dirty | dirstate_flag_merged))) {
-			if (PySet_Add(nonnset, fname) == -1) {
-				goto bail;
-			}
-		}
-	}
-
-	result = Py_BuildValue("(OO)", nonnset, otherpset);
-	if (result == NULL) {
-		goto bail;
-	}
-	Py_DECREF(nonnset);
-	Py_DECREF(otherpset);
-	return result;
-bail:
-	Py_XDECREF(nonnset);
-	Py_XDECREF(otherpset);
-	Py_XDECREF(result);
-	return NULL;
 }
 
 /*
@@ -1226,9 +1142,6 @@ PyObject *parse_index2(PyObject *self, PyObject *args, PyObject *kwargs);
 
 static PyMethodDef methods[] = {
     {"pack_dirstate", pack_dirstate, METH_VARARGS, "pack a dirstate\n"},
-    {"nonnormalotherparententries", nonnormalotherparententries, METH_VARARGS,
-     "create a set containing non-normal and other parent entries of given "
-     "dirstate\n"},
     {"parse_dirstate", parse_dirstate, METH_VARARGS, "parse a dirstate\n"},
     {"parse_index2", (PyCFunction)parse_index2, METH_VARARGS | METH_KEYWORDS,
      "parse a revlog index\n"},

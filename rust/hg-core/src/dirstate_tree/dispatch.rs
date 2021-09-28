@@ -67,82 +67,6 @@ pub trait DirstateMapMethods {
         filename: &HgPath,
     ) -> Result<(), DirstateError>;
 
-    /// Return whether the map has an "non-normal" entry for the given
-    /// filename. That is, any entry with a `state` other than
-    /// `EntryState::Normal` or with an ambiguous `mtime`.
-    fn non_normal_entries_contains(
-        &mut self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError>;
-
-    /// Mark the given path as "normal" file. This is only relevant in the flat
-    /// dirstate map where there is a separate `HashSet` that needs to be kept
-    /// up to date.
-    /// Returns whether the key was present in the set.
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool;
-
-    /// Mark the given path as "non-normal" file.
-    /// This is only relevant in the flat dirstate map where there is a
-    /// separate `HashSet` that needs to be kept up to date.
-    fn non_normal_entries_add(&mut self, key: &HgPath);
-
-    /// Return an iterator of paths whose respective entry are either
-    /// "non-normal" (see `non_normal_entries_contains`) or "from other
-    /// parent".
-    ///
-    /// If that information is cached, create the cache as needed.
-    ///
-    /// "From other parent" is defined as `state == Normal && size == -2`.
-    ///
-    /// Because parse errors can happen during iteration, the iterated items
-    /// are `Result`s.
-    fn non_normal_or_other_parent_paths(
-        &mut self,
-    ) -> Box<dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + '_>;
-
-    /// Create the cache for `non_normal_or_other_parent_paths` if needed.
-    ///
-    /// If `force` is true, the cache is re-created even if it already exists.
-    fn set_non_normal_other_parent_entries(&mut self, force: bool);
-
-    /// Return an iterator of paths whose respective entry are "non-normal"
-    /// (see `non_normal_entries_contains`).
-    ///
-    /// If that information is cached, create the cache as needed.
-    ///
-    /// Because parse errors can happen during iteration, the iterated items
-    /// are `Result`s.
-    fn iter_non_normal_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    >;
-
-    /// Same as `iter_non_normal_paths`, but takes `&self` instead of `&mut
-    /// self`.
-    ///
-    /// Panics if a cache is necessary but does not exist yet.
-    fn iter_non_normal_paths_panic(
-        &self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    >;
-
-    /// Return an iterator of paths whose respective entry are "from other
-    /// parent".
-    ///
-    /// If that information is cached, create the cache as needed.
-    ///
-    /// "From other parent" is defined as `state == Normal && size == -2`.
-    ///
-    /// Because parse errors can happen during iteration, the iterated items
-    /// are `Result`s.
-    fn iter_other_parent_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    >;
-
     /// Returns whether the sub-tree rooted at the given directory contains any
     /// tracked file.
     ///
@@ -330,66 +254,6 @@ impl DirstateMapMethods for DirstateMap {
         self.drop_entry_and_copy_source(filename)
     }
 
-    fn non_normal_entries_contains(
-        &mut self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError> {
-        let (non_normal, _other_parent) =
-            self.get_non_normal_other_parent_entries();
-        Ok(non_normal.contains(key))
-    }
-
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
-        self.non_normal_entries_remove(key)
-    }
-
-    fn non_normal_entries_add(&mut self, key: &HgPath) {
-        self.non_normal_entries_add(key)
-    }
-
-    fn non_normal_or_other_parent_paths(
-        &mut self,
-    ) -> Box<dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + '_>
-    {
-        let (non_normal, other_parent) =
-            self.get_non_normal_other_parent_entries();
-        Box::new(non_normal.union(other_parent).map(|p| Ok(&**p)))
-    }
-
-    fn set_non_normal_other_parent_entries(&mut self, force: bool) {
-        self.set_non_normal_other_parent_entries(force)
-    }
-
-    fn iter_non_normal_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        let (non_normal, _other_parent) =
-            self.get_non_normal_other_parent_entries();
-        Box::new(non_normal.iter().map(|p| Ok(&**p)))
-    }
-
-    fn iter_non_normal_paths_panic(
-        &self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        let (non_normal, _other_parent) =
-            self.get_non_normal_other_parent_entries_panic();
-        Box::new(non_normal.iter().map(|p| Ok(&**p)))
-    }
-
-    fn iter_other_parent_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        let (_non_normal, other_parent) =
-            self.get_non_normal_other_parent_entries();
-        Box::new(other_parent.iter().map(|p| Ok(&**p)))
-    }
-
     fn has_tracked_dir(
         &mut self,
         directory: &HgPath,
@@ -406,7 +270,7 @@ impl DirstateMapMethods for DirstateMap {
         parents: DirstateParents,
         now: Timestamp,
     ) -> Result<Vec<u8>, DirstateError> {
-        self.pack(parents, now)
+        Ok(self.pack(parents, now)?)
     }
 
     fn pack_v2(

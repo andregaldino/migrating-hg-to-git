@@ -294,11 +294,7 @@ impl DirstateEntry {
         (self.state().into(), self.mode(), self.size(), self.mtime())
     }
 
-    pub fn is_non_normal(&self) -> bool {
-        self.state() != EntryState::Normal || self.mtime() == MTIME_UNSET
-    }
-
-    pub fn is_from_other_parent(&self) -> bool {
+    pub(crate) fn is_from_other_parent(&self) -> bool {
         self.state() == EntryState::Normal
             && self.size() == SIZE_FROM_OTHER_PARENT
     }

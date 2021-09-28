@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::dirstate::parsers::Timestamp;
+use crate::errors::HgError;
 use crate::{
     dirstate::EntryState,
     dirstate::SIZE_FROM_OTHER_PARENT,
@@ -16,7 +17,6 @@ use crate::{
     StateMap,
 };
 use micro_timer::timed;
-use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::ops::Deref;
 
@@ -26,8 +26,6 @@ pub struct DirstateMap {
     pub copy_map: CopyMap,
     pub dirs: Option<DirsMultiset>,
     pub all_dirs: Option<DirsMultiset>,
-    non_normal_set: Option<HashSet<HgPathBuf>>,
-    other_parent_set: Option<HashSet<HgPathBuf>>,
 }
 
 /// Should only really be used in python interface code, for clarity
@@ -58,8 +56,6 @@ impl DirstateMap {
     pub fn clear(&mut self) {
         self.state_map = StateMap::default();
         self.copy_map.clear();
-        self.non_normal_set = None;
-        self.other_parent_set = None;
     }
 
     pub fn set_entry(&mut self, filename: &HgPath, entry: DirstateEntry) {
@@ -84,18 +80,6 @@ impl DirstateMap {
             }
         }
         self.state_map.insert(filename.to_owned(), entry.to_owned());
-
-        if entry.is_non_normal() {
-            self.get_non_normal_other_parent_entries()
-                .0
-                .insert(filename.to_owned());
-        }
-
-        if entry.is_from_other_parent() {
-            self.get_non_normal_other_parent_entries()
-                .1
-                .insert(filename.to_owned());
-        }
         Ok(())
     }
 
@@ -126,9 +110,6 @@ impl DirstateMap {
                 {
                     // other parent
                     size = SIZE_FROM_OTHER_PARENT;
-                    self.get_non_normal_other_parent_entries()
-                        .1
-                        .insert(filename.to_owned());
                 }
             }
         }
@@ -148,9 +129,6 @@ impl DirstateMap {
 
         self.state_map
             .insert(filename.to_owned(), DirstateEntry::new_removed(size));
-        self.get_non_normal_other_parent_entries()
-            .0
-            .insert(filename.to_owned());
         Ok(())
     }
 
@@ -173,90 +151,9 @@ impl DirstateMap {
                 all_dirs.delete_path(filename)?;
             }
         }
-        self.get_non_normal_other_parent_entries()
-            .0
-            .remove(filename);
-
         self.copy_map.remove(filename);
 
         Ok(())
-    }
-
-    pub fn non_normal_entries_remove(
-        &mut self,
-        key: impl AsRef<HgPath>,
-    ) -> bool {
-        self.get_non_normal_other_parent_entries()
-            .0
-            .remove(key.as_ref())
-    }
-
-    pub fn non_normal_entries_add(&mut self, key: impl AsRef<HgPath>) {
-        self.get_non_normal_other_parent_entries()
-            .0
-            .insert(key.as_ref().into());
-    }
-
-    pub fn non_normal_entries_union(
-        &mut self,
-        other: HashSet<HgPathBuf>,
-    ) -> Vec<HgPathBuf> {
-        self.get_non_normal_other_parent_entries()
-            .0
-            .union(&other)
-            .map(ToOwned::to_owned)
-            .collect()
-    }
-
-    pub fn get_non_normal_other_parent_entries(
-        &mut self,
-    ) -> (&mut HashSet<HgPathBuf>, &mut HashSet<HgPathBuf>) {
-        self.set_non_normal_other_parent_entries(false);
-        (
-            self.non_normal_set.as_mut().unwrap(),
-            self.other_parent_set.as_mut().unwrap(),
-        )
-    }
-
-    /// Useful to get immutable references to those sets in contexts where
-    /// you only have an immutable reference to the `DirstateMap`, like when
-    /// sharing references with Python.
-    ///
-    /// TODO, get rid of this along with the other "setter/getter" stuff when
-    /// a nice typestate plan is defined.
-    ///
-    /// # Panics
-    ///
-    /// Will panic if either set is `None`.
-    pub fn get_non_normal_other_parent_entries_panic(
-        &self,
-    ) -> (&HashSet<HgPathBuf>, &HashSet<HgPathBuf>) {
-        (
-            self.non_normal_set.as_ref().unwrap(),
-            self.other_parent_set.as_ref().unwrap(),
-        )
-    }
-
-    pub fn set_non_normal_other_parent_entries(&mut self, force: bool) {
-        if !force
-            && self.non_normal_set.is_some()
-            && self.other_parent_set.is_some()
-        {
-            return;
-        }
-        let mut non_normal = HashSet::new();
-        let mut other_parent = HashSet::new();
-
-        for (filename, entry) in self.state_map.iter() {
-            if entry.is_non_normal() {
-                non_normal.insert(filename.to_owned());
-            }
-            if entry.is_from_other_parent() {
-                other_parent.insert(filename.to_owned());
-            }
-        }
-        self.non_normal_set = Some(non_normal);
-        self.other_parent_set = Some(other_parent);
     }
 
     /// Both of these setters and their uses appear to be the simplest way to
@@ -326,12 +223,8 @@ impl DirstateMap {
         &mut self,
         parents: DirstateParents,
         now: Timestamp,
-    ) -> Result<Vec<u8>, DirstateError> {
-        let packed =
-            pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)?;
-
-        self.set_non_normal_other_parent_entries(true);
-        Ok(packed)
+    ) -> Result<Vec<u8>, HgError> {
+        pack_dirstate(&mut self.state_map, &self.copy_map, parents, now)
     }
 }
 
@@ -366,49 +259,5 @@ mod tests {
         .unwrap();
 
         assert_eq!(1, map.len());
-        assert_eq!(0, map.get_non_normal_other_parent_entries().0.len());
-        assert_eq!(0, map.get_non_normal_other_parent_entries().1.len());
-    }
-
-    #[test]
-    fn test_non_normal_other_parent_entries() {
-        let mut map: DirstateMap = [
-            (b"f1", (EntryState::Removed, 1337, 1337, 1337)),
-            (b"f2", (EntryState::Normal, 1337, 1337, -1)),
-            (b"f3", (EntryState::Normal, 1337, 1337, 1337)),
-            (b"f4", (EntryState::Normal, 1337, -2, 1337)),
-            (b"f5", (EntryState::Added, 1337, 1337, 1337)),
-            (b"f6", (EntryState::Added, 1337, 1337, -1)),
-            (b"f7", (EntryState::Merged, 1337, 1337, -1)),
-            (b"f8", (EntryState::Merged, 1337, 1337, 1337)),
-            (b"f9", (EntryState::Merged, 1337, -2, 1337)),
-            (b"fa", (EntryState::Added, 1337, -2, 1337)),
-            (b"fb", (EntryState::Removed, 1337, -2, 1337)),
-        ]
-        .iter()
-        .map(|(fname, (state, mode, size, mtime))| {
-            (
-                HgPathBuf::from_bytes(fname.as_ref()),
-                DirstateEntry::from_v1_data(*state, *mode, *size, *mtime),
-            )
-        })
-        .collect();
-
-        let mut non_normal = [
-            b"f1", b"f2", b"f4", b"f5", b"f6", b"f7", b"f8", b"f9", b"fa",
-            b"fb",
-        ]
-        .iter()
-        .map(|x| HgPathBuf::from_bytes(x.as_ref()))
-        .collect();
-
-        let mut other_parent = HashSet::new();
-        other_parent.insert(HgPathBuf::from_bytes(b"f4"));
-        let entries = map.get_non_normal_other_parent_entries();
-
-        assert_eq!(
-            (&mut non_normal, &mut other_parent),
-            (entries.0, entries.1)
-        );
     }
 }

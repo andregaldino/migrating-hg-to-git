@@ -361,22 +361,6 @@ class DirstateItem(object):
         """
         return self.removed and self._merged
 
-    @property
-    def dm_nonnormal(self):
-        """True is the entry is non-normal in the dirstatemap sense
-
-        There is no reason for any code, but the dirstatemap one to use this.
-        """
-        return self.v1_state() != b'n' or self.v1_mtime() == AMBIGUOUS_TIME
-
-    @property
-    def dm_otherparent(self):
-        """True is the entry is `otherparent` in the dirstatemap sense
-
-        There is no reason for any code, but the dirstatemap one to use this.
-        """
-        return self.v1_size() == FROM_P2
-
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):

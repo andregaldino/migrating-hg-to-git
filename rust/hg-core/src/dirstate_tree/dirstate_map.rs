@@ -701,27 +701,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(())
     }
 
-    /// Return a faillilble iterator of full paths of nodes that have an
-    /// `entry` for which the given `predicate` returns true.
-    ///
-    /// Fallibility means that each iterator item is a `Result`, which may
-    /// indicate a parse error of the on-disk dirstate-v2 format. Such errors
-    /// should only happen if Mercurial is buggy or a repository is corrupted.
-    fn filter_full_paths<'tree>(
-        &'tree self,
-        predicate: impl Fn(&DirstateEntry) -> bool + 'tree,
-    ) -> impl Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + 'tree
-    {
-        filter_map_results(self.iter_nodes(), move |node| {
-            if let Some(entry) = node.entry()? {
-                if predicate(&entry) {
-                    return Ok(Some(node.full_path(self.on_disk)?));
-                }
-            }
-            Ok(None)
-        })
-    }
-
     fn count_dropped_path(unreachable_bytes: &mut u32, path: &Cow<HgPath>) {
         if let Cow::Borrowed(path) = path {
             *unreachable_bytes += path.len() as u32
@@ -915,69 +894,6 @@ impl<'on_disk> super::dispatch::DirstateMapMethods for DirstateMap<'on_disk> {
             debug_assert!(!was_tracked);
         }
         Ok(())
-    }
-
-    fn non_normal_entries_contains(
-        &mut self,
-        key: &HgPath,
-    ) -> Result<bool, DirstateV2ParseError> {
-        Ok(if let Some(node) = self.get_node(key)? {
-            node.entry()?.map_or(false, |entry| entry.is_non_normal())
-        } else {
-            false
-        })
-    }
-
-    fn non_normal_entries_remove(&mut self, key: &HgPath) -> bool {
-        // Do nothing, this `DirstateMap` does not have a separate "non normal
-        // entries" set that need to be kept up to date.
-        if let Ok(Some(v)) = self.get(key) {
-            return v.is_non_normal();
-        }
-        false
-    }
-
-    fn non_normal_entries_add(&mut self, _key: &HgPath) {
-        // Do nothing, this `DirstateMap` does not have a separate "non normal
-        // entries" set that need to be kept up to date
-    }
-
-    fn non_normal_or_other_parent_paths(
-        &mut self,
-    ) -> Box<dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + '_>
-    {
-        Box::new(self.filter_full_paths(|entry| {
-            entry.is_non_normal() || entry.is_from_other_parent()
-        }))
-    }
-
-    fn set_non_normal_other_parent_entries(&mut self, _force: bool) {
-        // Do nothing, this `DirstateMap` does not have a separate "non normal
-        // entries" and "from other parent" sets that need to be recomputed
-    }
-
-    fn iter_non_normal_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        self.iter_non_normal_paths_panic()
-    }
-
-    fn iter_non_normal_paths_panic(
-        &self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        Box::new(self.filter_full_paths(|entry| entry.is_non_normal()))
-    }
-
-    fn iter_other_parent_paths(
-        &mut self,
-    ) -> Box<
-        dyn Iterator<Item = Result<&HgPath, DirstateV2ParseError>> + Send + '_,
-    > {
-        Box::new(self.filter_full_paths(|entry| entry.is_from_other_parent()))
     }
 
     fn has_tracked_dir(

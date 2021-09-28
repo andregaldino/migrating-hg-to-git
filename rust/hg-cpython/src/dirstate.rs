@@ -13,7 +13,6 @@ mod copymap;
 mod dirs_multiset;
 mod dirstate_map;
 mod item;
-mod non_normal_entries;
 mod status;
 use self::item::DirstateItem;
 use crate::{

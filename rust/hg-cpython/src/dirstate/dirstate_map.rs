@@ -13,16 +13,12 @@ use std::convert::TryInto;
 
 use cpython::{
     exc, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList, PyNone, PyObject,
-    PyResult, PySet, PyString, Python, PythonObject, ToPyObject,
-    UnsafePyLeaked,
+    PyResult, Python, PythonObject, ToPyObject, UnsafePyLeaked,
 };
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
     dirstate::item::DirstateItem,
-    dirstate::non_normal_entries::{
-        NonNormalEntries, NonNormalEntriesIterator,
-    },
     pybytes_deref::PyBytesDeref,
 };
 use hg::{
@@ -183,100 +179,6 @@ py_class!(pub class DirstateMap |py| {
             .drop_entry_and_copy_source(HgPath::new(f.data(py)))
             .map_err(|e |dirstate_error(py, e))?;
         Ok(PyNone)
-    }
-
-    def other_parent_entries(&self) -> PyResult<PyObject> {
-        let mut inner_shared = self.inner(py).borrow_mut();
-        let set = PySet::empty(py)?;
-        for path in inner_shared.iter_other_parent_paths() {
-            let path = path.map_err(|e| v2_error(py, e))?;
-            set.add(py, PyBytes::new(py, path.as_bytes()))?;
-        }
-        Ok(set.into_object())
-    }
-
-    def non_normal_entries(&self) -> PyResult<NonNormalEntries> {
-        NonNormalEntries::from_inner(py, self.clone_ref(py))
-    }
-
-    def non_normal_entries_contains(&self, key: PyObject) -> PyResult<bool> {
-        let key = key.extract::<PyBytes>(py)?;
-        self.inner(py)
-            .borrow_mut()
-            .non_normal_entries_contains(HgPath::new(key.data(py)))
-            .map_err(|e| v2_error(py, e))
-    }
-
-    def non_normal_entries_display(&self) -> PyResult<PyString> {
-        let mut inner = self.inner(py).borrow_mut();
-        let paths = inner
-            .iter_non_normal_paths()
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| v2_error(py, e))?;
-        let formatted = format!("NonNormalEntries: {}", hg::utils::join_display(paths, ", "));
-        Ok(PyString::new(py, &formatted))
-    }
-
-    def non_normal_entries_remove(&self, key: PyObject) -> PyResult<PyObject> {
-        let key = key.extract::<PyBytes>(py)?;
-        let key = key.data(py);
-        let was_present = self
-            .inner(py)
-            .borrow_mut()
-            .non_normal_entries_remove(HgPath::new(key));
-        if !was_present {
-            let msg = String::from_utf8_lossy(key);
-            Err(PyErr::new::<exc::KeyError, _>(py, msg))
-        } else {
-            Ok(py.None())
-        }
-    }
-
-    def non_normal_entries_discard(&self, key: PyObject) -> PyResult<PyObject>
-    {
-        let key = key.extract::<PyBytes>(py)?;
-        self
-            .inner(py)
-            .borrow_mut()
-            .non_normal_entries_remove(HgPath::new(key.data(py)));
-        Ok(py.None())
-    }
-
-    def non_normal_entries_add(&self, key: PyObject) -> PyResult<PyObject> {
-        let key = key.extract::<PyBytes>(py)?;
-        self
-            .inner(py)
-            .borrow_mut()
-            .non_normal_entries_add(HgPath::new(key.data(py)));
-        Ok(py.None())
-    }
-
-    def non_normal_or_other_parent_paths(&self) -> PyResult<PyList> {
-        let mut inner = self.inner(py).borrow_mut();
-
-        let ret = PyList::new(py, &[]);
-        for filename in inner.non_normal_or_other_parent_paths() {
-            let filename = filename.map_err(|e| v2_error(py, e))?;
-            let as_pystring = PyBytes::new(py, filename.as_bytes());
-            ret.append(py, as_pystring.into_object());
-        }
-        Ok(ret)
-    }
-
-    def non_normal_entries_iter(&self) -> PyResult<NonNormalEntriesIterator> {
-        // Make sure the sets are defined before we no longer have a mutable
-        // reference to the dmap.
-        self.inner(py)
-            .borrow_mut()
-            .set_non_normal_other_parent_entries(false);
-
-        let leaked_ref = self.inner(py).leak_immutable();
-
-        NonNormalEntriesIterator::from_inner(py, unsafe {
-            leaked_ref.map(py, |o| {
-                o.iter_non_normal_paths_panic()
-            })
-        })
     }
 
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {
