@@ -1697,13 +1697,6 @@ def _chistedit(ui, repo, freeargs, opts):
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
 
-        if os.path.exists(os.path.join(repo.path, b'histedit-state')):
-            raise error.Abort(
-                _(
-                    b'history edit already in progress, try '
-                    b'--continue or --abort'
-                )
-            )
         revs.extend(freeargs)
         if not revs:
             defaultrev = destutil.desthistedit(ui, repo)
@@ -1928,7 +1921,7 @@ def _readfile(ui, path):
             return f.read()
 
 
-def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
+def _validateargs(ui, repo, freeargs, opts, goal, rules, revs):
     # TODO only abort if we try to histedit mq patches, not just
     # blanket if mq patches are applied somewhere
     mq = getattr(repo, 'mq', None)
@@ -1954,13 +1947,6 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
                 _(b'only --commands argument allowed with --edit-plan')
             )
     else:
-        if state.inprogress():
-            raise error.Abort(
-                _(
-                    b'history edit already in progress, try '
-                    b'--continue or --abort'
-                )
-            )
         if outg:
             if revs:
                 raise error.Abort(_(b'no revisions allowed with --outgoing'))
@@ -1990,7 +1976,7 @@ def _histedit(ui, repo, state, freeargs, opts):
     rules = opts.get(b'commands', b'')
     state.keep = opts.get(b'keep', False)
 
-    _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs)
+    _validateargs(ui, repo, freeargs, opts, goal, rules, revs)
 
     hastags = False
     if revs:
