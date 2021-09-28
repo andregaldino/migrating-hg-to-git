@@ -508,7 +508,7 @@ Note that there is a few reordering in this series for more extensive test
   $ hg ci -m 'modify wat'
   $ hg histedit 050280826e04
   abort: cannot edit history that contains merges
-  [255]
+  [20]
   $ cd ..
 
 Check abort behavior

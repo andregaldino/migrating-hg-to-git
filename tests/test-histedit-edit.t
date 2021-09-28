@@ -552,5 +552,5 @@ warn the user on editing tagged commits
   do you want to continue (yN)?  n
   abort: histedit cancelled
   
-  [255]
+  [250]
   $ cd ..

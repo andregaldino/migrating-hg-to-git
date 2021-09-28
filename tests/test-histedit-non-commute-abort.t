@@ -160,7 +160,7 @@ even prompt the user for rules, sidestepping any dataloss issues.
   $ hg histedit e860deea161a
   c: untracked file differs
   abort: untracked files in working directory conflict with files in 055a42cdd887
-  [255]
+  [20]
 
 We should have detected the collision early enough we're not in a
 histedit state, and p1 is unchanged.

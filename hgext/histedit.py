@@ -749,7 +749,7 @@ def _isdirtywc(repo):
 
 
 def abortdirty():
-    raise error.Abort(
+    raise error.StateError(
         _(b'working copy has pending changes'),
         hint=_(
             b'amend, commit, or revert them and run histedit '
@@ -1052,12 +1052,12 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
 
     outgoing = discovery.findcommonoutgoing(repo, other, revs, force=force)
     if not outgoing.missing:
-        raise error.Abort(_(b'no outgoing ancestors'))
+        raise error.StateError(_(b'no outgoing ancestors'))
     roots = list(repo.revs(b"roots(%ln)", outgoing.missing))
     if len(roots) > 1:
         msg = _(b'there are ambiguous outgoing revisions')
         hint = _(b"see 'hg help histedit' for more detail")
-        raise error.Abort(msg, hint=hint)
+        raise error.StateError(msg, hint=hint)
     return repo[roots[0]].node()
 
 
@@ -1703,13 +1703,13 @@ def _chistedit(ui, repo, freeargs, opts):
             if defaultrev is not None:
                 revs.append(defaultrev)
         if len(revs) != 1:
-            raise error.Abort(
+            raise error.InputError(
                 _(b'histedit requires exactly one ancestor revision')
             )
 
         rr = list(repo.set(b'roots(%ld)', scmutil.revrange(repo, revs)))
         if len(rr) != 1:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b'The specified revisions must have '
                     b'exactly one common root'
@@ -1720,7 +1720,7 @@ def _chistedit(ui, repo, freeargs, opts):
         topmost = repo.dirstate.p1()
         revs = between(repo, root, topmost, keep)
         if not revs:
-            raise error.Abort(
+            raise error.InputError(
                 _(b'%s is not an ancestor of working directory') % short(root)
             )
 
@@ -1926,7 +1926,7 @@ def _validateargs(ui, repo, freeargs, opts, goal, rules, revs):
     # blanket if mq patches are applied somewhere
     mq = getattr(repo, 'mq', None)
     if mq and mq.applied:
-        raise error.Abort(_(b'source has mq patches applied'))
+        raise error.StateError(_(b'source has mq patches applied'))
 
     # basic argument incompatibility processing
     outg = opts.get(b'outgoing')
@@ -1934,24 +1934,26 @@ def _validateargs(ui, repo, freeargs, opts, goal, rules, revs):
     abort = opts.get(b'abort')
     force = opts.get(b'force')
     if force and not outg:
-        raise error.Abort(_(b'--force only allowed with --outgoing'))
+        raise error.InputError(_(b'--force only allowed with --outgoing'))
     if goal == b'continue':
         if any((outg, abort, revs, freeargs, rules, editplan)):
-            raise error.Abort(_(b'no arguments allowed with --continue'))
+            raise error.InputError(_(b'no arguments allowed with --continue'))
     elif goal == b'abort':
         if any((outg, revs, freeargs, rules, editplan)):
-            raise error.Abort(_(b'no arguments allowed with --abort'))
+            raise error.InputError(_(b'no arguments allowed with --abort'))
     elif goal == b'edit-plan':
         if any((outg, revs, freeargs)):
-            raise error.Abort(
+            raise error.InputError(
                 _(b'only --commands argument allowed with --edit-plan')
             )
     else:
         if outg:
             if revs:
-                raise error.Abort(_(b'no revisions allowed with --outgoing'))
+                raise error.InputError(
+                    _(b'no revisions allowed with --outgoing')
+                )
             if len(freeargs) > 1:
-                raise error.Abort(
+                raise error.InputError(
                     _(b'only one repo argument allowed with --outgoing')
                 )
         else:
@@ -1962,7 +1964,7 @@ def _validateargs(ui, repo, freeargs, opts, goal, rules, revs):
                     revs.append(defaultrev)
 
             if len(revs) != 1:
-                raise error.Abort(
+                raise error.InputError(
                     _(b'histedit requires exactly one ancestor revision')
                 )
 
@@ -1995,7 +1997,7 @@ def _histedit(ui, repo, state, freeargs, opts):
             ),
             default=1,
         ):
-            raise error.Abort(_(b'histedit cancelled\n'))
+            raise error.CanceledError(_(b'histedit cancelled\n'))
     # rebuild state
     if goal == goalcontinue:
         state.read()
@@ -2205,7 +2207,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     else:
         rr = list(repo.set(b'roots(%ld)', scmutil.revrange(repo, revs)))
         if len(rr) != 1:
-            raise error.Abort(
+            raise error.InputError(
                 _(
                     b'The specified revisions must have '
                     b'exactly one common root'
@@ -2215,7 +2217,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
 
     revs = between(repo, root, topmost, state.keep)
     if not revs:
-        raise error.Abort(
+        raise error.InputError(
             _(b'%s is not an ancestor of working directory') % short(root)
         )
 
@@ -2245,7 +2247,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
                 followcopies=False,
             )
         except error.Abort:
-            raise error.Abort(
+            raise error.StateError(
                 _(
                     b"untracked files in working directory conflict with files in %s"
                 )
@@ -2323,7 +2325,9 @@ def between(repo, old, new, keep):
     if revs and not keep:
         rewriteutil.precheck(repo, revs, b'edit')
         if repo.revs(b'(%ld) and merge()', revs):
-            raise error.Abort(_(b'cannot edit history that contains merges'))
+            raise error.StateError(
+                _(b'cannot edit history that contains merges')
+            )
     return pycompat.maplist(repo.changelog.node, revs)
 
 
