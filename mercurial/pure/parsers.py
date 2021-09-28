@@ -352,15 +352,6 @@ class DirstateItem(object):
         """True if the file has been removed"""
         return not self._wc_tracked and (self._p1_tracked or self._p2_tracked)
 
-    @property
-    def merged_removed(self):
-        """True if the file has been removed, but was "merged" initially
-
-        This property seems like an abstraction leakage and should probably be
-        dealt in this class (or maybe the dirstatemap)  directly.
-        """
-        return self.removed and self._merged
-
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
         if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):

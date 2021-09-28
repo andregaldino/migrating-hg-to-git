@@ -178,10 +178,6 @@ impl DirstateEntry {
             && !self.flags.contains(Flags::WDIR_TRACKED)
     }
 
-    pub fn merged_removed(&self) -> bool {
-        self.removed() && self.flags.contains(Flags::MERGED)
-    }
-
     pub fn from_p2_removed(&self) -> bool {
         self.removed() && self.flags.contains(Flags::CLEAN_P2)
     }

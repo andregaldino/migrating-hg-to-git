@@ -166,14 +166,6 @@ static inline bool dirstate_item_c_merged(dirstateItemObject *self)
 	        (self->flags & dirstate_flag_merged));
 }
 
-static inline bool dirstate_item_c_merged_removed(dirstateItemObject *self)
-{
-	if (!dirstate_item_c_removed(self)) {
-		return false;
-	}
-	return (self->flags & dirstate_flag_merged);
-}
-
 static inline bool dirstate_item_c_from_p2(dirstateItemObject *self)
 {
 	if (!dirstate_item_c_tracked(self)) {
@@ -626,15 +618,6 @@ static PyObject *dirstate_item_get_merged(dirstateItemObject *self)
 	}
 };
 
-static PyObject *dirstate_item_get_merged_removed(dirstateItemObject *self)
-{
-	if (dirstate_item_c_merged_removed(self)) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-
 static PyObject *dirstate_item_get_from_p2(dirstateItemObject *self)
 {
 	if (dirstate_item_c_from_p2(self)) {
@@ -669,8 +652,6 @@ static PyGetSetDef dirstate_item_getset[] = {
     {"state", (getter)dirstate_item_get_state, NULL, "state", NULL},
     {"tracked", (getter)dirstate_item_get_tracked, NULL, "tracked", NULL},
     {"added", (getter)dirstate_item_get_added, NULL, "added", NULL},
-    {"merged_removed", (getter)dirstate_item_get_merged_removed, NULL,
-     "merged_removed", NULL},
     {"merged", (getter)dirstate_item_get_merged, NULL, "merged", NULL},
     {"from_p2_removed", (getter)dirstate_item_get_from_p2_removed, NULL,
      "from_p2_removed", NULL},
