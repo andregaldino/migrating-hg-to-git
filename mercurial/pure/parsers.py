@@ -336,7 +336,7 @@ class DirstateItem(object):
         """
         if not self._wc_tracked:
             return False
-        return self._clean_p2 or (not self._p1_tracked and self._p2_tracked)
+        return self._clean_p2
 
     @property
     def from_p2_removed(self):
