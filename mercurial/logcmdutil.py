@@ -912,6 +912,18 @@ def _makenofollowfilematcher(repo, pats, opts):
     return None
 
 
+def revpair(repo, revs):
+    """Resolves user-provided revset(s) into two revisions.
+
+    This just wraps the lower-level scmutil.revpair() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revpair(repo, revs)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
 def revrange(repo, specs, localalias=None):
     """Resolves user-provided revset(s).
 

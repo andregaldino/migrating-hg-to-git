@@ -101,6 +101,7 @@ from mercurial import (
     error,
     filemerge,
     formatter,
+    logcmdutil,
     pycompat,
     registrar,
     scmutil,
@@ -568,7 +569,7 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
         ctx1b = repo[nullrev]
         ctx2 = scmutil.revsingle(repo, to_rev, None)
     else:
-        ctx1a, ctx2 = scmutil.revpair(repo, revs)
+        ctx1a, ctx2 = logcmdutil.revpair(repo, revs)
         if not revs:
             ctx1b = repo[None].p2()
         else:

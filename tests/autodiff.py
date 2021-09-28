@@ -4,6 +4,7 @@ from __future__ import absolute_import
 
 from mercurial import (
     error,
+    logcmdutil,
     patch,
     pycompat,
     registrar,
@@ -49,7 +50,7 @@ def autodiff(ui, repo, *pats, **opts):
     else:
         raise error.Abort(b'--git must be yes, no or auto')
 
-    ctx1, ctx2 = scmutil.revpair(repo, [])
+    ctx1, ctx2 = logcmdutil.revpair(repo, [])
     m = scmutil.match(ctx2, pats, opts)
     it = patch.diff(
         repo,

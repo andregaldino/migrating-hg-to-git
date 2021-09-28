@@ -2610,7 +2610,7 @@ def diff(ui, repo, *pats, **opts):
         ctx2 = scmutil.revsingle(repo, to_rev, None)
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
-        ctx1, ctx2 = scmutil.revpair(repo, revs)
+        ctx1, ctx2 = logcmdutil.revpair(repo, revs)
 
     if reverse:
         ctxleft = ctx2
@@ -6909,7 +6909,7 @@ def status(ui, repo, *pats, **opts):
         ctx1 = ctx2.p1()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
-        ctx1, ctx2 = scmutil.revpair(repo, revs)
+        ctx1, ctx2 = logcmdutil.revpair(repo, revs)
 
     forcerelativevalue = None
     if ui.hasconfig(b'commands', b'status.relative'):
