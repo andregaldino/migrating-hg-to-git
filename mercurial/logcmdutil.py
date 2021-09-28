@@ -912,6 +912,18 @@ def _makenofollowfilematcher(repo, pats, opts):
     return None
 
 
+def revsingle(repo, revspec, default=b'.', localalias=None):
+    """Resolves user-provided revset(s) into a single revision.
+
+    This just wraps the lower-level scmutil.revsingle() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revsingle(repo, revspec, default, localalias)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
 def revpair(repo, revs):
     """Resolves user-provided revset(s) into two revisions.
 

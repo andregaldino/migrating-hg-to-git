@@ -101,7 +101,7 @@ typical client does not want echo-back messages, so test without it:
   000000000000 tip
   *** runcommand id -runknown
   abort: unknown revision 'unknown'
-   [255]
+   [10]
 
   >>> from hgclient import bprint, check, readchannel
   >>> @check

@@ -506,7 +506,7 @@ def debugcapabilities(ui, path, **opts):
 )
 def debugchangedfiles(ui, repo, rev, **opts):
     """list the stored files changes for a revision"""
-    ctx = scmutil.revsingle(repo, rev, None)
+    ctx = logcmdutil.revsingle(repo, rev, None)
     files = None
 
     if opts['compute']:
@@ -1373,7 +1373,7 @@ def debugfileset(ui, repo, expr, **opts):
 
     fileset.symbols  # force import of fileset so we have predicates to optimize
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get(b'rev'), None)
+    ctx = logcmdutil.revsingle(repo, opts.get(b'rev'), None)
 
     stages = [
         (b'parsed', pycompat.identity),

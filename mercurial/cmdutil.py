@@ -1480,7 +1480,7 @@ def copy(ui, repo, pats, opts, rename=False):
             # TODO: Remove this restriction and make it also create the copy
             #       targets (and remove the rename source if rename==True).
             raise error.InputError(_(b'--at-rev requires --after'))
-        ctx = scmutil.revsingle(repo, rev)
+        ctx = logcmdutil.revsingle(repo, rev)
         if len(ctx.parents()) > 1:
             raise error.InputError(
                 _(b'cannot mark/unmark copy in merge commit')

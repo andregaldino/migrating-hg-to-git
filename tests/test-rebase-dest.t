@@ -162,7 +162,7 @@ Multiple destinations cannot be used with --base:
   > A D
   > EOS
   abort: unknown revision 'SRC'
-  [255]
+  [10]
 
 Rebase to null should work:
 

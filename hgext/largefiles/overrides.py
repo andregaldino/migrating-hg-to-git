@@ -1667,7 +1667,7 @@ def overridetransplant(orig, ui, repo, *revs, **opts):
 @eh.wrapcommand(b'cat')
 def overridecat(orig, ui, repo, file1, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get(b'rev'))
+    ctx = logcmdutil.revsingle(repo, opts.get(b'rev'))
     err = 1
     notbad = set()
     m = scmutil.match(ctx, (file1,) + pats, opts)

@@ -445,7 +445,7 @@ def annotate(ui, repo, *pats, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
 
     ui.pager(b'annotate')
     rootfm = ui.formatter(b'annotate', opts)
@@ -649,7 +649,7 @@ def archive(ui, repo, dest, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
     if not ctx:
         raise error.InputError(
             _(b'no working directory: please specify a revision')
@@ -791,7 +791,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     cmdutil.checkunfinished(repo)
     cmdutil.bailifchanged(repo)
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
     node = ctx.node()
 
     op1, op2 = repo.dirstate.parents()
@@ -1761,7 +1761,7 @@ def cat(ui, repo, file1, *pats, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
     m = scmutil.match(ctx, (file1,) + pats, opts)
     fntemplate = opts.pop(b'output', b'')
     if cmdutil.isstdiofilename(fntemplate):
@@ -2600,14 +2600,14 @@ def diff(ui, repo, *pats, **opts):
     cmdutil.check_incompatible_arguments(opts, b'to', [b'rev', b'change'])
     if change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
-        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx2 = logcmdutil.revsingle(repo, change, None)
         ctx1 = logcmdutil.diff_parent(ctx2)
     elif from_rev or to_rev:
         repo = scmutil.unhidehashlikerevs(
             repo, [from_rev] + [to_rev], b'nowarn'
         )
-        ctx1 = scmutil.revsingle(repo, from_rev, None)
-        ctx2 = scmutil.revsingle(repo, to_rev, None)
+        ctx1 = logcmdutil.revsingle(repo, from_rev, None)
+        ctx2 = logcmdutil.revsingle(repo, to_rev, None)
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
         ctx1, ctx2 = logcmdutil.revpair(repo, revs)
@@ -2864,7 +2864,7 @@ def files(ui, repo, *pats, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev, None)
+    ctx = logcmdutil.revsingle(repo, rev, None)
 
     end = b'\n'
     if opts.get(b'print0'):
@@ -3175,7 +3175,7 @@ def _dograft(ui, repo, *revs, **opts):
     skipped = set()
     basectx = None
     if opts.get('base'):
-        basectx = scmutil.revsingle(repo, opts['base'], None)
+        basectx = logcmdutil.revsingle(repo, opts['base'], None)
     if basectx is None:
         # check for merges
         for rev in repo.revs(b'%ld and merge()', revs):
@@ -3696,7 +3696,7 @@ def heads(ui, repo, *branchrevs, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-        start = scmutil.revsingle(repo, rev, None).node()
+        start = logcmdutil.revsingle(repo, rev, None).node()
 
     if opts.get(b'topo'):
         heads = [repo[h] for h in repo.heads(start)]
@@ -3932,7 +3932,7 @@ def identify(
         else:
             if rev:
                 repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-            ctx = scmutil.revsingle(repo, rev, None)
+            ctx = logcmdutil.revsingle(repo, rev, None)
 
             if ctx.rev() is None:
                 ctx = repo[None]
@@ -4445,7 +4445,7 @@ def locate(ui, repo, *pats, **opts):
         end = b'\0'
     else:
         end = b'\n'
-    ctx = scmutil.revsingle(repo, opts.get(b'rev'), None)
+    ctx = logcmdutil.revsingle(repo, opts.get(b'rev'), None)
 
     ret = 1
     m = scmutil.match(
@@ -4790,7 +4790,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
     mode = {b'l': b'644', b'x': b'755', b'': b'644', b't': b'755'}
     if node:
         repo = scmutil.unhidehashlikerevs(repo, [node], b'nowarn')
-    ctx = scmutil.revsingle(repo, node)
+    ctx = logcmdutil.revsingle(repo, node)
     mf = ctx.manifest()
     ui.pager(b'manifest')
     for f in ctx:
@@ -4877,7 +4877,7 @@ def merge(ui, repo, node=None, **opts):
         node = opts.get(b'rev')
 
     if node:
-        ctx = scmutil.revsingle(repo, node)
+        ctx = logcmdutil.revsingle(repo, node)
     else:
         if ui.configbool(b'commands', b'merge.require-rev'):
             raise error.InputError(
@@ -5056,7 +5056,7 @@ def parents(ui, repo, file_=None, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev, None)
+    ctx = logcmdutil.revsingle(repo, rev, None)
 
     if file_:
         m = scmutil.match(ctx, (file_,), opts)
@@ -6347,7 +6347,7 @@ def revert(ui, repo, *pats, **opts):
     rev = opts.get(b'rev')
     if rev:
         repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
 
     if not (
         pats
@@ -6905,7 +6905,7 @@ def status(ui, repo, *pats, **opts):
         raise error.InputError(msg)
     elif change:
         repo = scmutil.unhidehashlikerevs(repo, [change], b'nowarn')
-        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx2 = logcmdutil.revsingle(repo, change, None)
         ctx1 = ctx2.p1()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, b'nowarn')
@@ -7453,7 +7453,7 @@ def tag(ui, repo, name1, *names, **opts):
                         b'(use -f to force)'
                     )
                 )
-        node = scmutil.revsingle(repo, rev_).node()
+        node = logcmdutil.revsingle(repo, rev_).node()
 
         if not message:
             # we don't translate commit messages
@@ -7477,7 +7477,7 @@ def tag(ui, repo, name1, *names, **opts):
         # don't allow tagging the null rev
         if (
             not opts.get(b'remove')
-            and scmutil.revsingle(repo, rev_).rev() == nullrev
+            and logcmdutil.revsingle(repo, rev_).rev() == nullrev
         ):
             raise error.InputError(_(b"cannot tag null revision"))
 
@@ -7840,7 +7840,7 @@ def update(ui, repo, node=None, **opts):
         brev = rev
         if rev:
             repo = scmutil.unhidehashlikerevs(repo, [rev], b'nowarn')
-        ctx = scmutil.revsingle(repo, rev, default=None)
+        ctx = logcmdutil.revsingle(repo, rev, default=None)
         rev = ctx.rev()
         hidden = ctx.hidden()
         overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}

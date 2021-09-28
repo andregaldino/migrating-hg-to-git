@@ -1323,7 +1323,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
             return None
         if destf:
             # --base does not support multiple destinations
-            dest = scmutil.revsingle(repo, destf)
+            dest = logcmdutil.revsingle(repo, destf)
         else:
             dest = repo[_destrebase(repo, base, destspace=destspace)]
             destf = bytes(dest)

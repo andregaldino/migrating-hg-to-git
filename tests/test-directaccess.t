@@ -75,7 +75,7 @@ Testing with rev number
   $ hg status --change 2 --config experimental.directaccess.revnums=False
   abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
   $ hg diff -c 2
   diff -r 29becc82797a -r 28ad74487de9 c

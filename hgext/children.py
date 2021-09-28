@@ -22,7 +22,6 @@ from mercurial import (
     logcmdutil,
     pycompat,
     registrar,
-    scmutil,
 )
 
 templateopts = cmdutil.templateopts
@@ -71,7 +70,7 @@ def children(ui, repo, file_=None, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     rev = opts.get(b'rev')
-    ctx = scmutil.revsingle(repo, rev)
+    ctx = logcmdutil.revsingle(repo, rev)
     if file_:
         fctx = repo.filectx(file_, changeid=ctx.rev())
         childctxs = [fcctx.changectx() for fcctx in fctx.children()]

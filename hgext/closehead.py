@@ -13,9 +13,9 @@ from mercurial import (
     cmdutil,
     context,
     error,
+    logcmdutil,
     pycompat,
     registrar,
-    logcmdutil,
 )
 
 cmdtable = {}
