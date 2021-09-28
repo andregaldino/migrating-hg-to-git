@@ -85,11 +85,6 @@ py_class!(pub class DirstateItem |py| {
         Ok(self.entry(py).get().from_p2())
     }
 
-    @property
-    def from_p2_removed(&self) -> PyResult<bool> {
-        Ok(self.entry(py).get().from_p2_removed())
-    }
-
     def v1_state(&self) -> PyResult<PyBytes> {
         let (state, _mode, _size, _mtime) = self.entry(py).get().v1_data();
         let state_byte: u8 = state.into();

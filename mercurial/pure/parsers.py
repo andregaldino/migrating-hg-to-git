@@ -339,15 +339,6 @@ class DirstateItem(object):
         return self._clean_p2
 
     @property
-    def from_p2_removed(self):
-        """True if the file has been removed, but was "from_p2" initially
-
-        This property seems like an abstraction leakage and should probably be
-        dealt in this class (or maybe the dirstatemap) directly.
-        """
-        return self.removed and self._clean_p2
-
-    @property
     def removed(self):
         """True if the file has been removed"""
         return not self._wc_tracked and (self._p1_tracked or self._p2_tracked)
