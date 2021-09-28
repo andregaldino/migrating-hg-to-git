@@ -96,10 +96,10 @@ Test label with quote in them.
   2:fb616635b18f Added tag rev(0) for changeset 43114e71eddd ["foo"]
   $ hg log -r '("foo")'
   abort: unknown revision 'foo'
-  [255]
+  [10]
   $ hg log -r 'revset("foo")'
   abort: unknown revision 'foo'
-  [255]
+  [10]
   $ hg log -r '("\"foo\"")'
   2:fb616635b18f Added tag rev(0) for changeset 43114e71eddd ["foo"]
   $ hg log -r 'revset("\"foo\"")'
@@ -126,10 +126,10 @@ Test label with + in them.
   4:bbf52b87b370 Added tag foo-bar for changeset a50aae922707 [foo+bar]
   $ hg log -r '(foo+bar)'
   abort: unknown revision 'foo'
-  [255]
+  [10]
   $ hg log -r 'revset(foo+bar)'
   abort: unknown revision 'foo'
-  [255]
+  [10]
   $ hg log -r '"foo+bar"'
   4:bbf52b87b370 Added tag foo-bar for changeset a50aae922707 [foo+bar]
   $ hg log -r '("foo+bar")'

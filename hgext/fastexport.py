@@ -15,6 +15,7 @@ from mercurial.node import hex, nullrev
 from mercurial.utils import stringutil
 from mercurial import (
     error,
+    logcmdutil,
     pycompat,
     registrar,
     scmutil,
@@ -182,7 +183,7 @@ def fastexport(ui, repo, *revs, **opts):
     if not revs:
         revs = scmutil.revrange(repo, [b":"])
     else:
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
     if not revs:
         raise error.Abort(_(b"no revisions matched"))
     authorfile = opts.get(b"authormap")

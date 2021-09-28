@@ -137,6 +137,7 @@ from mercurial import (
     filelog,
     filesetlang,
     localrepo,
+    logcmdutil,
     minifileset,
     pycompat,
     revlog,
@@ -417,7 +418,7 @@ def lfsfiles(context, mapping):
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
     revs = opts.get('rev', [])
-    pointers = wrapper.extractpointers(repo, scmutil.revrange(repo, revs))
+    pointers = wrapper.extractpointers(repo, logcmdutil.revrange(repo, revs))
     wrapper.uploadblobs(repo, pointers)
 
 

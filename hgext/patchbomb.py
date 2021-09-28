@@ -91,6 +91,7 @@ from mercurial import (
     error,
     formatter,
     hg,
+    logcmdutil,
     mail,
     patch,
     pycompat,
@@ -812,7 +813,7 @@ def email(ui, repo, *revs, **opts):
             raise error.Abort(_(b"bookmark '%s' not found") % bookmark)
         revs = scmutil.bookmarkrevs(repo, bookmark)
 
-    revs = scmutil.revrange(repo, revs)
+    revs = logcmdutil.revrange(repo, revs)
     if outgoing:
         revs = _getoutgoing(repo, dest, revs)
     if bundle:

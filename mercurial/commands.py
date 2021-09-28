@@ -536,7 +536,7 @@ def annotate(ui, repo, *pats, **opts):
     )
     skiprevs = opts.get(b'skip')
     if skiprevs:
-        skiprevs = scmutil.revrange(repo, skiprevs)
+        skiprevs = logcmdutil.revrange(repo, skiprevs)
 
     uipathfn = scmutil.getuipathfn(repo, legacyrelativevalue=True)
     for abs in ctx.walk(m):
@@ -1037,7 +1037,7 @@ def bisect(
     state = hbisect.load_state(repo)
 
     if rev:
-        nodes = [repo[i].node() for i in scmutil.revrange(repo, rev)]
+        nodes = [repo[i].node() for i in logcmdutil.revrange(repo, rev)]
     else:
         nodes = [repo.lookup(b'.')]
 
@@ -1424,7 +1424,7 @@ def branches(ui, repo, active=False, closed=False, **opts):
     revs = opts.get(b'rev')
     selectedbranches = None
     if revs:
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
         getbi = repo.revbranchcache().branchinfo
         selectedbranches = {getbi(r)[0] for r in revs}
 
@@ -1558,7 +1558,7 @@ def bundle(ui, repo, fname, *dests, **opts):
     revs = None
     if b'rev' in opts:
         revstrings = opts[b'rev']
-        revs = scmutil.revrange(repo, revstrings)
+        revs = logcmdutil.revrange(repo, revstrings)
         if revstrings and not revs:
             raise error.InputError(_(b'no commits to bundle'))
 
@@ -1590,7 +1590,7 @@ def bundle(ui, repo, fname, *dests, **opts):
             ui.warn(_(b"ignoring --base because --all was specified\n"))
         base = [nullrev]
     else:
-        base = scmutil.revrange(repo, opts.get(b'base'))
+        base = logcmdutil.revrange(repo, opts.get(b'base'))
     if cgversion not in changegroup.supportedoutgoingversions(repo):
         raise error.Abort(
             _(b"repository does not support bundle version %s") % cgversion
@@ -2753,7 +2753,7 @@ def export(ui, repo, *changesets, **opts):
             changesets = [b'.']
 
         repo = scmutil.unhidehashlikerevs(repo, changesets, b'nowarn')
-        revs = scmutil.revrange(repo, changesets)
+        revs = logcmdutil.revrange(repo, changesets)
 
     if not revs:
         raise error.InputError(_(b"export requires at least one changeset"))
@@ -3170,7 +3170,7 @@ def _dograft(ui, repo, *revs, **opts):
             raise error.InputError(_(b'no revisions specified'))
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
 
     skipped = set()
     basectx = None
@@ -3708,7 +3708,7 @@ def heads(ui, repo, *branchrevs, **opts):
 
     if branchrevs:
         branches = {
-            repo[r].branch() for r in scmutil.revrange(repo, branchrevs)
+            repo[r].branch() for r in logcmdutil.revrange(repo, branchrevs)
         }
         heads = [h for h in heads if h.branch() in branches]
 
@@ -5220,7 +5220,7 @@ def phase(ui, repo, *revs, **opts):
     revs = list(revs)
     revs.extend(opts[b'rev'])
     if revs:
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
     else:
         # display both parents as the second parent phase can influence
         # the phase of a merge commit
@@ -5735,7 +5735,7 @@ def push(ui, repo, *dests, **opts):
 
         try:
             if revs:
-                revs = [repo[r].node() for r in scmutil.revrange(repo, revs)]
+                revs = [repo[r].node() for r in logcmdutil.revrange(repo, revs)]
                 if not revs:
                     raise error.InputError(
                         _(b"specified revisions evaluate to an empty set"),

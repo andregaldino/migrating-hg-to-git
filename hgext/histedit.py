@@ -1707,7 +1707,7 @@ def _chistedit(ui, repo, freeargs, opts):
                 _(b'histedit requires exactly one ancestor revision')
             )
 
-        rr = list(repo.set(b'roots(%ld)', scmutil.revrange(repo, revs)))
+        rr = list(repo.set(b'roots(%ld)', logcmdutil.revrange(repo, revs)))
         if len(rr) != 1:
             raise error.InputError(
                 _(
@@ -1982,7 +1982,7 @@ def _histedit(ui, repo, state, freeargs, opts):
 
     hastags = False
     if revs:
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
         ctxs = [repo[rev] for rev in revs]
         for ctx in ctxs:
             tags = [tag for tag in ctx.tags() if tag != b'tip']
@@ -2205,7 +2205,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
             remote = None
         root = findoutgoing(ui, repo, remote, force, opts)
     else:
-        rr = list(repo.set(b'roots(%ld)', scmutil.revrange(repo, revs)))
+        rr = list(repo.set(b'roots(%ld)', logcmdutil.revrange(repo, revs)))
         if len(rr) != 1:
             raise error.InputError(
                 _(

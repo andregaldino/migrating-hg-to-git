@@ -912,6 +912,18 @@ def _makenofollowfilematcher(repo, pats, opts):
     return None
 
 
+def revrange(repo, specs, localalias=None):
+    """Resolves user-provided revset(s).
+
+    This just wraps the lower-level scmutil.revrange() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revrange(repo, specs, localalias)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
 _opt2logrevset = {
     b'no_merges': (b'not merge()', None),
     b'only_merges': (b'merge()', None),
@@ -987,7 +999,7 @@ def _makerevset(repo, wopts, slowpath):
 def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
     if wopts.revspec:
-        revs = scmutil.revrange(repo, wopts.revspec)
+        revs = revrange(repo, wopts.revspec)
     elif wopts.follow and repo.dirstate.p1() == repo.nullid:
         revs = smartset.baseset()
     elif wopts.follow:

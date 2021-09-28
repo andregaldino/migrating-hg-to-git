@@ -144,6 +144,7 @@ from mercurial import (
     context,
     copies,
     error,
+    logcmdutil,
     match as matchmod,
     mdiff,
     merge,
@@ -420,7 +421,7 @@ def getrevstofix(ui, repo, opts):
     if opts[b'all']:
         revs = repo.revs(b'(not public() and not obsolete()) or wdir()')
     elif opts[b'source']:
-        source_revs = scmutil.revrange(repo, opts[b'source'])
+        source_revs = logcmdutil.revrange(repo, opts[b'source'])
         revs = set(repo.revs(b'(%ld::) - obsolete()', source_revs))
         if wdirrev in source_revs:
             # `wdir()::` is currently empty, so manually add wdir
@@ -428,7 +429,7 @@ def getrevstofix(ui, repo, opts):
         if repo[b'.'].rev() in revs:
             revs.add(wdirrev)
     else:
-        revs = set(scmutil.revrange(repo, opts[b'rev']))
+        revs = set(logcmdutil.revrange(repo, opts[b'rev']))
         if opts.get(b'working_dir'):
             revs.add(wdirrev)
         for rev in revs:
@@ -618,7 +619,7 @@ def getbasectxs(repo, opts, revstofix):
     # The --base flag overrides the usual logic, and we give every revision
     # exactly the set of baserevs that the user specified.
     if opts.get(b'base'):
-        baserevs = set(scmutil.revrange(repo, opts.get(b'base')))
+        baserevs = set(logcmdutil.revrange(repo, opts.get(b'base')))
         if not baserevs:
             baserevs = {nullrev}
         basectxs = {repo[rev] for rev in baserevs}

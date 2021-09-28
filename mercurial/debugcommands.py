@@ -1082,7 +1082,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
     else:
         branches = (None, [])
-        remote_filtered_revs = scmutil.revrange(
+        remote_filtered_revs = logcmdutil.revrange(
             unfi, [b"not (::(%s))" % remote_revs]
         )
         remote_filtered_revs = frozenset(remote_filtered_revs)
@@ -1096,7 +1096,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         remote._repo = remote._repo.filtered(b'debug-discovery-remote-filter')
 
     if local_revs:
-        local_filtered_revs = scmutil.revrange(
+        local_filtered_revs = logcmdutil.revrange(
             unfi, [b"not (::(%s))" % local_revs]
         )
         local_filtered_revs = frozenset(local_filtered_revs)
@@ -1134,7 +1134,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         def doit(pushedrevs, remoteheads, remote=remote):
             nodes = None
             if pushedrevs:
-                revs = scmutil.revrange(repo, pushedrevs)
+                revs = logcmdutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
             common, any, hds = setdiscovery.findcommonheads(
                 ui, repo, remote, ancestorsof=nodes, audit=data
@@ -2593,7 +2593,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             l.release()
     else:
         if opts[b'rev']:
-            revs = scmutil.revrange(repo, opts[b'rev'])
+            revs = logcmdutil.revrange(repo, opts[b'rev'])
             nodes = [repo[r].node() for r in revs]
             markers = list(
                 obsutil.getmarkers(
@@ -4009,7 +4009,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     cache = {}
     ctx2str = bytes
     node2str = short
-    for rev in scmutil.revrange(repo, revs):
+    for rev in logcmdutil.revrange(repo, revs):
         ctx = repo[rev]
         ui.write(b'%s\n' % ctx2str(ctx))
         for succsset in obsutil.successorssets(
@@ -4068,7 +4068,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
             raise error.RepoError(
                 _(b'there is no Mercurial repository here (.hg not found)')
             )
-        revs = scmutil.revrange(repo, opts['rev'])
+        revs = logcmdutil.revrange(repo, opts['rev'])
 
     props = {}
     for d in opts['define']:

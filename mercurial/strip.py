@@ -8,6 +8,7 @@ from . import (
     error,
     hg,
     lock as lockmod,
+    logcmdutil,
     mergestate as mergestatemod,
     pycompat,
     registrar,
@@ -178,7 +179,7 @@ def debugstrip(ui, repo, *revs, **opts):
 
     cl = repo.changelog
     revs = list(revs) + opts.get(b'rev')
-    revs = set(scmutil.revrange(repo, revs))
+    revs = set(logcmdutil.revrange(repo, revs))
 
     with repo.wlock():
         bookmarks = set(opts.get(b'bookmark'))

@@ -320,7 +320,7 @@ test unknown revision in `_list`
 
   $ log '0|unknown'
   abort: unknown revision 'unknown'
-  [255]
+  [10]
 
 test integer range in `_list`
 
@@ -330,11 +330,11 @@ test integer range in `_list`
 
   $ log '-10|-11'
   abort: unknown revision '-11'
-  [255]
+  [10]
 
   $ log '9|10'
   abort: unknown revision '10'
-  [255]
+  [10]
 
 test '0000' != '0' in `_list`
 
@@ -590,7 +590,7 @@ we can use patterns when searching for tags
 
   $ log 'tag("1..*")'
   abort: tag '1..*' does not exist
-  [255]
+  [10]
   $ log 'tag("re:1..*")'
   6
   $ log 'tag("re:[0-9].[0-9]")'
@@ -601,16 +601,16 @@ we can use patterns when searching for tags
 
   $ log 'tag(unknown)'
   abort: tag 'unknown' does not exist
-  [255]
+  [10]
   $ log 'tag("re:unknown")'
   $ log 'present(tag("unknown"))'
   $ log 'present(tag("re:unknown"))'
   $ log 'branch(unknown)'
   abort: unknown revision 'unknown'
-  [255]
+  [10]
   $ log 'branch("literal:unknown")'
   abort: branch 'unknown' does not exist
-  [255]
+  [10]
   $ log 'branch("re:unknown")'
   $ log 'present(branch("unknown"))'
   $ log 'present(branch("re:unknown"))'
@@ -666,7 +666,7 @@ matching() should preserve the order of the input set:
 
   $ log 'named("unknown")'
   abort: namespace 'unknown' does not exist
-  [255]
+  [10]
   $ log 'named("re:unknown")'
   $ log 'present(named("unknown"))'
   $ log 'present(named("re:unknown"))'
@@ -759,7 +759,7 @@ parentrevspec
 
   $ log 'branchpoint()~-1'
   abort: revision in set has more than one child
-  [255]
+  [10]
 
 Bogus function gets suggestions
   $ log 'add()'

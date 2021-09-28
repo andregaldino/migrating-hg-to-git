@@ -24,10 +24,10 @@ from mercurial import (
     cmdutil,
     config,
     error,
+    logcmdutil,
     minirst,
     pycompat,
     registrar,
-    scmutil,
     util,
 )
 from mercurial.utils import (
@@ -676,7 +676,7 @@ def releasenotes(ui, repo, file_=None, **opts):
         return _getadmonitionlist(ui, sections)
 
     rev = opts.get(b'rev')
-    revs = scmutil.revrange(repo, [rev or b'not public()'])
+    revs = logcmdutil.revrange(repo, [rev or b'not public()'])
     if opts.get(b'check'):
         return checkadmonitions(ui, repo, sections.names(), revs)
 

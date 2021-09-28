@@ -1354,7 +1354,7 @@ def phabsend(ui, repo, *revs, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     revs = list(revs) + opts.get(b'rev', [])
-    revs = scmutil.revrange(repo, revs)
+    revs = logcmdutil.revrange(repo, revs)
     revs.sort()  # ascending order to preserve topological parent/child in phab
 
     if not revs:
@@ -2276,7 +2276,7 @@ def phabupdate(ui, repo, *specs, **opts):
         if specs:
             raise error.InputError(_(b'cannot specify both DREVSPEC and --rev'))
 
-        drevmap = getdrevmap(repo, scmutil.revrange(repo, [revs]))
+        drevmap = getdrevmap(repo, logcmdutil.revrange(repo, [revs]))
         specs = []
         unknown = []
         for r, d in pycompat.iteritems(drevmap):

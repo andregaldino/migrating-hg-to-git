@@ -987,7 +987,7 @@ def changebranch(ui, repo, revs, label, opts):
     with repo.wlock(), repo.lock(), repo.transaction(b'branches'):
         # abort in case of uncommitted merge or dirty wdir
         bailifchanged(repo)
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
         if not revs:
             raise error.InputError(b"empty revision set")
         roots = repo.revs(b'roots(%ld)', revs)

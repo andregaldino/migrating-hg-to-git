@@ -1241,7 +1241,7 @@ class queue(object):
         if opts.get(b'rev'):
             if not self.applied:
                 raise error.Abort(_(b'no patches applied'))
-            revs = scmutil.revrange(repo, opts.get(b'rev'))
+            revs = logcmdutil.revrange(repo, opts.get(b'rev'))
             revs.sort()
             revpatches = self._revpatches(repo, revs)
             realpatches += revpatches
@@ -2417,7 +2417,7 @@ class queue(object):
                 raise error.Abort(
                     _(b'option "-r" not valid when importing files')
                 )
-            rev = scmutil.revrange(repo, rev)
+            rev = logcmdutil.revrange(repo, rev)
             rev.sort(reverse=True)
         elif not files:
             raise error.Abort(_(b'no files or revisions specified'))
@@ -3878,7 +3878,7 @@ def finish(ui, repo, *revrange, **opts):
         ui.status(_(b'no patches applied\n'))
         return 0
 
-    revs = scmutil.revrange(repo, revrange)
+    revs = logcmdutil.revrange(repo, revrange)
     if repo[b'.'].rev() in revs and repo[None].files():
         ui.warn(_(b'warning: uncommitted changes in the working directory\n'))
     # queue.finish may changes phases but leave the responsibility to lock the

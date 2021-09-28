@@ -26,6 +26,7 @@ from mercurial import (
     exthelper,
     hg,
     lock,
+    logcmdutil,
     match as matchmod,
     pycompat,
     scmutil,
@@ -657,7 +658,7 @@ def lfpull(ui, repo, source=b"default", **opts):
     revs = opts.get('rev', [])
     if not revs:
         raise error.Abort(_(b'no revisions specified'))
-    revs = scmutil.revrange(repo, revs)
+    revs = logcmdutil.revrange(repo, revs)
 
     numcached = 0
     for rev in revs:

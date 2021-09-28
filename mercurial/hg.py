@@ -1352,7 +1352,7 @@ def _outgoing(ui, repo, dests, opts, subpath=None):
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(dest))
         revs, checkout = addbranchrevs(repo, repo, branches, opts.get(b'rev'))
         if revs:
-            revs = [repo[rev].node() for rev in scmutil.revrange(repo, revs)]
+            revs = [repo[rev].node() for rev in logcmdutil.revrange(repo, revs)]
 
         other = peer(repo, opts, dest)
         try:

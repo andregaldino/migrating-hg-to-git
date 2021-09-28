@@ -1000,7 +1000,7 @@ def overridepull(orig, ui, repo, source=None, **opts):
         numcached = 0
         repo.firstpulled = revsprepull  # for pulled() revset expression
         try:
-            for rev in scmutil.revrange(repo, lfrevs):
+            for rev in logcmdutil.revrange(repo, lfrevs):
                 ui.note(_(b'pulling largefiles for revision %d\n') % rev)
                 (cached, missing) = lfcommands.cachelfiles(ui, repo, rev)
                 numcached += len(cached)
@@ -1027,7 +1027,7 @@ def overridepush(orig, ui, repo, *args, **kwargs):
     lfrevs = kwargs.pop('lfrev', None)
     if lfrevs:
         opargs = kwargs.setdefault('opargs', {})
-        opargs[b'lfrevs'] = scmutil.revrange(repo, lfrevs)
+        opargs[b'lfrevs'] = logcmdutil.revrange(repo, lfrevs)
     return orig(ui, repo, *args, **kwargs)
 
 
