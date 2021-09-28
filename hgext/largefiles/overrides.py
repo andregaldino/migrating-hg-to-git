@@ -1787,8 +1787,6 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         # mark all clean largefiles as dirty, just in case the update gets
         # interrupted before largefiles and lfdirstate are synchronized
         for lfile in oldclean:
-            entry = lfdirstate._map.get(lfile)
-            assert not (entry.merged_removed or entry.from_p2_removed)
             lfdirstate.set_possibly_dirty(lfile)
         lfdirstate.write()
 
