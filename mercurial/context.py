@@ -1555,7 +1555,7 @@ class workingctx(committablectx):
                 yield f
 
     def __contains__(self, key):
-        return self._repo.dirstate[key] not in b"?r"
+        return self._repo.dirstate.get_entry(key).tracked
 
     def hex(self):
         return self._repo.nodeconstants.wdirhex
