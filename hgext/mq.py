@@ -1267,9 +1267,9 @@ class queue(object):
         if any((b'.hgsubstate' in files for files in mar)):
             return  # already listed up
         # not yet listed up
-        if substatestate in b'a?':
+        if substatestate.added or not substatestate.any_tracked:
             mar[1].append(b'.hgsubstate')
-        elif substatestate in b'r':
+        elif substatestate.removed:
             mar[2].append(b'.hgsubstate')
         else:  # modified
             mar[0].append(b'.hgsubstate')
@@ -1377,7 +1377,7 @@ class queue(object):
             self.checkpatchname(patchfn)
         inclsubs = checksubstate(repo)
         if inclsubs:
-            substatestate = repo.dirstate[b'.hgsubstate']
+            substatestate = repo.dirstate.get_entry(b'.hgsubstate')
         if opts.get(b'include') or opts.get(b'exclude') or pats:
             # detect missing files in pats
             def badfn(f, msg):
@@ -1908,7 +1908,7 @@ class queue(object):
 
             inclsubs = checksubstate(repo, patchparent)
             if inclsubs:
-                substatestate = repo.dirstate[b'.hgsubstate']
+                substatestate = repo.dirstate.get_entry(b'.hgsubstate')
 
             ph = patchheader(self.join(patchfn), self.plainmode)
             diffopts = self.diffopts(
