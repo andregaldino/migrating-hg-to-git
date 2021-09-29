@@ -90,6 +90,11 @@ py_class!(pub class DirstateItem |py| {
         Ok(self.entry(py).get().maybe_clean())
     }
 
+    @property
+    def any_tracked(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().any_tracked())
+    }
+
     def v1_state(&self) -> PyResult<PyBytes> {
         let (state, _mode, _size, _mtime) = self.entry(py).get().v1_data();
         let state_byte: u8 = state.into();

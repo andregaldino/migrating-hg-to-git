@@ -205,6 +205,12 @@ impl DirstateEntry {
         }
     }
 
+    pub fn any_tracked(&self) -> bool {
+        self.flags.intersects(
+            Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_TRACKED,
+        )
+    }
+
     pub fn state(&self) -> EntryState {
         if self.removed() {
             EntryState::Removed

@@ -314,6 +314,11 @@ class DirstateItem(object):
         return self._wc_tracked
 
     @property
+    def any_tracked(self):
+        """True is the file is tracked anywhere (wc or parents)"""
+        return self._wc_tracked or self._p1_tracked or self._p2_tracked
+
+    @property
     def added(self):
         """True if the file has been added"""
         return self._wc_tracked and not (self._p1_tracked or self._p2_tracked)
