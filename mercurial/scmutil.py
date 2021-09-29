@@ -1327,17 +1327,17 @@ def _interestingfiles(repo, matcher):
         full=False,
     )
     for abs, st in pycompat.iteritems(walkresults):
-        dstate = dirstate[abs]
-        if dstate == b'?' and audit_path.check(abs):
+        entry = dirstate.get_entry(abs)
+        if (not entry.any_tracked) and audit_path.check(abs):
             unknown.append(abs)
-        elif dstate != b'r' and not st:
+        elif (not entry.removed) and not st:
             deleted.append(abs)
-        elif dstate == b'r' and st:
+        elif entry.removed and st:
             forgotten.append(abs)
         # for finding renames
-        elif dstate == b'r' and not st:
+        elif entry.removed and not st:
             removed.append(abs)
-        elif dstate == b'a':
+        elif entry.added:
             added.append(abs)
 
     return added, unknown, deleted, removed, forgotten
