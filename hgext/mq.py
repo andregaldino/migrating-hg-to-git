@@ -3638,7 +3638,7 @@ def rename(ui, repo, patch, name=None, **opts):
     if r and patch in r.dirstate:
         wctx = r[None]
         with r.wlock():
-            if r.dirstate[patch] == b'a':
+            if r.dirstate.get_entry(patch).added:
                 r.dirstate.set_untracked(patch)
                 r.dirstate.set_tracked(name)
             else:
