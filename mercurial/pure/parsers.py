@@ -306,6 +306,8 @@ class DirstateItem(object):
         dirstatev1 format. It would make sense to ultimately deprecate it in
         favor of the more "semantic" attributes.
         """
+        if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):
+            return b'?'
         return self.v1_state()
 
     @property
