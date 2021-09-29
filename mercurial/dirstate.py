@@ -327,6 +327,8 @@ class dirstate(object):
         consider migrating all user of this to going through the dirstate entry
         instead.
         """
+        msg = b"don't use dirstate[file], use dirstate.get_entry(file)"
+        util.nouideprecwarn(msg, b'6.1', stacklevel=2)
         entry = self._map.get(key)
         if entry is not None:
             return entry.state
