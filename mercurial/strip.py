@@ -255,7 +255,9 @@ def debugstrip(ui, repo, *revs, **opts):
 
             # reset files that only changed in the dirstate too
             dirstate = repo.dirstate
-            dirchanges = [f for f in dirstate if dirstate[f] != b'n']
+            dirchanges = [
+                f for f in dirstate if not dirstate.get_entry(f).maybe_clean
+            ]
             changedfiles.extend(dirchanges)
 
             repo.dirstate.rebuild(urev, uctx.manifest(), changedfiles)
