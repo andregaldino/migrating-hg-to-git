@@ -3352,7 +3352,11 @@ def revert(ui, repo, ctx, *pats, **opts):
         for f in localchanges:
             src = repo.dirstate.copied(f)
             # XXX should we check for rename down to target node?
-            if src and src not in names and repo.dirstate[src] == b'r':
+            if (
+                src
+                and src not in names
+                and repo.dirstate.get_entry(src).removed
+            ):
                 dsremoved.add(src)
                 names[src] = True
 
@@ -3366,12 +3370,12 @@ def revert(ui, repo, ctx, *pats, **opts):
         # distinguish between file to forget and the other
         added = set()
         for abs in dsadded:
-            if repo.dirstate[abs] != b'a':
+            if not repo.dirstate.get_entry(abs).added:
                 added.add(abs)
         dsadded -= added
 
         for abs in deladded:
-            if repo.dirstate[abs] == b'a':
+            if repo.dirstate.get_entry(abs).added:
                 dsadded.add(abs)
         deladded -= dsadded
 
