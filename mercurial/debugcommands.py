@@ -2960,7 +2960,7 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
             dsonly = dirstatefiles - manifestfiles
-            dsnotadded = {f for f in dsonly if dirstate[f] != b'a'}
+            dsnotadded = {f for f in dsonly if not dirstate.get_entry(f).added}
             changedfiles = manifestonly | dsnotadded
 
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
