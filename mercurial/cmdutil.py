@@ -626,7 +626,7 @@ def dorecord(
                 for realname, tmpname in pycompat.iteritems(backups):
                     ui.debug(b'restoring %r to %r\n' % (tmpname, realname))
 
-                    if dirstate[realname] == b'n':
+                    if dirstate.get_entry(realname).maybe_clean:
                         # without normallookup, restoring timestamp
                         # may cause partially committed files
                         # to be treated as unmodified
