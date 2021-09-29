@@ -540,7 +540,7 @@ def updatelfiles(
                     expecthash = lfutil.readasstandin(wctx[standin])
                     if expecthash != b'':
                         if lfile not in wctx:  # not switched to normal file
-                            if repo.dirstate[standin] != b'?':
+                            if repo.dirstate.get_entry(standin).any_tracked:
                                 wvfs.unlinkpath(lfile, ignoremissing=True)
                             else:
                                 dropped.add(lfile)

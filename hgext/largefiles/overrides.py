@@ -934,7 +934,7 @@ def overriderevert(orig, ui, repo, ctx, *pats, **opts):
                 standin = lfutil.standin(f)
                 if standin in ctx or standin in mctx:
                     matchfiles.append(standin)
-                elif standin in wctx or lfdirstate[f] == b'r':
+                elif standin in wctx or lfdirstate.get_entry(f).removed:
                     continue
                 else:
                     matchfiles.append(f)
@@ -1591,8 +1591,12 @@ def overridepurge(orig, ui, repo, *dirs, **opts):
             node1, node2, match, ignored, clean, unknown, listsubrepos
         )
         lfdirstate = lfutil.openlfdirstate(ui, repo)
-        unknown = [f for f in r.unknown if lfdirstate[f] == b'?']
-        ignored = [f for f in r.ignored if lfdirstate[f] == b'?']
+        unknown = [
+            f for f in r.unknown if not lfdirstate.get_entry(f).any_tracked
+        ]
+        ignored = [
+            f for f in r.ignored if not lfdirstate.get_entry(f).any_tracked
+        ]
         return scmutil.status(
             r.modified, r.added, r.removed, r.deleted, unknown, ignored, r.clean
         )
@@ -1609,7 +1613,7 @@ def overriderollback(orig, ui, repo, **opts):
         orphans = {
             f
             for f in repo.dirstate
-            if lfutil.isstandin(f) and repo.dirstate[f] != b'r'
+            if lfutil.isstandin(f) and not repo.dirstate.get_entry(f).removed
         }
         result = orig(ui, repo, **opts)
         after = repo.dirstate.parents()
@@ -1620,7 +1624,7 @@ def overriderollback(orig, ui, repo, **opts):
         for f in repo.dirstate:
             if lfutil.isstandin(f):
                 orphans.discard(f)
-                if repo.dirstate[f] == b'r':
+                if repo.dirstate.get_entry(f).removed:
                     repo.wvfs.unlinkpath(f, ignoremissing=True)
                 elif f in pctx:
                     fctx = pctx[f]

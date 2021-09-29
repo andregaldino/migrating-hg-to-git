@@ -269,7 +269,7 @@ def listlfiles(repo, rev=None, matcher=None):
     return [
         splitstandin(f)
         for f in repo[rev].walk(matcher)
-        if rev is not None or repo.dirstate[f] != b'?'
+        if rev is not None or repo.dirstate.get_entry(f).any_tracked
     ]
 
 
@@ -558,7 +558,7 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     if lfstandin not in repo.dirstate:
         lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=False)
     else:
-        stat = repo.dirstate._map[lfstandin]
+        stat = repo.dirstate.get_entry(lfstandin)
         state, mtime = stat.state, stat.mtime
         if state == b'n':
             if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
@@ -713,7 +713,7 @@ def updatestandinsbymatch(repo, match):
     lfdirstate = openlfdirstate(ui, repo)
     for fstandin in standins:
         lfile = splitstandin(fstandin)
-        if lfdirstate[lfile] != b'r':
+        if lfdirstate.get_entry(lfile).tracked:
             updatestandin(repo, lfile, fstandin)
 
     # Cook up a new matcher that only matches regular files or
@@ -737,10 +737,10 @@ def updatestandinsbymatch(repo, match):
         # standin removal, drop the normal file if it is unknown to dirstate.
         # Thus, skip plain largefile names but keep the standin.
         if f in lfiles or fstandin in standins:
-            if repo.dirstate[fstandin] != b'r':
-                if repo.dirstate[f] != b'r':
+            if not repo.dirstate.get_entry(fstandin).removed:
+                if not repo.dirstate.get_entry(f).removed:
                     continue
-            elif repo.dirstate[f] == b'?':
+            elif not repo.dirstate.get_entry(f).any_tracked:
                 continue
 
         actualfiles.append(f)
