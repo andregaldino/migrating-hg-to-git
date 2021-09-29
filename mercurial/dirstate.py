@@ -1372,7 +1372,7 @@ class dirstate(object):
 
             if not st and t.tracked:
                 dadd(fn)
-            elif t.merged:
+            elif t.merged or t.from_p2:
                 madd(fn)
             elif t.added:
                 aadd(fn)
@@ -1385,7 +1385,6 @@ class dirstate(object):
                         (size != st.st_size and size != st.st_size & _rangemask)
                         or ((mode ^ st.st_mode) & 0o100 and checkexec)
                     )
-                    or t.from_p2
                     or fn in copymap
                 ):
                     if stat.S_ISLNK(st.st_mode) and size != st.st_size:
