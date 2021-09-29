@@ -620,6 +620,21 @@ static PyObject *dirstate_item_get_from_p2(dirstateItemObject *self)
 	}
 };
 
+static PyObject *dirstate_item_get_maybe_clean(dirstateItemObject *self)
+{
+	if (!(self->flags & dirstate_flag_wc_tracked)) {
+		Py_RETURN_FALSE;
+	} else if (dirstate_item_c_added(self)) {
+		Py_RETURN_FALSE;
+	} else if (self->flags & dirstate_flag_merged) {
+		Py_RETURN_FALSE;
+	} else if (self->flags & dirstate_flag_clean_p2) {
+		Py_RETURN_FALSE;
+	} else {
+		Py_RETURN_TRUE;
+	}
+};
+
 static PyObject *dirstate_item_get_removed(dirstateItemObject *self)
 {
 	if (dirstate_item_c_removed(self)) {
@@ -638,6 +653,8 @@ static PyGetSetDef dirstate_item_getset[] = {
     {"added", (getter)dirstate_item_get_added, NULL, "added", NULL},
     {"merged", (getter)dirstate_item_get_merged, NULL, "merged", NULL},
     {"from_p2", (getter)dirstate_item_get_from_p2, NULL, "from_p2", NULL},
+    {"maybe_clean", (getter)dirstate_item_get_maybe_clean, NULL, "maybe_clean",
+     NULL},
     {"removed", (getter)dirstate_item_get_removed, NULL, "removed", NULL},
     {NULL} /* Sentinel */
 };

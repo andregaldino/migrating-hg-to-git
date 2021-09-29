@@ -319,6 +319,19 @@ class DirstateItem(object):
         return self._wc_tracked and not (self._p1_tracked or self._p2_tracked)
 
     @property
+    def maybe_clean(self):
+        """True if the file has a chance to be in the "clean" state"""
+        if not self._wc_tracked:
+            return False
+        elif self.added:
+            return False
+        elif self._merged:
+            return False
+        elif self._clean_p2:
+            return False
+        return True
+
+    @property
     def merged(self):
         """True if the file has been merged
 

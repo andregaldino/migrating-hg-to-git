@@ -191,6 +191,20 @@ impl DirstateEntry {
         self.flags.contains(Flags::WDIR_TRACKED | Flags::CLEAN_P2)
     }
 
+    pub fn maybe_clean(&self) -> bool {
+        if !self.flags.contains(Flags::WDIR_TRACKED) {
+            false
+        } else if self.added() {
+            false
+        } else if self.flags.contains(Flags::MERGED) {
+            false
+        } else if self.flags.contains(Flags::CLEAN_P2) {
+            false
+        } else {
+            true
+        }
+    }
+
     pub fn state(&self) -> EntryState {
         if self.removed() {
             EntryState::Removed
