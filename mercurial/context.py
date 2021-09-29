@@ -2017,7 +2017,7 @@ class workingctx(committablectx):
     def matches(self, match):
         match = self._repo.narrowmatch(match)
         ds = self._repo.dirstate
-        return sorted(f for f in ds.matches(match) if ds[f] != b'r')
+        return sorted(f for f in ds.matches(match) if ds.get_entry(f).tracked)
 
     def markcommitted(self, node):
         with self._repo.dirstate.parentchange():
