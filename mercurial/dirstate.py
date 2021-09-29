@@ -332,6 +332,13 @@ class dirstate(object):
             return entry.state
         return b'?'
 
+    def get_entry(self, path):
+        """return a DirstateItem for the associated path"""
+        entry = self._map.get(path)
+        if entry is None:
+            return DirstateItem()
+        return entry
+
     def __contains__(self, key):
         return key in self._map
 
