@@ -1505,7 +1505,7 @@ def movedirstate(repo, newctx, match=None):
     }
     # Adjust the dirstate copies
     for dst, src in pycompat.iteritems(copies):
-        if src not in newctx or dst in newctx or ds[dst] != b'a':
+        if src not in newctx or dst in newctx or not ds.get_entry(dst).added:
             src = None
         ds.copy(src, dst)
     repo._quick_access_changeid_invalidate()
