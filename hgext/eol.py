@@ -423,7 +423,7 @@ def reposetup(ui, repo):
                 try:
                     wlock = self.wlock()
                     for f in self.dirstate:
-                        if self.dirstate[f] != b'n':
+                        if not self.dirstate.get_entry(f).maybe_clean:
                             continue
                         if oldeol is not None:
                             if not oldeol.match(f) and not neweol.match(f):
