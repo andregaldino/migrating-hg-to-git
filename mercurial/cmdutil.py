@@ -1642,7 +1642,9 @@ def copy(ui, repo, pats, opts, rename=False):
         reltarget = repo.pathto(abstarget, cwd)
         target = repo.wjoin(abstarget)
         src = repo.wjoin(abssrc)
-        state = repo.dirstate[abstarget]
+        entry = repo.dirstate.get_entry(abstarget)
+
+        already_commited = entry.tracked and not entry.added
 
         scmutil.checkportable(ui, abstarget)
 
@@ -1672,9 +1674,9 @@ def copy(ui, repo, pats, opts, rename=False):
                 exists = False
                 samefile = True
 
-        if not after and exists or after and state in b'mn':
+        if not after and exists or after and already_commited:
             if not opts[b'force']:
-                if state in b'mn':
+                if already_commited:
                     msg = _(b'%s: not overwriting - file already committed\n')
                     if after:
                         flags = b'--after --force'
