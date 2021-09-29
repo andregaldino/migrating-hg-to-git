@@ -550,7 +550,9 @@ class workingbackend(fsbackend):
         self.copied = []
 
     def _checkknown(self, fname):
-        if self.repo.dirstate[fname] == b'?' and self.exists(fname):
+        if not self.repo.dirstate.get_entry(fname).any_tracked and self.exists(
+            fname
+        ):
             raise PatchError(_(b'cannot patch %s: file is not tracked') % fname)
 
     def setfile(self, fname, data, mode, copysource):
