@@ -1455,10 +1455,11 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """
     origsrc = repo.dirstate.copied(src) or src
     if dst == origsrc:  # copying back a copy?
-        if repo.dirstate[dst] not in b'mn' and not dryrun:
+        entry = repo.dirstate.get_entry(dst)
+        if (entry.added or not entry.tracked) and not dryrun:
             repo.dirstate.set_tracked(dst)
     else:
-        if repo.dirstate[origsrc] == b'a' and origsrc == src:
+        if repo.dirstate.get_entry(origsrc).added and origsrc == src:
             if not ui.quiet:
                 ui.warn(
                     _(
@@ -1467,7 +1468,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
                     )
                     % (repo.pathto(origsrc, cwd), repo.pathto(dst, cwd))
                 )
-            if repo.dirstate[dst] in b'?r' and not dryrun:
+            if not repo.dirstate.get_entry(dst).tracked and not dryrun:
                 wctx.add([dst])
         elif not dryrun:
             wctx.copy(origsrc, dst)
