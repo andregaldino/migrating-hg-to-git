@@ -226,16 +226,7 @@ class dirstatemap(object):
         elif (p1_tracked or p2_tracked) and not wc_tracked:
             pass
         elif clean_p2 and wc_tracked:
-            if p1_tracked or self.get(filename) is not None:
-                # XXX the `self.get` call is catching some case in
-                # `test-merge-remove.t` where the file is tracked in p1, the
-                # p1_tracked argument is False.
-                #
-                # In addition, this seems to be a case where the file is marked
-                # as merged without actually being the result of a merge
-                # action. So thing are not ideal here.
-                merged = True
-                clean_p2 = False
+            pass
         elif not p1_tracked and p2_tracked and wc_tracked:
             clean_p2 = True
         elif possibly_dirty:
