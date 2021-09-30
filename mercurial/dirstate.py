@@ -1525,3 +1525,22 @@ class dirstate(object):
     def clearbackup(self, tr, backupname):
         '''Clear backup file'''
         self._opener.unlink(backupname)
+
+    def verify(self, m1, m2):
+        """check the dirstate content again the parent manifest and yield errors"""
+        missing_from_p1 = b"%s in state %s, but not in manifest1\n"
+        unexpected_in_p1 = b"%s in state %s, but also in manifest1\n"
+        missing_from_ps = b"%s in state %s, but not in either manifest\n"
+        missing_from_ds = b"%s in manifest1, but listed as state %s\n"
+        for f, entry in self.items():
+            state = entry.state
+            if state in b"nr" and f not in m1:
+                yield (missing_from_p1, f, state)
+            if state in b"a" and f in m1:
+                yield (unexpected_in_p1, f, state)
+            if state in b"m" and f not in m1 and f not in m2:
+                yield (missing_from_ps, f, state)
+        for f in m1:
+            state = self.get_entry(f).state
+            if state not in b"nrm":
+                yield (missing_from_ds, f, state)
