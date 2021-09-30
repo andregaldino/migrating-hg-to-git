@@ -173,11 +173,9 @@ class _dirstatemapcommon(object):
         filename,
         wc_tracked=False,
         p1_tracked=False,
-        p2_tracked=False,
-        merged=False,
-        clean_p1=False,
-        clean_p2=False,
-        possibly_dirty=False,
+        p2_info=False,
+        has_meaningful_mtime=True,
+        has_meaningful_data=True,
         parentfiledata=None,
     ):
         """Set a entry to a given state, diregarding all previous state
@@ -189,24 +187,15 @@ class _dirstatemapcommon(object):
         dirstate map does not see any point at having one for this file
         anymore.
         """
-        if merged and (clean_p1 or clean_p2):
-            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-            raise error.ProgrammingError(msg)
         # copy information are now outdated
         # (maybe new information should be in directly passed to this function)
         self.copymap.pop(filename, None)
 
-        if not (p1_tracked or p2_tracked or wc_tracked):
+        if not (p1_tracked or p2_info or wc_tracked):
             old_entry = self._map.get(filename)
             self._drop_entry(filename)
             self._dirs_decr(filename, old_entry=old_entry)
             return
-
-        p2_info = merged or clean_p2
-        if merged:
-            assert p1_tracked
-
-        has_meaningful_mtime = not possibly_dirty
 
         old_entry = self._map.get(filename)
         self._dirs_incr(filename, old_entry)

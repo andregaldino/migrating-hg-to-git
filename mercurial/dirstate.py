@@ -516,12 +516,7 @@ class dirstate(object):
             wc_tracked = False
         else:
             wc_tracked = entry.tracked
-        possibly_dirty = False
-        if p1_tracked and wc_tracked:
-            # the underlying reference might have changed, we will have to
-            # check it.
-            possibly_dirty = True
-        elif not (p1_tracked or wc_tracked):
+        if not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
             if self._map.get(filename) is not None:
                 self._map.reset_state(filename)
@@ -529,10 +524,6 @@ class dirstate(object):
         elif (not p1_tracked) and wc_tracked:
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
-        elif p1_tracked and not wc_tracked:
-            pass
-        else:
-            assert False, 'unreachable'
 
         # this mean we are doing call for file we do not really care about the
         # data (eg: added or removed), however this should be a minor overhead
@@ -545,7 +536,9 @@ class dirstate(object):
             filename,
             wc_tracked,
             p1_tracked,
-            possibly_dirty=possibly_dirty,
+            # the underlying reference might have changed, we will have to
+            # check it.
+            has_meaningful_mtime=False,
             parentfiledata=parentfiledata,
         )
         if (
@@ -616,11 +609,8 @@ class dirstate(object):
             filename,
             wc_tracked,
             p1_tracked,
-            p2_tracked=p2_tracked,
-            merged=merged,
-            clean_p1=clean_p1,
-            clean_p2=clean_p2,
-            possibly_dirty=possibly_dirty,
+            p2_info=merged or clean_p2,
+            has_meaningful_mtime=not possibly_dirty,
             parentfiledata=parentfiledata,
         )
         if (
@@ -773,7 +763,6 @@ class dirstate(object):
                     f,
                     wc_tracked=True,
                     p1_tracked=True,
-                    possibly_dirty=True,
                 )
         for f in to_drop:
             self._map.reset_state(f)
