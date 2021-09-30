@@ -1551,7 +1551,7 @@ class workingctx(committablectx):
     def __iter__(self):
         d = self._repo.dirstate
         for f in d:
-            if d[f] != b'r':
+            if d.get_entry(f).tracked:
                 yield f
 
     def __contains__(self, key):
