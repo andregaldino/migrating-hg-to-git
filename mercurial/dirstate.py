@@ -553,10 +553,7 @@ class dirstate(object):
         filename,
         wc_tracked,
         p1_tracked,
-        p2_tracked=False,
-        merged=False,
-        clean_p1=False,
-        clean_p2=False,
+        p2_info=False,
         possibly_dirty=False,
         parentfiledata=None,
     ):
@@ -571,9 +568,6 @@ class dirstate(object):
         depending of what information ends up being relevant and useful to
         other processing.
         """
-        if merged and (clean_p1 or clean_p2):
-            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-            raise error.ProgrammingError(msg)
 
         # note: I do not think we need to double check name clash here since we
         # are in a update/merge case that should already have taken care of
@@ -582,9 +576,7 @@ class dirstate(object):
         self._dirty = True
 
         need_parent_file_data = (
-            not (possibly_dirty or clean_p2 or merged)
-            and wc_tracked
-            and p1_tracked
+            not possibly_dirty and not p2_info and wc_tracked and p1_tracked
         )
 
         # this mean we are doing call for file we do not really care about the
@@ -606,7 +598,7 @@ class dirstate(object):
             filename,
             wc_tracked,
             p1_tracked,
-            p2_info=merged or clean_p2,
+            p2_info=p2_info,
             has_meaningful_mtime=not possibly_dirty,
             parentfiledata=parentfiledata,
         )

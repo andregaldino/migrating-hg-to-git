@@ -558,24 +558,14 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     if lfstandin not in repo.dirstate:
         lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=False)
     else:
-        stat = repo.dirstate.get_entry(lfstandin)
-        state, mtime = stat.state, stat.mtime
-        if state == b'n':
-            if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
-                # state 'n' doesn't ensure 'clean' in this case
-                lfdirstate.update_file(
-                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
-                )
-            else:
-                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
-        elif state == b'm':
-            lfdirstate.update_file(
-                lfile, p1_tracked=True, wc_tracked=True, merged=True
-            )
-        elif state == b'r':
-            lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
-        elif state == b'a':
-            lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
+        entry = repo.dirstate.get_entry(lfstandin)
+        lfdirstate.update_file(
+            lfile,
+            wc_tracked=entry.tracked,
+            p1_tracked=entry.p1_tracked,
+            p2_info=entry.p2_info,
+            possibly_dirty=True,
+        )
 
 
 def markcommitted(orig, ctx, node):
