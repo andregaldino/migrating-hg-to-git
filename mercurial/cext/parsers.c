@@ -71,7 +71,7 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	clean_p2 = 0;
 	possibly_dirty = 0;
 	parentfiledata = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "iiiiiiiO", keywords_name,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiiiiiiO", keywords_name,
 	                                 &wc_tracked, &p1_tracked, &p2_tracked,
 	                                 &merged, &clean_p1, &clean_p2,
 	                                 &possibly_dirty, &parentfiledata
