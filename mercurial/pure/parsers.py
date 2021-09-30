@@ -102,6 +102,7 @@ class DirstateItem(object):
             msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
             raise error.ProgrammingError(msg)
 
+        assert not (merged and not p1_tracked)
         self._wc_tracked = wc_tracked
         self._p1_tracked = p1_tracked
         self._p2_tracked = p2_tracked
