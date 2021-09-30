@@ -582,17 +582,8 @@ class dirstate(object):
         # this mean we are doing call for file we do not really care about the
         # data (eg: added or removed), however this should be a minor overhead
         # compared to the overall update process calling this.
-        if need_parent_file_data:
-            if parentfiledata is None:
-                parentfiledata = self._get_filedata(filename)
-            mtime = parentfiledata[2]
-
-            if mtime > self._lastnormaltime:
-                # Remember the most recent modification timeslot for
-                # status(), to make sure we won't miss future
-                # size-preserving file content modifications that happen
-                # within the same timeslot.
-                self._lastnormaltime = mtime
+        if need_parent_file_data or parentfiledata is None:
+            parentfiledata = self._get_filedata(filename)
 
         self._map.reset_state(
             filename,
