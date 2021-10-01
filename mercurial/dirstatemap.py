@@ -98,6 +98,9 @@ class _dirstatemapcommon(object):
         tracking in a different way.
         """
 
+    def _refresh_entry(self, f, entry):
+        """record updated state of an entry"""
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
@@ -380,6 +383,10 @@ class dirstatemap(_dirstatemapcommon):
         return pathutil.dirs(self._map)
 
     ### code related to manipulation of entries and copy-sources
+
+    def _refresh_entry(self, f, entry):
+        if not entry.any_tracked:
+            self._map.pop(f, None)
 
     def set_possibly_dirty(self, filename):
         """record that the current state of the file on disk is unknown"""
@@ -769,6 +776,12 @@ if rustmod is not None:
             return f
 
         ### code related to manipulation of entries and copy-sources
+
+        def _refresh_entry(self, f, entry):
+            if not entry.any_tracked:
+                self._map.drop_item_and_copy_source(f)
+            else:
+                self._map.addfile(f, entry)
 
         def set_possibly_dirty(self, filename):
             """record that the current state of the file on disk is unknown"""
