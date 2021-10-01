@@ -109,14 +109,6 @@ class DirstateItem(object):
             self._mtime = parentfiledata[2]
 
     @classmethod
-    def new_from_p2(cls):
-        """constructor to help legacy API to build a new "from_p2" item
-
-        Should eventually be removed
-        """
-        return cls(wc_tracked=True, p2_info=True)
-
-    @classmethod
     def new_possibly_dirty(cls):
         """constructor to help legacy API to build a new "possibly_dirty" item
 

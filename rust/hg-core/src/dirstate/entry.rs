@@ -113,15 +113,6 @@ impl DirstateEntry {
         }
     }
 
-    pub fn new_from_p2() -> Self {
-        Self {
-            // might be missing P1_TRACKED
-            flags: Flags::WDIR_TRACKED | Flags::P2_INFO,
-            mode_size: None,
-            mtime: None,
-        }
-    }
-
     pub fn new_possibly_dirty() -> Self {
         Self {
             flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
