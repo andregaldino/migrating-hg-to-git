@@ -1,22 +1,6 @@
 //! The "version 2" disk representation of the dirstate
 //!
-//! # File format
-//!
-//! In dirstate-v2 format, the `.hg/dirstate` file is a "docket that starts
-//! with a fixed-sized header whose layout is defined by the `DocketHeader`
-//! struct, followed by the data file identifier.
-//!
-//! A separate `.hg/dirstate.{uuid}.d` file contains most of the data. That
-//! file may be longer than the size given in the docket, but not shorter. Only
-//! the start of the data file up to the given size is considered. The
-//! fixed-size "root" of the dirstate tree whose layout is defined by the
-//! `Root` struct is found at the end of that slice of data.
-//!
-//! Its `root_nodes` field contains the slice (offset and length) to
-//! the nodes representing the files and directories at the root of the
-//! repository. Each node is also fixed-size, defined by the `Node` struct.
-//! Nodes in turn contain slices to variable-size paths, and to their own child
-//! nodes (if any) for nested files and directories.
+//! See `mercurial/helptext/internals/dirstate-v2.txt`
 
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;

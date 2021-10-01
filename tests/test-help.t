@@ -1121,6 +1121,7 @@ internals topic renders index of available sub-topics
        censor        Censor
        changegroups  Changegroups
        config        Config Registrar
+       dirstate-v2   dirstate-v2 file format
        extensions    Extension API
        mergestate    Mergestate
        requirements  Repository Requirements
@@ -3564,6 +3565,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Config Registrar
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.dirstate-v2">
+  dirstate-v2
+  </a>
+  </td><td>
+  dirstate-v2 file format
   </td></tr>
   <tr><td>
   <a href="/help/internals.extensions">
