@@ -107,6 +107,13 @@ class _dirstatemapcommon(object):
         The fact it is actually new is the responsability of the caller
         """
 
+    def _drop_entry(self, f):
+        """remove any entry for file f
+
+        This should also drop associated copy information
+
+        The fact we actually need to drop it is the responsability of the caller"""
+
     ### method to manipulate the entries
 
     def set_possibly_dirty(self, filename):
@@ -526,6 +533,10 @@ class dirstatemap(_dirstatemapcommon):
         )
         self._map[filename] = entry
 
+    def _drop_entry(self, f):
+        self._map.pop(f, None)
+        self._copymap.pop(f, None)
+
 
 if rustmod is not None:
 
@@ -801,6 +812,9 @@ if rustmod is not None:
 
         def _insert_entry(self, f, entry):
             self._map.addfile(f, entry)
+
+        def _drop_entry(self, f):
+            self._map.drop_item_and_copy_source(f)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
