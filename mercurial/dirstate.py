@@ -525,11 +525,8 @@ class dirstate(object):
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
 
-        # this mean we are doing call for file we do not really care about the
-        # data (eg: added or removed), however this should be a minor overhead
-        # compared to the overall update process calling this.
         parentfiledata = None
-        if wc_tracked:
+        if wc_tracked and p1_tracked:
             parentfiledata = self._get_filedata(filename)
 
         self._map.reset_state(
