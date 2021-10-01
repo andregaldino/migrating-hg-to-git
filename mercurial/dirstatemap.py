@@ -162,7 +162,7 @@ class _dirstatemapcommon(object):
             return False
         else:
             self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
-            if not entry.merged:
+            if not entry.p2_info:
                 self.copymap.pop(f, None)
             entry.set_untracked()
             self._refresh_entry(f, entry)
