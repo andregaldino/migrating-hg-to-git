@@ -401,7 +401,9 @@ py_class!(pub class DirstateMap |py| {
             .copy_map_remove(HgPath::new(key.data(py)))
             .map_err(|e| v2_error(py, e))?
         {
-            Some(_) => Ok(None),
+            Some(copy) => Ok(Some(
+                PyBytes::new(py, copy.as_bytes()).into_object(),
+            )),
             None => Ok(default),
         }
     }
