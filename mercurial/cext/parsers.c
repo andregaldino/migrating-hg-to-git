@@ -347,30 +347,6 @@ static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
 	return (PyObject *)dirstate_item_from_v1_data(state, mode, size, mtime);
 };
 
-/* constructor to help legacy API to build a new "normal" item
-
-Should eventually be removed */
-static PyObject *dirstate_item_new_normal(PyTypeObject *subtype, PyObject *args)
-{
-	/* We do all the initialization here and not a tp_init function because
-	 * dirstate_item is immutable. */
-	dirstateItemObject *t;
-	int size, mode, mtime;
-	if (!PyArg_ParseTuple(args, "iii", &mode, &size, &mtime)) {
-		return NULL;
-	}
-
-	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
-	if (!t) {
-		return NULL;
-	}
-	t->flags = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked);
-	t->mode = mode;
-	t->size = size;
-	t->mtime = mtime;
-	return (PyObject *)t;
-};
-
 /* This means the next status call will have to actually check its content
    to make sure it is correct. */
 static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
@@ -437,9 +413,6 @@ static PyMethodDef dirstate_item_methods[] = {
      "True if the stored mtime would be ambiguous with the current time"},
     {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth,
      METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V1 data"},
-    {"new_normal", (PyCFunction)dirstate_item_new_normal,
-     METH_VARARGS | METH_CLASS,
-     "constructor to help legacy API to build a new \"normal\" item"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
      METH_NOARGS, "mark a file as \"possibly dirty\""},
     {"set_clean", (PyCFunction)dirstate_item_set_clean, METH_VARARGS,

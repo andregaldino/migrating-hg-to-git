@@ -138,12 +138,6 @@ py_class!(pub class DirstateItem |py| {
         DirstateItem::create_instance(py, Cell::new(entry))
     }
 
-    @classmethod
-    def new_normal(_cls, mode: i32, size: i32, mtime: i32) -> PyResult<Self> {
-        let entry = DirstateEntry::new_normal(mode, size, mtime);
-        DirstateItem::create_instance(py, Cell::new(entry))
-    }
-
     def drop_merge_data(&self) -> PyResult<PyNone> {
         self.update(py, |entry| entry.drop_merge_data());
         Ok(PyNone)

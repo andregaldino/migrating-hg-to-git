@@ -121,14 +121,6 @@ impl DirstateEntry {
         }
     }
 
-    pub fn new_normal(mode: i32, size: i32, mtime: i32) -> Self {
-        Self {
-            flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
-            mode_size: Some((mode, size)),
-            mtime: Some(mtime),
-        }
-    }
-
     /// Creates a new entry in "removed" state.
     ///
     /// `size` is expected to be zero, `SIZE_NON_NORMAL`, or

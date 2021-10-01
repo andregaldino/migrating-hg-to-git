@@ -109,20 +109,6 @@ class DirstateItem(object):
             self._mtime = parentfiledata[2]
 
     @classmethod
-    def new_normal(cls, mode, size, mtime):
-        """constructor to help legacy API to build a new "normal" item
-
-        Should eventually be removed
-        """
-        assert size != FROM_P2
-        assert size != NONNORMAL
-        return cls(
-            wc_tracked=True,
-            p1_tracked=True,
-            parentfiledata=(mode, size, mtime),
-        )
-
-    @classmethod
     def from_v1_data(cls, state, mode, size, mtime):
         """Build a new DirstateItem object from V1 data
 
