@@ -139,12 +139,6 @@ py_class!(pub class DirstateItem |py| {
     }
 
     @classmethod
-    def new_possibly_dirty(_cls) -> PyResult<Self> {
-        let entry = DirstateEntry::new_possibly_dirty();
-        DirstateItem::create_instance(py, Cell::new(entry))
-    }
-
-    @classmethod
     def new_normal(_cls, mode: i32, size: i32, mtime: i32) -> PyResult<Self> {
         let entry = DirstateEntry::new_normal(mode, size, mtime);
         DirstateItem::create_instance(py, Cell::new(entry))
