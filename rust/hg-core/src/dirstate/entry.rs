@@ -75,7 +75,11 @@ impl DirstateEntry {
                         mtime: None,
                     }
                 } else if size == SIZE_NON_NORMAL {
-                    Self::new_possibly_dirty()
+                    Self {
+                        flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
+                        mode_size: None,
+                        mtime: None,
+                    }
                 } else if mtime == MTIME_UNSET {
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,

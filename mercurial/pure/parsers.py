@@ -156,7 +156,7 @@ class DirstateItem(object):
             if size == FROM_P2:
                 return cls(wc_tracked=True, p2_info=True)
             elif size == NONNORMAL:
-                return cls.new_possibly_dirty()
+                return cls(wc_tracked=True, p1_tracked=True)
             elif mtime == AMBIGUOUS_TIME:
                 instance = cls.new_normal(mode, size, 42)
                 instance._mtime = None
