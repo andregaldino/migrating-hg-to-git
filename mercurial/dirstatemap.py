@@ -332,7 +332,7 @@ class dirstatemap(_dirstatemapcommon):
         if fold_p2:
             for f, s in pycompat.iteritems(self._map):
                 # Discard "merged" markers when moving away from a merge state
-                if s.merged or s.from_p2:
+                if s.p2_info:
                     source = self.copymap.pop(f, None)
                     if source:
                         copies[f] = source
@@ -604,7 +604,7 @@ if rustmod is not None:
                 # enables in-place mutation of elements of a collection while
                 # iterating it, without mutating the collection itself.
                 files_with_p2_info = [
-                    f for f, s in self._map.items() if s.merged or s.from_p2
+                    f for f, s in self._map.items() if s.p2_info
                 ]
                 rust_map = self._map
                 for f in files_with_p2_info:

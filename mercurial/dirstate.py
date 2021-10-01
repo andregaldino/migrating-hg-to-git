@@ -1372,7 +1372,7 @@ class dirstate(object):
 
             if not st and t.tracked:
                 dadd(fn)
-            elif t.merged or t.from_p2:
+            elif t.p2_info:
                 madd(fn)
             elif t.added:
                 aadd(fn)
