@@ -41,6 +41,20 @@ class _dirstatemapcommon(object):
     class, with and without Rust extensions enabled.
     """
 
+    def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
+        self._use_dirstate_v2 = use_dirstate_v2
+        self._nodeconstants = nodeconstants
+        self._ui = ui
+        self._opener = opener
+        self._root = root
+        self._filename = b'dirstate'
+        self._nodelen = 20  # Also update Rust code when changing this!
+        self._parents = None
+        self._dirtyparents = False
+
+        # for consistent view between _pl() and _read() invocations
+        self._pendingmode = None
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
@@ -77,21 +91,13 @@ class dirstatemap(_dirstatemapcommon):
     """
 
     def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
-        self._ui = ui
-        self._opener = opener
-        self._root = root
-        self._filename = b'dirstate'
-        self._nodelen = 20
-        self._nodeconstants = nodeconstants
-        assert (
-            not use_dirstate_v2
-        ), "should have detected unsupported requirement"
-
-        self._parents = None
-        self._dirtyparents = False
-
-        # for consistent view between _pl() and _read() invocations
-        self._pendingmode = None
+        super(dirstatemap, self).__init__(
+            ui, opener, root, nodeconstants, use_dirstate_v2
+        )
+        if self._use_dirstate_v2:
+            msg = "Dirstate V2 not supportedi"
+            msg += "(should have detected unsupported requirement)"
+            raise error.ProgrammingError(msg)
 
     @propertycache
     def _map(self):
@@ -469,19 +475,10 @@ if rustmod is not None:
 
     class dirstatemap(_dirstatemapcommon):
         def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
-            self._use_dirstate_v2 = use_dirstate_v2
-            self._nodeconstants = nodeconstants
-            self._ui = ui
-            self._opener = opener
-            self._root = root
-            self._filename = b'dirstate'
-            self._nodelen = 20  # Also update Rust code when changing this!
-            self._parents = None
-            self._dirtyparents = False
+            super(dirstatemap, self).__init__(
+                ui, opener, root, nodeconstants, use_dirstate_v2
+            )
             self._docket = None
-
-            # for consistent view between _pl() and _read() invocations
-            self._pendingmode = None
 
         def addfile(
             self,
