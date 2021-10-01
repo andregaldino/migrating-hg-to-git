@@ -257,7 +257,6 @@ class DirstateItem(object):
 
         This will ultimately be called by command like `hg remove`.
         """
-        # backup the previous state (useful for merge)
         self._wc_tracked = False
         self._mode = None
         self._size = None
