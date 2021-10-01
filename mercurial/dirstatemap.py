@@ -115,6 +115,15 @@ class _dirstatemapcommon(object):
         entry.set_possibly_dirty()
         self._refresh_entry(filename, entry)
 
+    def set_clean(self, filename, mode, size, mtime):
+        """mark a file as back to a clean state"""
+        entry = self[filename]
+        mtime = mtime & rangemask
+        size = size & rangemask
+        entry.set_clean(mode, size, mtime)
+        self._refresh_entry(filename, entry)
+        self.copymap.pop(filename, None)
+
     def set_tracked(self, filename):
         new = False
         entry = self.get(filename)
@@ -448,14 +457,6 @@ class dirstatemap(_dirstatemapcommon):
 
     def _insert_entry(self, f, entry):
         self._map[f] = entry
-
-    def set_clean(self, filename, mode, size, mtime):
-        """mark a file as back to a clean state"""
-        entry = self[filename]
-        mtime = mtime & rangemask
-        size = size & rangemask
-        entry.set_clean(mode, size, mtime)
-        self.copymap.pop(filename, None)
 
     def reset_state(
         self,
@@ -800,15 +801,6 @@ if rustmod is not None:
 
         def _insert_entry(self, f, entry):
             self._map.addfile(f, entry)
-
-        def set_clean(self, filename, mode, size, mtime):
-            """mark a file as back to a clean state"""
-            entry = self[filename]
-            mtime = mtime & rangemask
-            size = size & rangemask
-            entry.set_clean(mode, size, mtime)
-            self._map.set_dirstate_item(filename, entry)
-            self._map.copymap().pop(filename, None)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
