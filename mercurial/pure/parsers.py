@@ -157,7 +157,11 @@ class DirstateItem(object):
                     parentfiledata=(mode, size, 42),
                 )
             else:
-                return cls.new_normal(mode, size, mtime)
+                return cls(
+                    wc_tracked=True,
+                    p1_tracked=True,
+                    parentfiledata=(mode, size, mtime),
+                )
         else:
             raise RuntimeError(b'unknown state: %s' % state)
 

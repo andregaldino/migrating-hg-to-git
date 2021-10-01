@@ -87,7 +87,11 @@ impl DirstateEntry {
                         mtime: None,
                     }
                 } else {
-                    Self::new_normal(mode, size, mtime)
+                    Self {
+                        flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
+                        mode_size: Some((mode, size)),
+                        mtime: Some(mtime),
+                    }
                 }
             }
             EntryState::Added => Self {
