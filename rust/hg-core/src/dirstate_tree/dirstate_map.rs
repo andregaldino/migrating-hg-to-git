@@ -325,12 +325,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     pub(super) fn state(
         &self,
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        match self {
-            NodeRef::InMemory(_path, node) => {
-                Ok(node.data.as_entry().map(|entry| entry.state()))
-            }
-            NodeRef::OnDisk(node) => node.state(),
-        }
+        Ok(self.entry()?.map(|e| e.state()))
     }
 
     pub(super) fn cached_directory_mtime(

@@ -15,13 +15,13 @@ pub enum EntryState {
 /// comes first.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct DirstateEntry {
-    flags: Flags,
+    pub(crate) flags: Flags,
     mode_size: Option<(i32, i32)>,
     mtime: Option<i32>,
 }
 
 bitflags! {
-    struct Flags: u8 {
+    pub(crate) struct Flags: u8 {
         const WDIR_TRACKED = 1 << 0;
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
@@ -41,7 +41,7 @@ pub const SIZE_FROM_OTHER_PARENT: i32 = -2;
 pub const SIZE_NON_NORMAL: i32 = -1;
 
 impl DirstateEntry {
-    pub fn new(
+    pub fn from_v2_data(
         wdir_tracked: bool,
         p1_tracked: bool,
         p2_info: bool,
@@ -191,6 +191,22 @@ impl DirstateEntry {
         self.flags.intersects(
             Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO,
         )
+    }
+
+    /// Returns `(wdir_tracked, p1_tracked, p2_info, mode_size, mtime)`
+    pub(crate) fn v2_data(
+        &self,
+    ) -> (bool, bool, bool, Option<(i32, i32)>, Option<i32>) {
+        if !self.any_tracked() {
+            // TODO: return an Option instead?
+            panic!("Accessing v1_state of an untracked DirstateEntry")
+        }
+        let wdir_tracked = self.flags.contains(Flags::WDIR_TRACKED);
+        let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
+        let p2_info = self.flags.contains(Flags::P2_INFO);
+        let mode_size = self.mode_size;
+        let mtime = self.mtime;
+        (wdir_tracked, p1_tracked, p2_info, mode_size, mtime)
     }
 
     fn v1_state(&self) -> EntryState {

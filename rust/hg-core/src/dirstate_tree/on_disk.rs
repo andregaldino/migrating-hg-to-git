@@ -25,7 +25,7 @@ use crate::utils::hg_path::HgPath;
 use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
-use crate::EntryState;
+use bitflags::bitflags;
 use bytes_cast::unaligned::{I32Be, I64Be, U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
@@ -131,18 +131,26 @@ pub(super) struct Node {
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
 
-    /// Depending on the value of `state`:
+    /// Depending on the bits in `flags`:
     ///
-    /// * A null byte: `data` is not used.
+    /// * If any of `WDIR_TRACKED`, `P1_TRACKED`, or `P2_INFO` are set, the
+    ///   node has an entry.
     ///
-    /// * A `n`, `a`, `r`, or `m` ASCII byte: `state` and `data` together
-    ///   represent a dirstate entry like in the v1 format.
+    ///   - If `HAS_MODE_AND_SIZE` is set, `data.mode` and `data.size` are
+    ///     meaningful. Otherwise they are set to zero
+    ///   - If `HAS_MTIME` is set, `data.mtime` is meaningful. Otherwise it is
+    ///     set to zero.
     ///
-    /// * A `d` ASCII byte: the bytes of `data` should instead be interpreted
-    ///   as the `Timestamp` for the mtime of a cached directory.
+    /// * If none of `WDIR_TRACKED`, `P1_TRACKED`, `P2_INFO`, or `HAS_MTIME`
+    ///   are set, the node does not have an entry and `data` is set to all
+    ///   zeros.
     ///
-    ///   The presence of this state means that at some point, this path in
-    ///   the working directory was observed:
+    /// * If none of `WDIR_TRACKED`, `P1_TRACKED`, `P2_INFO` are set, but
+    ///   `HAS_MTIME` is set, the bytes of `data` should instead be
+    ///   interpreted as the `Timestamp` for the mtime of a cached directory.
+    ///
+    ///   The presence of this combination of flags means that at some point,
+    ///   this path in the working directory was observed:
     ///
     ///   - To be a directory
     ///   - With the modification time as given by `Timestamp`
@@ -161,11 +169,23 @@ pub(super) struct Node {
     ///   of status that is not listing ignored   files can skip calling
     ///   `std::fs::read_dir` again for this directory,   iterate child
     ///   dirstate nodes instead.
-    state: u8,
+    flags: Flags,
     data: Entry,
 }
 
-#[derive(BytesCast, Copy, Clone)]
+bitflags! {
+    #[derive(BytesCast)]
+    #[repr(C)]
+    struct Flags: u8 {
+        const WDIR_TRACKED = 1 << 0;
+        const P1_TRACKED = 1 << 1;
+        const P2_INFO = 1 << 2;
+        const HAS_MODE_AND_SIZE = 1 << 3;
+        const HAS_MTIME = 1 << 4;
+    }
+}
+
+#[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct Entry {
     mode: I32Be,
@@ -361,65 +381,64 @@ impl Node {
         })
     }
 
+    fn has_entry(&self) -> bool {
+        self.flags.intersects(
+            Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO,
+        )
+    }
+
     pub(super) fn node_data(
         &self,
     ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
-        let entry = |state| {
-            dirstate_map::NodeData::Entry(self.entry_with_given_state(state))
-        };
-
-        match self.state {
-            b'\0' => Ok(dirstate_map::NodeData::None),
-            b'd' => Ok(dirstate_map::NodeData::CachedDirectory {
-                mtime: *self.data.as_timestamp(),
-            }),
-            b'n' => Ok(entry(EntryState::Normal)),
-            b'a' => Ok(entry(EntryState::Added)),
-            b'r' => Ok(entry(EntryState::Removed)),
-            b'm' => Ok(entry(EntryState::Merged)),
-            _ => Err(DirstateV2ParseError),
+        if self.has_entry() {
+            Ok(dirstate_map::NodeData::Entry(self.assume_entry()))
+        } else if let Some(&mtime) = self.cached_directory_mtime() {
+            Ok(dirstate_map::NodeData::CachedDirectory { mtime })
+        } else {
+            Ok(dirstate_map::NodeData::None)
         }
     }
 
     pub(super) fn cached_directory_mtime(&self) -> Option<&Timestamp> {
-        if self.state == b'd' {
+        if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
             Some(self.data.as_timestamp())
         } else {
             None
         }
     }
 
-    pub(super) fn state(
-        &self,
-    ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        match self.state {
-            b'\0' | b'd' => Ok(None),
-            b'n' => Ok(Some(EntryState::Normal)),
-            b'a' => Ok(Some(EntryState::Added)),
-            b'r' => Ok(Some(EntryState::Removed)),
-            b'm' => Ok(Some(EntryState::Merged)),
-            _ => Err(DirstateV2ParseError),
-        }
-    }
-
-    fn entry_with_given_state(&self, state: EntryState) -> DirstateEntry {
-        // For now, the on-disk representation of DirstateEntry in dirstate-v2
-        // format is equivalent to that of dirstate-v1. When that changes, add
-        // a new constructor.
-        DirstateEntry::from_v1_data(
-            state,
-            self.data.mode.get(),
-            self.data.size.get(),
-            self.data.mtime.get(),
+    fn assume_entry(&self) -> DirstateEntry {
+        // TODO: convert through raw bits instead?
+        let wdir_tracked = self.flags.contains(Flags::WDIR_TRACKED);
+        let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
+        let p2_info = self.flags.contains(Flags::P2_INFO);
+        let mode_size = if self.flags.contains(Flags::HAS_MODE_AND_SIZE) {
+            Some((self.data.mode.into(), self.data.size.into()))
+        } else {
+            None
+        };
+        let mtime = if self.flags.contains(Flags::HAS_MTIME) {
+            Some(self.data.mtime.into())
+        } else {
+            None
+        };
+        DirstateEntry::from_v2_data(
+            wdir_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size,
+            mtime,
         )
     }
 
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
-        Ok(self
-            .state()?
-            .map(|state| self.entry_with_given_state(state)))
+        if self.has_entry() {
+            Ok(Some(self.assume_entry()))
+        } else {
+            Ok(None)
+        }
     }
 
     pub(super) fn children<'on_disk>(
@@ -448,6 +467,37 @@ impl Node {
 }
 
 impl Entry {
+    fn from_dirstate_entry(entry: &DirstateEntry) -> (Flags, Self) {
+        let (wdir_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt) =
+            entry.v2_data();
+        // TODO: convert throug raw flag bits instead?
+        let mut flags = Flags::empty();
+        flags.set(Flags::WDIR_TRACKED, wdir_tracked);
+        flags.set(Flags::P1_TRACKED, p1_tracked);
+        flags.set(Flags::P2_INFO, p2_info);
+        let (mode, size, mtime);
+        if let Some((m, s)) = mode_size_opt {
+            mode = m;
+            size = s;
+            flags.insert(Flags::HAS_MODE_AND_SIZE)
+        } else {
+            mode = 0;
+            size = 0;
+        }
+        if let Some(m) = mtime_opt {
+            mtime = m;
+            flags.insert(Flags::HAS_MTIME);
+        } else {
+            mtime = 0;
+        }
+        let raw_entry = Entry {
+            mode: mode.into(),
+            size: size.into(),
+            mtime: mtime.into(),
+        };
+        (flags, raw_entry)
+    }
+
     fn from_timestamp(timestamp: Timestamp) -> Self {
         // Safety: both types implement the `ByteCast` trait, so we could
         // safely use `as_bytes` and `from_bytes` to do this conversion. Using
@@ -546,8 +596,8 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
         f: &mut impl FnMut(&'on_disk HgPath),
     ) -> Result<(), DirstateV2ParseError> {
         for node in read_nodes(on_disk, nodes)? {
-            if let Some(state) = node.state()? {
-                if state.is_tracked() {
+            if let Some(entry) = node.entry()? {
+                if entry.state().is_tracked() {
                     f(node.full_path(on_disk)?)
                 }
             }
@@ -641,24 +691,19 @@ impl Writer<'_, '_> {
             };
             on_disk_nodes.push(match node {
                 NodeRef::InMemory(path, node) => {
-                    let (state, data) = match &node.data {
-                        dirstate_map::NodeData::Entry(entry) => (
-                            entry.state().into(),
-                            Entry {
-                                mode: entry.mode().into(),
-                                mtime: entry.mtime().into(),
-                                size: entry.size().into(),
-                            },
-                        ),
+                    let (flags, data) = match &node.data {
+                        dirstate_map::NodeData::Entry(entry) => {
+                            Entry::from_dirstate_entry(entry)
+                        }
                         dirstate_map::NodeData::CachedDirectory { mtime } => {
-                            (b'd', Entry::from_timestamp(*mtime))
+                            (Flags::HAS_MTIME, Entry::from_timestamp(*mtime))
                         }
                         dirstate_map::NodeData::None => (
-                            b'\0',
+                            Flags::empty(),
                             Entry {
                                 mode: 0.into(),
-                                mtime: 0.into(),
                                 size: 0.into(),
+                                mtime: 0.into(),
                             },
                         ),
                     };
@@ -676,7 +721,7 @@ impl Writer<'_, '_> {
                         tracked_descendants_count: node
                             .tracked_descendants_count
                             .into(),
-                        state,
+                        flags,
                         data,
                     }
                 }

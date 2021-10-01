@@ -34,7 +34,7 @@ py_class!(pub class DirstateItem |py| {
                 mtime_opt = Some(mtime)
             }
         }
-        let entry = DirstateEntry::new(
+        let entry = DirstateEntry::from_v2_data(
             wc_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt,
         );
         DirstateItem::create_instance(py, Cell::new(entry))
