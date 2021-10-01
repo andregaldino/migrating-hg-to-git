@@ -263,6 +263,33 @@ impl DirstateEntry {
         }
     }
 
+    pub fn drop_merge_data(&mut self) {
+        if self.flags.contains(Flags::CLEAN_P1)
+            || self.flags.contains(Flags::CLEAN_P2)
+            || self.flags.contains(Flags::MERGED)
+            || self.flags.contains(Flags::P2_TRACKED)
+        {
+            if self.flags.contains(Flags::MERGED) {
+                self.flags.insert(Flags::P1_TRACKED);
+            } else {
+                self.flags.remove(Flags::P1_TRACKED);
+            }
+            self.flags.remove(
+                Flags::MERGED
+                    | Flags::CLEAN_P1
+                    | Flags::CLEAN_P2
+                    | Flags::P2_TRACKED,
+            );
+            self.flags.insert(Flags::POSSIBLY_DIRTY);
+            self.mode = 0;
+            self.mtime = 0;
+            // size = None on the python size turn into size = NON_NORMAL when
+            // accessed. So the next line is currently required, but a some
+            // future clean up would be welcome.
+            self.size = SIZE_NON_NORMAL;
+        }
+    }
+
     pub fn set_possibly_dirty(&mut self) {
         self.flags.insert(Flags::POSSIBLY_DIRTY)
     }
