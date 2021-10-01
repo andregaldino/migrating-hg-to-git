@@ -579,10 +579,7 @@ class dirstate(object):
             not possibly_dirty and not p2_info and wc_tracked and p1_tracked
         )
 
-        # this mean we are doing call for file we do not really care about the
-        # data (eg: added or removed), however this should be a minor overhead
-        # compared to the overall update process calling this.
-        if need_parent_file_data or parentfiledata is None:
+        if need_parent_file_data and parentfiledata is None:
             parentfiledata = self._get_filedata(filename)
 
         self._map.reset_state(
