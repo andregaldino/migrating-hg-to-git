@@ -175,6 +175,74 @@ class _dirstatemapcommon(object):
             self._refresh_entry(f, entry)
             return True
 
+    def reset_state(
+        self,
+        filename,
+        wc_tracked=False,
+        p1_tracked=False,
+        p2_tracked=False,
+        merged=False,
+        clean_p1=False,
+        clean_p2=False,
+        possibly_dirty=False,
+        parentfiledata=None,
+    ):
+        """Set a entry to a given state, diregarding all previous state
+
+        This is to be used by the part of the dirstate API dedicated to
+        adjusting the dirstate after a update/merge.
+
+        note: calling this might result to no entry existing at all if the
+        dirstate map does not see any point at having one for this file
+        anymore.
+        """
+        if merged and (clean_p1 or clean_p2):
+            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
+            raise error.ProgrammingError(msg)
+        # copy information are now outdated
+        # (maybe new information should be in directly passed to this function)
+        self.copymap.pop(filename, None)
+
+        if not (p1_tracked or p2_tracked or wc_tracked):
+            old_entry = self._map.get(filename)
+            self._drop_entry(filename)
+            self._dirs_decr(filename, old_entry=old_entry)
+            return
+        elif merged:
+            pass
+        elif not (p1_tracked or p2_tracked) and wc_tracked:
+            pass  # file is added, nothing special to adjust
+        elif (p1_tracked or p2_tracked) and not wc_tracked:
+            pass
+        elif clean_p2 and wc_tracked:
+            pass
+        elif not p1_tracked and p2_tracked and wc_tracked:
+            clean_p2 = True
+        elif possibly_dirty:
+            pass
+        elif wc_tracked:
+            # this is a "normal" file
+            if parentfiledata is None:
+                msg = b'failed to pass parentfiledata for a normal file: %s'
+                msg %= filename
+                raise error.ProgrammingError(msg)
+        else:
+            assert False, 'unreachable'
+
+        old_entry = self._map.get(filename)
+        self._dirs_incr(filename, old_entry)
+        entry = DirstateItem(
+            wc_tracked=wc_tracked,
+            p1_tracked=p1_tracked,
+            p2_tracked=p2_tracked,
+            merged=merged,
+            clean_p1=clean_p1,
+            clean_p2=clean_p2,
+            possibly_dirty=possibly_dirty,
+            parentfiledata=parentfiledata,
+        )
+        self._insert_entry(filename, entry)
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
@@ -465,77 +533,9 @@ class dirstatemap(_dirstatemapcommon):
     def _insert_entry(self, f, entry):
         self._map[f] = entry
 
-    def reset_state(
-        self,
-        filename,
-        wc_tracked=False,
-        p1_tracked=False,
-        p2_tracked=False,
-        merged=False,
-        clean_p1=False,
-        clean_p2=False,
-        possibly_dirty=False,
-        parentfiledata=None,
-    ):
-        """Set a entry to a given state, diregarding all previous state
-
-        This is to be used by the part of the dirstate API dedicated to
-        adjusting the dirstate after a update/merge.
-
-        note: calling this might result to no entry existing at all if the
-        dirstate map does not see any point at having one for this file
-        anymore.
-        """
-        if merged and (clean_p1 or clean_p2):
-            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-            raise error.ProgrammingError(msg)
-        # copy information are now outdated
-        # (maybe new information should be in directly passed to this function)
-        self.copymap.pop(filename, None)
-
-        if not (p1_tracked or p2_tracked or wc_tracked):
-            old_entry = self._map.pop(filename, None)
-            self._dirs_decr(filename, old_entry=old_entry)
-            self.copymap.pop(filename, None)
-            return
-        elif merged:
-            pass
-        elif not (p1_tracked or p2_tracked) and wc_tracked:
-            pass  # file is added, nothing special to adjust
-        elif (p1_tracked or p2_tracked) and not wc_tracked:
-            pass
-        elif clean_p2 and wc_tracked:
-            pass
-        elif not p1_tracked and p2_tracked and wc_tracked:
-            clean_p2 = True
-        elif possibly_dirty:
-            pass
-        elif wc_tracked:
-            # this is a "normal" file
-            if parentfiledata is None:
-                msg = b'failed to pass parentfiledata for a normal file: %s'
-                msg %= filename
-                raise error.ProgrammingError(msg)
-        else:
-            assert False, 'unreachable'
-
-        old_entry = self._map.get(filename)
-        self._dirs_incr(filename, old_entry)
-        entry = DirstateItem(
-            wc_tracked=wc_tracked,
-            p1_tracked=p1_tracked,
-            p2_tracked=p2_tracked,
-            merged=merged,
-            clean_p1=clean_p1,
-            clean_p2=clean_p2,
-            possibly_dirty=possibly_dirty,
-            parentfiledata=parentfiledata,
-        )
-        self._map[filename] = entry
-
     def _drop_entry(self, f):
         self._map.pop(f, None)
-        self._copymap.pop(f, None)
+        self.copymap.pop(f, None)
 
 
 if rustmod is not None:
@@ -819,85 +819,6 @@ if rustmod is not None:
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
             self._map.set_dirstate_item(key, value)
-
-        def reset_state(
-            self,
-            filename,
-            wc_tracked=False,
-            p1_tracked=False,
-            p2_tracked=False,
-            merged=False,
-            clean_p1=False,
-            clean_p2=False,
-            possibly_dirty=False,
-            parentfiledata=None,
-        ):
-            """Set a entry to a given state, disregarding all previous state
-
-            This is to be used by the part of the dirstate API dedicated to
-            adjusting the dirstate after a update/merge.
-
-            note: calling this might result to no entry existing at all if the
-            dirstate map does not see any point at having one for this file
-            anymore.
-            """
-            if merged and (clean_p1 or clean_p2):
-                msg = (
-                    b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-                )
-                raise error.ProgrammingError(msg)
-            # copy information are now outdated
-            # (maybe new information should be in directly passed to this function)
-            self.copymap.pop(filename, None)
-
-            if not (p1_tracked or p2_tracked or wc_tracked):
-                self._map.drop_item_and_copy_source(filename)
-            elif merged:
-                # XXX might be merged and removed ?
-                entry = self.get(filename)
-                if entry is not None and entry.tracked:
-                    # XXX mostly replicate dirstate.other parent.  We should get
-                    # the higher layer to pass us more reliable data where `merged`
-                    # actually mean merged. Dropping the else clause will show
-                    # failure in `test-graft.t`
-                    self.addfile(filename, merged=True)
-                else:
-                    self.addfile(filename, from_p2=True)
-            elif not (p1_tracked or p2_tracked) and wc_tracked:
-                self.addfile(
-                    filename, added=True, possibly_dirty=possibly_dirty
-                )
-            elif (p1_tracked or p2_tracked) and not wc_tracked:
-                # XXX might be merged and removed ?
-                self[filename] = DirstateItem.from_v1_data(b'r', 0, 0, 0)
-            elif clean_p2 and wc_tracked:
-                if p1_tracked or self.get(filename) is not None:
-                    # XXX the `self.get` call is catching some case in
-                    # `test-merge-remove.t` where the file is tracked in p1, the
-                    # p1_tracked argument is False.
-                    #
-                    # In addition, this seems to be a case where the file is marked
-                    # as merged without actually being the result of a merge
-                    # action. So thing are not ideal here.
-                    self.addfile(filename, merged=True)
-                else:
-                    self.addfile(filename, from_p2=True)
-            elif not p1_tracked and p2_tracked and wc_tracked:
-                self.addfile(
-                    filename, from_p2=True, possibly_dirty=possibly_dirty
-                )
-            elif possibly_dirty:
-                self.addfile(filename, possibly_dirty=possibly_dirty)
-            elif wc_tracked:
-                # this is a "normal" file
-                if parentfiledata is None:
-                    msg = b'failed to pass parentfiledata for a normal file: %s'
-                    msg %= filename
-                    raise error.ProgrammingError(msg)
-                mode, size, mtime = parentfiledata
-                self.addfile(filename, mode=mode, size=size, mtime=mtime)
-            else:
-                assert False, 'unreachable'
 
         ### Legacy method we need to get rid of
 
