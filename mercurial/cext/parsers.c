@@ -577,6 +577,16 @@ static PyObject *dirstate_item_get_added(dirstateItemObject *self)
 	}
 };
 
+static PyObject *dirstate_item_get_p2_info(dirstateItemObject *self)
+{
+	if (self->flags & dirstate_flag_wc_tracked &&
+	    self->flags & dirstate_flag_p2_info) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
 static PyObject *dirstate_item_get_merged(dirstateItemObject *self)
 {
 	if (dirstate_item_c_merged(self)) {
@@ -633,6 +643,7 @@ static PyGetSetDef dirstate_item_getset[] = {
     {"state", (getter)dirstate_item_get_state, NULL, "state", NULL},
     {"tracked", (getter)dirstate_item_get_tracked, NULL, "tracked", NULL},
     {"added", (getter)dirstate_item_get_added, NULL, "added", NULL},
+    {"p2_info", (getter)dirstate_item_get_p2_info, NULL, "p2_info", NULL},
     {"merged", (getter)dirstate_item_get_merged, NULL, "merged", NULL},
     {"from_p2", (getter)dirstate_item_get_from_p2, NULL, "from_p2", NULL},
     {"maybe_clean", (getter)dirstate_item_get_maybe_clean, NULL, "maybe_clean",

@@ -71,6 +71,12 @@ py_class!(pub class DirstateItem |py| {
         Ok(self.entry(py).get().added())
     }
 
+
+    @property
+    def p2_info(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().p2_info())
+    }
+
     @property
     def merged(&self) -> PyResult<bool> {
         Ok(self.entry(py).get().merged())

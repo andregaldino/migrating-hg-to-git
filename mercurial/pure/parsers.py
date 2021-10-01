@@ -301,6 +301,14 @@ class DirstateItem(object):
         return True
 
     @property
+    def p2_info(self):
+        """True if the file needed to merge or apply any input from p2
+
+        See the class documentation for details.
+        """
+        return self._wc_tracked and self._p2_info
+
+    @property
     def merged(self):
         """True if the file has been merged
 
