@@ -305,7 +305,7 @@ class DirstateItem(object):
         dirstatev1 format. It would make sense to ultimately deprecate it in
         favor of the more "semantic" attributes.
         """
-        if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):
+        if not self.any_tracked:
             return b'?'
         return self.v1_state()
 
@@ -383,7 +383,7 @@ class DirstateItem(object):
 
     def v1_size(self):
         """return a "size" suitable for v1 serialization"""
-        if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):
+        if not self.any_tracked:
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
@@ -406,7 +406,7 @@ class DirstateItem(object):
 
     def v1_mtime(self):
         """return a "mtime" suitable for v1 serialization"""
-        if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):
+        if not self.any_tracked:
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
