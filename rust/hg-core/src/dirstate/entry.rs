@@ -129,16 +129,6 @@ impl DirstateEntry {
         }
     }
 
-    pub fn new_merged() -> Self {
-        Self {
-            flags: Flags::WDIR_TRACKED
-                | Flags::P1_TRACKED // might not be true because of rename ?
-                | Flags::P2_INFO, // might not be true because of rename ?
-            mode_size: None,
-            mtime: None,
-        }
-    }
-
     pub fn new_normal(mode: i32, size: i32, mtime: i32) -> Self {
         Self {
             flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,

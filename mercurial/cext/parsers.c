@@ -364,24 +364,6 @@ static PyObject *dirstate_item_new_added(PyTypeObject *subtype)
 	return (PyObject *)t;
 };
 
-/* constructor to help legacy API to build a new "merged" item
-
-Should eventually be removed */
-static PyObject *dirstate_item_new_merged(PyTypeObject *subtype)
-{
-	dirstateItemObject *t;
-	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
-	if (!t) {
-		return NULL;
-	}
-	t->flags = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	            dirstate_flag_p2_info);
-	t->mode = 0;
-	t->size = 0;
-	t->mtime = 0;
-	return (PyObject *)t;
-};
-
 /* constructor to help legacy API to build a new "from_p2" item
 
 Should eventually be removed */
@@ -513,9 +495,6 @@ static PyMethodDef dirstate_item_methods[] = {
     {"new_added", (PyCFunction)dirstate_item_new_added,
      METH_NOARGS | METH_CLASS,
      "constructor to help legacy API to build a new \"added\" item"},
-    {"new_merged", (PyCFunction)dirstate_item_new_merged,
-     METH_NOARGS | METH_CLASS,
-     "constructor to help legacy API to build a new \"merged\" item"},
     {"new_from_p2", (PyCFunction)dirstate_item_new_from_p2,
      METH_NOARGS | METH_CLASS,
      "constructor to help legacy API to build a new \"from_p2\" item"},

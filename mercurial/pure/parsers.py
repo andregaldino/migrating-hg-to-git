@@ -117,14 +117,6 @@ class DirstateItem(object):
         return cls(wc_tracked=True)
 
     @classmethod
-    def new_merged(cls):
-        """constructor to help legacy API to build a new "merged" item
-
-        Should eventually be removed
-        """
-        return cls(wc_tracked=True, p1_tracked=True, p2_info=True)
-
-    @classmethod
     def new_from_p2(cls):
         """constructor to help legacy API to build a new "from_p2" item
 

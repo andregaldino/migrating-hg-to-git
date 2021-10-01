@@ -145,12 +145,6 @@ py_class!(pub class DirstateItem |py| {
     }
 
     @classmethod
-    def new_merged(_cls) -> PyResult<Self> {
-        let entry = DirstateEntry::new_merged();
-        DirstateItem::create_instance(py, Cell::new(entry))
-    }
-
-    @classmethod
     def new_from_p2(_cls) -> PyResult<Self> {
         let entry = DirstateEntry::new_from_p2();
         DirstateItem::create_instance(py, Cell::new(entry))
