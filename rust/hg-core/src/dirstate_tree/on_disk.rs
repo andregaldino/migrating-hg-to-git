@@ -67,10 +67,10 @@ struct DocketHeader {
     parent_1: [u8; STORED_NODE_ID_BYTES],
     parent_2: [u8; STORED_NODE_ID_BYTES],
 
+    metadata: TreeMetadata,
+
     /// Counted in bytes
     data_size: Size,
-
-    metadata: TreeMetadata,
 
     uuid_size: u8,
 }
