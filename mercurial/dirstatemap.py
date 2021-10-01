@@ -101,6 +101,12 @@ class _dirstatemapcommon(object):
     def _refresh_entry(self, f, entry):
         """record updated state of an entry"""
 
+    def _insert_entry(self, f, entry):
+        """add a new dirstate entry (or replace an unrelated one)
+
+        The fact it is actually new is the responsability of the caller
+        """
+
     ### method to manipulate the entries
 
     def set_untracked(self, f):
@@ -402,6 +408,9 @@ class dirstatemap(_dirstatemapcommon):
     def _refresh_entry(self, f, entry):
         if not entry.any_tracked:
             self._map.pop(f, None)
+
+    def _insert_entry(self, f, entry):
+        self._map[f] = entry
 
     def set_possibly_dirty(self, filename):
         """record that the current state of the file on disk is unknown"""
@@ -783,6 +792,9 @@ if rustmod is not None:
                 self._map.drop_item_and_copy_source(f)
             else:
                 self._map.addfile(f, entry)
+
+        def _insert_entry(self, f, entry):
+            self._map.addfile(f, entry)
 
         def set_possibly_dirty(self, filename):
             """record that the current state of the file on disk is unknown"""
