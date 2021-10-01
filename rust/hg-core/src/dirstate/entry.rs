@@ -219,7 +219,10 @@ impl DirstateEntry {
         }
         if self.removed() {
             EntryState::Removed
-        } else if self.merged() {
+        } else if self
+            .flags
+            .contains(Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO)
+        {
             EntryState::Merged
         } else if self.added() {
             EntryState::Added
