@@ -94,7 +94,13 @@ impl DirstateEntry {
                 mode_size: None,
                 mtime: None,
             },
-            EntryState::Merged => Self::new_merged(),
+            EntryState::Merged => Self {
+                flags: Flags::WDIR_TRACKED
+                    | Flags::P1_TRACKED // might not be true because of rename ?
+                    | Flags::P2_INFO, // might not be true because of rename ?
+                mode_size: None,
+                mtime: None,
+            },
         }
     }
 

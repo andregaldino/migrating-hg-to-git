@@ -162,7 +162,7 @@ class DirstateItem(object):
         is not expected to change, unlike the __init__ one.
         """
         if state == b'm':
-            return cls.new_merged()
+            return cls(wc_tracked=True, p1_tracked=True, p2_info=True)
         elif state == b'a':
             return cls.new_added()
         elif state == b'r':
