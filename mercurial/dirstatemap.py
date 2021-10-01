@@ -101,6 +101,21 @@ class _dirstatemapcommon(object):
     def _refresh_entry(self, f, entry):
         """record updated state of an entry"""
 
+    ### method to manipulate the entries
+
+    def set_untracked(self, f):
+        """Mark a file as no longer tracked in the dirstate map"""
+        entry = self.get(f)
+        if entry is None:
+            return False
+        else:
+            self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
+            if not entry.merged:
+                self.copymap.pop(f, None)
+            entry.set_untracked()
+            self._refresh_entry(f, entry)
+            return True
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
@@ -496,20 +511,6 @@ class dirstatemap(_dirstatemapcommon):
             self.set_possibly_dirty(filename)
         return new
 
-    def set_untracked(self, f):
-        """Mark a file as no longer tracked in the dirstate map"""
-        entry = self.get(f)
-        if entry is None:
-            return False
-        else:
-            self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
-            if not entry.merged:
-                self.copymap.pop(f, None)
-            entry.set_untracked()
-            if not entry.any_tracked:
-                self._map.pop(f, None)
-            return True
-
 
 if rustmod is not None:
 
@@ -897,22 +898,6 @@ if rustmod is not None:
                 # Consider smoothing this in the future.
                 self.set_possibly_dirty(filename)
             return new
-
-        def set_untracked(self, f):
-            """Mark a file as no longer tracked in the dirstate map"""
-            # in merge is only trigger more logic, so it "fine" to pass it.
-            #
-            # the inner rust dirstate map code need to be adjusted once the API
-            # for dirstate/dirstatemap/DirstateItem is a bit more settled
-            entry = self.get(f)
-            if entry is None:
-                return False
-            else:
-                if entry.added:
-                    self._map.drop_item_and_copy_source(f)
-                else:
-                    self._map.removefile(f, in_merge=True)
-                return True
 
         ### Legacy method we need to get rid of
 
