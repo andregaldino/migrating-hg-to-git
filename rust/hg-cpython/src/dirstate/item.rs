@@ -83,11 +83,6 @@ py_class!(pub class DirstateItem |py| {
     }
 
     @property
-    def merged(&self) -> PyResult<bool> {
-        Ok(self.entry(py).get().merged())
-    }
-
-    @property
     def removed(&self) -> PyResult<bool> {
         Ok(self.entry(py).get().removed())
     }

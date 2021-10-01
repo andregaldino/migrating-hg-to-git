@@ -314,14 +314,6 @@ class DirstateItem(object):
         return self._wc_tracked and self._p2_info
 
     @property
-    def merged(self):
-        """True if the file has been merged
-
-        Should only be set if a merge is in progress in the dirstate
-        """
-        return self._wc_tracked and self._p1_tracked and self._p2_info
-
-    @property
     def removed(self):
         """True if the file has been removed"""
         return not self._wc_tracked and (self._p1_tracked or self._p2_info)

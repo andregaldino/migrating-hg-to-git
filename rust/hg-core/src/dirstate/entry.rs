@@ -169,11 +169,6 @@ impl DirstateEntry {
         self.flags.contains(Flags::WDIR_TRACKED | Flags::P2_INFO)
     }
 
-    pub fn merged(&self) -> bool {
-        self.flags
-            .contains(Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO)
-    }
-
     pub fn added(&self) -> bool {
         self.flags.contains(Flags::WDIR_TRACKED) && !self.in_either_parent()
     }
