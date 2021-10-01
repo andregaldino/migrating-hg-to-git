@@ -638,33 +638,17 @@ if rustmod is not None:
                 # TODO: move this the whole loop to Rust where `iter_mut`
                 # enables in-place mutation of elements of a collection while
                 # iterating it, without mutating the collection itself.
-                candidatefiles = [
-                    (f, s)
-                    for f, s in self._map.items()
-                    if s.merged or s.from_p2
+                files_with_p2_info = [
+                    f for f, s in self._map.items() if s.merged or s.from_p2
                 ]
-                for f, s in candidatefiles:
-                    # Discard "merged" markers when moving away from a merge state
-                    if s.merged:
-                        source = self.copymap.get(f)
-                        if source:
-                            copies[f] = source
-                        self.reset_state(
-                            f,
-                            wc_tracked=True,
-                            p1_tracked=True,
-                            possibly_dirty=True,
-                        )
-                    # Also fix up otherparent markers
-                    elif s.from_p2:
-                        source = self.copymap.get(f)
-                        if source:
-                            copies[f] = source
-                        self.reset_state(
-                            f,
-                            p1_tracked=False,
-                            wc_tracked=True,
-                        )
+                rust_map = self._map
+                for f in files_with_p2_info:
+                    e = rust_map.get(f)
+                    source = self.copymap.pop(f, None)
+                    if source:
+                        copies[f] = source
+                    e.drop_merge_data()
+                    rust_map.set_dirstate_item(f, e)
             return copies
 
         def parents(self):
