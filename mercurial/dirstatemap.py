@@ -109,6 +109,37 @@ class _dirstatemapcommon(object):
 
     ### method to manipulate the entries
 
+    def set_tracked(self, filename):
+        new = False
+        entry = self.get(filename)
+        if entry is None:
+            self._dirs_incr(filename)
+            entry = DirstateItem(
+                p1_tracked=False,
+                p2_tracked=False,
+                wc_tracked=True,
+                merged=False,
+                clean_p1=False,
+                clean_p2=False,
+                possibly_dirty=False,
+                parentfiledata=None,
+            )
+
+            self._insert_entry(filename, entry)
+            new = True
+        elif not entry.tracked:
+            self._dirs_incr(filename, entry)
+            entry.set_tracked()
+            self._refresh_entry(filename, entry)
+            new = True
+        else:
+            # XXX This is probably overkill for more case, but we need this to
+            # fully replace the `normallookup` call with `set_tracked` one.
+            # Consider smoothing this in the future.
+            entry.set_possibly_dirty()
+            self._refresh_entry(filename, entry)
+        return new
+
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
         entry = self.get(f)
@@ -492,34 +523,6 @@ class dirstatemap(_dirstatemapcommon):
         )
         self._map[filename] = entry
 
-    def set_tracked(self, filename):
-        new = False
-        entry = self.get(filename)
-        if entry is None:
-            self._dirs_incr(filename)
-            entry = DirstateItem(
-                p1_tracked=False,
-                p2_tracked=False,
-                wc_tracked=True,
-                merged=False,
-                clean_p1=False,
-                clean_p2=False,
-                possibly_dirty=False,
-                parentfiledata=None,
-            )
-            self._map[filename] = entry
-            new = True
-        elif not entry.tracked:
-            self._dirs_incr(filename, entry)
-            entry.set_tracked()
-            new = True
-        else:
-            # XXX This is probably overkill for more case, but we need this to
-            # fully replace the `normallookup` call with `set_tracked` one.
-            # Consider smoothing this in the future.
-            self.set_possibly_dirty(filename)
-        return new
-
 
 if rustmod is not None:
 
@@ -893,23 +896,6 @@ if rustmod is not None:
                 self.addfile(filename, mode=mode, size=size, mtime=mtime)
             else:
                 assert False, 'unreachable'
-
-        def set_tracked(self, filename):
-            new = False
-            entry = self.get(filename)
-            if entry is None:
-                self.addfile(filename, added=True)
-                new = True
-            elif not entry.tracked:
-                entry.set_tracked()
-                self._map.set_dirstate_item(filename, entry)
-                new = True
-            else:
-                # XXX This is probably overkill for more case, but we need this to
-                # fully replace the `normallookup` call with `set_tracked` one.
-                # Consider smoothing this in the future.
-                self.set_possibly_dirty(filename)
-            return new
 
         ### Legacy method we need to get rid of
 
