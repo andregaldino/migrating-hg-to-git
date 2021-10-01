@@ -125,14 +125,6 @@ impl DirstateEntry {
         }
     }
 
-    pub fn new_added() -> Self {
-        Self {
-            flags: Flags::WDIR_TRACKED,
-            mode_size: None,
-            mtime: None,
-        }
-    }
-
     pub fn new_normal(mode: i32, size: i32, mtime: i32) -> Self {
         Self {
             flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
