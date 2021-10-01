@@ -150,9 +150,12 @@ class DirstateItem(object):
             elif size == NONNORMAL:
                 return cls(wc_tracked=True, p1_tracked=True)
             elif mtime == AMBIGUOUS_TIME:
-                instance = cls.new_normal(mode, size, 42)
-                instance._mtime = None
-                return instance
+                return cls(
+                    wc_tracked=True,
+                    p1_tracked=True,
+                    has_meaningful_mtime=False,
+                    parentfiledata=(mode, size, 42),
+                )
             else:
                 return cls.new_normal(mode, size, mtime)
         else:
