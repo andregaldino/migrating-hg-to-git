@@ -137,14 +137,7 @@ class _dirstatemapcommon(object):
         if entry is None:
             self._dirs_incr(filename)
             entry = DirstateItem(
-                p1_tracked=False,
-                p2_tracked=False,
                 wc_tracked=True,
-                merged=False,
-                clean_p1=False,
-                clean_p2=False,
-                possibly_dirty=False,
-                parentfiledata=None,
             )
 
             self._insert_entry(filename, entry)
@@ -208,37 +201,20 @@ class _dirstatemapcommon(object):
             self._drop_entry(filename)
             self._dirs_decr(filename, old_entry=old_entry)
             return
-        elif merged:
-            pass
-        elif not (p1_tracked or p2_tracked) and wc_tracked:
-            pass  # file is added, nothing special to adjust
-        elif (p1_tracked or p2_tracked) and not wc_tracked:
-            pass
-        elif clean_p2 and wc_tracked:
-            pass
-        elif not p1_tracked and p2_tracked and wc_tracked:
-            clean_p2 = True
-        elif possibly_dirty:
-            pass
-        elif wc_tracked:
-            # this is a "normal" file
-            if parentfiledata is None:
-                msg = b'failed to pass parentfiledata for a normal file: %s'
-                msg %= filename
-                raise error.ProgrammingError(msg)
-        else:
-            assert False, 'unreachable'
+
+        p2_info = merged or clean_p2
+        if merged:
+            assert p1_tracked
+
+        has_meaningful_mtime = not possibly_dirty
 
         old_entry = self._map.get(filename)
         self._dirs_incr(filename, old_entry)
         entry = DirstateItem(
             wc_tracked=wc_tracked,
             p1_tracked=p1_tracked,
-            p2_tracked=p2_tracked,
-            merged=merged,
-            clean_p1=clean_p1,
-            clean_p2=clean_p2,
-            possibly_dirty=possibly_dirty,
+            p2_info=p2_info,
+            has_meaningful_mtime=has_meaningful_mtime,
             parentfiledata=parentfiledata,
         )
         self._insert_entry(filename, entry)

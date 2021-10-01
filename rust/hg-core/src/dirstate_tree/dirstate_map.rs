@@ -695,7 +695,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 path.as_ref(),
             )? {
                 if let NodeData::Entry(entry) = &mut node.data {
-                    entry.clear_mtime();
+                    entry.set_possibly_dirty();
                 }
             }
         }

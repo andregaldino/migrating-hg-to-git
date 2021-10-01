@@ -16,21 +16,15 @@ pub enum EntryState {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct DirstateEntry {
     flags: Flags,
-    mode: i32,
-    size: i32,
-    mtime: i32,
+    mode_size: Option<(i32, i32)>,
+    mtime: Option<i32>,
 }
 
 bitflags! {
-    pub struct Flags: u8 {
+    struct Flags: u8 {
         const WDIR_TRACKED = 1 << 0;
         const P1_TRACKED = 1 << 1;
-        const P2_TRACKED = 1 << 2;
-        const POSSIBLY_DIRTY = 1 << 3;
-        const MERGED = 1 << 4;
-        const CLEAN_P1 = 1 << 5;
-        const CLEAN_P2 = 1 << 6;
-        const ENTRYLESS_TREE_NODE = 1 << 7;
+        const P2_INFO = 1 << 2;
     }
 }
 
@@ -48,15 +42,19 @@ pub const SIZE_NON_NORMAL: i32 = -1;
 
 impl DirstateEntry {
     pub fn new(
-        flags: Flags,
-        mode_size_mtime: Option<(i32, i32, i32)>,
+        wdir_tracked: bool,
+        p1_tracked: bool,
+        p2_info: bool,
+        mode_size: Option<(i32, i32)>,
+        mtime: Option<i32>,
     ) -> Self {
-        let (mode, size, mtime) =
-            mode_size_mtime.unwrap_or((0, SIZE_NON_NORMAL, MTIME_UNSET));
+        let mut flags = Flags::empty();
+        flags.set(Flags::WDIR_TRACKED, wdir_tracked);
+        flags.set(Flags::P1_TRACKED, p1_tracked);
+        flags.set(Flags::P2_INFO, p2_info);
         Self {
             flags,
-            mode,
-            size,
+            mode_size,
             mtime,
         }
     }
@@ -75,12 +73,9 @@ impl DirstateEntry {
                     Self::new_possibly_dirty()
                 } else if mtime == MTIME_UNSET {
                     Self {
-                        flags: Flags::WDIR_TRACKED
-                            | Flags::P1_TRACKED
-                            | Flags::POSSIBLY_DIRTY,
-                        mode,
-                        size,
-                        mtime: 0,
+                        flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
+                        mode_size: Some((mode, size)),
+                        mtime: None,
                     }
                 } else {
                     Self::new_normal(mode, size, mtime)
@@ -89,18 +84,15 @@ impl DirstateEntry {
             EntryState::Added => Self::new_added(),
             EntryState::Removed => Self {
                 flags: if size == SIZE_NON_NORMAL {
-                    Flags::P1_TRACKED // might not be true because of rename ?
-                    | Flags::P2_TRACKED // might not be true because of rename ?
-                    | Flags::MERGED
+                    Flags::P1_TRACKED | Flags::P2_INFO
                 } else if size == SIZE_FROM_OTHER_PARENT {
                     // We don’t know if P1_TRACKED should be set (file history)
-                    Flags::P2_TRACKED | Flags::CLEAN_P2
+                    Flags::P2_INFO
                 } else {
                     Flags::P1_TRACKED
                 },
-                mode: 0,
-                size: 0,
-                mtime: 0,
+                mode_size: None,
+                mtime: None,
             },
             EntryState::Merged => Self::new_merged(),
         }
@@ -109,30 +101,25 @@ impl DirstateEntry {
     pub fn new_from_p2() -> Self {
         Self {
             // might be missing P1_TRACKED
-            flags: Flags::WDIR_TRACKED | Flags::P2_TRACKED | Flags::CLEAN_P2,
-            mode: 0,
-            size: SIZE_FROM_OTHER_PARENT,
-            mtime: MTIME_UNSET,
+            flags: Flags::WDIR_TRACKED | Flags::P2_INFO,
+            mode_size: None,
+            mtime: None,
         }
     }
 
     pub fn new_possibly_dirty() -> Self {
         Self {
-            flags: Flags::WDIR_TRACKED
-                | Flags::P1_TRACKED
-                | Flags::POSSIBLY_DIRTY,
-            mode: 0,
-            size: SIZE_NON_NORMAL,
-            mtime: MTIME_UNSET,
+            flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
+            mode_size: None,
+            mtime: None,
         }
     }
 
     pub fn new_added() -> Self {
         Self {
             flags: Flags::WDIR_TRACKED,
-            mode: 0,
-            size: SIZE_NON_NORMAL,
-            mtime: MTIME_UNSET,
+            mode_size: None,
+            mtime: None,
         }
     }
 
@@ -140,20 +127,17 @@ impl DirstateEntry {
         Self {
             flags: Flags::WDIR_TRACKED
                 | Flags::P1_TRACKED // might not be true because of rename ?
-                | Flags::P2_TRACKED // might not be true because of rename ?
-                | Flags::MERGED,
-            mode: 0,
-            size: SIZE_NON_NORMAL,
-            mtime: MTIME_UNSET,
+                | Flags::P2_INFO, // might not be true because of rename ?
+            mode_size: None,
+            mtime: None,
         }
     }
 
     pub fn new_normal(mode: i32, size: i32, mtime: i32) -> Self {
         Self {
             flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
-            mode,
-            size,
-            mtime,
+            mode_size: Some((mode, size)),
+            mtime: Some(mtime),
         }
     }
 
@@ -169,36 +153,34 @@ impl DirstateEntry {
         self.flags.contains(Flags::WDIR_TRACKED)
     }
 
-    fn tracked_in_any_parent(&self) -> bool {
-        self.flags.intersects(Flags::P1_TRACKED | Flags::P2_TRACKED)
+    fn in_either_parent(&self) -> bool {
+        self.flags.intersects(Flags::P1_TRACKED | Flags::P2_INFO)
     }
 
     pub fn removed(&self) -> bool {
-        self.tracked_in_any_parent()
-            && !self.flags.contains(Flags::WDIR_TRACKED)
+        self.in_either_parent() && !self.flags.contains(Flags::WDIR_TRACKED)
     }
 
     pub fn merged(&self) -> bool {
-        self.flags.contains(Flags::WDIR_TRACKED | Flags::MERGED)
+        self.flags
+            .contains(Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO)
     }
 
     pub fn added(&self) -> bool {
-        self.flags.contains(Flags::WDIR_TRACKED)
-            && !self.tracked_in_any_parent()
+        self.flags.contains(Flags::WDIR_TRACKED) && !self.in_either_parent()
     }
 
     pub fn from_p2(&self) -> bool {
-        self.flags.contains(Flags::WDIR_TRACKED | Flags::CLEAN_P2)
+        self.flags.contains(Flags::WDIR_TRACKED | Flags::P2_INFO)
+            && !self.flags.contains(Flags::P1_TRACKED)
     }
 
     pub fn maybe_clean(&self) -> bool {
         if !self.flags.contains(Flags::WDIR_TRACKED) {
             false
-        } else if self.added() {
+        } else if !self.flags.contains(Flags::P1_TRACKED) {
             false
-        } else if self.flags.contains(Flags::MERGED) {
-            false
-        } else if self.flags.contains(Flags::CLEAN_P2) {
+        } else if self.flags.contains(Flags::P2_INFO) {
             false
         } else {
             true
@@ -207,11 +189,15 @@ impl DirstateEntry {
 
     pub fn any_tracked(&self) -> bool {
         self.flags.intersects(
-            Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_TRACKED,
+            Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO,
         )
     }
 
-    pub fn state(&self) -> EntryState {
+    fn v1_state(&self) -> EntryState {
+        if !self.any_tracked() {
+            // TODO: return an Option instead?
+            panic!("Accessing v1_state of an untracked DirstateEntry")
+        }
         if self.removed() {
             EntryState::Removed
         } else if self.merged() {
@@ -223,14 +209,24 @@ impl DirstateEntry {
         }
     }
 
-    pub fn mode(&self) -> i32 {
-        self.mode
+    fn v1_mode(&self) -> i32 {
+        if let Some((mode, _size)) = self.mode_size {
+            mode
+        } else {
+            0
+        }
     }
 
-    pub fn size(&self) -> i32 {
-        if self.removed() && self.flags.contains(Flags::MERGED) {
+    fn v1_size(&self) -> i32 {
+        if !self.any_tracked() {
+            // TODO: return an Option instead?
+            panic!("Accessing v1_size of an untracked DirstateEntry")
+        }
+        if self.removed()
+            && self.flags.contains(Flags::P1_TRACKED | Flags::P2_INFO)
+        {
             SIZE_NON_NORMAL
-        } else if self.removed() && self.flags.contains(Flags::CLEAN_P2) {
+        } else if self.removed() && self.flags.contains(Flags::P2_INFO) {
             SIZE_FROM_OTHER_PARENT
         } else if self.removed() {
             0
@@ -240,87 +236,81 @@ impl DirstateEntry {
             SIZE_NON_NORMAL
         } else if self.from_p2() {
             SIZE_FROM_OTHER_PARENT
-        } else if self.flags.contains(Flags::POSSIBLY_DIRTY) {
-            self.size // TODO: SIZE_NON_NORMAL ?
+        } else if let Some((_mode, size)) = self.mode_size {
+            size
         } else {
-            self.size
+            SIZE_NON_NORMAL
         }
     }
 
-    pub fn mtime(&self) -> i32 {
+    fn v1_mtime(&self) -> i32 {
+        if !self.any_tracked() {
+            // TODO: return an Option instead?
+            panic!("Accessing v1_mtime of an untracked DirstateEntry")
+        }
         if self.removed() {
             0
-        } else if self.flags.contains(Flags::POSSIBLY_DIRTY) {
+        } else if self.flags.contains(Flags::P2_INFO) {
             MTIME_UNSET
-        } else if self.merged() {
-            MTIME_UNSET
-        } else if self.added() {
-            MTIME_UNSET
-        } else if self.from_p2() {
+        } else if !self.flags.contains(Flags::P1_TRACKED) {
             MTIME_UNSET
         } else {
-            self.mtime
+            self.mtime.unwrap_or(MTIME_UNSET)
         }
+    }
+
+    // TODO: return `Option<EntryState>`? None when `!self.any_tracked`
+    pub fn state(&self) -> EntryState {
+        self.v1_state()
+    }
+
+    // TODO: return Option?
+    pub fn mode(&self) -> i32 {
+        self.v1_mode()
+    }
+
+    // TODO: return Option?
+    pub fn size(&self) -> i32 {
+        self.v1_size()
+    }
+
+    // TODO: return Option?
+    pub fn mtime(&self) -> i32 {
+        self.v1_mtime()
     }
 
     pub fn drop_merge_data(&mut self) {
-        if self.flags.contains(Flags::CLEAN_P1)
-            || self.flags.contains(Flags::CLEAN_P2)
-            || self.flags.contains(Flags::MERGED)
-            || self.flags.contains(Flags::P2_TRACKED)
-        {
-            if self.flags.contains(Flags::MERGED) {
-                self.flags.insert(Flags::P1_TRACKED);
-            } else {
-                self.flags.remove(Flags::P1_TRACKED);
-            }
-            self.flags.remove(
-                Flags::MERGED
-                    | Flags::CLEAN_P1
-                    | Flags::CLEAN_P2
-                    | Flags::P2_TRACKED,
-            );
-            self.flags.insert(Flags::POSSIBLY_DIRTY);
-            self.mode = 0;
-            self.mtime = 0;
-            // size = None on the python size turn into size = NON_NORMAL when
-            // accessed. So the next line is currently required, but a some
-            // future clean up would be welcome.
-            self.size = SIZE_NON_NORMAL;
+        if self.flags.contains(Flags::P2_INFO) {
+            self.flags.remove(Flags::P2_INFO);
+            self.mode_size = None;
+            self.mtime = None;
         }
     }
 
     pub fn set_possibly_dirty(&mut self) {
-        self.flags.insert(Flags::POSSIBLY_DIRTY)
+        self.mtime = None
     }
 
     pub fn set_clean(&mut self, mode: i32, size: i32, mtime: i32) {
         self.flags.insert(Flags::WDIR_TRACKED | Flags::P1_TRACKED);
-        self.flags.remove(
-            Flags::P2_TRACKED // This might be wrong
-                | Flags::MERGED
-                | Flags::CLEAN_P2
-                | Flags::POSSIBLY_DIRTY,
-        );
-        self.mode = mode;
-        self.size = size;
-        self.mtime = mtime;
+        self.mode_size = Some((mode, size));
+        self.mtime = Some(mtime);
     }
 
     pub fn set_tracked(&mut self) {
-        self.flags
-            .insert(Flags::WDIR_TRACKED | Flags::POSSIBLY_DIRTY);
-        // size = None on the python size turn into size = NON_NORMAL when
-        // accessed. So the next line is currently required, but a some future
-        // clean up would be welcome.
-        self.size = SIZE_NON_NORMAL;
+        self.flags.insert(Flags::WDIR_TRACKED);
+        // `set_tracked` is replacing various `normallookup` call. So we mark
+        // the files as needing lookup
+        //
+        // Consider dropping this in the future in favor of something less
+        // broad.
+        self.mtime = None;
     }
 
     pub fn set_untracked(&mut self) {
         self.flags.remove(Flags::WDIR_TRACKED);
-        self.mode = 0;
-        self.size = 0;
-        self.mtime = 0;
+        self.mode_size = None;
+        self.mtime = None;
     }
 
     /// Returns `(state, mode, size, mtime)` for the puprose of serialization
@@ -330,7 +320,12 @@ impl DirstateEntry {
     /// want to not represent these cases that way in memory, but serialization
     /// will need to keep the same format.
     pub fn v1_data(&self) -> (u8, i32, i32, i32) {
-        (self.state().into(), self.mode(), self.size(), self.mtime())
+        (
+            self.v1_state().into(),
+            self.v1_mode(),
+            self.v1_size(),
+            self.v1_mtime(),
+        )
     }
 
     pub(crate) fn is_from_other_parent(&self) -> bool {
@@ -354,12 +349,7 @@ impl DirstateEntry {
     /// Returns a `(state, mode, size, mtime)` tuple as for
     /// `DirstateMapMethods::debug_iter`.
     pub fn debug_tuple(&self) -> (u8, i32, i32, i32) {
-        let state = if self.flags.contains(Flags::ENTRYLESS_TREE_NODE) {
-            b' '
-        } else {
-            self.state().into()
-        };
-        (state, self.mode(), self.size(), self.mtime())
+        (self.state().into(), self.mode(), self.size(), self.mtime())
     }
 
     pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
@@ -378,13 +368,9 @@ impl DirstateEntry {
             // dirstate, forcing future 'status' calls to compare the
             // contents of the file if the size is the same. This prevents
             // mistakenly treating such files as clean.
-            self.clear_mtime()
+            self.set_possibly_dirty()
         }
         ambiguous
-    }
-
-    pub fn clear_mtime(&mut self) {
-        self.mtime = -1;
     }
 }
 

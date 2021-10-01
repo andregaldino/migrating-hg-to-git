@@ -53,36 +53,32 @@ class DirstateItem(object):
     # about file tracking
     - wc_tracked: is the file tracked by the working copy
     - p1_tracked: is the file tracked in working copy first parent
-    - p2_tracked: is the file tracked in working copy second parent
-
-    # about what possible merge action related to this file
-    - clean_p1: merge picked the file content from p1
-    - clean_p2: merge picked the file content from p2
-    - merged: file gather changes from both side.
+    - p2_info: the file has been involved in some merge operation. Either
+               because it was actually merged, or because the p2 version was
+               ahead, or because some renamed moved it there. In either case
+               `hg status` will want it displayed as modified.
 
     # about the file state expected from p1 manifest:
     - mode: the file mode in p1
     - size: the file size in p1
 
+    These value can be set to None, which mean we don't have a meaningful value
+    to compare with. Either because we don't really care about them as there
+    `status` is known without having to look at the disk or because we don't
+    know these right now and a full comparison will be needed to find out if
+    the file is clean.
+
     # about the file state on disk last time we saw it:
     - mtime: the last known clean mtime for the file.
 
-    The last three item (mode, size and mtime) can be None if no meaningful (or
-    trusted) value exists.
-
+    This value can be set to None if no cachable state exist. Either because we
+    do not care (see previous section) or because we could not cache something
+    yet.
     """
 
     _wc_tracked = attr.ib()
     _p1_tracked = attr.ib()
-    _p2_tracked = attr.ib()
-    # the three item above should probably be combined
-    #
-    # However it is unclear if they properly cover some of the most advanced
-    # merge case. So we should probably wait on this to be settled.
-    _merged = attr.ib()
-    _clean_p1 = attr.ib()
-    _clean_p2 = attr.ib()
-    _possibly_dirty = attr.ib()
+    _p2_info = attr.ib()
     _mode = attr.ib()
     _size = attr.ib()
     _mtime = attr.ib()
@@ -91,32 +87,25 @@ class DirstateItem(object):
         self,
         wc_tracked=False,
         p1_tracked=False,
-        p2_tracked=False,
-        merged=False,
-        clean_p1=False,
-        clean_p2=False,
-        possibly_dirty=False,
+        p2_info=False,
+        has_meaningful_data=True,
+        has_meaningful_mtime=True,
         parentfiledata=None,
     ):
-        if merged and (clean_p1 or clean_p2):
-            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-            raise error.ProgrammingError(msg)
-
-        assert not (merged and not p1_tracked)
         self._wc_tracked = wc_tracked
         self._p1_tracked = p1_tracked
-        self._p2_tracked = p2_tracked
-        self._merged = merged
-        self._clean_p1 = clean_p1
-        self._clean_p2 = clean_p2
-        self._possibly_dirty = possibly_dirty
+        self._p2_info = p2_info
+
+        self._mode = None
+        self._size = None
+        self._mtime = None
         if parentfiledata is None:
-            self._mode = None
-            self._size = None
-            self._mtime = None
-        else:
+            has_meaningful_mtime = False
+            has_meaningful_data = False
+        if has_meaningful_data:
             self._mode = parentfiledata[0]
             self._size = parentfiledata[1]
+        if has_meaningful_mtime:
             self._mtime = parentfiledata[2]
 
     @classmethod
@@ -125,11 +114,7 @@ class DirstateItem(object):
 
         Should eventually be removed
         """
-        instance = cls()
-        instance._wc_tracked = True
-        instance._p1_tracked = False
-        instance._p2_tracked = False
-        return instance
+        return cls(wc_tracked=True)
 
     @classmethod
     def new_merged(cls):
@@ -137,12 +122,7 @@ class DirstateItem(object):
 
         Should eventually be removed
         """
-        instance = cls()
-        instance._wc_tracked = True
-        instance._p1_tracked = True  # might not be True because of rename ?
-        instance._p2_tracked = True  # might not be True because of rename ?
-        instance._merged = True
-        return instance
+        return cls(wc_tracked=True, p1_tracked=True, p2_info=True)
 
     @classmethod
     def new_from_p2(cls):
@@ -150,12 +130,7 @@ class DirstateItem(object):
 
         Should eventually be removed
         """
-        instance = cls()
-        instance._wc_tracked = True
-        instance._p1_tracked = False  # might actually be True
-        instance._p2_tracked = True
-        instance._clean_p2 = True
-        return instance
+        return cls(wc_tracked=True, p2_info=True)
 
     @classmethod
     def new_possibly_dirty(cls):
@@ -163,11 +138,7 @@ class DirstateItem(object):
 
         Should eventually be removed
         """
-        instance = cls()
-        instance._wc_tracked = True
-        instance._p1_tracked = True
-        instance._possibly_dirty = True
-        return instance
+        return cls(wc_tracked=True, p1_tracked=True)
 
     @classmethod
     def new_normal(cls, mode, size, mtime):
@@ -177,13 +148,11 @@ class DirstateItem(object):
         """
         assert size != FROM_P2
         assert size != NONNORMAL
-        instance = cls()
-        instance._wc_tracked = True
-        instance._p1_tracked = True
-        instance._mode = mode
-        instance._size = size
-        instance._mtime = mtime
-        return instance
+        return cls(
+            wc_tracked=True,
+            p1_tracked=True,
+            parentfiledata=(mode, size, mtime),
+        )
 
     @classmethod
     def from_v1_data(cls, state, mode, size, mtime):
@@ -197,25 +166,16 @@ class DirstateItem(object):
         elif state == b'a':
             return cls.new_added()
         elif state == b'r':
-            instance = cls()
-            instance._wc_tracked = False
             if size == NONNORMAL:
-                instance._merged = True
-                instance._p1_tracked = (
-                    True  # might not be True because of rename ?
-                )
-                instance._p2_tracked = (
-                    True  # might not be True because of rename ?
-                )
+                p1_tracked = True
+                p2_info = True
             elif size == FROM_P2:
-                instance._clean_p2 = True
-                instance._p1_tracked = (
-                    False  # We actually don't know (file history)
-                )
-                instance._p2_tracked = True
+                p1_tracked = False
+                p2_info = True
             else:
-                instance._p1_tracked = True
-            return instance
+                p1_tracked = True
+                p2_info = False
+            return cls(p1_tracked=p1_tracked, p2_info=p2_info)
         elif state == b'n':
             if size == FROM_P2:
                 return cls.new_from_p2()
@@ -224,7 +184,6 @@ class DirstateItem(object):
             elif mtime == AMBIGUOUS_TIME:
                 instance = cls.new_normal(mode, size, 42)
                 instance._mtime = None
-                instance._possibly_dirty = True
                 return instance
             else:
                 return cls.new_normal(mode, size, mtime)
@@ -237,7 +196,7 @@ class DirstateItem(object):
         This means the next status call will have to actually check its content
         to make sure it is correct.
         """
-        self._possibly_dirty = True
+        self._mtime = None
 
     def set_clean(self, mode, size, mtime):
         """mark a file as "clean" cancelling potential "possibly dirty call"
@@ -249,10 +208,6 @@ class DirstateItem(object):
         """
         self._wc_tracked = True
         self._p1_tracked = True
-        self._p2_tracked = False  # this might be wrong
-        self._merged = False
-        self._clean_p2 = False
-        self._possibly_dirty = False
         self._mode = mode
         self._size = size
         self._mtime = mtime
@@ -263,11 +218,11 @@ class DirstateItem(object):
         This will ultimately be called by command like `hg add`.
         """
         self._wc_tracked = True
-        # `set_tracked` is replacing various `normallookup` call. So we set
-        # "possibly dirty" to stay on the safe side.
+        # `set_tracked` is replacing various `normallookup` call. So we mark
+        # the files as needing lookup
         #
         # Consider dropping this in the future in favor of something less broad.
-        self._possibly_dirty = True
+        self._mtime = None
 
     def set_untracked(self):
         """mark a file as untracked in the working copy
@@ -284,18 +239,11 @@ class DirstateItem(object):
 
         This is to be call by the dirstatemap code when the second parent is dropped
         """
-        if not (self.merged or self.from_p2):
-            return
-        self._p1_tracked = self.merged  # why is this not already properly set ?
-
-        self._merged = False
-        self._clean_p1 = False
-        self._clean_p2 = False
-        self._p2_tracked = False
-        self._possibly_dirty = True
-        self._mode = None
-        self._size = None
-        self._mtime = None
+        if self._p2_info:
+            self._p2_info = False
+            self._mode = None
+            self._size = None
+            self._mtime = None
 
     @property
     def mode(self):
@@ -334,23 +282,21 @@ class DirstateItem(object):
     @property
     def any_tracked(self):
         """True is the file is tracked anywhere (wc or parents)"""
-        return self._wc_tracked or self._p1_tracked or self._p2_tracked
+        return self._wc_tracked or self._p1_tracked or self._p2_info
 
     @property
     def added(self):
         """True if the file has been added"""
-        return self._wc_tracked and not (self._p1_tracked or self._p2_tracked)
+        return self._wc_tracked and not (self._p1_tracked or self._p2_info)
 
     @property
     def maybe_clean(self):
         """True if the file has a chance to be in the "clean" state"""
         if not self._wc_tracked:
             return False
-        elif self.added:
+        elif not self._p1_tracked:
             return False
-        elif self._merged:
-            return False
-        elif self._clean_p2:
+        elif self._p2_info:
             return False
         return True
 
@@ -360,7 +306,7 @@ class DirstateItem(object):
 
         Should only be set if a merge is in progress in the dirstate
         """
-        return self._wc_tracked and self._merged
+        return self._wc_tracked and self._p1_tracked and self._p2_info
 
     @property
     def from_p2(self):
@@ -370,18 +316,16 @@ class DirstateItem(object):
 
         Should only be set if a merge is in progress in the dirstate
         """
-        if not self._wc_tracked:
-            return False
-        return self._clean_p2
+        return self._wc_tracked and (not self._p1_tracked) and self._p2_info
 
     @property
     def removed(self):
         """True if the file has been removed"""
-        return not self._wc_tracked and (self._p1_tracked or self._p2_tracked)
+        return not self._wc_tracked and (self._p1_tracked or self._p2_info)
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
-        if not (self._p1_tracked or self._p2_tracked or self._wc_tracked):
+        if not self.any_tracked:
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
@@ -404,9 +348,9 @@ class DirstateItem(object):
             # the object has no state to record, this is -currently-
             # unsupported
             raise RuntimeError('untracked item')
-        elif self.removed and self._merged:
+        elif self.removed and self._p1_tracked and self._p2_info:
             return NONNORMAL
-        elif self.removed and self._clean_p2:
+        elif self.removed and self._p2_info:
             return FROM_P2
         elif self.removed:
             return 0
@@ -416,8 +360,8 @@ class DirstateItem(object):
             return NONNORMAL
         elif self.from_p2:
             return FROM_P2
-        elif self._possibly_dirty:
-            return self._size if self._size is not None else NONNORMAL
+        elif self._size is None:
+            return NONNORMAL
         else:
             return self._size
 
@@ -429,16 +373,14 @@ class DirstateItem(object):
             raise RuntimeError('untracked item')
         elif self.removed:
             return 0
-        elif self._possibly_dirty:
+        elif self._mtime is None:
             return AMBIGUOUS_TIME
-        elif self.merged:
+        elif self._p2_info:
             return AMBIGUOUS_TIME
-        elif self.added:
-            return AMBIGUOUS_TIME
-        elif self.from_p2:
+        elif not self._p1_tracked:
             return AMBIGUOUS_TIME
         else:
-            return self._mtime if self._mtime is not None else 0
+            return self._mtime
 
     def need_delay(self, now):
         """True if the stored mtime would be ambiguous with the current time"""

@@ -6,7 +6,6 @@ use cpython::PyObject;
 use cpython::PyResult;
 use cpython::Python;
 use cpython::PythonObject;
-use hg::dirstate::entry::Flags;
 use hg::dirstate::DirstateEntry;
 use hg::dirstate::EntryState;
 use std::cell::Cell;
@@ -19,23 +18,25 @@ py_class!(pub class DirstateItem |py| {
         _cls,
         wc_tracked: bool = false,
         p1_tracked: bool = false,
-        p2_tracked: bool = false,
-        merged: bool = false,
-        clean_p1: bool = false,
-        clean_p2: bool = false,
-        possibly_dirty: bool = false,
+        p2_info: bool = false,
+        has_meaningful_data: bool = true,
+        has_meaningful_mtime: bool = true,
         parentfiledata: Option<(i32, i32, i32)> = None,
 
     ) -> PyResult<DirstateItem> {
-        let mut flags = Flags::empty();
-        flags.set(Flags::WDIR_TRACKED, wc_tracked);
-        flags.set(Flags::P1_TRACKED, p1_tracked);
-        flags.set(Flags::P2_TRACKED, p2_tracked);
-        flags.set(Flags::MERGED, merged);
-        flags.set(Flags::CLEAN_P1, clean_p1);
-        flags.set(Flags::CLEAN_P2, clean_p2);
-        flags.set(Flags::POSSIBLY_DIRTY, possibly_dirty);
-        let entry = DirstateEntry::new(flags, parentfiledata);
+        let mut mode_size_opt = None;
+        let mut mtime_opt = None;
+        if let Some((mode, size, mtime)) = parentfiledata {
+            if has_meaningful_data {
+                mode_size_opt = Some((mode, size))
+            }
+            if has_meaningful_mtime {
+                mtime_opt = Some(mtime)
+            }
+        }
+        let entry = DirstateEntry::new(
+            wc_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt,
+        );
         DirstateItem::create_instance(py, Cell::new(entry))
     }
 

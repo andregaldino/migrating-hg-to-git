@@ -52,37 +52,32 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	dirstateItemObject *t;
 	int wc_tracked;
 	int p1_tracked;
-	int p2_tracked;
-	int merged;
-	int clean_p1;
-	int clean_p2;
-	int possibly_dirty;
+	int p2_info;
+	int has_meaningful_data;
+	int has_meaningful_mtime;
+	int mode;
+	int size;
+	int mtime;
 	PyObject *parentfiledata;
 	static char *keywords_name[] = {
-	    "wc_tracked",     "p1_tracked",     "p2_tracked",
-	    "merged",         "clean_p1",       "clean_p2",
-	    "possibly_dirty", "parentfiledata", NULL,
+	    "wc_tracked",
+	    "p1_tracked",
+	    "p2_info",
+	    "has_meaningful_data",
+	    "has_meaningful_mtime",
+	    "parentfiledata",
+	    NULL,
 	};
 	wc_tracked = 0;
 	p1_tracked = 0;
-	p2_tracked = 0;
-	merged = 0;
-	clean_p1 = 0;
-	clean_p2 = 0;
-	possibly_dirty = 0;
+	p2_info = 0;
+	has_meaningful_mtime = 1;
+	has_meaningful_data = 1;
 	parentfiledata = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiiiiiiO", keywords_name,
-	                                 &wc_tracked, &p1_tracked, &p2_tracked,
-	                                 &merged, &clean_p1, &clean_p2,
-	                                 &possibly_dirty, &parentfiledata
-
-	                                 )) {
-		return NULL;
-	}
-	if (merged && (clean_p1 || clean_p2)) {
-		PyErr_SetString(PyExc_RuntimeError,
-		                "`merged` argument incompatible with "
-		                "`clean_p1`/`clean_p2`");
+	if (!PyArg_ParseTupleAndKeywords(
+	        args, kwds, "|iiiiiO", keywords_name, &wc_tracked, &p1_tracked,
+	        &p2_info, &has_meaningful_data, &has_meaningful_mtime,
+	        &parentfiledata)) {
 		return NULL;
 	}
 	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
@@ -97,24 +92,10 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	if (p1_tracked) {
 		t->flags |= dirstate_flag_p1_tracked;
 	}
-	if (p2_tracked) {
-		t->flags |= dirstate_flag_p2_tracked;
+	if (p2_info) {
+		t->flags |= dirstate_flag_p2_info;
 	}
-	if (possibly_dirty) {
-		t->flags |= dirstate_flag_possibly_dirty;
-	}
-	if (merged) {
-		t->flags |= dirstate_flag_merged;
-	}
-	if (clean_p1) {
-		t->flags |= dirstate_flag_clean_p1;
-	}
-	if (clean_p2) {
-		t->flags |= dirstate_flag_clean_p2;
-	}
-	t->mode = 0;
-	t->size = dirstate_v1_nonnormal;
-	t->mtime = ambiguous_time;
+
 	if (parentfiledata != Py_None) {
 		if (!PyTuple_CheckExact(parentfiledata)) {
 			PyErr_SetString(
@@ -122,12 +103,26 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 			    "parentfiledata should be a Tuple or None");
 			return NULL;
 		}
-		t->mode =
-		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 0));
-		t->size =
-		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 1));
-		t->mtime =
-		    (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 2));
+		mode = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 0));
+		size = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 1));
+		mtime = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 2));
+	} else {
+		has_meaningful_data = 0;
+		has_meaningful_mtime = 0;
+	}
+	if (has_meaningful_data) {
+		t->flags |= dirstate_flag_has_meaningful_data;
+		t->mode = mode;
+		t->size = size;
+	} else {
+		t->mode = 0;
+		t->size = 0;
+	}
+	if (has_meaningful_mtime) {
+		t->flags |= dirstate_flag_has_meaningful_mtime;
+		t->mtime = mtime;
+	} else {
+		t->mtime = 0;
 	}
 	return (PyObject *)t;
 }
@@ -142,12 +137,20 @@ static inline bool dirstate_item_c_tracked(dirstateItemObject *self)
 	return (self->flags & dirstate_flag_wc_tracked);
 }
 
+static inline bool dirstate_item_c_any_tracked(dirstateItemObject *self)
+{
+	const unsigned char mask = dirstate_flag_wc_tracked |
+	                           dirstate_flag_p1_tracked |
+	                           dirstate_flag_p2_info;
+	return (self->flags & mask);
+}
+
 static inline bool dirstate_item_c_added(dirstateItemObject *self)
 {
-	unsigned char mask =
+	const unsigned char mask =
 	    (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	     dirstate_flag_p2_tracked);
-	unsigned char target = dirstate_flag_wc_tracked;
+	     dirstate_flag_p2_info);
+	const unsigned char target = dirstate_flag_wc_tracked;
 	return (self->flags & mask) == target;
 }
 
@@ -157,21 +160,21 @@ static inline bool dirstate_item_c_removed(dirstateItemObject *self)
 		return false;
 	}
 	return (self->flags &
-	        (dirstate_flag_p1_tracked | dirstate_flag_p2_tracked));
+	        (dirstate_flag_p1_tracked | dirstate_flag_p2_info));
 }
 
 static inline bool dirstate_item_c_merged(dirstateItemObject *self)
 {
 	return ((self->flags & dirstate_flag_wc_tracked) &&
-	        (self->flags & dirstate_flag_merged));
+	        (self->flags & dirstate_flag_p1_tracked) &&
+	        (self->flags & dirstate_flag_p2_info));
 }
 
 static inline bool dirstate_item_c_from_p2(dirstateItemObject *self)
 {
-	if (!dirstate_item_c_tracked(self)) {
-		return false;
-	}
-	return (self->flags & dirstate_flag_clean_p2);
+	return ((self->flags & dirstate_flag_wc_tracked) &&
+	        !(self->flags & dirstate_flag_p1_tracked) &&
+	        (self->flags & dirstate_flag_p2_info));
 }
 
 static inline char dirstate_item_c_v1_state(dirstateItemObject *self)
@@ -189,29 +192,32 @@ static inline char dirstate_item_c_v1_state(dirstateItemObject *self)
 
 static inline int dirstate_item_c_v1_mode(dirstateItemObject *self)
 {
-	return self->mode;
+	if (self->flags & dirstate_flag_has_meaningful_data) {
+		return self->mode;
+	} else {
+		return 0;
+	}
 }
 
 static inline int dirstate_item_c_v1_size(dirstateItemObject *self)
 {
-	if (dirstate_item_c_removed(self) &&
-	    (self->flags & dirstate_flag_merged)) {
-		return dirstate_v1_nonnormal;
-	} else if (dirstate_item_c_removed(self) &&
-	           (self->flags & dirstate_flag_clean_p2)) {
-		return dirstate_v1_from_p2;
+	if (!(self->flags & dirstate_flag_wc_tracked) &&
+	    (self->flags & dirstate_flag_p2_info)) {
+		if (self->flags & dirstate_flag_p1_tracked) {
+			return dirstate_v1_nonnormal;
+		} else {
+			return dirstate_v1_from_p2;
+		}
 	} else if (dirstate_item_c_removed(self)) {
 		return 0;
-	} else if (dirstate_item_c_merged(self)) {
+	} else if (self->flags & dirstate_flag_p2_info) {
 		return dirstate_v1_from_p2;
 	} else if (dirstate_item_c_added(self)) {
 		return dirstate_v1_nonnormal;
-	} else if (dirstate_item_c_from_p2(self)) {
-		return dirstate_v1_from_p2;
-	} else if (self->flags & dirstate_flag_possibly_dirty) {
-		return self->size; /* NON NORMAL ? */
-	} else {
+	} else if (self->flags & dirstate_flag_has_meaningful_data) {
 		return self->size;
+	} else {
+		return dirstate_v1_nonnormal;
 	}
 }
 
@@ -219,13 +225,10 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 {
 	if (dirstate_item_c_removed(self)) {
 		return 0;
-	} else if (self->flags & dirstate_flag_possibly_dirty) {
-		return ambiguous_time;
-	} else if (dirstate_item_c_merged(self)) {
-		return ambiguous_time;
-	} else if (dirstate_item_c_added(self)) {
-		return ambiguous_time;
-	} else if (dirstate_item_c_from_p2(self)) {
+	} else if (!(self->flags & dirstate_flag_has_meaningful_mtime) ||
+	           !(self->flags & dirstate_flag_p1_tracked) ||
+	           !(self->flags & dirstate_flag_wc_tracked) ||
+	           (self->flags & dirstate_flag_p2_info)) {
 		return ambiguous_time;
 	} else {
 		return self->mtime;
@@ -278,58 +281,43 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 	if (!t) {
 		return NULL;
 	}
+	t->flags = 0;
+	t->mode = 0;
+	t->size = 0;
+	t->mtime = 0;
 
 	if (state == 'm') {
-		t->flags =
-		    (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-		     dirstate_flag_p2_tracked | dirstate_flag_merged);
-		t->mode = 0;
-		t->size = dirstate_v1_from_p2;
-		t->mtime = ambiguous_time;
+		t->flags = (dirstate_flag_wc_tracked |
+		            dirstate_flag_p1_tracked | dirstate_flag_p2_info);
 	} else if (state == 'a') {
 		t->flags = dirstate_flag_wc_tracked;
-		t->mode = 0;
-		t->size = dirstate_v1_nonnormal;
-		t->mtime = ambiguous_time;
 	} else if (state == 'r') {
-		t->mode = 0;
-		t->size = 0;
-		t->mtime = 0;
 		if (size == dirstate_v1_nonnormal) {
 			t->flags =
-			    (dirstate_flag_p1_tracked |
-			     dirstate_flag_p2_tracked | dirstate_flag_merged);
+			    dirstate_flag_p1_tracked | dirstate_flag_p2_info;
 		} else if (size == dirstate_v1_from_p2) {
-			t->flags =
-			    (dirstate_flag_p2_tracked | dirstate_flag_clean_p2);
+			t->flags = dirstate_flag_p2_info;
 		} else {
 			t->flags = dirstate_flag_p1_tracked;
 		}
 	} else if (state == 'n') {
 		if (size == dirstate_v1_from_p2) {
 			t->flags =
-			    (dirstate_flag_wc_tracked |
-			     dirstate_flag_p2_tracked | dirstate_flag_clean_p2);
-			t->mode = 0;
-			t->size = dirstate_v1_from_p2;
-			t->mtime = ambiguous_time;
+			    dirstate_flag_wc_tracked | dirstate_flag_p2_info;
 		} else if (size == dirstate_v1_nonnormal) {
-			t->flags = (dirstate_flag_wc_tracked |
-			            dirstate_flag_p1_tracked |
-			            dirstate_flag_possibly_dirty);
-			t->mode = 0;
-			t->size = dirstate_v1_nonnormal;
-			t->mtime = ambiguous_time;
+			t->flags =
+			    dirstate_flag_wc_tracked | dirstate_flag_p1_tracked;
 		} else if (mtime == ambiguous_time) {
 			t->flags = (dirstate_flag_wc_tracked |
 			            dirstate_flag_p1_tracked |
-			            dirstate_flag_possibly_dirty);
+			            dirstate_flag_has_meaningful_data);
 			t->mode = mode;
 			t->size = size;
-			t->mtime = 0;
 		} else {
 			t->flags = (dirstate_flag_wc_tracked |
-			            dirstate_flag_p1_tracked);
+			            dirstate_flag_p1_tracked |
+			            dirstate_flag_has_meaningful_data |
+			            dirstate_flag_has_meaningful_mtime);
 			t->mode = mode;
 			t->size = size;
 			t->mtime = mtime;
@@ -371,8 +359,8 @@ static PyObject *dirstate_item_new_added(PyTypeObject *subtype)
 	}
 	t->flags = dirstate_flag_wc_tracked;
 	t->mode = 0;
-	t->size = dirstate_v1_nonnormal;
-	t->mtime = ambiguous_time;
+	t->size = 0;
+	t->mtime = 0;
 	return (PyObject *)t;
 };
 
@@ -387,10 +375,10 @@ static PyObject *dirstate_item_new_merged(PyTypeObject *subtype)
 		return NULL;
 	}
 	t->flags = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	            dirstate_flag_p2_tracked | dirstate_flag_merged);
+	            dirstate_flag_p2_info);
 	t->mode = 0;
-	t->size = dirstate_v1_from_p2;
-	t->mtime = ambiguous_time;
+	t->size = 0;
+	t->mtime = 0;
 	return (PyObject *)t;
 };
 
@@ -406,11 +394,10 @@ static PyObject *dirstate_item_new_from_p2(PyTypeObject *subtype)
 	if (!t) {
 		return NULL;
 	}
-	t->flags = (dirstate_flag_wc_tracked | dirstate_flag_p2_tracked |
-	            dirstate_flag_clean_p2);
+	t->flags = dirstate_flag_wc_tracked | dirstate_flag_p2_info;
 	t->mode = 0;
-	t->size = dirstate_v1_from_p2;
-	t->mtime = ambiguous_time;
+	t->size = 0;
+	t->mtime = 0;
 	return (PyObject *)t;
 };
 
@@ -426,11 +413,10 @@ static PyObject *dirstate_item_new_possibly_dirty(PyTypeObject *subtype)
 	if (!t) {
 		return NULL;
 	}
-	t->flags = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	            dirstate_flag_possibly_dirty);
+	t->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked;
 	t->mode = 0;
-	t->size = dirstate_v1_nonnormal;
-	t->mtime = ambiguous_time;
+	t->size = 0;
+	t->mtime = 0;
 	return (PyObject *)t;
 };
 
@@ -462,7 +448,7 @@ static PyObject *dirstate_item_new_normal(PyTypeObject *subtype, PyObject *args)
    to make sure it is correct. */
 static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 {
-	self->flags |= dirstate_flag_possibly_dirty;
+	self->flags &= ~dirstate_flag_has_meaningful_mtime;
 	Py_RETURN_NONE;
 }
 
@@ -474,7 +460,9 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 	if (!PyArg_ParseTuple(args, "iii", &mode, &size, &mtime)) {
 		return NULL;
 	}
-	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked;
+	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
+	              dirstate_flag_has_meaningful_data |
+	              dirstate_flag_has_meaningful_mtime;
 	self->mode = mode;
 	self->size = size;
 	self->mtime = mtime;
@@ -484,11 +472,7 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 static PyObject *dirstate_item_set_tracked(dirstateItemObject *self)
 {
 	self->flags |= dirstate_flag_wc_tracked;
-	self->flags |= dirstate_flag_possibly_dirty;
-	/* size = None on the python size turn into size = NON_NORMAL when
-	 * accessed. So the next line is currently required, but a some future
-	 * clean up would be welcome. */
-	self->size = dirstate_v1_nonnormal;
+	self->flags &= ~dirstate_flag_has_meaningful_mtime;
 	Py_RETURN_NONE;
 }
 
@@ -503,22 +487,13 @@ static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 
 static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
 {
-	if (dirstate_item_c_merged(self) || dirstate_item_c_from_p2(self)) {
-		if (dirstate_item_c_merged(self)) {
-			self->flags |= dirstate_flag_p1_tracked;
-		} else {
-			self->flags &= ~dirstate_flag_p1_tracked;
-		}
-		self->flags &=
-		    ~(dirstate_flag_merged | dirstate_flag_clean_p1 |
-		      dirstate_flag_clean_p2 | dirstate_flag_p2_tracked);
-		self->flags |= dirstate_flag_possibly_dirty;
+	if (self->flags & dirstate_flag_p2_info) {
+		self->flags &= ~(dirstate_flag_p2_info |
+		                 dirstate_flag_has_meaningful_data |
+		                 dirstate_flag_has_meaningful_mtime);
 		self->mode = 0;
 		self->mtime = 0;
-		/* size = None on the python size turn into size = NON_NORMAL
-		 * when accessed. So the next line is currently required, but a
-		 * some future clean up would be welcome. */
-		self->size = dirstate_v1_nonnormal;
+		self->size = 0;
 	}
 	Py_RETURN_NONE;
 }
@@ -624,11 +599,9 @@ static PyObject *dirstate_item_get_maybe_clean(dirstateItemObject *self)
 {
 	if (!(self->flags & dirstate_flag_wc_tracked)) {
 		Py_RETURN_FALSE;
-	} else if (dirstate_item_c_added(self)) {
+	} else if (!(self->flags & dirstate_flag_p1_tracked)) {
 		Py_RETURN_FALSE;
-	} else if (self->flags & dirstate_flag_merged) {
-		Py_RETURN_FALSE;
-	} else if (self->flags & dirstate_flag_clean_p2) {
+	} else if (self->flags & dirstate_flag_p2_info) {
 		Py_RETURN_FALSE;
 	} else {
 		Py_RETURN_TRUE;
@@ -637,10 +610,7 @@ static PyObject *dirstate_item_get_maybe_clean(dirstateItemObject *self)
 
 static PyObject *dirstate_item_get_any_tracked(dirstateItemObject *self)
 {
-	unsigned char mask = dirstate_flag_wc_tracked |
-	                     dirstate_flag_p1_tracked |
-	                     dirstate_flag_p2_tracked;
-	if ((self->flags & mask) != 0) {
+	if (dirstate_item_c_any_tracked(self)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;

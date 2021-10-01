@@ -33,11 +33,9 @@ typedef struct {
 
 static const unsigned char dirstate_flag_wc_tracked = 1;
 static const unsigned char dirstate_flag_p1_tracked = 1 << 1;
-static const unsigned char dirstate_flag_p2_tracked = 1 << 2;
-static const unsigned char dirstate_flag_possibly_dirty = 1 << 3;
-static const unsigned char dirstate_flag_merged = 1 << 4;
-static const unsigned char dirstate_flag_clean_p1 = 1 << 5;
-static const unsigned char dirstate_flag_clean_p2 = 1 << 6;
+static const unsigned char dirstate_flag_p2_info = 1 << 2;
+static const unsigned char dirstate_flag_has_meaningful_data = 1 << 3;
+static const unsigned char dirstate_flag_has_meaningful_mtime = 1 << 4;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)
