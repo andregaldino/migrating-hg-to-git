@@ -162,7 +162,7 @@ class DirstateItem(object):
             return cls(p1_tracked=p1_tracked, p2_info=p2_info)
         elif state == b'n':
             if size == FROM_P2:
-                return cls.new_from_p2()
+                return cls(wc_tracked=True, p2_info=True)
             elif size == NONNORMAL:
                 return cls.new_possibly_dirty()
             elif mtime == AMBIGUOUS_TIME:

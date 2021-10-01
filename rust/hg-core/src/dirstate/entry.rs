@@ -68,7 +68,12 @@ impl DirstateEntry {
         match state {
             EntryState::Normal => {
                 if size == SIZE_FROM_OTHER_PARENT {
-                    Self::new_from_p2()
+                    Self {
+                        // might be missing P1_TRACKED
+                        flags: Flags::WDIR_TRACKED | Flags::P2_INFO,
+                        mode_size: None,
+                        mtime: None,
+                    }
                 } else if size == SIZE_NON_NORMAL {
                     Self::new_possibly_dirty()
                 } else if mtime == MTIME_UNSET {
