@@ -304,6 +304,10 @@ pub struct RevlogEntry<'a> {
 }
 
 impl<'a> RevlogEntry<'a> {
+    pub fn revision(&self) -> Revision {
+        self.rev
+    }
+
     /// Extract the data contained in the entry.
     pub fn data(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
         if self.bytes.is_empty() {
