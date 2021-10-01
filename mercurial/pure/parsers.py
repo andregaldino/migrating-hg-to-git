@@ -156,7 +156,7 @@ class DirstateItem(object):
         if state == b'm':
             return cls(wc_tracked=True, p1_tracked=True, p2_info=True)
         elif state == b'a':
-            return cls.new_added()
+            return cls(wc_tracked=True)
         elif state == b'r':
             if size == NONNORMAL:
                 p1_tracked = True
