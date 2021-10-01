@@ -250,16 +250,12 @@ impl DirstateEntry {
             && self.flags.contains(Flags::P1_TRACKED | Flags::P2_INFO)
         {
             SIZE_NON_NORMAL
-        } else if self.removed() && self.flags.contains(Flags::P2_INFO) {
+        } else if self.flags.contains(Flags::P2_INFO) {
             SIZE_FROM_OTHER_PARENT
         } else if self.removed() {
             0
-        } else if self.merged() {
-            SIZE_FROM_OTHER_PARENT
         } else if self.added() {
             SIZE_NON_NORMAL
-        } else if self.from_p2() {
-            SIZE_FROM_OTHER_PARENT
         } else if let Some((_mode, size)) = self.mode_size {
             size
         } else {
