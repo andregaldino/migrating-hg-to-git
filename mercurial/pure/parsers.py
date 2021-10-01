@@ -322,16 +322,6 @@ class DirstateItem(object):
         return self._wc_tracked and self._p1_tracked and self._p2_info
 
     @property
-    def from_p2(self):
-        """True if the file have been fetched from p2 during the current merge
-
-        This is only True is the file is currently tracked.
-
-        Should only be set if a merge is in progress in the dirstate
-        """
-        return self._wc_tracked and (not self._p1_tracked) and self._p2_info
-
-    @property
     def removed(self):
         """True if the file has been removed"""
         return not self._wc_tracked and (self._p1_tracked or self._p2_info)

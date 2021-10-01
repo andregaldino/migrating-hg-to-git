@@ -93,11 +93,6 @@ py_class!(pub class DirstateItem |py| {
     }
 
     @property
-    def from_p2(&self) -> PyResult<bool> {
-        Ok(self.entry(py).get().from_p2())
-    }
-
-    @property
     def maybe_clean(&self) -> PyResult<bool> {
         Ok(self.entry(py).get().maybe_clean())
     }
