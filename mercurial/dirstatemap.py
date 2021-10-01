@@ -479,10 +479,9 @@ class dirstatemap(_dirstatemapcommon):
             self._dirs_decr(f, old_entry=entry, remove_variant=not entry.added)
             if not entry.merged:
                 self.copymap.pop(f, None)
-            if entry.added:
+            entry.set_untracked()
+            if not entry.any_tracked:
                 self._map.pop(f, None)
-            else:
-                entry.set_untracked()
             return True
 
 
