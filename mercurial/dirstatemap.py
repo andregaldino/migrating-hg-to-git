@@ -510,7 +510,7 @@ if rustmod is not None:
                 size = size & rangemask
                 mtime = mtime & rangemask
                 item = DirstateItem.new_normal(mode, size, mtime)
-            self._rustmap.addfile(f, item)
+            self._map.addfile(f, item)
             if added:
                 self.copymap.pop(f, None)
 
@@ -545,7 +545,7 @@ if rustmod is not None:
             self.copymap.pop(filename, None)
 
             if not (p1_tracked or p2_tracked or wc_tracked):
-                self._rustmap.drop_item_and_copy_source(filename)
+                self._map.drop_item_and_copy_source(filename)
             elif merged:
                 # XXX might be merged and removed ?
                 entry = self.get(filename)
@@ -601,7 +601,7 @@ if rustmod is not None:
                 new = True
             elif not entry.tracked:
                 entry.set_tracked()
-                self._rustmap.set_dirstate_item(filename, entry)
+                self._map.set_dirstate_item(filename, entry)
                 new = True
             else:
                 # XXX This is probably overkill for more case, but we need this to
@@ -621,20 +621,20 @@ if rustmod is not None:
                 return False
             else:
                 if entry.added:
-                    self._rustmap.drop_item_and_copy_source(f)
+                    self._map.drop_item_and_copy_source(f)
                 else:
-                    self._rustmap.removefile(f, in_merge=True)
+                    self._map.removefile(f, in_merge=True)
                 return True
 
         def removefile(self, *args, **kwargs):
-            return self._rustmap.removefile(*args, **kwargs)
+            return self._map.removefile(*args, **kwargs)
 
         def get(self, *args, **kwargs):
-            return self._rustmap.get(*args, **kwargs)
+            return self._map.get(*args, **kwargs)
 
         @property
         def copymap(self):
-            return self._rustmap.copymap()
+            return self._map.copymap()
 
         def debug_iter(self, all):
             """
@@ -644,13 +644,13 @@ if rustmod is not None:
             don't have an associated `DirstateItem`.
 
             """
-            return self._rustmap.debug_iter(all)
+            return self._map.debug_iter(all)
 
         def preload(self):
-            self._rustmap
+            self._map
 
         def clear(self):
-            self._rustmap.clear()
+            self._map.clear()
             self.setparents(
                 self._nodeconstants.nullid, self._nodeconstants.nullid
             )
@@ -659,22 +659,22 @@ if rustmod is not None:
             util.clearcachedproperty(self, b"dirfoldmap")
 
         def items(self):
-            return self._rustmap.items()
+            return self._map.items()
 
         def keys(self):
-            return iter(self._rustmap)
+            return iter(self._map)
 
         def __contains__(self, key):
-            return key in self._rustmap
+            return key in self._map
 
         def __getitem__(self, item):
-            return self._rustmap[item]
+            return self._map[item]
 
         def __len__(self):
-            return len(self._rustmap)
+            return len(self._map)
 
         def __iter__(self):
-            return iter(self._rustmap)
+            return iter(self._map)
 
         # forward for python2,3 compat
         iteritems = items
@@ -713,7 +713,7 @@ if rustmod is not None:
                 # iterating it, without mutating the collection itself.
                 candidatefiles = [
                     (f, s)
-                    for f, s in self._rustmap.items()
+                    for f, s in self._map.items()
                     if s.merged or s.from_p2
                 ]
                 for f, s in candidatefiles:
@@ -778,7 +778,7 @@ if rustmod is not None:
             return self._docket
 
         @propertycache
-        def _rustmap(self):
+        def _map(self):
             """
             Fills the Dirstatemap when called.
             """
@@ -793,27 +793,27 @@ if rustmod is not None:
                     data = self._opener.read(self.docket.data_filename())
                 else:
                     data = b''
-                self._rustmap = rustmod.DirstateMap.new_v2(
+                self._map = rustmod.DirstateMap.new_v2(
                     data, self.docket.data_size, self.docket.tree_metadata
                 )
                 parents = self.docket.parents
             else:
-                self._rustmap, parents = rustmod.DirstateMap.new_v1(
+                self._map, parents = rustmod.DirstateMap.new_v1(
                     self._readdirstatefile()
                 )
 
             if parents and not self._dirtyparents:
                 self.setparents(*parents)
 
-            self.__contains__ = self._rustmap.__contains__
-            self.__getitem__ = self._rustmap.__getitem__
-            self.get = self._rustmap.get
-            return self._rustmap
+            self.__contains__ = self._map.__contains__
+            self.__getitem__ = self._map.__getitem__
+            self.get = self._map.get
+            return self._map
 
         def write(self, tr, st, now):
             if not self._use_dirstate_v2:
                 p1, p2 = self.parents()
-                packed = self._rustmap.write_v1(p1, p2, now)
+                packed = self._map.write_v1(p1, p2, now)
                 st.write(packed)
                 st.close()
                 self._dirtyparents = False
@@ -821,7 +821,7 @@ if rustmod is not None:
 
             # We can only append to an existing data file if there is one
             can_append = self.docket.uuid is not None
-            packed, meta, append = self._rustmap.write_v2(now, can_append)
+            packed, meta, append = self._map.write_v2(now, can_append)
             if append:
                 docket = self.docket
                 data_filename = docket.data_filename()
@@ -864,7 +864,7 @@ if rustmod is not None:
                         unlink()
                 self._docket = new_docket
             # Reload from the newly-written file
-            util.clearcachedproperty(self, b"_rustmap")
+            util.clearcachedproperty(self, b"_map")
             self._dirtyparents = False
 
         @propertycache
@@ -872,24 +872,24 @@ if rustmod is not None:
             """Returns a dictionary mapping normalized case paths to their
             non-normalized versions.
             """
-            return self._rustmap.filefoldmapasdict()
+            return self._map.filefoldmapasdict()
 
         def hastrackeddir(self, d):
-            return self._rustmap.hastrackeddir(d)
+            return self._map.hastrackeddir(d)
 
         def hasdir(self, d):
-            return self._rustmap.hasdir(d)
+            return self._map.hasdir(d)
 
         @propertycache
         def identity(self):
-            self._rustmap
+            self._map
             return self.identity
 
         @propertycache
         def dirfoldmap(self):
             f = {}
             normcase = util.normcase
-            for name in self._rustmap.tracked_dirs():
+            for name in self._map.tracked_dirs():
                 f[normcase(name)] = name
             return f
 
@@ -897,7 +897,7 @@ if rustmod is not None:
             """record that the current state of the file on disk is unknown"""
             entry = self[filename]
             entry.set_possibly_dirty()
-            self._rustmap.set_dirstate_item(filename, entry)
+            self._map.set_dirstate_item(filename, entry)
 
         def set_clean(self, filename, mode, size, mtime):
             """mark a file as back to a clean state"""
@@ -905,9 +905,9 @@ if rustmod is not None:
             mtime = mtime & rangemask
             size = size & rangemask
             entry.set_clean(mode, size, mtime)
-            self._rustmap.set_dirstate_item(filename, entry)
-            self._rustmap.copymap().pop(filename, None)
+            self._map.set_dirstate_item(filename, entry)
+            self._map.copymap().pop(filename, None)
 
         def __setitem__(self, key, value):
             assert isinstance(value, DirstateItem)
-            self._rustmap.set_dirstate_item(key, value)
+            self._map.set_dirstate_item(key, value)

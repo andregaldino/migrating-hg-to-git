@@ -1252,7 +1252,7 @@ class dirstate(object):
             traversed,
             dirty,
         ) = rustmod.status(
-            self._map._rustmap,
+            self._map._map,
             matcher,
             self._rootdir,
             self._ignorefiles(),
@@ -1452,7 +1452,7 @@ class dirstate(object):
         """
         dmap = self._map
         if rustmod is not None:
-            dmap = self._map._rustmap
+            dmap = self._map._map
 
         if match.always():
             return dmap.keys()
