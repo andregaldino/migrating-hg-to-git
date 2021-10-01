@@ -153,6 +153,10 @@ impl DirstateEntry {
         self.flags.contains(Flags::WDIR_TRACKED)
     }
 
+    pub fn p1_tracked(&self) -> bool {
+        self.flags.contains(Flags::P1_TRACKED)
+    }
+
     fn in_either_parent(&self) -> bool {
         self.flags.intersects(Flags::P1_TRACKED | Flags::P2_INFO)
     }

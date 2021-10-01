@@ -67,6 +67,11 @@ py_class!(pub class DirstateItem |py| {
     }
 
     @property
+    def p1_tracked(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().p1_tracked())
+    }
+
+    @property
     def added(&self) -> PyResult<bool> {
         Ok(self.entry(py).get().added())
     }

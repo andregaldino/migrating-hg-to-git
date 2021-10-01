@@ -301,6 +301,11 @@ class DirstateItem(object):
         return True
 
     @property
+    def p1_tracked(self):
+        """True if the file is tracked in the first parent manifest"""
+        return self._p1_tracked
+
+    @property
     def p2_info(self):
         """True if the file needed to merge or apply any input from p2
 
