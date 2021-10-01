@@ -79,6 +79,25 @@ class _dirstatemapcommon(object):
     def __getitem__(self, item):
         return self._map[item]
 
+    ### sub-class utility method
+    #
+    # Use to allow for generic implementation of some method while still coping
+    # with minor difference between implementation.
+
+    def _dirs_incr(self, filename, old_entry=None):
+        """incremente the dirstate counter if applicable
+
+        This might be a no-op for some subclass who deal with directory
+        tracking in a different way.
+        """
+
+    def _dirs_decr(self, filename, old_entry=None, remove_variant=False):
+        """decremente the dirstate counter if applicable
+
+        This might be a no-op for some subclass who deal with directory
+        tracking in a different way.
+        """
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
