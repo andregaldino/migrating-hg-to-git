@@ -35,7 +35,14 @@ else:
 rangemask = 0x7FFFFFFF
 
 
-class dirstatemap(object):
+class _dirstatemapcommon(object):
+    """
+    Methods that are identical for both implementations of the dirstatemap
+    class, with and without Rust extensions enabled.
+    """
+
+
+class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
 
     The dirstate contains the following state:
@@ -460,7 +467,7 @@ class dirstatemap(object):
 
 if rustmod is not None:
 
-    class dirstatemap(object):
+    class dirstatemap(_dirstatemapcommon):
         def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
             self._use_dirstate_v2 = use_dirstate_v2
             self._nodeconstants = nodeconstants
