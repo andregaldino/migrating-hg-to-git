@@ -41,6 +41,11 @@ class _dirstatemapcommon(object):
     class, with and without Rust extensions enabled.
     """
 
+    # please pytype
+
+    _map = None
+    copymap = None
+
     def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
         self._use_dirstate_v2 = use_dirstate_v2
         self._nodeconstants = nodeconstants
@@ -54,6 +59,25 @@ class _dirstatemapcommon(object):
 
         # for consistent view between _pl() and _read() invocations
         self._pendingmode = None
+
+    def preload(self):
+        """Loads the underlying data, if it's not already loaded"""
+        self._map
+
+    def get(self, key, default=None):
+        return self._map.get(key, default)
+
+    def __len__(self):
+        return len(self._map)
+
+    def __iter__(self):
+        return iter(self._map)
+
+    def __contains__(self, key):
+        return key in self._map
+
+    def __getitem__(self, item):
+        return self._map[item]
 
 
 class dirstatemap(_dirstatemapcommon):
@@ -135,27 +159,8 @@ class dirstatemap(_dirstatemapcommon):
         for (filename, item) in self.items():
             yield (filename, item.state, item.mode, item.size, item.mtime)
 
-    def __len__(self):
-        return len(self._map)
-
-    def __iter__(self):
-        return iter(self._map)
-
-    def get(self, key, default=None):
-        return self._map.get(key, default)
-
-    def __contains__(self, key):
-        return key in self._map
-
-    def __getitem__(self, key):
-        return self._map[key]
-
     def keys(self):
         return self._map.keys()
-
-    def preload(self):
-        """Loads the underlying data, if it's not already loaded"""
-        self._map
 
     def _dirs_incr(self, filename, old_entry=None):
         """incremente the dirstate counter if applicable"""
@@ -629,9 +634,6 @@ if rustmod is not None:
         def removefile(self, *args, **kwargs):
             return self._map.removefile(*args, **kwargs)
 
-        def get(self, *args, **kwargs):
-            return self._map.get(*args, **kwargs)
-
         @property
         def copymap(self):
             return self._map.copymap()
@@ -646,9 +648,6 @@ if rustmod is not None:
             """
             return self._map.debug_iter(all)
 
-        def preload(self):
-            self._map
-
         def clear(self):
             self._map.clear()
             self.setparents(
@@ -662,18 +661,6 @@ if rustmod is not None:
             return self._map.items()
 
         def keys(self):
-            return iter(self._map)
-
-        def __contains__(self, key):
-            return key in self._map
-
-        def __getitem__(self, item):
-            return self._map[item]
-
-        def __len__(self):
-            return len(self._map)
-
-        def __iter__(self):
             return iter(self._map)
 
         # forward for python2,3 compat
