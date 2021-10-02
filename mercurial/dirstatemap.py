@@ -123,6 +123,8 @@ class dirstatemap(_dirstatemapcommon):
             msg += "(should have detected unsupported requirement)"
             raise error.ProgrammingError(msg)
 
+    ### Core data storage and access
+
     @propertycache
     def _map(self):
         self._map = {}
@@ -162,6 +164,128 @@ class dirstatemap(_dirstatemapcommon):
     def keys(self):
         return self._map.keys()
 
+    ### reading/setting parents
+
+    def parents(self):
+        if not self._parents:
+            try:
+                fp = self._opendirstatefile()
+                st = fp.read(2 * self._nodelen)
+                fp.close()
+            except IOError as err:
+                if err.errno != errno.ENOENT:
+                    raise
+                # File doesn't exist, so the current state is empty
+                st = b''
+
+            l = len(st)
+            if l == self._nodelen * 2:
+                self._parents = (
+                    st[: self._nodelen],
+                    st[self._nodelen : 2 * self._nodelen],
+                )
+            elif l == 0:
+                self._parents = (
+                    self._nodeconstants.nullid,
+                    self._nodeconstants.nullid,
+                )
+            else:
+                raise error.Abort(
+                    _(b'working directory state appears damaged!')
+                )
+
+        return self._parents
+
+    def setparents(self, p1, p2, fold_p2=False):
+        self._parents = (p1, p2)
+        self._dirtyparents = True
+        copies = {}
+        if fold_p2:
+            for f, s in pycompat.iteritems(self._map):
+                # Discard "merged" markers when moving away from a merge state
+                if s.merged or s.from_p2:
+                    source = self.copymap.pop(f, None)
+                    if source:
+                        copies[f] = source
+                    s.drop_merge_data()
+        return copies
+
+    ### disk interaction
+
+    def read(self):
+        # ignore HG_PENDING because identity is used only for writing
+        self.identity = util.filestat.frompath(
+            self._opener.join(self._filename)
+        )
+
+        try:
+            fp = self._opendirstatefile()
+            try:
+                st = fp.read()
+            finally:
+                fp.close()
+        except IOError as err:
+            if err.errno != errno.ENOENT:
+                raise
+            return
+        if not st:
+            return
+
+        if util.safehasattr(parsers, b'dict_new_presized'):
+            # Make an estimate of the number of files in the dirstate based on
+            # its size. This trades wasting some memory for avoiding costly
+            # resizes. Each entry have a prefix of 17 bytes followed by one or
+            # two path names. Studies on various large-scale real-world repositories
+            # found 54 bytes a reasonable upper limit for the average path names.
+            # Copy entries are ignored for the sake of this estimate.
+            self._map = parsers.dict_new_presized(len(st) // 71)
+
+        # Python's garbage collector triggers a GC each time a certain number
+        # of container objects (the number being defined by
+        # gc.get_threshold()) are allocated. parse_dirstate creates a tuple
+        # for each file in the dirstate. The C version then immediately marks
+        # them as not to be tracked by the collector. However, this has no
+        # effect on when GCs are triggered, only on what objects the GC looks
+        # into. This means that O(number of files) GCs are unavoidable.
+        # Depending on when in the process's lifetime the dirstate is parsed,
+        # this can get very expensive. As a workaround, disable GC while
+        # parsing the dirstate.
+        #
+        # (we cannot decorate the function directly since it is in a C module)
+        parse_dirstate = util.nogc(parsers.parse_dirstate)
+        p = parse_dirstate(self._map, self.copymap, st)
+        if not self._dirtyparents:
+            self.setparents(*p)
+
+        # Avoid excess attribute lookups by fast pathing certain checks
+        self.__contains__ = self._map.__contains__
+        self.__getitem__ = self._map.__getitem__
+        self.get = self._map.get
+
+    def write(self, _tr, st, now):
+        d = parsers.pack_dirstate(self._map, self.copymap, self.parents(), now)
+        st.write(d)
+        st.close()
+        self._dirtyparents = False
+
+    def _opendirstatefile(self):
+        fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
+        if self._pendingmode is not None and self._pendingmode != mode:
+            fp.close()
+            raise error.Abort(
+                _(b'working directory state may be changed parallelly')
+            )
+        self._pendingmode = mode
+        return fp
+
+    @propertycache
+    def identity(self):
+        self._map
+        return self.identity
+
+    ### code related to maintaining and accessing "extra" property
+    # (e.g. "has_dir")
+
     def _dirs_incr(self, filename, old_entry=None):
         """incremente the dirstate counter if applicable"""
         if (
@@ -183,6 +307,60 @@ class dirstatemap(_dirstatemapcommon):
         if "filefoldmap" in self.__dict__:
             normed = util.normcase(filename)
             self.filefoldmap.pop(normed, None)
+
+    @propertycache
+    def filefoldmap(self):
+        """Returns a dictionary mapping normalized case paths to their
+        non-normalized versions.
+        """
+        try:
+            makefilefoldmap = parsers.make_file_foldmap
+        except AttributeError:
+            pass
+        else:
+            return makefilefoldmap(
+                self._map, util.normcasespec, util.normcasefallback
+            )
+
+        f = {}
+        normcase = util.normcase
+        for name, s in pycompat.iteritems(self._map):
+            if not s.removed:
+                f[normcase(name)] = name
+        f[b'.'] = b'.'  # prevents useless util.fspath() invocation
+        return f
+
+    @propertycache
+    def dirfoldmap(self):
+        f = {}
+        normcase = util.normcase
+        for name in self._dirs:
+            f[normcase(name)] = name
+        return f
+
+    def hastrackeddir(self, d):
+        """
+        Returns True if the dirstate contains a tracked (not removed) file
+        in this directory.
+        """
+        return d in self._dirs
+
+    def hasdir(self, d):
+        """
+        Returns True if the dirstate contains a file (tracked or removed)
+        in this directory.
+        """
+        return d in self._alldirs
+
+    @propertycache
+    def _dirs(self):
+        return pathutil.dirs(self._map, only_tracked=True)
+
+    @propertycache
+    def _alldirs(self):
+        return pathutil.dirs(self._map)
+
+    ### code related to manipulation of entries and copy-sources
 
     def set_possibly_dirty(self, filename):
         """record that the current state of the file on disk is unknown"""
@@ -307,174 +485,6 @@ class dirstatemap(_dirstatemapcommon):
                 entry.set_untracked()
             return True
 
-    @propertycache
-    def filefoldmap(self):
-        """Returns a dictionary mapping normalized case paths to their
-        non-normalized versions.
-        """
-        try:
-            makefilefoldmap = parsers.make_file_foldmap
-        except AttributeError:
-            pass
-        else:
-            return makefilefoldmap(
-                self._map, util.normcasespec, util.normcasefallback
-            )
-
-        f = {}
-        normcase = util.normcase
-        for name, s in pycompat.iteritems(self._map):
-            if not s.removed:
-                f[normcase(name)] = name
-        f[b'.'] = b'.'  # prevents useless util.fspath() invocation
-        return f
-
-    def hastrackeddir(self, d):
-        """
-        Returns True if the dirstate contains a tracked (not removed) file
-        in this directory.
-        """
-        return d in self._dirs
-
-    def hasdir(self, d):
-        """
-        Returns True if the dirstate contains a file (tracked or removed)
-        in this directory.
-        """
-        return d in self._alldirs
-
-    @propertycache
-    def _dirs(self):
-        return pathutil.dirs(self._map, only_tracked=True)
-
-    @propertycache
-    def _alldirs(self):
-        return pathutil.dirs(self._map)
-
-    def _opendirstatefile(self):
-        fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
-        if self._pendingmode is not None and self._pendingmode != mode:
-            fp.close()
-            raise error.Abort(
-                _(b'working directory state may be changed parallelly')
-            )
-        self._pendingmode = mode
-        return fp
-
-    def parents(self):
-        if not self._parents:
-            try:
-                fp = self._opendirstatefile()
-                st = fp.read(2 * self._nodelen)
-                fp.close()
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-                # File doesn't exist, so the current state is empty
-                st = b''
-
-            l = len(st)
-            if l == self._nodelen * 2:
-                self._parents = (
-                    st[: self._nodelen],
-                    st[self._nodelen : 2 * self._nodelen],
-                )
-            elif l == 0:
-                self._parents = (
-                    self._nodeconstants.nullid,
-                    self._nodeconstants.nullid,
-                )
-            else:
-                raise error.Abort(
-                    _(b'working directory state appears damaged!')
-                )
-
-        return self._parents
-
-    def setparents(self, p1, p2, fold_p2=False):
-        self._parents = (p1, p2)
-        self._dirtyparents = True
-        copies = {}
-        if fold_p2:
-            for f, s in pycompat.iteritems(self._map):
-                # Discard "merged" markers when moving away from a merge state
-                if s.merged or s.from_p2:
-                    source = self.copymap.pop(f, None)
-                    if source:
-                        copies[f] = source
-                    s.drop_merge_data()
-        return copies
-
-    def read(self):
-        # ignore HG_PENDING because identity is used only for writing
-        self.identity = util.filestat.frompath(
-            self._opener.join(self._filename)
-        )
-
-        try:
-            fp = self._opendirstatefile()
-            try:
-                st = fp.read()
-            finally:
-                fp.close()
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            return
-        if not st:
-            return
-
-        if util.safehasattr(parsers, b'dict_new_presized'):
-            # Make an estimate of the number of files in the dirstate based on
-            # its size. This trades wasting some memory for avoiding costly
-            # resizes. Each entry have a prefix of 17 bytes followed by one or
-            # two path names. Studies on various large-scale real-world repositories
-            # found 54 bytes a reasonable upper limit for the average path names.
-            # Copy entries are ignored for the sake of this estimate.
-            self._map = parsers.dict_new_presized(len(st) // 71)
-
-        # Python's garbage collector triggers a GC each time a certain number
-        # of container objects (the number being defined by
-        # gc.get_threshold()) are allocated. parse_dirstate creates a tuple
-        # for each file in the dirstate. The C version then immediately marks
-        # them as not to be tracked by the collector. However, this has no
-        # effect on when GCs are triggered, only on what objects the GC looks
-        # into. This means that O(number of files) GCs are unavoidable.
-        # Depending on when in the process's lifetime the dirstate is parsed,
-        # this can get very expensive. As a workaround, disable GC while
-        # parsing the dirstate.
-        #
-        # (we cannot decorate the function directly since it is in a C module)
-        parse_dirstate = util.nogc(parsers.parse_dirstate)
-        p = parse_dirstate(self._map, self.copymap, st)
-        if not self._dirtyparents:
-            self.setparents(*p)
-
-        # Avoid excess attribute lookups by fast pathing certain checks
-        self.__contains__ = self._map.__contains__
-        self.__getitem__ = self._map.__getitem__
-        self.get = self._map.get
-
-    def write(self, _tr, st, now):
-        st.write(
-            parsers.pack_dirstate(self._map, self.copymap, self.parents(), now)
-        )
-        st.close()
-        self._dirtyparents = False
-
-    @propertycache
-    def identity(self):
-        self._map
-        return self.identity
-
-    @propertycache
-    def dirfoldmap(self):
-        f = {}
-        normcase = util.normcase
-        for name in self._dirs:
-            f[normcase(name)] = name
-        return f
-
 
 if rustmod is not None:
 
@@ -485,39 +495,281 @@ if rustmod is not None:
             )
             self._docket = None
 
-        def addfile(
-            self,
-            f,
-            mode=0,
-            size=None,
-            mtime=None,
-            added=False,
-            merged=False,
-            from_p2=False,
-            possibly_dirty=False,
-        ):
-            if added:
-                assert not possibly_dirty
-                assert not from_p2
-                item = DirstateItem.new_added()
-            elif merged:
-                assert not possibly_dirty
-                assert not from_p2
-                item = DirstateItem.new_merged()
-            elif from_p2:
-                assert not possibly_dirty
-                item = DirstateItem.new_from_p2()
-            elif possibly_dirty:
-                item = DirstateItem.new_possibly_dirty()
+        ### Core data storage and access
+
+        @property
+        def docket(self):
+            if not self._docket:
+                if not self._use_dirstate_v2:
+                    raise error.ProgrammingError(
+                        b'dirstate only has a docket in v2 format'
+                    )
+                self._docket = docketmod.DirstateDocket.parse(
+                    self._readdirstatefile(), self._nodeconstants
+                )
+            return self._docket
+
+        @propertycache
+        def _map(self):
+            """
+            Fills the Dirstatemap when called.
+            """
+            # ignore HG_PENDING because identity is used only for writing
+            self.identity = util.filestat.frompath(
+                self._opener.join(self._filename)
+            )
+
+            if self._use_dirstate_v2:
+                if self.docket.uuid:
+                    # TODO: use mmap when possible
+                    data = self._opener.read(self.docket.data_filename())
+                else:
+                    data = b''
+                self._map = rustmod.DirstateMap.new_v2(
+                    data, self.docket.data_size, self.docket.tree_metadata
+                )
+                parents = self.docket.parents
             else:
-                assert size is not None
-                assert mtime is not None
-                size = size & rangemask
-                mtime = mtime & rangemask
-                item = DirstateItem.new_normal(mode, size, mtime)
-            self._map.addfile(f, item)
-            if added:
-                self.copymap.pop(f, None)
+                self._map, parents = rustmod.DirstateMap.new_v1(
+                    self._readdirstatefile()
+                )
+
+            if parents and not self._dirtyparents:
+                self.setparents(*parents)
+
+            self.__contains__ = self._map.__contains__
+            self.__getitem__ = self._map.__getitem__
+            self.get = self._map.get
+            return self._map
+
+        @property
+        def copymap(self):
+            return self._map.copymap()
+
+        def debug_iter(self, all):
+            """
+            Return an iterator of (filename, state, mode, size, mtime) tuples
+
+            `all`: also include with `state == b' '` dirstate tree nodes that
+            don't have an associated `DirstateItem`.
+
+            """
+            return self._map.debug_iter(all)
+
+        def clear(self):
+            self._map.clear()
+            self.setparents(
+                self._nodeconstants.nullid, self._nodeconstants.nullid
+            )
+            util.clearcachedproperty(self, b"_dirs")
+            util.clearcachedproperty(self, b"_alldirs")
+            util.clearcachedproperty(self, b"dirfoldmap")
+
+        def items(self):
+            return self._map.items()
+
+        # forward for python2,3 compat
+        iteritems = items
+
+        def keys(self):
+            return iter(self._map)
+
+        ### reading/setting parents
+
+        def setparents(self, p1, p2, fold_p2=False):
+            self._parents = (p1, p2)
+            self._dirtyparents = True
+            copies = {}
+            if fold_p2:
+                # Collect into an intermediate list to avoid a `RuntimeError`
+                # exception due to mutation during iteration.
+                # TODO: move this the whole loop to Rust where `iter_mut`
+                # enables in-place mutation of elements of a collection while
+                # iterating it, without mutating the collection itself.
+                candidatefiles = [
+                    (f, s)
+                    for f, s in self._map.items()
+                    if s.merged or s.from_p2
+                ]
+                for f, s in candidatefiles:
+                    # Discard "merged" markers when moving away from a merge state
+                    if s.merged:
+                        source = self.copymap.get(f)
+                        if source:
+                            copies[f] = source
+                        self.reset_state(
+                            f,
+                            wc_tracked=True,
+                            p1_tracked=True,
+                            possibly_dirty=True,
+                        )
+                    # Also fix up otherparent markers
+                    elif s.from_p2:
+                        source = self.copymap.get(f)
+                        if source:
+                            copies[f] = source
+                        self.reset_state(
+                            f,
+                            p1_tracked=False,
+                            wc_tracked=True,
+                        )
+            return copies
+
+        def parents(self):
+            if not self._parents:
+                if self._use_dirstate_v2:
+                    self._parents = self.docket.parents
+                else:
+                    read_len = self._nodelen * 2
+                    st = self._readdirstatefile(read_len)
+                    l = len(st)
+                    if l == read_len:
+                        self._parents = (
+                            st[: self._nodelen],
+                            st[self._nodelen : 2 * self._nodelen],
+                        )
+                    elif l == 0:
+                        self._parents = (
+                            self._nodeconstants.nullid,
+                            self._nodeconstants.nullid,
+                        )
+                    else:
+                        raise error.Abort(
+                            _(b'working directory state appears damaged!')
+                        )
+
+            return self._parents
+
+        ### disk interaction
+
+        @propertycache
+        def identity(self):
+            self._map
+            return self.identity
+
+        def write(self, tr, st, now):
+            if not self._use_dirstate_v2:
+                p1, p2 = self.parents()
+                packed = self._map.write_v1(p1, p2, now)
+                st.write(packed)
+                st.close()
+                self._dirtyparents = False
+                return
+
+            # We can only append to an existing data file if there is one
+            can_append = self.docket.uuid is not None
+            packed, meta, append = self._map.write_v2(now, can_append)
+            if append:
+                docket = self.docket
+                data_filename = docket.data_filename()
+                if tr:
+                    tr.add(data_filename, docket.data_size)
+                with self._opener(data_filename, b'r+b') as fp:
+                    fp.seek(docket.data_size)
+                    assert fp.tell() == docket.data_size
+                    written = fp.write(packed)
+                    if written is not None:  # py2 may return None
+                        assert written == len(packed), (written, len(packed))
+                docket.data_size += len(packed)
+                docket.parents = self.parents()
+                docket.tree_metadata = meta
+                st.write(docket.serialize())
+                st.close()
+            else:
+                old_docket = self.docket
+                new_docket = docketmod.DirstateDocket.with_new_uuid(
+                    self.parents(), len(packed), meta
+                )
+                data_filename = new_docket.data_filename()
+                if tr:
+                    tr.add(data_filename, 0)
+                self._opener.write(data_filename, packed)
+                # Write the new docket after the new data file has been
+                # written. Because `st` was opened with `atomictemp=True`,
+                # the actual `.hg/dirstate` file is only affected on close.
+                st.write(new_docket.serialize())
+                st.close()
+                # Remove the old data file after the new docket pointing to
+                # the new data file was written.
+                if old_docket.uuid:
+                    data_filename = old_docket.data_filename()
+                    unlink = lambda _tr=None: self._opener.unlink(data_filename)
+                    if tr:
+                        category = b"dirstate-v2-clean-" + old_docket.uuid
+                        tr.addpostclose(category, unlink)
+                    else:
+                        unlink()
+                self._docket = new_docket
+            # Reload from the newly-written file
+            util.clearcachedproperty(self, b"_map")
+            self._dirtyparents = False
+
+        def _opendirstatefile(self):
+            fp, mode = txnutil.trypending(
+                self._root, self._opener, self._filename
+            )
+            if self._pendingmode is not None and self._pendingmode != mode:
+                fp.close()
+                raise error.Abort(
+                    _(b'working directory state may be changed parallelly')
+                )
+            self._pendingmode = mode
+            return fp
+
+        def _readdirstatefile(self, size=-1):
+            try:
+                with self._opendirstatefile() as fp:
+                    return fp.read(size)
+            except IOError as err:
+                if err.errno != errno.ENOENT:
+                    raise
+                # File doesn't exist, so the current state is empty
+                return b''
+
+        ### code related to maintaining and accessing "extra" property
+        # (e.g. "has_dir")
+
+        @propertycache
+        def filefoldmap(self):
+            """Returns a dictionary mapping normalized case paths to their
+            non-normalized versions.
+            """
+            return self._map.filefoldmapasdict()
+
+        def hastrackeddir(self, d):
+            return self._map.hastrackeddir(d)
+
+        def hasdir(self, d):
+            return self._map.hasdir(d)
+
+        @propertycache
+        def dirfoldmap(self):
+            f = {}
+            normcase = util.normcase
+            for name in self._map.tracked_dirs():
+                f[normcase(name)] = name
+            return f
+
+        ### code related to manipulation of entries and copy-sources
+
+        def set_possibly_dirty(self, filename):
+            """record that the current state of the file on disk is unknown"""
+            entry = self[filename]
+            entry.set_possibly_dirty()
+            self._map.set_dirstate_item(filename, entry)
+
+        def set_clean(self, filename, mode, size, mtime):
+            """mark a file as back to a clean state"""
+            entry = self[filename]
+            mtime = mtime & rangemask
+            size = size & rangemask
+            entry.set_clean(mode, size, mtime)
+            self._map.set_dirstate_item(filename, entry)
+            self._map.copymap().pop(filename, None)
+
+        def __setitem__(self, key, value):
+            assert isinstance(value, DirstateItem)
+            self._map.set_dirstate_item(key, value)
 
         def reset_state(
             self,
@@ -631,270 +883,41 @@ if rustmod is not None:
                     self._map.removefile(f, in_merge=True)
                 return True
 
+        ### Legacy method we need to get rid of
+
+        def addfile(
+            self,
+            f,
+            mode=0,
+            size=None,
+            mtime=None,
+            added=False,
+            merged=False,
+            from_p2=False,
+            possibly_dirty=False,
+        ):
+            if added:
+                assert not possibly_dirty
+                assert not from_p2
+                item = DirstateItem.new_added()
+            elif merged:
+                assert not possibly_dirty
+                assert not from_p2
+                item = DirstateItem.new_merged()
+            elif from_p2:
+                assert not possibly_dirty
+                item = DirstateItem.new_from_p2()
+            elif possibly_dirty:
+                item = DirstateItem.new_possibly_dirty()
+            else:
+                assert size is not None
+                assert mtime is not None
+                size = size & rangemask
+                mtime = mtime & rangemask
+                item = DirstateItem.new_normal(mode, size, mtime)
+            self._map.addfile(f, item)
+            if added:
+                self.copymap.pop(f, None)
+
         def removefile(self, *args, **kwargs):
             return self._map.removefile(*args, **kwargs)
-
-        @property
-        def copymap(self):
-            return self._map.copymap()
-
-        def debug_iter(self, all):
-            """
-            Return an iterator of (filename, state, mode, size, mtime) tuples
-
-            `all`: also include with `state == b' '` dirstate tree nodes that
-            don't have an associated `DirstateItem`.
-
-            """
-            return self._map.debug_iter(all)
-
-        def clear(self):
-            self._map.clear()
-            self.setparents(
-                self._nodeconstants.nullid, self._nodeconstants.nullid
-            )
-            util.clearcachedproperty(self, b"_dirs")
-            util.clearcachedproperty(self, b"_alldirs")
-            util.clearcachedproperty(self, b"dirfoldmap")
-
-        def items(self):
-            return self._map.items()
-
-        def keys(self):
-            return iter(self._map)
-
-        # forward for python2,3 compat
-        iteritems = items
-
-        def _opendirstatefile(self):
-            fp, mode = txnutil.trypending(
-                self._root, self._opener, self._filename
-            )
-            if self._pendingmode is not None and self._pendingmode != mode:
-                fp.close()
-                raise error.Abort(
-                    _(b'working directory state may be changed parallelly')
-                )
-            self._pendingmode = mode
-            return fp
-
-        def _readdirstatefile(self, size=-1):
-            try:
-                with self._opendirstatefile() as fp:
-                    return fp.read(size)
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-                # File doesn't exist, so the current state is empty
-                return b''
-
-        def setparents(self, p1, p2, fold_p2=False):
-            self._parents = (p1, p2)
-            self._dirtyparents = True
-            copies = {}
-            if fold_p2:
-                # Collect into an intermediate list to avoid a `RuntimeError`
-                # exception due to mutation during iteration.
-                # TODO: move this the whole loop to Rust where `iter_mut`
-                # enables in-place mutation of elements of a collection while
-                # iterating it, without mutating the collection itself.
-                candidatefiles = [
-                    (f, s)
-                    for f, s in self._map.items()
-                    if s.merged or s.from_p2
-                ]
-                for f, s in candidatefiles:
-                    # Discard "merged" markers when moving away from a merge state
-                    if s.merged:
-                        source = self.copymap.get(f)
-                        if source:
-                            copies[f] = source
-                        self.reset_state(
-                            f,
-                            wc_tracked=True,
-                            p1_tracked=True,
-                            possibly_dirty=True,
-                        )
-                    # Also fix up otherparent markers
-                    elif s.from_p2:
-                        source = self.copymap.get(f)
-                        if source:
-                            copies[f] = source
-                        self.reset_state(
-                            f,
-                            p1_tracked=False,
-                            wc_tracked=True,
-                        )
-            return copies
-
-        def parents(self):
-            if not self._parents:
-                if self._use_dirstate_v2:
-                    self._parents = self.docket.parents
-                else:
-                    read_len = self._nodelen * 2
-                    st = self._readdirstatefile(read_len)
-                    l = len(st)
-                    if l == read_len:
-                        self._parents = (
-                            st[: self._nodelen],
-                            st[self._nodelen : 2 * self._nodelen],
-                        )
-                    elif l == 0:
-                        self._parents = (
-                            self._nodeconstants.nullid,
-                            self._nodeconstants.nullid,
-                        )
-                    else:
-                        raise error.Abort(
-                            _(b'working directory state appears damaged!')
-                        )
-
-            return self._parents
-
-        @property
-        def docket(self):
-            if not self._docket:
-                if not self._use_dirstate_v2:
-                    raise error.ProgrammingError(
-                        b'dirstate only has a docket in v2 format'
-                    )
-                self._docket = docketmod.DirstateDocket.parse(
-                    self._readdirstatefile(), self._nodeconstants
-                )
-            return self._docket
-
-        @propertycache
-        def _map(self):
-            """
-            Fills the Dirstatemap when called.
-            """
-            # ignore HG_PENDING because identity is used only for writing
-            self.identity = util.filestat.frompath(
-                self._opener.join(self._filename)
-            )
-
-            if self._use_dirstate_v2:
-                if self.docket.uuid:
-                    # TODO: use mmap when possible
-                    data = self._opener.read(self.docket.data_filename())
-                else:
-                    data = b''
-                self._map = rustmod.DirstateMap.new_v2(
-                    data, self.docket.data_size, self.docket.tree_metadata
-                )
-                parents = self.docket.parents
-            else:
-                self._map, parents = rustmod.DirstateMap.new_v1(
-                    self._readdirstatefile()
-                )
-
-            if parents and not self._dirtyparents:
-                self.setparents(*parents)
-
-            self.__contains__ = self._map.__contains__
-            self.__getitem__ = self._map.__getitem__
-            self.get = self._map.get
-            return self._map
-
-        def write(self, tr, st, now):
-            if not self._use_dirstate_v2:
-                p1, p2 = self.parents()
-                packed = self._map.write_v1(p1, p2, now)
-                st.write(packed)
-                st.close()
-                self._dirtyparents = False
-                return
-
-            # We can only append to an existing data file if there is one
-            can_append = self.docket.uuid is not None
-            packed, meta, append = self._map.write_v2(now, can_append)
-            if append:
-                docket = self.docket
-                data_filename = docket.data_filename()
-                if tr:
-                    tr.add(data_filename, docket.data_size)
-                with self._opener(data_filename, b'r+b') as fp:
-                    fp.seek(docket.data_size)
-                    assert fp.tell() == docket.data_size
-                    written = fp.write(packed)
-                    if written is not None:  # py2 may return None
-                        assert written == len(packed), (written, len(packed))
-                docket.data_size += len(packed)
-                docket.parents = self.parents()
-                docket.tree_metadata = meta
-                st.write(docket.serialize())
-                st.close()
-            else:
-                old_docket = self.docket
-                new_docket = docketmod.DirstateDocket.with_new_uuid(
-                    self.parents(), len(packed), meta
-                )
-                data_filename = new_docket.data_filename()
-                if tr:
-                    tr.add(data_filename, 0)
-                self._opener.write(data_filename, packed)
-                # Write the new docket after the new data file has been
-                # written. Because `st` was opened with `atomictemp=True`,
-                # the actual `.hg/dirstate` file is only affected on close.
-                st.write(new_docket.serialize())
-                st.close()
-                # Remove the old data file after the new docket pointing to
-                # the new data file was written.
-                if old_docket.uuid:
-                    data_filename = old_docket.data_filename()
-                    unlink = lambda _tr=None: self._opener.unlink(data_filename)
-                    if tr:
-                        category = b"dirstate-v2-clean-" + old_docket.uuid
-                        tr.addpostclose(category, unlink)
-                    else:
-                        unlink()
-                self._docket = new_docket
-            # Reload from the newly-written file
-            util.clearcachedproperty(self, b"_map")
-            self._dirtyparents = False
-
-        @propertycache
-        def filefoldmap(self):
-            """Returns a dictionary mapping normalized case paths to their
-            non-normalized versions.
-            """
-            return self._map.filefoldmapasdict()
-
-        def hastrackeddir(self, d):
-            return self._map.hastrackeddir(d)
-
-        def hasdir(self, d):
-            return self._map.hasdir(d)
-
-        @propertycache
-        def identity(self):
-            self._map
-            return self.identity
-
-        @propertycache
-        def dirfoldmap(self):
-            f = {}
-            normcase = util.normcase
-            for name in self._map.tracked_dirs():
-                f[normcase(name)] = name
-            return f
-
-        def set_possibly_dirty(self, filename):
-            """record that the current state of the file on disk is unknown"""
-            entry = self[filename]
-            entry.set_possibly_dirty()
-            self._map.set_dirstate_item(filename, entry)
-
-        def set_clean(self, filename, mode, size, mtime):
-            """mark a file as back to a clean state"""
-            entry = self[filename]
-            mtime = mtime & rangemask
-            size = size & rangemask
-            entry.set_clean(mode, size, mtime)
-            self._map.set_dirstate_item(filename, entry)
-            self._map.copymap().pop(filename, None)
-
-        def __setitem__(self, key, value):
-            assert isinstance(value, DirstateItem)
-            self._map.set_dirstate_item(key, value)
