@@ -35,12 +35,14 @@ pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 /// `mercurial/dirstateutils/docket.py`
 const TREE_METADATA_SIZE: usize = 44;
 
+const NODE_SIZE: usize = 43;
+
 /// Make sure that size-affecting changes are made knowingly
 #[allow(unused)]
 fn static_assert_size_of() {
     let _ = std::mem::transmute::<TreeMetadata, [u8; TREE_METADATA_SIZE]>;
     let _ = std::mem::transmute::<DocketHeader, [u8; TREE_METADATA_SIZE + 81]>;
-    let _ = std::mem::transmute::<Node, [u8; 43]>;
+    let _ = std::mem::transmute::<Node, [u8; NODE_SIZE]>;
 }
 
 // Must match `HEADER` in `mercurial/dirstateutils/docket.py`
