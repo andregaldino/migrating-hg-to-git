@@ -20,6 +20,7 @@ from . import (
 
 from .dirstateutils import (
     docket as docketmod,
+    v2,
 )
 
 parsers = policy.importmod('parsers')

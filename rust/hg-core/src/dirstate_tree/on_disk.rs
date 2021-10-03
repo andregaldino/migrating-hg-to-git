@@ -31,10 +31,8 @@ const USED_NODE_ID_BYTES: usize = 20;
 pub(super) const IGNORE_PATTERNS_HASH_LEN: usize = 20;
 pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 
-/// Must match the constant of the same name in
-/// `mercurial/dirstateutils/docket.py`
+/// Must match constants of the same names in `mercurial/dirstateutils/v2.py`
 const TREE_METADATA_SIZE: usize = 44;
-
 const NODE_SIZE: usize = 43;
 
 /// Make sure that size-affecting changes are made knowingly

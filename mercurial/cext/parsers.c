@@ -347,6 +347,33 @@ static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
 	return (PyObject *)dirstate_item_from_v1_data(state, mode, size, mtime);
 };
 
+static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
+                                            PyObject *args)
+{
+	dirstateItemObject *t =
+	    PyObject_New(dirstateItemObject, &dirstateItemType);
+	if (!t) {
+		return NULL;
+	}
+	if (!PyArg_ParseTuple(args, "bii", &t->flags, &t->size, &t->mtime)) {
+		return NULL;
+	}
+	t->mode = 0;
+	if (t->flags & dirstate_flag_has_meaningful_data) {
+		if (t->flags & dirstate_flag_mode_exec_perm) {
+			t->mode = 0755;
+		} else {
+			t->mode = 0644;
+		}
+		if (t->flags & dirstate_flag_mode_is_symlink) {
+			t->mode |= S_IFLNK;
+		} else {
+			t->mode |= S_IFREG;
+		}
+	}
+	return (PyObject *)t;
+};
+
 /* This means the next status call will have to actually check its content
    to make sure it is correct. */
 static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
@@ -413,6 +440,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "True if the stored mtime would be ambiguous with the current time"},
     {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth,
      METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V1 data"},
+    {"from_v2_data", (PyCFunction)dirstate_item_from_v2_meth,
+     METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V2 data"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,
      METH_NOARGS, "mark a file as \"possibly dirty\""},
     {"set_clean", (PyCFunction)dirstate_item_set_clean, METH_VARARGS,

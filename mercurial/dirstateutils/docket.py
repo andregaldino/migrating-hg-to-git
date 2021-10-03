@@ -10,13 +10,9 @@ from __future__ import absolute_import
 import struct
 
 from ..revlogutils import docket as docket_mod
-
+from . import v2
 
 V2_FORMAT_MARKER = b"dirstate-v2\n"
-
-# Must match the constant of the same name in
-# `rust/hg-core/src/dirstate_tree/on_disk.rs`
-TREE_METADATA_SIZE = 44
 
 # * 12 bytes: format marker
 # * 32 bytes: node ID of the working directory's first parent
@@ -29,7 +25,7 @@ TREE_METADATA_SIZE = 44
 # Node IDs are null-padded if shorter than 32 bytes.
 # A data file shorter than the specified used size is corrupted (truncated)
 HEADER = struct.Struct(
-    ">{}s32s32s{}sLB".format(len(V2_FORMAT_MARKER), TREE_METADATA_SIZE)
+    ">{}s32s32s{}sLB".format(len(V2_FORMAT_MARKER), v2.TREE_METADATA_SIZE)
 )
 
 

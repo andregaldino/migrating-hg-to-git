@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import stat
 import struct
 import zlib
 
@@ -42,6 +43,15 @@ NONNORMAL = -1
 
 # a special value used internally for `time` if the time is ambigeous
 AMBIGUOUS_TIME = -1
+
+# Bits of the `flags` byte inside a node in the file format
+DIRSTATE_V2_WDIR_TRACKED = 1 << 0
+DIRSTATE_V2_P1_TRACKED = 1 << 1
+DIRSTATE_V2_P2_INFO = 1 << 2
+DIRSTATE_V2_HAS_MODE_AND_SIZE = 1 << 3
+DIRSTATE_V2_HAS_MTIME = 1 << 4
+DIRSTATE_V2_MODE_EXEC_PERM = 1 << 5
+DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 6
 
 
 @attr.s(slots=True, init=False)
@@ -107,6 +117,30 @@ class DirstateItem(object):
             self._size = parentfiledata[1]
         if has_meaningful_mtime:
             self._mtime = parentfiledata[2]
+
+    @classmethod
+    def from_v2_data(cls, flags, size, mtime):
+        """Build a new DirstateItem object from V2 data"""
+        has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
+        mode = None
+        if has_mode_size:
+            assert stat.S_IXUSR == 0o100
+            if flags & DIRSTATE_V2_MODE_EXEC_PERM:
+                mode = 0o755
+            else:
+                mode = 0o644
+            if flags & DIRSTATE_V2_MODE_IS_SYMLINK:
+                mode |= stat.S_IFLNK
+            else:
+                mode |= stat.S_IFREG
+        return cls(
+            wc_tracked=bool(flags & DIRSTATE_V2_WDIR_TRACKED),
+            p1_tracked=bool(flags & DIRSTATE_V2_P1_TRACKED),
+            p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
+            has_meaningful_data=has_mode_size,
+            has_meaningful_mtime=bool(flags & DIRSTATE_V2_HAS_MTIME),
+            parentfiledata=(mode, size, mtime),
+        )
 
     @classmethod
     def from_v1_data(cls, state, mode, size, mtime):
