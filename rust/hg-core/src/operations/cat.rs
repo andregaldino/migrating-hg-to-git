@@ -11,6 +11,9 @@ use crate::revlog::Node;
 
 use crate::utils::hg_path::HgPathBuf;
 
+use itertools::EitherOrBoth::{Both, Left, Right};
+use itertools::Itertools;
+
 pub struct CatOutput {
     /// Whether any file in the manifest matched the paths given as CLI
     /// arguments
@@ -31,7 +34,7 @@ pub struct CatOutput {
 pub fn cat<'a>(
     repo: &Repo,
     revset: &str,
-    files: &'a [HgPathBuf],
+    mut files: Vec<HgPathBuf>,
 ) -> Result<CatOutput, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
     let manifest = repo.manifest_for_rev(rev)?;
@@ -40,13 +43,21 @@ pub fn cat<'a>(
         .node_from_rev(rev)
         .expect("should succeed when repo.manifest did");
     let mut bytes = vec![];
-    let mut matched = vec![false; files.len()];
     let mut found_any = false;
+    files.sort_unstable();
 
-    for (manifest_file, node_bytes) in manifest.files_with_nodes() {
-        for (cat_file, is_matched) in files.iter().zip(&mut matched) {
-            if cat_file.as_bytes() == manifest_file.as_bytes() {
-                *is_matched = true;
+    let mut missing = vec![];
+
+    for entry in manifest
+        .files_with_nodes()
+        .merge_join_by(files.iter(), |(manifest_file, _), file| {
+            manifest_file.cmp(&file.as_ref())
+        })
+    {
+        match entry {
+            Left(_) => (),
+            Right(path) => missing.push(path),
+            Both((manifest_file, node_bytes), _) => {
                 found_any = true;
                 let file_log = repo.filelog(manifest_file)?;
                 let file_node = Node::from_hex_for_repo(node_bytes)?;
@@ -56,11 +67,9 @@ pub fn cat<'a>(
         }
     }
 
-    let missing: Vec<_> = files
+    let missing: Vec<HgPathBuf> = missing
         .iter()
-        .zip(&matched)
-        .filter(|pair| !*pair.1)
-        .map(|pair| pair.0.clone())
+        .map(|file| (*(file.as_ref())).to_owned())
         .collect();
     Ok(CatOutput {
         found_any,

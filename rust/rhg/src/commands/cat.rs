@@ -73,7 +73,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         None => format!("{:x}", repo.dirstate_parents()?.p1),
     };
 
-    let output = cat(&repo, &rev, &files).map_err(|e| (e, rev.as_str()))?;
+    let output = cat(&repo, &rev, files).map_err(|e| (e, rev.as_str()))?;
     invocation.ui.write_stdout(&output.concatenated)?;
     if !output.missing.is_empty() {
         let short = format!("{:x}", output.node.short()).into_bytes();
