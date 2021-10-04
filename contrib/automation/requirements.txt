@@ -37,9 +37,9 @@ botocore==1.12.243 \
     --hash=sha256:397585a7881230274afb8d1877ef69a661b0a311745cd324f14a052fb2a2863a \
     --hash=sha256:4496f8da89cb496462a831897ad248e13e431d9fa7e41e06d426fd6658ab6e59 \
     # via boto3, s3transfer
-certifi==2019.9.11 \
-    --hash=sha256:e4f3620cfea4f83eedc95b24abd9cd56f3c4b146dd0177e83a21b4eb49e21e50 \
-    --hash=sha256:fd7c7c74727ddcf00e9acd26bba8da604ffec95bf1c2144e67aff7a8b50e6cef \
+certifi==2021.5.30 \
+    --hash=sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee \
+    --hash=sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8 \
     # via requests
 cffi==1.12.3 \
     --hash=sha256:041c81822e9f84b1d9c401182e174996f0bae9991f33725d059b771744290774 \
