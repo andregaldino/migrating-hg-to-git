@@ -121,6 +121,8 @@ Specifying revisions by changeset ID
   file-3
   $ $NO_FALLBACK rhg cat -r cf8b83 file-2
   2
+  $ $NO_FALLBACK rhg cat --rev cf8b83 file-2
+  2
   $ $NO_FALLBACK rhg cat -r c file-2
   abort: ambiguous revision identifier: c
   [255]

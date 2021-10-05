@@ -16,7 +16,7 @@ pub fn args() -> clap::App<'static, 'static> {
             Arg::with_name("rev")
                 .help("search the repository as it is in REV")
                 .short("-r")
-                .long("--revision")
+                .long("--rev")
                 .value_name("REV")
                 .takes_value(true),
         )
@@ -26,7 +26,7 @@ pub fn args() -> clap::App<'static, 'static> {
                 .multiple(true)
                 .empty_values(false)
                 .value_name("FILE")
-                .help("Activity to start: activity@category"),
+                .help("Files to output"),
         )
         .about(HELP_TEXT)
 }
