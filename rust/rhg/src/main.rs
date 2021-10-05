@@ -17,6 +17,9 @@ use std::process::Command;
 mod blackbox;
 mod error;
 mod ui;
+pub mod utils {
+    pub mod path_utils;
+}
 use error::CommandError;
 
 fn main_with_result(
