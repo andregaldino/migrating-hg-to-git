@@ -6,9 +6,11 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::error::CommandError;
-use crate::ui::Ui;
+use crate::ui::{Ui, UiError};
+use crate::utils::path_utils::relativize_paths;
 use clap::{Arg, SubCommand};
 use hg;
+use hg::config::Config;
 use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
@@ -16,6 +18,7 @@ use hg::repo::Repo;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
+use std::borrow::Cow;
 
 pub const HELP_TEXT: &str = "
 Show changed files in the working directory
@@ -146,6 +149,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     }
 
     let ui = invocation.ui;
+    let config = invocation.config;
     let args = invocation.subcommand_args;
     let display_states = if args.is_present("all") {
         // TODO when implementing `--quiet`: it excludes clean files
@@ -225,25 +229,25 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         }
     }
     if display_states.modified {
-        display_status_paths(ui, &mut ds_status.modified, b"M")?;
+        display_status_paths(ui, repo, config, &mut ds_status.modified, b"M")?;
     }
     if display_states.added {
-        display_status_paths(ui, &mut ds_status.added, b"A")?;
+        display_status_paths(ui, repo, config, &mut ds_status.added, b"A")?;
     }
     if display_states.removed {
-        display_status_paths(ui, &mut ds_status.removed, b"R")?;
+        display_status_paths(ui, repo, config, &mut ds_status.removed, b"R")?;
     }
     if display_states.deleted {
-        display_status_paths(ui, &mut ds_status.deleted, b"!")?;
+        display_status_paths(ui, repo, config, &mut ds_status.deleted, b"!")?;
     }
     if display_states.unknown {
-        display_status_paths(ui, &mut ds_status.unknown, b"?")?;
+        display_status_paths(ui, repo, config, &mut ds_status.unknown, b"?")?;
     }
     if display_states.ignored {
-        display_status_paths(ui, &mut ds_status.ignored, b"I")?;
+        display_status_paths(ui, repo, config, &mut ds_status.ignored, b"I")?;
     }
     if display_states.clean {
-        display_status_paths(ui, &mut ds_status.clean, b"C")?;
+        display_status_paths(ui, repo, config, &mut ds_status.clean, b"C")?;
     }
     Ok(())
 }
@@ -252,16 +256,35 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
 // harcode HgPathBuf, but probably not really useful at this point
 fn display_status_paths(
     ui: &Ui,
+    repo: &Repo,
+    config: &Config,
     paths: &mut [HgPathCow],
     status_prefix: &[u8],
 ) -> Result<(), CommandError> {
     paths.sort_unstable();
-    for path in paths {
-        // Same TODO as in commands::root
-        let bytes: &[u8] = path.as_bytes();
-        // TODO optim, probably lots of unneeded copies here, especially
-        // if out stream is buffered
-        ui.write_stdout(&[status_prefix, b" ", bytes, b"\n"].concat())?;
+    let mut relative: bool =
+        config.get_bool(b"ui", b"relative-paths").unwrap_or(false);
+    relative = config
+        .get_bool(b"commands", b"status.relative")
+        .unwrap_or(relative);
+    if relative {
+        relativize_paths(
+            repo,
+            paths,
+            |path: Cow<[u8]>| -> Result<(), UiError> {
+                ui.write_stdout(
+                    &[status_prefix, b" ", path.as_ref(), b"\n"].concat(),
+                )
+            },
+        )?;
+    } else {
+        for path in paths {
+            // Same TODO as in commands::root
+            let bytes: &[u8] = path.as_bytes();
+            // TODO optim, probably lots of unneeded copies here, especially
+            // if out stream is buffered
+            ui.write_stdout(&[status_prefix, b" ", bytes, b"\n"].concat())?;
+        }
     }
     Ok(())
 }
