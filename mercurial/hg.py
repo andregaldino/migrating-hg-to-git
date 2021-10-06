@@ -1285,7 +1285,7 @@ def _incoming(
         if revs:
             revs = [other.lookup(rev) for rev in revs]
         other, chlist, cleanupfn = bundlerepo.getremotechanges(
-            ui, repo, other, revs, opts[b"bundle"], opts[b"force"]
+            ui, repo, other, revs, opts.get(b"bundle"), opts.get(b"force")
         )
 
         if not chlist:
