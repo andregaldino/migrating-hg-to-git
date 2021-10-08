@@ -219,8 +219,7 @@ use shell=True in the subprocess call:
 #endif
 
 A complicated pager command gets worse behavior. Bonus points if you can
-improve this. Windows apparently does this better, but only sometimes?
-#if windows
+improve this.
   $ hg log --limit 3 \
   >   --config pager.pager='this-command-better-never-exist --seriously' \
   >  2>/dev/null || true
@@ -240,11 +239,6 @@ improve this. Windows apparently does this better, but only sometimes?
   date:        Thu Jan 01 00:00:00 1970 +0000 (?)
   summary:     modify a 8 (?)
    (?)
-#else
-  $ hg log --limit 3 \
-  >   --config pager.pager='this-command-better-never-exist --seriously' \
-  >  2>/dev/null || true
-#endif
 
 Pager works with shell aliases.
 
