@@ -253,7 +253,7 @@ def dispatch(req):
         status = -1
 
     ret = _flushstdio(req.ui, err)
-    if ret:
+    if ret and not status:
         status = ret
     return status
 
