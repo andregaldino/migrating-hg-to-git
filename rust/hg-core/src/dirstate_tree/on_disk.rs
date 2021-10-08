@@ -114,8 +114,8 @@ bitflags! {
 #[repr(C)]
 struct Entry {
     mode: I32Be,
-    mtime: I32Be,
     size: I32Be,
+    mtime: I32Be,
 }
 
 /// Duration since the Unix epoch

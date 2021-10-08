@@ -424,15 +424,15 @@ Node components are:
     Only the `S_IXUSR` bit (owner has execute permission) is considered.
 
   * Offset 35:
-    If `HAS_MTIME` is unset, four zero bytes.
-    Otherwise, a 32-bit integer for expected modified time of the file
-    (as in `stat_result.st_mtime`),
+    If `HAS_MODE_AND_SIZE` is unset, four zero bytes.
+    Otherwise, a 32-bit integer for expected size of the file
     truncated to its 31 least-significant bits.
     Unlike in dirstate-v1, negative values are not used.
 
   * Offset 39:
-    If `HAS_MODE_AND_SIZE` is unset, four zero bytes.
-    Otherwise, a 32-bit integer for expected size of the file
+    If `HAS_MTIME` is unset, four zero bytes.
+    Otherwise, a 32-bit integer for expected modified time of the file
+    (as in `stat_result.st_mtime`),
     truncated to its 31 least-significant bits.
     Unlike in dirstate-v1, negative values are not used.
 
