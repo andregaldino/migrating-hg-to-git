@@ -56,6 +56,7 @@ class _dirstatemapcommon(object):
         self._nodelen = 20  # Also update Rust code when changing this!
         self._parents = None
         self._dirtyparents = False
+        self._docket = None
 
         # for consistent view between _pl() and _read() invocations
         self._pendingmode = None
@@ -208,6 +209,93 @@ class _dirstatemapcommon(object):
         )
         self._insert_entry(filename, entry)
 
+    ### disk interaction
+
+    def _opendirstatefile(self):
+        fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
+        if self._pendingmode is not None and self._pendingmode != mode:
+            fp.close()
+            raise error.Abort(
+                _(b'working directory state may be changed parallelly')
+            )
+        self._pendingmode = mode
+        return fp
+
+    def _readdirstatefile(self, size=-1):
+        try:
+            with self._opendirstatefile() as fp:
+                return fp.read(size)
+        except IOError as err:
+            if err.errno != errno.ENOENT:
+                raise
+            # File doesn't exist, so the current state is empty
+            return b''
+
+    @property
+    def docket(self):
+        if not self._docket:
+            if not self._use_dirstate_v2:
+                raise error.ProgrammingError(
+                    b'dirstate only has a docket in v2 format'
+                )
+            self._docket = docketmod.DirstateDocket.parse(
+                self._readdirstatefile(), self._nodeconstants
+            )
+        return self._docket
+
+    def write_v2_no_append(self, tr, st, meta, packed):
+        old_docket = self.docket
+        new_docket = docketmod.DirstateDocket.with_new_uuid(
+            self.parents(), len(packed), meta
+        )
+        data_filename = new_docket.data_filename()
+        if tr:
+            tr.add(data_filename, 0)
+        self._opener.write(data_filename, packed)
+        # Write the new docket after the new data file has been
+        # written. Because `st` was opened with `atomictemp=True`,
+        # the actual `.hg/dirstate` file is only affected on close.
+        st.write(new_docket.serialize())
+        st.close()
+        # Remove the old data file after the new docket pointing to
+        # the new data file was written.
+        if old_docket.uuid:
+            data_filename = old_docket.data_filename()
+            unlink = lambda _tr=None: self._opener.unlink(data_filename)
+            if tr:
+                category = b"dirstate-v2-clean-" + old_docket.uuid
+                tr.addpostclose(category, unlink)
+            else:
+                unlink()
+        self._docket = new_docket
+
+    ### reading/setting parents
+
+    def parents(self):
+        if not self._parents:
+            if self._use_dirstate_v2:
+                self._parents = self.docket.parents
+            else:
+                read_len = self._nodelen * 2
+                st = self._readdirstatefile(read_len)
+                l = len(st)
+                if l == read_len:
+                    self._parents = (
+                        st[: self._nodelen],
+                        st[self._nodelen : 2 * self._nodelen],
+                    )
+                elif l == 0:
+                    self._parents = (
+                        self._nodeconstants.nullid,
+                        self._nodeconstants.nullid,
+                    )
+                else:
+                    raise error.Abort(
+                        _(b'working directory state appears damaged!')
+                    )
+
+        return self._parents
+
 
 class dirstatemap(_dirstatemapcommon):
     """Map encapsulating the dirstate's contents.
@@ -295,36 +383,6 @@ class dirstatemap(_dirstatemapcommon):
 
     ### reading/setting parents
 
-    def parents(self):
-        if not self._parents:
-            try:
-                fp = self._opendirstatefile()
-                st = fp.read(2 * self._nodelen)
-                fp.close()
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-                # File doesn't exist, so the current state is empty
-                st = b''
-
-            l = len(st)
-            if l == self._nodelen * 2:
-                self._parents = (
-                    st[: self._nodelen],
-                    st[self._nodelen : 2 * self._nodelen],
-                )
-            elif l == 0:
-                self._parents = (
-                    self._nodeconstants.nullid,
-                    self._nodeconstants.nullid,
-                )
-            else:
-                raise error.Abort(
-                    _(b'working directory state appears damaged!')
-                )
-
-        return self._parents
-
     def setparents(self, p1, p2, fold_p2=False):
         self._parents = (p1, p2)
         self._dirtyparents = True
@@ -396,16 +454,6 @@ class dirstatemap(_dirstatemapcommon):
         st.write(d)
         st.close()
         self._dirtyparents = False
-
-    def _opendirstatefile(self):
-        fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
-        if self._pendingmode is not None and self._pendingmode != mode:
-            fp.close()
-            raise error.Abort(
-                _(b'working directory state may be changed parallelly')
-            )
-        self._pendingmode = mode
-        return fp
 
     @propertycache
     def identity(self):
@@ -506,25 +554,8 @@ class dirstatemap(_dirstatemapcommon):
 if rustmod is not None:
 
     class dirstatemap(_dirstatemapcommon):
-        def __init__(self, ui, opener, root, nodeconstants, use_dirstate_v2):
-            super(dirstatemap, self).__init__(
-                ui, opener, root, nodeconstants, use_dirstate_v2
-            )
-            self._docket = None
 
         ### Core data storage and access
-
-        @property
-        def docket(self):
-            if not self._docket:
-                if not self._use_dirstate_v2:
-                    raise error.ProgrammingError(
-                        b'dirstate only has a docket in v2 format'
-                    )
-                self._docket = docketmod.DirstateDocket.parse(
-                    self._readdirstatefile(), self._nodeconstants
-                )
-            return self._docket
 
         @propertycache
         def _map(self):
@@ -616,31 +647,6 @@ if rustmod is not None:
                     rust_map.set_dirstate_item(f, e)
             return copies
 
-        def parents(self):
-            if not self._parents:
-                if self._use_dirstate_v2:
-                    self._parents = self.docket.parents
-                else:
-                    read_len = self._nodelen * 2
-                    st = self._readdirstatefile(read_len)
-                    l = len(st)
-                    if l == read_len:
-                        self._parents = (
-                            st[: self._nodelen],
-                            st[self._nodelen : 2 * self._nodelen],
-                        )
-                    elif l == 0:
-                        self._parents = (
-                            self._nodeconstants.nullid,
-                            self._nodeconstants.nullid,
-                        )
-                    else:
-                        raise error.Abort(
-                            _(b'working directory state appears damaged!')
-                        )
-
-            return self._parents
-
         ### disk interaction
 
         @propertycache
@@ -677,55 +683,10 @@ if rustmod is not None:
                 st.write(docket.serialize())
                 st.close()
             else:
-                old_docket = self.docket
-                new_docket = docketmod.DirstateDocket.with_new_uuid(
-                    self.parents(), len(packed), meta
-                )
-                data_filename = new_docket.data_filename()
-                if tr:
-                    tr.add(data_filename, 0)
-                self._opener.write(data_filename, packed)
-                # Write the new docket after the new data file has been
-                # written. Because `st` was opened with `atomictemp=True`,
-                # the actual `.hg/dirstate` file is only affected on close.
-                st.write(new_docket.serialize())
-                st.close()
-                # Remove the old data file after the new docket pointing to
-                # the new data file was written.
-                if old_docket.uuid:
-                    data_filename = old_docket.data_filename()
-                    unlink = lambda _tr=None: self._opener.unlink(data_filename)
-                    if tr:
-                        category = b"dirstate-v2-clean-" + old_docket.uuid
-                        tr.addpostclose(category, unlink)
-                    else:
-                        unlink()
-                self._docket = new_docket
+                self.write_v2_no_append(tr, st, meta, packed)
             # Reload from the newly-written file
             util.clearcachedproperty(self, b"_map")
             self._dirtyparents = False
-
-        def _opendirstatefile(self):
-            fp, mode = txnutil.trypending(
-                self._root, self._opener, self._filename
-            )
-            if self._pendingmode is not None and self._pendingmode != mode:
-                fp.close()
-                raise error.Abort(
-                    _(b'working directory state may be changed parallelly')
-                )
-            self._pendingmode = mode
-            return fp
-
-        def _readdirstatefile(self, size=-1):
-            try:
-                with self._opendirstatefile() as fp:
-                    return fp.read(size)
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-                # File doesn't exist, so the current state is empty
-                return b''
 
         ### code related to maintaining and accessing "extra" property
         # (e.g. "has_dir")
