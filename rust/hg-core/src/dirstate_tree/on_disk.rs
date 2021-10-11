@@ -126,8 +126,7 @@ pub(super) struct Timestamp {
 
     /// In `0 .. 1_000_000_000`.
     ///
-    /// This timestamp is later or earlier than `(seconds, 0)` by this many
-    /// nanoseconds, if `seconds` is non-negative or negative, respectively.
+    /// This timestamp is after `(seconds, 0)` by this many nanoseconds.
     nanoseconds: U32Be,
 }
 
@@ -446,13 +445,30 @@ impl Timestamp {
 
 impl From<SystemTime> for Timestamp {
     fn from(system_time: SystemTime) -> Self {
+        // On Unix, `SystemTime` is a wrapper for the `timespec` C struct:
+        // https://www.gnu.org/software/libc/manual/html_node/Time-Types.html#index-struct-timespec
+        // We want to effectively access its fields, but the Rust standard
+        // library does not expose them. The best we can do is:
         let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {
             Ok(duration) => {
                 (duration.as_secs() as i64, duration.subsec_nanos())
             }
             Err(error) => {
+                // `system_time` is before `UNIX_EPOCH`.
+                // We need to undo this algorithm:
+                // https://github.com/rust-lang/rust/blob/6bed1f0bc3cc50c10aab26d5f94b16a00776b8a5/library/std/src/sys/unix/time.rs#L40-L41
                 let negative = error.duration();
-                (-(negative.as_secs() as i64), negative.subsec_nanos())
+                let negative_secs = negative.as_secs() as i64;
+                let negative_nanos = negative.subsec_nanos();
+                if negative_nanos == 0 {
+                    (-negative_secs, 0)
+                } else {
+                    // For example if `system_time` was 4.3 seconds before
+                    // the Unix epoch we get a Duration that represents
+                    // `(-4, -0.3)` but we want `(-5, +0.7)`:
+                    const NSEC_PER_SEC: u32 = 1_000_000_000;
+                    (-1 - negative_secs, NSEC_PER_SEC - negative_nanos)
+                }
             }
         };
         Timestamp {

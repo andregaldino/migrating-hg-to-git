@@ -443,20 +443,19 @@ Node components are:
 
   If an untracked node `HAS_MTIME` *set*,
   what follows is the modification time of a directory
-  represented with separated second and sub-second components
-  since the Unix epoch:
+  represented similarly to the C `timespec` struct:
 
   * Offset 31:
-    The number of seconds as a signed (two’s complement) 64-bit integer.
+    The number of seconds elapsed since the Unix epoch,
+    as a signed (two’s complement) 64-bit integer.
 
   * Offset 39:
-    The number of nanoseconds as 32-bit integer.
+    The number of nanoseconds elapsed since
+    the instant specified by the previous field alone,
+    as 32-bit integer.
     Always greater than or equal to zero, and strictly less than a billion.
     Increasing this component makes the modification time
-    go forward or backward in time dependening
-    on the sign of the integral seconds components.
-    (Note: this is buggy because there is no negative zero integer,
-    but will be changed soon.)
+    go forward in time regardless of the sign of the seconds component.
 
   The presence of a directory modification time means that at some point,
   this path in the working directory was observed:
