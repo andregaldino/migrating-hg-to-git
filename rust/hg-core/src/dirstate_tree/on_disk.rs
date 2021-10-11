@@ -64,44 +64,24 @@ pub struct Docket<'on_disk> {
     uuid: &'on_disk [u8],
 }
 
+/// Fields are documented in the *Tree metadata in the docket file*
+/// section of `mercurial/helptext/internals/dirstate-v2.txt`
 #[derive(BytesCast)]
 #[repr(C)]
 struct TreeMetadata {
     root_nodes: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
-
-    /// How many bytes of this data file are not used anymore
     unreachable_bytes: Size,
-
-    /// Current version always sets these bytes to zero when creating or
-    /// updating a dirstate. Future versions could assign some bits to signal
-    /// for example "the version that last wrote/updated this dirstate did so
-    /// in such and such way that can be relied on by versions that know to."
     unused: [u8; 4],
 
-    /// If non-zero, a hash of ignore files that were used for some previous
-    /// run of the `status` algorithm.
-    ///
-    /// We define:
-    ///
-    /// * "Root" ignore files are `.hgignore` at the root of the repository if
-    ///   it exists, and files from `ui.ignore.*` config. This set of files is
-    ///   then sorted by the string representation of their path.
-    /// * The "expanded contents" of an ignore files is the byte string made
-    ///   by concatenating its contents with the "expanded contents" of other
-    ///   files included with `include:` or `subinclude:` files, in inclusion
-    ///   order. This definition is recursive, as included files can
-    ///   themselves include more files.
-    ///
-    /// This hash is defined as the SHA-1 of the concatenation (in sorted
-    /// order) of the "expanded contents" of each "root" ignore file.
-    /// (Note that computing this does not require actually concatenating byte
-    /// strings into contiguous memory, instead SHA-1 hashing can be done
-    /// incrementally.)
+    /// See *Optional hash of ignore patterns* section of
+    /// `mercurial/helptext/internals/dirstate-v2.txt`
     ignore_patterns_hash: IgnorePatternsHash,
 }
 
+/// Fields are documented in the *The data file format*
+/// section of `mercurial/helptext/internals/dirstate-v2.txt`
 #[derive(BytesCast)]
 #[repr(C)]
 pub(super) struct Node {
@@ -114,45 +94,6 @@ pub(super) struct Node {
     children: ChildNodes,
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
-
-    /// Depending on the bits in `flags`:
-    ///
-    /// * If any of `WDIR_TRACKED`, `P1_TRACKED`, or `P2_INFO` are set, the
-    ///   node has an entry.
-    ///
-    ///   - If `HAS_MODE_AND_SIZE` is set, `data.mode` and `data.size` are
-    ///     meaningful. Otherwise they are set to zero
-    ///   - If `HAS_MTIME` is set, `data.mtime` is meaningful. Otherwise it is
-    ///     set to zero.
-    ///
-    /// * If none of `WDIR_TRACKED`, `P1_TRACKED`, `P2_INFO`, or `HAS_MTIME`
-    ///   are set, the node does not have an entry and `data` is set to all
-    ///   zeros.
-    ///
-    /// * If none of `WDIR_TRACKED`, `P1_TRACKED`, `P2_INFO` are set, but
-    ///   `HAS_MTIME` is set, the bytes of `data` should instead be
-    ///   interpreted as the `Timestamp` for the mtime of a cached directory.
-    ///
-    ///   The presence of this combination of flags means that at some point,
-    ///   this path in the working directory was observed:
-    ///
-    ///   - To be a directory
-    ///   - With the modification time as given by `Timestamp`
-    ///   - That timestamp was already strictly in the past when observed,
-    ///     meaning that later changes cannot happen in the same clock tick
-    ///     and must cause a different modification time (unless the system
-    ///     clock jumps back and we get unlucky, which is not impossible but
-    ///     but deemed unlikely enough).
-    ///   - All direct children of this directory (as returned by
-    ///     `std::fs::read_dir`) either have a corresponding dirstate node, or
-    ///     are ignored by ignore patterns whose hash is in
-    ///     `TreeMetadata::ignore_patterns_hash`.
-    ///
-    ///   This means that if `std::fs::symlink_metadata` later reports the
-    ///   same modification time and ignored patterns haven’t changed, a run
-    ///   of status that is not listing ignored   files can skip calling
-    ///   `std::fs::read_dir` again for this directory,   iterate child
-    ///   dirstate nodes instead.
     flags: Flags,
     data: Entry,
 }

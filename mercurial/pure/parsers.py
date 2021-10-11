@@ -55,7 +55,7 @@ class DirstateItem(object):
     - p1_tracked: is the file tracked in working copy first parent
     - p2_info: the file has been involved in some merge operation. Either
                because it was actually merged, or because the p2 version was
-               ahead, or because some renamed moved it there. In either case
+               ahead, or because some rename moved it there. In either case
                `hg status` will want it displayed as modified.
 
     # about the file state expected from p1 manifest:

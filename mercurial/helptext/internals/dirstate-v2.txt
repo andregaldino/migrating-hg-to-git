@@ -371,6 +371,114 @@ Node components are:
   (For example, `hg rm` makes a file untracked.)
   This counter is used to implement `has_tracked_dir`.
 
-* Offset 30 and more:
-  **TODO:** docs not written yet
-  as this part of the format might be changing soon.
+* Offset 30:
+  Some boolean values packed as bits of a single byte.
+  Starting from least-significant, bit masks are::
+
+    WDIR_TRACKED = 1 << 0
+    P1_TRACKED = 1 << 1
+    P2_INFO = 1 << 2
+    HAS_MODE_AND_SIZE = 1 << 3
+    HAS_MTIME = 1 << 4
+
+  Other bits are unset. The meaning of these bits are:
+
+  `WDIR_TRACKED`
+      Set if the working directory contains a tracked file at this node’s path.
+      This is typically set and unset by `hg add` and `hg rm`.
+
+  `P1_TRACKED`
+      set if the working directory’s first parent changeset
+      (whose node identifier is found in tree metadata)
+      contains a tracked file at this node’s path.
+      This is a cache to reduce manifest lookups.
+
+  `P2_INFO`
+      Set if the file has been involved in some merge operation.
+      Either because it was actually merged,
+      or because the version in the second parent p2 version was ahead,
+      or because some rename moved it there.
+      In either case `hg status` will want it displayed as modified.
+
+  Files that would be mentioned at all in the `dirstate-v1` file format
+  have a node with at least one of the above three bits set in `dirstate-v2`.
+  Let’s call these files "tracked anywhere",
+  and "untracked" the nodes with all three of these bits unset.
+  Untracked nodes are typically for directories:
+  they hold child nodes and form the tree structure.
+  Additional untracked nodes may also exist.
+  Although implementations should strive to clean up nodes
+  that are entirely unused, other untracked nodes may also exist.
+  For example, a future version of Mercurial might in some cases
+  add nodes for untracked files or/and ignored files in the working directory
+  in order to optimize `hg status`
+  by enabling it to skip `readdir` in more cases.
+
+  When a node is for a file tracked anywhere,
+  the rest of the node data is three fields:
+
+  * Offset 31:
+    If `HAS_MODE_AND_SIZE` is unset, four zero bytes.
+    Otherwise, a 32-bit integer for the Unix mode (as in `stat_result.st_mode`)
+    expected for this file to be considered clean.
+    Only the `S_IXUSR` bit (owner has execute permission) is considered.
+
+  * Offset 35:
+    If `HAS_MTIME` is unset, four zero bytes.
+    Otherwise, a 32-bit integer for expected modified time of the file
+    (as in `stat_result.st_mtime`),
+    truncated to its 31 least-significant bits.
+    Unlike in dirstate-v1, negative values are not used.
+
+  * Offset 39:
+    If `HAS_MODE_AND_SIZE` is unset, four zero bytes.
+    Otherwise, a 32-bit integer for expected size of the file
+    truncated to its 31 least-significant bits.
+    Unlike in dirstate-v1, negative values are not used.
+
+  If an untracked node `HAS_MTIME` *unset*, this space is unused:
+
+  * Offset 31:
+    12 bytes set to zero
+
+  If an untracked node `HAS_MTIME` *set*,
+  what follows is the modification time of a directory
+  represented with separated second and sub-second components
+  since the Unix epoch:
+
+  * Offset 31:
+    The number of seconds as a signed (two’s complement) 64-bit integer.
+
+  * Offset 39:
+    The number of nanoseconds as 32-bit integer.
+    Always greater than or equal to zero, and strictly less than a billion.
+    Increasing this component makes the modification time
+    go forward or backward in time dependening
+    on the sign of the integral seconds components.
+    (Note: this is buggy because there is no negative zero integer,
+    but will be changed soon.)
+
+  The presence of a directory modification time means that at some point,
+  this path in the working directory was observed:
+
+  - To be a directory
+  - With the given modification time
+  - That time was already strictly in the past when observed,
+    meaning that later changes cannot happen in the same clock tick
+    and must cause a different modification time
+    (unless the system clock jumps back and we get unlucky,
+    which is not impossible but deemed unlikely enough).
+  - All direct children of this directory
+    (as returned by `std::fs::read_dir`)
+    either have a corresponding dirstate node,
+    or are ignored by ignore patterns whose hash is in tree metadata.
+
+  This means that if `std::fs::symlink_metadata` later reports
+  the same modification time
+  and ignored patterns haven’t changed,
+  a run of status that is not listing ignored files
+  can skip calling `std::fs::read_dir` again for this directory,
+  and iterate child dirstate nodes instead.
+
+
+* (Offset 43: end of this node)
