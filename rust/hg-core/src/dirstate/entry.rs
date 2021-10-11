@@ -18,8 +18,8 @@ pub enum EntryState {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct DirstateEntry {
     pub(crate) flags: Flags,
-    mode_size: Option<(i32, i32)>,
-    mtime: Option<i32>,
+    mode_size: Option<(u32, u32)>,
+    mtime: Option<u32>,
 }
 
 bitflags! {
@@ -153,9 +153,17 @@ impl DirstateEntry {
         wdir_tracked: bool,
         p1_tracked: bool,
         p2_info: bool,
-        mode_size: Option<(i32, i32)>,
-        mtime: Option<i32>,
+        mode_size: Option<(u32, u32)>,
+        mtime: Option<u32>,
     ) -> Self {
+        if let Some((mode, size)) = mode_size {
+            // TODO: return an error for out of range values?
+            assert!(mode & !RANGE_MASK_31BIT == 0);
+            assert!(size & !RANGE_MASK_31BIT == 0);
+        }
+        if let Some(mtime) = mtime {
+            assert!(mtime & !RANGE_MASK_31BIT == 0);
+        }
         let mut flags = Flags::empty();
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
         flags.set(Flags::P1_TRACKED, p1_tracked);
@@ -189,12 +197,19 @@ impl DirstateEntry {
                         mtime: None,
                     }
                 } else if mtime == MTIME_UNSET {
+                    // TODO: return an error for negative values?
+                    let mode = u32::try_from(mode).unwrap();
+                    let size = u32::try_from(size).unwrap();
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
                         mode_size: Some((mode, size)),
                         mtime: None,
                     }
                 } else {
+                    // TODO: return an error for negative values?
+                    let mode = u32::try_from(mode).unwrap();
+                    let size = u32::try_from(size).unwrap();
+                    let mtime = u32::try_from(mtime).unwrap();
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
                         mode_size: Some((mode, size)),
@@ -282,7 +297,7 @@ impl DirstateEntry {
     /// Returns `(wdir_tracked, p1_tracked, p2_info, mode_size, mtime)`
     pub(crate) fn v2_data(
         &self,
-    ) -> (bool, bool, bool, Option<(i32, i32)>, Option<i32>) {
+    ) -> (bool, bool, bool, Option<(u32, u32)>, Option<u32>) {
         if !self.any_tracked() {
             // TODO: return an Option instead?
             panic!("Accessing v1_state of an untracked DirstateEntry")
@@ -316,7 +331,7 @@ impl DirstateEntry {
 
     fn v1_mode(&self) -> i32 {
         if let Some((mode, _size)) = self.mode_size {
-            mode
+            i32::try_from(mode).unwrap()
         } else {
             0
         }
@@ -338,7 +353,7 @@ impl DirstateEntry {
         } else if self.added() {
             SIZE_NON_NORMAL
         } else if let Some((_mode, size)) = self.mode_size {
-            size
+            i32::try_from(size).unwrap()
         } else {
             SIZE_NON_NORMAL
         }
@@ -355,8 +370,10 @@ impl DirstateEntry {
             MTIME_UNSET
         } else if !self.flags.contains(Flags::P1_TRACKED) {
             MTIME_UNSET
+        } else if let Some(mtime) = self.mtime {
+            i32::try_from(mtime).unwrap()
         } else {
-            self.mtime.unwrap_or(MTIME_UNSET)
+            MTIME_UNSET
         }
     }
 
@@ -392,7 +409,9 @@ impl DirstateEntry {
         self.mtime = None
     }
 
-    pub fn set_clean(&mut self, mode: i32, size: i32, mtime: i32) {
+    pub fn set_clean(&mut self, mode: u32, size: u32, mtime: u32) {
+        let size = size & RANGE_MASK_31BIT;
+        let mtime = mtime & RANGE_MASK_31BIT;
         self.flags.insert(Flags::WDIR_TRACKED | Flags::P1_TRACKED);
         self.mode_size = Some((mode, size));
         self.mtime = Some(mtime);

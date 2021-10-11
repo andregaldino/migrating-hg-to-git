@@ -21,7 +21,7 @@ py_class!(pub class DirstateItem |py| {
         p2_info: bool = false,
         has_meaningful_data: bool = true,
         has_meaningful_mtime: bool = true,
-        parentfiledata: Option<(i32, i32, i32)> = None,
+        parentfiledata: Option<(u32, u32, u32)> = None,
 
     ) -> PyResult<DirstateItem> {
         let mut mode_size_opt = None;
@@ -145,9 +145,9 @@ py_class!(pub class DirstateItem |py| {
 
     def set_clean(
         &self,
-        mode: i32,
-        size: i32,
-        mtime: i32,
+        mode: u32,
+        size: u32,
+        mtime: u32,
     ) -> PyResult<PyNone> {
         self.update(py, |entry| entry.set_clean(mode, size, mtime));
         Ok(PyNone)

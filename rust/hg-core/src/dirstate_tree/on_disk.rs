@@ -11,7 +11,7 @@ use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use bitflags::bitflags;
-use bytes_cast::unaligned::{I32Be, U16Be, U32Be};
+use bytes_cast::unaligned::{U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
@@ -113,9 +113,9 @@ bitflags! {
 #[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct Entry {
-    mode: I32Be,
-    size: I32Be,
-    mtime: I32Be,
+    mode: U32Be,
+    size: U32Be,
+    mtime: U32Be,
 }
 
 /// Duration since the Unix epoch
