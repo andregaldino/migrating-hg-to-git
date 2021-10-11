@@ -285,10 +285,10 @@ We define:
 
 This hash is defined as the SHA-1 of the concatenation (in sorted
 order) of the "expanded contents" of each "root" ignore file.
-(Note that computing this does not require actually concatenating byte ranges into
-contiguous memory.
-Instead a SHA-1 hasher object can be created and fed separate byte ranges one by
-one.)
+(Note that computing this does not require actually concatenating
+into a single contiguous byte sequence.
+Instead a SHA-1 hasher object can be created
+and fed separate chunks one by one.)
 
 The data file format
 --------------------
@@ -299,11 +299,12 @@ and `mercurial/dirstateutils/v2.py`.
 The data file contains two types of data: paths and nodes.
 
 Paths and nodes can be organized in any order in the file, except that sibling
-nodes must be next to each other and sorted by their path. Contiguity lets
-the parent refer to them all by their count with a single pseudo-pointer,
-instead of storing one pseudo-pointer per child node. Sorting allows using
-binary seach to find a child node with a given name in `O(log(n))` byte ranges
-comparisons.
+nodes must be next to each other and sorted by their path.
+Contiguity lets the parent refer to them all
+by their count and a single pseudo-pointer,
+instead of storing one pseudo-pointer per child node.
+Sorting allows using binary seach to find a child node with a given name
+in `O(log(n))` byte sequence comparisons.
 
 The current implemention writes paths and child node before a given node
 for ease of figuring out the value of pseudo-pointers by the time the are to be
