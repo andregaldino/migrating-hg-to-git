@@ -1194,29 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def swap(state, oldpos, newpos):
-    """Swap two positions and calculate necessary conflicts in
-    O(|newpos-oldpos|) time"""
-
-    rules = state.rules
-    assert 0 <= oldpos < len(rules) and 0 <= newpos < len(rules)
-
-    rules[oldpos], rules[newpos] = rules[newpos], rules[oldpos]
-
-    # TODO: swap should not know about histeditrule's internals
-    rules[newpos].pos = newpos
-    rules[oldpos].pos = oldpos
-
-    start = min(oldpos, newpos)
-    end = max(oldpos, newpos)
-    for r in pycompat.xrange(start, end + 1):
-        rules[newpos].checkconflicts(rules[r])
-        rules[oldpos].checkconflicts(rules[r])
-
-    if state.selected:
-        state.make_selection(newpos)
-
-
 def changeaction(state, pos, action):
     """Change the action state on the given position to the new action"""
     rules = state.rules
@@ -1509,12 +1486,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             newpos = min(oldpos + 1, len(rules) - 1)
             self.move_cursor(oldpos, newpos)
             if selected is not None or action == b'move-down':
-                swap(self, oldpos, newpos)
+                self.swap(oldpos, newpos)
         elif action in (b'up', b'move-up'):
             newpos = max(0, oldpos - 1)
             self.move_cursor(oldpos, newpos)
             if selected is not None or action == b'move-up':
-                swap(self, oldpos, newpos)
+                self.swap(oldpos, newpos)
         elif action == b'next-action':
             cycleaction(self, oldpos, next=True)
         elif action == b'prev-action':
@@ -1526,7 +1503,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             newrule = next((r for r in rules if r.origpos == int(ch)))
             self.move_cursor(oldpos, newrule.pos)
             if selected is not None:
-                swap(self, oldpos, newrule.pos)
+                self.swap(oldpos, newrule.pos)
         elif action.startswith(b'action-'):
             changeaction(self, oldpos, action[7:])
         elif action == b'showpatch':
@@ -1588,6 +1565,28 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def make_selection(self, pos):
         self.selected = pos
+
+    def swap(self, oldpos, newpos):
+        """Swap two positions and calculate necessary conflicts in
+        O(|newpos-oldpos|) time"""
+
+        rules = self.rules
+        assert 0 <= oldpos < len(rules) and 0 <= newpos < len(rules)
+
+        rules[oldpos], rules[newpos] = rules[newpos], rules[oldpos]
+
+        # TODO: swap should not know about histeditrule's internals
+        rules[newpos].pos = newpos
+        rules[oldpos].pos = oldpos
+
+        start = min(oldpos, newpos)
+        end = max(oldpos, newpos)
+        for r in pycompat.xrange(start, end + 1):
+            rules[newpos].checkconflicts(rules[r])
+            rules[oldpos].checkconflicts(rules[r])
+
+        if self.selected:
+            self.make_selection(newpos)
 
 
 def _chisteditmain(repo, rules, stdscr):
