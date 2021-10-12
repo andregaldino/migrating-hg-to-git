@@ -1197,39 +1197,39 @@ class histeditrule(object):
 def movecursor(state, oldpos, newpos):
     """Change the rule/changeset that the cursor is pointing to, regardless of
     current mode (you can switch between patches from the view patch window)."""
-    state[b'pos'] = newpos
+    state.pos = newpos
 
-    mode, _ = state[b'mode']
+    mode, _ = state.mode
     if mode == MODE_RULES:
         # Scroll through the list by updating the view for MODE_RULES, so that
         # even if we are not currently viewing the rules, switching back will
         # result in the cursor's rule being visible.
-        modestate = state[b'modes'][MODE_RULES]
+        modestate = state.modes[MODE_RULES]
         if newpos < modestate[b'line_offset']:
             modestate[b'line_offset'] = newpos
-        elif newpos > modestate[b'line_offset'] + state[b'page_height'] - 1:
-            modestate[b'line_offset'] = newpos - state[b'page_height'] + 1
+        elif newpos > modestate[b'line_offset'] + state.page_height - 1:
+            modestate[b'line_offset'] = newpos - state.page_height + 1
 
     # Reset the patch view region to the top of the new patch.
-    state[b'modes'][MODE_PATCH][b'line_offset'] = 0
+    state.modes[MODE_PATCH][b'line_offset'] = 0
 
 
 def changemode(state, mode):
-    curmode, _ = state[b'mode']
-    state[b'mode'] = (mode, curmode)
+    curmode, _ = state.mode
+    state.mode = (mode, curmode)
     if mode == MODE_PATCH:
-        state[b'modes'][MODE_PATCH][b'patchcontents'] = patchcontents(state)
+        state.modes[MODE_PATCH][b'patchcontents'] = patchcontents(state)
 
 
 def makeselection(state, pos):
-    state[b'selected'] = pos
+    state.selected = pos
 
 
 def swap(state, oldpos, newpos):
     """Swap two positions and calculate necessary conflicts in
     O(|newpos-oldpos|) time"""
 
-    rules = state[b'rules']
+    rules = state.rules
     assert 0 <= oldpos < len(rules) and 0 <= newpos < len(rules)
 
     rules[oldpos], rules[newpos] = rules[newpos], rules[oldpos]
@@ -1244,13 +1244,13 @@ def swap(state, oldpos, newpos):
         rules[newpos].checkconflicts(rules[r])
         rules[oldpos].checkconflicts(rules[r])
 
-    if state[b'selected']:
+    if state.selected:
         makeselection(state, newpos)
 
 
 def changeaction(state, pos, action):
     """Change the action state on the given position to the new action"""
-    rules = state[b'rules']
+    rules = state.rules
     assert 0 <= pos < len(rules)
     rules[pos].action = action
 
@@ -1258,7 +1258,7 @@ def changeaction(state, pos, action):
 def cycleaction(state, pos, next=False):
     """Changes the action state the next or the previous action from
     the action list"""
-    rules = state[b'rules']
+    rules = state.rules
     assert 0 <= pos < len(rules)
     current = rules[pos].action
 
@@ -1275,12 +1275,12 @@ def cycleaction(state, pos, next=False):
 def changeview(state, delta, unit):
     """Change the region of whatever is being viewed (a patch or the list of
     changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'."""
-    mode, _ = state[b'mode']
+    mode, _ = state.mode
     if mode != MODE_PATCH:
         return
-    mode_state = state[b'modes'][mode]
+    mode_state = state.modes[mode]
     num_lines = len(mode_state[b'patchcontents'])
-    page_height = state[b'page_height']
+    page_height = state.page_height
     unit = page_height if unit == b'page' else 1
     num_pages = 1 + (num_lines - 1) // page_height
     max_offset = (num_pages - 1) * page_height
@@ -1294,9 +1294,9 @@ def event(state, ch):
     This takes the current state and based on the current character input from
     the user we change the state.
     """
-    selected = state[b'selected']
-    oldpos = state[b'pos']
-    rules = state[b'rules']
+    selected = state.selected
+    oldpos = state.pos
+    rules = state.rules
 
     if ch in (curses.KEY_RESIZE, b"KEY_RESIZE"):
         return E_RESIZE
@@ -1305,7 +1305,7 @@ def event(state, ch):
     if ch is not None and b'0' <= ch <= b'9':
         lookup_ch = b'0'
 
-    curmode, prevmode = state[b'mode']
+    curmode, prevmode = state.mode
     action = KEYTABLE[curmode].get(
         lookup_ch, KEYTABLE[b'global'].get(lookup_ch)
     )
@@ -1391,8 +1391,8 @@ def _trunc_tail(line, n):
 
 
 def patchcontents(state):
-    repo = state[b'repo']
-    rule = state[b'rules'][state[b'pos']]
+    repo = state.repo
+    rule = state.rules[state.pos]
     displayer = logcmdutil.changesetdisplayer(
         repo.ui, repo, {b"patch": True, b"template": b"status"}, buffered=True
     )
@@ -1401,6 +1401,28 @@ def patchcontents(state):
         displayer.show(rule.ctx)
         displayer.close()
     return displayer.hunk[rule.ctx.rev()].splitlines()
+
+
+class _chistedit_state(object):
+    def __init__(
+        self,
+        repo,
+        rules,
+    ):
+        self.repo = repo
+        self.rules = rules
+        self.pos = 0
+        self.selected = None
+        self.mode = (MODE_INIT, MODE_INIT)
+        self.page_height = None
+        self.modes = {
+            MODE_RULES: {
+                b'line_offset': 0,
+            },
+            MODE_PATCH: {
+                b'line_offset': 0,
+            },
+        }
 
 
 def _chisteditmain(repo, rules, stdscr):
@@ -1433,8 +1455,8 @@ def _chisteditmain(repo, rules, stdscr):
     def rendercommit(win, state):
         """Renders the commit window that shows the log of the current selected
         commit"""
-        pos = state[b'pos']
-        rules = state[b'rules']
+        pos = state.pos
+        rules = state.rules
         rule = rules[pos]
 
         ctx = rule.ctx
@@ -1497,7 +1519,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def renderhelp(win, state):
         maxy, maxx = win.getmaxyx()
-        mode, _ = state[b'mode']
+        mode, _ = state.mode
         for y, line in enumerate(helplines(mode)):
             if y >= maxy:
                 break
@@ -1505,10 +1527,10 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         win.noutrefresh()
 
     def renderrules(rulesscr, state):
-        rules = state[b'rules']
-        pos = state[b'pos']
-        selected = state[b'selected']
-        start = state[b'modes'][MODE_RULES][b'line_offset']
+        rules = state.rules
+        pos = state.pos
+        selected = state.selected
+        start = state.modes[MODE_RULES][b'line_offset']
 
         conflicts = [r.ctx for r in rules if r.conflicts]
         if len(conflicts) > 0:
@@ -1518,7 +1540,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
         for y, rule in enumerate(rules[start:]):
-            if y >= state[b'page_height']:
+            if y >= state.page_height:
                 break
             if len(rule.conflicts) > 0:
                 rulesscr.addstr(y, 0, b" ", curses.color_pair(COLOR_WARN))
@@ -1574,8 +1596,8 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         win.noutrefresh()
 
     def renderpatch(win, state):
-        start = state[b'modes'][MODE_PATCH][b'line_offset']
-        content = state[b'modes'][MODE_PATCH][b'patchcontents']
+        start = state.modes[MODE_PATCH][b'line_offset']
+        content = state.modes[MODE_PATCH][b'patchcontents']
         renderstring(win, state, content[start:], diffcolors=True)
 
     def layout(mode):
@@ -1601,29 +1623,14 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         y += size[0]
         return win, y, x
 
-    state = {
-        b'pos': 0,
-        b'rules': rules,
-        b'selected': None,
-        b'mode': (MODE_INIT, MODE_INIT),
-        b'page_height': None,
-        b'modes': {
-            MODE_RULES: {
-                b'line_offset': 0,
-            },
-            MODE_PATCH: {
-                b'line_offset': 0,
-            },
-        },
-        b'repo': repo,
-    }
+    state = _chistedit_state(repo, rules)
 
     # eventloop
     ch = None
     stdscr.clear()
     stdscr.refresh()
     while True:
-        oldmode, unused = state[b'mode']
+        oldmode, unused = state.mode
         if oldmode == MODE_INIT:
             changemode(state, MODE_RULES)
         e = event(state, ch)
@@ -1631,19 +1638,19 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         if e == E_QUIT:
             return False
         if e == E_HISTEDIT:
-            return state[b'rules']
+            return state.rules
         else:
             if e == E_RESIZE:
                 size = screen_size()
                 if size != stdscr.getmaxyx():
                     curses.resizeterm(*size)
 
-            curmode, unused = state[b'mode']
+            curmode, unused = state.mode
             sizes = layout(curmode)
             if curmode != oldmode:
-                state[b'page_height'] = sizes[b'main'][0]
+                state.page_height = sizes[b'main'][0]
                 # Adjust the view to fit the current screen size.
-                movecursor(state, state[b'pos'], state[b'pos'])
+                movecursor(state, state.pos, state.pos)
 
             # Pack the windows against the top, each pane spread across the
             # full width of the screen.
