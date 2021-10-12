@@ -1194,13 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def changemode(state, mode):
-    curmode, _ = state.mode
-    state.mode = (mode, curmode)
-    if mode == MODE_PATCH:
-        state.modes[MODE_PATCH][b'patchcontents'] = state.patch_contents()
-
-
 def makeselection(state, pos):
     state.selected = pos
 
@@ -1541,9 +1534,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         elif action.startswith(b'action-'):
             changeaction(self, oldpos, action[7:])
         elif action == b'showpatch':
-            changemode(self, MODE_PATCH if curmode != MODE_PATCH else prevmode)
+            self.change_mode(MODE_PATCH if curmode != MODE_PATCH else prevmode)
         elif action == b'help':
-            changemode(self, MODE_HELP if curmode != MODE_HELP else prevmode)
+            self.change_mode(MODE_HELP if curmode != MODE_HELP else prevmode)
         elif action == b'quit':
             return E_QUIT
         elif action == b'histedit':
@@ -1591,6 +1584,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         # Reset the patch view region to the top of the new patch.
         self.modes[MODE_PATCH][b'line_offset'] = 0
 
+    def change_mode(self, mode):
+        curmode, _ = self.mode
+        self.mode = (mode, curmode)
+        if mode == MODE_PATCH:
+            self.modes[MODE_PATCH][b'patchcontents'] = self.patch_contents()
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1633,7 +1632,7 @@ def _chisteditmain(repo, rules, stdscr):
     while True:
         oldmode, unused = state.mode
         if oldmode == MODE_INIT:
-            changemode(state, MODE_RULES)
+            state.change_mode(MODE_RULES)
         e = state.event(ch)
 
         if e == E_QUIT:
