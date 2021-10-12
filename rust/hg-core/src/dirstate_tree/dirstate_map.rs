@@ -330,9 +330,9 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn cached_directory_mtime(
         &self,
-    ) -> Option<&'tree on_disk::Timestamp> {
+    ) -> Option<crate::dirstate::Timestamp> {
         match self {
-            NodeRef::InMemory(_path, node) => match &node.data {
+            NodeRef::InMemory(_path, node) => match node.data {
                 NodeData::CachedDirectory { mtime } => Some(mtime),
                 _ => None,
             },
@@ -376,7 +376,7 @@ pub(super) struct Node<'on_disk> {
 
 pub(super) enum NodeData {
     Entry(DirstateEntry),
-    CachedDirectory { mtime: on_disk::Timestamp },
+    CachedDirectory { mtime: crate::dirstate::Timestamp },
     None,
 }
 

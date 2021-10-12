@@ -2,6 +2,7 @@
 //!
 //! See `mercurial/helptext/internals/dirstate-v2.txt`
 
+use crate::dirstate::Timestamp;
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
@@ -15,7 +16,6 @@ use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
 use std::convert::{TryFrom, TryInto};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
 /// This a redundant sanity check more than an actual "magic number" since
@@ -119,9 +119,9 @@ struct Entry {
 }
 
 /// Duration since the Unix epoch
-#[derive(BytesCast, Copy, Clone, PartialEq)]
+#[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
-pub(super) struct Timestamp {
+struct PackedTimestamp {
     seconds: I64Be,
 
     /// In `0 .. 1_000_000_000`.
@@ -316,14 +316,14 @@ impl Node {
     ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
         if self.has_entry() {
             Ok(dirstate_map::NodeData::Entry(self.assume_entry()))
-        } else if let Some(&mtime) = self.cached_directory_mtime() {
+        } else if let Some(mtime) = self.cached_directory_mtime() {
             Ok(dirstate_map::NodeData::CachedDirectory { mtime })
         } else {
             Ok(dirstate_map::NodeData::None)
         }
     }
 
-    pub(super) fn cached_directory_mtime(&self) -> Option<&Timestamp> {
+    pub(super) fn cached_directory_mtime(&self) -> Option<Timestamp> {
         if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
             Some(self.data.as_timestamp())
         } else {
@@ -423,58 +423,23 @@ impl Entry {
     }
 
     fn from_timestamp(timestamp: Timestamp) -> Self {
+        let packed = PackedTimestamp {
+            seconds: timestamp.seconds().into(),
+            nanoseconds: timestamp.nanoseconds().into(),
+        };
         // Safety: both types implement the `ByteCast` trait, so we could
         // safely use `as_bytes` and `from_bytes` to do this conversion. Using
         // `transmute` instead makes the compiler check that the two types
         // have the same size, which eliminates the error case of
         // `from_bytes`.
-        unsafe { std::mem::transmute::<Timestamp, Entry>(timestamp) }
+        unsafe { std::mem::transmute::<PackedTimestamp, Entry>(packed) }
     }
 
-    fn as_timestamp(&self) -> &Timestamp {
+    fn as_timestamp(self) -> Timestamp {
         // Safety: same as above in `from_timestamp`
-        unsafe { &*(self as *const Entry as *const Timestamp) }
-    }
-}
-
-impl Timestamp {
-    pub fn seconds(&self) -> i64 {
-        self.seconds.get()
-    }
-}
-
-impl From<SystemTime> for Timestamp {
-    fn from(system_time: SystemTime) -> Self {
-        // On Unix, `SystemTime` is a wrapper for the `timespec` C struct:
-        // https://www.gnu.org/software/libc/manual/html_node/Time-Types.html#index-struct-timespec
-        // We want to effectively access its fields, but the Rust standard
-        // library does not expose them. The best we can do is:
-        let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {
-            Ok(duration) => {
-                (duration.as_secs() as i64, duration.subsec_nanos())
-            }
-            Err(error) => {
-                // `system_time` is before `UNIX_EPOCH`.
-                // We need to undo this algorithm:
-                // https://github.com/rust-lang/rust/blob/6bed1f0bc3cc50c10aab26d5f94b16a00776b8a5/library/std/src/sys/unix/time.rs#L40-L41
-                let negative = error.duration();
-                let negative_secs = negative.as_secs() as i64;
-                let negative_nanos = negative.subsec_nanos();
-                if negative_nanos == 0 {
-                    (-negative_secs, 0)
-                } else {
-                    // For example if `system_time` was 4.3 seconds before
-                    // the Unix epoch we get a Duration that represents
-                    // `(-4, -0.3)` but we want `(-5, +0.7)`:
-                    const NSEC_PER_SEC: u32 = 1_000_000_000;
-                    (-1 - negative_secs, NSEC_PER_SEC - negative_nanos)
-                }
-            }
-        };
-        Timestamp {
-            seconds: secs.into(),
-            nanoseconds: nanos.into(),
-        }
+        let packed =
+            unsafe { std::mem::transmute::<Entry, PackedTimestamp>(self) };
+        Timestamp::new(packed.seconds.get(), packed.nanoseconds.get())
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::dirstate::entry::Timestamp;
 use crate::dirstate::status::IgnoreFnType;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
@@ -5,7 +6,6 @@ use crate::dirstate_tree::dirstate_map::DirstateMap;
 use crate::dirstate_tree::dirstate_map::NodeData;
 use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
-use crate::dirstate_tree::on_disk::Timestamp;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
@@ -182,7 +182,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     fn can_skip_fs_readdir(
         &self,
         directory_metadata: Option<&std::fs::Metadata>,
-        cached_directory_mtime: Option<&Timestamp>,
+        cached_directory_mtime: Option<Timestamp>,
     ) -> bool {
         if !self.options.list_unknown && !self.options.list_ignored {
             // All states that we care about listing have corresponding
@@ -200,7 +200,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 if let Some(meta) = directory_metadata {
                     if let Ok(current_mtime) = meta.modified() {
                         let current_mtime = Timestamp::from(current_mtime);
-                        if current_mtime == *cached_mtime {
+                        if current_mtime == cached_mtime {
                             // The mtime of that directory has not changed
                             // since then, which means that the results of
                             // `read_dir` should also be unchanged.
@@ -222,7 +222,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         directory_hg_path: &BorrowedPath<'tree, 'on_disk>,
         directory_fs_path: &Path,
         directory_metadata: Option<&std::fs::Metadata>,
-        cached_directory_mtime: Option<&Timestamp>,
+        cached_directory_mtime: Option<Timestamp>,
         is_at_repo_root: bool,
     ) -> Result<bool, DirstateV2ParseError> {
         if self.can_skip_fs_readdir(directory_metadata, cached_directory_mtime)
@@ -468,7 +468,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     // unlikely enough in practice.
                     let timestamp = directory_mtime.into();
                     let cached = dirstate_node.cached_directory_mtime();
-                    if cached != Some(&timestamp) {
+                    if cached != Some(timestamp) {
                         let hg_path = dirstate_node
                             .full_path_borrowed(self.dmap.on_disk)?
                             .detach_from_tree();
