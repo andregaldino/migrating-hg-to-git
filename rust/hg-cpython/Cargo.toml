@@ -23,7 +23,7 @@ python3-bin = ["cpython/python3-sys"]
 [dependencies]
 crossbeam-channel = "0.4"
 hg-core = { path = "../hg-core"}
-libc = '*'
+libc = "0.2"
 log = "0.4.8"
 env_logger = "0.7.1"
 stable_deref_trait = "1.2.0"

@@ -107,13 +107,15 @@ bitflags! {
         const P2_INFO = 1 << 2;
         const HAS_MODE_AND_SIZE = 1 << 3;
         const HAS_MTIME = 1 << 4;
+        const MODE_EXEC_PERM = 1 << 5;
+        const MODE_IS_SYMLINK = 1 << 7;
     }
 }
 
 #[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct Entry {
-    mode: U32Be,
+    _padding: U32Be,
     size: U32Be,
     mtime: U32Be,
 }
@@ -332,13 +334,27 @@ impl Node {
         )
     }
 
+    fn synthesize_unix_mode(&self) -> u32 {
+        let file_type = if self.flags.contains(Flags::MODE_IS_SYMLINK) {
+            libc::S_IFLNK
+        } else {
+            libc::S_IFREG
+        };
+        let permisions = if self.flags.contains(Flags::MODE_EXEC_PERM) {
+            0o755
+        } else {
+            0o644
+        };
+        file_type | permisions
+    }
+
     fn assume_entry(&self) -> DirstateEntry {
         // TODO: convert through raw bits instead?
         let wdir_tracked = self.flags.contains(Flags::WDIR_TRACKED);
         let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
         let p2_info = self.flags.contains(Flags::P2_INFO);
         let mode_size = if self.flags.contains(Flags::HAS_MODE_AND_SIZE) {
-            Some((self.data.mode.into(), self.data.size.into()))
+            Some((self.synthesize_unix_mode(), self.data.size.into()))
         } else {
             None
         };
@@ -400,13 +416,15 @@ impl Entry {
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
         flags.set(Flags::P1_TRACKED, p1_tracked);
         flags.set(Flags::P2_INFO, p2_info);
-        let (mode, size, mtime);
+        let (size, mtime);
         if let Some((m, s)) = mode_size_opt {
-            mode = m;
+            let exec_perm = m & libc::S_IXUSR != 0;
+            let is_symlink = m & libc::S_IFMT == libc::S_IFLNK;
+            flags.set(Flags::MODE_EXEC_PERM, exec_perm);
+            flags.set(Flags::MODE_IS_SYMLINK, is_symlink);
             size = s;
             flags.insert(Flags::HAS_MODE_AND_SIZE)
         } else {
-            mode = 0;
             size = 0;
         }
         if let Some(m) = mtime_opt {
@@ -416,7 +434,7 @@ impl Entry {
             mtime = 0;
         }
         let raw_entry = Entry {
-            mode: mode.into(),
+            _padding: 0.into(),
             size: size.into(),
             mtime: mtime.into(),
         };
@@ -600,7 +618,7 @@ impl Writer<'_, '_> {
                         dirstate_map::NodeData::None => (
                             Flags::empty(),
                             Entry {
-                                mode: 0.into(),
+                                _padding: 0.into(),
                                 size: 0.into(),
                                 mtime: 0.into(),
                             },
