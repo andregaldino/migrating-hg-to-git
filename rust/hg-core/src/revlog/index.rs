@@ -208,6 +208,9 @@ impl<'a> IndexEntry<'a> {
 
 /// Value of the inline flag.
 pub fn is_inline(index_bytes: &[u8]) -> bool {
+    if index_bytes.len() < 4 {
+        return true;
+    }
     match &index_bytes[0..=1] {
         [0, 0] | [0, 2] => false,
         _ => true,

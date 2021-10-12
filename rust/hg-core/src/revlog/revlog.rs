@@ -72,7 +72,7 @@ impl Revlog {
         let index_path = index_path.as_ref();
         let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
 
-        let version = get_version(&index_mmap);
+        let version = get_version(&index_mmap)?;
         if version != 1 {
             // A proper new version should have had a repo/store requirement.
             return Err(HgError::corrupted("corrupted revlog"));
@@ -179,6 +179,9 @@ impl Revlog {
     /// snapshot to rebuild the final data.
     #[timed]
     pub fn get_rev_data(&self, rev: Revision) -> Result<Vec<u8>, RevlogError> {
+        if rev == NULL_REVISION {
+            return Ok(vec![]);
+        };
         // Todo return -> Cow
         let mut entry = self.get_entry(rev)?;
         let mut delta_chain = vec![];
@@ -371,8 +374,16 @@ impl<'a> RevlogEntry<'a> {
 }
 
 /// Format version of the revlog.
-pub fn get_version(index_bytes: &[u8]) -> u16 {
-    BigEndian::read_u16(&index_bytes[2..=3])
+pub fn get_version(index_bytes: &[u8]) -> Result<u16, HgError> {
+    if index_bytes.len() == 0 {
+        return Ok(1);
+    };
+    if index_bytes.len() < 4 {
+        return Err(HgError::corrupted(
+            "corrupted revlog: can't read the index format header",
+        ));
+    };
+    Ok(BigEndian::read_u16(&index_bytes[2..=3]))
 }
 
 /// Calculate the hash of a revision given its data and its parents.
