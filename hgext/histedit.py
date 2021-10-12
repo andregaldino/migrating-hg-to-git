@@ -1194,23 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def cycleaction(state, pos, next=False):
-    """Changes the action state the next or the previous action from
-    the action list"""
-    rules = state.rules
-    assert 0 <= pos < len(rules)
-    current = rules[pos].action
-
-    assert current in KEY_LIST
-
-    index = KEY_LIST.index(current)
-    if next:
-        index += 1
-    else:
-        index -= 1
-    state.change_action(pos, KEY_LIST[index % len(KEY_LIST)])
-
-
 def changeview(state, delta, unit):
     """Change the region of whatever is being viewed (a patch or the list of
     changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'."""
@@ -1486,9 +1469,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             if selected is not None or action == b'move-up':
                 self.swap(oldpos, newpos)
         elif action == b'next-action':
-            cycleaction(self, oldpos, next=True)
+            self.cycle_action(oldpos, next=True)
         elif action == b'prev-action':
-            cycleaction(self, oldpos, next=False)
+            self.cycle_action(oldpos, next=False)
         elif action == b'select':
             selected = oldpos if selected is None else None
             self.make_selection(selected)
@@ -1586,6 +1569,22 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         rules = self.rules
         assert 0 <= pos < len(rules)
         rules[pos].action = action
+
+    def cycle_action(self, pos, next=False):
+        """Changes the action state the next or the previous action from
+        the action list"""
+        rules = self.rules
+        assert 0 <= pos < len(rules)
+        current = rules[pos].action
+
+        assert current in KEY_LIST
+
+        index = KEY_LIST.index(current)
+        if next:
+            index += 1
+        else:
+            index -= 1
+        self.change_action(pos, KEY_LIST[index % len(KEY_LIST)])
 
 
 def _chisteditmain(repo, rules, stdscr):
