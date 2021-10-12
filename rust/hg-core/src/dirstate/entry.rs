@@ -1,3 +1,4 @@
+use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::errors::HgError;
 use bitflags::bitflags;
 use std::convert::TryFrom;
@@ -29,34 +30,76 @@ bitflags! {
     }
 }
 
-#[derive(Copy, Clone, PartialEq)]
-pub struct Timestamp {
-    seconds: i64,
-
-    /// In `0 .. 1_000_000_000`.
-    ///
-    /// This timestamp is after `(seconds, 0)` by this many nanoseconds.
+/// A Unix timestamp with nanoseconds precision
+#[derive(Copy, Clone)]
+pub struct TruncatedTimestamp {
+    truncated_seconds: u32,
+    /// Always in the `0 .. 1_000_000_000` range.
     nanoseconds: u32,
 }
 
-impl Timestamp {
-    pub fn new(seconds: i64, nanoseconds: u32) -> Self {
+impl TruncatedTimestamp {
+    /// Constructs from a timestamp potentially outside of the supported range,
+    /// and truncate the seconds components to its lower 31 bits.
+    ///
+    /// Panics if the nanoseconds components is not in the expected range.
+    pub fn new_truncate(seconds: i64, nanoseconds: u32) -> Self {
+        assert!(nanoseconds < NSEC_PER_SEC);
         Self {
-            seconds,
+            truncated_seconds: seconds as u32 & RANGE_MASK_31BIT,
             nanoseconds,
         }
     }
 
-    pub fn seconds(&self) -> i64 {
-        self.seconds
+    /// Construct from components. Returns an error if they are not in the
+    /// expcted range.
+    pub fn from_already_truncated(
+        truncated_seconds: u32,
+        nanoseconds: u32,
+    ) -> Result<Self, DirstateV2ParseError> {
+        if truncated_seconds & !RANGE_MASK_31BIT == 0
+            && nanoseconds < NSEC_PER_SEC
+        {
+            Ok(Self {
+                truncated_seconds,
+                nanoseconds,
+            })
+        } else {
+            Err(DirstateV2ParseError)
+        }
     }
 
+    /// The lower 31 bits of the number of seconds since the epoch.
+    pub fn truncated_seconds(&self) -> u32 {
+        self.truncated_seconds
+    }
+
+    /// The sub-second component of this timestamp, in nanoseconds.
+    /// Always in the `0 .. 1_000_000_000` range.
+    ///
+    /// This timestamp is after `(seconds, 0)` by this many nanoseconds.
     pub fn nanoseconds(&self) -> u32 {
         self.nanoseconds
     }
+
+    /// Returns whether two timestamps are equal modulo 2**31 seconds.
+    ///
+    /// If this returns `true`, the original values converted from `SystemTime`
+    /// or given to `new_truncate` were very likely equal. A false positive is
+    /// possible if they were exactly a multiple of 2**31 seconds apart (around
+    /// 68 years). This is deemed very unlikely to happen by chance, especially
+    /// on filesystems that support sub-second precision.
+    ///
+    /// If someone is manipulating the modification times of some files to
+    /// intentionally make `hg status` return incorrect results, not truncating
+    /// wouldn’t help much since they can set exactly the expected timestamp.
+    pub fn very_likely_equal(&self, other: &Self) -> bool {
+        self.truncated_seconds == other.truncated_seconds
+            && self.nanoseconds == other.nanoseconds
+    }
 }
 
-impl From<SystemTime> for Timestamp {
+impl From<SystemTime> for TruncatedTimestamp {
     fn from(system_time: SystemTime) -> Self {
         // On Unix, `SystemTime` is a wrapper for the `timespec` C struct:
         // https://www.gnu.org/software/libc/manual/html_node/Time-Types.html#index-struct-timespec
@@ -83,20 +126,17 @@ impl From<SystemTime> for Timestamp {
                     // For example if `system_time` was 4.3 seconds before
                     // the Unix epoch we get a Duration that represents
                     // `(-4, -0.3)` but we want `(-5, +0.7)`:
-                    const NSEC_PER_SEC: u32 = 1_000_000_000;
                     seconds = -1 - negative_secs;
                     nanoseconds = NSEC_PER_SEC - negative_nanos;
                 }
             }
         };
-        Self {
-            seconds,
-            nanoseconds,
-        }
+        Self::new_truncate(seconds, nanoseconds)
     }
 }
 
-pub const V1_RANGEMASK: i32 = 0x7FFFFFFF;
+const NSEC_PER_SEC: u32 = 1_000_000_000;
+const RANGE_MASK_31BIT: u32 = 0x7FFF_FFFF;
 
 pub const MTIME_UNSET: i32 = -1;
 

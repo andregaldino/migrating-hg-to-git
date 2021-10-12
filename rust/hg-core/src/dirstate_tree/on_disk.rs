@@ -2,7 +2,7 @@
 //!
 //! See `mercurial/helptext/internals/dirstate-v2.txt`
 
-use crate::dirstate::Timestamp;
+use crate::dirstate::TruncatedTimestamp;
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
@@ -11,7 +11,7 @@ use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
 use bitflags::bitflags;
-use bytes_cast::unaligned::{I32Be, I64Be, U16Be, U32Be};
+use bytes_cast::unaligned::{I32Be, U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
@@ -122,11 +122,8 @@ struct Entry {
 #[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
 struct PackedTimestamp {
-    seconds: I64Be,
-
-    /// In `0 .. 1_000_000_000`.
-    ///
-    /// This timestamp is after `(seconds, 0)` by this many nanoseconds.
+    _padding: U32Be,
+    truncated_seconds: U32Be,
     nanoseconds: U32Be,
 }
 
@@ -316,19 +313,23 @@ impl Node {
     ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
         if self.has_entry() {
             Ok(dirstate_map::NodeData::Entry(self.assume_entry()))
-        } else if let Some(mtime) = self.cached_directory_mtime() {
+        } else if let Some(mtime) = self.cached_directory_mtime()? {
             Ok(dirstate_map::NodeData::CachedDirectory { mtime })
         } else {
             Ok(dirstate_map::NodeData::None)
         }
     }
 
-    pub(super) fn cached_directory_mtime(&self) -> Option<Timestamp> {
-        if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
-            Some(self.data.as_timestamp())
-        } else {
-            None
-        }
+    pub(super) fn cached_directory_mtime(
+        &self,
+    ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
+        Ok(
+            if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
+                Some(self.data.as_timestamp()?)
+            } else {
+                None
+            },
+        )
     }
 
     fn assume_entry(&self) -> DirstateEntry {
@@ -422,9 +423,10 @@ impl Entry {
         (flags, raw_entry)
     }
 
-    fn from_timestamp(timestamp: Timestamp) -> Self {
+    fn from_timestamp(timestamp: TruncatedTimestamp) -> Self {
         let packed = PackedTimestamp {
-            seconds: timestamp.seconds().into(),
+            _padding: 0.into(),
+            truncated_seconds: timestamp.truncated_seconds().into(),
             nanoseconds: timestamp.nanoseconds().into(),
         };
         // Safety: both types implement the `ByteCast` trait, so we could
@@ -435,11 +437,14 @@ impl Entry {
         unsafe { std::mem::transmute::<PackedTimestamp, Entry>(packed) }
     }
 
-    fn as_timestamp(self) -> Timestamp {
+    fn as_timestamp(self) -> Result<TruncatedTimestamp, DirstateV2ParseError> {
         // Safety: same as above in `from_timestamp`
         let packed =
             unsafe { std::mem::transmute::<Entry, PackedTimestamp>(self) };
-        Timestamp::new(packed.seconds.get(), packed.nanoseconds.get())
+        TruncatedTimestamp::from_already_truncated(
+            packed.truncated_seconds.get(),
+            packed.nanoseconds.get(),
+        )
     }
 }
 

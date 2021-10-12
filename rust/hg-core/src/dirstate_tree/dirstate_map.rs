@@ -14,6 +14,7 @@ use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::parsers::Timestamp;
 use crate::dirstate::CopyMapIter;
 use crate::dirstate::StateMapIter;
+use crate::dirstate::TruncatedTimestamp;
 use crate::dirstate::SIZE_FROM_OTHER_PARENT;
 use crate::dirstate::SIZE_NON_NORMAL;
 use crate::matchers::Matcher;
@@ -330,12 +331,12 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 
     pub(super) fn cached_directory_mtime(
         &self,
-    ) -> Option<crate::dirstate::Timestamp> {
+    ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
         match self {
-            NodeRef::InMemory(_path, node) => match node.data {
+            NodeRef::InMemory(_path, node) => Ok(match node.data {
                 NodeData::CachedDirectory { mtime } => Some(mtime),
                 _ => None,
-            },
+            }),
             NodeRef::OnDisk(node) => node.cached_directory_mtime(),
         }
     }
@@ -376,7 +377,7 @@ pub(super) struct Node<'on_disk> {
 
 pub(super) enum NodeData {
     Entry(DirstateEntry),
-    CachedDirectory { mtime: crate::dirstate::Timestamp },
+    CachedDirectory { mtime: TruncatedTimestamp },
     None,
 }
 
@@ -1177,8 +1178,8 @@ impl OwningDirstateMap {
                 entry.debug_tuple()
             } else if !all {
                 return Ok(None);
-            } else if let Some(mtime) = node.cached_directory_mtime() {
-                (b' ', 0, -1, mtime.seconds() as i32)
+            } else if let Some(mtime) = node.cached_directory_mtime()? {
+                (b' ', 0, -1, mtime.truncated_seconds() as i32)
             } else {
                 (b' ', 0, -1, -1)
             };
