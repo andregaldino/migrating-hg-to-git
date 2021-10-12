@@ -1408,9 +1408,11 @@ class _chistedit_state(object):
         self,
         repo,
         rules,
+        stdscr,
     ):
         self.repo = repo
         self.rules = rules
+        self.stdscr = stdscr
         self.pos = 0
         self.selected = None
         self.mode = (MODE_INIT, MODE_INIT)
@@ -1475,6 +1477,46 @@ class _chistedit_state(object):
         win.addstr(y, 1, conflictstr[:length])
         win.noutrefresh()
 
+    def helplines(self):
+        if self.mode[0] == MODE_PATCH:
+            help = b"""\
+?: help, k/up: line up, j/down: line down, v: stop viewing patch
+pgup: prev page, space/pgdn: next page, c: commit, q: abort
+"""
+        else:
+            help = b"""\
+?: help, k/up: move up, j/down: move down, space: select, v: view patch
+d: drop, e: edit, f: fold, m: mess, p: pick, r: roll
+pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
+"""
+        return help.splitlines()
+
+    def render_help(self, win):
+        maxy, maxx = win.getmaxyx()
+        for y, line in enumerate(self.helplines()):
+            if y >= maxy:
+                break
+            addln(win, y, 0, line, curses.color_pair(COLOR_HELP))
+        win.noutrefresh()
+
+    def layout(self):
+        maxy, maxx = self.stdscr.getmaxyx()
+        helplen = len(self.helplines())
+        mainlen = maxy - helplen - 12
+        if mainlen < 1:
+            raise error.Abort(
+                _(b"terminal dimensions %d by %d too small for curses histedit")
+                % (maxy, maxx),
+                hint=_(
+                    b"enlarge your terminal or use --config ui.interface=text"
+                ),
+            )
+        return {
+            b'commit': (12, maxx),
+            b'help': (helplen, maxx),
+            b'main': (mainlen, maxx),
+        }
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1502,29 +1544,6 @@ def _chisteditmain(repo, rules, stdscr):
         curses.curs_set(0)
     except curses.error:
         pass
-
-    def helplines(mode):
-        if mode == MODE_PATCH:
-            help = b"""\
-?: help, k/up: line up, j/down: line down, v: stop viewing patch
-pgup: prev page, space/pgdn: next page, c: commit, q: abort
-"""
-        else:
-            help = b"""\
-?: help, k/up: move up, j/down: move down, space: select, v: view patch
-d: drop, e: edit, f: fold, m: mess, p: pick, r: roll
-pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
-"""
-        return help.splitlines()
-
-    def renderhelp(win, state):
-        maxy, maxx = win.getmaxyx()
-        mode, _ = state.mode
-        for y, line in enumerate(helplines(mode)):
-            if y >= maxy:
-                break
-            addln(win, y, 0, line, curses.color_pair(COLOR_HELP))
-        win.noutrefresh()
 
     def renderrules(rulesscr, state):
         rules = state.rules
@@ -1600,30 +1619,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         content = state.modes[MODE_PATCH][b'patchcontents']
         renderstring(win, state, content[start:], diffcolors=True)
 
-    def layout(mode):
-        maxy, maxx = stdscr.getmaxyx()
-        helplen = len(helplines(mode))
-        mainlen = maxy - helplen - 12
-        if mainlen < 1:
-            raise error.Abort(
-                _(b"terminal dimensions %d by %d too small for curses histedit")
-                % (maxy, maxx),
-                hint=_(
-                    b"enlarge your terminal or use --config ui.interface=text"
-                ),
-            )
-        return {
-            b'commit': (12, maxx),
-            b'help': (helplen, maxx),
-            b'main': (mainlen, maxx),
-        }
-
     def drawvertwin(size, y, x):
         win = curses.newwin(size[0], size[1], y, x)
         y += size[0]
         return win, y, x
 
-    state = _chistedit_state(repo, rules)
+    state = _chistedit_state(repo, rules, stdscr)
 
     # eventloop
     ch = None
@@ -1645,8 +1646,8 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 if size != stdscr.getmaxyx():
                     curses.resizeterm(*size)
 
+            sizes = state.layout()
             curmode, unused = state.mode
-            sizes = layout(curmode)
             if curmode != oldmode:
                 state.page_height = sizes[b'main'][0]
                 # Adjust the view to fit the current screen size.
@@ -1680,7 +1681,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             else:
                 renderrules(mainwin, state)
                 state.render_commit(commitwin)
-            renderhelp(helpwin, state)
+            state.render_help(helpwin)
             curses.doupdate()
             # done rendering
             ch = encoding.strtolocal(stdscr.getkey())
