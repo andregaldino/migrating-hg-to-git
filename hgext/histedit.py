@@ -1564,6 +1564,33 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
         rulesscr.noutrefresh()
 
+    def render_string(self, win, output, diffcolors=False):
+        maxy, maxx = win.getmaxyx()
+        length = min(maxy - 1, len(output))
+        for y in range(0, length):
+            line = output[y]
+            if diffcolors:
+                if line and line[0] == b'+':
+                    win.addstr(
+                        y, 0, line, curses.color_pair(COLOR_DIFF_ADD_LINE)
+                    )
+                elif line and line[0] == b'-':
+                    win.addstr(
+                        y, 0, line, curses.color_pair(COLOR_DIFF_DEL_LINE)
+                    )
+                elif line.startswith(b'@@ '):
+                    win.addstr(y, 0, line, curses.color_pair(COLOR_DIFF_OFFSET))
+                else:
+                    win.addstr(y, 0, line)
+            else:
+                win.addstr(y, 0, line)
+        win.noutrefresh()
+
+    def render_patch(self, win):
+        start = self.modes[MODE_PATCH][b'line_offset']
+        content = self.modes[MODE_PATCH][b'patchcontents']
+        self.render_string(win, content[start:], diffcolors=True)
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1591,33 +1618,6 @@ def _chisteditmain(repo, rules, stdscr):
         curses.curs_set(0)
     except curses.error:
         pass
-
-    def renderstring(win, state, output, diffcolors=False):
-        maxy, maxx = win.getmaxyx()
-        length = min(maxy - 1, len(output))
-        for y in range(0, length):
-            line = output[y]
-            if diffcolors:
-                if line and line[0] == b'+':
-                    win.addstr(
-                        y, 0, line, curses.color_pair(COLOR_DIFF_ADD_LINE)
-                    )
-                elif line and line[0] == b'-':
-                    win.addstr(
-                        y, 0, line, curses.color_pair(COLOR_DIFF_DEL_LINE)
-                    )
-                elif line.startswith(b'@@ '):
-                    win.addstr(y, 0, line, curses.color_pair(COLOR_DIFF_OFFSET))
-                else:
-                    win.addstr(y, 0, line)
-            else:
-                win.addstr(y, 0, line)
-        win.noutrefresh()
-
-    def renderpatch(win, state):
-        start = state.modes[MODE_PATCH][b'line_offset']
-        content = state.modes[MODE_PATCH][b'patchcontents']
-        renderstring(win, state, content[start:], diffcolors=True)
 
     def drawvertwin(size, y, x):
         win = curses.newwin(size[0], size[1], y, x)
@@ -1675,9 +1675,9 @@ def _chisteditmain(repo, rules, stdscr):
             helpwin.erase()
             mainwin.erase()
             if curmode == MODE_PATCH:
-                renderpatch(mainwin, state)
+                state.render_patch(mainwin)
             elif curmode == MODE_HELP:
-                renderstring(mainwin, state, __doc__.strip().splitlines())
+                state.render_string(mainwin, __doc__.strip().splitlines())
             else:
                 state.render_rules(mainwin)
                 state.render_commit(commitwin)
