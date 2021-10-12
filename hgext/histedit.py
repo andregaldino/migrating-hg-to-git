@@ -1218,7 +1218,7 @@ def changemode(state, mode):
     curmode, _ = state.mode
     state.mode = (mode, curmode)
     if mode == MODE_PATCH:
-        state.modes[MODE_PATCH][b'patchcontents'] = patchcontents(state)
+        state.modes[MODE_PATCH][b'patchcontents'] = state.patch_contents()
 
 
 def makeselection(state, pos):
@@ -1323,19 +1323,6 @@ def _trunc_tail(line, n):
     if len(line) <= n:
         return line
     return line[: n - 2] + b' >'
-
-
-def patchcontents(state):
-    repo = state.repo
-    rule = state.rules[state.pos]
-    displayer = logcmdutil.changesetdisplayer(
-        repo.ui, repo, {b"patch": True, b"template": b"status"}, buffered=True
-    )
-    overrides = {(b'ui', b'verbose'): True}
-    with repo.ui.configoverride(overrides, source=b'histedit'):
-        displayer.show(rule.ctx)
-        displayer.close()
-    return displayer.hunk[rule.ctx.rev()].splitlines()
 
 
 class _chistedit_state(object):
@@ -1589,6 +1576,21 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             return E_LINEDOWN
         elif action == b'line-up':
             return E_LINEUP
+
+    def patch_contents(self):
+        repo = self.repo
+        rule = self.rules[self.pos]
+        displayer = logcmdutil.changesetdisplayer(
+            repo.ui,
+            repo,
+            {b"patch": True, b"template": b"status"},
+            buffered=True,
+        )
+        overrides = {(b'ui', b'verbose'): True}
+        with repo.ui.configoverride(overrides, source=b'histedit'):
+            displayer.show(rule.ctx)
+            displayer.close()
+        return displayer.hunk[rule.ctx.rev()].splitlines()
 
 
 def _chisteditmain(repo, rules, stdscr):
