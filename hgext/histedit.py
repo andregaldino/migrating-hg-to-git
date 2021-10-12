@@ -1256,9 +1256,7 @@ class _chistedit_state(object):
     def render_commit(self, win):
         """Renders the commit window that shows the log of the current selected
         commit"""
-        pos = self.pos
-        rules = self.rules
-        rule = rules[pos]
+        rule = self.rules[self.pos]
 
         ctx = rule.ctx
         win.box()
@@ -1345,19 +1343,16 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         }
 
     def render_rules(self, rulesscr):
-        rules = self.rules
-        pos = self.pos
-        selected = self.selected
         start = self.modes[MODE_RULES][b'line_offset']
 
-        conflicts = [r.ctx for r in rules if r.conflicts]
+        conflicts = [r.ctx for r in self.rules if r.conflicts]
         if len(conflicts) > 0:
             line = b"potential conflict in %s" % b','.join(
                 map(pycompat.bytestr, conflicts)
             )
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
-        for y, rule in enumerate(rules[start:]):
+        for y, rule in enumerate(self.rules[start:]):
             if y >= self.page_height:
                 break
             if len(rule.conflicts) > 0:
@@ -1365,10 +1360,10 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             else:
                 rulesscr.addstr(y, 0, b" ", curses.COLOR_BLACK)
 
-            if y + start == selected:
+            if y + start == self.selected:
                 rollcolor = COLOR_ROLL_SELECTED
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
-            elif y + start == pos:
+            elif y + start == self.pos:
                 rollcolor = COLOR_ROLL_CURRENT
                 addln(
                     rulesscr,
@@ -1424,9 +1419,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         This takes the current state and based on the current character input from
         the user we change the state.
         """
-        selected = self.selected
         oldpos = self.pos
-        rules = self.rules
 
         if ch in (curses.KEY_RESIZE, b"KEY_RESIZE"):
             return E_RESIZE
@@ -1442,26 +1435,26 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         if action is None:
             return
         if action in (b'down', b'move-down'):
-            newpos = min(oldpos + 1, len(rules) - 1)
+            newpos = min(oldpos + 1, len(self.rules) - 1)
             self.move_cursor(oldpos, newpos)
-            if selected is not None or action == b'move-down':
+            if self.selected is not None or action == b'move-down':
                 self.swap(oldpos, newpos)
         elif action in (b'up', b'move-up'):
             newpos = max(0, oldpos - 1)
             self.move_cursor(oldpos, newpos)
-            if selected is not None or action == b'move-up':
+            if self.selected is not None or action == b'move-up':
                 self.swap(oldpos, newpos)
         elif action == b'next-action':
             self.cycle_action(oldpos, next=True)
         elif action == b'prev-action':
             self.cycle_action(oldpos, next=False)
         elif action == b'select':
-            selected = oldpos if selected is None else None
-            self.make_selection(selected)
-        elif action == b'goto' and int(ch) < len(rules) and len(rules) <= 10:
-            newrule = next((r for r in rules if r.origpos == int(ch)))
+            self.selected = oldpos if self.selected is None else None
+            self.make_selection(self.selected)
+        elif action == b'goto' and int(ch) < len(self.rules) <= 10:
+            newrule = next((r for r in self.rules if r.origpos == int(ch)))
             self.move_cursor(oldpos, newrule.pos)
-            if selected is not None:
+            if self.selected is not None:
                 self.swap(oldpos, newrule.pos)
         elif action.startswith(b'action-'):
             self.change_action(oldpos, action[7:])
@@ -1549,16 +1542,14 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def change_action(self, pos, action):
         """Change the action state on the given position to the new action"""
-        rules = self.rules
-        assert 0 <= pos < len(rules)
-        rules[pos].action = action
+        assert 0 <= pos < len(self.rules)
+        self.rules[pos].action = action
 
     def cycle_action(self, pos, next=False):
         """Changes the action state the next or the previous action from
         the action list"""
-        rules = self.rules
-        assert 0 <= pos < len(rules)
-        current = rules[pos].action
+        assert 0 <= pos < len(self.rules)
+        current = self.rules[pos].action
 
         assert current in KEY_LIST
 
