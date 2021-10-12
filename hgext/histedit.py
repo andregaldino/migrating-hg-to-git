@@ -1288,71 +1288,6 @@ def changeview(state, delta, unit):
     mode_state[b'line_offset'] = max(0, min(max_offset, newline))
 
 
-def event(state, ch):
-    """Change state based on the current character input
-
-    This takes the current state and based on the current character input from
-    the user we change the state.
-    """
-    selected = state.selected
-    oldpos = state.pos
-    rules = state.rules
-
-    if ch in (curses.KEY_RESIZE, b"KEY_RESIZE"):
-        return E_RESIZE
-
-    lookup_ch = ch
-    if ch is not None and b'0' <= ch <= b'9':
-        lookup_ch = b'0'
-
-    curmode, prevmode = state.mode
-    action = KEYTABLE[curmode].get(
-        lookup_ch, KEYTABLE[b'global'].get(lookup_ch)
-    )
-    if action is None:
-        return
-    if action in (b'down', b'move-down'):
-        newpos = min(oldpos + 1, len(rules) - 1)
-        movecursor(state, oldpos, newpos)
-        if selected is not None or action == b'move-down':
-            swap(state, oldpos, newpos)
-    elif action in (b'up', b'move-up'):
-        newpos = max(0, oldpos - 1)
-        movecursor(state, oldpos, newpos)
-        if selected is not None or action == b'move-up':
-            swap(state, oldpos, newpos)
-    elif action == b'next-action':
-        cycleaction(state, oldpos, next=True)
-    elif action == b'prev-action':
-        cycleaction(state, oldpos, next=False)
-    elif action == b'select':
-        selected = oldpos if selected is None else None
-        makeselection(state, selected)
-    elif action == b'goto' and int(ch) < len(rules) and len(rules) <= 10:
-        newrule = next((r for r in rules if r.origpos == int(ch)))
-        movecursor(state, oldpos, newrule.pos)
-        if selected is not None:
-            swap(state, oldpos, newrule.pos)
-    elif action.startswith(b'action-'):
-        changeaction(state, oldpos, action[7:])
-    elif action == b'showpatch':
-        changemode(state, MODE_PATCH if curmode != MODE_PATCH else prevmode)
-    elif action == b'help':
-        changemode(state, MODE_HELP if curmode != MODE_HELP else prevmode)
-    elif action == b'quit':
-        return E_QUIT
-    elif action == b'histedit':
-        return E_HISTEDIT
-    elif action == b'page-down':
-        return E_PAGEDOWN
-    elif action == b'page-up':
-        return E_PAGEUP
-    elif action == b'line-down':
-        return E_LINEDOWN
-    elif action == b'line-up':
-        return E_LINEUP
-
-
 def makecommands(rules):
     """Returns a list of commands consumable by histedit --commands based on
     our list of rules"""
@@ -1591,6 +1526,70 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         content = self.modes[MODE_PATCH][b'patchcontents']
         self.render_string(win, content[start:], diffcolors=True)
 
+    def event(self, ch):
+        """Change state based on the current character input
+
+        This takes the current state and based on the current character input from
+        the user we change the state.
+        """
+        selected = self.selected
+        oldpos = self.pos
+        rules = self.rules
+
+        if ch in (curses.KEY_RESIZE, b"KEY_RESIZE"):
+            return E_RESIZE
+
+        lookup_ch = ch
+        if ch is not None and b'0' <= ch <= b'9':
+            lookup_ch = b'0'
+
+        curmode, prevmode = self.mode
+        action = KEYTABLE[curmode].get(
+            lookup_ch, KEYTABLE[b'global'].get(lookup_ch)
+        )
+        if action is None:
+            return
+        if action in (b'down', b'move-down'):
+            newpos = min(oldpos + 1, len(rules) - 1)
+            movecursor(self, oldpos, newpos)
+            if selected is not None or action == b'move-down':
+                swap(self, oldpos, newpos)
+        elif action in (b'up', b'move-up'):
+            newpos = max(0, oldpos - 1)
+            movecursor(self, oldpos, newpos)
+            if selected is not None or action == b'move-up':
+                swap(self, oldpos, newpos)
+        elif action == b'next-action':
+            cycleaction(self, oldpos, next=True)
+        elif action == b'prev-action':
+            cycleaction(self, oldpos, next=False)
+        elif action == b'select':
+            selected = oldpos if selected is None else None
+            makeselection(self, selected)
+        elif action == b'goto' and int(ch) < len(rules) and len(rules) <= 10:
+            newrule = next((r for r in rules if r.origpos == int(ch)))
+            movecursor(self, oldpos, newrule.pos)
+            if selected is not None:
+                swap(self, oldpos, newrule.pos)
+        elif action.startswith(b'action-'):
+            changeaction(self, oldpos, action[7:])
+        elif action == b'showpatch':
+            changemode(self, MODE_PATCH if curmode != MODE_PATCH else prevmode)
+        elif action == b'help':
+            changemode(self, MODE_HELP if curmode != MODE_HELP else prevmode)
+        elif action == b'quit':
+            return E_QUIT
+        elif action == b'histedit':
+            return E_HISTEDIT
+        elif action == b'page-down':
+            return E_PAGEDOWN
+        elif action == b'page-up':
+            return E_PAGEUP
+        elif action == b'line-down':
+            return E_LINEDOWN
+        elif action == b'line-up':
+            return E_LINEUP
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1634,7 +1633,7 @@ def _chisteditmain(repo, rules, stdscr):
         oldmode, unused = state.mode
         if oldmode == MODE_INIT:
             changemode(state, MODE_RULES)
-        e = event(state, ch)
+        e = state.event(ch)
 
         if e == E_QUIT:
             return False
