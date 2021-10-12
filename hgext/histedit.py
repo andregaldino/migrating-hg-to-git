@@ -1193,23 +1193,6 @@ class histeditrule(object):
         return self.conflicts
 
 
-# ============ EVENTS ===============
-def changeview(state, delta, unit):
-    """Change the region of whatever is being viewed (a patch or the list of
-    changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'."""
-    mode, _ = state.mode
-    if mode != MODE_PATCH:
-        return
-    mode_state = state.modes[mode]
-    num_lines = len(mode_state[b'patchcontents'])
-    page_height = state.page_height
-    unit = page_height if unit == b'page' else 1
-    num_pages = 1 + (num_lines - 1) // page_height
-    max_offset = (num_pages - 1) * page_height
-    newline = mode_state[b'line_offset'] + delta * unit
-    mode_state[b'line_offset'] = max(0, min(max_offset, newline))
-
-
 def makecommands(rules):
     """Returns a list of commands consumable by histedit --commands based on
     our list of rules"""
@@ -1586,6 +1569,21 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             index -= 1
         self.change_action(pos, KEY_LIST[index % len(KEY_LIST)])
 
+    def change_view(self, delta, unit):
+        """Change the region of whatever is being viewed (a patch or the list of
+        changesets). 'delta' is an amount (+/- 1) and 'unit' is 'page' or 'line'."""
+        mode, _ = self.mode
+        if mode != MODE_PATCH:
+            return
+        mode_state = self.modes[mode]
+        num_lines = len(mode_state[b'patchcontents'])
+        page_height = self.page_height
+        unit = page_height if unit == b'page' else 1
+        num_pages = 1 + (num_lines - 1) // page_height
+        max_offset = (num_pages - 1) * page_height
+        newline = mode_state[b'line_offset'] + delta * unit
+        mode_state[b'line_offset'] = max(0, min(max_offset, newline))
+
 
 def _chisteditmain(repo, rules, stdscr):
     try:
@@ -1657,13 +1655,13 @@ def _chisteditmain(repo, rules, stdscr):
 
             if e in (E_PAGEDOWN, E_PAGEUP, E_LINEDOWN, E_LINEUP):
                 if e == E_PAGEDOWN:
-                    changeview(state, +1, b'page')
+                    state.change_view(+1, b'page')
                 elif e == E_PAGEUP:
-                    changeview(state, -1, b'page')
+                    state.change_view(-1, b'page')
                 elif e == E_LINEDOWN:
-                    changeview(state, +1, b'line')
+                    state.change_view(+1, b'line')
                 elif e == E_LINEUP:
-                    changeview(state, -1, b'line')
+                    state.change_view(-1, b'line')
 
             # start rendering
             commitwin.erase()
