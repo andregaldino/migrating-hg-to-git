@@ -282,6 +282,11 @@ configitem(
     default=None,
 )
 configitem(b'histedit', b'summary-template', default=b'{rev} {desc|firstline}')
+# TODO: Teach the text-based histedit interface to respect this config option
+# before we make it non-experimental.
+configitem(
+    b'histedit', b'later-commits-first', default=False, experimental=True
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -1240,6 +1245,11 @@ class _chistedit_state(object):
         self.repo = repo
         self.rules = rules
         self.stdscr = stdscr
+        self.later_on_top = repo.ui.configbool(
+            b'histedit', b'later-commits-first'
+        )
+        # The current item in display order, initialized to point to the top
+        # of the screen.
         self.pos = 0
         self.selected = None
         self.mode = (MODE_INIT, MODE_INIT)
@@ -1256,7 +1266,7 @@ class _chistedit_state(object):
     def render_commit(self, win):
         """Renders the commit window that shows the log of the current selected
         commit"""
-        rule = self.rules[self.pos]
+        rule = self.rules[self.display_pos_to_rule_pos(self.pos)]
 
         ctx = rule.ctx
         win.box()
@@ -1342,6 +1352,19 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             b'main': (mainlen, maxx),
         }
 
+    def display_pos_to_rule_pos(self, display_pos):
+        """Converts a position in display order to rule order.
+
+        The `display_pos` is the order from the top in display order, not
+        considering which items are currently visible on the screen. Thus,
+        `display_pos=0` is the item at the top (possibly after scrolling to
+        the top)
+        """
+        if self.later_on_top:
+            return len(self.rules) - 1 - display_pos
+        else:
+            return display_pos
+
     def render_rules(self, rulesscr):
         start = self.modes[MODE_RULES][b'line_offset']
 
@@ -1352,18 +1375,21 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             )
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
-        for y, rule in enumerate(self.rules[start:]):
-            if y >= self.page_height:
-                break
+        for display_pos in range(start, len(self.rules)):
+            y = display_pos - start
+            if y < 0 or y >= self.page_height:
+                continue
+            rule_pos = self.display_pos_to_rule_pos(display_pos)
+            rule = self.rules[rule_pos]
             if len(rule.conflicts) > 0:
                 rulesscr.addstr(y, 0, b" ", curses.color_pair(COLOR_WARN))
             else:
                 rulesscr.addstr(y, 0, b" ", curses.COLOR_BLACK)
 
-            if y + start == self.selected:
+            if display_pos == self.selected:
                 rollcolor = COLOR_ROLL_SELECTED
                 addln(rulesscr, y, 2, rule, curses.color_pair(COLOR_SELECTED))
-            elif y + start == self.pos:
+            elif display_pos == self.pos:
                 rollcolor = COLOR_ROLL_CURRENT
                 addln(
                     rulesscr,
@@ -1477,7 +1503,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
     def patch_contents(self):
         repo = self.repo
-        rule = self.rules[self.pos]
+        rule = self.rules[self.display_pos_to_rule_pos(self.pos)]
         displayer = logcmdutil.changesetdisplayer(
             repo.ui,
             repo,
@@ -1521,21 +1547,26 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
     def swap(self, oldpos, newpos):
         """Swap two positions and calculate necessary conflicts in
         O(|newpos-oldpos|) time"""
+        old_rule_pos = self.display_pos_to_rule_pos(oldpos)
+        new_rule_pos = self.display_pos_to_rule_pos(newpos)
 
         rules = self.rules
-        assert 0 <= oldpos < len(rules) and 0 <= newpos < len(rules)
+        assert 0 <= old_rule_pos < len(rules) and 0 <= new_rule_pos < len(rules)
 
-        rules[oldpos], rules[newpos] = rules[newpos], rules[oldpos]
+        rules[old_rule_pos], rules[new_rule_pos] = (
+            rules[new_rule_pos],
+            rules[old_rule_pos],
+        )
 
         # TODO: swap should not know about histeditrule's internals
-        rules[newpos].pos = newpos
-        rules[oldpos].pos = oldpos
+        rules[new_rule_pos].pos = new_rule_pos
+        rules[old_rule_pos].pos = old_rule_pos
 
-        start = min(oldpos, newpos)
-        end = max(oldpos, newpos)
+        start = min(old_rule_pos, new_rule_pos)
+        end = max(old_rule_pos, new_rule_pos)
         for r in pycompat.xrange(start, end + 1):
-            rules[newpos].checkconflicts(rules[r])
-            rules[oldpos].checkconflicts(rules[r])
+            rules[new_rule_pos].checkconflicts(rules[r])
+            rules[old_rule_pos].checkconflicts(rules[r])
 
         if self.selected:
             self.make_selection(newpos)
