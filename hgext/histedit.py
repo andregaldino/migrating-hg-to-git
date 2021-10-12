@@ -1194,10 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def makeselection(state, pos):
-    state.selected = pos
-
-
 def swap(state, oldpos, newpos):
     """Swap two positions and calculate necessary conflicts in
     O(|newpos-oldpos|) time"""
@@ -1218,7 +1214,7 @@ def swap(state, oldpos, newpos):
         rules[oldpos].checkconflicts(rules[r])
 
     if state.selected:
-        makeselection(state, newpos)
+        state.make_selection(newpos)
 
 
 def changeaction(state, pos, action):
@@ -1525,7 +1521,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             cycleaction(self, oldpos, next=False)
         elif action == b'select':
             selected = oldpos if selected is None else None
-            makeselection(self, selected)
+            self.make_selection(selected)
         elif action == b'goto' and int(ch) < len(rules) and len(rules) <= 10:
             newrule = next((r for r in rules if r.origpos == int(ch)))
             self.move_cursor(oldpos, newrule.pos)
@@ -1589,6 +1585,9 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
         self.mode = (mode, curmode)
         if mode == MODE_PATCH:
             self.modes[MODE_PATCH][b'patchcontents'] = self.patch_contents()
+
+    def make_selection(self, pos):
+        self.selected = pos
 
 
 def _chisteditmain(repo, rules, stdscr):
