@@ -1194,26 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def movecursor(state, oldpos, newpos):
-    """Change the rule/changeset that the cursor is pointing to, regardless of
-    current mode (you can switch between patches from the view patch window)."""
-    state.pos = newpos
-
-    mode, _ = state.mode
-    if mode == MODE_RULES:
-        # Scroll through the list by updating the view for MODE_RULES, so that
-        # even if we are not currently viewing the rules, switching back will
-        # result in the cursor's rule being visible.
-        modestate = state.modes[MODE_RULES]
-        if newpos < modestate[b'line_offset']:
-            modestate[b'line_offset'] = newpos
-        elif newpos > modestate[b'line_offset'] + state.page_height - 1:
-            modestate[b'line_offset'] = newpos - state.page_height + 1
-
-    # Reset the patch view region to the top of the new patch.
-    state.modes[MODE_PATCH][b'line_offset'] = 0
-
-
 def changemode(state, mode):
     curmode, _ = state.mode
     state.mode = (mode, curmode)
@@ -1538,12 +1518,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             return
         if action in (b'down', b'move-down'):
             newpos = min(oldpos + 1, len(rules) - 1)
-            movecursor(self, oldpos, newpos)
+            self.move_cursor(oldpos, newpos)
             if selected is not None or action == b'move-down':
                 swap(self, oldpos, newpos)
         elif action in (b'up', b'move-up'):
             newpos = max(0, oldpos - 1)
-            movecursor(self, oldpos, newpos)
+            self.move_cursor(oldpos, newpos)
             if selected is not None or action == b'move-up':
                 swap(self, oldpos, newpos)
         elif action == b'next-action':
@@ -1555,7 +1535,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             makeselection(self, selected)
         elif action == b'goto' and int(ch) < len(rules) and len(rules) <= 10:
             newrule = next((r for r in rules if r.origpos == int(ch)))
-            movecursor(self, oldpos, newrule.pos)
+            self.move_cursor(oldpos, newrule.pos)
             if selected is not None:
                 swap(self, oldpos, newrule.pos)
         elif action.startswith(b'action-'):
@@ -1591,6 +1571,25 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             displayer.show(rule.ctx)
             displayer.close()
         return displayer.hunk[rule.ctx.rev()].splitlines()
+
+    def move_cursor(self, oldpos, newpos):
+        """Change the rule/changeset that the cursor is pointing to, regardless of
+        current mode (you can switch between patches from the view patch window)."""
+        self.pos = newpos
+
+        mode, _ = self.mode
+        if mode == MODE_RULES:
+            # Scroll through the list by updating the view for MODE_RULES, so that
+            # even if we are not currently viewing the rules, switching back will
+            # result in the cursor's rule being visible.
+            modestate = self.modes[MODE_RULES]
+            if newpos < modestate[b'line_offset']:
+                modestate[b'line_offset'] = newpos
+            elif newpos > modestate[b'line_offset'] + self.page_height - 1:
+                modestate[b'line_offset'] = newpos - self.page_height + 1
+
+        # Reset the patch view region to the top of the new patch.
+        self.modes[MODE_PATCH][b'line_offset'] = 0
 
 
 def _chisteditmain(repo, rules, stdscr):
@@ -1652,7 +1651,7 @@ def _chisteditmain(repo, rules, stdscr):
             if curmode != oldmode:
                 state.page_height = sizes[b'main'][0]
                 # Adjust the view to fit the current screen size.
-                movecursor(state, state.pos, state.pos)
+                state.move_cursor(state.pos, state.pos)
 
             # Pack the windows against the top, each pane spread across the
             # full width of the screen.
