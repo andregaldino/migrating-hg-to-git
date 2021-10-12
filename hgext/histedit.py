@@ -1194,13 +1194,6 @@ class histeditrule(object):
 
 
 # ============ EVENTS ===============
-def changeaction(state, pos, action):
-    """Change the action state on the given position to the new action"""
-    rules = state.rules
-    assert 0 <= pos < len(rules)
-    rules[pos].action = action
-
-
 def cycleaction(state, pos, next=False):
     """Changes the action state the next or the previous action from
     the action list"""
@@ -1215,7 +1208,7 @@ def cycleaction(state, pos, next=False):
         index += 1
     else:
         index -= 1
-    changeaction(state, pos, KEY_LIST[index % len(KEY_LIST)])
+    state.change_action(pos, KEY_LIST[index % len(KEY_LIST)])
 
 
 def changeview(state, delta, unit):
@@ -1505,7 +1498,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             if selected is not None:
                 self.swap(oldpos, newrule.pos)
         elif action.startswith(b'action-'):
-            changeaction(self, oldpos, action[7:])
+            self.change_action(oldpos, action[7:])
         elif action == b'showpatch':
             self.change_mode(MODE_PATCH if curmode != MODE_PATCH else prevmode)
         elif action == b'help':
@@ -1587,6 +1580,12 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
         if self.selected:
             self.make_selection(newpos)
+
+    def change_action(self, pos, action):
+        """Change the action state on the given position to the new action"""
+        rules = self.rules
+        assert 0 <= pos < len(rules)
+        rules[pos].action = action
 
 
 def _chisteditmain(repo, rules, stdscr):
