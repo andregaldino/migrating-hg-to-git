@@ -1716,11 +1716,11 @@ def _chistedit(ui, repo, freeargs, opts):
                 _(b'%s is not an ancestor of working directory') % short(root)
             )
 
-        ctxs = []
+        rules = []
         for i, r in enumerate(revs):
-            ctxs.append(histeditrule(ui, repo[r], i))
+            rules.append(histeditrule(ui, repo[r], i))
         with util.with_lc_ctype():
-            rc = curses.wrapper(functools.partial(_chisteditmain, repo, ctxs))
+            rc = curses.wrapper(functools.partial(_chisteditmain, repo, rules))
         curses.echo()
         curses.endwin()
         if rc is False:
