@@ -1424,39 +1424,11 @@ class _chistedit_state(object):
             },
         }
 
-
-def _chisteditmain(repo, rules, stdscr):
-    try:
-        curses.use_default_colors()
-    except curses.error:
-        pass
-
-    # initialize color pattern
-    curses.init_pair(COLOR_HELP, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
-    curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
-    curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
-    curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
-    curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
-    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
-    curses.init_pair(
-        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
-    )
-    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
-
-    # don't display the cursor
-    try:
-        curses.curs_set(0)
-    except curses.error:
-        pass
-
-    def rendercommit(win, state):
+    def render_commit(self, win):
         """Renders the commit window that shows the log of the current selected
         commit"""
-        pos = state.pos
-        rules = state.rules
+        pos = self.pos
+        rules = self.rules
         rule = rules[pos]
 
         ctx = rule.ctx
@@ -1471,7 +1443,7 @@ def _chisteditmain(repo, rules, stdscr):
         line = b"user:      %s" % ctx.user()
         win.addstr(2, 1, line[:length])
 
-        bms = repo.nodebookmarks(ctx.node())
+        bms = self.repo.nodebookmarks(ctx.node())
         line = b"bookmark:  %s" % b' '.join(bms)
         win.addstr(3, 1, line[:length])
 
@@ -1502,6 +1474,34 @@ def _chisteditmain(repo, rules, stdscr):
 
         win.addstr(y, 1, conflictstr[:length])
         win.noutrefresh()
+
+
+def _chisteditmain(repo, rules, stdscr):
+    try:
+        curses.use_default_colors()
+    except curses.error:
+        pass
+
+    # initialize color pattern
+    curses.init_pair(COLOR_HELP, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
+    curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
+    curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
+    curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
+    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
+    curses.init_pair(
+        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
+    )
+    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
+
+    # don't display the cursor
+    try:
+        curses.curs_set(0)
+    except curses.error:
+        pass
 
     def helplines(mode):
         if mode == MODE_PATCH:
@@ -1679,7 +1679,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
                 renderstring(mainwin, state, __doc__.strip().splitlines())
             else:
                 renderrules(mainwin, state)
-                rendercommit(commitwin, state)
+                state.render_commit(commitwin)
             renderhelp(helpwin, state)
             curses.doupdate()
             # done rendering
