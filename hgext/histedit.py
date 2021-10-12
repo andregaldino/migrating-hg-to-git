@@ -1517,39 +1517,11 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
             b'main': (mainlen, maxx),
         }
 
-
-def _chisteditmain(repo, rules, stdscr):
-    try:
-        curses.use_default_colors()
-    except curses.error:
-        pass
-
-    # initialize color pattern
-    curses.init_pair(COLOR_HELP, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
-    curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
-    curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
-    curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
-    curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
-    curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
-    curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
-    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
-    curses.init_pair(
-        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
-    )
-    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
-
-    # don't display the cursor
-    try:
-        curses.curs_set(0)
-    except curses.error:
-        pass
-
-    def renderrules(rulesscr, state):
-        rules = state.rules
-        pos = state.pos
-        selected = state.selected
-        start = state.modes[MODE_RULES][b'line_offset']
+    def render_rules(self, rulesscr):
+        rules = self.rules
+        pos = self.pos
+        selected = self.selected
+        start = self.modes[MODE_RULES][b'line_offset']
 
         conflicts = [r.ctx for r in rules if r.conflicts]
         if len(conflicts) > 0:
@@ -1559,7 +1531,7 @@ def _chisteditmain(repo, rules, stdscr):
             addln(rulesscr, -1, 0, line, curses.color_pair(COLOR_WARN))
 
         for y, rule in enumerate(rules[start:]):
-            if y >= state.page_height:
+            if y >= self.page_height:
                 break
             if len(rule.conflicts) > 0:
                 rulesscr.addstr(y, 0, b" ", curses.color_pair(COLOR_WARN))
@@ -1591,6 +1563,34 @@ def _chisteditmain(repo, rules, stdscr):
                 )
 
         rulesscr.noutrefresh()
+
+
+def _chisteditmain(repo, rules, stdscr):
+    try:
+        curses.use_default_colors()
+    except curses.error:
+        pass
+
+    # initialize color pattern
+    curses.init_pair(COLOR_HELP, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(COLOR_SELECTED, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(COLOR_WARN, curses.COLOR_BLACK, curses.COLOR_YELLOW)
+    curses.init_pair(COLOR_OK, curses.COLOR_BLACK, curses.COLOR_GREEN)
+    curses.init_pair(COLOR_CURRENT, curses.COLOR_WHITE, curses.COLOR_MAGENTA)
+    curses.init_pair(COLOR_DIFF_ADD_LINE, curses.COLOR_GREEN, -1)
+    curses.init_pair(COLOR_DIFF_DEL_LINE, curses.COLOR_RED, -1)
+    curses.init_pair(COLOR_DIFF_OFFSET, curses.COLOR_MAGENTA, -1)
+    curses.init_pair(COLOR_ROLL, curses.COLOR_RED, -1)
+    curses.init_pair(
+        COLOR_ROLL_CURRENT, curses.COLOR_BLACK, curses.COLOR_MAGENTA
+    )
+    curses.init_pair(COLOR_ROLL_SELECTED, curses.COLOR_RED, curses.COLOR_WHITE)
+
+    # don't display the cursor
+    try:
+        curses.curs_set(0)
+    except curses.error:
+        pass
 
     def renderstring(win, state, output, diffcolors=False):
         maxy, maxx = win.getmaxyx()
@@ -1679,7 +1679,7 @@ def _chisteditmain(repo, rules, stdscr):
             elif curmode == MODE_HELP:
                 renderstring(mainwin, state, __doc__.strip().splitlines())
             else:
-                renderrules(mainwin, state)
+                state.render_rules(mainwin)
                 state.render_commit(commitwin)
             state.render_help(helpwin)
             curses.doupdate()
