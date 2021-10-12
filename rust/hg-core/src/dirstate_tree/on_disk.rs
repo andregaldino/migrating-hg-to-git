@@ -15,7 +15,7 @@ use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
 use std::convert::{TryFrom, TryInto};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
 /// This a redundant sanity check more than an actual "magic number" since
@@ -458,18 +458,6 @@ impl From<SystemTime> for Timestamp {
         Timestamp {
             seconds: secs.into(),
             nanoseconds: nanos.into(),
-        }
-    }
-}
-
-impl From<&'_ Timestamp> for SystemTime {
-    fn from(timestamp: &'_ Timestamp) -> Self {
-        let secs = timestamp.seconds.get();
-        let nanos = timestamp.nanoseconds.get();
-        if secs >= 0 {
-            UNIX_EPOCH + Duration::new(secs as u64, nanos)
-        } else {
-            UNIX_EPOCH - Duration::new((-secs) as u64, nanos)
         }
     }
 }

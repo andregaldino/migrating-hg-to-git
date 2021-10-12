@@ -199,7 +199,8 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 // directory eligible for `read_dir` caching.
                 if let Some(meta) = directory_metadata {
                     if let Ok(current_mtime) = meta.modified() {
-                        if current_mtime == cached_mtime.into() {
+                        let current_mtime = Timestamp::from(current_mtime);
+                        if current_mtime == *cached_mtime {
                             // The mtime of that directory has not changed
                             // since then, which means that the results of
                             // `read_dir` should also be unchanged.
