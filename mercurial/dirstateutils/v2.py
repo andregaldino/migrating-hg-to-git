@@ -101,15 +101,12 @@ def parse_nodes(map, copy_map, data, start, len):
             flags,
             size,
             mtime_s,
-            _mtime_ns,
+            mtime_ns,
         ) = NODE.unpack(node_bytes)
 
         # Parse child nodes of this node recursively
         parse_nodes(map, copy_map, data, children_start, children_count)
 
-        # Don’t yet use sub-second precision if it exists in the file,
-        # since other parts of the code still set it to zero.
-        mtime_ns = 0
         item = parsers.DirstateItem.from_v2_data(flags, size, mtime_s, mtime_ns)
         if not item.any_tracked:
             continue

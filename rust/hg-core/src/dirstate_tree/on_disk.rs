@@ -376,15 +376,7 @@ impl Node {
             // MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
             && !self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS)
         {
-            // TODO: replace this by `self.mtime.try_into()?` to use
-            // sub-second precision from the file.
-            // We don’t do this yet because other parts of the code
-            // always set it to zero.
-            let mtime = TruncatedTimestamp::from_already_truncated(
-                self.mtime.truncated_seconds.get(),
-                0,
-            )?;
-            Some(mtime)
+            Some(self.mtime.try_into()?)
         } else {
             None
         };

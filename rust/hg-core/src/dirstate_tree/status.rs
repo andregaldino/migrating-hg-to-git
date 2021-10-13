@@ -531,9 +531,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             let mtime_looks_clean;
             if let Some(dirstate_mtime) = entry.truncated_mtime() {
                 let fs_mtime = TruncatedTimestamp::for_mtime_of(fs_metadata)
-                    .expect("OS/libc does not support mtime?")
-                    // For now don’t use sub-second precision for file mtimes
-                    .to_integer_second();
+                    .expect("OS/libc does not support mtime?");
                 mtime_looks_clean = fs_mtime.likely_equal(dirstate_mtime)
                     && !fs_mtime.likely_equal(self.options.last_normal_time)
             } else {

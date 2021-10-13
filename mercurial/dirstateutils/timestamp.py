@@ -66,12 +66,22 @@ def mtime_of(stat_result):
     Takes an `os.stat_result`-like object and returns a `timestamp` object
     for its modification time.
     """
-    # https://docs.python.org/2/library/os.html#os.stat_float_times
-    # "For compatibility with older Python versions,
-    #  accessing stat_result as a tuple always returns integers."
-    secs = stat_result[stat.ST_MTIME]
+    try:
+        # TODO: add this attribute to `osutil.stat` objects,
+        # see `mercurial/cext/osutil.c`.
+        #
+        # This attribute is also not available on Python 2.
+        nanos = stat_result.st_mtime_ns
+    except AttributeError:
+        # https://docs.python.org/2/library/os.html#os.stat_float_times
+        # "For compatibility with older Python versions,
+        #  accessing stat_result as a tuple always returns integers."
+        secs = stat_result[stat.ST_MTIME]
 
-    # For now
-    subsec_nanos = 0
+        subsec_nanos = 0
+    else:
+        billion = int(1e9)
+        secs = nanos // billion
+        subsec_nanos = nanos % billion
 
     return timestamp((secs, subsec_nanos))

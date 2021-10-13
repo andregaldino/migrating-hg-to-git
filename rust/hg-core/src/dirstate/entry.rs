@@ -91,11 +91,6 @@ impl TruncatedTimestamp {
         }
     }
 
-    pub fn to_integer_second(mut self) -> Self {
-        self.nanoseconds = 0;
-        self
-    }
-
     /// The lower 31 bits of the number of seconds since the epoch.
     pub fn truncated_seconds(&self) -> u32 {
         self.truncated_seconds
