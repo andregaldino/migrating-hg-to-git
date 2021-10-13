@@ -1,7 +1,9 @@
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::errors::HgError;
 use bitflags::bitflags;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
+use std::fs;
+use std::io;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -69,6 +71,21 @@ impl TruncatedTimestamp {
         }
     }
 
+    pub fn for_mtime_of(metadata: &fs::Metadata) -> io::Result<Self> {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::MetadataExt;
+            let seconds = metadata.mtime();
+            // i64 -> u32 with value always in the `0 .. NSEC_PER_SEC` range
+            let nanoseconds = metadata.mtime_nsec().try_into().unwrap();
+            Ok(Self::new_truncate(seconds, nanoseconds))
+        }
+        #[cfg(not(unix))]
+        {
+            metadata.modified().map(Self::from)
+        }
+    }
+
     /// The lower 31 bits of the number of seconds since the epoch.
     pub fn truncated_seconds(&self) -> u32 {
         self.truncated_seconds
@@ -93,9 +110,16 @@ impl TruncatedTimestamp {
     /// If someone is manipulating the modification times of some files to
     /// intentionally make `hg status` return incorrect results, not truncating
     /// wouldn’t help much since they can set exactly the expected timestamp.
-    pub fn very_likely_equal(&self, other: &Self) -> bool {
+    pub fn very_likely_equal(self, other: Self) -> bool {
         self.truncated_seconds == other.truncated_seconds
             && self.nanoseconds == other.nanoseconds
+    }
+
+    pub fn very_likely_equal_to_mtime_of(
+        self,
+        metadata: &fs::Metadata,
+    ) -> io::Result<bool> {
+        Ok(self.very_likely_equal(Self::for_mtime_of(metadata)?))
     }
 }
 

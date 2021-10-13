@@ -199,15 +199,14 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 // by a previous run of the `status` algorithm which found this
                 // directory eligible for `read_dir` caching.
                 if let Some(meta) = directory_metadata {
-                    if let Ok(current_mtime) = meta.modified() {
-                        let truncated =
-                            TruncatedTimestamp::from(current_mtime);
-                        if truncated.very_likely_equal(&cached_mtime) {
-                            // The mtime of that directory has not changed
-                            // since then, which means that the results of
-                            // `read_dir` should also be unchanged.
-                            return true;
-                        }
+                    if cached_mtime
+                        .very_likely_equal_to_mtime_of(meta)
+                        .unwrap_or(false)
+                    {
+                        // The mtime of that directory has not changed
+                        // since then, which means that the results of
+                        // `read_dir` should also be unchanged.
+                        return true;
                     }
                 }
             }
@@ -472,7 +471,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     let is_up_to_date = if let Some(cached) =
                         dirstate_node.cached_directory_mtime()?
                     {
-                        cached.very_likely_equal(&truncated)
+                        cached.very_likely_equal(truncated)
                     } else {
                         false
                     };
