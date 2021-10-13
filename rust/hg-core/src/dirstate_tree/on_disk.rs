@@ -97,7 +97,8 @@ pub(super) struct Node {
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
     flags: Flags,
-    data: Entry,
+    size: U32Be,
+    mtime: PackedTruncatedTimestamp,
 }
 
 bitflags! {
@@ -110,23 +111,14 @@ bitflags! {
         const HAS_MODE_AND_SIZE = 1 << 3;
         const HAS_MTIME = 1 << 4;
         const MODE_EXEC_PERM = 1 << 5;
-        const MODE_IS_SYMLINK = 1 << 7;
+        const MODE_IS_SYMLINK = 1 << 6;
     }
-}
-
-#[derive(BytesCast, Copy, Clone, Debug)]
-#[repr(C)]
-struct Entry {
-    _padding: U32Be,
-    size: U32Be,
-    mtime: U32Be,
 }
 
 /// Duration since the Unix epoch
 #[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
-struct PackedTimestamp {
-    _padding: U32Be,
+struct PackedTruncatedTimestamp {
     truncated_seconds: U32Be,
     nanoseconds: U32Be,
 }
@@ -329,7 +321,7 @@ impl Node {
     ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
         Ok(
             if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
-                Some(self.data.as_timestamp()?)
+                Some(self.mtime.try_into()?)
             } else {
                 None
             },
@@ -356,12 +348,12 @@ impl Node {
         let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
         let p2_info = self.flags.contains(Flags::P2_INFO);
         let mode_size = if self.flags.contains(Flags::HAS_MODE_AND_SIZE) {
-            Some((self.synthesize_unix_mode(), self.data.size.into()))
+            Some((self.synthesize_unix_mode(), self.size.into()))
         } else {
             None
         };
         let mtime = if self.flags.contains(Flags::HAS_MTIME) {
-            Some(self.data.mtime.into())
+            Some(self.mtime.truncated_seconds.into())
         } else {
             None
         };
@@ -407,10 +399,10 @@ impl Node {
             tracked_descendants_count: self.tracked_descendants_count.get(),
         })
     }
-}
 
-impl Entry {
-    fn from_dirstate_entry(entry: &DirstateEntry) -> (Flags, Self) {
+    fn from_dirstate_entry(
+        entry: &DirstateEntry,
+    ) -> (Flags, U32Be, PackedTruncatedTimestamp) {
         let (wdir_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt) =
             entry.v2_data();
         // TODO: convert throug raw flag bits instead?
@@ -418,53 +410,26 @@ impl Entry {
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
         flags.set(Flags::P1_TRACKED, p1_tracked);
         flags.set(Flags::P2_INFO, p2_info);
-        let (size, mtime);
-        if let Some((m, s)) = mode_size_opt {
+        let size = if let Some((m, s)) = mode_size_opt {
             let exec_perm = m & libc::S_IXUSR != 0;
             let is_symlink = m & libc::S_IFMT == libc::S_IFLNK;
             flags.set(Flags::MODE_EXEC_PERM, exec_perm);
             flags.set(Flags::MODE_IS_SYMLINK, is_symlink);
-            size = s;
-            flags.insert(Flags::HAS_MODE_AND_SIZE)
+            flags.insert(Flags::HAS_MODE_AND_SIZE);
+            s.into()
         } else {
-            size = 0;
-        }
-        if let Some(m) = mtime_opt {
-            mtime = m;
+            0.into()
+        };
+        let mtime = if let Some(m) = mtime_opt {
             flags.insert(Flags::HAS_MTIME);
+            PackedTruncatedTimestamp {
+                truncated_seconds: m.into(),
+                nanoseconds: 0.into(),
+            }
         } else {
-            mtime = 0;
-        }
-        let raw_entry = Entry {
-            _padding: 0.into(),
-            size: size.into(),
-            mtime: mtime.into(),
+            PackedTruncatedTimestamp::null()
         };
-        (flags, raw_entry)
-    }
-
-    fn from_timestamp(timestamp: TruncatedTimestamp) -> Self {
-        let packed = PackedTimestamp {
-            _padding: 0.into(),
-            truncated_seconds: timestamp.truncated_seconds().into(),
-            nanoseconds: timestamp.nanoseconds().into(),
-        };
-        // Safety: both types implement the `ByteCast` trait, so we could
-        // safely use `as_bytes` and `from_bytes` to do this conversion. Using
-        // `transmute` instead makes the compiler check that the two types
-        // have the same size, which eliminates the error case of
-        // `from_bytes`.
-        unsafe { std::mem::transmute::<PackedTimestamp, Entry>(packed) }
-    }
-
-    fn as_timestamp(self) -> Result<TruncatedTimestamp, DirstateV2ParseError> {
-        // Safety: same as above in `from_timestamp`
-        let packed =
-            unsafe { std::mem::transmute::<Entry, PackedTimestamp>(self) };
-        TruncatedTimestamp::from_already_truncated(
-            packed.truncated_seconds.get(),
-            packed.nanoseconds.get(),
-        )
+        (flags, size, mtime)
     }
 }
 
@@ -610,20 +575,17 @@ impl Writer<'_, '_> {
             };
             on_disk_nodes.push(match node {
                 NodeRef::InMemory(path, node) => {
-                    let (flags, data) = match &node.data {
+                    let (flags, size, mtime) = match &node.data {
                         dirstate_map::NodeData::Entry(entry) => {
-                            Entry::from_dirstate_entry(entry)
+                            Node::from_dirstate_entry(entry)
                         }
                         dirstate_map::NodeData::CachedDirectory { mtime } => {
-                            (Flags::HAS_MTIME, Entry::from_timestamp(*mtime))
+                            (Flags::HAS_MTIME, 0.into(), (*mtime).into())
                         }
                         dirstate_map::NodeData::None => (
                             Flags::empty(),
-                            Entry {
-                                _padding: 0.into(),
-                                size: 0.into(),
-                                mtime: 0.into(),
-                            },
+                            0.into(),
+                            PackedTruncatedTimestamp::null(),
                         ),
                     };
                     Node {
@@ -641,7 +603,8 @@ impl Writer<'_, '_> {
                             .tracked_descendants_count
                             .into(),
                         flags,
-                        data,
+                        size,
+                        mtime,
                     }
                 }
                 NodeRef::OnDisk(node) => Node {
@@ -724,4 +687,34 @@ fn path_len_from_usize(x: usize) -> PathSize {
         // Could only panic for paths over 64 KiB
         .expect("dirstate-v2 path length overflow")
         .into()
+}
+
+impl From<TruncatedTimestamp> for PackedTruncatedTimestamp {
+    fn from(timestamp: TruncatedTimestamp) -> Self {
+        Self {
+            truncated_seconds: timestamp.truncated_seconds().into(),
+            nanoseconds: timestamp.nanoseconds().into(),
+        }
+    }
+}
+
+impl TryFrom<PackedTruncatedTimestamp> for TruncatedTimestamp {
+    type Error = DirstateV2ParseError;
+
+    fn try_from(
+        timestamp: PackedTruncatedTimestamp,
+    ) -> Result<Self, Self::Error> {
+        Self::from_already_truncated(
+            timestamp.truncated_seconds.get(),
+            timestamp.nanoseconds.get(),
+        )
+    }
+}
+impl PackedTruncatedTimestamp {
+    fn null() -> Self {
+        Self {
+            truncated_seconds: 0.into(),
+            nanoseconds: 0.into(),
+        }
+    }
 }
