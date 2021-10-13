@@ -70,15 +70,21 @@ impl Revlog {
         data_path: Option<&Path>,
     ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
-        let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
+        let index = {
+            match repo.store_vfs().mmap_open_opt(&index_path)? {
+                None => Index::new(Box::new(vec![])),
+                Some(index_mmap) => {
+                    let version = get_version(&index_mmap)?;
+                    if version != 1 {
+                        // A proper new version should have had a repo/store requirement.
+                        return Err(HgError::corrupted("corrupted revlog"));
+                    }
 
-        let version = get_version(&index_mmap)?;
-        if version != 1 {
-            // A proper new version should have had a repo/store requirement.
-            return Err(HgError::corrupted("corrupted revlog"));
-        }
-
-        let index = Index::new(Box::new(index_mmap))?;
+                    let index = Index::new(Box::new(index_mmap))?;
+                    Ok(index)
+                }
+            }
+        }?;
 
         let default_data_path = index_path.with_extension("d");
 
@@ -418,6 +424,6 @@ mod tests {
             .with_version(1)
             .build();
 
-        assert_eq!(get_version(&bytes), 1)
+        assert_eq!(get_version(&bytes).map_err(|_err|()), Ok(1))
     }
 }

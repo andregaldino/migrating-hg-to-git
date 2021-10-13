@@ -9,6 +9,8 @@ pub struct Vfs<'a> {
     pub(crate) base: &'a Path,
 }
 
+struct FileNotFound(std::io::Error, PathBuf);
+
 impl Vfs<'_> {
     pub fn join(&self, relative_path: impl AsRef<Path>) -> PathBuf {
         self.base.join(relative_path)
@@ -22,16 +24,41 @@ impl Vfs<'_> {
         std::fs::read(&path).when_reading_file(&path)
     }
 
+    fn mmap_open_gen(
+        &self,
+        relative_path: impl AsRef<Path>,
+    ) -> Result<Result<Mmap, FileNotFound>, HgError> {
+        let path = self.join(relative_path);
+        let file = match std::fs::File::open(&path) {
+            Err(err) => {
+                if let ErrorKind::NotFound = err.kind() {
+                    return Ok(Err(FileNotFound(err, path)));
+                };
+                return (Err(err)).when_reading_file(&path);
+            }
+            Ok(file) => file,
+        };
+        // TODO: what are the safety requirements here?
+        let mmap = unsafe { MmapOptions::new().map(&file) }
+            .when_reading_file(&path)?;
+        Ok(Ok(mmap))
+    }
+
+    pub fn mmap_open_opt(
+        &self,
+        relative_path: impl AsRef<Path>,
+    ) -> Result<Option<Mmap>, HgError> {
+        self.mmap_open_gen(relative_path).map(|res| res.ok())
+    }
+
     pub fn mmap_open(
         &self,
         relative_path: impl AsRef<Path>,
     ) -> Result<Mmap, HgError> {
-        let path = self.base.join(relative_path);
-        let file = std::fs::File::open(&path).when_reading_file(&path)?;
-        // TODO: what are the safety requirements here?
-        let mmap = unsafe { MmapOptions::new().map(&file) }
-            .when_reading_file(&path)?;
-        Ok(mmap)
+        match self.mmap_open_gen(relative_path)? {
+            Err(FileNotFound(err, path)) => Err(err).when_reading_file(&path),
+            Ok(res) => Ok(res),
+        }
     }
 
     pub fn rename(
