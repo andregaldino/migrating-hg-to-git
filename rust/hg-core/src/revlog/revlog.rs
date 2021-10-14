@@ -76,7 +76,8 @@ impl Revlog {
                 Some(index_mmap) => {
                     let version = get_version(&index_mmap)?;
                     if version != 1 {
-                        // A proper new version should have had a repo/store requirement.
+                        // A proper new version should have had a repo/store
+                        // requirement.
                         return Err(HgError::corrupted("corrupted revlog"));
                     }
 
@@ -428,6 +429,6 @@ mod tests {
             .with_version(1)
             .build();
 
-        assert_eq!(get_version(&bytes).map_err(|_err|()), Ok(1))
+        assert_eq!(get_version(&bytes).map_err(|_err| ()), Ok(1))
     }
 }
