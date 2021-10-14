@@ -149,7 +149,6 @@ class Node(object):
         else:
             # There are no mtime-cached directories in the Python implementation
             flags = 0
-            mode = 0
             size = 0
             mtime_s = 0
             mtime_ns = 0
