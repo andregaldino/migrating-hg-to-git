@@ -1174,6 +1174,32 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             if slow_path == b'abort':
                 raise error.Abort(msg, hint=hint)
         options[b'persistent-nodemap'] = True
+    if requirementsmod.DIRSTATE_V2_REQUIREMENT in requirements:
+        slow_path = ui.config(b'storage', b'dirstate-v2.slow-path')
+        if slow_path not in (b'allow', b'warn', b'abort'):
+            default = ui.config_default(b'storage', b'dirstate-v2.slow-path')
+            msg = _(b'unknown value for config "dirstate-v2.slow-path": "%s"\n')
+            ui.warn(msg % slow_path)
+            if not ui.quiet:
+                ui.warn(_(b'falling back to default value: %s\n') % default)
+            slow_path = default
+
+        msg = _(
+            b"accessing `dirstate-v2` repository without associated "
+            b"fast implementation."
+        )
+        hint = _(
+            b"check `hg help config.format.exp-dirstate-v2` " b"for details"
+        )
+        if not dirstate.HAS_FAST_DIRSTATE_V2:
+            if slow_path == b'warn':
+                msg = b"warning: " + msg + b'\n'
+                ui.warn(msg)
+                if not ui.quiet:
+                    hint = b'(' + hint + b')\n'
+                    ui.warn(hint)
+            if slow_path == b'abort':
+                raise error.Abort(msg, hint=hint)
     if ui.configbool(b'storage', b'revlog.persistent-nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True
     if ui.configbool(b'devel', b'persistent-nodemap'):

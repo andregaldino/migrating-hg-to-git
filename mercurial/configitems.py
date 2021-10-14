@@ -1885,6 +1885,13 @@ coreconfigitem(
     default=b'skip',
     experimental=True,
 )
+# experimental as long as format.exp-dirstate-v2 is.
+coreconfigitem(
+    b'storage',
+    b'dirstate-v2.slow-path',
+    default=b"abort",
+    experimental=True,
+)
 coreconfigitem(
     b'storage',
     b'new-repo-backend',

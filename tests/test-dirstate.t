@@ -1,8 +1,12 @@
 #testcases dirstate-v1 dirstate-v2
 
 #if dirstate-v2
-  $ echo '[format]' >> $HGRCPATH
-  $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-dirstate-v2=1
+  > [storage]
+  > dirstate-v2.slow-path=allow
+  > EOF
 #endif
 
 ------ Test dirstate._dirs refcounting
