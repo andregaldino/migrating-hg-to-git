@@ -372,7 +372,7 @@ Node components are:
   This counter is used to implement `has_tracked_dir`.
 
 * Offset 30:
-  A single `flags` byte that packs some boolean values as bits.
+  A `flags` fields  that packs some boolean values as bits of a 16-bit integer.
   Starting from least-significant, bit masks are::
 
     WDIR_TRACKED = 1 << 0
@@ -384,22 +384,29 @@ Node components are:
     MODE_IS_SYMLINK = 1 << 6
 
   The meaning of each bit is described below.
-  Other bits are unset.
 
-* Offset 31:
+  Other bits are unset.
+  They may be assigned meaning if the future,
+  with the limitation that Mercurial versions that pre-date such meaning
+  will always reset those bits to unset when writing nodes.
+  (A new node is written for any mutation in its subtree,
+  leaving the bytes of the old node unreachable
+  until the data file is rewritten entirely.)
+
+* Offset 32:
   A `size` field described below, as a 32-bit integer.
   Unlike in dirstate-v1, negative values are not used.
 
-* Offset 35:
+* Offset 36:
   The seconds component of an `mtime` field described below,
   as a 32-bit integer.
   Unlike in dirstate-v1, negative values are not used.
 
-* Offset 39:
+* Offset 40:
   The nanoseconds component of an `mtime` field described below,
   as a 32-bit integer.
 
-* (Offset 43: end of this node)
+* (Offset 44: end of this node)
 
 The meaning of the boolean values packed in `flags` is:
 

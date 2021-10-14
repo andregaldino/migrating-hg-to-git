@@ -33,7 +33,7 @@ pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 
 /// Must match constants of the same names in `mercurial/dirstateutils/v2.py`
 const TREE_METADATA_SIZE: usize = 44;
-const NODE_SIZE: usize = 43;
+const NODE_SIZE: usize = 44;
 
 /// Make sure that size-affecting changes are made knowingly
 #[allow(unused)]
@@ -94,15 +94,14 @@ pub(super) struct Node {
     children: ChildNodes,
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
-    flags: Flags,
+    flags: U16Be,
     size: U32Be,
     mtime: PackedTruncatedTimestamp,
 }
 
 bitflags! {
-    #[derive(BytesCast)]
     #[repr(C)]
-    struct Flags: u8 {
+    struct Flags: u16 {
         const WDIR_TRACKED = 1 << 0;
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
@@ -296,8 +295,12 @@ impl Node {
         })
     }
 
+    fn flags(&self) -> Flags {
+        Flags::from_bits_truncate(self.flags.get())
+    }
+
     fn has_entry(&self) -> bool {
-        self.flags.intersects(
+        self.flags().intersects(
             Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO,
         )
     }
@@ -318,7 +321,7 @@ impl Node {
         &self,
     ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
         Ok(
-            if self.flags.contains(Flags::HAS_MTIME) && !self.has_entry() {
+            if self.flags().contains(Flags::HAS_MTIME) && !self.has_entry() {
                 Some(self.mtime.try_into()?)
             } else {
                 None
@@ -327,12 +330,12 @@ impl Node {
     }
 
     fn synthesize_unix_mode(&self) -> u32 {
-        let file_type = if self.flags.contains(Flags::MODE_IS_SYMLINK) {
+        let file_type = if self.flags().contains(Flags::MODE_IS_SYMLINK) {
             libc::S_IFLNK
         } else {
             libc::S_IFREG
         };
-        let permisions = if self.flags.contains(Flags::MODE_EXEC_PERM) {
+        let permisions = if self.flags().contains(Flags::MODE_EXEC_PERM) {
             0o755
         } else {
             0o644
@@ -342,15 +345,15 @@ impl Node {
 
     fn assume_entry(&self) -> DirstateEntry {
         // TODO: convert through raw bits instead?
-        let wdir_tracked = self.flags.contains(Flags::WDIR_TRACKED);
-        let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
-        let p2_info = self.flags.contains(Flags::P2_INFO);
-        let mode_size = if self.flags.contains(Flags::HAS_MODE_AND_SIZE) {
+        let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
+        let p1_tracked = self.flags().contains(Flags::P1_TRACKED);
+        let p2_info = self.flags().contains(Flags::P2_INFO);
+        let mode_size = if self.flags().contains(Flags::HAS_MODE_AND_SIZE) {
             Some((self.synthesize_unix_mode(), self.size.into()))
         } else {
             None
         };
-        let mtime = if self.flags.contains(Flags::HAS_MTIME) {
+        let mtime = if self.flags().contains(Flags::HAS_MTIME) {
             Some(self.mtime.truncated_seconds.into())
         } else {
             None
@@ -600,7 +603,7 @@ impl Writer<'_, '_> {
                         tracked_descendants_count: node
                             .tracked_descendants_count
                             .into(),
-                        flags,
+                        flags: flags.bits().into(),
                         size,
                         mtime,
                     }

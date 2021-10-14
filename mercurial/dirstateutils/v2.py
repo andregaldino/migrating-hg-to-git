@@ -18,7 +18,7 @@ parsers = policy.importmod('parsers')
 # Must match the constant of the same name in
 # `rust/hg-core/src/dirstate_tree/on_disk.rs`
 TREE_METADATA_SIZE = 44
-NODE_SIZE = 43
+NODE_SIZE = 44
 
 
 # Must match the `TreeMetadata` Rust struct in
@@ -50,7 +50,7 @@ TREE_METADATA = struct.Struct('>LLLLL4s20s')
 # * 4 bytes: expected size
 # * 4 bytes: mtime seconds
 # * 4 bytes: mtime nanoseconds
-NODE = struct.Struct('>LHHLHLLLLBlll')
+NODE = struct.Struct('>LHHLHLLLLHlll')
 
 
 assert TREE_METADATA_SIZE == TREE_METADATA.size
