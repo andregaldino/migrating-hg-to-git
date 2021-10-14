@@ -322,15 +322,15 @@ class DirstateItem(object):
             flags |= DIRSTATE_V2_P1_TRACKED
         if self._p2_info:
             flags |= DIRSTATE_V2_P2_INFO
-        if self.mode is not None and self.size is not None:
+        if self._mode is not None and self._size is not None:
             flags |= DIRSTATE_V2_HAS_MODE_AND_SIZE
             if self.mode & stat.S_IXUSR:
                 flags |= DIRSTATE_V2_MODE_EXEC_PERM
             if stat.S_ISLNK(self.mode):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
-        if self.mtime is not None:
+        if self._mtime is not None:
             flags |= DIRSTATE_V2_HAS_MTIME
-        return (flags, self.size or 0, self.mtime or 0)
+        return (flags, self._size or 0, self._mtime or 0)
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
