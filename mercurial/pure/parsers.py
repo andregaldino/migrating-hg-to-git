@@ -302,7 +302,9 @@ class DirstateItem(object):
             return False
         self_ns = self._mtime_ns
         other_sec, other_ns = other_mtime
-        return self_sec == other_sec and self_ns == other_ns
+        return self_sec == other_sec and (
+            self_ns == other_ns or self_ns == 0 or other_ns == 0
+        )
 
     @property
     def state(self):

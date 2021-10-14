@@ -120,9 +120,17 @@ impl TruncatedTimestamp {
     /// If someone is manipulating the modification times of some files to
     /// intentionally make `hg status` return incorrect results, not truncating
     /// wouldn’t help much since they can set exactly the expected timestamp.
+    ///
+    /// Sub-second precision is ignored if it is zero in either value.
+    /// Some APIs simply return zero when more precision is not available.
+    /// When comparing values from different sources, if only one is truncated
+    /// in that way, doing a simple comparison would cause many false
+    /// negatives.
     pub fn likely_equal(self, other: Self) -> bool {
         self.truncated_seconds == other.truncated_seconds
-            && self.nanoseconds == other.nanoseconds
+            && (self.nanoseconds == other.nanoseconds
+                || self.nanoseconds == 0
+                || other.nanoseconds == 0)
     }
 
     pub fn likely_equal_to_mtime_of(

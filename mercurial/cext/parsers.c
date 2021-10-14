@@ -319,7 +319,9 @@ static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
 		return NULL;
 	}
 	if ((self->flags & dirstate_flag_has_file_mtime) &&
-	    self->mtime_s == other_s && self->mtime_ns == other_ns) {
+	    self->mtime_s == other_s &&
+	    (self->mtime_ns == other_ns || self->mtime_ns == 0 ||
+	     other_ns == 0)) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;

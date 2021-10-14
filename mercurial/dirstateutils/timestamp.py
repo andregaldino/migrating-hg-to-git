@@ -5,15 +5,17 @@
 
 from __future__ import absolute_import
 
+import functools
 import stat
 
 
 rangemask = 0x7FFFFFFF
 
 
+@functools.total_ordering
 class timestamp(tuple):
     """
-    A Unix timestamp with nanoseconds precision,
+    A Unix timestamp with optional nanoseconds precision,
     modulo 2**31 seconds.
 
     A 2-tuple containing:
@@ -22,12 +24,34 @@ class timestamp(tuple):
     truncated to its lower 31 bits
 
     `subsecond_nanoseconds`: number of nanoseconds since `truncated_seconds`.
+    When this is zero, the sub-second precision is considered unknown.
     """
 
     def __new__(cls, value):
         truncated_seconds, subsec_nanos = value
         value = (truncated_seconds & rangemask, subsec_nanos)
         return super(timestamp, cls).__new__(cls, value)
+
+    def __eq__(self, other):
+        self_secs, self_subsec_nanos = self
+        other_secs, other_subsec_nanos = other
+        return self_secs == other_secs and (
+            self_subsec_nanos == other_subsec_nanos
+            or self_subsec_nanos == 0
+            or other_subsec_nanos == 0
+        )
+
+    def __gt__(self, other):
+        self_secs, self_subsec_nanos = self
+        other_secs, other_subsec_nanos = other
+        if self_secs > other_secs:
+            return True
+        if self_secs < other_secs:
+            return False
+        if self_subsec_nanos == 0 or other_subsec_nanos == 0:
+            # they are considered equal, so not "greater than"
+            return False
+        return self_subsec_nanos > other_subsec_nanos
 
 
 def zero():
