@@ -1678,26 +1678,44 @@ def copy(ui, repo, pats, opts, rename=False):
             if not opts[b'force']:
                 if already_commited:
                     msg = _(b'%s: not overwriting - file already committed\n')
-                    if after:
-                        flags = b'--after --force'
-                    else:
-                        flags = b'--force'
-                    if rename:
-                        hint = (
-                            _(
-                                b"('hg rename %s' to replace the file by "
-                                b'recording a rename)\n'
+                    # Check if if the target was added in the parent and the
+                    # source already existed in the grandparent.
+                    looks_like_copy_in_pctx = abstarget in pctx and any(
+                        abssrc in gpctx and abstarget not in gpctx
+                        for gpctx in pctx.parents()
+                    )
+                    if looks_like_copy_in_pctx:
+                        if rename:
+                            hint = _(
+                                b"('hg rename --at-rev .' to record the rename "
+                                b"in the parent of the working copy)\n"
                             )
-                            % flags
-                        )
-                    else:
-                        hint = (
-                            _(
-                                b"('hg copy %s' to replace the file by "
-                                b'recording a copy)\n'
+                        else:
+                            hint = _(
+                                b"('hg copy --at-rev .' to record the copy in "
+                                b"the parent of the working copy)\n"
                             )
-                            % flags
-                        )
+                    else:
+                        if after:
+                            flags = b'--after --force'
+                        else:
+                            flags = b'--force'
+                        if rename:
+                            hint = (
+                                _(
+                                    b"('hg rename %s' to replace the file by "
+                                    b'recording a rename)\n'
+                                )
+                                % flags
+                            )
+                        else:
+                            hint = (
+                                _(
+                                    b"('hg copy %s' to replace the file by "
+                                    b'recording a copy)\n'
+                                )
+                                % flags
+                            )
                 else:
                     msg = _(b'%s: not overwriting - file exists\n')
                     if rename:
