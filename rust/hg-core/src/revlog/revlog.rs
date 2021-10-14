@@ -99,14 +99,18 @@ impl Revlog {
                 Some(Box::new(data_mmap))
             };
 
-        let nodemap = NodeMapDocket::read_from_file(repo, index_path)?.map(
-            |(docket, data)| {
-                nodemap::NodeTree::load_bytes(
-                    Box::new(data),
-                    docket.data_length,
-                )
-            },
-        );
+        let nodemap = if index.is_inline() {
+            None
+        } else {
+            NodeMapDocket::read_from_file(repo, index_path)?.map(
+                |(docket, data)| {
+                    nodemap::NodeTree::load_bytes(
+                        Box::new(data),
+                        docket.data_length,
+                    )
+                },
+            )
+        };
 
         Ok(Revlog {
             index,

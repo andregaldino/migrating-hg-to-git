@@ -57,7 +57,7 @@ impl Index {
 
     /// Value of the inline flag.
     pub fn is_inline(&self) -> bool {
-        is_inline(&self.bytes)
+        self.offsets.is_some()
     }
 
     /// Return a slice of bytes if `revlog` is inline. Panic if not.
