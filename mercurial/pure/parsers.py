@@ -49,9 +49,10 @@ DIRSTATE_V2_WDIR_TRACKED = 1 << 0
 DIRSTATE_V2_P1_TRACKED = 1 << 1
 DIRSTATE_V2_P2_INFO = 1 << 2
 DIRSTATE_V2_HAS_MODE_AND_SIZE = 1 << 3
-DIRSTATE_V2_HAS_MTIME = 1 << 4
-DIRSTATE_V2_MODE_EXEC_PERM = 1 << 5
-DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 6
+DIRSTATE_V2_HAS_FILE_MTIME = 1 << 4
+_DIRSTATE_V2_HAS_DIRCTORY_MTIME = 1 << 5  # Unused when Rust is not available
+DIRSTATE_V2_MODE_EXEC_PERM = 1 << 6
+DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 7
 
 
 @attr.s(slots=True, init=False)
@@ -138,7 +139,7 @@ class DirstateItem(object):
             p1_tracked=bool(flags & DIRSTATE_V2_P1_TRACKED),
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
-            has_meaningful_mtime=bool(flags & DIRSTATE_V2_HAS_MTIME),
+            has_meaningful_mtime=bool(flags & DIRSTATE_V2_HAS_FILE_MTIME),
             parentfiledata=(mode, size, mtime),
         )
 
@@ -329,7 +330,7 @@ class DirstateItem(object):
             if stat.S_ISLNK(self.mode):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime is not None:
-            flags |= DIRSTATE_V2_HAS_MTIME
+            flags |= DIRSTATE_V2_HAS_FILE_MTIME
         return (flags, self._size or 0, self._mtime or 0)
 
     def v1_state(self):

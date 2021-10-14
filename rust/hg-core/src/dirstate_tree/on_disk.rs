@@ -106,9 +106,10 @@ bitflags! {
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
         const HAS_MODE_AND_SIZE = 1 << 3;
-        const HAS_MTIME = 1 << 4;
-        const MODE_EXEC_PERM = 1 << 5;
-        const MODE_IS_SYMLINK = 1 << 6;
+        const HAS_FILE_MTIME = 1 << 4;
+        const HAS_DIRECTORY_MTIME = 1 << 5;
+        const MODE_EXEC_PERM = 1 << 6;
+        const MODE_IS_SYMLINK = 1 << 7;
     }
 }
 
@@ -320,13 +321,15 @@ impl Node {
     pub(super) fn cached_directory_mtime(
         &self,
     ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
-        Ok(
-            if self.flags().contains(Flags::HAS_MTIME) && !self.has_entry() {
-                Some(self.mtime.try_into()?)
+        if self.flags().contains(Flags::HAS_DIRECTORY_MTIME) {
+            if self.flags().contains(Flags::HAS_FILE_MTIME) {
+                Err(DirstateV2ParseError)
             } else {
-                None
-            },
-        )
+                Ok(Some(self.mtime.try_into()?))
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     fn synthesize_unix_mode(&self) -> u32 {
@@ -353,7 +356,7 @@ impl Node {
         } else {
             None
         };
-        let mtime = if self.flags().contains(Flags::HAS_MTIME) {
+        let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME) {
             Some(self.mtime.truncated_seconds.into())
         } else {
             None
@@ -422,7 +425,7 @@ impl Node {
             0.into()
         };
         let mtime = if let Some(m) = mtime_opt {
-            flags.insert(Flags::HAS_MTIME);
+            flags.insert(Flags::HAS_FILE_MTIME);
             PackedTruncatedTimestamp {
                 truncated_seconds: m.into(),
                 nanoseconds: 0.into(),
@@ -580,9 +583,11 @@ impl Writer<'_, '_> {
                         dirstate_map::NodeData::Entry(entry) => {
                             Node::from_dirstate_entry(entry)
                         }
-                        dirstate_map::NodeData::CachedDirectory { mtime } => {
-                            (Flags::HAS_MTIME, 0.into(), (*mtime).into())
-                        }
+                        dirstate_map::NodeData::CachedDirectory { mtime } => (
+                            Flags::HAS_DIRECTORY_MTIME,
+                            0.into(),
+                            (*mtime).into(),
+                        ),
                         dirstate_map::NodeData::None => (
                             Flags::empty(),
                             0.into(),

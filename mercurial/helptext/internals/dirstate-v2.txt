@@ -379,9 +379,10 @@ Node components are:
     P1_TRACKED = 1 << 1
     P2_INFO = 1 << 2
     HAS_MODE_AND_SIZE = 1 << 3
-    HAS_MTIME = 1 << 4
-    MODE_EXEC_PERM = 1 << 5
-    MODE_IS_SYMLINK = 1 << 6
+    HAS_FILE_MTIME = 1 << 4
+    HAS_DIRECTORY_MTIME = 1 << 5
+    MODE_EXEC_PERM = 1 << 6
+    MODE_IS_SYMLINK = 1 << 7
 
   The meaning of each bit is described below.
 
@@ -401,10 +402,25 @@ Node components are:
   The seconds component of an `mtime` field described below,
   as a 32-bit integer.
   Unlike in dirstate-v1, negative values are not used.
+  When `mtime` is used, this is number of seconds since the Unix epoch
+  truncated to its lower 31 bits.
 
 * Offset 40:
   The nanoseconds component of an `mtime` field described below,
   as a 32-bit integer.
+  When `mtime` is used,
+  this is the number of nanoseconds since `mtime.seconds`,
+  always stritctly less than one billion.
+
+  This may be zero if more precision is not available.
+  (This can happen because of limitations in any of Mercurial, Python,
+  libc, the operating system, …)
+
+  When comparing two mtimes and either has this component set to zero,
+  the sub-second precision of both should be ignored.
+  False positives when checking mtime equality due to clock resolution
+  are always possible and the status algorithm needs to deal with them,
+  but having too many false negatives could be harmful too.
 
 * (Offset 44: end of this node)
 
@@ -454,21 +470,18 @@ by enabling it to skip `readdir` in more cases.
     If this is unset the expected size, permission, and file type are unknown.
     The `size` field is unused (set to zero).
 
-`HAS_MTIME`
-    If unset, the `mtime` field is unused (set to zero).
-    If set, it contains a timestamp represented as
-    - the number of seconds since the Unix epoch,
-      truncated to its lower 31 bits.
-    - and the number of nanoseconds since `mtime.seconds`,
-      always stritctly less than one billion.
-      This may be zero if more precision is not available.
-      (This can happen because of limitations in any of Mercurial, Python,
-      libc, the operating system, …)
+`HAS_FILE_MTIME`
+    Must be unset for untracked nodes.
+    If this and `HAS_DIRECTORY_MTIME` are both unset,
+    the `mtime` field is unused (set to zero).
+    If this is set, `mtime` is the modification time
+    expected for the file to be considered clean.
 
-    If set for a file tracked anywhere,
-    `mtime` is the expected modification time for the file to be clean.
-
-    If set for an untracked node, at some point,
+`HAS_DIRECTORY_MTIME`
+    Must be unset for file tracked anywhere.
+    If this and `HAS_DIRECTORY_MTIME` are both unset,
+    the `mtime` field is unused (set to zero).
+    If this is set, at some point,
     this path in the working directory was observed:
 
     - To be a directory
