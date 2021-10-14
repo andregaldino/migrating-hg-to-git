@@ -129,8 +129,8 @@ Specifying revisions by changeset ID
   $ $NO_FALLBACK rhg cat -r d file-2
   2
   $ $NO_FALLBACK rhg cat -r 0000 file-2
-  abort: invalid revision identifier: 0000
-  [255]
+  file-2: no such file in rev 000000000000
+  [1]
 
 Cat files
   $ cd $TESTTMP

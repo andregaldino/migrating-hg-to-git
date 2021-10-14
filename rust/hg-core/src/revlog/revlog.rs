@@ -133,6 +133,9 @@ impl Revlog {
     /// Returns the node ID for the given revision number, if it exists in this
     /// revlog
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        if rev == NULL_REVISION {
+            return Some(&NULL_NODE);
+        }
         Some(self.index.get_entry(rev)?.hash())
     }
 
