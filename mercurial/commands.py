@@ -4360,7 +4360,9 @@ def incoming(ui, repo, source=b"default", **opts):
                 ui.status(
                     _(b'comparing with %s\n') % urlutil.hidepassword(source)
                 )
-                return bookmarks.incoming(ui, repo, other)
+                return bookmarks.incoming(
+                    ui, repo, other, mode=path.bookmarks_mode
+                )
             finally:
                 other.close()
 

@@ -791,7 +791,7 @@ def updatefromremote(
         repo._bookmarks.applychanges(repo, tr, changes)
 
 
-def incoming(ui, repo, peer):
+def incoming(ui, repo, peer, mode=None):
     """Show bookmarks incoming from other to repo"""
     ui.status(_(b"searching for changed bookmarks\n"))
 
@@ -804,9 +804,6 @@ def incoming(ui, repo, peer):
                 },
             ).result()
         )
-
-    r = comparebookmarks(repo, remotemarks, repo._bookmarks)
-    addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
 
     incomings = []
     if ui.debugflag:
@@ -823,18 +820,36 @@ def incoming(ui, repo, peer):
         def add(b, id, st):
             incomings.append(b"   %-25s %s\n" % (b, getid(id)))
 
-    for b, scid, dcid in addsrc:
-        # i18n: "added" refers to a bookmark
-        add(b, hex(scid), _(b'added'))
-    for b, scid, dcid in advsrc:
-        # i18n: "advanced" refers to a bookmark
-        add(b, hex(scid), _(b'advanced'))
-    for b, scid, dcid in diverge:
-        # i18n: "diverged" refers to a bookmark
-        add(b, hex(scid), _(b'diverged'))
-    for b, scid, dcid in differ:
-        # i18n: "changed" refers to a bookmark
-        add(b, hex(scid), _(b'changed'))
+    if mode == b'mirror':
+        localmarks = repo._bookmarks
+        allmarks = set(remotemarks.keys()) | set(localmarks.keys())
+        for b in sorted(allmarks):
+            loc = localmarks.get(b)
+            rem = remotemarks.get(b)
+            if loc == rem:
+                continue
+            elif loc is None:
+                add(b, hex(rem), _(b'added'))
+            elif rem is None:
+                add(b, hex(repo.nullid), _(b'removed'))
+            else:
+                add(b, hex(rem), _(b'changed'))
+    else:
+        r = comparebookmarks(repo, remotemarks, repo._bookmarks)
+        addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
+
+        for b, scid, dcid in addsrc:
+            # i18n: "added" refers to a bookmark
+            add(b, hex(scid), _(b'added'))
+        for b, scid, dcid in advsrc:
+            # i18n: "advanced" refers to a bookmark
+            add(b, hex(scid), _(b'advanced'))
+        for b, scid, dcid in diverge:
+            # i18n: "diverged" refers to a bookmark
+            add(b, hex(scid), _(b'diverged'))
+        for b, scid, dcid in differ:
+            # i18n: "changed" refers to a bookmark
+            add(b, hex(scid), _(b'changed'))
 
     if not incomings:
         ui.status(_(b"no changed bookmarks found\n"))

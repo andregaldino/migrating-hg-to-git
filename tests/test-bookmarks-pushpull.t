@@ -503,6 +503,26 @@ mirroring bookmarks
    * foobar                    1:9b140be10808
   $ cp .hg/bookmarks .hg/bookmarks.bak
   $ hg book -d X
+  $ hg incoming --bookmark  -v ../a
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d diverged
+     X                         0d2164f0ce0d added
+  $ hg incoming --bookmark  -v ../a --config 'paths.*:bookmarks.mode=babar'
+  (paths.*:bookmarks.mode has unknown value: "babar")
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d diverged
+     X                         0d2164f0ce0d added
+  $ hg incoming --bookmark  -v ../a --config 'paths.*:bookmarks.mode=mirror'
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d changed
+     @foo                      000000000000 removed
+     X                         0d2164f0ce0d added
+     X@foo                     000000000000 removed
+     foo                       000000000000 removed
+     foobar                    000000000000 removed
   $ hg pull ../a --config 'paths.*:bookmarks.mode=mirror'
   pulling from ../a
   searching for changes
