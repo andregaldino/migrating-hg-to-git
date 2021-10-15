@@ -4346,8 +4346,11 @@ def incoming(ui, repo, source=b"default", **opts):
     cmdutil.check_incompatible_arguments(opts, b'subrepos', [b'bundle'])
 
     if opts.get(b'bookmarks'):
-        srcs = urlutil.get_pull_paths(repo, ui, [source], opts.get(b'branch'))
-        for source, branches in srcs:
+        srcs = urlutil.get_pull_paths(repo, ui, [source])
+        for path in srcs:
+            source, branches = urlutil.parseurl(
+                path.rawloc, opts.get(b'branch')
+            )
             other = hg.peer(repo, opts, source)
             try:
                 if b'bookmarks' not in other.listkeys(b'namespaces'):
@@ -5393,8 +5396,8 @@ def pull(ui, repo, *sources, **opts):
         hint = _(b'use hg pull followed by hg update DEST')
         raise error.InputError(msg, hint=hint)
 
-    sources = urlutil.get_pull_paths(repo, ui, sources, opts.get(b'branch'))
-    for source, branches in sources:
+    for path in urlutil.get_pull_paths(repo, ui, sources):
+        source, branches = urlutil.parseurl(path.rawloc, opts.get(b'branch'))
         ui.status(_(b'pulling from %s\n') % urlutil.hidepassword(source))
         ui.flush()
         other = hg.peer(repo, opts, source)

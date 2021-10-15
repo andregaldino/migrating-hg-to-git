@@ -503,17 +503,17 @@ def get_push_paths(repo, ui, dests):
                 yield path
 
 
-def get_pull_paths(repo, ui, sources, default_branches=()):
+def get_pull_paths(repo, ui, sources):
     """yields all the `(path, branch)` selected as pull source by `sources`"""
     if not sources:
         sources = [b'default']
     for source in sources:
         if source in ui.paths:
             for p in ui.paths[source]:
-                yield parseurl(p.rawloc, default_branches)
+                yield p
         else:
             p = path(ui, None, source, validate_path=False)
-            yield parseurl(p.rawloc, default_branches)
+            yield p
 
 
 def get_unique_push_path(action, repo, ui, dest=None):
