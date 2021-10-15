@@ -1908,6 +1908,8 @@ Test section lookup
           "merged" on push/pull.
         - "mirror": when pulling, replace local bookmarks by remote bookmarks.
           This is useful to replicate a repository, or as an optimization.
+        - "ignore": ignore bookmarks during exchange. (This currently only
+          affect pulling)
   
       The following special named paths exist:
   

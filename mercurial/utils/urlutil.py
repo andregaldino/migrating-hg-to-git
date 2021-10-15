@@ -769,6 +769,7 @@ def pushrevpathoption(ui, path, value):
 SUPPORTED_BOOKMARKS_MODES = {
     b'default',
     b'mirror',
+    b'ignore',
 }
 
 

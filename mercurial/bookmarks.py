@@ -775,6 +775,9 @@ def merging_from_remote(ui, repo, remotemarks, path, explicit=()):
 def updatefromremote(
     ui, repo, remotemarks, path, trfunc, explicit=(), mode=None
 ):
+    if mode == b'ignore':
+        # This should move to an higher level to avoid fetching bookmark at all
+        return
     ui.debug(b"checking for updated bookmarks\n")
     if mode == b'mirror':
         changed = mirroring_remote(ui, repo, remotemarks)
@@ -793,6 +796,9 @@ def updatefromremote(
 
 def incoming(ui, repo, peer, mode=None):
     """Show bookmarks incoming from other to repo"""
+    if mode == b'ignore':
+        ui.status(_(b"bookmarks exchange disabled with this path\n"))
+        return 0
     ui.status(_(b"searching for changed bookmarks\n"))
 
     with peer.commandexecutor() as e:
