@@ -145,7 +145,7 @@ class mercurial_sink(common.converter_sink):
                     _(b'pulling from %s into %s\n') % (pbranch, branch)
                 )
                 exchange.pull(
-                    self.repo, prepo, [prepo.lookup(h) for h in heads]
+                    self.repo, prepo, heads=[prepo.lookup(h) for h in heads]
                 )
             self.before()
 

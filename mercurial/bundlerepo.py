@@ -699,7 +699,9 @@ def getremotechanges(
                 },
             ).result()
 
-        pullop = exchange.pulloperation(bundlerepo, peer, heads=reponodes)
+        pullop = exchange.pulloperation(
+            bundlerepo, peer, path=None, heads=reponodes
+        )
         pullop.trmanager = bundletransactionmanager()
         exchange._pullapplyphases(pullop, remotephases)
 

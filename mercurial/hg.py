@@ -942,7 +942,7 @@ def clone(
                     exchange.pull(
                         local,
                         srcpeer,
-                        revs,
+                        heads=revs,
                         streamclonerequested=stream,
                         includepats=storeincludepats,
                         excludepats=storeexcludepats,

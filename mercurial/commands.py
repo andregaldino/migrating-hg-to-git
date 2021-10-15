@@ -5454,6 +5454,7 @@ def pull(ui, repo, *sources, **opts):
                 modheads = exchange.pull(
                     repo,
                     other,
+                    path=path,
                     heads=nodes,
                     force=opts.get(b'force'),
                     bookmarks=opts.get(b'bookmark', ()),

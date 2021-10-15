@@ -1378,6 +1378,7 @@ class pulloperation(object):
         self,
         repo,
         remote,
+        path,
         heads=None,
         force=False,
         bookmarks=(),
@@ -1391,6 +1392,10 @@ class pulloperation(object):
         self.repo = repo
         # repo we pull from
         self.remote = remote
+        # path object used to build this remote
+        #
+        # Ideally, the remote peer would carry that directly.
+        self.remote_path = path
         # revision we try to pull (None is "all")
         self.heads = heads
         # bookmark pulled explicitly
@@ -1556,6 +1561,7 @@ def add_confirm_callback(repo, pullop):
 def pull(
     repo,
     remote,
+    path=None,
     heads=None,
     force=False,
     bookmarks=(),
@@ -1611,8 +1617,9 @@ def pull(
     pullop = pulloperation(
         repo,
         remote,
-        heads,
-        force,
+        path=path,
+        heads=heads,
+        force=force,
         bookmarks=bookmarks,
         streamclonerequested=streamclonerequested,
         includepats=includepats,
