@@ -818,7 +818,14 @@ def _chain_path(base_path, ui, paths):
 class path(object):
     """Represents an individual path and its configuration."""
 
-    def __init__(self, ui=None, name=None, rawloc=None, suboptions=None):
+    def __init__(
+        self,
+        ui=None,
+        name=None,
+        rawloc=None,
+        suboptions=None,
+        validate_path=True,
+    ):
         """Construct a path from its config options.
 
         ``ui`` is the ``ui`` instance the path is coming from.
@@ -856,7 +863,8 @@ class path(object):
         self.rawloc = rawloc
         self.loc = b'%s' % u
 
-        self._validate_path()
+        if validate_path:
+            self._validate_path()
 
         _path, sub_opts = ui.configsuboptions(b'paths', b'*')
         self._own_sub_opts = {}
