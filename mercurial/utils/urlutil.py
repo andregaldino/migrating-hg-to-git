@@ -512,13 +512,8 @@ def get_pull_paths(repo, ui, sources, default_branches=()):
             for p in ui.paths[source]:
                 yield parseurl(p.rawloc, default_branches)
         else:
-            # Try to resolve as a local path or URI.
-            path = try_path(ui, source)
-            if path is not None:
-                url = path.rawloc
-            else:
-                url = source
-            yield parseurl(url, default_branches)
+            p = path(ui, None, source, validate_path=False)
+            yield parseurl(p.rawloc, default_branches)
 
 
 def get_unique_push_path(action, repo, ui, dest=None):
