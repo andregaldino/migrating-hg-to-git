@@ -139,18 +139,16 @@ static inline bool dirstate_item_c_tracked(dirstateItemObject *self)
 
 static inline bool dirstate_item_c_any_tracked(dirstateItemObject *self)
 {
-	const unsigned char mask = dirstate_flag_wc_tracked |
-	                           dirstate_flag_p1_tracked |
-	                           dirstate_flag_p2_info;
+	const int mask = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
+	                 dirstate_flag_p2_info;
 	return (self->flags & mask);
 }
 
 static inline bool dirstate_item_c_added(dirstateItemObject *self)
 {
-	const unsigned char mask =
-	    (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
-	     dirstate_flag_p2_info);
-	const unsigned char target = dirstate_flag_wc_tracked;
+	const int mask = (dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
+	                  dirstate_flag_p2_info);
+	const int target = dirstate_flag_wc_tracked;
 	return (self->flags & mask) == target;
 }
 
@@ -237,7 +235,7 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 
 static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 {
-	unsigned char flags = self->flags;
+	int flags = self->flags;
 	int mode = dirstate_item_c_v1_mode(self);
 	if ((mode & S_IXUSR) != 0) {
 		flags |= dirstate_flag_mode_exec_perm;
@@ -249,7 +247,7 @@ static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 	} else {
 		flags &= ~dirstate_flag_mode_is_symlink;
 	}
-	return Py_BuildValue("Bii", flags, self->size, self->mtime);
+	return Py_BuildValue("iii", flags, self->size, self->mtime);
 };
 
 static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
@@ -372,8 +370,13 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
 	if (!t) {
 		return NULL;
 	}
-	if (!PyArg_ParseTuple(args, "bii", &t->flags, &t->size, &t->mtime)) {
+	if (!PyArg_ParseTuple(args, "iii", &t->flags, &t->size, &t->mtime)) {
 		return NULL;
+	}
+	if (t->flags & dirstate_flag_expected_state_is_modified) {
+		t->flags &= ~(dirstate_flag_expected_state_is_modified |
+		              dirstate_flag_has_meaningful_data |
+		              dirstate_flag_has_file_mtime);
 	}
 	t->mode = 0;
 	if (t->flags & dirstate_flag_has_meaningful_data) {

@@ -110,6 +110,7 @@ bitflags! {
         const HAS_DIRECTORY_MTIME = 1 << 5;
         const MODE_EXEC_PERM = 1 << 6;
         const MODE_IS_SYMLINK = 1 << 7;
+        const EXPECTED_STATE_IS_MODIFIED = 1 << 8;
     }
 }
 
@@ -351,12 +352,16 @@ impl Node {
         let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
         let p1_tracked = self.flags().contains(Flags::P1_TRACKED);
         let p2_info = self.flags().contains(Flags::P2_INFO);
-        let mode_size = if self.flags().contains(Flags::HAS_MODE_AND_SIZE) {
+        let mode_size = if self.flags().contains(Flags::HAS_MODE_AND_SIZE)
+            && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
+        {
             Some((self.synthesize_unix_mode(), self.size.into()))
         } else {
             None
         };
-        let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME) {
+        let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME)
+            && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
+        {
             Some(self.mtime.truncated_seconds.into())
         } else {
             None

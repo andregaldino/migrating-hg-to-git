@@ -24,21 +24,22 @@
 /* clang-format off */
 typedef struct {
 	PyObject_HEAD
-	unsigned char flags;
+	int flags;
 	int mode;
 	int size;
 	int mtime;
 } dirstateItemObject;
 /* clang-format on */
 
-static const unsigned char dirstate_flag_wc_tracked = 1;
-static const unsigned char dirstate_flag_p1_tracked = 1 << 1;
-static const unsigned char dirstate_flag_p2_info = 1 << 2;
-static const unsigned char dirstate_flag_has_meaningful_data = 1 << 3;
-static const unsigned char dirstate_flag_has_file_mtime = 1 << 4;
-static const unsigned char dirstate_flag_has_directory_mtime = 1 << 5;
-static const unsigned char dirstate_flag_mode_exec_perm = 1 << 6;
-static const unsigned char dirstate_flag_mode_is_symlink = 1 << 7;
+static const int dirstate_flag_wc_tracked = 1;
+static const int dirstate_flag_p1_tracked = 1 << 1;
+static const int dirstate_flag_p2_info = 1 << 2;
+static const int dirstate_flag_has_meaningful_data = 1 << 3;
+static const int dirstate_flag_has_file_mtime = 1 << 4;
+static const int dirstate_flag_has_directory_mtime = 1 << 5;
+static const int dirstate_flag_mode_exec_perm = 1 << 6;
+static const int dirstate_flag_mode_is_symlink = 1 << 7;
+static const int dirstate_flag_expected_state_is_modified = 1 << 8;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

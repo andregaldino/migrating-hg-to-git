@@ -53,6 +53,7 @@ DIRSTATE_V2_HAS_FILE_MTIME = 1 << 4
 _DIRSTATE_V2_HAS_DIRCTORY_MTIME = 1 << 5  # Unused when Rust is not available
 DIRSTATE_V2_MODE_EXEC_PERM = 1 << 6
 DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 7
+DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED = 1 << 8
 
 
 @attr.s(slots=True, init=False)
@@ -123,7 +124,15 @@ class DirstateItem(object):
     def from_v2_data(cls, flags, size, mtime):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
+        has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_FILE_MTIME)
         mode = None
+
+        if flags & +DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED:
+            # we do not have support for this flag in the code yet,
+            # force a lookup for this file.
+            has_mode_size = False
+            has_meaningful_mtime = False
+
         if has_mode_size:
             assert stat.S_IXUSR == 0o100
             if flags & DIRSTATE_V2_MODE_EXEC_PERM:
@@ -139,7 +148,7 @@ class DirstateItem(object):
             p1_tracked=bool(flags & DIRSTATE_V2_P1_TRACKED),
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
-            has_meaningful_mtime=bool(flags & DIRSTATE_V2_HAS_FILE_MTIME),
+            has_meaningful_mtime=has_meaningful_mtime,
             parentfiledata=(mode, size, mtime),
         )
 

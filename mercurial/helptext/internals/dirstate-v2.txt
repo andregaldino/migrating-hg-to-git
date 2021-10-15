@@ -383,6 +383,7 @@ Node components are:
     HAS_DIRECTORY_MTIME = 1 << 5
     MODE_EXEC_PERM = 1 << 6
     MODE_IS_SYMLINK = 1 << 7
+    EXPECTED_STATE_IS_MODIFIED = 1 << 8
 
   The meaning of each bit is described below.
 
@@ -461,8 +462,7 @@ by enabling it to skip `readdir` in more cases.
     Must be unset for untracked nodes.
     For files tracked anywhere, if this is set:
     - The `size` field is the expected file size,
-      in bytes truncated its lower to 31 bits,
-      for the file to be clean.
+      in bytes truncated its lower to 31 bits.
     - The expected execute permission for the file’s owner
       is given by `MODE_EXEC_PERM`
     - The expected file type is given by `MODE_IS_SIMLINK`:
@@ -474,8 +474,7 @@ by enabling it to skip `readdir` in more cases.
     Must be unset for untracked nodes.
     If this and `HAS_DIRECTORY_MTIME` are both unset,
     the `mtime` field is unused (set to zero).
-    If this is set, `mtime` is the modification time
-    expected for the file to be considered clean.
+    If this is set, `mtime` is the expected modification time.
 
 `HAS_DIRECTORY_MTIME`
     Must be unset for file tracked anywhere.
@@ -514,3 +513,20 @@ by enabling it to skip `readdir` in more cases.
     If `HAS_MODE_AND_SIZE` is set,
     this indicates whether the file is expected to be a symlink
     as opposed to a normal file.
+
+`EXPECTED_STATE_IS_MODIFIED`
+    Must be unset for untracked nodes.
+    For:
+    - a file tracked anywhere
+    - that has expected metadata (`HAS_MODE_AND_SIZE` and `HAS_FILE_MTIME`)
+    - if that metadata matches
+      metadata found in the working directory with `stat`
+    This bit indicates the status of the file.
+    If set, the status is modified. If unset, it is clean.
+
+    In cases where `hg status` needs to read the contents of a file
+    because metadata is ambiguous, this bit lets it record the result
+    if the result is modified so that a future run of `hg status`
+    does not need to do the same again.
+    It is valid to never set this bit,
+    and consider expected metadata ambiguous if it is set.
