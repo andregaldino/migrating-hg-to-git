@@ -7,7 +7,6 @@ use crate::revlog::Revision;
 use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::HgPath;
 use crate::utils::SliceExt;
-use std::borrow::Cow;
 use std::path::PathBuf;
 
 /// A specialized `Revlog` to work with file data logs.
@@ -40,7 +39,7 @@ impl Filelog {
         &self,
         file_rev: Revision,
     ) -> Result<FilelogEntry, RevlogError> {
-        let data = self.revlog.get_rev_data(file_rev)?;
+        let data: Vec<u8> = self.revlog.get_rev_data(file_rev)?;
         Ok(FilelogEntry(data.into()))
     }
 }
@@ -51,21 +50,31 @@ fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
     get_path_from_bytes(&encoded_bytes).into()
 }
 
-pub struct FilelogEntry<'filelog>(Cow<'filelog, [u8]>);
+pub struct FilelogEntry(Vec<u8>);
 
-impl<'filelog> FilelogEntry<'filelog> {
+impl FilelogEntry {
     /// Split into metadata and data
-    pub fn split(&self) -> Result<(Option<&[u8]>, &[u8]), HgError> {
+    /// Returns None if there is no metadata, so the entire entry is data.
+    fn split_metadata(&self) -> Result<Option<(&[u8], &[u8])>, HgError> {
         const DELIMITER: &[u8; 2] = &[b'\x01', b'\n'];
 
         if let Some(rest) = self.0.drop_prefix(DELIMITER) {
             if let Some((metadata, data)) = rest.split_2_by_slice(DELIMITER) {
-                Ok((Some(metadata), data))
+                Ok(Some((metadata, data)))
             } else {
                 Err(HgError::corrupted(
                     "Missing metadata end delimiter in filelog entry",
                 ))
             }
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Split into metadata and data
+    pub fn split(&self) -> Result<(Option<&[u8]>, &[u8]), HgError> {
+        if let Some((metadata, data)) = self.split_metadata()? {
+            Ok((Some(metadata), data))
         } else {
             Ok((None, &self.0))
         }
@@ -75,5 +84,15 @@ impl<'filelog> FilelogEntry<'filelog> {
     pub fn data(&self) -> Result<&[u8], HgError> {
         let (_metadata, data) = self.split()?;
         Ok(data)
+    }
+
+    /// Consume the entry, and convert it into data, discarding any metadata,
+    /// if present.
+    pub fn into_data(self) -> Result<Vec<u8>, HgError> {
+        if let Some((_metadata, data)) = self.split_metadata()? {
+            Ok(data.to_owned())
+        } else {
+            Ok(self.0)
+        }
     }
 }

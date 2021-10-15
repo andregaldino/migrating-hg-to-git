@@ -66,6 +66,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             .map_err(|e| CommandError::abort(e.to_string()))?;
         files.push(hg_file);
     }
+    let files = files.iter().map(|file| file.as_ref()).collect();
     // TODO probably move this to a util function like `repo.default_rev` or
     // something when it's used somewhere else
     let rev = match rev {
@@ -74,7 +75,9 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     };
 
     let output = cat(&repo, &rev, files).map_err(|e| (e, rev.as_str()))?;
-    invocation.ui.write_stdout(&output.concatenated)?;
+    for (_file, contents) in output.results {
+        invocation.ui.write_stdout(&contents)?;
+    }
     if !output.missing.is_empty() {
         let short = format!("{:x}", output.node.short()).into_bytes();
         for path in &output.missing {
