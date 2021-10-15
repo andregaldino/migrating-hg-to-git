@@ -418,16 +418,6 @@ Supported arguments:
 If no suitable authentication entry is found, the user is prompted
 for credentials as usual if required by the remote.
 
-``bookmarks``
--------------
-
-Controls some aspect of bookmarks.
-
-``mirror``
-    When pulling, instead of merging local bookmarks and remote bookmarks,
-    replace local bookmarks by remote bookmarks. This is useful to replicate
-    a repository, or as an optimization. (default: False)
-
 ``cmdserver``
 -------------
 
@@ -1757,6 +1747,15 @@ The following sub-options can be defined:
 
    Revsets specifying bookmarks will not result in the bookmark being
    pushed.
+
+``bookmarks.mode``
+  How bookmark will be dealt during the exchange. It support the following value
+
+  - ``default``: the default behavior, local and remote bookmarks are "merged"
+    on push/pull.
+
+  - ``mirror``: when pulling, replace local bookmarks by remote bookmarks. This
+    is useful to replicate a repository, or as an optimization.
 
 The following special named paths exist:
 

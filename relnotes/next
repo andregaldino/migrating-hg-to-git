@@ -1,6 +1,10 @@
 == New Features ==
   * `debugrebuildfncache` now has an option to rebuild only the index files
 
+  * a new `bookmarks.mode` path option have been introduced to control the
+    bookmark update strategy during exchange with a peer. See hg help paths for
+    details.
+
 
 == Default Format Change ==
 

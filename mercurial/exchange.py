@@ -2028,6 +2028,9 @@ def _pullbookmarks(pullop):
     pullop.stepsdone.add(b'bookmarks')
     repo = pullop.repo
     remotebookmarks = pullop.remotebookmarks
+    bookmarks_mode = None
+    if pullop.remote_path is not None:
+        bookmarks_mode = pullop.remote_path.bookmarks_mode
     bookmod.updatefromremote(
         repo.ui,
         repo,
@@ -2035,6 +2038,7 @@ def _pullbookmarks(pullop):
         pullop.remote.url(),
         pullop.gettransaction,
         explicit=pullop.explicitbookmarks,
+        mode=bookmarks_mode,
     )
 
 

@@ -772,9 +772,11 @@ def merging_from_remote(ui, repo, remotemarks, path, explicit=()):
     return changed
 
 
-def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
+def updatefromremote(
+    ui, repo, remotemarks, path, trfunc, explicit=(), mode=None
+):
     ui.debug(b"checking for updated bookmarks\n")
-    if ui.configbool(b'bookmarks', b'mirror'):
+    if mode == b'mirror':
         changed = mirroring_remote(ui, repo, remotemarks)
     else:
         changed = merging_from_remote(ui, repo, remotemarks, path, explicit)

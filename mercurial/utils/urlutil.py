@@ -766,6 +766,27 @@ def pushrevpathoption(ui, path, value):
     return value
 
 
+SUPPORTED_BOOKMARKS_MODES = {
+    b'default',
+    b'mirror',
+}
+
+
+@pathsuboption(b'bookmarks.mode', b'bookmarks_mode')
+def bookmarks_mode_option(ui, path, value):
+    if value not in SUPPORTED_BOOKMARKS_MODES:
+        path_name = path.name
+        if path_name is None:
+            # this is an "anonymous" path, config comes from the global one
+            path_name = b'*'
+        msg = _(b'(paths.%s:bookmarks.mode has unknown value: "%s")\n')
+        msg %= (path_name, value)
+        ui.warn(msg)
+    if value == b'default':
+        value = None
+    return value
+
+
 @pathsuboption(b'multi-urls', b'multi_urls')
 def multiurls_pathoption(ui, path, value):
     res = stringutil.parsebool(value)

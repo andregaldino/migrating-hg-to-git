@@ -503,7 +503,7 @@ mirroring bookmarks
    * foobar                    1:9b140be10808
   $ cp .hg/bookmarks .hg/bookmarks.bak
   $ hg book -d X
-  $ hg pull ../a --config bookmarks.mirror=true
+  $ hg pull ../a --config 'paths.*:bookmarks.mode=mirror'
   pulling from ../a
   searching for changes
   no changes found

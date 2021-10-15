@@ -1900,6 +1900,15 @@ Test section lookup
          Revsets specifying bookmarks will not result in the bookmark being
          pushed.
   
+      "bookmarks.mode"
+        How bookmark will be dealt during the exchange. It support the following
+        value
+  
+        - "default": the default behavior, local and remote bookmarks are
+          "merged" on push/pull.
+        - "mirror": when pulling, replace local bookmarks by remote bookmarks.
+          This is useful to replicate a repository, or as an optimization.
+  
       The following special named paths exist:
   
       "default"
