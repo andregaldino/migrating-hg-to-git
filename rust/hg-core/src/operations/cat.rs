@@ -104,10 +104,8 @@ pub fn cat<'a>(
         bytes.extend(file_log.data_for_node(file_node)?.data()?);
     }
 
-    let missing: Vec<HgPathBuf> = missing
-        .iter()
-        .map(|file| (*file).to_owned())
-        .collect();
+    let missing: Vec<HgPathBuf> =
+        missing.iter().map(|file| (*file).to_owned()).collect();
     Ok(CatOutput {
         found_any,
         concatenated: bytes,
