@@ -40,6 +40,8 @@ static const int dirstate_flag_has_directory_mtime = 1 << 5;
 static const int dirstate_flag_mode_exec_perm = 1 << 6;
 static const int dirstate_flag_mode_is_symlink = 1 << 7;
 static const int dirstate_flag_expected_state_is_modified = 1 << 8;
+static const int dirstate_flag_all_unknown_recorded = 1 << 9;
+static const int dirstate_flag_all_ignored_recorded = 1 << 10;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

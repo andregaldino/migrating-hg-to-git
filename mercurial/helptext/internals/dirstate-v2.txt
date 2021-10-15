@@ -384,6 +384,8 @@ Node components are:
     MODE_EXEC_PERM = 1 << 6
     MODE_IS_SYMLINK = 1 << 7
     EXPECTED_STATE_IS_MODIFIED = 1 << 8
+    ALL_UNKNOWN_RECORDED = 1 << 9
+    ALL_IGNORED_RECORDED = 1 << 10
 
   The meaning of each bit is described below.
 
@@ -530,3 +532,29 @@ by enabling it to skip `readdir` in more cases.
     does not need to do the same again.
     It is valid to never set this bit,
     and consider expected metadata ambiguous if it is set.
+
+`ALL_UNKNOWN_RECORDED`
+    If set, all "unknown" children existing on disk (at the time of the last
+    status) have been recorded and the `mtime` associated with
+    `HAS_DIRECTORY_MTIME` can be used for optimization even when "unknown" file
+    are listed.
+
+    Note that the amount recorded "unknown" children can still be zero if None
+    where present.
+
+    Also note that having this flag unset does not imply that no "unknown"
+    children have been recorded. Some might be present, but there is no garantee
+    that is will be all of them.
+
+`ALL_IGNORED_RECORDED`
+    If set, all "ignored" children existing on disk (at the time of the last
+    status) have been recorded and the `mtime` associated with
+    `HAS_DIRECTORY_MTIME` can be used for optimization even when "ignored" file
+    are listed.
+
+    Note that the amount recorded "ignored" children can still be zero if None
+    where present.
+
+    Also note that having this flag unset does not imply that no "ignored"
+    children have been recorded. Some might be present, but there is no garantee
+    that is will be all of them.

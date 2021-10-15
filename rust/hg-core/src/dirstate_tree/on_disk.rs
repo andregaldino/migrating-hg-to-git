@@ -111,6 +111,8 @@ bitflags! {
         const MODE_EXEC_PERM = 1 << 6;
         const MODE_IS_SYMLINK = 1 << 7;
         const EXPECTED_STATE_IS_MODIFIED = 1 << 8;
+        const ALL_UNKNOWN_RECORDED = 1 << 9;
+        const ALL_IGNORED_RECORDED = 1 << 10;
     }
 }
 
@@ -322,7 +324,11 @@ impl Node {
     pub(super) fn cached_directory_mtime(
         &self,
     ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
-        if self.flags().contains(Flags::HAS_DIRECTORY_MTIME) {
+        // For now we do not have code to handle ALL_UNKNOWN_RECORDED, so we
+        // ignore the mtime if the flag is set.
+        if self.flags().contains(Flags::HAS_DIRECTORY_MTIME)
+            && self.flags().contains(Flags::ALL_UNKNOWN_RECORDED)
+        {
             if self.flags().contains(Flags::HAS_FILE_MTIME) {
                 Err(DirstateV2ParseError)
             } else {
@@ -589,7 +595,18 @@ impl Writer<'_, '_> {
                             Node::from_dirstate_entry(entry)
                         }
                         dirstate_map::NodeData::CachedDirectory { mtime } => (
-                            Flags::HAS_DIRECTORY_MTIME,
+                            // we currently never set a mtime if unknown file
+                            // are present.
+                            // So if we have a mtime for a directory, we know
+                            // they are no unknown
+                            // files and we
+                            // blindly set ALL_UNKNOWN_RECORDED.
+                            //
+                            // We never set ALL_IGNORED_RECORDED since we
+                            // don't track that case
+                            // currently.
+                            Flags::HAS_DIRECTORY_MTIME
+                                | Flags::ALL_UNKNOWN_RECORDED,
                             0.into(),
                             (*mtime).into(),
                         ),

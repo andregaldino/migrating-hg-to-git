@@ -81,6 +81,9 @@ def parse_nodes(map, copy_map, data, start, len):
     """parse <len> nodes from <data> starting at offset <start>
 
     This is used by parse_dirstate to recursively fill `map` and `copy_map`.
+
+    All directory specific information is ignored and do not need any
+    processing (HAS_DIRECTORY_MTIME, ALL_UNKNOWN_RECORDED, ALL_IGNORED_RECORDED)
     """
     for i in range(len):
         node_start = start + NODE_SIZE * i

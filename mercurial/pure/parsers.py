@@ -54,6 +54,8 @@ _DIRSTATE_V2_HAS_DIRCTORY_MTIME = 1 << 5  # Unused when Rust is not available
 DIRSTATE_V2_MODE_EXEC_PERM = 1 << 6
 DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 7
 DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED = 1 << 8
+DIRSTATE_V2_ALL_UNKNOWN_RECORDED = 1 << 9
+DIRSTATE_V2_ALL_IGNORED_RECORDED = 1 << 10
 
 
 @attr.s(slots=True, init=False)
@@ -340,6 +342,9 @@ class DirstateItem(object):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime is not None:
             flags |= DIRSTATE_V2_HAS_FILE_MTIME
+        # Note: we do not need to do anything regarding
+        # DIRSTATE_V2_ALL_UNKNOWN_RECORDED and DIRSTATE_V2_ALL_IGNORED_RECORDED
+        # since we never set _DIRSTATE_V2_HAS_DIRCTORY_MTIME
         return (flags, self._size or 0, self._mtime or 0)
 
     def v1_state(self):
