@@ -114,16 +114,16 @@ impl TruncatedTimestamp {
     /// If someone is manipulating the modification times of some files to
     /// intentionally make `hg status` return incorrect results, not truncating
     /// wouldn’t help much since they can set exactly the expected timestamp.
-    pub fn very_likely_equal(self, other: Self) -> bool {
+    pub fn likely_equal(self, other: Self) -> bool {
         self.truncated_seconds == other.truncated_seconds
             && self.nanoseconds == other.nanoseconds
     }
 
-    pub fn very_likely_equal_to_mtime_of(
+    pub fn likely_equal_to_mtime_of(
         self,
         metadata: &fs::Metadata,
     ) -> io::Result<bool> {
-        Ok(self.very_likely_equal(Self::for_mtime_of(metadata)?))
+        Ok(self.likely_equal(Self::for_mtime_of(metadata)?))
     }
 }
 

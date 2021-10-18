@@ -200,7 +200,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 // directory eligible for `read_dir` caching.
                 if let Some(meta) = directory_metadata {
                     if cached_mtime
-                        .very_likely_equal_to_mtime_of(meta)
+                        .likely_equal_to_mtime_of(meta)
                         .unwrap_or(false)
                     {
                         // The mtime of that directory has not changed
@@ -471,7 +471,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     let is_up_to_date = if let Some(cached) =
                         dirstate_node.cached_directory_mtime()?
                     {
-                        cached.very_likely_equal(truncated)
+                        cached.likely_equal(truncated)
                     } else {
                         false
                     };
