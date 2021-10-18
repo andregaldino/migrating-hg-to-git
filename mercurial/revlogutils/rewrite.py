@@ -589,7 +589,9 @@ def _is_revision_affected_inner(
     except error.CensoredNodeError:
         # We don't care about censored nodes as they never carry metadata
         return False
-    has_meta = raw_text.startswith(b'\x01\n')
+
+    # raw text can be a `memoryview`, which doesn't implement `startswith`
+    has_meta = bytes(raw_text[:2]) == b'\x01\n'
     if metadata_cache is not None:
         metadata_cache[filerev] = has_meta
     if has_meta:
