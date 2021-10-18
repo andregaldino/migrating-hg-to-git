@@ -113,6 +113,10 @@ bitflags! {
         const EXPECTED_STATE_IS_MODIFIED = 1 << 8;
         const ALL_UNKNOWN_RECORDED = 1 << 9;
         const ALL_IGNORED_RECORDED = 1 << 10;
+        const HAS_FALLBACK_EXEC = 1 << 11;
+        const FALLBACK_EXEC = 1 << 12;
+        const HAS_FALLBACK_SYMLINK = 1 << 13;
+        const FALLBACK_SYMLINK = 1 << 14;
     }
 }
 
@@ -420,8 +424,15 @@ impl Node {
     fn from_dirstate_entry(
         entry: &DirstateEntry,
     ) -> (Flags, U32Be, PackedTruncatedTimestamp) {
-        let (wdir_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt) =
-            entry.v2_data();
+        let (
+            wdir_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size_opt,
+            mtime_opt,
+            fallback_exec,
+            fallback_symlink,
+        ) = entry.v2_data();
         // TODO: convert throug raw flag bits instead?
         let mut flags = Flags::empty();
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
@@ -446,6 +457,18 @@ impl Node {
         } else {
             PackedTruncatedTimestamp::null()
         };
+        if let Some(f_exec) = fallback_exec {
+            flags.insert(Flags::HAS_FALLBACK_EXEC);
+            if f_exec {
+                flags.insert(Flags::FALLBACK_EXEC);
+            }
+        }
+        if let Some(f_symlink) = fallback_symlink {
+            flags.insert(Flags::HAS_FALLBACK_SYMLINK);
+            if f_symlink {
+                flags.insert(Flags::FALLBACK_SYMLINK);
+            }
+        }
         (flags, size, mtime)
     }
 }

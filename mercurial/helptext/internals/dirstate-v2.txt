@@ -386,6 +386,10 @@ Node components are:
     EXPECTED_STATE_IS_MODIFIED = 1 << 8
     ALL_UNKNOWN_RECORDED = 1 << 9
     ALL_IGNORED_RECORDED = 1 << 10
+    HAS_FALLBACK_EXEC = 1 << 11
+    FALLBACK_EXEC = 1 << 12
+    HAS_FALLBACK_SYMLINK = 1 << 13
+    FALLBACK_SYMLINK = 1 << 14
 
   The meaning of each bit is described below.
 
@@ -558,3 +562,33 @@ by enabling it to skip `readdir` in more cases.
     Also note that having this flag unset does not imply that no "ignored"
     children have been recorded. Some might be present, but there is no garantee
     that is will be all of them.
+
+`HAS_FALLBACK_EXEC`
+    If this flag is set, the entry carries "fallback" information for the
+    executable bit in the `FALLBACK_EXEC` flag.
+
+    Fallback information can be stored in the dirstate to keep track of
+    filesystem attribute tracked by Mercurial when the underlying file
+    system or operating system does not support that property, (e.g.
+    Windows).
+
+`FALLBACK_EXEC`
+    Should be ignored if `HAS_FALLBACK_EXEC` is unset. If set the file for this
+    entry should be considered executable if that information cannot be
+    extracted from the file system. If unset it should be considered
+    non-executable instead.
+
+`HAS_FALLBACK_SYMLINK`
+    If this flag is set, the entry carries "fallback" information for symbolic
+    link status in the `FALLBACK_SYMLINK` flag.
+
+    Fallback information can be stored in the dirstate to keep track of
+    filesystem attribute tracked by Mercurial when the underlying file
+    system or operating system does not support that property, (e.g.
+    Windows).
+
+`FALLBACK_SYMLINK`
+    Should be ignored if `HAS_FALLBACK_SYMLINK` is unset. If set the file for
+    this entry should be considered a symlink if that information cannot be
+    extracted from the file system. If unset it should be considered a normal
+    file instead.

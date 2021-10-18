@@ -339,7 +339,15 @@ impl DirstateEntry {
     /// Returns `(wdir_tracked, p1_tracked, p2_info, mode_size, mtime)`
     pub(crate) fn v2_data(
         &self,
-    ) -> (bool, bool, bool, Option<(u32, u32)>, Option<u32>) {
+    ) -> (
+        bool,
+        bool,
+        bool,
+        Option<(u32, u32)>,
+        Option<u32>,
+        Option<bool>,
+        Option<bool>,
+    ) {
         if !self.any_tracked() {
             // TODO: return an Option instead?
             panic!("Accessing v1_state of an untracked DirstateEntry")
@@ -349,7 +357,15 @@ impl DirstateEntry {
         let p2_info = self.flags.contains(Flags::P2_INFO);
         let mode_size = self.mode_size;
         let mtime = self.mtime;
-        (wdir_tracked, p1_tracked, p2_info, mode_size, mtime)
+        (
+            wdir_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size,
+            mtime,
+            self.get_fallback_exec(),
+            self.get_fallback_symlink(),
+        )
     }
 
     fn v1_state(&self) -> EntryState {

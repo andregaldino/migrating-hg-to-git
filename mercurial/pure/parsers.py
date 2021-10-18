@@ -56,6 +56,10 @@ DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 7
 DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED = 1 << 8
 DIRSTATE_V2_ALL_UNKNOWN_RECORDED = 1 << 9
 DIRSTATE_V2_ALL_IGNORED_RECORDED = 1 << 10
+DIRSTATE_V2_HAS_FALLBACK_EXEC = 1 << 11
+DIRSTATE_V2_FALLBACK_EXEC = 1 << 12
+DIRSTATE_V2_HAS_FALLBACK_SYMLINK = 1 << 13
+DIRSTATE_V2_FALLBACK_SYMLINK = 1 << 14
 
 
 @attr.s(slots=True, init=False)
@@ -142,6 +146,14 @@ class DirstateItem(object):
             has_mode_size = False
             has_meaningful_mtime = False
 
+        fallback_exec = None
+        if flags & DIRSTATE_V2_HAS_FALLBACK_EXEC:
+            fallback_exec = flags & DIRSTATE_V2_FALLBACK_EXEC
+
+        fallback_symlink = None
+        if flags & DIRSTATE_V2_HAS_FALLBACK_SYMLINK:
+            fallback_symlink = flags & DIRSTATE_V2_FALLBACK_SYMLINK
+
         if has_mode_size:
             assert stat.S_IXUSR == 0o100
             if flags & DIRSTATE_V2_MODE_EXEC_PERM:
@@ -159,6 +171,8 @@ class DirstateItem(object):
             has_meaningful_data=has_mode_size,
             has_meaningful_mtime=has_meaningful_mtime,
             parentfiledata=(mode, size, mtime),
+            fallback_exec=fallback_exec,
+            fallback_symlink=fallback_symlink,
         )
 
     @classmethod
@@ -428,6 +442,17 @@ class DirstateItem(object):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime is not None:
             flags |= DIRSTATE_V2_HAS_FILE_MTIME
+
+        if self._fallback_exec is not None:
+            flags |= DIRSTATE_V2_HAS_FALLBACK_EXEC
+            if self._fallback_exec:
+                flags |= DIRSTATE_V2_FALLBACK_EXEC
+
+        if self._fallback_symlink is not None:
+            flags |= DIRSTATE_V2_HAS_FALLBACK_SYMLINK
+            if self._fallback_symlink:
+                flags |= DIRSTATE_V2_FALLBACK_SYMLINK
+
         # Note: we do not need to do anything regarding
         # DIRSTATE_V2_ALL_UNKNOWN_RECORDED and DIRSTATE_V2_ALL_IGNORED_RECORDED
         # since we never set _DIRSTATE_V2_HAS_DIRCTORY_MTIME
