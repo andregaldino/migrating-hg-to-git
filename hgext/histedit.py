@@ -1324,6 +1324,10 @@ pgup: prev page, space/pgdn: next page, c: commit, q: abort
 d: drop, e: edit, f: fold, m: mess, p: pick, r: roll
 pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 """
+            if self.later_on_top:
+                help += b"Newer commits are shown above older commits.\n"
+            else:
+                help += b"Older commits are shown above newer commits.\n"
         return help.splitlines()
 
     def render_help(self, win):
