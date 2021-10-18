@@ -33,7 +33,8 @@ SIGNING_SUBJECT_NAME = VARS.get("SIGNING_SUBJECT_NAME")
 TIME_STAMP_SERVER_URL = VARS.get("TIME_STAMP_SERVER_URL", "http://timestamp.digicert.com")
 
 IS_WINDOWS = "windows" in BUILD_TARGET_TRIPLE
-IS_MACOS = "darwin" in BUILD_TARGET_TRIPLE
+
+USE_IN_MEMORY_RESOURCES = False
 
 # Code to run in Python interpreter.
 RUN_CODE = """
@@ -84,7 +85,7 @@ def make_distribution():
     return default_python_distribution(python_version = "3.9")
 
 def resource_callback(policy, resource):
-    if not (IS_WINDOWS or IS_MACOS):
+    if USE_IN_MEMORY_RESOURCES:
         resource.add_location = "in-memory"
         return
 
@@ -115,7 +116,7 @@ def make_exe(dist):
     # extensions.
     packaging_policy.extension_module_filter = "all"
     packaging_policy.resources_location = "in-memory"
-    if IS_WINDOWS or IS_MACOS:
+    if not USE_IN_MEMORY_RESOURCES:
         packaging_policy.resources_location_fallback = "filesystem-relative:lib"
     packaging_policy.register_resource_callback(resource_callback)
 
