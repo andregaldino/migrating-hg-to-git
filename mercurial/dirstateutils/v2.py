@@ -107,7 +107,10 @@ def parse_nodes(map, copy_map, data, start, len):
         # Parse child nodes of this node recursively
         parse_nodes(map, copy_map, data, children_start, children_count)
 
-        item = parsers.DirstateItem.from_v2_data(flags, size, mtime_s)
+        # Don’t yet use sub-second precision if it exists in the file,
+        # since other parts of the code still set it to zero.
+        mtime_ns = 0
+        item = parsers.DirstateItem.from_v2_data(flags, size, mtime_s, mtime_ns)
         if not item.any_tracked:
             continue
         path = slice_with_len(data, path_start, path_len)
@@ -147,8 +150,7 @@ class Node(object):
             copy_source_start = 0
             copy_source_len = 0
         if entry is not None:
-            flags, size, mtime_s = entry.v2_data()
-            mtime_ns = 0
+            flags, size, mtime_s, mtime_ns = entry.v2_data()
         else:
             # There are no mtime-cached directories in the Python implementation
             flags = 0
@@ -249,7 +251,6 @@ def pack_dirstate(map, copy_map, now):
     written to the docket. Again, see more details on the on-disk format in
     `mercurial/helptext/internals/dirstate-v2`.
     """
-    now = int(now)
     data = bytearray()
     root_nodes_start = 0
     root_nodes_len = 0

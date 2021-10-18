@@ -135,6 +135,3 @@ pub fn pack_entry(
         packed.extend(source.as_bytes());
     }
 }
-
-/// Seconds since the Unix epoch
-pub struct Timestamp(pub i64);

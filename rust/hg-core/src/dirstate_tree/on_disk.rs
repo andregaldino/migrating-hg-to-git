@@ -317,7 +317,7 @@ impl Node {
         &self,
     ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
         if self.has_entry() {
-            Ok(dirstate_map::NodeData::Entry(self.assume_entry()))
+            Ok(dirstate_map::NodeData::Entry(self.assume_entry()?))
         } else if let Some(mtime) = self.cached_directory_mtime()? {
             Ok(dirstate_map::NodeData::CachedDirectory { mtime })
         } else {
@@ -357,7 +357,7 @@ impl Node {
         file_type | permisions
     }
 
-    fn assume_entry(&self) -> DirstateEntry {
+    fn assume_entry(&self) -> Result<DirstateEntry, DirstateV2ParseError> {
         // TODO: convert through raw bits instead?
         let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
         let p1_tracked = self.flags().contains(Flags::P1_TRACKED);
@@ -372,11 +372,19 @@ impl Node {
         let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME)
             && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
         {
-            Some(self.mtime.truncated_seconds.into())
+            // TODO: replace this by `self.mtime.try_into()?` to use
+            // sub-second precision from the file.
+            // We don’t do this yet because other parts of the code
+            // always set it to zero.
+            let mtime = TruncatedTimestamp::from_already_truncated(
+                self.mtime.truncated_seconds.get(),
+                0,
+            )?;
+            Some(mtime)
         } else {
             None
         };
-        DirstateEntry::from_v2_data(
+        Ok(DirstateEntry::from_v2_data(
             wdir_tracked,
             p1_tracked,
             p2_info,
@@ -384,14 +392,14 @@ impl Node {
             mtime,
             None,
             None,
-        )
+        ))
     }
 
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
         if self.has_entry() {
-            Ok(Some(self.assume_entry()))
+            Ok(Some(self.assume_entry()?))
         } else {
             Ok(None)
         }
@@ -450,10 +458,7 @@ impl Node {
         };
         let mtime = if let Some(m) = mtime_opt {
             flags.insert(Flags::HAS_FILE_MTIME);
-            PackedTruncatedTimestamp {
-                truncated_seconds: m.into(),
-                nanoseconds: 0.into(),
-            }
+            m.into()
         } else {
             PackedTruncatedTimestamp::null()
         };

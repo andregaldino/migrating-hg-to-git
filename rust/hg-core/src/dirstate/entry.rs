@@ -14,14 +14,15 @@ pub enum EntryState {
     Merged,
 }
 
-/// The C implementation uses all signed types. This will be an issue
-/// either when 4GB+ source files are commonplace or in 2038, whichever
-/// comes first.
-#[derive(Debug, PartialEq, Copy, Clone)]
+/// `size` and `mtime.seconds` are truncated to 31 bits.
+///
+/// TODO: double-check status algorithm correctness for files
+/// larger than 2 GiB or modified after 2038.
+#[derive(Debug, Copy, Clone)]
 pub struct DirstateEntry {
     pub(crate) flags: Flags,
     mode_size: Option<(u32, u32)>,
-    mtime: Option<u32>,
+    mtime: Option<TruncatedTimestamp>,
 }
 
 bitflags! {
@@ -37,7 +38,7 @@ bitflags! {
 }
 
 /// A Unix timestamp with nanoseconds precision
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct TruncatedTimestamp {
     truncated_seconds: u32,
     /// Always in the `0 .. 1_000_000_000` range.
@@ -88,6 +89,11 @@ impl TruncatedTimestamp {
         {
             metadata.modified().map(Self::from)
         }
+    }
+
+    pub fn to_integer_second(mut self) -> Self {
+        self.nanoseconds = 0;
+        self
     }
 
     /// The lower 31 bits of the number of seconds since the epoch.
@@ -182,7 +188,7 @@ impl DirstateEntry {
         p1_tracked: bool,
         p2_info: bool,
         mode_size: Option<(u32, u32)>,
-        mtime: Option<u32>,
+        mtime: Option<TruncatedTimestamp>,
         fallback_exec: Option<bool>,
         fallback_symlink: Option<bool>,
     ) -> Self {
@@ -190,9 +196,6 @@ impl DirstateEntry {
             // TODO: return an error for out of range values?
             assert!(mode & !RANGE_MASK_31BIT == 0);
             assert!(size & !RANGE_MASK_31BIT == 0);
-        }
-        if let Some(mtime) = mtime {
-            assert!(mtime & !RANGE_MASK_31BIT == 0);
         }
         let mut flags = Flags::empty();
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
@@ -252,6 +255,9 @@ impl DirstateEntry {
                     let mode = u32::try_from(mode).unwrap();
                     let size = u32::try_from(size).unwrap();
                     let mtime = u32::try_from(mtime).unwrap();
+                    let mtime =
+                        TruncatedTimestamp::from_already_truncated(mtime, 0)
+                            .unwrap();
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
                         mode_size: Some((mode, size)),
@@ -344,7 +350,7 @@ impl DirstateEntry {
         bool,
         bool,
         Option<(u32, u32)>,
-        Option<u32>,
+        Option<TruncatedTimestamp>,
         Option<bool>,
         Option<bool>,
     ) {
@@ -429,7 +435,7 @@ impl DirstateEntry {
         } else if !self.flags.contains(Flags::P1_TRACKED) {
             MTIME_UNSET
         } else if let Some(mtime) = self.mtime {
-            i32::try_from(mtime).unwrap()
+            i32::try_from(mtime.truncated_seconds()).unwrap()
         } else {
             MTIME_UNSET
         }
@@ -501,6 +507,10 @@ impl DirstateEntry {
         }
     }
 
+    pub fn truncated_mtime(&self) -> Option<TruncatedTimestamp> {
+        self.mtime
+    }
+
     pub fn drop_merge_data(&mut self) {
         if self.flags.contains(Flags::P2_INFO) {
             self.flags.remove(Flags::P2_INFO);
@@ -513,9 +523,13 @@ impl DirstateEntry {
         self.mtime = None
     }
 
-    pub fn set_clean(&mut self, mode: u32, size: u32, mtime: u32) {
+    pub fn set_clean(
+        &mut self,
+        mode: u32,
+        size: u32,
+        mtime: TruncatedTimestamp,
+    ) {
         let size = size & RANGE_MASK_31BIT;
-        let mtime = mtime & RANGE_MASK_31BIT;
         self.flags.insert(Flags::WDIR_TRACKED | Flags::P1_TRACKED);
         self.mode_size = Some((mode, size));
         self.mtime = Some(mtime);
@@ -577,8 +591,13 @@ impl DirstateEntry {
     }
 
     /// True if the stored mtime would be ambiguous with the current time
-    pub fn need_delay(&self, now: i32) -> bool {
-        self.state() == EntryState::Normal && self.mtime() == now
+    pub fn need_delay(&self, now: TruncatedTimestamp) -> bool {
+        if let Some(mtime) = self.mtime {
+            self.state() == EntryState::Normal
+                && mtime.truncated_seconds() == now.truncated_seconds()
+        } else {
+            false
+        }
     }
 }
 

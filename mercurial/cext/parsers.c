@@ -57,7 +57,8 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	int has_meaningful_mtime;
 	int mode;
 	int size;
-	int mtime;
+	int mtime_s;
+	int mtime_ns;
 	PyObject *parentfiledata;
 	PyObject *fallback_exec;
 	PyObject *fallback_symlink;
@@ -111,15 +112,10 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	}
 
 	if (parentfiledata != Py_None) {
-		if (!PyTuple_CheckExact(parentfiledata)) {
-			PyErr_SetString(
-			    PyExc_TypeError,
-			    "parentfiledata should be a Tuple or None");
+		if (!PyArg_ParseTuple(parentfiledata, "ii(ii)", &mode, &size,
+		                      &mtime_s, &mtime_ns)) {
 			return NULL;
 		}
-		mode = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 0));
-		size = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 1));
-		mtime = (int)PyLong_AsLong(PyTuple_GetItem(parentfiledata, 2));
 	} else {
 		has_meaningful_data = 0;
 		has_meaningful_mtime = 0;
@@ -134,9 +130,11 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	}
 	if (has_meaningful_mtime) {
 		t->flags |= dirstate_flag_has_file_mtime;
-		t->mtime = mtime;
+		t->mtime_s = mtime_s;
+		t->mtime_ns = mtime_ns;
 	} else {
-		t->mtime = 0;
+		t->mtime_s = 0;
+		t->mtime_ns = 0;
 	}
 	return (PyObject *)t;
 }
@@ -254,7 +252,7 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 	           (self->flags & dirstate_flag_p2_info)) {
 		return ambiguous_time;
 	} else {
-		return self->mtime;
+		return self->mtime_s;
 	}
 }
 
@@ -272,7 +270,8 @@ static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 	} else {
 		flags &= ~dirstate_flag_mode_is_symlink;
 	}
-	return Py_BuildValue("iii", flags, self->size, self->mtime);
+	return Py_BuildValue("iiii", flags, self->size, self->mtime_s,
+	                     self->mtime_ns);
 };
 
 static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
@@ -297,14 +296,30 @@ static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 };
 
 static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
-                                          PyObject *value)
+                                          PyObject *now)
 {
-	long now;
-	if (!pylong_to_long(value, &now)) {
+	int now_s;
+	int now_ns;
+	if (!PyArg_ParseTuple(now, "ii", &now_s, &now_ns)) {
 		return NULL;
 	}
-	if (dirstate_item_c_v1_state(self) == 'n' &&
-	    dirstate_item_c_v1_mtime(self) == now) {
+	if (dirstate_item_c_v1_state(self) == 'n' && self->mtime_s == now_s) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
+static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
+                                                     PyObject *other)
+{
+	int other_s;
+	int other_ns;
+	if (!PyArg_ParseTuple(other, "ii", &other_s, &other_ns)) {
+		return NULL;
+	}
+	if ((self->flags & dirstate_flag_has_file_mtime) &&
+	    self->mtime_s == other_s && self->mtime_ns == other_ns) {
 		Py_RETURN_TRUE;
 	} else {
 		Py_RETURN_FALSE;
@@ -324,7 +339,8 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 	t->flags = 0;
 	t->mode = 0;
 	t->size = 0;
-	t->mtime = 0;
+	t->mtime_s = 0;
+	t->mtime_ns = 0;
 
 	if (state == 'm') {
 		t->flags = (dirstate_flag_wc_tracked |
@@ -360,7 +376,7 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 			            dirstate_flag_has_file_mtime);
 			t->mode = mode;
 			t->size = size;
-			t->mtime = mtime;
+			t->mtime_s = mtime;
 		}
 	} else {
 		PyErr_Format(PyExc_RuntimeError,
@@ -395,7 +411,8 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
 	if (!t) {
 		return NULL;
 	}
-	if (!PyArg_ParseTuple(args, "iii", &t->flags, &t->size, &t->mtime)) {
+	if (!PyArg_ParseTuple(args, "iiii", &t->flags, &t->size, &t->mtime_s,
+	                      &t->mtime_ns)) {
 		return NULL;
 	}
 	if (t->flags & dirstate_flag_expected_state_is_modified) {
@@ -431,8 +448,9 @@ static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
                                          PyObject *args)
 {
-	int size, mode, mtime;
-	if (!PyArg_ParseTuple(args, "iii", &mode, &size, &mtime)) {
+	int size, mode, mtime_s, mtime_ns;
+	if (!PyArg_ParseTuple(args, "ii(ii)", &mode, &size, &mtime_s,
+	                      &mtime_ns)) {
 		return NULL;
 	}
 	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
@@ -440,7 +458,8 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 	              dirstate_flag_has_file_mtime;
 	self->mode = mode;
 	self->size = size;
-	self->mtime = mtime;
+	self->mtime_s = mtime_s;
+	self->mtime_ns = mtime_ns;
 	Py_RETURN_NONE;
 }
 
@@ -455,8 +474,9 @@ static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 {
 	self->flags &= ~dirstate_flag_wc_tracked;
 	self->mode = 0;
-	self->mtime = 0;
 	self->size = 0;
+	self->mtime_s = 0;
+	self->mtime_ns = 0;
 	Py_RETURN_NONE;
 }
 
@@ -467,8 +487,9 @@ static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
 		                 dirstate_flag_has_meaningful_data |
 		                 dirstate_flag_has_file_mtime);
 		self->mode = 0;
-		self->mtime = 0;
 		self->size = 0;
+		self->mtime_s = 0;
+		self->mtime_ns = 0;
 	}
 	Py_RETURN_NONE;
 }
@@ -485,6 +506,8 @@ static PyMethodDef dirstate_item_methods[] = {
      "return a \"mtime\" suitable for v1 serialization"},
     {"need_delay", (PyCFunction)dirstate_item_need_delay, METH_O,
      "True if the stored mtime would be ambiguous with the current time"},
+    {"mtime_likely_equal_to", (PyCFunction)dirstate_item_mtime_likely_equal_to,
+     METH_O, "True if the stored mtime is likely equal to the given mtime"},
     {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth,
      METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V1 data"},
     {"from_v2_data", (PyCFunction)dirstate_item_from_v2_meth,
@@ -855,11 +878,12 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 	Py_ssize_t nbytes, pos, l;
 	PyObject *k, *v = NULL, *pn;
 	char *p, *s;
-	int now;
+	int now_s;
+	int now_ns;
 
-	if (!PyArg_ParseTuple(args, "O!O!O!i:pack_dirstate", &PyDict_Type, &map,
-	                      &PyDict_Type, &copymap, &PyTuple_Type, &pl,
-	                      &now)) {
+	if (!PyArg_ParseTuple(args, "O!O!O!(ii):pack_dirstate", &PyDict_Type,
+	                      &map, &PyDict_Type, &copymap, &PyTuple_Type, &pl,
+	                      &now_s, &now_ns)) {
 		return NULL;
 	}
 
@@ -928,7 +952,7 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 		mode = dirstate_item_c_v1_mode(tuple);
 		size = dirstate_item_c_v1_size(tuple);
 		mtime = dirstate_item_c_v1_mtime(tuple);
-		if (state == 'n' && mtime == now) {
+		if (state == 'n' && tuple->mtime_s == now_s) {
 			/* See pure/parsers.py:pack_dirstate for why we do
 			 * this. */
 			mtime = -1;

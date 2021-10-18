@@ -18,11 +18,10 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::item::DirstateItem,
+    dirstate::item::{timestamp, DirstateItem},
     pybytes_deref::PyBytesDeref,
 };
 use hg::{
-    dirstate::parsers::Timestamp,
     dirstate::StateMapIter,
     dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
     dirstate_tree::on_disk::DirstateV2ParseError,
@@ -195,9 +194,9 @@ py_class!(pub class DirstateMap |py| {
         &self,
         p1: PyObject,
         p2: PyObject,
-        now: PyObject
+        now: (u32, u32)
     ) -> PyResult<PyBytes> {
-        let now = Timestamp(now.extract(py)?);
+        let now = timestamp(py, now)?;
 
         let mut inner = self.inner(py).borrow_mut();
         let parents = DirstateParents {
@@ -219,10 +218,10 @@ py_class!(pub class DirstateMap |py| {
     /// instead of written to a new data file (False).
     def write_v2(
         &self,
-        now: PyObject,
+        now: (u32, u32),
         can_append: bool,
     ) -> PyResult<PyObject> {
-        let now = Timestamp(now.extract(py)?);
+        let now = timestamp(py, now)?;
 
         let mut inner = self.inner(py).borrow_mut();
         let result = inner.pack_v2(now, can_append);

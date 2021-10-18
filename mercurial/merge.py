@@ -9,13 +9,13 @@ from __future__ import absolute_import
 
 import collections
 import errno
-import stat
 import struct
 
 from .i18n import _
 from .node import nullrev
 from .thirdparty import attr
 from .utils import stringutil
+from .dirstateutils import timestamp
 from . import (
     copies,
     encoding,
@@ -1406,8 +1406,9 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
             if wantfiledata:
                 s = wfctx.lstat()
                 mode = s.st_mode
-                mtime = s[stat.ST_MTIME]
-                filedata[f] = (mode, size, mtime)  # for dirstate.normal
+                mtime = timestamp.mtime_of(s)
+                # for dirstate.update_file's parentfiledata argument:
+                filedata[f] = (mode, size, mtime)
             if i == 100:
                 yield False, (i, f)
                 i = 0

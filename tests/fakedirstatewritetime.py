@@ -15,6 +15,7 @@ from mercurial import (
     policy,
     registrar,
 )
+from mercurial.dirstateutils import timestamp
 from mercurial.utils import dateutil
 
 try:
@@ -40,9 +41,8 @@ has_rust_dirstate = policy.importrust('dirstate') is not None
 def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     # execute what original parsers.pack_dirstate should do actually
     # for consistency
-    actualnow = int(now)
     for f, e in dmap.items():
-        if e.need_delay(actualnow):
+        if e.need_delay(now):
             e.set_possibly_dirty()
 
     return orig(dmap, copymap, pl, fakenow)
@@ -62,6 +62,7 @@ def fakewrite(ui, func):
     # parsing 'fakenow' in YYYYmmddHHMM format makes comparison between
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
     fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
+    fakenow = timestamp.timestamp((fakenow, 0))
 
     if has_rust_dirstate:
         # The Rust implementation does not use public parse/pack dirstate

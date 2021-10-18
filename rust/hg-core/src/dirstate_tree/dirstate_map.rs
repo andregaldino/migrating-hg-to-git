@@ -1,7 +1,6 @@
 use bytes_cast::BytesCast;
 use micro_timer::timed;
 use std::borrow::Cow;
-use std::convert::TryInto;
 use std::path::PathBuf;
 
 use super::on_disk;
@@ -11,7 +10,6 @@ use super::path_with_basename::WithBasename;
 use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
-use crate::dirstate::parsers::Timestamp;
 use crate::dirstate::CopyMapIter;
 use crate::dirstate::StateMapIter;
 use crate::dirstate::TruncatedTimestamp;
@@ -932,10 +930,9 @@ impl OwningDirstateMap {
     pub fn pack_v1(
         &mut self,
         parents: DirstateParents,
-        now: Timestamp,
+        now: TruncatedTimestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         let map = self.get_map_mut();
-        let now: i32 = now.0.try_into().expect("time overflow");
         let mut ambiguous_mtimes = Vec::new();
         // Optizimation (to be measured?): pre-compute size to avoid `Vec`
         // reallocations
@@ -981,12 +978,10 @@ impl OwningDirstateMap {
     #[timed]
     pub fn pack_v2(
         &mut self,
-        now: Timestamp,
+        now: TruncatedTimestamp,
         can_append: bool,
     ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
         let map = self.get_map_mut();
-        // TODO: how do we want to handle this in 2038?
-        let now: i32 = now.0.try_into().expect("time overflow");
         let mut paths = Vec::new();
         for node in map.iter_nodes() {
             let node = node?;

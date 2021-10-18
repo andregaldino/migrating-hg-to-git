@@ -99,7 +99,8 @@ class DirstateItem(object):
     _p2_info = attr.ib()
     _mode = attr.ib()
     _size = attr.ib()
-    _mtime = attr.ib()
+    _mtime_s = attr.ib()
+    _mtime_ns = attr.ib()
     _fallback_exec = attr.ib()
     _fallback_symlink = attr.ib()
 
@@ -123,7 +124,8 @@ class DirstateItem(object):
 
         self._mode = None
         self._size = None
-        self._mtime = None
+        self._mtime_s = None
+        self._mtime_ns = None
         if parentfiledata is None:
             has_meaningful_mtime = False
             has_meaningful_data = False
@@ -131,10 +133,10 @@ class DirstateItem(object):
             self._mode = parentfiledata[0]
             self._size = parentfiledata[1]
         if has_meaningful_mtime:
-            self._mtime = parentfiledata[2]
+            self._mtime_s, self._mtime_ns = parentfiledata[2]
 
     @classmethod
-    def from_v2_data(cls, flags, size, mtime):
+    def from_v2_data(cls, flags, size, mtime_s, mtime_ns):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
         has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_FILE_MTIME)
@@ -170,7 +172,7 @@ class DirstateItem(object):
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
             has_meaningful_mtime=has_meaningful_mtime,
-            parentfiledata=(mode, size, mtime),
+            parentfiledata=(mode, size, (mtime_s, mtime_ns)),
             fallback_exec=fallback_exec,
             fallback_symlink=fallback_symlink,
         )
@@ -207,13 +209,13 @@ class DirstateItem(object):
                     wc_tracked=True,
                     p1_tracked=True,
                     has_meaningful_mtime=False,
-                    parentfiledata=(mode, size, 42),
+                    parentfiledata=(mode, size, (42, 0)),
                 )
             else:
                 return cls(
                     wc_tracked=True,
                     p1_tracked=True,
-                    parentfiledata=(mode, size, mtime),
+                    parentfiledata=(mode, size, (mtime, 0)),
                 )
         else:
             raise RuntimeError(b'unknown state: %s' % state)
@@ -224,7 +226,8 @@ class DirstateItem(object):
         This means the next status call will have to actually check its content
         to make sure it is correct.
         """
-        self._mtime = None
+        self._mtime_s = None
+        self._mtime_ns = None
 
     def set_clean(self, mode, size, mtime):
         """mark a file as "clean" cancelling potential "possibly dirty call"
@@ -238,7 +241,7 @@ class DirstateItem(object):
         self._p1_tracked = True
         self._mode = mode
         self._size = size
-        self._mtime = mtime
+        self._mtime_s, self._mtime_ns = mtime
 
     def set_tracked(self):
         """mark a file as tracked in the working copy
@@ -250,7 +253,8 @@ class DirstateItem(object):
         # the files as needing lookup
         #
         # Consider dropping this in the future in favor of something less broad.
-        self._mtime = None
+        self._mtime_s = None
+        self._mtime_ns = None
 
     def set_untracked(self):
         """mark a file as untracked in the working copy
@@ -260,7 +264,8 @@ class DirstateItem(object):
         self._wc_tracked = False
         self._mode = None
         self._size = None
-        self._mtime = None
+        self._mtime_s = None
+        self._mtime_ns = None
 
     def drop_merge_data(self):
         """remove all "merge-only" from a DirstateItem
@@ -271,7 +276,8 @@ class DirstateItem(object):
             self._p2_info = False
             self._mode = None
             self._size = None
-            self._mtime = None
+            self._mtime_s = None
+            self._mtime_ns = None
 
     @property
     def mode(self):
@@ -284,6 +290,14 @@ class DirstateItem(object):
     @property
     def mtime(self):
         return self.v1_mtime()
+
+    def mtime_likely_equal_to(self, other_mtime):
+        self_sec = self._mtime_s
+        if self_sec is None:
+            return False
+        self_ns = self._mtime_ns
+        other_sec, other_ns = other_mtime
+        return self_sec == other_sec and self_ns == other_ns
 
     @property
     def state(self):
@@ -440,7 +454,7 @@ class DirstateItem(object):
                 flags |= DIRSTATE_V2_MODE_EXEC_PERM
             if stat.S_ISLNK(self.mode):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
-        if self._mtime is not None:
+        if self._mtime_s is not None:
             flags |= DIRSTATE_V2_HAS_FILE_MTIME
 
         if self._fallback_exec is not None:
@@ -456,7 +470,7 @@ class DirstateItem(object):
         # Note: we do not need to do anything regarding
         # DIRSTATE_V2_ALL_UNKNOWN_RECORDED and DIRSTATE_V2_ALL_IGNORED_RECORDED
         # since we never set _DIRSTATE_V2_HAS_DIRCTORY_MTIME
-        return (flags, self._size or 0, self._mtime or 0)
+        return (flags, self._size or 0, self._mtime_s or 0, self._mtime_ns or 0)
 
     def v1_state(self):
         """return a "state" suitable for v1 serialization"""
@@ -504,18 +518,18 @@ class DirstateItem(object):
             raise RuntimeError('untracked item')
         elif self.removed:
             return 0
-        elif self._mtime is None:
+        elif self._mtime_s is None:
             return AMBIGUOUS_TIME
         elif self._p2_info:
             return AMBIGUOUS_TIME
         elif not self._p1_tracked:
             return AMBIGUOUS_TIME
         else:
-            return self._mtime
+            return self._mtime_s
 
     def need_delay(self, now):
         """True if the stored mtime would be ambiguous with the current time"""
-        return self.v1_state() == b'n' and self.v1_mtime() == now
+        return self.v1_state() == b'n' and self._mtime_s == now[0]
 
 
 def gettype(q):
@@ -883,7 +897,6 @@ def parse_dirstate(dmap, copymap, st):
 
 
 def pack_dirstate(dmap, copymap, pl, now):
-    now = int(now)
     cs = stringio()
     write = cs.write
     write(b"".join(pl))

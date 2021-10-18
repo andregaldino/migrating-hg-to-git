@@ -501,9 +501,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         fn truncate_u64(value: u64) -> i32 {
             (value & 0x7FFF_FFFF) as i32
         }
-        fn truncate_i64(value: i64) -> i32 {
-            (value & 0x7FFF_FFFF) as i32
-        }
 
         let entry = dirstate_node
             .entry()?
@@ -531,10 +528,19 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 .modified
                 .push(hg_path.detach_from_tree())
         } else {
-            let mtime = mtime_seconds(fs_metadata);
-            if truncate_i64(mtime) != entry.mtime()
-                || mtime == self.options.last_normal_time
-            {
+            let mtime_looks_clean;
+            if let Some(dirstate_mtime) = entry.truncated_mtime() {
+                let fs_mtime = TruncatedTimestamp::for_mtime_of(fs_metadata)
+                    .expect("OS/libc does not support mtime?")
+                    // For now don’t use sub-second precision for file mtimes
+                    .to_integer_second();
+                mtime_looks_clean = fs_mtime.likely_equal(dirstate_mtime)
+                    && !fs_mtime.likely_equal(self.options.last_normal_time)
+            } else {
+                // No mtime in the dirstate entry
+                mtime_looks_clean = false
+            };
+            if !mtime_looks_clean {
                 self.outcome
                     .lock()
                     .unwrap()
@@ -688,15 +694,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         }
         is_ignored
     }
-}
-
-#[cfg(unix)] // TODO
-fn mtime_seconds(metadata: &std::fs::Metadata) -> i64 {
-    // Going through `Metadata::modified()` would be portable, but would take
-    // care to construct a `SystemTime` value with sub-second precision just
-    // for us to throw that away here.
-    use std::os::unix::fs::MetadataExt;
-    metadata.mtime()
 }
 
 struct DirEntry {

@@ -27,7 +27,8 @@ typedef struct {
 	int flags;
 	int mode;
 	int size;
-	int mtime;
+	int mtime_s;
+	int mtime_ns;
 } dirstateItemObject;
 /* clang-format on */
 

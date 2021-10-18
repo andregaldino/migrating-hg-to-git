@@ -54,7 +54,7 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
                 matcher: PyObject,
                 ignorefiles: PyList,
                 check_exec: bool,
-                last_normal_time: i64,
+                last_normal_time: (u32, u32),
                 list_clean: bool,
                 list_ignored: bool,
                 list_unknown: bool,

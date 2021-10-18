@@ -127,7 +127,6 @@ class _dirstatemapcommon(object):
     def set_clean(self, filename, mode, size, mtime):
         """mark a file as back to a clean state"""
         entry = self[filename]
-        mtime = mtime & rangemask
         size = size & rangemask
         entry.set_clean(mode, size, mtime)
         self._refresh_entry(filename, entry)

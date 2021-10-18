@@ -31,6 +31,10 @@ from . import (
     util,
 )
 
+from .dirstateutils import (
+    timestamp,
+)
+
 from .interfaces import (
     dirstate as intdirstate,
     util as interfaceutil,
@@ -66,7 +70,7 @@ def _getfsnow(vfs):
     '''Get "now" timestamp on filesystem'''
     tmpfd, tmpname = vfs.mkstemp()
     try:
-        return os.fstat(tmpfd)[stat.ST_MTIME]
+        return timestamp.mtime_of(os.fstat(tmpfd))
     finally:
         os.close(tmpfd)
         vfs.unlink(tmpname)
@@ -122,7 +126,7 @@ class dirstate(object):
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
         self._dirty = False
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._ui = ui
         self._filecache = {}
         self._parentwriters = 0
@@ -440,7 +444,7 @@ class dirstate(object):
         for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._dirty = False
         self._parentwriters = 0
         self._origpl = None
@@ -639,7 +643,7 @@ class dirstate(object):
         s = os.lstat(self._join(filename))
         mode = s.st_mode
         size = s.st_size
-        mtime = s[stat.ST_MTIME]
+        mtime = timestamp.mtime_of(s)
         return (mode, size, mtime)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
@@ -720,7 +724,7 @@ class dirstate(object):
 
     def clear(self):
         self._map.clear()
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._dirty = True
 
     def rebuild(self, parent, allfiles, changedfiles=None):
@@ -823,7 +827,7 @@ class dirstate(object):
         if now is None:
             # use the modification time of the newly created temporary file as the
             # filesystem's notion of 'now'
-            now = util.fstat(st)[stat.ST_MTIME] & _rangemask
+            now = timestamp.mtime_of(util.fstat(st))
 
         # enough 'delaywrite' prevents 'pack_dirstate' from dropping
         # timestamp of each entries in dirstate, because of 'now > mtime'
@@ -840,11 +844,12 @@ class dirstate(object):
                     start = int(clock) - (int(clock) % delaywrite)
                     end = start + delaywrite
                     time.sleep(end - clock)
-                    now = end  # trust our estimate that the end is near now
+                    # trust our estimate that the end is near now
+                    now = timestamp.timestamp((end, 0))
                     break
 
         self._map.write(tr, st, now)
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._dirty = False
 
     def _dirignore(self, f):
@@ -1377,17 +1382,9 @@ class dirstate(object):
                     uadd(fn)
                 continue
 
-            # This is equivalent to 'state, mode, size, time = dmap[fn]' but not
-            # written like that for performance reasons. dmap[fn] is not a
-            # Python tuple in compiled builds. The CPython UNPACK_SEQUENCE
-            # opcode has fast paths when the value to be unpacked is a tuple or
-            # a list, but falls back to creating a full-fledged iterator in
-            # general. That is much slower than simply accessing and storing the
-            # tuple members one by one.
             t = dget(fn)
             mode = t.mode
             size = t.size
-            time = t.mtime
 
             if not st and t.tracked:
                 dadd(fn)
@@ -1412,12 +1409,9 @@ class dirstate(object):
                         ladd(fn)
                     else:
                         madd(fn)
-                elif (
-                    time != st[stat.ST_MTIME]
-                    and time != st[stat.ST_MTIME] & _rangemask
-                ):
+                elif not t.mtime_likely_equal_to(timestamp.mtime_of(st)):
                     ladd(fn)
-                elif st[stat.ST_MTIME] == lastnormaltime:
+                elif timestamp.mtime_of(st) == lastnormaltime:
                     # fn may have just been marked as normal and it may have
                     # changed in the same second without changing its size.
                     # This can happen if we quickly do multiple commits.

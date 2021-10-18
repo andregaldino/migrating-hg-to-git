@@ -11,6 +11,7 @@ use crate::utils::path_utils::relativize_paths;
 use clap::{Arg, SubCommand};
 use hg;
 use hg::config::Config;
+use hg::dirstate::TruncatedTimestamp;
 use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
@@ -180,7 +181,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         // hence be stored on dmap. Using a value that assumes we aren't
         // below the time resolution granularity of the FS and the
         // dirstate.
-        last_normal_time: 0,
+        last_normal_time: TruncatedTimestamp::new_truncate(0, 0),
         // we're currently supporting file systems with exec flags only
         // anyway
         check_exec: true,
