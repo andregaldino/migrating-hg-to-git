@@ -12,23 +12,21 @@ functionality.
 
 # Building
 
-This project currently requires an unreleased version of PyOxidizer
-(0.7.0-pre). For best results, build the exact PyOxidizer commit
-as defined in the `pyoxidizer.bzl` file:
+First, acquire and build a copy of PyOxidizer; you probably want to do this in
+some directory outside of your clone of Mercurial:
 
     $ git clone https://github.com/indygreg/PyOxidizer.git
     $ cd PyOxidizer
-    $ git checkout <Git commit from pyoxidizer.bzl>
     $ cargo build --release
 
-Then build this Rust project using the built `pyoxidizer` executable::
+Then build this Rust project using the built `pyoxidizer` executable:
 
-    $ /path/to/pyoxidizer/target/release/pyoxidizer build
+    $ /path/to/pyoxidizer/target/release/pyoxidizer build --release
 
 If all goes according to plan, there should be an assembled application
-under `build/<arch>/debug/app/` with an `hg` executable:
+under `build/<arch>/release/app/` with an `hg` executable:
 
-    $ build/x86_64-unknown-linux-gnu/debug/app/hg version
+    $ build/x86_64-unknown-linux-gnu/release/app/hg version
     Mercurial Distributed SCM (version 5.3.1+433-f99cd77d53dc+20200331)
     (see https://mercurial-scm.org for more information)
 
@@ -46,5 +44,5 @@ Python interpreter can't access them! To work around this, set `PYTHONPATH`
 to the Mercurial source directory. e.g.:
 
     $ cd /path/to/hg/src/tests
-    $ PYTHONPATH=`pwd`/.. python3.7 run-tests.py \
-        --with-hg `pwd`/../rust/hgcli/build/x86_64-unknown-linux-gnu/debug/app/hg
+    $ PYTHONPATH=`pwd`/.. python3.9 run-tests.py \
+        --with-hg `pwd`/../rust/hgcli/build/x86_64-unknown-linux-gnu/release/app/hg
