@@ -42,6 +42,10 @@ static const int dirstate_flag_mode_is_symlink = 1 << 7;
 static const int dirstate_flag_expected_state_is_modified = 1 << 8;
 static const int dirstate_flag_all_unknown_recorded = 1 << 9;
 static const int dirstate_flag_all_ignored_recorded = 1 << 10;
+static const int dirstate_flag_fallback_exec = 1 << 11;
+static const int dirstate_flag_has_fallback_exec = 1 << 12;
+static const int dirstate_flag_fallback_symlink = 1 << 13;
+static const int dirstate_flag_has_fallback_symlink = 1 << 14;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

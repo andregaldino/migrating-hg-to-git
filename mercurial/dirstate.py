@@ -259,7 +259,11 @@ class dirstate(object):
             def f(x):
                 if os.path.islink(self._join(x)):
                     return b'l'
-                if b'x' in fallback(x):
+                entry = self.get_entry(x)
+                if entry.has_fallback_exec:
+                    if entry.fallback_exec:
+                        return b'x'
+                elif b'x' in fallback(x):
                     return b'x'
                 return b''
 
@@ -269,13 +273,28 @@ class dirstate(object):
             def f(x):
                 if b'l' in fallback(x):
                     return b'l'
+                entry = self.get_entry(x)
+                if entry.has_fallback_symlink:
+                    if entry.fallback_symlink:
+                        return b'l'
                 if util.isexec(self._join(x)):
                     return b'x'
                 return b''
 
             return f
         else:
-            return fallback
+
+            def f(x):
+                entry = self.get_entry(x)
+                if entry.has_fallback_symlink:
+                    if entry.fallback_symlink:
+                        return b'l'
+                if entry.has_fallback_exec:
+                    if entry.fallback_exec:
+                        return b'x'
+                    elif entry.has_fallback_symlink:
+                        return b''
+                return fallback(x)
 
     @propertycache
     def _cwd(self):

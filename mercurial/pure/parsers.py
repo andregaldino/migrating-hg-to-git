@@ -96,6 +96,8 @@ class DirstateItem(object):
     _mode = attr.ib()
     _size = attr.ib()
     _mtime = attr.ib()
+    _fallback_exec = attr.ib()
+    _fallback_symlink = attr.ib()
 
     def __init__(
         self,
@@ -109,6 +111,9 @@ class DirstateItem(object):
         self._wc_tracked = wc_tracked
         self._p1_tracked = p1_tracked
         self._p2_info = p2_info
+
+        self._fallback_exec = None
+        self._fallback_symlink = None
 
         self._mode = None
         self._size = None
@@ -280,6 +285,85 @@ class DirstateItem(object):
         if not self.any_tracked:
             return b'?'
         return self.v1_state()
+
+    @property
+    def has_fallback_exec(self):
+        """True if "fallback" information are available for the "exec" bit
+
+        Fallback information can be stored in the dirstate to keep track of
+        filesystem attribute tracked by Mercurial when the underlying file
+        system or operating system does not support that property, (e.g.
+        Windows).
+
+        Not all version of the dirstate on-disk storage support preserving this
+        information.
+        """
+        return self._fallback_exec is not None
+
+    @property
+    def fallback_exec(self):
+        """ "fallback" information for the executable bit
+
+        True if the file should be considered executable when we cannot get
+        this information from the files system. False if it should be
+        considered non-executable.
+
+        See has_fallback_exec for details."""
+        return self._fallback_exec
+
+    @fallback_exec.setter
+    def set_fallback_exec(self, value):
+        """control "fallback" executable bit
+
+        Set to:
+        - True if the file should be considered executable,
+        - False if the file should be considered non-executable,
+        - None if we do not have valid fallback data.
+
+        See has_fallback_exec for details."""
+        if value is None:
+            self._fallback_exec = None
+        else:
+            self._fallback_exec = bool(value)
+
+    @property
+    def has_fallback_symlink(self):
+        """True if "fallback" information are available for symlink status
+
+        Fallback information can be stored in the dirstate to keep track of
+        filesystem attribute tracked by Mercurial when the underlying file
+        system or operating system does not support that property, (e.g.
+        Windows).
+
+        Not all version of the dirstate on-disk storage support preserving this
+        information."""
+        return self._fallback_symlink is not None
+
+    @property
+    def fallback_symlink(self):
+        """ "fallback" information for symlink status
+
+        True if the file should be considered executable when we cannot get
+        this information from the files system. False if it should be
+        considered non-executable.
+
+        See has_fallback_exec for details."""
+        return self._fallback_symlink
+
+    @fallback_symlink.setter
+    def set_fallback_symlink(self, value):
+        """control "fallback" symlink status
+
+        Set to:
+        - True if the file should be considered a symlink,
+        - False if the file should be considered not a symlink,
+        - None if we do not have valid fallback data.
+
+        See has_fallback_symlink for details."""
+        if value is None:
+            self._fallback_symlink = None
+        else:
+            self._fallback_symlink = bool(value)
 
     @property
     def tracked(self):

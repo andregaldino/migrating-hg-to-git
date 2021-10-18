@@ -29,6 +29,10 @@ bitflags! {
         const WDIR_TRACKED = 1 << 0;
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
+        const HAS_FALLBACK_EXEC = 1 << 3;
+        const FALLBACK_EXEC = 1 << 4;
+        const HAS_FALLBACK_SYMLINK = 1 << 5;
+        const FALLBACK_SYMLINK = 1 << 6;
     }
 }
 
@@ -419,6 +423,52 @@ impl DirstateEntry {
     // TODO: return Option?
     pub fn mtime(&self) -> i32 {
         self.v1_mtime()
+    }
+
+    pub fn get_fallback_exec(&self) -> Option<bool> {
+        if self.flags.contains(Flags::HAS_FALLBACK_EXEC) {
+            Some(self.flags.contains(Flags::FALLBACK_EXEC))
+        } else {
+            None
+        }
+    }
+
+    pub fn set_fallback_exec(&mut self, value: Option<bool>) {
+        match value {
+            None => {
+                self.flags.remove(Flags::HAS_FALLBACK_EXEC);
+                self.flags.remove(Flags::FALLBACK_EXEC);
+            }
+            Some(exec) => {
+                self.flags.insert(Flags::HAS_FALLBACK_EXEC);
+                if exec {
+                    self.flags.insert(Flags::FALLBACK_EXEC);
+                }
+            }
+        }
+    }
+
+    pub fn get_fallback_symlink(&self) -> Option<bool> {
+        if self.flags.contains(Flags::HAS_FALLBACK_SYMLINK) {
+            Some(self.flags.contains(Flags::FALLBACK_SYMLINK))
+        } else {
+            None
+        }
+    }
+
+    pub fn set_fallback_symlink(&mut self, value: Option<bool>) {
+        match value {
+            None => {
+                self.flags.remove(Flags::HAS_FALLBACK_SYMLINK);
+                self.flags.remove(Flags::FALLBACK_SYMLINK);
+            }
+            Some(symlink) => {
+                self.flags.insert(Flags::HAS_FALLBACK_SYMLINK);
+                if symlink {
+                    self.flags.insert(Flags::FALLBACK_SYMLINK);
+                }
+            }
+        }
     }
 
     pub fn drop_merge_data(&mut self) {

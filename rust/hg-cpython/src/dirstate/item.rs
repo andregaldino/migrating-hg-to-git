@@ -1,4 +1,5 @@
 use cpython::exc;
+use cpython::ObjectProtocol;
 use cpython::PyBytes;
 use cpython::PyErr;
 use cpython::PyNone;
@@ -59,6 +60,70 @@ py_class!(pub class DirstateItem |py| {
     @property
     def mtime(&self) -> PyResult<i32> {
         Ok(self.entry(py).get().mtime())
+    }
+
+    @property
+    def has_fallback_exec(&self) -> PyResult<bool> {
+        match self.entry(py).get().get_fallback_exec() {
+            Some(_) => Ok(true),
+            None => Ok(false),
+        }
+    }
+
+    @property
+    def fallback_exec(&self) -> PyResult<Option<bool>> {
+        match self.entry(py).get().get_fallback_exec() {
+            Some(exec) => Ok(Some(exec)),
+            None => Ok(None),
+        }
+    }
+
+    @fallback_exec.setter
+    def set_fallback_exec(&self, value: Option<PyObject>) -> PyResult<()> {
+        match value {
+            None => {self.entry(py).get().set_fallback_exec(None);},
+            Some(value) => {
+            if value.is_none(py) {
+                self.entry(py).get().set_fallback_exec(None);
+            } else {
+                self.entry(py).get().set_fallback_exec(
+                    Some(value.is_true(py)?)
+                );
+            }},
+        }
+        Ok(())
+    }
+
+    @property
+    def has_fallback_symlink(&self) -> PyResult<bool> {
+        match self.entry(py).get().get_fallback_symlink() {
+            Some(_) => Ok(true),
+            None => Ok(false),
+        }
+    }
+
+    @property
+    def fallback_symlink(&self) -> PyResult<Option<bool>> {
+        match self.entry(py).get().get_fallback_symlink() {
+            Some(symlink) => Ok(Some(symlink)),
+            None => Ok(None),
+        }
+    }
+
+    @fallback_symlink.setter
+    def set_fallback_symlink(&self, value: Option<PyObject>) -> PyResult<()> {
+        match value {
+            None => {self.entry(py).get().set_fallback_symlink(None);},
+            Some(value) => {
+            if value.is_none(py) {
+                self.entry(py).get().set_fallback_symlink(None);
+            } else {
+                self.entry(py).get().set_fallback_symlink(
+                    Some(value.is_true(py)?)
+                );
+            }},
+        }
+        Ok(())
     }
 
     @property

@@ -188,6 +188,17 @@ static inline char dirstate_item_c_v1_state(dirstateItemObject *self)
 	}
 }
 
+static inline bool dirstate_item_c_has_fallback_exec(dirstateItemObject *self)
+{
+	return (bool)self->flags & dirstate_flag_has_fallback_exec;
+}
+
+static inline bool
+dirstate_item_c_has_fallback_symlink(dirstateItemObject *self)
+{
+	return (bool)self->flags & dirstate_flag_has_fallback_symlink;
+}
+
 static inline int dirstate_item_c_v1_mode(dirstateItemObject *self)
 {
 	if (self->flags & dirstate_flag_has_meaningful_data) {
@@ -498,6 +509,83 @@ static PyObject *dirstate_item_get_state(dirstateItemObject *self)
 	return PyBytes_FromStringAndSize(&state, 1);
 };
 
+static PyObject *dirstate_item_get_has_fallback_exec(dirstateItemObject *self)
+{
+	if (dirstate_item_c_has_fallback_exec(self)) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
+static PyObject *dirstate_item_get_fallback_exec(dirstateItemObject *self)
+{
+	if (dirstate_item_c_has_fallback_exec(self)) {
+		if (self->flags & dirstate_flag_fallback_exec) {
+			Py_RETURN_TRUE;
+		} else {
+			Py_RETURN_FALSE;
+		}
+	} else {
+		Py_RETURN_NONE;
+	}
+};
+
+static int dirstate_item_set_fallback_exec(dirstateItemObject *self,
+                                           PyObject *value)
+{
+	if ((value == Py_None) || (value == NULL)) {
+		self->flags &= ~dirstate_flag_has_fallback_exec;
+	} else {
+		self->flags |= dirstate_flag_has_fallback_exec;
+		if (PyObject_IsTrue(value)) {
+			self->flags |= dirstate_flag_fallback_exec;
+		} else {
+			self->flags &= ~dirstate_flag_fallback_exec;
+		}
+	}
+	return 0;
+};
+
+static PyObject *
+dirstate_item_get_has_fallback_symlink(dirstateItemObject *self)
+{
+	if (dirstate_item_c_has_fallback_symlink(self)) {
+		Py_RETURN_TRUE;
+	} else {
+		Py_RETURN_FALSE;
+	}
+};
+
+static PyObject *dirstate_item_get_fallback_symlink(dirstateItemObject *self)
+{
+	if (dirstate_item_c_has_fallback_symlink(self)) {
+		if (self->flags & dirstate_flag_fallback_symlink) {
+			Py_RETURN_TRUE;
+		} else {
+			Py_RETURN_FALSE;
+		}
+	} else {
+		Py_RETURN_NONE;
+	}
+};
+
+static int dirstate_item_set_fallback_symlink(dirstateItemObject *self,
+                                              PyObject *value)
+{
+	if ((value == Py_None) || (value == NULL)) {
+		self->flags &= ~dirstate_flag_has_fallback_symlink;
+	} else {
+		self->flags |= dirstate_flag_has_fallback_symlink;
+		if (PyObject_IsTrue(value)) {
+			self->flags |= dirstate_flag_fallback_symlink;
+		} else {
+			self->flags &= ~dirstate_flag_fallback_symlink;
+		}
+	}
+	return 0;
+};
+
 static PyObject *dirstate_item_get_tracked(dirstateItemObject *self)
 {
 	if (dirstate_item_c_tracked(self)) {
@@ -588,6 +676,14 @@ static PyGetSetDef dirstate_item_getset[] = {
     {"size", (getter)dirstate_item_get_size, NULL, "size", NULL},
     {"mtime", (getter)dirstate_item_get_mtime, NULL, "mtime", NULL},
     {"state", (getter)dirstate_item_get_state, NULL, "state", NULL},
+    {"has_fallback_exec", (getter)dirstate_item_get_has_fallback_exec, NULL,
+     "has_fallback_exec", NULL},
+    {"fallback_exec", (getter)dirstate_item_get_fallback_exec,
+     (setter)dirstate_item_set_fallback_exec, "fallback_exec", NULL},
+    {"has_fallback_symlink", (getter)dirstate_item_get_has_fallback_symlink,
+     NULL, "has_fallback_symlink", NULL},
+    {"fallback_symlink", (getter)dirstate_item_get_fallback_symlink,
+     (setter)dirstate_item_set_fallback_symlink, "fallback_symlink", NULL},
     {"tracked", (getter)dirstate_item_get_tracked, NULL, "tracked", NULL},
     {"p1_tracked", (getter)dirstate_item_get_p1_tracked, NULL, "p1_tracked",
      NULL},
