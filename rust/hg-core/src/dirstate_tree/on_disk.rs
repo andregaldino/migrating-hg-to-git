@@ -378,6 +378,8 @@ impl Node {
             p2_info,
             mode_size,
             mtime,
+            None,
+            None,
         )
     }
 

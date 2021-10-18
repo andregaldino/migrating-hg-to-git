@@ -107,13 +107,15 @@ class DirstateItem(object):
         has_meaningful_data=True,
         has_meaningful_mtime=True,
         parentfiledata=None,
+        fallback_exec=None,
+        fallback_symlink=None,
     ):
         self._wc_tracked = wc_tracked
         self._p1_tracked = p1_tracked
         self._p2_info = p2_info
 
-        self._fallback_exec = None
-        self._fallback_symlink = None
+        self._fallback_exec = fallback_exec
+        self._fallback_symlink = fallback_symlink
 
         self._mode = None
         self._size = None

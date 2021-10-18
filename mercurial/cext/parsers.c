@@ -59,14 +59,12 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	int size;
 	int mtime;
 	PyObject *parentfiledata;
+	PyObject *fallback_exec;
+	PyObject *fallback_symlink;
 	static char *keywords_name[] = {
-	    "wc_tracked",
-	    "p1_tracked",
-	    "p2_info",
-	    "has_meaningful_data",
-	    "has_meaningful_mtime",
-	    "parentfiledata",
-	    NULL,
+	    "wc_tracked",          "p1_tracked",           "p2_info",
+	    "has_meaningful_data", "has_meaningful_mtime", "parentfiledata",
+	    "fallback_exec",       "fallback_symlink",     NULL,
 	};
 	wc_tracked = 0;
 	p1_tracked = 0;
@@ -74,10 +72,13 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	has_meaningful_mtime = 1;
 	has_meaningful_data = 1;
 	parentfiledata = Py_None;
-	if (!PyArg_ParseTupleAndKeywords(
-	        args, kwds, "|iiiiiO", keywords_name, &wc_tracked, &p1_tracked,
-	        &p2_info, &has_meaningful_data, &has_meaningful_mtime,
-	        &parentfiledata)) {
+	fallback_exec = Py_None;
+	fallback_symlink = Py_None;
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|iiiiiOOO", keywords_name,
+	                                 &wc_tracked, &p1_tracked, &p2_info,
+	                                 &has_meaningful_data,
+	                                 &has_meaningful_mtime, &parentfiledata,
+	                                 &fallback_exec, &fallback_symlink)) {
 		return NULL;
 	}
 	t = (dirstateItemObject *)subtype->tp_alloc(subtype, 1);
@@ -94,6 +95,19 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	}
 	if (p2_info) {
 		t->flags |= dirstate_flag_p2_info;
+	}
+
+	if (fallback_exec != Py_None) {
+		t->flags |= dirstate_flag_has_fallback_exec;
+		if (PyObject_IsTrue(fallback_exec)) {
+			t->flags |= dirstate_flag_fallback_exec;
+		}
+	}
+	if (fallback_symlink != Py_None) {
+		t->flags |= dirstate_flag_has_fallback_symlink;
+		if (PyObject_IsTrue(fallback_symlink)) {
+			t->flags |= dirstate_flag_fallback_symlink;
+		}
 	}
 
 	if (parentfiledata != Py_None) {

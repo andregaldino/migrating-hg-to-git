@@ -23,6 +23,8 @@ py_class!(pub class DirstateItem |py| {
         has_meaningful_data: bool = true,
         has_meaningful_mtime: bool = true,
         parentfiledata: Option<(u32, u32, u32)> = None,
+        fallback_exec: Option<bool> = None,
+        fallback_symlink: Option<bool> = None,
 
     ) -> PyResult<DirstateItem> {
         let mut mode_size_opt = None;
@@ -36,7 +38,13 @@ py_class!(pub class DirstateItem |py| {
             }
         }
         let entry = DirstateEntry::from_v2_data(
-            wc_tracked, p1_tracked, p2_info, mode_size_opt, mtime_opt,
+            wc_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size_opt,
+            mtime_opt,
+            fallback_exec,
+            fallback_symlink,
         );
         DirstateItem::create_instance(py, Cell::new(entry))
     }

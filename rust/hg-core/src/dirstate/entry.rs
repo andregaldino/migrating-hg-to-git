@@ -183,6 +183,8 @@ impl DirstateEntry {
         p2_info: bool,
         mode_size: Option<(u32, u32)>,
         mtime: Option<u32>,
+        fallback_exec: Option<bool>,
+        fallback_symlink: Option<bool>,
     ) -> Self {
         if let Some((mode, size)) = mode_size {
             // TODO: return an error for out of range values?
@@ -196,6 +198,18 @@ impl DirstateEntry {
         flags.set(Flags::WDIR_TRACKED, wdir_tracked);
         flags.set(Flags::P1_TRACKED, p1_tracked);
         flags.set(Flags::P2_INFO, p2_info);
+        if let Some(exec) = fallback_exec {
+            flags.insert(Flags::HAS_FALLBACK_EXEC);
+            if exec {
+                flags.insert(Flags::FALLBACK_EXEC);
+            }
+        }
+        if let Some(exec) = fallback_symlink {
+            flags.insert(Flags::HAS_FALLBACK_SYMLINK);
+            if exec {
+                flags.insert(Flags::FALLBACK_SYMLINK);
+            }
+        }
         Self {
             flags,
             mode_size,
