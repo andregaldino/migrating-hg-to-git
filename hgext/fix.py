@@ -434,7 +434,7 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
             numitems[rev] += 1
     workqueue = [
         (min(dstrevs), path, dstrevs)
-        for (filerev, baserevs, path), dstrevs in dstrevmap.items()
+        for (_filerev, _baserevs, path), dstrevs in dstrevmap.items()
     ]
     # Move work items for earlier changesets to the front of the queue, so we
     # might be able to replace those changesets (in topological order) while
