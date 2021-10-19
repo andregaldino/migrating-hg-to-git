@@ -379,14 +379,26 @@ impl Node {
         } else {
             None
         };
+        let fallback_exec = if self.flags().contains(Flags::HAS_FALLBACK_EXEC)
+        {
+            Some(self.flags().contains(Flags::FALLBACK_EXEC))
+        } else {
+            None
+        };
+        let fallback_symlink =
+            if self.flags().contains(Flags::HAS_FALLBACK_SYMLINK) {
+                Some(self.flags().contains(Flags::FALLBACK_SYMLINK))
+            } else {
+                None
+            };
         Ok(DirstateEntry::from_v2_data(
             wdir_tracked,
             p1_tracked,
             p2_info,
             mode_size,
             mtime,
-            None,
-            None,
+            fallback_exec,
+            fallback_symlink,
         ))
     }
 
