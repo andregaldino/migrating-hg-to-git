@@ -576,12 +576,13 @@ impl DirstateEntry {
         (self.state().into(), self.mode(), self.size(), self.mtime())
     }
 
-    pub fn mtime_is_ambiguous(&self, now: i32) -> bool {
+    /// True if the stored mtime would be ambiguous with the current time
+    pub fn need_delay(&self, now: i32) -> bool {
         self.state() == EntryState::Normal && self.mtime() == now
     }
 
     pub fn clear_ambiguous_mtime(&mut self, now: i32) -> bool {
-        let ambiguous = self.mtime_is_ambiguous(now);
+        let ambiguous = self.need_delay(now);
         if ambiguous {
             // The file was last modified "simultaneously" with the current
             // write to dirstate (i.e. within the same second for file-

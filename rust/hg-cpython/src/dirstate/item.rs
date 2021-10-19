@@ -192,7 +192,7 @@ py_class!(pub class DirstateItem |py| {
     }
 
     def need_delay(&self, now: i32) -> PyResult<bool> {
-        Ok(self.entry(py).get().mtime_is_ambiguous(now))
+        Ok(self.entry(py).get().need_delay(now))
     }
 
     @classmethod

@@ -947,7 +947,7 @@ impl OwningDirstateMap {
                     node.full_path(map.on_disk)?,
                     node.copy_source(map.on_disk)?,
                 );
-                if entry.mtime_is_ambiguous(now) {
+                if entry.need_delay(now) {
                     ambiguous_mtimes.push(
                         node.full_path_borrowed(map.on_disk)?
                             .detach_from_tree(),
@@ -991,7 +991,7 @@ impl OwningDirstateMap {
         for node in map.iter_nodes() {
             let node = node?;
             if let Some(entry) = node.entry()? {
-                if entry.mtime_is_ambiguous(now) {
+                if entry.need_delay(now) {
                     paths.push(
                         node.full_path_borrowed(map.on_disk)?
                             .detach_from_tree(),
