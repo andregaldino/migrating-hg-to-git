@@ -60,6 +60,7 @@ DIRSTATE_V2_HAS_FALLBACK_EXEC = 1 << 11
 DIRSTATE_V2_FALLBACK_EXEC = 1 << 12
 DIRSTATE_V2_HAS_FALLBACK_SYMLINK = 1 << 13
 DIRSTATE_V2_FALLBACK_SYMLINK = 1 << 14
+DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS = 1 << 15
 
 
 @attr.s(slots=True, init=False)
@@ -140,6 +141,10 @@ class DirstateItem(object):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
         has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_FILE_MTIME)
+        if flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS:
+            # The current code is not able to do the more subtle comparison that the
+            # MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
+            has_meaningful_mtime = False
         mode = None
 
         if flags & +DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED:

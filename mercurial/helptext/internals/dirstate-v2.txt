@@ -390,6 +390,7 @@ Node components are:
     FALLBACK_EXEC = 1 << 12
     HAS_FALLBACK_SYMLINK = 1 << 13
     FALLBACK_SYMLINK = 1 << 14
+    MTIME_SECOND_AMBIGUOUS = 1 << 15
 
   The meaning of each bit is described below.
 
@@ -592,3 +593,10 @@ by enabling it to skip `readdir` in more cases.
     this entry should be considered a symlink if that information cannot be
     extracted from the file system. If unset it should be considered a normal
     file instead.
+
+`MTIME_SECOND_AMBIGUOUS`
+    This flag is relevant only when `HAS_FILE_MTIME` is set.  When set, the
+    `mtime` stored in the entry is only valid for comparison with timestamps
+    that have nanosecond information. If available timestamp does not carries
+    nanosecond information, the `mtime` should be ignored and no optimisation
+    can be applied.

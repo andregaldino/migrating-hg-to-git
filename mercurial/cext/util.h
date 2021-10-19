@@ -47,6 +47,7 @@ static const int dirstate_flag_fallback_exec = 1 << 11;
 static const int dirstate_flag_has_fallback_exec = 1 << 12;
 static const int dirstate_flag_fallback_symlink = 1 << 13;
 static const int dirstate_flag_has_fallback_symlink = 1 << 14;
+static const int dirstate_flag_mtime_second_ambiguous = 1 << 15;
 
 extern PyTypeObject dirstateItemType;
 #define dirstate_tuple_check(op) (Py_TYPE(op) == &dirstateItemType)

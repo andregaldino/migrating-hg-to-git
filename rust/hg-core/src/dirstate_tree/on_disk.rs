@@ -117,6 +117,7 @@ bitflags! {
         const FALLBACK_EXEC = 1 << 12;
         const HAS_FALLBACK_SYMLINK = 1 << 13;
         const FALLBACK_SYMLINK = 1 << 14;
+        const MTIME_SECOND_AMBIGUOUS = 1 << 15;
     }
 }
 
@@ -371,6 +372,9 @@ impl Node {
         };
         let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME)
             && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
+            // The current code is not able to do the more subtle comparison that the
+            // MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
+            && !self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS)
         {
             // TODO: replace this by `self.mtime.try_into()?` to use
             // sub-second precision from the file.
