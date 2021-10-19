@@ -54,27 +54,17 @@ pub struct FilelogEntry(Vec<u8>);
 
 impl FilelogEntry {
     /// Split into metadata and data
-    /// Returns None if there is no metadata, so the entire entry is data.
-    fn split_metadata(&self) -> Result<Option<(&[u8], &[u8])>, HgError> {
+    pub fn split(&self) -> Result<(Option<&[u8]>, &[u8]), HgError> {
         const DELIMITER: &[u8; 2] = &[b'\x01', b'\n'];
 
         if let Some(rest) = self.0.drop_prefix(DELIMITER) {
             if let Some((metadata, data)) = rest.split_2_by_slice(DELIMITER) {
-                Ok(Some((metadata, data)))
+                Ok((Some(metadata), data))
             } else {
                 Err(HgError::corrupted(
                     "Missing metadata end delimiter in filelog entry",
                 ))
             }
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Split into metadata and data
-    pub fn split(&self) -> Result<(Option<&[u8]>, &[u8]), HgError> {
-        if let Some((metadata, data)) = self.split_metadata()? {
-            Ok((Some(metadata), data))
         } else {
             Ok((None, &self.0))
         }
@@ -89,7 +79,7 @@ impl FilelogEntry {
     /// Consume the entry, and convert it into data, discarding any metadata,
     /// if present.
     pub fn into_data(self) -> Result<Vec<u8>, HgError> {
-        if let Some((_metadata, data)) = self.split_metadata()? {
+        if let (Some(_metadata), data) = self.split()? {
             Ok(data.to_owned())
         } else {
             Ok(self.0)
