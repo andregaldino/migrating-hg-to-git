@@ -44,7 +44,7 @@ Testing on-failure=halt
   merging a
   merging b
   merging a failed!
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
   $ hg resolve --list
@@ -72,7 +72,7 @@ Testing on-failure=prompt
   continue merge operation (yn)? y
   merging b failed!
   continue merge operation (yn)? n
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
   $ hg resolve --list
@@ -101,7 +101,7 @@ Check that successful tool with failed post-check halts the merge
   was merge successful (yn)? n
   merging b failed!
   continue merge operation (yn)? n
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
   $ hg resolve --list
@@ -124,7 +124,7 @@ Check that conflicts with conflict check also halts the merge
   merging a
   merging b
   merging a failed!
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
   $ hg resolve --list
@@ -145,7 +145,7 @@ Check that always-prompt also can halt the merge
   was merge of 'a' successful (yn)? y
   was merge of 'b' successful (yn)? n
   merging b failed!
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
 
   $ hg resolve --list
@@ -167,6 +167,9 @@ Check that unshelve isn't broken by halting the merge
   $ cat <<EOS >> $HGRCPATH
   > [extensions]
   > shelve =
+  > [merge-tools]
+  > false.check=conflicts
+  > false.premerge=false
   > EOS
   $ echo foo > shelve_file1
   $ echo foo > shelve_file2
@@ -186,15 +189,14 @@ Check that unshelve isn't broken by halting the merge
   merging shelve_file1
   merging shelve_file2
   merging shelve_file1 failed!
-  merge halted after failed merge (see hg resolve)
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [240]
-FIXME: This should claim it's in an 'unshelve' state
   $ hg status --config commands.status.verbose=True
   M shelve_file1
   M shelve_file2
   ? shelve_file1.orig
   ? shelve_file2.orig
-  # The repository is in an unfinished *update* state.
+  # The repository is in an unfinished *unshelve* state.
   
   # Unresolved merge conflicts:
   # 
@@ -203,16 +205,16 @@ FIXME: This should claim it's in an 'unshelve' state
   # 
   # To mark files as resolved:  hg resolve --mark FILE
   
-  # To continue:    hg update .
+  # To continue:    hg unshelve --continue
+  # To abort:       hg unshelve --abort
   
-FIXME: This should not be referencing a stripped commit.
   $ hg resolve --tool false --all --re-merge
-  abort: unknown revision '4a1d727ea5bb6aed9adfacb2a8f776bae44301d6'
-  [255]
-Ensure the shelve is still around, since we haven't finished the operation yet.
+  merging shelve_file1
+  merging shelve_file2
+  merging shelve_file1 failed!
+  merge halted after failed merge (see hg resolve)
+  [240]
   $ hg shelve --list
   default         (* ago)    changes to: foo (glob)
-FIXME: `hg unshelve --abort` should work.
   $ hg unshelve --abort
-  abort: no unshelve in progress
-  [20]
+  unshelve of 'default' aborted
