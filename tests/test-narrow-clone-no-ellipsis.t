@@ -24,7 +24,7 @@ narrow clone a file, f10
   $ cd narrow
   $ cat .hg/requires | grep -v generaldelta
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   narrowhg-experimental
   persistent-nodemap (rust !)

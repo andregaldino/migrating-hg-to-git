@@ -218,7 +218,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)
-  format.exp-dirstate-v2=1 (dirstate-v2 !)
+  format.exp-rc-dirstate-v2=1 (dirstate-v2 !)
   largefiles.usercache=$TESTTMP/.cache/largefiles
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True

@@ -1189,7 +1189,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             b"fast implementation."
         )
         hint = _(
-            b"check `hg help config.format.exp-dirstate-v2` " b"for details"
+            b"check `hg help config.format.exp-rc-dirstate-v2` " b"for details"
         )
         if not dirstate.HAS_FAST_DIRSTATE_V2:
             if slow_path == b'warn':
@@ -3630,9 +3630,9 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
-    # experimental config: format.exp-dirstate-v2
+    # experimental config: format.exp-rc-dirstate-v2
     # Keep this logic in sync with `has_dirstate_v2()` in `tests/hghave.py`
-    if ui.configbool(b'format', b'exp-dirstate-v2'):
+    if ui.configbool(b'format', b'exp-rc-dirstate-v2'):
         requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
 
     # experimental config: format.exp-use-copies-side-data-changeset

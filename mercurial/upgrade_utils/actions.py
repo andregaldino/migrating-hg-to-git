@@ -178,7 +178,9 @@ class dirstatev2(requirementformatvariant):
 
     description = _(
         b'version 1 of the dirstate file format requires '
-        b'reading and parsing it all at once.'
+        b'reading and parsing it all at once.\n'
+        b'Version 2 has a better structure,'
+        b'better information and lighter update mechanism'
     )
 
     upgrademessage = _(b'"hg status" will be faster')
