@@ -56,6 +56,9 @@ NODE = struct.Struct('>LHHLHLLLLHlll')
 assert TREE_METADATA_SIZE == TREE_METADATA.size
 assert NODE_SIZE == NODE.size
 
+# match constant in mercurial/pure/parsers.py
+DIRSTATE_V2_DIRECTORY = 1 << 5
+
 
 def parse_dirstate(map, copy_map, data, tree_metadata):
     """parse a full v2-dirstate from a binary data into dictionnaries:
@@ -83,7 +86,7 @@ def parse_nodes(map, copy_map, data, start, len):
     This is used by parse_dirstate to recursively fill `map` and `copy_map`.
 
     All directory specific information is ignored and do not need any
-    processing (HAS_DIRECTORY_MTIME, ALL_UNKNOWN_RECORDED, ALL_IGNORED_RECORDED)
+    processing (DIRECTORY, ALL_UNKNOWN_RECORDED, ALL_IGNORED_RECORDED)
     """
     for i in range(len):
         node_start = start + NODE_SIZE * i
@@ -150,7 +153,7 @@ class Node(object):
             flags, size, mtime_s, mtime_ns = entry.v2_data()
         else:
             # There are no mtime-cached directories in the Python implementation
-            flags = 0
+            flags = DIRSTATE_V2_DIRECTORY
             size = 0
             mtime_s = 0
             mtime_ns = 0

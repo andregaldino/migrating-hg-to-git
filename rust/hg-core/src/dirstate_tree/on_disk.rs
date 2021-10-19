@@ -106,8 +106,8 @@ bitflags! {
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
         const HAS_MODE_AND_SIZE = 1 << 3;
-        const HAS_FILE_MTIME = 1 << 4;
-        const HAS_DIRECTORY_MTIME = 1 << 5;
+        const HAS_MTIME = 1 << 4;
+        const DIRECTORY = 1 << 5;
         const MODE_EXEC_PERM = 1 << 6;
         const MODE_IS_SYMLINK = 1 << 7;
         const EXPECTED_STATE_IS_MODIFIED = 1 << 8;
@@ -329,16 +329,14 @@ impl Node {
     pub(super) fn cached_directory_mtime(
         &self,
     ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
-        // For now we do not have code to handle ALL_UNKNOWN_RECORDED, so we
-        // ignore the mtime if the flag is set.
-        if self.flags().contains(Flags::HAS_DIRECTORY_MTIME)
+        // For now we do not have code to handle the absence of
+        // ALL_UNKNOWN_RECORDED, so we ignore the mtime if the flag is
+        // unset.
+        if self.flags().contains(Flags::DIRECTORY)
+            && self.flags().contains(Flags::HAS_MTIME)
             && self.flags().contains(Flags::ALL_UNKNOWN_RECORDED)
         {
-            if self.flags().contains(Flags::HAS_FILE_MTIME) {
-                Err(DirstateV2ParseError)
-            } else {
-                Ok(Some(self.mtime.try_into()?))
-            }
+            Ok(Some(self.mtime.try_into()?))
         } else {
             Ok(None)
         }
@@ -370,7 +368,8 @@ impl Node {
         } else {
             None
         };
-        let mtime = if self.flags().contains(Flags::HAS_FILE_MTIME)
+        let mtime = if self.flags().contains(Flags::HAS_MTIME)
+            && !self.flags().contains(Flags::DIRECTORY)
             && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
             // The current code is not able to do the more subtle comparison that the
             // MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
@@ -453,7 +452,7 @@ impl Node {
             0.into()
         };
         let mtime = if let Some(m) = mtime_opt {
-            flags.insert(Flags::HAS_FILE_MTIME);
+            flags.insert(Flags::HAS_MTIME);
             m.into()
         } else {
             PackedTruncatedTimestamp::null()
@@ -631,13 +630,14 @@ impl Writer<'_, '_> {
                             // We never set ALL_IGNORED_RECORDED since we
                             // don't track that case
                             // currently.
-                            Flags::HAS_DIRECTORY_MTIME
+                            Flags::DIRECTORY
+                                | Flags::HAS_MTIME
                                 | Flags::ALL_UNKNOWN_RECORDED,
                             0.into(),
                             (*mtime).into(),
                         ),
                         dirstate_map::NodeData::None => (
-                            Flags::empty(),
+                            Flags::DIRECTORY,
                             0.into(),
                             PackedTruncatedTimestamp::null(),
                         ),

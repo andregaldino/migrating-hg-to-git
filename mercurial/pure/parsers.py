@@ -49,8 +49,8 @@ DIRSTATE_V2_WDIR_TRACKED = 1 << 0
 DIRSTATE_V2_P1_TRACKED = 1 << 1
 DIRSTATE_V2_P2_INFO = 1 << 2
 DIRSTATE_V2_HAS_MODE_AND_SIZE = 1 << 3
-DIRSTATE_V2_HAS_FILE_MTIME = 1 << 4
-_DIRSTATE_V2_HAS_DIRCTORY_MTIME = 1 << 5  # Unused when Rust is not available
+DIRSTATE_V2_HAS_MTIME = 1 << 4
+DIRSTATE_V2_DIRECTORY = 1 << 5
 DIRSTATE_V2_MODE_EXEC_PERM = 1 << 6
 DIRSTATE_V2_MODE_IS_SYMLINK = 1 << 7
 DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED = 1 << 8
@@ -140,7 +140,7 @@ class DirstateItem(object):
     def from_v2_data(cls, flags, size, mtime_s, mtime_ns):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
-        has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_FILE_MTIME)
+        has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_MTIME)
         if flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS:
             # The current code is not able to do the more subtle comparison that the
             # MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
@@ -462,7 +462,7 @@ class DirstateItem(object):
             if stat.S_ISLNK(self.mode):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime_s is not None:
-            flags |= DIRSTATE_V2_HAS_FILE_MTIME
+            flags |= DIRSTATE_V2_HAS_MTIME
 
         if self._fallback_exec is not None:
             flags |= DIRSTATE_V2_HAS_FALLBACK_EXEC

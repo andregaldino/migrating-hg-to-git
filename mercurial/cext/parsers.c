@@ -129,7 +129,7 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 		t->size = 0;
 	}
 	if (has_meaningful_mtime) {
-		t->flags |= dirstate_flag_has_file_mtime;
+		t->flags |= dirstate_flag_has_mtime;
 		t->mtime_s = mtime_s;
 		t->mtime_ns = mtime_ns;
 	} else {
@@ -246,7 +246,7 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 {
 	if (dirstate_item_c_removed(self)) {
 		return 0;
-	} else if (!(self->flags & dirstate_flag_has_file_mtime) ||
+	} else if (!(self->flags & dirstate_flag_has_mtime) ||
 	           !(self->flags & dirstate_flag_p1_tracked) ||
 	           !(self->flags & dirstate_flag_wc_tracked) ||
 	           (self->flags & dirstate_flag_p2_info)) {
@@ -318,7 +318,7 @@ static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
 	if (!PyArg_ParseTuple(other, "ii", &other_s, &other_ns)) {
 		return NULL;
 	}
-	if ((self->flags & dirstate_flag_has_file_mtime) &&
+	if ((self->flags & dirstate_flag_has_mtime) &&
 	    self->mtime_s == other_s &&
 	    (self->mtime_ns == other_ns || self->mtime_ns == 0 ||
 	     other_ns == 0)) {
@@ -375,7 +375,7 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 			t->flags = (dirstate_flag_wc_tracked |
 			            dirstate_flag_p1_tracked |
 			            dirstate_flag_has_meaningful_data |
-			            dirstate_flag_has_file_mtime);
+			            dirstate_flag_has_mtime);
 			t->mode = mode;
 			t->size = size;
 			t->mtime_s = mtime;
@@ -420,7 +420,7 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
 	if (t->flags & dirstate_flag_expected_state_is_modified) {
 		t->flags &= ~(dirstate_flag_expected_state_is_modified |
 		              dirstate_flag_has_meaningful_data |
-		              dirstate_flag_has_file_mtime);
+		              dirstate_flag_has_mtime);
 	}
 	if (t->flags & dirstate_flag_mtime_second_ambiguous) {
 		/* The current code is not able to do the more subtle comparison
@@ -428,7 +428,7 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
 		 * mtime */
 		t->flags &= ~(dirstate_flag_mtime_second_ambiguous |
 		              dirstate_flag_has_meaningful_data |
-		              dirstate_flag_has_file_mtime);
+		              dirstate_flag_has_mtime);
 	}
 	t->mode = 0;
 	if (t->flags & dirstate_flag_has_meaningful_data) {
@@ -450,7 +450,7 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
    to make sure it is correct. */
 static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 {
-	self->flags &= ~dirstate_flag_has_file_mtime;
+	self->flags &= ~dirstate_flag_has_mtime;
 	Py_RETURN_NONE;
 }
 
@@ -465,7 +465,7 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 	}
 	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
 	              dirstate_flag_has_meaningful_data |
-	              dirstate_flag_has_file_mtime;
+	              dirstate_flag_has_mtime;
 	self->mode = mode;
 	self->size = size;
 	self->mtime_s = mtime_s;
@@ -476,7 +476,7 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 static PyObject *dirstate_item_set_tracked(dirstateItemObject *self)
 {
 	self->flags |= dirstate_flag_wc_tracked;
-	self->flags &= ~dirstate_flag_has_file_mtime;
+	self->flags &= ~dirstate_flag_has_mtime;
 	Py_RETURN_NONE;
 }
 
@@ -495,7 +495,7 @@ static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
 	if (self->flags & dirstate_flag_p2_info) {
 		self->flags &= ~(dirstate_flag_p2_info |
 		                 dirstate_flag_has_meaningful_data |
-		                 dirstate_flag_has_file_mtime);
+		                 dirstate_flag_has_mtime);
 		self->mode = 0;
 		self->size = 0;
 		self->mtime_s = 0;
