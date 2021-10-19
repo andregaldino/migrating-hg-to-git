@@ -252,14 +252,9 @@ def dispatch(req):
         err = e
         status = -1
 
-    # Somehow we have to catcht he exception here; catching it inside
-    # _flushstdio() doesn't work.
-    try:
-        ret = _flushstdio(req.ui, err)
-        if ret and not status:
-            status = ret
-    except BaseException:
-        pass
+    ret = _flushstdio(req.ui, err)
+    if ret and not status:
+        status = ret
     return status
 
 
@@ -319,10 +314,7 @@ def _rundispatch(req):
             ret = -1
         finally:
             duration = util.timer() - starttime
-            try:
-                req.ui.flush()  # record blocked times
-            except BaseException:
-                pass
+            req.ui.flush()  # record blocked times
             if req.ui.logblockedtimes:
                 req.ui._blockedtimes[b'command_duration'] = duration * 1000
                 req.ui.log(
@@ -346,10 +338,7 @@ def _rundispatch(req):
             except:  # exiting, so no re-raises
                 ret = ret or -1
             # do flush again since ui.log() and exit handlers may write to ui
-            try:
-                req.ui.flush()
-            except BaseException:
-                pass
+            req.ui.flush()
         return ret
 
 
@@ -470,10 +459,7 @@ def _runcatch(req):
                 try:
                     return _dispatch(req)
                 finally:
-                    try:
-                        ui.flush()  # record blocked times
-                    except BaseException:
-                        pass
+                    ui.flush()
             except:  # re-raises
                 # enter the debugger when we hit an exception
                 if req.earlyoptions[b'debugger']:
