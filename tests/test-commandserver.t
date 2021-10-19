@@ -792,7 +792,7 @@ option to not shutdown on SIGINT:
   *** runcommand debugsuicide
   interrupted!
   killed!
-   [250]
+   [255]
 
 #endif
 

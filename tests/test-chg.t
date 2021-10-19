@@ -188,12 +188,12 @@ in this test.
   $ chg bulkwrite --pager=on --color no --config ui.formatted=True
   paged! 'going to write massive data\n'
   killed! (?)
-  [250]
+  [255]
 
   $ chg bulkwrite --pager=on --color no --config ui.formatted=True
   paged! 'going to write massive data\n'
   killed! (?)
-  [250]
+  [255]
 
   $ cd ..
 
