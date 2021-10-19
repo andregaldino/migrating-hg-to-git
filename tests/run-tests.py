@@ -2233,12 +2233,15 @@ iolock = threading.RLock()
 firstlock = threading.RLock()
 firsterror = False
 
+if PYTHON3:
+    base_class = unittest.TextTestResult
+else:
+    base_class = unittest._TextTestResult
 
-class TestResult(unittest._TextTestResult):
+
+class TestResult(base_class):
     """Holds results when executing via unittest."""
 
-    # Don't worry too much about accessing the non-public _TextTestResult.
-    # It is relatively common in Python testing tools.
     def __init__(self, options, *args, **kwargs):
         super(TestResult, self).__init__(*args, **kwargs)
 
