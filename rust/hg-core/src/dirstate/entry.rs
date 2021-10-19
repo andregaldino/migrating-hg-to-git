@@ -580,23 +580,6 @@ impl DirstateEntry {
     pub fn need_delay(&self, now: i32) -> bool {
         self.state() == EntryState::Normal && self.mtime() == now
     }
-
-    pub fn clear_ambiguous_mtime(&mut self, now: i32) -> bool {
-        let ambiguous = self.need_delay(now);
-        if ambiguous {
-            // The file was last modified "simultaneously" with the current
-            // write to dirstate (i.e. within the same second for file-
-            // systems with a granularity of 1 sec). This commonly happens
-            // for at least a couple of files on 'update'.
-            // The user could change the file without changing its size
-            // within the same second. Invalidate the file's mtime in
-            // dirstate, forcing future 'status' calls to compare the
-            // contents of the file if the size is the same. This prevents
-            // mistakenly treating such files as clean.
-            self.set_possibly_dirty()
-        }
-        ambiguous
-    }
 }
 
 impl EntryState {
