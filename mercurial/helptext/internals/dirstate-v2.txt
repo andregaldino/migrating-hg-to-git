@@ -378,19 +378,19 @@ Node components are:
     WDIR_TRACKED = 1 << 0
     P1_TRACKED = 1 << 1
     P2_INFO = 1 << 2
-    HAS_MODE_AND_SIZE = 1 << 3
-    HAS_MTIME = 1 << 4
-    DIRECTORY = 1 << 5
-    MODE_EXEC_PERM = 1 << 6
-    MODE_IS_SYMLINK = 1 << 7
-    EXPECTED_STATE_IS_MODIFIED = 1 << 8
-    ALL_UNKNOWN_RECORDED = 1 << 9
-    ALL_IGNORED_RECORDED = 1 << 10
-    HAS_FALLBACK_EXEC = 1 << 11
-    FALLBACK_EXEC = 1 << 12
-    HAS_FALLBACK_SYMLINK = 1 << 13
-    FALLBACK_SYMLINK = 1 << 14
-    MTIME_SECOND_AMBIGUOUS = 1 << 15
+    MODE_EXEC_PERM = 1 << 3
+    MODE_IS_SYMLINK = 1 << 4
+    HAS_FALLBACK_EXEC = 1 << 5
+    FALLBACK_EXEC = 1 << 6
+    HAS_FALLBACK_SYMLINK = 1 << 7
+    FALLBACK_SYMLINK = 1 << 8
+    EXPECTED_STATE_IS_MODIFIED = 1 << 9
+    HAS_MODE_AND_SIZE = 1 << 10
+    HAS_MTIME = 1 << 11
+    MTIME_SECOND_AMBIGUOUS = 1 << 12
+    DIRECTORY = 1 << 13
+    ALL_UNKNOWN_RECORDED = 1 << 14
+    ALL_IGNORED_RECORDED = 1 << 15
 
   The meaning of each bit is described below.
 

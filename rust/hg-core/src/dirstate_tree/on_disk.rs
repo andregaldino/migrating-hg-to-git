@@ -105,19 +105,19 @@ bitflags! {
         const WDIR_TRACKED = 1 << 0;
         const P1_TRACKED = 1 << 1;
         const P2_INFO = 1 << 2;
-        const HAS_MODE_AND_SIZE = 1 << 3;
-        const HAS_MTIME = 1 << 4;
-        const DIRECTORY = 1 << 5;
-        const MODE_EXEC_PERM = 1 << 6;
-        const MODE_IS_SYMLINK = 1 << 7;
-        const EXPECTED_STATE_IS_MODIFIED = 1 << 8;
-        const ALL_UNKNOWN_RECORDED = 1 << 9;
-        const ALL_IGNORED_RECORDED = 1 << 10;
-        const HAS_FALLBACK_EXEC = 1 << 11;
-        const FALLBACK_EXEC = 1 << 12;
-        const HAS_FALLBACK_SYMLINK = 1 << 13;
-        const FALLBACK_SYMLINK = 1 << 14;
-        const MTIME_SECOND_AMBIGUOUS = 1 << 15;
+        const MODE_EXEC_PERM = 1 << 3;
+        const MODE_IS_SYMLINK = 1 << 4;
+        const HAS_FALLBACK_EXEC = 1 <<  5;
+        const FALLBACK_EXEC = 1 <<  6;
+        const HAS_FALLBACK_SYMLINK = 1 <<  7;
+        const FALLBACK_SYMLINK = 1 <<  8;
+        const EXPECTED_STATE_IS_MODIFIED = 1 << 9;
+        const HAS_MODE_AND_SIZE = 1 <<10;
+        const HAS_MTIME = 1 <<11;
+        const MTIME_SECOND_AMBIGUOUS = 1 << 12;
+        const DIRECTORY = 1 <<13;
+        const ALL_UNKNOWN_RECORDED = 1 <<14;
+        const ALL_IGNORED_RECORDED = 1 <<15;
     }
 }
 
