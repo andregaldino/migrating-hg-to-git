@@ -162,3 +162,57 @@ Check that successful tool otherwise allows the merge to continue
   merging b
   $TESTTMP/repo/a *a~base* *a~other* (glob)
   $TESTTMP/repo/b *b~base* *b~other* (glob)
+
+Check that unshelve isn't broken by halting the merge
+  $ cat <<EOS >> $HGRCPATH
+  > [extensions]
+  > shelve =
+  > EOS
+  $ echo foo > shelve_file1
+  $ echo foo > shelve_file2
+  $ hg ci -qAm foo
+  $ echo bar >> shelve_file1
+  $ echo bar >> shelve_file2
+  $ hg shelve --list
+  $ hg shelve
+  shelved as default
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo baz >> shelve_file1
+  $ echo baz >> shelve_file2
+  $ hg ci -m baz
+  $ hg unshelve --tool false --config merge-tools.false.premerge=keep
+  unshelving change 'default'
+  rebasing shelved changes
+  merging shelve_file1
+  merging shelve_file2
+  merging shelve_file1 failed!
+  merge halted after failed merge (see hg resolve)
+  [240]
+FIXME: This should claim it's in an 'unshelve' state
+  $ hg status --config commands.status.verbose=True
+  M shelve_file1
+  M shelve_file2
+  ? shelve_file1.orig
+  ? shelve_file2.orig
+  # The repository is in an unfinished *update* state.
+  
+  # Unresolved merge conflicts:
+  # 
+  #     shelve_file1
+  #     shelve_file2
+  # 
+  # To mark files as resolved:  hg resolve --mark FILE
+  
+  # To continue:    hg update .
+  
+FIXME: This should not be referencing a stripped commit.
+  $ hg resolve --tool false --all --re-merge
+  abort: unknown revision '4a1d727ea5bb6aed9adfacb2a8f776bae44301d6'
+  [255]
+Ensure the shelve is still around, since we haven't finished the operation yet.
+  $ hg shelve --list
+  default         (* ago)    changes to: foo (glob)
+FIXME: `hg unshelve --abort` should work.
+  $ hg unshelve --abort
+  abort: no unshelve in progress
+  [20]
