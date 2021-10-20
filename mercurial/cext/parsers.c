@@ -260,11 +260,16 @@ static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 {
 	int flags = self->flags;
 	int mode = dirstate_item_c_v1_mode(self);
+#ifdef S_IXUSR
+	/* This is for platforms with an exec bit */
 	if ((mode & S_IXUSR) != 0) {
 		flags |= dirstate_flag_mode_exec_perm;
 	} else {
 		flags &= ~dirstate_flag_mode_exec_perm;
 	}
+#else
+	flags &= ~dirstate_flag_mode_exec_perm;
+#endif
 	if (S_ISLNK(mode)) {
 		flags |= dirstate_flag_mode_is_symlink;
 	} else {
