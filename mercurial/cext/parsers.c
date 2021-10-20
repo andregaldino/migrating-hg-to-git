@@ -270,11 +270,16 @@ static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 #else
 	flags &= ~dirstate_flag_mode_exec_perm;
 #endif
+#ifdef S_ISLNK
+	/* This is for platforms with support for symlinks */
 	if (S_ISLNK(mode)) {
 		flags |= dirstate_flag_mode_is_symlink;
 	} else {
 		flags &= ~dirstate_flag_mode_is_symlink;
 	}
+#else
+	flags &= ~dirstate_flag_mode_is_symlink;
+#endif
 	return Py_BuildValue("iiii", flags, self->size, self->mtime_s,
 	                     self->mtime_ns);
 };
