@@ -560,8 +560,8 @@ def overridestatus(
             for i, (s1, s2) in enumerate(zip(l1, l2)):
                 if set(s1) != set(s2):
                     f.write(b'sets at position %d are unequal\n' % i)
-                    f.write(b'watchman returned: %s\n' % s1)
-                    f.write(b'stat returned: %s\n' % s2)
+                    f.write(b'watchman returned: %r\n' % s1)
+                    f.write(b'stat returned: %r\n' % s2)
         finally:
             f.close()
 
