@@ -333,7 +333,11 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         # for better performance, directly access the inner dirstate map if the
         # standard dirstate implementation is in use.
         dmap = dmap._map
-    nonnormalset = self._map.nonnormalset
+    nonnormalset = {
+        f
+        for f, e in self._map.items()
+        if e.v1_state() != "n" or e.v1_mtime() == -1
+    }
 
     copymap = self._map.copymap
     getkind = stat.S_IFMT
