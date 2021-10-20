@@ -300,6 +300,8 @@ class dirstate(object):
                         return b''
                 return fallback(x)
 
+            return f
+
     @propertycache
     def _cwd(self):
         # internal config: ui.forcecwd
