@@ -242,65 +242,68 @@ class dirstate(object):
         return self._rootdir + f
 
     def flagfunc(self, buildfallback):
+        if not (self._checklink and self._checkexec):
+            fallback = buildfallback()
+
+        def check_both(x):
+            """This platform supports symlinks and exec permissions"""
+            try:
+                st = os.lstat(self._join(x))
+                if util.statislink(st):
+                    return b'l'
+                if util.statisexec(st):
+                    return b'x'
+            except OSError:
+                pass
+            return b''
+
+        def check_link(x):
+            """This platform only supports symlinks"""
+            if os.path.islink(self._join(x)):
+                return b'l'
+            entry = self.get_entry(x)
+            if entry.has_fallback_exec:
+                if entry.fallback_exec:
+                    return b'x'
+            elif b'x' in fallback(x):
+                return b'x'
+            return b''
+
+        def check_exec(x):
+            """This platform only supports exec permissions"""
+            if b'l' in fallback(x):
+                return b'l'
+            entry = self.get_entry(x)
+            if entry.has_fallback_symlink:
+                if entry.fallback_symlink:
+                    return b'l'
+            if util.isexec(self._join(x)):
+                return b'x'
+            return b''
+
+        def check_fallback(x):
+            """This platform supports neither symlinks nor exec permissions, so
+            check the fallback in the dirstate if it exists, otherwise figure it
+            out the more expensive way from the parents."""
+            entry = self.get_entry(x)
+            if entry.has_fallback_symlink:
+                if entry.fallback_symlink:
+                    return b'l'
+            if entry.has_fallback_exec:
+                if entry.fallback_exec:
+                    return b'x'
+                elif entry.has_fallback_symlink:
+                    return b''
+            return fallback(x)
+
         if self._checklink and self._checkexec:
-
-            def f(x):
-                try:
-                    st = os.lstat(self._join(x))
-                    if util.statislink(st):
-                        return b'l'
-                    if util.statisexec(st):
-                        return b'x'
-                except OSError:
-                    pass
-                return b''
-
-            return f
-
-        fallback = buildfallback()
-        if self._checklink:
-
-            def f(x):
-                if os.path.islink(self._join(x)):
-                    return b'l'
-                entry = self.get_entry(x)
-                if entry.has_fallback_exec:
-                    if entry.fallback_exec:
-                        return b'x'
-                elif b'x' in fallback(x):
-                    return b'x'
-                return b''
-
-            return f
-        if self._checkexec:
-
-            def f(x):
-                if b'l' in fallback(x):
-                    return b'l'
-                entry = self.get_entry(x)
-                if entry.has_fallback_symlink:
-                    if entry.fallback_symlink:
-                        return b'l'
-                if util.isexec(self._join(x)):
-                    return b'x'
-                return b''
-
-            return f
+            return check_both
+        elif self._checklink:
+            return check_link
+        elif self._checkexec:
+            return check_exec
         else:
-
-            def f(x):
-                entry = self.get_entry(x)
-                if entry.has_fallback_symlink:
-                    if entry.fallback_symlink:
-                        return b'l'
-                if entry.has_fallback_exec:
-                    if entry.fallback_exec:
-                        return b'x'
-                    elif entry.has_fallback_symlink:
-                        return b''
-                return fallback(x)
-
-            return f
+            return check_fallback
 
     @propertycache
     def _cwd(self):
