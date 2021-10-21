@@ -1,5 +1,5 @@
-#ifndef _HG_BDIFF_H_
-#define _HG_BDIFF_H_
+#ifndef HG_BDIFF_H
+#define HG_BDIFF_H
 
 #include "compat.h"
 

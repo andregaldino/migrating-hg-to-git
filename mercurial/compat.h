@@ -1,5 +1,5 @@
-#ifndef _HG_COMPAT_H_
-#define _HG_COMPAT_H_
+#ifndef HG_COMPAT_H
+#define HG_COMPAT_H
 
 #ifdef _WIN32
 #ifdef _MSC_VER

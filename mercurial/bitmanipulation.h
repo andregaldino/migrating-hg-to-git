@@ -1,5 +1,5 @@
-#ifndef _HG_BITMANIPULATION_H_
-#define _HG_BITMANIPULATION_H_
+#ifndef HG_BITMANIPULATION_H
+#define HG_BITMANIPULATION_H
 
 #include <string.h>
 
