@@ -475,7 +475,7 @@ share the same server
   $ hg init $TESTTMP/profiling
   $ cd $TESTTMP/profiling
   $ filteredchg() {
-  >   CHGDEBUG=1 chg "$@" 2>&1 | egrep 'Sample count|start cmdserver' || true
+  >   CHGDEBUG=1 chg "$@" 2>&1 | sed -rn 's_^No samples recorded.*$_Sample count: 0_; /Sample count/p; /start cmdserver/p'
   > }
   $ newchg() {
   >   chg --kill-chg-daemon

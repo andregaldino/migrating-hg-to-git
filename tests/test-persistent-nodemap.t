@@ -435,46 +435,6 @@ mercurial don't crash
   data-length: 121088
   data-unused: 0
   data-unused: 0.000%
-
-Sub-case: fallback for corrupted data file
-------------------------------------------
-
-Sabotaging the data file so that nodemap resolutions fail, triggering fallback to
-(non-persistent) C implementation.
-
-
-  $ UUID=`hg debugnodemap --metadata| grep 'uid:' | \
-  > sed 's/uid: //'`
-  $ FILE=.hg/store/00changelog-"${UUID}".nd
-  $ python -c "fobj = open('$FILE', 'r+b'); fobj.write(b'\xff' * 121088); fobj.close()"
-
-The nodemap data file is still considered in sync with the docket. This
-would fail without the fallback to the (non-persistent) C implementation:
-
-  $ hg log -r b355ef8adce0949b8bdf6afc72ca853740d65944 -T '{rev}\n' --traceback
-  5002
-
-The nodemap data file hasn't been fixed, more tests can be inserted:
-
-  $ hg debugnodemap --dump-disk | f --bytes=256 --hexdump --size
-  size=121088
-  0000: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0010: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0020: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0030: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0040: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0050: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0060: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0070: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0080: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  0090: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00a0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00b0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00c0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00d0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00e0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-  00f0: ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff |................|
-
   $ mv ../tmp-data-file $FILE
   $ mv ../tmp-docket .hg/store/00changelog.n
 

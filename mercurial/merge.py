@@ -1714,6 +1714,10 @@ def applyupdates(
             progress.increment(item=f, total=numupdates)
             ms.resolve(f, wctx)
 
+    except error.InterventionRequired:
+        # If the user has merge.on-failure=halt, catch the error and close the
+        # merge state "properly".
+        pass
     finally:
         ms.commit()
 

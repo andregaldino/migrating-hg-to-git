@@ -1,9 +1,15 @@
 from __future__ import absolute_import, print_function
 
+import sys
 import unittest
 
+if sys.version_info[0] < 3:
+    base_class = unittest._TextTestResult
+else:
+    base_class = unittest.TextTestResult
 
-class TestResult(unittest._TextTestResult):
+
+class TestResult(base_class):
     def __init__(self, options, *args, **kwargs):
         super(TestResult, self).__init__(*args, **kwargs)
         self._options = options

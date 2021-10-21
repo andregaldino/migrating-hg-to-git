@@ -138,7 +138,7 @@ def make_exe(dist):
     )
 
     # Add Mercurial to resources.
-    exe.add_python_resources(exe.pip_install(["--verbose", ROOT]))
+    exe.add_python_resources(exe.pip_install(["--verbose", "--no-use-pep517", ROOT]))
 
     # On Windows, we install extra packages for convenience.
     if IS_WINDOWS:
