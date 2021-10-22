@@ -1785,7 +1785,7 @@ fixed.
   $ cat >> $LOGGER <<EOF
   > # Appends the input file's name to the log file.
   > import sys
-  > with open('$LOGFILE', 'a') as f:
+  > with open(r'$LOGFILE', 'a') as f:
   >     f.write(sys.argv[1] + '\n')
   > sys.stdout.write(sys.stdin.read())
   > EOF
