@@ -31,6 +31,7 @@ if pycompat.TYPE_CHECKING:
 
 
 def _tobytes(exc):
+    # type: (...) -> bytes
     """Byte-stringify exception in the same way as BaseException_str()"""
     if not exc.args:
         return b''
@@ -47,7 +48,7 @@ class Hint(object):
     """
 
     def __init__(self, *args, **kw):
-        self.hint = kw.pop('hint', None)
+        self.hint = kw.pop('hint', None)  # type: Optional[bytes]
         super(Hint, self).__init__(*args, **kw)
 
 
@@ -71,6 +72,7 @@ class Error(Hint, Exception):
     if pycompat.ispy3:
 
         def __str__(self):
+            # type: () -> str
             # the output would be unreadable if the message was translated,
             # but do not replace it with encoding.strfromlocal(), which
             # may raise another exception.
@@ -105,6 +107,7 @@ class RevlogError(StorageError):
 
 class SidedataHashError(RevlogError):
     def __init__(self, key, expected, got):
+        # type: (int, bytes, bytes) -> None
         self.hint = None
         self.sidedatakey = key
         self.expecteddigest = expected
@@ -117,6 +120,7 @@ class FilteredIndexError(IndexError):
 
 class LookupError(RevlogError, KeyError):
     def __init__(self, name, index, message):
+        # type: (bytes, bytes, bytes) -> None
         self.name = name
         self.index = index
         # this can't be called 'message' because at least some installs of
@@ -343,6 +347,7 @@ class OutOfBandError(RemoteError):
     """Exception raised when a remote repo reports failure"""
 
     def __init__(self, message=None, hint=None):
+        # type: (Optional[bytes], Optional[bytes]) -> None
         from .i18n import _
 
         if message:
