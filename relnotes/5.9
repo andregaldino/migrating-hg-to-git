@@ -26,6 +26,10 @@ Mercurial 5.9.
 
 == Bug Fixes ==
 
+ * Fixed committing empty files with `narrow`
+ * Allow overriding `pip`'s pep517 compliance to build C or Rust extensions
+ * Fixed regression on outgoing email when not specifying revisions
+ * Fixed a regression causing bookmarks to disappear when using Rust persistent nodemap
  * Fixed a regression (in 5.9.1) introduced in 5.9 when cloning repos with
    deep filenames
  * Fixed detection of directories becoming symlinks, but only when using the
