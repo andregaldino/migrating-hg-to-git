@@ -345,7 +345,7 @@ This `head -n 20` looks dumb (since we expect no output), but if something
 breaks you can get 1048576 lines of +y in the output, which takes a looooooong
 time to print.
   $ hg diff -r 2:3 | head -n 20
-  $ hg diff -r 2:6
+  $ hg diff -r 2:6 | head -n 20
   diff -r e989d0fa3764 -r 752e3a0d8488 large.bin
   --- a/large.bin	Thu Jan 01 00:00:00 1970 +0000
   +++ b/large.bin	Thu Jan 01 00:00:00 1970 +0000
