@@ -12,7 +12,7 @@ use clap::{Arg, SubCommand};
 use format_bytes::format_bytes;
 use hg;
 use hg::config::Config;
-use hg::dirstate::{has_exec_bit, TruncatedTimestamp};
+use hg::dirstate::has_exec_bit;
 use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
@@ -194,11 +194,6 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let mut dmap = repo.dirstate_map_mut()?;
 
     let options = StatusOptions {
-        // TODO should be provided by the dirstate parsing and
-        // hence be stored on dmap. Using a value that assumes we aren't
-        // below the time resolution granularity of the FS and the
-        // dirstate.
-        last_normal_time: TruncatedTimestamp::new_truncate(0, 0),
         // we're currently supporting file systems with exec flags only
         // anyway
         check_exec: true,
@@ -369,7 +364,8 @@ fn unsure_is_modified(
     let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
     let fs_metadata = vfs.symlink_metadata(&fs_path)?;
     let is_symlink = fs_metadata.file_type().is_symlink();
-    // TODO: Also account for `FALLBACK_SYMLINK` and `FALLBACK_EXEC` from the dirstate
+    // TODO: Also account for `FALLBACK_SYMLINK` and `FALLBACK_EXEC` from the
+    // dirstate
     let fs_flags = if is_symlink {
         Some(b'l')
     } else if has_exec_bit(&fs_metadata) {

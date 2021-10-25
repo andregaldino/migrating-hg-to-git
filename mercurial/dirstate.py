@@ -116,7 +116,6 @@ class dirstate(object):
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
         self._dirty = False
-        self._lastnormaltime = timestamp.zero()
         self._ui = ui
         self._filecache = {}
         self._parentwriters = 0
@@ -430,7 +429,6 @@ class dirstate(object):
         for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
-        self._lastnormaltime = timestamp.zero()
         self._dirty = False
         self._parentwriters = 0
         self._origpl = None
@@ -493,11 +491,6 @@ class dirstate(object):
             self._check_new_tracked_filename(filename)
         (mode, size, mtime) = parentfiledata
         self._map.set_clean(filename, mode, size, mtime)
-        if mtime > self._lastnormaltime:
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = mtime
 
     @requires_no_parents_change
     def set_possibly_dirty(self, filename):
@@ -581,15 +574,6 @@ class dirstate(object):
             has_meaningful_mtime=not possibly_dirty,
             parentfiledata=parentfiledata,
         )
-        if (
-            parentfiledata is not None
-            and parentfiledata[2] is not None
-            and parentfiledata[2] > self._lastnormaltime
-        ):
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = parentfiledata[2]
 
     def _check_new_tracked_filename(self, filename):
         scmutil.checkfilename(filename)
@@ -693,7 +677,6 @@ class dirstate(object):
 
     def clear(self):
         self._map.clear()
-        self._lastnormaltime = timestamp.zero()
         self._dirty = True
 
     def rebuild(self, parent, allfiles, changedfiles=None):
@@ -701,9 +684,7 @@ class dirstate(object):
             # Rebuild entire dirstate
             to_lookup = allfiles
             to_drop = []
-            lastnormaltime = self._lastnormaltime
             self.clear()
-            self._lastnormaltime = lastnormaltime
         elif len(changedfiles) < 10:
             # Avoid turning allfiles into a set, which can be expensive if it's
             # large.
@@ -818,7 +799,6 @@ class dirstate(object):
                     break
 
         self._map.write(tr, st, now)
-        self._lastnormaltime = timestamp.zero()
         self._dirty = False
 
     def _dirignore(self, f):
@@ -1216,7 +1196,6 @@ class dirstate(object):
             self._rootdir,
             self._ignorefiles(),
             self._checkexec,
-            self._lastnormaltime,
             bool(list_clean),
             bool(list_ignored),
             bool(list_unknown),
@@ -1343,7 +1322,6 @@ class dirstate(object):
         checkexec = self._checkexec
         checklink = self._checklink
         copymap = self._map.copymap
-        lastnormaltime = self._lastnormaltime
 
         # We need to do full walks when either
         # - we're listing all clean files, or
@@ -1399,12 +1377,10 @@ class dirstate(object):
                     else:
                         madd(fn)
                 elif not t.mtime_likely_equal_to(timestamp.mtime_of(st)):
-                    ladd(fn)
-                elif timestamp.mtime_of(st) == lastnormaltime:
-                    # fn may have just been marked as normal and it may have
-                    # changed in the same second without changing its size.
-                    # This can happen if we quickly do multiple commits.
-                    # Force lookup, so we don't miss such a racy file change.
+                    # There might be a change in the future if for example the
+                    # internal clock is off, but this is a case where the issues
+                    # the user would face would be a lot worse and there is
+                    # nothing we can really do.
                     ladd(fn)
                 elif listclean:
                     cadd(fn)

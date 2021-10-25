@@ -9,7 +9,6 @@
 //! `hg-core` crate. From Python, this will be seen as
 //! `rustext.dirstate.status`.
 
-use crate::dirstate::item::timestamp;
 use crate::{dirstate::DirstateMap, exceptions::FallbackError};
 use cpython::exc::OSError;
 use cpython::{
@@ -103,13 +102,11 @@ pub fn status_wrapper(
     root_dir: PyObject,
     ignore_files: PyList,
     check_exec: bool,
-    last_normal_time: (u32, u32),
     list_clean: bool,
     list_ignored: bool,
     list_unknown: bool,
     collect_traversed_dirs: bool,
 ) -> PyResult<PyTuple> {
-    let last_normal_time = timestamp(py, last_normal_time)?;
     let bytes = root_dir.extract::<PyBytes>(py)?;
     let root_dir = get_path_from_bytes(bytes.data(py));
 
@@ -135,7 +132,6 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,
@@ -172,7 +168,6 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,
@@ -224,7 +219,6 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,

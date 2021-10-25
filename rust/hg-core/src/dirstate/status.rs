@@ -12,7 +12,6 @@
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 
 use crate::{
-    dirstate::TruncatedTimestamp,
     utils::hg_path::{HgPath, HgPathError},
     PatternError,
 };
@@ -62,10 +61,6 @@ pub type HgPathCow<'a> = Cow<'a, HgPath>;
 
 #[derive(Debug, Copy, Clone)]
 pub struct StatusOptions {
-    /// Remember the most recent modification timeslot for status, to make
-    /// sure we won't miss future size-preserving file content modifications
-    /// that happen within the same timeslot.
-    pub last_normal_time: TruncatedTimestamp,
     /// Whether we are on a filesystem with UNIX-like exec flags
     pub check_exec: bool,
     pub list_clean: bool,

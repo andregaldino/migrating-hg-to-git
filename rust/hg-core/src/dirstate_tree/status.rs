@@ -532,8 +532,12 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             if let Some(dirstate_mtime) = entry.truncated_mtime() {
                 let fs_mtime = TruncatedTimestamp::for_mtime_of(fs_metadata)
                     .expect("OS/libc does not support mtime?");
+                // There might be a change in the future if for example the
+                // internal clock become off while process run, but this is a
+                // case where the issues the user would face
+                // would be a lot worse and there is nothing we
+                // can really do.
                 mtime_looks_clean = fs_mtime.likely_equal(dirstate_mtime)
-                    && !fs_mtime.likely_equal(self.options.last_normal_time)
             } else {
                 // No mtime in the dirstate entry
                 mtime_looks_clean = false
