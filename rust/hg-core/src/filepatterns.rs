@@ -536,7 +536,7 @@ impl SubInclude {
         Ok(Self {
             prefix: path_to_hg_path_buf(prefix).and_then(|mut p| {
                 if !p.is_empty() {
-                    p.push(b'/');
+                    p.push_byte(b'/');
                 }
                 Ok(p)
             })?,
