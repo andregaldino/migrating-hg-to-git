@@ -33,6 +33,15 @@ pub fn args() -> clap::App<'static, 'static> {
 
 #[timed]
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
+    let cat_enabled_default = true;
+    let cat_enabled = invocation.config.get_option(b"rhg", b"cat")?;
+    if !cat_enabled.unwrap_or(cat_enabled_default) {
+        return Err(CommandError::unsupported(
+            "cat is disabled in rhg (enable it with 'rhg.cat = true' \
+            or enable fallback with 'rhg.on-unsupported = fallback')",
+        ));
+    }
+
     let rev = invocation.subcommand_args.value_of("rev");
     let file_args = match invocation.subcommand_args.values_of("files") {
         Some(files) => files.collect(),
