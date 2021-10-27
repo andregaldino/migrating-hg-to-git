@@ -780,6 +780,9 @@ class buildhgexe(build_ext):
 
         pythonlib = None
 
+        dir = os.path.dirname(self.get_ext_fullpath('dummy'))
+        self.hgtarget = os.path.join(dir, 'hg')
+
         if getattr(sys, 'dllhandle', None):
             # Different Python installs can have different Python library
             # names. e.g. the official CPython distribution uses pythonXY.dll
@@ -805,6 +808,35 @@ class buildhgexe(build_ext):
                     )
                 pythonlib = dllbasename[:-4]
 
+                # Copy the pythonXY.dll next to the binary so that it runs
+                # without tampering with PATH.
+                fsdecode = lambda x: x
+                if sys.version_info[0] >= 3:
+                    fsdecode = os.fsdecode
+                dest = os.path.join(
+                    os.path.dirname(self.hgtarget),
+                    fsdecode(dllbasename),
+                )
+
+                if not os.path.exists(dest):
+                    shutil.copy(buf.value, dest)
+
+                # Also overwrite python3.dll so that hgext.git is usable.
+                # TODO: also handle the MSYS flavor
+                if sys.version_info[0] >= 3:
+                    python_x = os.path.join(
+                        os.path.dirname(fsdecode(buf.value)),
+                        "python3.dll",
+                    )
+
+                    if os.path.exists(python_x):
+                        dest = os.path.join(
+                            os.path.dirname(self.hgtarget),
+                            os.path.basename(python_x),
+                        )
+
+                        shutil.copy(python_x, dest)
+
         if not pythonlib:
             log.warn(
                 'could not determine Python DLL filename; assuming pythonXY'
@@ -827,8 +859,6 @@ class buildhgexe(build_ext):
             output_dir=self.build_temp,
             macros=macros,
         )
-        dir = os.path.dirname(self.get_ext_fullpath('dummy'))
-        self.hgtarget = os.path.join(dir, 'hg')
         self.compiler.link_executable(
             objects, self.hgtarget, libraries=[], output_dir=self.build_temp
         )
