@@ -47,8 +47,8 @@ share shouldn't have a full cache dir, original repo should
   [1]
   $ ls -1 .hg/wcache || true
   checkisexec (execbit !)
-  checklink (symlink !)
-  checklink-target (symlink !)
+  checklink (symlink no-rust !)
+  checklink-target (symlink no-rust !)
   manifestfulltextcache (reporevlogstore !)
   $ ls -1 ../repo1/.hg/cache
   branch2-served
