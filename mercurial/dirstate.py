@@ -1359,6 +1359,7 @@ class dirstate(object):
         mexact = match.exact
         dirignore = self._dirignore
         checkexec = self._checkexec
+        checklink = self._checklink
         copymap = self._map.copymap
         lastnormaltime = self._lastnormaltime
 
@@ -1391,7 +1392,17 @@ class dirstate(object):
             elif t.removed:
                 radd(fn)
             elif t.tracked:
-                if (
+                if not checklink and t.has_fallback_symlink:
+                    # If the file system does not support symlink, the mode
+                    # might not be correctly stored in the dirstate, so do not
+                    # trust it.
+                    ladd(fn)
+                elif not checkexec and t.has_fallback_exec:
+                    # If the file system does not support exec bits, the mode
+                    # might not be correctly stored in the dirstate, so do not
+                    # trust it.
+                    ladd(fn)
+                elif (
                     size >= 0
                     and (
                         (size != st.st_size and size != st.st_size & _rangemask)

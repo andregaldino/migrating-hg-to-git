@@ -523,11 +523,17 @@ by enabling it to skip `readdir` in more cases.
     this indicates whether the file’s own is expected
     to have execute permission.
 
+    Beware that on system without fs support for this information, the value
+    stored in the dirstate might be wrong and should not be relied on.
+
 `MODE_IS_SYMLINK`
     Must be unset if `HAS_MODE_AND_SIZE` is unset.
     If `HAS_MODE_AND_SIZE` is set,
     this indicates whether the file is expected to be a symlink
     as opposed to a normal file.
+
+    Beware that on system without fs support for this information, the value
+    stored in the dirstate might be wrong and should not be relied on.
 
 `EXPECTED_STATE_IS_MODIFIED`
     Must be unset for untracked nodes.
