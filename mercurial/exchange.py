@@ -1378,7 +1378,6 @@ class pulloperation(object):
         self,
         repo,
         remote,
-        path,
         heads=None,
         force=False,
         bookmarks=(),
@@ -1387,6 +1386,7 @@ class pulloperation(object):
         includepats=None,
         excludepats=None,
         depth=None,
+        path=None,
     ):
         # repo we pull into
         self.repo = repo
