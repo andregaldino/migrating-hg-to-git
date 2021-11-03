@@ -44,6 +44,7 @@ if not ispy3:
     FileNotFoundError = OSError
 
 else:
+    import builtins
     import concurrent.futures as futures
     import http.cookiejar as cookielib
     import http.client as httplib
@@ -55,7 +56,7 @@ else:
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
 
-    FileNotFoundError = __builtins__['FileNotFoundError']
+    FileNotFoundError = builtins.FileNotFoundError
 
 
 def identity(a):
