@@ -34,7 +34,10 @@ TIME_STAMP_SERVER_URL = VARS.get("TIME_STAMP_SERVER_URL", "http://timestamp.digi
 
 IS_WINDOWS = "windows" in BUILD_TARGET_TRIPLE
 
-USE_IN_MEMORY_RESOURCES = False
+# Use in-memory resources for all resources. If false, most of the Python
+# stdlib will be in memory, but other things such as Mercurial itself will not
+# be. See the comment in resource_callback, below.
+USE_IN_MEMORY_RESOURCES = not IS_WINDOWS
 
 # Code to run in Python interpreter.
 RUN_CODE = """
