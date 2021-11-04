@@ -1,30 +1,16 @@
 == New Features ==
-  * `debugrebuildfncache` now has an option to rebuild only the index files
-
-  * a new `bookmarks.mode` path option have been introduced to control the
-    bookmark update strategy during exchange with a peer. See hg help paths for
-    details.
 
 
 == Default Format Change ==
 
 These changes affects newly created repositories (or new clone) done with
-Mercurial 6.0.
+Mercurial XXX.
 
 
 == New Experimental Features ==
 
- * Added a new `web.full-garbage-collection-rate` to control performance. See
-   de2e04fe4897a554b9ef433167f11ea4feb2e09c for more information
-
 == Bug Fixes ==
 
- * `hg fix --working-dir` now correctly works when in an uncommitted merge state
- * `rhg` (Rust fast-path for `hg`) now supports the full config list syntax
- * `rhg` now parses some corner-cases for revsets correctly
- * `hg email -o` now works again when not mentioning a revision
- * Lots of Windows fixes
- * Lots of miscellaneous other fixes
 
 == Backwards Compatibility Changes ==
 
@@ -33,15 +19,4 @@ Mercurial 6.0.
 
 The following functions have been removed:
 
-  * `dirstate.normal`
-  * `dirstate.normallookup`
-  * `dirstate.otherparent`
-  * `dirstate.add`
-  * `dirstate.remove`
-  * `dirstate.drop`
-  * `dirstate.__getitem__`
-
 Miscellaneous:
-
- * `wireprotov1peer`'s `batchable` is now a simple function and not a generator
-   anymore
