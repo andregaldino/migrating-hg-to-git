@@ -312,5 +312,5 @@ fn cat_file_is_modified(
 
     let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
     let fs_contents = repo.working_directory_vfs().read(fs_path)?;
-    return Ok(contents_in_p1 == &*fs_contents);
+    return Ok(contents_in_p1 != &*fs_contents);
 }
