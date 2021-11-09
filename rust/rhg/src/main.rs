@@ -28,7 +28,7 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
-    check_unsupported(config)?;
+    check_unsupported(config, ui)?;
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
@@ -617,7 +617,10 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
     }
 }
 
-fn check_unsupported(config: &Config) -> Result<(), CommandError> {
+fn check_unsupported(
+    config: &Config,
+    ui: &ui::Ui,
+) -> Result<(), CommandError> {
     check_extensions(config)?;
 
     if std::env::var_os("HG_PENDING").is_some() {
@@ -632,6 +635,12 @@ fn check_unsupported(config: &Config) -> Result<(), CommandError> {
 
     if config.has_non_empty_section(b"decode") {
         Err(CommandError::unsupported("[decode] config"))?
+    }
+
+    if let Some(color) = config.get(b"ui", b"color") {
+        if (color == b"always" || color == b"debug") && !ui.plain() {
+            Err(CommandError::unsupported("colored output"))?
+        }
     }
 
     Ok(())
