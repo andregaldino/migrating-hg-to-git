@@ -917,9 +917,6 @@ def gathersupportedrequirements(ui):
     # Start with all requirements supported by this file.
     supported = set(localrepository._basesupported)
 
-    if dirstate.SUPPORTS_DIRSTATE_V2:
-        supported.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
-
     # Execute ``featuresetupfuncs`` entries if they belong to an extension
     # relevant to this ui instance.
     modules = {m.__name__ for n, m in extensions.extensions(ui)}
@@ -1177,6 +1174,32 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
             if slow_path == b'abort':
                 raise error.Abort(msg, hint=hint)
         options[b'persistent-nodemap'] = True
+    if requirementsmod.DIRSTATE_V2_REQUIREMENT in requirements:
+        slow_path = ui.config(b'storage', b'dirstate-v2.slow-path')
+        if slow_path not in (b'allow', b'warn', b'abort'):
+            default = ui.config_default(b'storage', b'dirstate-v2.slow-path')
+            msg = _(b'unknown value for config "dirstate-v2.slow-path": "%s"\n')
+            ui.warn(msg % slow_path)
+            if not ui.quiet:
+                ui.warn(_(b'falling back to default value: %s\n') % default)
+            slow_path = default
+
+        msg = _(
+            b"accessing `dirstate-v2` repository without associated "
+            b"fast implementation."
+        )
+        hint = _(
+            b"check `hg help config.format.exp-rc-dirstate-v2` " b"for details"
+        )
+        if not dirstate.HAS_FAST_DIRSTATE_V2:
+            if slow_path == b'warn':
+                msg = b"warning: " + msg + b'\n'
+                ui.warn(msg)
+                if not ui.quiet:
+                    hint = b'(' + hint + b')\n'
+                    ui.warn(hint)
+            if slow_path == b'abort':
+                raise error.Abort(msg, hint=hint)
     if ui.configbool(b'storage', b'revlog.persistent-nodemap.mmap'):
         options[b'persistent-nodemap.mmap'] = True
     if ui.configbool(b'devel', b'persistent-nodemap'):
@@ -1266,6 +1289,7 @@ class localrepository(object):
         requirementsmod.NODEMAP_REQUIREMENT,
         bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.SHARESAFE_REQUIREMENT,
+        requirementsmod.DIRSTATE_V2_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         requirementsmod.STORE_REQUIREMENT,
@@ -3606,18 +3630,10 @@ def newreporequirements(ui, createopts):
         if ui.configbool(b'format', b'sparse-revlog'):
             requirements.add(requirementsmod.SPARSEREVLOG_REQUIREMENT)
 
-    # experimental config: format.exp-dirstate-v2
+    # experimental config: format.exp-rc-dirstate-v2
     # Keep this logic in sync with `has_dirstate_v2()` in `tests/hghave.py`
-    if ui.configbool(b'format', b'exp-dirstate-v2'):
-        if dirstate.SUPPORTS_DIRSTATE_V2:
-            requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
-        else:
-            raise error.Abort(
-                _(
-                    b"dirstate v2 format requested by config "
-                    b"but not supported (requires Rust extensions)"
-                )
-            )
+    if ui.configbool(b'format', b'exp-rc-dirstate-v2'):
+        requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
 
     # experimental config: format.exp-use-copies-side-data-changeset
     if ui.configbool(b'format', b'exp-use-copies-side-data-changeset'):

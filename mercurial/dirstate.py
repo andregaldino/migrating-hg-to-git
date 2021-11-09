@@ -31,6 +31,10 @@ from . import (
     util,
 )
 
+from .dirstateutils import (
+    timestamp,
+)
+
 from .interfaces import (
     dirstate as intdirstate,
     util as interfaceutil,
@@ -39,13 +43,13 @@ from .interfaces import (
 parsers = policy.importmod('parsers')
 rustmod = policy.importrust('dirstate')
 
-SUPPORTS_DIRSTATE_V2 = rustmod is not None
+HAS_FAST_DIRSTATE_V2 = rustmod is not None
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
 _rangemask = dirstatemap.rangemask
 
-DirstateItem = parsers.DirstateItem
+DirstateItem = dirstatemap.DirstateItem
 
 
 class repocache(filecache):
@@ -66,7 +70,7 @@ def _getfsnow(vfs):
     '''Get "now" timestamp on filesystem'''
     tmpfd, tmpname = vfs.mkstemp()
     try:
-        return os.fstat(tmpfd)[stat.ST_MTIME]
+        return timestamp.mtime_of(os.fstat(tmpfd))
     finally:
         os.close(tmpfd)
         vfs.unlink(tmpname)
@@ -122,7 +126,7 @@ class dirstate(object):
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
         self._dirty = False
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._ui = ui
         self._filecache = {}
         self._parentwriters = 0
@@ -130,7 +134,6 @@ class dirstate(object):
         self._pendingfilename = b'%s.pending' % self._filename
         self._plchangecallbacks = {}
         self._origpl = None
-        self._updatedfiles = set()
         self._mapcls = dirstatemap.dirstatemap
         # Access and cache cwd early, so we don't access it for the first time
         # after a working-copy update caused it to not exist (accessing it then
@@ -239,44 +242,59 @@ class dirstate(object):
         return self._rootdir + f
 
     def flagfunc(self, buildfallback):
-        if self._checklink and self._checkexec:
+        """build a callable that returns flags associated with a filename
 
-            def f(x):
-                try:
-                    st = os.lstat(self._join(x))
-                    if util.statislink(st):
+        The information is extracted from three possible layers:
+        1. the file system if it supports the information
+        2. the "fallback" information stored in the dirstate if any
+        3. a more expensive mechanism inferring the flags from the parents.
+        """
+
+        # small hack to cache the result of buildfallback()
+        fallback_func = []
+
+        def get_flags(x):
+            entry = None
+            fallback_value = None
+            try:
+                st = os.lstat(self._join(x))
+            except OSError:
+                return b''
+
+            if self._checklink:
+                if util.statislink(st):
+                    return b'l'
+            else:
+                entry = self.get_entry(x)
+                if entry.has_fallback_symlink:
+                    if entry.fallback_symlink:
                         return b'l'
-                    if util.statisexec(st):
+                else:
+                    if not fallback_func:
+                        fallback_func.append(buildfallback())
+                    fallback_value = fallback_func[0](x)
+                    if b'l' in fallback_value:
+                        return b'l'
+
+            if self._checkexec:
+                if util.statisexec(st):
+                    return b'x'
+            else:
+                if entry is None:
+                    entry = self.get_entry(x)
+                if entry.has_fallback_exec:
+                    if entry.fallback_exec:
                         return b'x'
-                except OSError:
-                    pass
-                return b''
+                else:
+                    if fallback_value is None:
+                        if not fallback_func:
+                            fallback_func.append(buildfallback())
+                        fallback_value = fallback_func[0](x)
+                    if b'x' in fallback_value:
+                        return b'x'
+            return b''
 
-            return f
-
-        fallback = buildfallback()
-        if self._checklink:
-
-            def f(x):
-                if os.path.islink(self._join(x)):
-                    return b'l'
-                if b'x' in fallback(x):
-                    return b'x'
-                return b''
-
-            return f
-        if self._checkexec:
-
-            def f(x):
-                if b'l' in fallback(x):
-                    return b'l'
-                if util.isexec(self._join(x)):
-                    return b'x'
-                return b''
-
-            return f
-        else:
-            return fallback
+        return get_flags
 
     @propertycache
     def _cwd(self):
@@ -328,10 +346,19 @@ class dirstate(object):
         consider migrating all user of this to going through the dirstate entry
         instead.
         """
+        msg = b"don't use dirstate[file], use dirstate.get_entry(file)"
+        util.nouideprecwarn(msg, b'6.1', stacklevel=2)
         entry = self._map.get(key)
         if entry is not None:
             return entry.state
         return b'?'
+
+    def get_entry(self, path):
+        """return a DirstateItem for the associated path"""
+        entry = self._map.get(path)
+        if entry is None:
+            return DirstateItem()
+        return entry
 
     def __contains__(self, key):
         return key in self._map
@@ -343,9 +370,6 @@ class dirstate(object):
         return pycompat.iteritems(self._map)
 
     iteritems = items
-
-    def directories(self):
-        return self._map.directories()
 
     def parents(self):
         return [self._validate(p) for p in self._pl]
@@ -385,32 +409,10 @@ class dirstate(object):
         oldp2 = self._pl[1]
         if self._origpl is None:
             self._origpl = self._pl
-        self._map.setparents(p1, p2)
-        copies = {}
-        if (
-            oldp2 != self._nodeconstants.nullid
-            and p2 == self._nodeconstants.nullid
-        ):
-            candidatefiles = self._map.non_normal_or_other_parent_paths()
-
-            for f in candidatefiles:
-                s = self._map.get(f)
-                if s is None:
-                    continue
-
-                # Discard "merged" markers when moving away from a merge state
-                if s.merged:
-                    source = self._map.copymap.get(f)
-                    if source:
-                        copies[f] = source
-                    self._normallookup(f)
-                # Also fix up otherparent markers
-                elif s.from_p2:
-                    source = self._map.copymap.get(f)
-                    if source:
-                        copies[f] = source
-                    self._add(f)
-        return copies
+        nullid = self._nodeconstants.nullid
+        # True if we need to fold p2 related state back to a linear case
+        fold_p2 = oldp2 != nullid and p2 == nullid
+        return self._map.setparents(p1, p2, fold_p2=fold_p2)
 
     def setbranch(self, branch):
         self.__class__._branch.set(self, encoding.fromlocal(branch))
@@ -438,9 +440,8 @@ class dirstate(object):
         for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._dirty = False
-        self._updatedfiles.clear()
         self._parentwriters = 0
         self._origpl = None
 
@@ -451,10 +452,8 @@ class dirstate(object):
         self._dirty = True
         if source is not None:
             self._map.copymap[dest] = source
-            self._updatedfiles.add(source)
-            self._updatedfiles.add(dest)
-        elif self._map.copymap.pop(dest, None):
-            self._updatedfiles.add(dest)
+        else:
+            self._map.copymap.pop(dest, None)
 
     def copied(self, file):
         return self._map.copymap.get(file, None)
@@ -471,18 +470,11 @@ class dirstate(object):
 
         return True the file was previously untracked, False otherwise.
         """
+        self._dirty = True
         entry = self._map.get(filename)
-        if entry is None:
-            self._add(filename)
-            return True
-        elif not entry.tracked:
-            self._normallookup(filename)
-            return True
-        # XXX This is probably overkill for more case, but we need this to
-        # fully replace the `normallookup` call with `set_tracked` one.
-        # Consider smoothing this in the future.
-        self.set_possibly_dirty(filename)
-        return False
+        if entry is None or not entry.tracked:
+            self._check_new_tracked_filename(filename)
+        return self._map.set_tracked(filename)
 
     @requires_no_parents_change
     def set_untracked(self, filename):
@@ -493,28 +485,32 @@ class dirstate(object):
 
         return True the file was previously tracked, False otherwise.
         """
-        entry = self._map.get(filename)
-        if entry is None:
-            return False
-        elif entry.added:
-            self._drop(filename)
-            return True
-        else:
-            self._remove(filename)
-            return True
+        ret = self._map.set_untracked(filename)
+        if ret:
+            self._dirty = True
+        return ret
 
     @requires_no_parents_change
     def set_clean(self, filename, parentfiledata=None):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
-        self._updatedfiles.add(filename)
-        self._normal(filename, parentfiledata=parentfiledata)
+        if parentfiledata:
+            (mode, size, mtime) = parentfiledata
+        else:
+            (mode, size, mtime) = self._get_filedata(filename)
+        if not self._map[filename].tracked:
+            self._check_new_tracked_filename(filename)
+        self._map.set_clean(filename, mode, size, mtime)
+        if mtime > self._lastnormaltime:
+            # Remember the most recent modification timeslot for status(),
+            # to make sure we won't miss future size-preserving file content
+            # modifications that happen within the same timeslot.
+            self._lastnormaltime = mtime
 
     @requires_no_parents_change
     def set_possibly_dirty(self, filename):
         """record that the current state of the file on disk is unknown"""
         self._dirty = True
-        self._updatedfiles.add(filename)
         self._map.set_possibly_dirty(filename)
 
     @requires_parents_change
@@ -539,35 +535,26 @@ class dirstate(object):
             wc_tracked = False
         else:
             wc_tracked = entry.tracked
-        possibly_dirty = False
-        if p1_tracked and wc_tracked:
-            # the underlying reference might have changed, we will have to
-            # check it.
-            possibly_dirty = True
-        elif not (p1_tracked or wc_tracked):
+        if not (p1_tracked or wc_tracked):
             # the file is no longer relevant to anyone
-            self._drop(filename)
+            if self._map.get(filename) is not None:
+                self._map.reset_state(filename)
+                self._dirty = True
         elif (not p1_tracked) and wc_tracked:
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
-        elif p1_tracked and not wc_tracked:
-            pass
-        else:
-            assert False, 'unreachable'
 
-        # this mean we are doing call for file we do not really care about the
-        # data (eg: added or removed), however this should be a minor overhead
-        # compared to the overall update process calling this.
         parentfiledata = None
-        if wc_tracked:
+        if wc_tracked and p1_tracked:
             parentfiledata = self._get_filedata(filename)
 
-        self._updatedfiles.add(filename)
         self._map.reset_state(
             filename,
             wc_tracked,
             p1_tracked,
-            possibly_dirty=possibly_dirty,
+            # the underlying reference might have changed, we will have to
+            # check it.
+            has_meaningful_mtime=False,
             parentfiledata=parentfiledata,
         )
         if (
@@ -585,10 +572,7 @@ class dirstate(object):
         filename,
         wc_tracked,
         p1_tracked,
-        p2_tracked=False,
-        merged=False,
-        clean_p1=False,
-        clean_p2=False,
+        p2_info=False,
         possibly_dirty=False,
         parentfiledata=None,
     ):
@@ -603,47 +587,26 @@ class dirstate(object):
         depending of what information ends up being relevant and useful to
         other processing.
         """
-        if merged and (clean_p1 or clean_p2):
-            msg = b'`merged` argument incompatible with `clean_p1`/`clean_p2`'
-            raise error.ProgrammingError(msg)
 
         # note: I do not think we need to double check name clash here since we
         # are in a update/merge case that should already have taken care of
         # this. The test agrees
 
         self._dirty = True
-        self._updatedfiles.add(filename)
 
         need_parent_file_data = (
-            not (possibly_dirty or clean_p2 or merged)
-            and wc_tracked
-            and p1_tracked
+            not possibly_dirty and not p2_info and wc_tracked and p1_tracked
         )
 
-        # this mean we are doing call for file we do not really care about the
-        # data (eg: added or removed), however this should be a minor overhead
-        # compared to the overall update process calling this.
-        if need_parent_file_data:
-            if parentfiledata is None:
-                parentfiledata = self._get_filedata(filename)
-            mtime = parentfiledata[2]
-
-            if mtime > self._lastnormaltime:
-                # Remember the most recent modification timeslot for
-                # status(), to make sure we won't miss future
-                # size-preserving file content modifications that happen
-                # within the same timeslot.
-                self._lastnormaltime = mtime
+        if need_parent_file_data and parentfiledata is None:
+            parentfiledata = self._get_filedata(filename)
 
         self._map.reset_state(
             filename,
             wc_tracked,
             p1_tracked,
-            p2_tracked=p2_tracked,
-            merged=merged,
-            clean_p1=clean_p1,
-            clean_p2=clean_p2,
-            possibly_dirty=possibly_dirty,
+            p2_info=p2_info,
+            has_meaningful_mtime=not possibly_dirty,
             parentfiledata=parentfiledata,
         )
         if (
@@ -655,262 +618,29 @@ class dirstate(object):
             # modifications that happen within the same timeslot.
             self._lastnormaltime = parentfiledata[2]
 
-    def _addpath(
-        self,
-        f,
-        mode=0,
-        size=None,
-        mtime=None,
-        added=False,
-        merged=False,
-        from_p2=False,
-        possibly_dirty=False,
-    ):
-        entry = self._map.get(f)
-        if added or entry is not None and entry.removed:
-            scmutil.checkfilename(f)
-            if self._map.hastrackeddir(f):
-                msg = _(b'directory %r already in dirstate')
-                msg %= pycompat.bytestr(f)
+    def _check_new_tracked_filename(self, filename):
+        scmutil.checkfilename(filename)
+        if self._map.hastrackeddir(filename):
+            msg = _(b'directory %r already in dirstate')
+            msg %= pycompat.bytestr(filename)
+            raise error.Abort(msg)
+        # shadows
+        for d in pathutil.finddirs(filename):
+            if self._map.hastrackeddir(d):
+                break
+            entry = self._map.get(d)
+            if entry is not None and not entry.removed:
+                msg = _(b'file %r in dirstate clashes with %r')
+                msg %= (pycompat.bytestr(d), pycompat.bytestr(filename))
                 raise error.Abort(msg)
-            # shadows
-            for d in pathutil.finddirs(f):
-                if self._map.hastrackeddir(d):
-                    break
-                entry = self._map.get(d)
-                if entry is not None and not entry.removed:
-                    msg = _(b'file %r in dirstate clashes with %r')
-                    msg %= (pycompat.bytestr(d), pycompat.bytestr(f))
-                    raise error.Abort(msg)
-        self._dirty = True
-        self._updatedfiles.add(f)
-        self._map.addfile(
-            f,
-            mode=mode,
-            size=size,
-            mtime=mtime,
-            added=added,
-            merged=merged,
-            from_p2=from_p2,
-            possibly_dirty=possibly_dirty,
-        )
 
     def _get_filedata(self, filename):
         """returns"""
         s = os.lstat(self._join(filename))
         mode = s.st_mode
         size = s.st_size
-        mtime = s[stat.ST_MTIME]
+        mtime = timestamp.mtime_of(s)
         return (mode, size, mtime)
-
-    def normal(self, f, parentfiledata=None):
-        """Mark a file normal and clean.
-
-        parentfiledata: (mode, size, mtime) of the clean file
-
-        parentfiledata should be computed from memory (for mode,
-        size), as or close as possible from the point where we
-        determined the file was clean, to limit the risk of the
-        file having been changed by an external process between the
-        moment where the file was determined to be clean and now."""
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normal` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normal` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normal(f, parentfiledata=parentfiledata)
-
-    def _normal(self, f, parentfiledata=None):
-        if parentfiledata:
-            (mode, size, mtime) = parentfiledata
-        else:
-            (mode, size, mtime) = self._get_filedata(f)
-        self._addpath(f, mode=mode, size=size, mtime=mtime)
-        self._map.copymap.pop(f, None)
-        if f in self._map.nonnormalset:
-            self._map.nonnormalset.remove(f)
-        if mtime > self._lastnormaltime:
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = mtime
-
-    def normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `normallookup` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `normallookup` outside of update/merge context."
-                b" Use `set_possibly_dirty` or `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._normallookup(f)
-
-    def _normallookup(self, f):
-        '''Mark a file normal, but possibly dirty.'''
-        if self.in_merge:
-            # if there is a merge going on and the file was either
-            # "merged" or coming from other parent (-2) before
-            # being removed, restore that state.
-            entry = self._map.get(f)
-            if entry is not None:
-                # XXX this should probably be dealt with a a lower level
-                # (see `merged_removed` and `from_p2_removed`)
-                if entry.merged_removed or entry.from_p2_removed:
-                    source = self._map.copymap.get(f)
-                    if entry.merged_removed:
-                        self._merge(f)
-                    elif entry.from_p2_removed:
-                        self._otherparent(f)
-                    if source is not None:
-                        self.copy(source, f)
-                    return
-                elif entry.merged or entry.from_p2:
-                    return
-        self._addpath(f, possibly_dirty=True)
-        self._map.copymap.pop(f, None)
-
-    def otherparent(self, f):
-        '''Mark as coming from the other parent, always dirty.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `otherparent` inside of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `otherparent` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._otherparent(f)
-
-    def _otherparent(self, f):
-        if not self.in_merge:
-            msg = _(b"setting %r to other parent only allowed in merges") % f
-            raise error.Abort(msg)
-        entry = self._map.get(f)
-        if entry is not None and entry.tracked:
-            # merge-like
-            self._addpath(f, merged=True)
-        else:
-            # add-like
-            self._addpath(f, from_p2=True)
-        self._map.copymap.pop(f, None)
-
-    def add(self, f):
-        '''Mark a file added.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `add` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `add` outside of update/merge context."
-                b" Use `set_tracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._add(f)
-
-    def _add(self, filename):
-        """internal function to mark a file as added"""
-        self._addpath(filename, added=True)
-        self._map.copymap.pop(filename, None)
-
-    def remove(self, f):
-        '''Mark a file removed'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `remove` insde of update/merge context."
-                b" Use `update_file` or `update_file_p1`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `remove` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._remove(f)
-
-    def _remove(self, filename):
-        """internal function to mark a file removed"""
-        self._dirty = True
-        self._updatedfiles.add(filename)
-        self._map.removefile(filename, in_merge=self.in_merge)
-
-    def merge(self, f):
-        '''Mark a file merged.'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `merge` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `merge` outside of update/merge context."
-                b"It should have been set by the update/merge code",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._merge(f)
-
-    def _merge(self, f):
-        if not self.in_merge:
-            return self._normallookup(f)
-        return self._otherparent(f)
-
-    def drop(self, f):
-        '''Drop a file from the dirstate'''
-        if self.pendingparentchange():
-            util.nouideprecwarn(
-                b"do not use `drop` inside of update/merge context."
-                b" Use `update_file`",
-                b'6.0',
-                stacklevel=2,
-            )
-        else:
-            util.nouideprecwarn(
-                b"do not use `drop` outside of update/merge context."
-                b" Use `set_untracked`",
-                b'6.0',
-                stacklevel=2,
-            )
-        self._drop(f)
-
-    def _drop(self, filename):
-        """internal function to drop a file from the dirstate"""
-        if self._map.dropfile(filename):
-            self._dirty = True
-            self._updatedfiles.add(filename)
-            self._map.copymap.pop(filename, None)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
@@ -990,8 +720,7 @@ class dirstate(object):
 
     def clear(self):
         self._map.clear()
-        self._lastnormaltime = 0
-        self._updatedfiles.clear()
+        self._lastnormaltime = timestamp.zero()
         self._dirty = True
 
     def rebuild(self, parent, allfiles, changedfiles=None):
@@ -1022,9 +751,17 @@ class dirstate(object):
         self._map.setparents(parent, self._nodeconstants.nullid)
 
         for f in to_lookup:
-            self._normallookup(f)
+
+            if self.in_merge:
+                self.set_tracked(f)
+            else:
+                self._map.reset_state(
+                    f,
+                    wc_tracked=True,
+                    p1_tracked=True,
+                )
         for f in to_drop:
-            self._drop(f)
+            self._map.reset_state(f)
 
         self._dirty = True
 
@@ -1048,19 +785,14 @@ class dirstate(object):
             # See also the wiki page below for detail:
             # https://www.mercurial-scm.org/wiki/DirstateTransactionPlan
 
-            # emulate dropping timestamp in 'parsers.pack_dirstate'
+            # record when mtime start to be ambiguous
             now = _getfsnow(self._opener)
-            self._map.clearambiguoustimes(self._updatedfiles, now)
-
-            # emulate that all 'dirstate.normal' results are written out
-            self._lastnormaltime = 0
-            self._updatedfiles.clear()
 
             # delay writing in-memory changes out
             tr.addfilegenerator(
                 b'dirstate',
                 (self._filename,),
-                lambda f: self._writedirstate(tr, f),
+                lambda f: self._writedirstate(tr, f, now=now),
                 location=b'plain',
             )
             return
@@ -1079,7 +811,7 @@ class dirstate(object):
         """
         self._plchangecallbacks[category] = callback
 
-    def _writedirstate(self, tr, st):
+    def _writedirstate(self, tr, st, now=None):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
             for c, callback in sorted(
@@ -1087,9 +819,11 @@ class dirstate(object):
             ):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
-        # use the modification time of the newly created temporary file as the
-        # filesystem's notion of 'now'
-        now = util.fstat(st)[stat.ST_MTIME] & _rangemask
+
+        if now is None:
+            # use the modification time of the newly created temporary file as the
+            # filesystem's notion of 'now'
+            now = timestamp.mtime_of(util.fstat(st))
 
         # enough 'delaywrite' prevents 'pack_dirstate' from dropping
         # timestamp of each entries in dirstate, because of 'now > mtime'
@@ -1106,11 +840,12 @@ class dirstate(object):
                     start = int(clock) - (int(clock) % delaywrite)
                     end = start + delaywrite
                     time.sleep(end - clock)
-                    now = end  # trust our estimate that the end is near now
+                    # trust our estimate that the end is near now
+                    now = timestamp.timestamp((end, 0))
                     break
 
         self._map.write(tr, st, now)
-        self._lastnormaltime = 0
+        self._lastnormaltime = timestamp.zero()
         self._dirty = False
 
     def _dirignore(self, f):
@@ -1503,7 +1238,7 @@ class dirstate(object):
             traversed,
             dirty,
         ) = rustmod.status(
-            self._map._rustmap,
+            self._map._map,
             matcher,
             self._rootdir,
             self._ignorefiles(),
@@ -1624,6 +1359,7 @@ class dirstate(object):
         mexact = match.exact
         dirignore = self._dirignore
         checkexec = self._checkexec
+        checklink = self._checklink
         copymap = self._map.copymap
         lastnormaltime = self._lastnormaltime
 
@@ -1643,34 +1379,35 @@ class dirstate(object):
                     uadd(fn)
                 continue
 
-            # This is equivalent to 'state, mode, size, time = dmap[fn]' but not
-            # written like that for performance reasons. dmap[fn] is not a
-            # Python tuple in compiled builds. The CPython UNPACK_SEQUENCE
-            # opcode has fast paths when the value to be unpacked is a tuple or
-            # a list, but falls back to creating a full-fledged iterator in
-            # general. That is much slower than simply accessing and storing the
-            # tuple members one by one.
             t = dget(fn)
             mode = t.mode
             size = t.size
-            time = t.mtime
 
             if not st and t.tracked:
                 dadd(fn)
-            elif t.merged:
+            elif t.p2_info:
                 madd(fn)
             elif t.added:
                 aadd(fn)
             elif t.removed:
                 radd(fn)
             elif t.tracked:
-                if (
+                if not checklink and t.has_fallback_symlink:
+                    # If the file system does not support symlink, the mode
+                    # might not be correctly stored in the dirstate, so do not
+                    # trust it.
+                    ladd(fn)
+                elif not checkexec and t.has_fallback_exec:
+                    # If the file system does not support exec bits, the mode
+                    # might not be correctly stored in the dirstate, so do not
+                    # trust it.
+                    ladd(fn)
+                elif (
                     size >= 0
                     and (
                         (size != st.st_size and size != st.st_size & _rangemask)
                         or ((mode ^ st.st_mode) & 0o100 and checkexec)
                     )
-                    or t.from_p2
                     or fn in copymap
                 ):
                     if stat.S_ISLNK(st.st_mode) and size != st.st_size:
@@ -1679,12 +1416,9 @@ class dirstate(object):
                         ladd(fn)
                     else:
                         madd(fn)
-                elif (
-                    time != st[stat.ST_MTIME]
-                    and time != st[stat.ST_MTIME] & _rangemask
-                ):
+                elif not t.mtime_likely_equal_to(timestamp.mtime_of(st)):
                     ladd(fn)
-                elif st[stat.ST_MTIME] == lastnormaltime:
+                elif timestamp.mtime_of(st) == lastnormaltime:
                     # fn may have just been marked as normal and it may have
                     # changed in the same second without changing its size.
                     # This can happen if we quickly do multiple commits.
@@ -1703,7 +1437,7 @@ class dirstate(object):
         """
         dmap = self._map
         if rustmod is not None:
-            dmap = self._map._rustmap
+            dmap = self._map._map
 
         if match.always():
             return dmap.keys()
@@ -1778,3 +1512,22 @@ class dirstate(object):
     def clearbackup(self, tr, backupname):
         '''Clear backup file'''
         self._opener.unlink(backupname)
+
+    def verify(self, m1, m2):
+        """check the dirstate content again the parent manifest and yield errors"""
+        missing_from_p1 = b"%s in state %s, but not in manifest1\n"
+        unexpected_in_p1 = b"%s in state %s, but also in manifest1\n"
+        missing_from_ps = b"%s in state %s, but not in either manifest\n"
+        missing_from_ds = b"%s in manifest1, but listed as state %s\n"
+        for f, entry in self.items():
+            state = entry.state
+            if state in b"nr" and f not in m1:
+                yield (missing_from_p1, f, state)
+            if state in b"a" and f in m1:
+                yield (unexpected_in_p1, f, state)
+            if state in b"m" and f not in m1 and f not in m2:
+                yield (missing_from_ps, f, state)
+        for f in m1:
+            state = self.get_entry(f).state
+            if state not in b"nrm":
+                yield (missing_from_ds, f, state)

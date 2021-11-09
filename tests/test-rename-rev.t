@@ -42,6 +42,17 @@ Test single file
     d1/b
   A d1/d
     d1/b
+# Should get helpful message if we try to copy or rename after commit
+  $ hg cp --forget --at-rev . d1/d
+  saved backup bundle to $TESTTMP/.hg/strip-backup/3f7c325d3f9e-46f377bb-uncopy.hg
+  $ hg cp d1/b d1/d
+  d1/d: not overwriting - file already committed
+  ('hg copy --at-rev .' to record the copy in the parent of the working copy)
+  [1]
+  $ hg mv d1/b d1/d
+  d1/d: not overwriting - file already committed
+  ('hg rename --at-rev .' to record the rename in the parent of the working copy)
+  [1]
 
 Test moved file (not copied) using 'hg cp' command
 

@@ -1,5 +1,6 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
+use crate::revlog::node::NULL_NODE;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
@@ -12,22 +13,22 @@ pub struct Changelog {
 
 impl Changelog {
     /// Open the `changelog` of a repository given by its root.
-    pub fn open(repo: &Repo) -> Result<Self, RevlogError> {
+    pub fn open(repo: &Repo) -> Result<Self, HgError> {
         let revlog = Revlog::open(repo, "00changelog.i", None)?;
         Ok(Self { revlog })
     }
 
-    /// Return the `ChangelogEntry` a given node id.
-    pub fn get_node(
+    /// Return the `ChangelogEntry` for the given node ID.
+    pub fn data_for_node(
         &self,
         node: NodePrefix,
     ) -> Result<ChangelogEntry, RevlogError> {
-        let rev = self.revlog.get_node_rev(node)?;
-        self.get_rev(rev)
+        let rev = self.revlog.rev_from_node(node)?;
+        self.data_for_rev(rev)
     }
 
-    /// Return the `ChangelogEntry` of a given node revision.
-    pub fn get_rev(
+    /// Return the `ChangelogEntry` of the given revision number.
+    pub fn data_for_rev(
         &self,
         rev: Revision,
     ) -> Result<ChangelogEntry, RevlogError> {
@@ -36,7 +37,7 @@ impl Changelog {
     }
 
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
-        Some(self.revlog.index.get_entry(rev)?.hash())
+        self.revlog.node_from_rev(rev)
     }
 }
 
@@ -57,9 +58,10 @@ impl ChangelogEntry {
 
     /// Return the node id of the `manifest` referenced by this `changelog`
     /// entry.
-    pub fn manifest_node(&self) -> Result<&[u8], RevlogError> {
-        self.lines()
-            .next()
-            .ok_or_else(|| HgError::corrupted("empty changelog entry").into())
+    pub fn manifest_node(&self) -> Result<Node, HgError> {
+        match self.lines().next() {
+            None => Ok(NULL_NODE),
+            Some(x) => Node::from_hex_for_repo(x),
+        }
     }
 }

@@ -449,8 +449,8 @@ def mmapread(fp, size=None):
         return b''
     elif size is None:
         size = 0
+    fd = getattr(fp, 'fileno', lambda: fp)()
     try:
-        fd = getattr(fp, 'fileno', lambda: fp)()
         return mmap.mmap(fd, size, access=mmap.ACCESS_READ)
     except ValueError:
         # Empty files cannot be mmapped, but mmapread should still work.  Check
@@ -1224,6 +1224,8 @@ def versiontuple(v=None, n=4):
         return (vints[0], vints[1], vints[2])
     if n == 4:
         return (vints[0], vints[1], vints[2], extra)
+
+    raise error.ProgrammingError(b"invalid version part request: %d" % n)
 
 
 def cachefunc(func):

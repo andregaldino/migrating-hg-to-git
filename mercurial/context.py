@@ -1551,11 +1551,11 @@ class workingctx(committablectx):
     def __iter__(self):
         d = self._repo.dirstate
         for f in d:
-            if d[f] != b'r':
+            if d.get_entry(f).tracked:
                 yield f
 
     def __contains__(self, key):
-        return self._repo.dirstate[key] not in b"?r"
+        return self._repo.dirstate.get_entry(key).tracked
 
     def hex(self):
         return self._repo.nodeconstants.wdirhex
@@ -2017,7 +2017,7 @@ class workingctx(committablectx):
     def matches(self, match):
         match = self._repo.narrowmatch(match)
         ds = self._repo.dirstate
-        return sorted(f for f in ds.matches(match) if ds[f] != b'r')
+        return sorted(f for f in ds.matches(match) if ds.get_entry(f).tracked)
 
     def markcommitted(self, node):
         with self._repo.dirstate.parentchange():

@@ -22,6 +22,7 @@ from mercurial import (
     commands,
     error,
     hg,
+    logcmdutil,
     pycompat,
     registrar,
     revsetlang,
@@ -75,7 +76,7 @@ def split(ui, repo, *revs, **opts):
         # If the rebase somehow runs into conflicts, make sure
         # we close the transaction so the user can continue it.
         with util.acceptintervention(tr):
-            revs = scmutil.revrange(repo, revlist or [b'.'])
+            revs = logcmdutil.revrange(repo, revlist or [b'.'])
             if len(revs) > 1:
                 raise error.InputError(_(b'cannot split multiple revisions'))
 

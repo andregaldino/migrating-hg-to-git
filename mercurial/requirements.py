@@ -12,7 +12,7 @@ DOTENCODE_REQUIREMENT = b'dotencode'
 STORE_REQUIREMENT = b'store'
 FNCACHE_REQUIREMENT = b'fncache'
 
-DIRSTATE_V2_REQUIREMENT = b'exp-dirstate-v2'
+DIRSTATE_V2_REQUIREMENT = b'dirstate-v2'
 
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.

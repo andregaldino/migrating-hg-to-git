@@ -191,10 +191,12 @@ class largefilesdirstate(dirstate.dirstate):
     def _ignore(self, f):
         return False
 
-    def write(self, tr=False):
+    def write(self, tr):
         # (1) disable PENDING mode always
         #     (lfdirstate isn't yet managed as a part of the transaction)
         # (2) avoid develwarn 'use dirstate.write with ....'
+        if tr:
+            tr.addbackup(b'largefiles/dirstate', location=b'plain')
         super(largefilesdirstate, self).write(None)
 
 
@@ -269,7 +271,7 @@ def listlfiles(repo, rev=None, matcher=None):
     return [
         splitstandin(f)
         for f in repo[rev].walk(matcher)
-        if rev is not None or repo.dirstate[f] != b'?'
+        if rev is not None or repo.dirstate.get_entry(f).any_tracked
     ]
 
 
@@ -558,24 +560,14 @@ def synclfdirstate(repo, lfdirstate, lfile, normallookup):
     if lfstandin not in repo.dirstate:
         lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=False)
     else:
-        stat = repo.dirstate._map[lfstandin]
-        state, mtime = stat.state, stat.mtime
-        if state == b'n':
-            if normallookup or mtime < 0 or not repo.wvfs.exists(lfile):
-                # state 'n' doesn't ensure 'clean' in this case
-                lfdirstate.update_file(
-                    lfile, p1_tracked=True, wc_tracked=True, possibly_dirty=True
-                )
-            else:
-                lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=True)
-        elif state == b'm':
-            lfdirstate.update_file(
-                lfile, p1_tracked=True, wc_tracked=True, merged=True
-            )
-        elif state == b'r':
-            lfdirstate.update_file(lfile, p1_tracked=True, wc_tracked=False)
-        elif state == b'a':
-            lfdirstate.update_file(lfile, p1_tracked=False, wc_tracked=True)
+        entry = repo.dirstate.get_entry(lfstandin)
+        lfdirstate.update_file(
+            lfile,
+            wc_tracked=entry.tracked,
+            p1_tracked=entry.p1_tracked,
+            p2_info=entry.p2_info,
+            possibly_dirty=True,
+        )
 
 
 def markcommitted(orig, ctx, node):
@@ -598,7 +590,7 @@ def markcommitted(orig, ctx, node):
             lfile = splitstandin(f)
             if lfile is not None:
                 synclfdirstate(repo, lfdirstate, lfile, False)
-    lfdirstate.write()
+    lfdirstate.write(repo.currenttransaction())
 
     # As part of committing, copy all of the largefiles into the cache.
     #
@@ -713,7 +705,7 @@ def updatestandinsbymatch(repo, match):
     lfdirstate = openlfdirstate(ui, repo)
     for fstandin in standins:
         lfile = splitstandin(fstandin)
-        if lfdirstate[lfile] != b'r':
+        if lfdirstate.get_entry(lfile).tracked:
             updatestandin(repo, lfile, fstandin)
 
     # Cook up a new matcher that only matches regular files or
@@ -737,10 +729,10 @@ def updatestandinsbymatch(repo, match):
         # standin removal, drop the normal file if it is unknown to dirstate.
         # Thus, skip plain largefile names but keep the standin.
         if f in lfiles or fstandin in standins:
-            if repo.dirstate[fstandin] != b'r':
-                if repo.dirstate[f] != b'r':
+            if not repo.dirstate.get_entry(fstandin).removed:
+                if not repo.dirstate.get_entry(f).removed:
                     continue
-            elif repo.dirstate[f] == b'?':
+            elif not repo.dirstate.get_entry(f).any_tracked:
                 continue
 
         actualfiles.append(f)

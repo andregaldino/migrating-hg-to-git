@@ -18,6 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
+use crate::{Node, NULL_REVISION};
 
 #[derive(derive_more::From)]
 pub enum RevlogError {
@@ -50,7 +51,7 @@ pub struct Revlog {
     /// When index and data are not interleaved: bytes of the revlog index.
     /// When index and data are interleaved: bytes of the revlog index and
     /// data.
-    pub(crate) index: Index,
+    index: Index,
     /// When index and data are not interleaved: bytes of the revlog data
     data_bytes: Option<Box<dyn Deref<Target = [u8]> + Send>>,
     /// When present on disk: the persistent nodemap for this revlog
@@ -67,17 +68,24 @@ impl Revlog {
         repo: &Repo,
         index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
-    ) -> Result<Self, RevlogError> {
+    ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
-        let index_mmap = repo.store_vfs().mmap_open(&index_path)?;
+        let index = {
+            match repo.store_vfs().mmap_open_opt(&index_path)? {
+                None => Index::new(Box::new(vec![])),
+                Some(index_mmap) => {
+                    let version = get_version(&index_mmap)?;
+                    if version != 1 {
+                        // A proper new version should have had a repo/store
+                        // requirement.
+                        return Err(HgError::corrupted("corrupted revlog"));
+                    }
 
-        let version = get_version(&index_mmap);
-        if version != 1 {
-            // A proper new version should have had a repo/store requirement.
-            return Err(RevlogError::corrupted());
-        }
-
-        let index = Index::new(Box::new(index_mmap))?;
+                    let index = Index::new(Box::new(index_mmap))?;
+                    Ok(index)
+                }
+            }
+        }?;
 
         let default_data_path = index_path.with_extension("d");
 
@@ -92,14 +100,18 @@ impl Revlog {
                 Some(Box::new(data_mmap))
             };
 
-        let nodemap = NodeMapDocket::read_from_file(repo, index_path)?.map(
-            |(docket, data)| {
-                nodemap::NodeTree::load_bytes(
-                    Box::new(data),
-                    docket.data_length,
-                )
-            },
-        );
+        let nodemap = if index.is_inline() {
+            None
+        } else {
+            NodeMapDocket::read_from_file(repo, index_path)?.map(
+                |(docket, data)| {
+                    nodemap::NodeTree::load_bytes(
+                        Box::new(data),
+                        docket.data_length,
+                    )
+                },
+            )
+        };
 
         Ok(Revlog {
             index,
@@ -118,12 +130,26 @@ impl Revlog {
         self.index.is_empty()
     }
 
-    /// Return the full data associated to a node.
+    /// Returns the node ID for the given revision number, if it exists in this
+    /// revlog
+    pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
+        if rev == NULL_REVISION {
+            return Some(&NULL_NODE);
+        }
+        Some(self.index.get_entry(rev)?.hash())
+    }
+
+    /// Return the revision number for the given node ID, if it exists in this
+    /// revlog
     #[timed]
-    pub fn get_node_rev(
+    pub fn rev_from_node(
         &self,
         node: NodePrefix,
     ) -> Result<Revision, RevlogError> {
+        if node.is_prefix_of(&NULL_NODE) {
+            return Ok(NULL_REVISION);
+        }
+
         if let Some(nodemap) = &self.nodemap {
             return nodemap
                 .find_bin(&self.index, node)?
@@ -167,6 +193,9 @@ impl Revlog {
     /// snapshot to rebuild the final data.
     #[timed]
     pub fn get_rev_data(&self, rev: Revision) -> Result<Vec<u8>, RevlogError> {
+        if rev == NULL_REVISION {
+            return Ok(vec![]);
+        };
         // Todo return -> Cow
         let mut entry = self.get_entry(rev)?;
         let mut delta_chain = vec![];
@@ -292,6 +321,10 @@ pub struct RevlogEntry<'a> {
 }
 
 impl<'a> RevlogEntry<'a> {
+    pub fn revision(&self) -> Revision {
+        self.rev
+    }
+
     /// Extract the data contained in the entry.
     pub fn data(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
         if self.bytes.is_empty() {
@@ -355,8 +388,16 @@ impl<'a> RevlogEntry<'a> {
 }
 
 /// Format version of the revlog.
-pub fn get_version(index_bytes: &[u8]) -> u16 {
-    BigEndian::read_u16(&index_bytes[2..=3])
+pub fn get_version(index_bytes: &[u8]) -> Result<u16, HgError> {
+    if index_bytes.len() == 0 {
+        return Ok(1);
+    };
+    if index_bytes.len() < 4 {
+        return Err(HgError::corrupted(
+            "corrupted revlog: can't read the index format header",
+        ));
+    };
+    Ok(BigEndian::read_u16(&index_bytes[2..=3]))
 }
 
 /// Calculate the hash of a revision given its data and its parents.
@@ -391,6 +432,6 @@ mod tests {
             .with_version(1)
             .build();
 
-        assert_eq!(get_version(&bytes), 1)
+        assert_eq!(get_version(&bytes).map_err(|_err| ()), Ok(1))
     }
 }

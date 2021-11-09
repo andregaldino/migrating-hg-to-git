@@ -959,11 +959,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'dirstate-tree.in-memory',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
     b'editortmpinhg',
     default=False,
 )
@@ -1266,6 +1261,11 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
+    b'web.full-garbage-collection-rate',
+    default=1,  # still forcing a full collection on each request
+)
+coreconfigitem(
+    b'experimental',
     b'worker.wdir-get-thread-safe',
     default=False,
 )
@@ -1306,7 +1306,7 @@ coreconfigitem(
     # Enable this dirstate format *when creating a new repository*.
     # Which format to use for existing repos is controlled by .hg/requires
     b'format',
-    b'exp-dirstate-v2',
+    b'exp-rc-dirstate-v2',
     default=False,
     experimental=True,
 )
@@ -1878,6 +1878,13 @@ coreconfigitem(
     b'rewrite',
     b'empty-successor',
     default=b'skip',
+    experimental=True,
+)
+# experimental as long as format.exp-rc-dirstate-v2 is.
+coreconfigitem(
+    b'storage',
+    b'dirstate-v2.slow-path',
+    default=b"abort",
     experimental=True,
 )
 coreconfigitem(

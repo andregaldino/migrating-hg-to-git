@@ -644,14 +644,13 @@ Test debugcapabilities command:
 
 Test debugpeer
 
-  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" debugpeer ssh://user@dummy/debugrevlog
+  $ hg debugpeer ssh://user@dummy/debugrevlog
   url: ssh://user@dummy/debugrevlog
   local: no
   pushable: yes
 
-  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
-  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
-  running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
+  $ hg --debug debugpeer ssh://user@dummy/debugrevlog
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R debugrevlog serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command

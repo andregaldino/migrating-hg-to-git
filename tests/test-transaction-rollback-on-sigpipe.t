@@ -2,7 +2,7 @@ Test that, when an hg push is interrupted and the remote side receives SIGPIPE,
 the remote hg is able to successfully roll back the transaction.
 
   $ hg init -q remote
-  $ hg clone -e "\"$PYTHON\" \"$RUNTESTDIR/dummyssh\"" -q ssh://user@dummy/`pwd`/remote local
+  $ hg clone -q ssh://user@dummy/`pwd`/remote local
   $ SIGPIPE_REMOTE_DEBUG_FILE="$TESTTMP/DEBUGFILE"
   $ SYNCFILE1="$TESTTMP/SYNCFILE1"
   $ SYNCFILE2="$TESTTMP/SYNCFILE2"
@@ -36,7 +36,7 @@ disconnecting. Then exit nonzero, to force a transaction rollback.
 
 (use quiet to avoid flacky output from the server)
 
-  $ hg push --quiet -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --remotecmd "$remotecmd"
+  $ hg push --quiet --remotecmd "$remotecmd"
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
   [255]
   $ cat $SIGPIPE_REMOTE_DEBUG_FILE

@@ -46,13 +46,12 @@ if pycompat.TYPE_CHECKING:
         Any,
         Callable,
         Dict,
-        List,
         Optional,
         Sequence,
         Tuple,
     )
 
-    for t in (Any, Callable, Dict, List, Optional, Tuple):
+    for t in (Any, Callable, Dict, Optional, Tuple):
         assert t
 
 
@@ -714,43 +713,43 @@ class walkopts(object):
     """
 
     # raw command-line parameters, which a matcher will be built from
-    pats = attr.ib()  # type: List[bytes]
-    opts = attr.ib()  # type: Dict[bytes, Any]
+    pats = attr.ib()
+    opts = attr.ib()
 
     # a list of revset expressions to be traversed; if follow, it specifies
     # the start revisions
-    revspec = attr.ib()  # type: List[bytes]
+    revspec = attr.ib()
 
     # miscellaneous queries to filter revisions (see "hg help log" for details)
-    bookmarks = attr.ib(default=attr.Factory(list))  # type: List[bytes]
-    branches = attr.ib(default=attr.Factory(list))  # type: List[bytes]
-    date = attr.ib(default=None)  # type: Optional[bytes]
-    keywords = attr.ib(default=attr.Factory(list))  # type: List[bytes]
-    no_merges = attr.ib(default=False)  # type: bool
-    only_merges = attr.ib(default=False)  # type: bool
-    prune_ancestors = attr.ib(default=attr.Factory(list))  # type: List[bytes]
-    users = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    bookmarks = attr.ib(default=attr.Factory(list))
+    branches = attr.ib(default=attr.Factory(list))
+    date = attr.ib(default=None)
+    keywords = attr.ib(default=attr.Factory(list))
+    no_merges = attr.ib(default=False)
+    only_merges = attr.ib(default=False)
+    prune_ancestors = attr.ib(default=attr.Factory(list))
+    users = attr.ib(default=attr.Factory(list))
 
     # miscellaneous matcher arguments
-    include_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
-    exclude_pats = attr.ib(default=attr.Factory(list))  # type: List[bytes]
+    include_pats = attr.ib(default=attr.Factory(list))
+    exclude_pats = attr.ib(default=attr.Factory(list))
 
     # 0: no follow, 1: follow first, 2: follow both parents
-    follow = attr.ib(default=0)  # type: int
+    follow = attr.ib(default=0)
 
     # do not attempt filelog-based traversal, which may be fast but cannot
     # include revisions where files were removed
-    force_changelog_traversal = attr.ib(default=False)  # type: bool
+    force_changelog_traversal = attr.ib(default=False)
 
     # filter revisions by file patterns, which should be disabled only if
     # you want to include revisions where files were unmodified
-    filter_revisions_by_pats = attr.ib(default=True)  # type: bool
+    filter_revisions_by_pats = attr.ib(default=True)
 
     # sort revisions prior to traversal: 'desc', 'topo', or None
-    sort_revisions = attr.ib(default=None)  # type: Optional[bytes]
+    sort_revisions = attr.ib(default=None)
 
     # limit number of changes displayed; None means unlimited
-    limit = attr.ib(default=None)  # type: Optional[int]
+    limit = attr.ib(default=None)
 
 
 def parseopts(ui, pats, opts):
@@ -913,6 +912,42 @@ def _makenofollowfilematcher(repo, pats, opts):
     return None
 
 
+def revsingle(repo, revspec, default=b'.', localalias=None):
+    """Resolves user-provided revset(s) into a single revision.
+
+    This just wraps the lower-level scmutil.revsingle() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revsingle(repo, revspec, default, localalias)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
+def revpair(repo, revs):
+    """Resolves user-provided revset(s) into two revisions.
+
+    This just wraps the lower-level scmutil.revpair() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revpair(repo, revs)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
+def revrange(repo, specs, localalias=None):
+    """Resolves user-provided revset(s).
+
+    This just wraps the lower-level scmutil.revrange() in order to raise an
+    exception indicating user error.
+    """
+    try:
+        return scmutil.revrange(repo, specs, localalias)
+    except error.RepoLookupError as e:
+        raise error.InputError(e.args[0], hint=e.hint)
+
+
 _opt2logrevset = {
     b'no_merges': (b'not merge()', None),
     b'only_merges': (b'merge()', None),
@@ -988,7 +1023,7 @@ def _makerevset(repo, wopts, slowpath):
 def _initialrevs(repo, wopts):
     """Return the initial set of revisions to be filtered or followed"""
     if wopts.revspec:
-        revs = scmutil.revrange(repo, wopts.revspec)
+        revs = revrange(repo, wopts.revspec)
     elif wopts.follow and repo.dirstate.p1() == repo.nullid:
         revs = smartset.baseset()
     elif wopts.follow:

@@ -1,6 +1,4 @@
   $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > [extensions]
   > fastannotate=
   > [fastannotate]

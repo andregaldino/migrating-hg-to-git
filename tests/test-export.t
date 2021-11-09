@@ -370,7 +370,7 @@ Catch exporting unknown revisions (especially empty revsets, see issue3353)
   [10]
   $ hg export 999
   abort: unknown revision '999'
-  [255]
+  [10]
   $ hg export "not all()"
   abort: export requires at least one changeset
   [10]

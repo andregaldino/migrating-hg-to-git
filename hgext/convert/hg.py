@@ -36,10 +36,10 @@ from mercurial import (
     exchange,
     hg,
     lock as lockmod,
+    logcmdutil,
     merge as mergemod,
     phases,
     pycompat,
-    scmutil,
     util,
 )
 from mercurial.utils import dateutil
@@ -145,7 +145,7 @@ class mercurial_sink(common.converter_sink):
                     _(b'pulling from %s into %s\n') % (pbranch, branch)
                 )
                 exchange.pull(
-                    self.repo, prepo, [prepo.lookup(h) for h in heads]
+                    self.repo, prepo, heads=[prepo.lookup(h) for h in heads]
                 )
             self.before()
 
@@ -564,7 +564,7 @@ class mercurial_source(common.converter_source):
                 )
             nodes = set()
             parents = set()
-            for r in scmutil.revrange(self.repo, [hgrevs]):
+            for r in logcmdutil.revrange(self.repo, [hgrevs]):
                 ctx = self.repo[r]
                 nodes.add(ctx.node())
                 parents.update(p.node() for p in ctx.parents())

@@ -157,9 +157,9 @@ dependencies = [
 
 [[package]]
 name = "cpython"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8094679a4e9bfc8035572162624bc800eda35b5f9eff2537b9cd9aacc3d9782e"
+checksum = "b7d46ba8ace7f3a1d204ac5060a706d0a68de6b42eafb6a586cc08bebcffe664"
 dependencies = [
  "libc",
  "num-traits",
@@ -374,6 +374,7 @@ dependencies = [
 name = "hg-core"
 version = "0.1.0"
 dependencies = [
+ "bitflags",
  "byteorder",
  "bytes-cast",
  "clap",
@@ -385,8 +386,9 @@ dependencies = [
  "im-rc",
  "itertools",
  "lazy_static",
+ "libc",
  "log",
- "memmap",
+ "memmap2",
  "micro-timer",
  "pretty_assertions",
  "rand",
@@ -396,6 +398,7 @@ dependencies = [
  "regex",
  "same-file",
  "sha-1",
+ "stable_deref_trait",
  "tempfile",
  "twox-hash",
  "zstd",
@@ -411,6 +414,7 @@ dependencies = [
  "hg-core",
  "libc",
  "log",
+ "stable_deref_trait",
 ]
 
 [[package]]
@@ -508,13 +512,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ee1c47aaa256ecabcaea351eae4a9b01ef39ed810004e298d2511ed284b1525"
 
 [[package]]
-name = "memmap"
-version = "0.7.0"
+name = "memmap2"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6585fd95e7bb50d6cc31e20d4cf9afb4e2ba16c5846fc76793f11218da9c475b"
+checksum = "de5d3112c080d58ce560081baeaab7e1e864ca21795ddbf533d5b1842bb1ecf8"
 dependencies = [
  "libc",
- "winapi",
+ "stable_deref_trait",
 ]
 
 [[package]]
@@ -649,9 +653,9 @@ dependencies = [
 
 [[package]]
 name = "python27-sys"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5826ddbc5366eb0b0492040fdc25bf50bb49092c192bd45e80fb7a24dc6832ab"
+checksum = "94670354e264300dde81a5864cbb6bfc9d56ac3dcf3a278c32cb52f816f4dfd1"
 dependencies = [
  "libc",
  "regex",
@@ -659,9 +663,9 @@ dependencies = [
 
 [[package]]
 name = "python3-sys"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b78af21b29594951a47fc3dac9b9eff0a3f077dec2f780ee943ae16a668f3b6a"
+checksum = "b18b32e64c103d5045f44644d7ddddd65336f7a0521f6fde673240a9ecceb77e"
 dependencies = [
  "libc",
  "regex",
@@ -863,6 +867,12 @@ dependencies = [
  "bitmaps",
  "typenum",
 ]
+
+[[package]]
+name = "stable_deref_trait"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "static_assertions"

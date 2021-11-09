@@ -186,7 +186,7 @@ subrepo is referenced by absolute path.
 
 subrepo paths with ssh urls
 
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/cloned sshclone
+  $ hg clone ssh://user@dummy/cloned sshclone
   requesting all changes
   adding changesets
   adding manifests
@@ -203,7 +203,7 @@ subrepo paths with ssh urls
   new changesets 863c1745b441
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-  $ hg -R sshclone push -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/`pwd`/cloned
+  $ hg -R sshclone push ssh://user@dummy/`pwd`/cloned
   pushing to ssh://user@dummy/$TESTTMP/cloned
   pushing subrepo sub to ssh://user@dummy/$TESTTMP/sub
   searching for changes

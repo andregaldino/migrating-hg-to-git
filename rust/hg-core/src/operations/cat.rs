@@ -5,31 +5,70 @@
 // This software may be used and distributed according to the terms of the
 // GNU General Public License version 2 or any later version.
 
-use std::path::PathBuf;
-
 use crate::repo::Repo;
-use crate::revlog::changelog::Changelog;
-use crate::revlog::manifest::Manifest;
-use crate::revlog::path_encode::path_encode;
-use crate::revlog::revlog::Revlog;
 use crate::revlog::revlog::RevlogError;
 use crate::revlog::Node;
-use crate::utils::files::get_path_from_bytes;
-use crate::utils::hg_path::{HgPath, HgPathBuf};
 
-pub struct CatOutput {
+use crate::utils::hg_path::HgPath;
+
+use itertools::put_back;
+use itertools::PutBack;
+use std::cmp::Ordering;
+
+pub struct CatOutput<'a> {
     /// Whether any file in the manifest matched the paths given as CLI
     /// arguments
     pub found_any: bool,
     /// The contents of matching files, in manifest order
-    pub concatenated: Vec<u8>,
+    pub results: Vec<(&'a HgPath, Vec<u8>)>,
     /// Which of the CLI arguments did not match any manifest file
-    pub missing: Vec<HgPathBuf>,
+    pub missing: Vec<&'a HgPath>,
     /// The node ID that the given revset was resolved to
     pub node: Node,
 }
 
-const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
+// Find an item in an iterator over a sorted collection.
+fn find_item<'a, 'b, 'c, D, I: Iterator<Item = (&'a HgPath, D)>>(
+    i: &mut PutBack<I>,
+    needle: &'b HgPath,
+) -> Option<D> {
+    loop {
+        match i.next() {
+            None => return None,
+            Some(val) => match needle.as_bytes().cmp(val.0.as_bytes()) {
+                Ordering::Less => {
+                    i.put_back(val);
+                    return None;
+                }
+                Ordering::Greater => continue,
+                Ordering::Equal => return Some(val.1),
+            },
+        }
+    }
+}
+
+fn find_files_in_manifest<
+    'manifest,
+    'query,
+    Data,
+    Manifest: Iterator<Item = (&'manifest HgPath, Data)>,
+    Query: Iterator<Item = &'query HgPath>,
+>(
+    manifest: Manifest,
+    query: Query,
+) -> (Vec<(&'query HgPath, Data)>, Vec<&'query HgPath>) {
+    let mut manifest = put_back(manifest);
+    let mut res = vec![];
+    let mut missing = vec![];
+
+    for file in query {
+        match find_item(&mut manifest, file) {
+            None => missing.push(file),
+            Some(item) => res.push((file, item)),
+        }
+    }
+    return (res, missing);
+}
 
 /// Output the given revision of files
 ///
@@ -39,67 +78,38 @@ const METADATA_DELIMITER: [u8; 2] = [b'\x01', b'\n'];
 pub fn cat<'a>(
     repo: &Repo,
     revset: &str,
-    files: &'a [HgPathBuf],
-) -> Result<CatOutput, RevlogError> {
+    mut files: Vec<&'a HgPath>,
+) -> Result<CatOutput<'a>, RevlogError> {
     let rev = crate::revset::resolve_single(revset, repo)?;
-    let changelog = Changelog::open(repo)?;
-    let manifest = Manifest::open(repo)?;
-    let changelog_entry = changelog.get_rev(rev)?;
-    let node = *changelog
+    let manifest = repo.manifest_for_rev(rev)?;
+    let node = *repo
+        .changelog()?
         .node_from_rev(rev)
-        .expect("should succeed when changelog.get_rev did");
-    let manifest_node =
-        Node::from_hex_for_repo(&changelog_entry.manifest_node()?)?;
-    let manifest_entry = manifest.get_node(manifest_node.into())?;
-    let mut bytes = vec![];
-    let mut matched = vec![false; files.len()];
+        .expect("should succeed when repo.manifest did");
+    let mut results: Vec<(&'a HgPath, Vec<u8>)> = vec![];
     let mut found_any = false;
 
-    for (manifest_file, node_bytes) in manifest_entry.files_with_nodes() {
-        for (cat_file, is_matched) in files.iter().zip(&mut matched) {
-            if cat_file.as_bytes() == manifest_file.as_bytes() {
-                *is_matched = true;
-                found_any = true;
-                let index_path = store_path(manifest_file, b".i");
-                let data_path = store_path(manifest_file, b".d");
+    files.sort_unstable();
 
-                let file_log =
-                    Revlog::open(repo, &index_path, Some(&data_path))?;
-                let file_node = Node::from_hex_for_repo(node_bytes)?;
-                let file_rev = file_log.get_node_rev(file_node.into())?;
-                let data = file_log.get_rev_data(file_rev)?;
-                if data.starts_with(&METADATA_DELIMITER) {
-                    let end_delimiter_position = data
-                        [METADATA_DELIMITER.len()..]
-                        .windows(METADATA_DELIMITER.len())
-                        .position(|bytes| bytes == METADATA_DELIMITER);
-                    if let Some(position) = end_delimiter_position {
-                        let offset = METADATA_DELIMITER.len() * 2;
-                        bytes.extend(data[position + offset..].iter());
-                    }
-                } else {
-                    bytes.extend(data);
-                }
-            }
-        }
+    let (found, missing) = find_files_in_manifest(
+        manifest.files_with_nodes(),
+        files.into_iter().map(|f| f.as_ref()),
+    );
+
+    for (file_path, node_bytes) in found {
+        found_any = true;
+        let file_log = repo.filelog(file_path)?;
+        let file_node = Node::from_hex_for_repo(node_bytes)?;
+        results.push((
+            file_path,
+            file_log.data_for_node(file_node)?.into_data()?,
+        ));
     }
 
-    let missing: Vec<_> = files
-        .iter()
-        .zip(&matched)
-        .filter(|pair| !*pair.1)
-        .map(|pair| pair.0.clone())
-        .collect();
     Ok(CatOutput {
         found_any,
-        concatenated: bytes,
+        results,
         missing,
         node,
     })
-}
-
-fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
-    let encoded_bytes =
-        path_encode(&[b"data/", hg_path.as_bytes(), suffix].concat());
-    get_path_from_bytes(&encoded_bytes).into()
 }

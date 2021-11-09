@@ -1,5 +1,6 @@
 use format_bytes::format_bytes;
 use std::borrow::Cow;
+use std::env;
 use std::io;
 use std::io::{ErrorKind, Write};
 
@@ -48,6 +49,25 @@ impl Ui {
         stderr.write_all(bytes).or_else(handle_stderr_error)?;
 
         stderr.flush().or_else(handle_stderr_error)
+    }
+
+    /// is plain mode active
+    ///
+    /// Plain mode means that all configuration variables which affect
+    /// the behavior and output of Mercurial should be
+    /// ignored. Additionally, the output should be stable,
+    /// reproducible and suitable for use in scripts or applications.
+    ///
+    /// The only way to trigger plain mode is by setting either the
+    /// `HGPLAIN' or `HGPLAINEXCEPT' environment variables.
+    ///
+    /// The return value can either be
+    /// - False if HGPLAIN is not set, or feature is in HGPLAINEXCEPT
+    /// - False if feature is disabled by default and not included in HGPLAIN
+    /// - True otherwise
+    pub fn plain(&self) -> bool {
+        // TODO: add support for HGPLAINEXCEPT
+        env::var_os("HGPLAIN").is_some()
     }
 }
 

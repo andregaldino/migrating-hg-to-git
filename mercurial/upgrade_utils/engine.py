@@ -201,7 +201,7 @@ def _clonerevlogs(
 
     # Perform a pass to collect metadata. This validates we can open all
     # source files and allows a unified progress bar to be displayed.
-    for rl_type, unencoded, encoded, size in alldatafiles:
+    for rl_type, unencoded, size in alldatafiles:
         if not rl_type & store.FILEFLAGS_REVLOG_MAIN:
             continue
 
@@ -638,7 +638,6 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
         )
 
     assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
-    srcrepo.dirstate._map._use_dirstate_tree = True
     srcrepo.dirstate._map.preload()
     srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
     srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2

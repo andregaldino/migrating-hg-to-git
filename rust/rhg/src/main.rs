@@ -17,6 +17,9 @@ use std::process::Command;
 mod blackbox;
 mod error;
 mod ui;
+pub mod utils {
+    pub mod path_utils;
+}
 use error::CommandError;
 
 fn main_with_result(
@@ -68,6 +71,25 @@ fn main_with_result(
     let matches = app.clone().get_matches_safe()?;
 
     let (subcommand_name, subcommand_matches) = matches.subcommand();
+
+    // Mercurial allows users to define "defaults" for commands, fallback
+    // if a default is detected for the current command
+    let defaults = config.get_str(b"defaults", subcommand_name.as_bytes());
+    if defaults?.is_some() {
+        let msg = "`defaults` config set";
+        return Err(CommandError::unsupported(msg));
+    }
+
+    for prefix in ["pre", "post", "fail"].iter() {
+        // Mercurial allows users to define generic hooks for commands,
+        // fallback if any are detected
+        let item = format!("{}-{}", prefix, subcommand_name);
+        let hook_for_command = config.get_str(b"hooks", item.as_bytes())?;
+        if hook_for_command.is_some() {
+            let msg = format!("{}-{} hook defined", prefix, subcommand_name);
+            return Err(CommandError::unsupported(msg));
+        }
+    }
     let run = subcommand_run_fn(subcommand_name)
         .expect("unknown subcommand name from clap despite AppSettings::SubcommandRequired");
     let subcommand_args = subcommand_matches
@@ -79,6 +101,15 @@ fn main_with_result(
         config,
         repo,
     };
+
+    if let Ok(repo) = repo {
+        // We don't support subrepos, fallback if the subrepos file is present
+        if repo.working_directory_vfs().join(".hgsub").exists() {
+            let msg = "subrepos (.hgsub is present)";
+            return Err(CommandError::unsupported(msg));
+        }
+    }
+
     let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
     blackbox.log_command_start();
     let result = run(&invocation);
@@ -567,11 +598,10 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
         unsupported.remove(supported);
     }
 
-    if let Some(ignored_list) =
-        config.get_simple_list(b"rhg", b"ignored-extensions")
+    if let Some(ignored_list) = config.get_list(b"rhg", b"ignored-extensions")
     {
         for ignored in ignored_list {
-            unsupported.remove(ignored);
+            unsupported.remove(ignored.as_slice());
         }
     }
 

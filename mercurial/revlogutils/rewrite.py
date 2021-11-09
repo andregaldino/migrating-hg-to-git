@@ -826,7 +826,7 @@ def repair_issue6528(
     with context():
         files = list(
             (file_type, path)
-            for (file_type, path, _e, _s) in repo.store.datafiles()
+            for (file_type, path, _s) in repo.store.datafiles()
             if path.endswith(b'.i') and file_type & store.FILEFLAGS_FILELOG
         )
 

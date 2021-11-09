@@ -626,7 +626,7 @@ def dorecord(
                 for realname, tmpname in pycompat.iteritems(backups):
                     ui.debug(b'restoring %r to %r\n' % (tmpname, realname))
 
-                    if dirstate[realname] == b'n':
+                    if dirstate.get_entry(realname).maybe_clean:
                         # without normallookup, restoring timestamp
                         # may cause partially committed files
                         # to be treated as unmodified
@@ -987,7 +987,7 @@ def changebranch(ui, repo, revs, label, opts):
     with repo.wlock(), repo.lock(), repo.transaction(b'branches'):
         # abort in case of uncommitted merge or dirty wdir
         bailifchanged(repo)
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
         if not revs:
             raise error.InputError(b"empty revision set")
         roots = repo.revs(b'roots(%ld)', revs)
@@ -1480,7 +1480,7 @@ def copy(ui, repo, pats, opts, rename=False):
             # TODO: Remove this restriction and make it also create the copy
             #       targets (and remove the rename source if rename==True).
             raise error.InputError(_(b'--at-rev requires --after'))
-        ctx = scmutil.revsingle(repo, rev)
+        ctx = logcmdutil.revsingle(repo, rev)
         if len(ctx.parents()) > 1:
             raise error.InputError(
                 _(b'cannot mark/unmark copy in merge commit')
@@ -1642,7 +1642,9 @@ def copy(ui, repo, pats, opts, rename=False):
         reltarget = repo.pathto(abstarget, cwd)
         target = repo.wjoin(abstarget)
         src = repo.wjoin(abssrc)
-        state = repo.dirstate[abstarget]
+        entry = repo.dirstate.get_entry(abstarget)
+
+        already_commited = entry.tracked and not entry.added
 
         scmutil.checkportable(ui, abstarget)
 
@@ -1672,30 +1674,48 @@ def copy(ui, repo, pats, opts, rename=False):
                 exists = False
                 samefile = True
 
-        if not after and exists or after and state in b'mn':
+        if not after and exists or after and already_commited:
             if not opts[b'force']:
-                if state in b'mn':
+                if already_commited:
                     msg = _(b'%s: not overwriting - file already committed\n')
-                    if after:
-                        flags = b'--after --force'
-                    else:
-                        flags = b'--force'
-                    if rename:
-                        hint = (
-                            _(
-                                b"('hg rename %s' to replace the file by "
-                                b'recording a rename)\n'
+                    # Check if if the target was added in the parent and the
+                    # source already existed in the grandparent.
+                    looks_like_copy_in_pctx = abstarget in pctx and any(
+                        abssrc in gpctx and abstarget not in gpctx
+                        for gpctx in pctx.parents()
+                    )
+                    if looks_like_copy_in_pctx:
+                        if rename:
+                            hint = _(
+                                b"('hg rename --at-rev .' to record the rename "
+                                b"in the parent of the working copy)\n"
                             )
-                            % flags
-                        )
-                    else:
-                        hint = (
-                            _(
-                                b"('hg copy %s' to replace the file by "
-                                b'recording a copy)\n'
+                        else:
+                            hint = _(
+                                b"('hg copy --at-rev .' to record the copy in "
+                                b"the parent of the working copy)\n"
                             )
-                            % flags
-                        )
+                    else:
+                        if after:
+                            flags = b'--after --force'
+                        else:
+                            flags = b'--force'
+                        if rename:
+                            hint = (
+                                _(
+                                    b"('hg rename %s' to replace the file by "
+                                    b'recording a rename)\n'
+                                )
+                                % flags
+                            )
+                        else:
+                            hint = (
+                                _(
+                                    b"('hg copy %s' to replace the file by "
+                                    b'recording a copy)\n'
+                                )
+                                % flags
+                            )
                 else:
                     msg = _(b'%s: not overwriting - file exists\n')
                     if rename:
@@ -3350,7 +3370,11 @@ def revert(ui, repo, ctx, *pats, **opts):
         for f in localchanges:
             src = repo.dirstate.copied(f)
             # XXX should we check for rename down to target node?
-            if src and src not in names and repo.dirstate[src] == b'r':
+            if (
+                src
+                and src not in names
+                and repo.dirstate.get_entry(src).removed
+            ):
                 dsremoved.add(src)
                 names[src] = True
 
@@ -3364,12 +3388,12 @@ def revert(ui, repo, ctx, *pats, **opts):
         # distinguish between file to forget and the other
         added = set()
         for abs in dsadded:
-            if repo.dirstate[abs] != b'a':
+            if not repo.dirstate.get_entry(abs).added:
                 added.add(abs)
         dsadded -= added
 
         for abs in deladded:
-            if repo.dirstate[abs] == b'a':
+            if repo.dirstate.get_entry(abs).added:
                 dsadded.add(abs)
         deladded -= dsadded
 

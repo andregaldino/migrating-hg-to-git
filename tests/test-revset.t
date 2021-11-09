@@ -407,7 +407,7 @@ quoting needed
   [10]
   $ log 'date'
   abort: unknown revision 'date'
-  [255]
+  [10]
   $ log 'date('
   hg: parse error at 5: not a prefix: end
   (date(
@@ -421,10 +421,10 @@ quoting needed
   [10]
   $ log '0:date'
   abort: unknown revision 'date'
-  [255]
+  [10]
   $ log '::"date"'
   abort: unknown revision 'date'
-  [255]
+  [10]
   $ hg book date -r 4
   $ log '0:date'
   0
@@ -3067,7 +3067,7 @@ abort if the revset doesn't expect given size
   0
   $ log 'expectsize(0:1, 1)'
   abort: revset size mismatch. expected 1, got 2
-  [255]
+  [10]
   $ log 'expectsize(0:4, -1)'
   hg: parse error: negative size
   [10]
@@ -3077,7 +3077,7 @@ abort if the revset doesn't expect given size
   2
   $ log 'expectsize(0:1, 3:5)'
   abort: revset size mismatch. expected between 3 and 5, got 2
-  [255]
+  [10]
   $ log 'expectsize(0:1, -1:2)'
   hg: parse error: negative size
   [10]
@@ -3104,10 +3104,10 @@ abort if the revset doesn't expect given size
   2
   $ log 'expectsize(0:2, 4:)'
   abort: revset size mismatch. expected between 4 and 11, got 3
-  [255]
+  [10]
   $ log 'expectsize(0:2, :2)'
   abort: revset size mismatch. expected between 0 and 2, got 3
-  [255]
+  [10]
 
 Test getting list of node from file
 

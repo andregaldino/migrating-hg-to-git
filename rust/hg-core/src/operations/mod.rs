@@ -4,7 +4,6 @@
 
 mod cat;
 mod debugdata;
-mod dirstate_status;
 mod list_tracked_files;
 pub use cat::{cat, CatOutput};
 pub use debugdata::{debug_data, DebugDataKind};

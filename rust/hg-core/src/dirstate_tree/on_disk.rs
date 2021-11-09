@@ -1,23 +1,8 @@
 //! The "version 2" disk representation of the dirstate
 //!
-//! # File format
-//!
-//! In dirstate-v2 format, the `.hg/dirstate` file is a "docket that starts
-//! with a fixed-sized header whose layout is defined by the `DocketHeader`
-//! struct, followed by the data file identifier.
-//!
-//! A separate `.hg/dirstate.{uuid}.d` file contains most of the data. That
-//! file may be longer than the size given in the docket, but not shorter. Only
-//! the start of the data file up to the given size is considered. The
-//! fixed-size "root" of the dirstate tree whose layout is defined by the
-//! `Root` struct is found at the end of that slice of data.
-//!
-//! Its `root_nodes` field contains the slice (offset and length) to
-//! the nodes representing the files and directories at the root of the
-//! repository. Each node is also fixed-size, defined by the `Node` struct.
-//! Nodes in turn contain slices to variable-size paths, and to their own child
-//! nodes (if any) for nested files and directories.
+//! See `mercurial/helptext/internals/dirstate-v2.txt`
 
+use crate::dirstate::TruncatedTimestamp;
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
@@ -25,13 +10,12 @@ use crate::utils::hg_path::HgPath;
 use crate::DirstateEntry;
 use crate::DirstateError;
 use crate::DirstateParents;
-use crate::EntryState;
-use bytes_cast::unaligned::{I32Be, I64Be, U16Be, U32Be};
+use bitflags::bitflags;
+use bytes_cast::unaligned::{U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
 use std::borrow::Cow;
 use std::convert::{TryFrom, TryInto};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
 /// This a redundant sanity check more than an actual "magic number" since
@@ -47,16 +31,16 @@ const USED_NODE_ID_BYTES: usize = 20;
 pub(super) const IGNORE_PATTERNS_HASH_LEN: usize = 20;
 pub(super) type IgnorePatternsHash = [u8; IGNORE_PATTERNS_HASH_LEN];
 
-/// Must match the constant of the same name in
-/// `mercurial/dirstateutils/docket.py`
+/// Must match constants of the same names in `mercurial/dirstateutils/v2.py`
 const TREE_METADATA_SIZE: usize = 44;
+const NODE_SIZE: usize = 44;
 
 /// Make sure that size-affecting changes are made knowingly
 #[allow(unused)]
 fn static_assert_size_of() {
     let _ = std::mem::transmute::<TreeMetadata, [u8; TREE_METADATA_SIZE]>;
     let _ = std::mem::transmute::<DocketHeader, [u8; TREE_METADATA_SIZE + 81]>;
-    let _ = std::mem::transmute::<Node, [u8; 43]>;
+    let _ = std::mem::transmute::<Node, [u8; NODE_SIZE]>;
 }
 
 // Must match `HEADER` in `mercurial/dirstateutils/docket.py`
@@ -67,10 +51,10 @@ struct DocketHeader {
     parent_1: [u8; STORED_NODE_ID_BYTES],
     parent_2: [u8; STORED_NODE_ID_BYTES],
 
+    metadata: TreeMetadata,
+
     /// Counted in bytes
     data_size: Size,
-
-    metadata: TreeMetadata,
 
     uuid_size: u8,
 }
@@ -80,44 +64,24 @@ pub struct Docket<'on_disk> {
     uuid: &'on_disk [u8],
 }
 
+/// Fields are documented in the *Tree metadata in the docket file*
+/// section of `mercurial/helptext/internals/dirstate-v2.txt`
 #[derive(BytesCast)]
 #[repr(C)]
 struct TreeMetadata {
     root_nodes: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
-
-    /// How many bytes of this data file are not used anymore
     unreachable_bytes: Size,
-
-    /// Current version always sets these bytes to zero when creating or
-    /// updating a dirstate. Future versions could assign some bits to signal
-    /// for example "the version that last wrote/updated this dirstate did so
-    /// in such and such way that can be relied on by versions that know to."
     unused: [u8; 4],
 
-    /// If non-zero, a hash of ignore files that were used for some previous
-    /// run of the `status` algorithm.
-    ///
-    /// We define:
-    ///
-    /// * "Root" ignore files are `.hgignore` at the root of the repository if
-    ///   it exists, and files from `ui.ignore.*` config. This set of files is
-    ///   then sorted by the string representation of their path.
-    /// * The "expanded contents" of an ignore files is the byte string made
-    ///   by concatenating its contents with the "expanded contents" of other
-    ///   files included with `include:` or `subinclude:` files, in inclusion
-    ///   order. This definition is recursive, as included files can
-    ///   themselves include more files.
-    ///
-    /// This hash is defined as the SHA-1 of the concatenation (in sorted
-    /// order) of the "expanded contents" of each "root" ignore file.
-    /// (Note that computing this does not require actually concatenating byte
-    /// strings into contiguous memory, instead SHA-1 hashing can be done
-    /// incrementally.)
+    /// See *Optional hash of ignore patterns* section of
+    /// `mercurial/helptext/internals/dirstate-v2.txt`
     ignore_patterns_hash: IgnorePatternsHash,
 }
 
+/// Fields are documented in the *The data file format*
+/// section of `mercurial/helptext/internals/dirstate-v2.txt`
 #[derive(BytesCast)]
 #[repr(C)]
 pub(super) struct Node {
@@ -130,59 +94,38 @@ pub(super) struct Node {
     children: ChildNodes,
     pub(super) descendants_with_entry_count: Size,
     pub(super) tracked_descendants_count: Size,
-
-    /// Depending on the value of `state`:
-    ///
-    /// * A null byte: `data` is not used.
-    ///
-    /// * A `n`, `a`, `r`, or `m` ASCII byte: `state` and `data` together
-    ///   represent a dirstate entry like in the v1 format.
-    ///
-    /// * A `d` ASCII byte: the bytes of `data` should instead be interpreted
-    ///   as the `Timestamp` for the mtime of a cached directory.
-    ///
-    ///   The presence of this state means that at some point, this path in
-    ///   the working directory was observed:
-    ///
-    ///   - To be a directory
-    ///   - With the modification time as given by `Timestamp`
-    ///   - That timestamp was already strictly in the past when observed,
-    ///     meaning that later changes cannot happen in the same clock tick
-    ///     and must cause a different modification time (unless the system
-    ///     clock jumps back and we get unlucky, which is not impossible but
-    ///     but deemed unlikely enough).
-    ///   - All direct children of this directory (as returned by
-    ///     `std::fs::read_dir`) either have a corresponding dirstate node, or
-    ///     are ignored by ignore patterns whose hash is in
-    ///     `TreeMetadata::ignore_patterns_hash`.
-    ///
-    ///   This means that if `std::fs::symlink_metadata` later reports the
-    ///   same modification time and ignored patterns haven’t changed, a run
-    ///   of status that is not listing ignored   files can skip calling
-    ///   `std::fs::read_dir` again for this directory,   iterate child
-    ///   dirstate nodes instead.
-    state: u8,
-    data: Entry,
+    flags: U16Be,
+    size: U32Be,
+    mtime: PackedTruncatedTimestamp,
 }
 
-#[derive(BytesCast, Copy, Clone)]
-#[repr(C)]
-struct Entry {
-    mode: I32Be,
-    mtime: I32Be,
-    size: I32Be,
+bitflags! {
+    #[repr(C)]
+    struct Flags: u16 {
+        const WDIR_TRACKED = 1 << 0;
+        const P1_TRACKED = 1 << 1;
+        const P2_INFO = 1 << 2;
+        const MODE_EXEC_PERM = 1 << 3;
+        const MODE_IS_SYMLINK = 1 << 4;
+        const HAS_FALLBACK_EXEC = 1 <<  5;
+        const FALLBACK_EXEC = 1 <<  6;
+        const HAS_FALLBACK_SYMLINK = 1 <<  7;
+        const FALLBACK_SYMLINK = 1 <<  8;
+        const EXPECTED_STATE_IS_MODIFIED = 1 << 9;
+        const HAS_MODE_AND_SIZE = 1 <<10;
+        const HAS_MTIME = 1 <<11;
+        const MTIME_SECOND_AMBIGUOUS = 1 << 12;
+        const DIRECTORY = 1 <<13;
+        const ALL_UNKNOWN_RECORDED = 1 <<14;
+        const ALL_IGNORED_RECORDED = 1 <<15;
+    }
 }
 
 /// Duration since the Unix epoch
-#[derive(BytesCast, Copy, Clone, PartialEq)]
+#[derive(BytesCast, Copy, Clone)]
 #[repr(C)]
-pub(super) struct Timestamp {
-    seconds: I64Be,
-
-    /// In `0 .. 1_000_000_000`.
-    ///
-    /// This timestamp is later or earlier than `(seconds, 0)` by this many
-    /// nanoseconds, if `seconds` is non-negative or negative, respectively.
+struct PackedTruncatedTimestamp {
+    truncated_seconds: U32Be,
     nanoseconds: U32Be,
 }
 
@@ -265,7 +208,7 @@ impl<'on_disk> Docket<'on_disk> {
     }
 
     pub fn data_filename(&self) -> String {
-        String::from_utf8(format_bytes!(b"dirstate.{}.d", self.uuid)).unwrap()
+        String::from_utf8(format_bytes!(b"dirstate.{}", self.uuid)).unwrap()
     }
 }
 
@@ -361,62 +304,112 @@ impl Node {
         })
     }
 
+    fn flags(&self) -> Flags {
+        Flags::from_bits_truncate(self.flags.get())
+    }
+
+    fn has_entry(&self) -> bool {
+        self.flags().intersects(
+            Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO,
+        )
+    }
+
     pub(super) fn node_data(
         &self,
     ) -> Result<dirstate_map::NodeData, DirstateV2ParseError> {
-        let entry = |state| {
-            dirstate_map::NodeData::Entry(self.entry_with_given_state(state))
-        };
-
-        match self.state {
-            b'\0' => Ok(dirstate_map::NodeData::None),
-            b'd' => Ok(dirstate_map::NodeData::CachedDirectory {
-                mtime: *self.data.as_timestamp(),
-            }),
-            b'n' => Ok(entry(EntryState::Normal)),
-            b'a' => Ok(entry(EntryState::Added)),
-            b'r' => Ok(entry(EntryState::Removed)),
-            b'm' => Ok(entry(EntryState::Merged)),
-            _ => Err(DirstateV2ParseError),
+        if self.has_entry() {
+            Ok(dirstate_map::NodeData::Entry(self.assume_entry()?))
+        } else if let Some(mtime) = self.cached_directory_mtime()? {
+            Ok(dirstate_map::NodeData::CachedDirectory { mtime })
+        } else {
+            Ok(dirstate_map::NodeData::None)
         }
     }
 
-    pub(super) fn cached_directory_mtime(&self) -> Option<&Timestamp> {
-        if self.state == b'd' {
-            Some(self.data.as_timestamp())
+    pub(super) fn cached_directory_mtime(
+        &self,
+    ) -> Result<Option<TruncatedTimestamp>, DirstateV2ParseError> {
+        // For now we do not have code to handle the absence of
+        // ALL_UNKNOWN_RECORDED, so we ignore the mtime if the flag is
+        // unset.
+        if self.flags().contains(Flags::DIRECTORY)
+            && self.flags().contains(Flags::HAS_MTIME)
+            && self.flags().contains(Flags::ALL_UNKNOWN_RECORDED)
+        {
+            Ok(Some(self.mtime.try_into()?))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn synthesize_unix_mode(&self) -> u32 {
+        let file_type = if self.flags().contains(Flags::MODE_IS_SYMLINK) {
+            libc::S_IFLNK
+        } else {
+            libc::S_IFREG
+        };
+        let permisions = if self.flags().contains(Flags::MODE_EXEC_PERM) {
+            0o755
+        } else {
+            0o644
+        };
+        file_type | permisions
+    }
+
+    fn assume_entry(&self) -> Result<DirstateEntry, DirstateV2ParseError> {
+        // TODO: convert through raw bits instead?
+        let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
+        let p1_tracked = self.flags().contains(Flags::P1_TRACKED);
+        let p2_info = self.flags().contains(Flags::P2_INFO);
+        let mode_size = if self.flags().contains(Flags::HAS_MODE_AND_SIZE)
+            && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
+        {
+            Some((self.synthesize_unix_mode(), self.size.into()))
         } else {
             None
-        }
-    }
-
-    pub(super) fn state(
-        &self,
-    ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        match self.state {
-            b'\0' | b'd' => Ok(None),
-            b'n' => Ok(Some(EntryState::Normal)),
-            b'a' => Ok(Some(EntryState::Added)),
-            b'r' => Ok(Some(EntryState::Removed)),
-            b'm' => Ok(Some(EntryState::Merged)),
-            _ => Err(DirstateV2ParseError),
-        }
-    }
-
-    fn entry_with_given_state(&self, state: EntryState) -> DirstateEntry {
-        DirstateEntry {
-            state,
-            mode: self.data.mode.get(),
-            mtime: self.data.mtime.get(),
-            size: self.data.size.get(),
-        }
+        };
+        let mtime = if self.flags().contains(Flags::HAS_MTIME)
+            && !self.flags().contains(Flags::DIRECTORY)
+            && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
+            // The current code is not able to do the more subtle comparison that the
+            // MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
+            && !self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS)
+        {
+            Some(self.mtime.try_into()?)
+        } else {
+            None
+        };
+        let fallback_exec = if self.flags().contains(Flags::HAS_FALLBACK_EXEC)
+        {
+            Some(self.flags().contains(Flags::FALLBACK_EXEC))
+        } else {
+            None
+        };
+        let fallback_symlink =
+            if self.flags().contains(Flags::HAS_FALLBACK_SYMLINK) {
+                Some(self.flags().contains(Flags::FALLBACK_SYMLINK))
+            } else {
+                None
+            };
+        Ok(DirstateEntry::from_v2_data(
+            wdir_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size,
+            mtime,
+            fallback_exec,
+            fallback_symlink,
+        ))
     }
 
     pub(super) fn entry(
         &self,
     ) -> Result<Option<DirstateEntry>, DirstateV2ParseError> {
-        Ok(self
-            .state()?
-            .map(|state| self.entry_with_given_state(state)))
+        if self.has_entry() {
+            Ok(Some(self.assume_entry()?))
+        } else {
+            Ok(None)
+        }
     }
 
     pub(super) fn children<'on_disk>(
@@ -442,57 +435,53 @@ impl Node {
             tracked_descendants_count: self.tracked_descendants_count.get(),
         })
     }
-}
 
-impl Entry {
-    fn from_timestamp(timestamp: Timestamp) -> Self {
-        // Safety: both types implement the `ByteCast` trait, so we could
-        // safely use `as_bytes` and `from_bytes` to do this conversion. Using
-        // `transmute` instead makes the compiler check that the two types
-        // have the same size, which eliminates the error case of
-        // `from_bytes`.
-        unsafe { std::mem::transmute::<Timestamp, Entry>(timestamp) }
-    }
-
-    fn as_timestamp(&self) -> &Timestamp {
-        // Safety: same as above in `from_timestamp`
-        unsafe { &*(self as *const Entry as *const Timestamp) }
-    }
-}
-
-impl Timestamp {
-    pub fn seconds(&self) -> i64 {
-        self.seconds.get()
-    }
-}
-
-impl From<SystemTime> for Timestamp {
-    fn from(system_time: SystemTime) -> Self {
-        let (secs, nanos) = match system_time.duration_since(UNIX_EPOCH) {
-            Ok(duration) => {
-                (duration.as_secs() as i64, duration.subsec_nanos())
-            }
-            Err(error) => {
-                let negative = error.duration();
-                (-(negative.as_secs() as i64), negative.subsec_nanos())
-            }
-        };
-        Timestamp {
-            seconds: secs.into(),
-            nanoseconds: nanos.into(),
-        }
-    }
-}
-
-impl From<&'_ Timestamp> for SystemTime {
-    fn from(timestamp: &'_ Timestamp) -> Self {
-        let secs = timestamp.seconds.get();
-        let nanos = timestamp.nanoseconds.get();
-        if secs >= 0 {
-            UNIX_EPOCH + Duration::new(secs as u64, nanos)
+    fn from_dirstate_entry(
+        entry: &DirstateEntry,
+    ) -> (Flags, U32Be, PackedTruncatedTimestamp) {
+        let (
+            wdir_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size_opt,
+            mtime_opt,
+            fallback_exec,
+            fallback_symlink,
+        ) = entry.v2_data();
+        // TODO: convert throug raw flag bits instead?
+        let mut flags = Flags::empty();
+        flags.set(Flags::WDIR_TRACKED, wdir_tracked);
+        flags.set(Flags::P1_TRACKED, p1_tracked);
+        flags.set(Flags::P2_INFO, p2_info);
+        let size = if let Some((m, s)) = mode_size_opt {
+            let exec_perm = m & libc::S_IXUSR != 0;
+            let is_symlink = m & libc::S_IFMT == libc::S_IFLNK;
+            flags.set(Flags::MODE_EXEC_PERM, exec_perm);
+            flags.set(Flags::MODE_IS_SYMLINK, is_symlink);
+            flags.insert(Flags::HAS_MODE_AND_SIZE);
+            s.into()
         } else {
-            UNIX_EPOCH - Duration::new((-secs) as u64, nanos)
+            0.into()
+        };
+        let mtime = if let Some(m) = mtime_opt {
+            flags.insert(Flags::HAS_MTIME);
+            m.into()
+        } else {
+            PackedTruncatedTimestamp::null()
+        };
+        if let Some(f_exec) = fallback_exec {
+            flags.insert(Flags::HAS_FALLBACK_EXEC);
+            if f_exec {
+                flags.insert(Flags::FALLBACK_EXEC);
+            }
         }
+        if let Some(f_symlink) = fallback_symlink {
+            flags.insert(Flags::HAS_FALLBACK_SYMLINK);
+            if f_symlink {
+                flags.insert(Flags::FALLBACK_SYMLINK);
+            }
+        }
+        (flags, size, mtime)
     }
 }
 
@@ -543,8 +532,8 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
         f: &mut impl FnMut(&'on_disk HgPath),
     ) -> Result<(), DirstateV2ParseError> {
         for node in read_nodes(on_disk, nodes)? {
-            if let Some(state) = node.state()? {
-                if state.is_tracked() {
+            if let Some(entry) = node.entry()? {
+                if entry.state().is_tracked() {
                     f(node.full_path(on_disk)?)
                 }
             }
@@ -638,25 +627,31 @@ impl Writer<'_, '_> {
             };
             on_disk_nodes.push(match node {
                 NodeRef::InMemory(path, node) => {
-                    let (state, data) = match &node.data {
-                        dirstate_map::NodeData::Entry(entry) => (
-                            entry.state.into(),
-                            Entry {
-                                mode: entry.mode.into(),
-                                mtime: entry.mtime.into(),
-                                size: entry.size.into(),
-                            },
-                        ),
-                        dirstate_map::NodeData::CachedDirectory { mtime } => {
-                            (b'd', Entry::from_timestamp(*mtime))
+                    let (flags, size, mtime) = match &node.data {
+                        dirstate_map::NodeData::Entry(entry) => {
+                            Node::from_dirstate_entry(entry)
                         }
+                        dirstate_map::NodeData::CachedDirectory { mtime } => (
+                            // we currently never set a mtime if unknown file
+                            // are present.
+                            // So if we have a mtime for a directory, we know
+                            // they are no unknown
+                            // files and we
+                            // blindly set ALL_UNKNOWN_RECORDED.
+                            //
+                            // We never set ALL_IGNORED_RECORDED since we
+                            // don't track that case
+                            // currently.
+                            Flags::DIRECTORY
+                                | Flags::HAS_MTIME
+                                | Flags::ALL_UNKNOWN_RECORDED,
+                            0.into(),
+                            (*mtime).into(),
+                        ),
                         dirstate_map::NodeData::None => (
-                            b'\0',
-                            Entry {
-                                mode: 0.into(),
-                                mtime: 0.into(),
-                                size: 0.into(),
-                            },
+                            Flags::DIRECTORY,
+                            0.into(),
+                            PackedTruncatedTimestamp::null(),
                         ),
                     };
                     Node {
@@ -673,8 +668,9 @@ impl Writer<'_, '_> {
                         tracked_descendants_count: node
                             .tracked_descendants_count
                             .into(),
-                        state,
-                        data,
+                        flags: flags.bits().into(),
+                        size,
+                        mtime,
                     }
                 }
                 NodeRef::OnDisk(node) => Node {
@@ -757,4 +753,34 @@ fn path_len_from_usize(x: usize) -> PathSize {
         // Could only panic for paths over 64 KiB
         .expect("dirstate-v2 path length overflow")
         .into()
+}
+
+impl From<TruncatedTimestamp> for PackedTruncatedTimestamp {
+    fn from(timestamp: TruncatedTimestamp) -> Self {
+        Self {
+            truncated_seconds: timestamp.truncated_seconds().into(),
+            nanoseconds: timestamp.nanoseconds().into(),
+        }
+    }
+}
+
+impl TryFrom<PackedTruncatedTimestamp> for TruncatedTimestamp {
+    type Error = DirstateV2ParseError;
+
+    fn try_from(
+        timestamp: PackedTruncatedTimestamp,
+    ) -> Result<Self, Self::Error> {
+        Self::from_already_truncated(
+            timestamp.truncated_seconds.get(),
+            timestamp.nanoseconds.get(),
+        )
+    }
+}
+impl PackedTruncatedTimestamp {
+    fn null() -> Self {
+        Self {
+            truncated_seconds: 0.into(),
+            nanoseconds: 0.into(),
+        }
+    }
 }

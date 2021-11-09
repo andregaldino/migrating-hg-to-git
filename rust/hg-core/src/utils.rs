@@ -67,36 +67,35 @@ where
 }
 
 pub trait SliceExt {
-    fn trim_end_newlines(&self) -> &Self;
     fn trim_end(&self) -> &Self;
     fn trim_start(&self) -> &Self;
+    fn trim_end_matches(&self, f: impl FnMut(u8) -> bool) -> &Self;
+    fn trim_start_matches(&self, f: impl FnMut(u8) -> bool) -> &Self;
     fn trim(&self) -> &Self;
     fn drop_prefix(&self, needle: &Self) -> Option<&Self>;
     fn split_2(&self, separator: u8) -> Option<(&[u8], &[u8])>;
-}
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_not_whitespace(c: &u8) -> bool {
-    !(*c as char).is_whitespace()
+    fn split_2_by_slice(&self, separator: &[u8]) -> Option<(&[u8], &[u8])>;
 }
 
 impl SliceExt for [u8] {
-    fn trim_end_newlines(&self) -> &[u8] {
-        if let Some(last) = self.iter().rposition(|&byte| byte != b'\n') {
-            &self[..=last]
-        } else {
-            &[]
-        }
-    }
     fn trim_end(&self) -> &[u8] {
-        if let Some(last) = self.iter().rposition(is_not_whitespace) {
+        self.trim_end_matches(|byte| byte.is_ascii_whitespace())
+    }
+
+    fn trim_start(&self) -> &[u8] {
+        self.trim_start_matches(|byte| byte.is_ascii_whitespace())
+    }
+
+    fn trim_end_matches(&self, mut f: impl FnMut(u8) -> bool) -> &Self {
+        if let Some(last) = self.iter().rposition(|&byte| !f(byte)) {
             &self[..=last]
         } else {
             &[]
         }
     }
-    fn trim_start(&self) -> &[u8] {
-        if let Some(first) = self.iter().position(is_not_whitespace) {
+
+    fn trim_start_matches(&self, mut f: impl FnMut(u8) -> bool) -> &Self {
+        if let Some(first) = self.iter().position(|&byte| !f(byte)) {
             &self[first..]
         } else {
             &[]
@@ -135,6 +134,14 @@ impl SliceExt for [u8] {
         let a = iter.next()?;
         let b = iter.next()?;
         Some((a, b))
+    }
+
+    fn split_2_by_slice(&self, separator: &[u8]) -> Option<(&[u8], &[u8])> {
+        if let Some(pos) = find_slice_in_slice(self, separator) {
+            Some((&self[..pos], &self[pos + separator.len()..]))
+        } else {
+            None
+        }
     }
 }
 

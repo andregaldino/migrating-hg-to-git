@@ -26,6 +26,7 @@ from mercurial import (
     exthelper,
     hg,
     lock,
+    logcmdutil,
     match as matchmod,
     pycompat,
     scmutil,
@@ -540,7 +541,7 @@ def updatelfiles(
                     expecthash = lfutil.readasstandin(wctx[standin])
                     if expecthash != b'':
                         if lfile not in wctx:  # not switched to normal file
-                            if repo.dirstate[standin] != b'?':
+                            if repo.dirstate.get_entry(standin).any_tracked:
                                 wvfs.unlinkpath(lfile, ignoremissing=True)
                             else:
                                 dropped.add(lfile)
@@ -568,7 +569,7 @@ def updatelfiles(
                         removed += 1
 
         # largefile processing might be slow and be interrupted - be prepared
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
 
         if lfiles:
             lfiles = [f for f in lfiles if f not in dropped]
@@ -577,7 +578,7 @@ def updatelfiles(
                 repo.wvfs.unlinkpath(lfutil.standin(f))
                 # This needs to happen for dropped files, otherwise they stay in
                 # the M state.
-                lfdirstate._drop(f)
+                lfdirstate._map.reset_state(f)
 
             statuswriter(_(b'getting changed largefiles\n'))
             cachelfiles(ui, repo, None, lfiles)
@@ -618,7 +619,7 @@ def updatelfiles(
 
                 lfutil.synclfdirstate(repo, lfdirstate, lfile, normallookup)
 
-        lfdirstate.write()
+        lfdirstate.write(repo.currenttransaction())
         if lfiles:
             statuswriter(
                 _(b'%d largefiles updated, %d removed\n') % (updated, removed)
@@ -657,7 +658,7 @@ def lfpull(ui, repo, source=b"default", **opts):
     revs = opts.get('rev', [])
     if not revs:
         raise error.Abort(_(b'no revisions specified'))
-    revs = scmutil.revrange(repo, revs)
+    revs = logcmdutil.revrange(repo, revs)
 
     numcached = 0
     for rev in revs:

@@ -1,6 +1,7 @@
 use crate::errors::{HgError, HgResultExt};
-use crate::repo::{Repo, Vfs};
+use crate::repo::Repo;
 use crate::utils::join_display;
+use crate::vfs::Vfs;
 use std::collections::HashSet;
 
 fn parse(bytes: &[u8]) -> Result<HashSet<String>, HgError> {
@@ -91,7 +92,7 @@ const SUPPORTED: &[&str] = &[
 
 // Copied from mercurial/requirements.py:
 
-pub(crate) const DIRSTATE_V2_REQUIREMENT: &str = "exp-dirstate-v2";
+pub(crate) const DIRSTATE_V2_REQUIREMENT: &str = "dirstate-v2";
 
 /// When narrowing is finalized and no longer subject to format changes,
 /// we should move this to just "narrow" or similar.

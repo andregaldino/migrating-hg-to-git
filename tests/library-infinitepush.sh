@@ -14,8 +14,6 @@ setupcommon() {
   cat >> $HGRCPATH << EOF
 [extensions]
 infinitepush=
-[ui]
-ssh = "$PYTHON" "$TESTDIR/dummyssh"
 [infinitepush]
 branchpattern=re:scratch/.*
 EOF

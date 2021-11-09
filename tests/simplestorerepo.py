@@ -665,20 +665,24 @@ def issimplestorefile(f, kind, st):
 
 
 class simplestore(store.encodedstore):
-    def datafiles(self):
+    def datafiles(self, undecodable=None):
         for x in super(simplestore, self).datafiles():
             yield x
 
         # Supplement with non-revlog files.
         extrafiles = self._walk('data', True, filefilter=issimplestorefile)
 
-        for unencoded, encoded, size in extrafiles:
+        for f1, size in extrafiles:
             try:
-                unencoded = store.decodefilename(unencoded)
+                f2 = store.decodefilename(f1)
             except KeyError:
-                unencoded = None
+                if undecodable is None:
+                    raise error.StorageError(b'undecodable revlog name %s' % f1)
+                else:
+                    undecodable.append(f1)
+                    continue
 
-            yield unencoded, encoded, size
+            yield f2, size
 
 
 def reposetup(ui, repo):

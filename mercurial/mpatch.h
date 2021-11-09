@@ -1,5 +1,5 @@
-#ifndef _HG_MPATCH_H_
-#define _HG_MPATCH_H_
+#ifndef HG_MPATCH_H
+#define HG_MPATCH_H
 
 #define MPATCH_ERR_NO_MEM -3
 #define MPATCH_ERR_CANNOT_BE_DECODED -2

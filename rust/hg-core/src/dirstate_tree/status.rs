@@ -1,3 +1,4 @@
+use crate::dirstate::entry::TruncatedTimestamp;
 use crate::dirstate::status::IgnoreFnType;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
@@ -5,7 +6,6 @@ use crate::dirstate_tree::dirstate_map::DirstateMap;
 use crate::dirstate_tree::dirstate_map::NodeData;
 use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
-use crate::dirstate_tree::on_disk::Timestamp;
 use crate::matchers::get_ignore_function;
 use crate::matchers::Matcher;
 use crate::utils::files::get_bytes_from_os_string;
@@ -126,7 +126,8 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     matcher: &'a (dyn Matcher + Sync),
     ignore_fn: IgnoreFnType<'a>,
     outcome: Mutex<DirstateStatus<'on_disk>>,
-    new_cachable_directories: Mutex<Vec<(Cow<'on_disk, HgPath>, Timestamp)>>,
+    new_cachable_directories:
+        Mutex<Vec<(Cow<'on_disk, HgPath>, TruncatedTimestamp)>>,
     outated_cached_directories: Mutex<Vec<Cow<'on_disk, HgPath>>>,
 
     /// Whether ignore files like `.hgignore` have changed since the previous
@@ -165,7 +166,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         dirstate_node: &NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
         if self.ignore_patterns_have_changed == Some(true)
-            && dirstate_node.cached_directory_mtime().is_some()
+            && dirstate_node.cached_directory_mtime()?.is_some()
         {
             self.outated_cached_directories.lock().unwrap().push(
                 dirstate_node
@@ -182,7 +183,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     fn can_skip_fs_readdir(
         &self,
         directory_metadata: Option<&std::fs::Metadata>,
-        cached_directory_mtime: Option<&Timestamp>,
+        cached_directory_mtime: Option<TruncatedTimestamp>,
     ) -> bool {
         if !self.options.list_unknown && !self.options.list_ignored {
             // All states that we care about listing have corresponding
@@ -198,13 +199,14 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 // by a previous run of the `status` algorithm which found this
                 // directory eligible for `read_dir` caching.
                 if let Some(meta) = directory_metadata {
-                    if let Ok(current_mtime) = meta.modified() {
-                        if current_mtime == cached_mtime.into() {
-                            // The mtime of that directory has not changed
-                            // since then, which means that the results of
-                            // `read_dir` should also be unchanged.
-                            return true;
-                        }
+                    if cached_mtime
+                        .likely_equal_to_mtime_of(meta)
+                        .unwrap_or(false)
+                    {
+                        // The mtime of that directory has not changed
+                        // since then, which means that the results of
+                        // `read_dir` should also be unchanged.
+                        return true;
                     }
                 }
             }
@@ -221,7 +223,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         directory_hg_path: &BorrowedPath<'tree, 'on_disk>,
         directory_fs_path: &Path,
         directory_metadata: Option<&std::fs::Metadata>,
-        cached_directory_mtime: Option<&Timestamp>,
+        cached_directory_mtime: Option<TruncatedTimestamp>,
         is_at_repo_root: bool,
     ) -> Result<bool, DirstateV2ParseError> {
         if self.can_skip_fs_readdir(directory_metadata, cached_directory_mtime)
@@ -362,7 +364,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     hg_path,
                     fs_path,
                     Some(fs_metadata),
-                    dirstate_node.cached_directory_mtime(),
+                    dirstate_node.cached_directory_mtime()?,
                     is_at_repo_root,
                 )?;
             self.maybe_save_directory_mtime(
@@ -394,9 +396,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                             .push(hg_path.detach_from_tree()),
                         EntryState::Normal => self
                             .handle_normal_file(&dirstate_node, fs_metadata)?,
-                        // This variant is not used in DirstateMap
-                        // nodes
-                        EntryState::Unknown => unreachable!(),
                     }
                 } else {
                     // `node.entry.is_none()` indicates a "directory"
@@ -468,16 +467,22 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                     //
                     // We deem this scenario (unlike the previous one) to be
                     // unlikely enough in practice.
-                    let timestamp = directory_mtime.into();
-                    let cached = dirstate_node.cached_directory_mtime();
-                    if cached != Some(&timestamp) {
+                    let truncated = TruncatedTimestamp::from(directory_mtime);
+                    let is_up_to_date = if let Some(cached) =
+                        dirstate_node.cached_directory_mtime()?
+                    {
+                        cached.likely_equal(truncated)
+                    } else {
+                        false
+                    };
+                    if !is_up_to_date {
                         let hg_path = dirstate_node
                             .full_path_borrowed(self.dmap.on_disk)?
                             .detach_from_tree();
                         self.new_cachable_directories
                             .lock()
                             .unwrap()
-                            .push((hg_path, timestamp))
+                            .push((hg_path, truncated))
                     }
                 }
             }
@@ -496,9 +501,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         fn truncate_u64(value: u64) -> i32 {
             (value & 0x7FFF_FFFF) as i32
         }
-        fn truncate_i64(value: i64) -> i32 {
-            (value & 0x7FFF_FFFF) as i32
-        }
 
         let entry = dirstate_node
             .entry()?
@@ -506,11 +508,9 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let mode_changed =
             || self.options.check_exec && entry.mode_changed(fs_metadata);
-        let size_changed = entry.size != truncate_u64(fs_metadata.len());
-        if entry.size >= 0
-            && size_changed
-            && fs_metadata.file_type().is_symlink()
-        {
+        let size = entry.size();
+        let size_changed = size != truncate_u64(fs_metadata.len());
+        if size >= 0 && size_changed && fs_metadata.file_type().is_symlink() {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
             self.outcome
@@ -520,7 +520,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 .push(hg_path.detach_from_tree())
         } else if dirstate_node.has_copy_source()
             || entry.is_from_other_parent()
-            || (entry.size >= 0 && (size_changed || mode_changed()))
+            || (size >= 0 && (size_changed || mode_changed()))
         {
             self.outcome
                 .lock()
@@ -528,10 +528,17 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 .modified
                 .push(hg_path.detach_from_tree())
         } else {
-            let mtime = mtime_seconds(fs_metadata);
-            if truncate_i64(mtime) != entry.mtime
-                || mtime == self.options.last_normal_time
-            {
+            let mtime_looks_clean;
+            if let Some(dirstate_mtime) = entry.truncated_mtime() {
+                let fs_mtime = TruncatedTimestamp::for_mtime_of(fs_metadata)
+                    .expect("OS/libc does not support mtime?");
+                mtime_looks_clean = fs_mtime.likely_equal(dirstate_mtime)
+                    && !fs_mtime.likely_equal(self.options.last_normal_time)
+            } else {
+                // No mtime in the dirstate entry
+                mtime_looks_clean = false
+            };
+            if !mtime_looks_clean {
                 self.outcome
                     .lock()
                     .unwrap()
@@ -685,15 +692,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         }
         is_ignored
     }
-}
-
-#[cfg(unix)] // TODO
-fn mtime_seconds(metadata: &std::fs::Metadata) -> i64 {
-    // Going through `Metadata::modified()` would be portable, but would take
-    // care to construct a `SystemTime` value with sub-second precision just
-    // for us to throw that away here.
-    use std::os::unix::fs::MetadataExt;
-    metadata.mtime()
 }
 
 struct DirEntry {

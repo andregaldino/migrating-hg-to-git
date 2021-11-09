@@ -1,15 +1,12 @@
-#testcases dirstate-v1 dirstate-v1-tree dirstate-v2
-
-#if dirstate-v1-tree
-#require rust
-  $ echo '[experimental]' >> $HGRCPATH
-  $ echo 'dirstate-tree.in-memory=1' >> $HGRCPATH
-#endif
+#testcases dirstate-v1 dirstate-v2
 
 #if dirstate-v2
-#require rust
-  $ echo '[format]' >> $HGRCPATH
-  $ echo 'exp-dirstate-v2=1' >> $HGRCPATH
+  $ cat >> $HGRCPATH << EOF
+  > [format]
+  > exp-rc-dirstate-v2=1
+  > [storage]
+  > dirstate-v2.slow-path=allow
+  > EOF
 #endif
 
   $ hg init repo

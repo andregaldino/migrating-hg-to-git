@@ -1638,7 +1638,7 @@ Demonstrate that nothing to perform upgrade will still run all the way through
 
 Upgrade to dirstate-v2
 
-  $ hg debugformat -v --config format.exp-dirstate-v2=1
+  $ hg debugformat -v --config format.exp-rc-dirstate-v2=1
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no    yes      no
@@ -1653,12 +1653,12 @@ Upgrade to dirstate-v2
   plain-cl-delta:     yes    yes     yes
   compression:        zstd   zstd    zstd
   compression-level:  default default default
-  $ hg debugupgraderepo --config format.exp-dirstate-v2=1 --run
+  $ hg debugupgraderepo --config format.exp-rc-dirstate-v2=1 --run
   upgrade will perform the following actions:
   
   requirements
      preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
-     added: exp-dirstate-v2
+     added: dirstate-v2
   
   dirstate-v2
      "hg status" will be faster
@@ -1703,7 +1703,7 @@ Downgrade from dirstate-v2
   
   requirements
      preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
-     removed: exp-dirstate-v2
+     removed: dirstate-v2
   
   processed revlogs:
     - all-filelogs

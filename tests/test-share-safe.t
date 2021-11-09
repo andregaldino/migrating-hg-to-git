@@ -19,7 +19,7 @@ prepare source repo
   $ hg init source
   $ cd source
   $ cat .hg/requires
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   share-safe
   $ cat .hg/store/requires
   dotencode
@@ -30,7 +30,7 @@ prepare source repo
   store
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -54,13 +54,13 @@ Create a shared repo and check the requirements are shared and read correctly
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd shared1
   $ cat .hg/requires
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   share-safe
   shared
 
   $ hg debugrequirements -R ../source
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -70,7 +70,7 @@ Create a shared repo and check the requirements are shared and read correctly
 
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -225,7 +225,7 @@ Disable zstd related tests because its not present on pure version
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (dirstate-v2 !)
      added: revlog-compression-zstd
   
   processed revlogs:
@@ -253,8 +253,8 @@ Disable zstd related tests because its not present on pure version
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd no-dirstate-v2 !)
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
      added: persistent-nodemap
   
   processed revlogs:
@@ -327,7 +327,7 @@ Test that upgrading using debugupgraderepo works
   $ cd non-share-safe
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -346,7 +346,7 @@ Create a share before upgrading
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg debugrequirements -R nss-share
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -360,7 +360,7 @@ Upgrade
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   processed revlogs:
@@ -373,7 +373,7 @@ Upgrade
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   share-safe
@@ -394,7 +394,7 @@ Upgrade
 
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -403,7 +403,7 @@ Upgrade
   store
 
   $ cat .hg/requires
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   share-safe
 
   $ cat .hg/store/requires
@@ -454,7 +454,7 @@ Test that downgrading works too
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
   processed revlogs:
@@ -467,7 +467,7 @@ Test that downgrading works too
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
   processed revlogs:
@@ -485,7 +485,7 @@ Test that downgrading works too
 
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -494,7 +494,7 @@ Test that downgrading works too
 
   $ cat .hg/requires
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -553,7 +553,7 @@ Testing automatic upgrade of shares when config is set
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   processed revlogs:
@@ -564,7 +564,7 @@ Testing automatic upgrade of shares when config is set
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
   $ hg debugrequirements
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1

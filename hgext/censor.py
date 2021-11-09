@@ -35,6 +35,7 @@ from mercurial.node import short
 
 from mercurial import (
     error,
+    logcmdutil,
     registrar,
     scmutil,
 )
@@ -84,7 +85,7 @@ def _docensor(ui, repo, path, rev=b'', tombstone=b'', **opts):
     if not len(flog):
         raise error.Abort(_(b'cannot censor file with no history'))
 
-    rev = scmutil.revsingle(repo, rev, rev).rev()
+    rev = logcmdutil.revsingle(repo, rev, rev).rev()
     try:
         ctx = repo[rev]
     except KeyError:

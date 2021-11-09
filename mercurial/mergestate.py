@@ -796,12 +796,13 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
     for f, args, msg in actions.get(ACTION_GET, []):
         if branchmerge:
             # tracked in p1 can be True also but update_file should not care
+            old_entry = repo.dirstate.get_entry(f)
+            p1_tracked = old_entry.any_tracked and not old_entry.added
             repo.dirstate.update_file(
                 f,
-                p1_tracked=False,
-                p2_tracked=True,
+                p1_tracked=p1_tracked,
                 wc_tracked=True,
-                clean_p2=True,
+                p2_info=True,
             )
         else:
             parentfiledata = getfiledata[f] if getfiledata else None
@@ -818,8 +819,12 @@ def recordupdates(repo, actions, branchmerge, getfiledata):
         if branchmerge:
             # We've done a branch merge, mark this file as merged
             # so that we properly record the merger later
+            p1_tracked = f1 == f
             repo.dirstate.update_file(
-                f, p1_tracked=True, wc_tracked=True, merged=True
+                f,
+                p1_tracked=p1_tracked,
+                wc_tracked=True,
+                p2_info=True,
             )
             if f1 != f2:  # copy/rename
                 if move:

@@ -18,7 +18,6 @@ use lazy_static::lazy_static;
 use same_file::is_same_file;
 use std::borrow::{Cow, ToOwned};
 use std::ffi::{OsStr, OsString};
-use std::fs::Metadata;
 use std::iter::FusedIterator;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -179,38 +178,6 @@ fn hfs_ignore_clean(bytes: &[u8]) -> Vec<u8> {
 
 pub fn lower_clean(bytes: &[u8]) -> Vec<u8> {
     hfs_ignore_clean(&bytes.to_ascii_lowercase())
-}
-
-#[derive(Eq, PartialEq, Ord, PartialOrd, Copy, Clone)]
-pub struct HgMetadata {
-    pub st_dev: u64,
-    pub st_mode: u32,
-    pub st_nlink: u64,
-    pub st_size: u64,
-    pub st_mtime: i64,
-    pub st_ctime: i64,
-}
-
-// TODO support other plaforms
-#[cfg(unix)]
-impl HgMetadata {
-    pub fn from_metadata(metadata: Metadata) -> Self {
-        use std::os::unix::fs::MetadataExt;
-        Self {
-            st_dev: metadata.dev(),
-            st_mode: metadata.mode(),
-            st_nlink: metadata.nlink(),
-            st_size: metadata.size(),
-            st_mtime: metadata.mtime(),
-            st_ctime: metadata.ctime(),
-        }
-    }
-
-    pub fn is_symlink(&self) -> bool {
-        // This is way too manual, but `HgMetadata` will go away in the
-        // near-future dirstate rewrite anyway.
-        self.st_mode & 0170000 == 0120000
-    }
 }
 
 /// Returns the canonical path of `name`, given `cwd` and `root`

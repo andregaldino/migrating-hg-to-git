@@ -220,13 +220,11 @@ impl HgPath {
             ),
         }
     }
-    pub fn join<T: ?Sized + AsRef<Self>>(&self, other: &T) -> HgPathBuf {
-        let mut inner = self.inner.to_owned();
-        if !inner.is_empty() && inner.last() != Some(&b'/') {
-            inner.push(b'/');
-        }
-        inner.extend(other.as_ref().bytes());
-        HgPathBuf::from_bytes(&inner)
+
+    pub fn join(&self, path: &HgPath) -> HgPathBuf {
+        let mut buf = self.to_owned();
+        buf.push(path);
+        buf
     }
 
     pub fn components(&self) -> impl Iterator<Item = &HgPath> {
@@ -405,7 +403,15 @@ impl HgPathBuf {
     pub fn new() -> Self {
         Default::default()
     }
-    pub fn push(&mut self, byte: u8) {
+
+    pub fn push<T: ?Sized + AsRef<HgPath>>(&mut self, other: &T) -> () {
+        if !self.inner.is_empty() && self.inner.last() != Some(&b'/') {
+            self.inner.push(b'/');
+        }
+        self.inner.extend(other.as_ref().bytes())
+    }
+
+    pub fn push_byte(&mut self, byte: u8) {
         self.inner.push(byte);
     }
     pub fn from_bytes(s: &[u8]) -> HgPathBuf {

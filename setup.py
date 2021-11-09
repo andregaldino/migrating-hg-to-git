@@ -1428,12 +1428,9 @@ class RustExtension(Extension):
 
     rusttargetdir = os.path.join('rust', 'target', 'release')
 
-    def __init__(
-        self, mpath, sources, rustlibname, subcrate, py3_features=None, **kw
-    ):
+    def __init__(self, mpath, sources, rustlibname, subcrate, **kw):
         Extension.__init__(self, mpath, sources, **kw)
         srcdir = self.rustsrcdir = os.path.join('rust', subcrate)
-        self.py3_features = py3_features
 
         # adding Rust source and control files to depends so that the extension
         # gets rebuilt if they've changed
@@ -1481,9 +1478,11 @@ class RustExtension(Extension):
 
         feature_flags = []
 
-        if sys.version_info[0] == 3 and self.py3_features is not None:
-            feature_flags.append(self.py3_features)
-            cargocmd.append('--no-default-features')
+        cargocmd.append('--no-default-features')
+        if sys.version_info[0] == 2:
+            feature_flags.append('python27')
+        elif sys.version_info[0] == 3:
+            feature_flags.append('python3')
 
         rust_features = env.get("HG_RUST_FEATURES")
         if rust_features:
@@ -1605,7 +1604,9 @@ extmodules = [
         extra_compile_args=common_cflags,
     ),
     RustStandaloneExtension(
-        'mercurial.rustext', 'hg-cpython', 'librusthg', py3_features='python3'
+        'mercurial.rustext',
+        'hg-cpython',
+        'librusthg',
     ),
 ]
 

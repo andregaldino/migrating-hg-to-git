@@ -101,7 +101,7 @@ typical client does not want echo-back messages, so test without it:
   000000000000 tip
   *** runcommand id -runknown
   abort: unknown revision 'unknown'
-   [255]
+   [10]
 
   >>> from hgclient import bprint, check, readchannel
   >>> @check
@@ -218,7 +218,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)
-  format.exp-dirstate-v2=1 (dirstate-v2 !)
+  format.exp-rc-dirstate-v2=1 (dirstate-v2 !)
   largefiles.usercache=$TESTTMP/.cache/largefiles
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
@@ -226,6 +226,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.detailed-exit-code=True
   ui.merge=internal:merge
   ui.mergemarkers=detailed
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   ui.foo=bar
   ui.nontty=true
@@ -239,6 +240,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.detailed-exit-code=True
   ui.merge=internal:merge
   ui.mergemarkers=detailed
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   ui.nontty=true
 #endif

@@ -689,7 +689,7 @@ def revsingle(repo, revspec, default=b'.', localalias=None):
 
     l = revrange(repo, [revspec], localalias=localalias)
     if not l:
-        raise error.Abort(_(b'empty revision set'))
+        raise error.InputError(_(b'empty revision set'))
     return repo[l.last()]
 
 
@@ -710,7 +710,7 @@ def revpair(repo, revs):
     l = revrange(repo, revs)
 
     if not l:
-        raise error.Abort(_(b'empty revision range'))
+        raise error.InputError(_(b'empty revision range'))
 
     first = l.first()
     second = l.last()
@@ -720,7 +720,7 @@ def revpair(repo, revs):
         and len(revs) >= 2
         and not all(revrange(repo, [r]) for r in revs)
     ):
-        raise error.Abort(_(b'empty revision on one side of range'))
+        raise error.InputError(_(b'empty revision on one side of range'))
 
     # if top-level is range expression, the result must always be a pair
     if first == second and len(revs) == 1 and not _pairspec(revs[0]):
@@ -1211,9 +1211,9 @@ def addremove(repo, matcher, prefix, uipathfn, opts=None):
     try:
         similarity = float(opts.get(b'similarity') or 0)
     except ValueError:
-        raise error.Abort(_(b'similarity must be a number'))
+        raise error.InputError(_(b'similarity must be a number'))
     if similarity < 0 or similarity > 100:
-        raise error.Abort(_(b'similarity must be between 0 and 100'))
+        raise error.InputError(_(b'similarity must be between 0 and 100'))
     similarity /= 100.0
 
     ret = 0
@@ -1327,17 +1327,17 @@ def _interestingfiles(repo, matcher):
         full=False,
     )
     for abs, st in pycompat.iteritems(walkresults):
-        dstate = dirstate[abs]
-        if dstate == b'?' and audit_path.check(abs):
+        entry = dirstate.get_entry(abs)
+        if (not entry.any_tracked) and audit_path.check(abs):
             unknown.append(abs)
-        elif dstate != b'r' and not st:
+        elif (not entry.removed) and not st:
             deleted.append(abs)
-        elif dstate == b'r' and st:
+        elif entry.removed and st:
             forgotten.append(abs)
         # for finding renames
-        elif dstate == b'r' and not st:
+        elif entry.removed and not st:
             removed.append(abs)
-        elif dstate == b'a':
+        elif entry.added:
             added.append(abs)
 
     return added, unknown, deleted, removed, forgotten
@@ -1455,10 +1455,11 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
     """
     origsrc = repo.dirstate.copied(src) or src
     if dst == origsrc:  # copying back a copy?
-        if repo.dirstate[dst] not in b'mn' and not dryrun:
+        entry = repo.dirstate.get_entry(dst)
+        if (entry.added or not entry.tracked) and not dryrun:
             repo.dirstate.set_tracked(dst)
     else:
-        if repo.dirstate[origsrc] == b'a' and origsrc == src:
+        if repo.dirstate.get_entry(origsrc).added and origsrc == src:
             if not ui.quiet:
                 ui.warn(
                     _(
@@ -1467,7 +1468,7 @@ def dirstatecopy(ui, repo, wctx, src, dst, dryrun=False, cwd=None):
                     )
                     % (repo.pathto(origsrc, cwd), repo.pathto(dst, cwd))
                 )
-            if repo.dirstate[dst] in b'?r' and not dryrun:
+            if not repo.dirstate.get_entry(dst).tracked and not dryrun:
                 wctx.add([dst])
         elif not dryrun:
             wctx.copy(origsrc, dst)
@@ -1504,7 +1505,7 @@ def movedirstate(repo, newctx, match=None):
     }
     # Adjust the dirstate copies
     for dst, src in pycompat.iteritems(copies):
-        if src not in newctx or dst in newctx or ds[dst] != b'a':
+        if src not in newctx or dst in newctx or not ds.get_entry(dst).added:
             src = None
         ds.copy(src, dst)
     repo._quick_access_changeid_invalidate()

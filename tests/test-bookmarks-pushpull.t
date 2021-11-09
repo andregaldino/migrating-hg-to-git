@@ -490,6 +490,65 @@ divergent bookmarks
      Y                         0:4e3505fd9583
      Z                         1:0d2164f0ce0d
 
+mirroring bookmarks
+
+  $ hg book
+     @                         1:9b140be10808
+     @foo                      2:0d2164f0ce0d
+     X                         1:9b140be10808
+     X@foo                     2:0d2164f0ce0d
+     Y                         0:4e3505fd9583
+     Z                         2:0d2164f0ce0d
+     foo                       -1:000000000000
+   * foobar                    1:9b140be10808
+  $ cp .hg/bookmarks .hg/bookmarks.bak
+  $ hg book -d X
+  $ hg incoming --bookmark  -v ../a
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d diverged
+     X                         0d2164f0ce0d added
+  $ hg incoming --bookmark  -v ../a --config 'paths.*:bookmarks.mode=babar'
+  (paths.*:bookmarks.mode has unknown value: "babar")
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d diverged
+     X                         0d2164f0ce0d added
+  $ hg incoming --bookmark  -v ../a --config 'paths.*:bookmarks.mode=mirror'
+  comparing with ../a
+  searching for changed bookmarks
+     @                         0d2164f0ce0d changed
+     @foo                      000000000000 removed
+     X                         0d2164f0ce0d added
+     X@foo                     000000000000 removed
+     foo                       000000000000 removed
+     foobar                    000000000000 removed
+  $ hg incoming --bookmark  -v ../a --config 'paths.*:bookmarks.mode=ignore'
+  comparing with ../a
+  bookmarks exchange disabled with this path
+  $ hg pull ../a --config 'paths.*:bookmarks.mode=ignore'
+  pulling from ../a
+  searching for changes
+  no changes found
+  $ hg book
+     @                         1:9b140be10808
+     @foo                      2:0d2164f0ce0d
+     X@foo                     2:0d2164f0ce0d
+     Y                         0:4e3505fd9583
+     Z                         2:0d2164f0ce0d
+     foo                       -1:000000000000
+   * foobar                    1:9b140be10808
+  $ hg pull ../a --config 'paths.*:bookmarks.mode=mirror'
+  pulling from ../a
+  searching for changes
+  no changes found
+  $ hg book
+     @                         2:0d2164f0ce0d
+     X                         2:0d2164f0ce0d
+     Y                         0:4e3505fd9583
+     Z                         2:0d2164f0ce0d
+  $ mv .hg/bookmarks.bak .hg/bookmarks
+
 explicit pull should overwrite the local version (issue4439)
 
   $ hg update -r X
@@ -1142,8 +1201,6 @@ Check hook preventing push (issue4455)
   > local=../issue4455-dest/
   > ssh=ssh://user@dummy/issue4455-dest
   > http=http://localhost:$HGPORT/
-  > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > EOF
   $ cat >> ../issue4455-dest/.hg/hgrc << EOF
   > [hooks]
@@ -1270,7 +1327,6 @@ Test that pre-pushkey compat for bookmark works as expected (issue5777)
 
   $ cat << EOF >> $HGRCPATH
   > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
   > [server]
   > bookmarks-pushkey-compat = yes
   > EOF

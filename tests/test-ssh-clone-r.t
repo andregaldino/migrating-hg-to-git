@@ -28,7 +28,7 @@ creating 'remote' repo
 clone remote via stream
 
   $ for i in 0 1 2 3 4 5 6 7 8; do
-  >    hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream -r "$i" ssh://user@dummy/remote test-"$i"
+  >    hg clone --stream -r "$i" ssh://user@dummy/remote test-"$i"
   >    if cd test-"$i"; then
   >       hg verify
   >       cd ..
@@ -160,7 +160,7 @@ clone remote via stream
   checked 9 changesets with 7 changes to 4 files
   $ cd ..
   $ cd test-1
-  $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -r 4 ssh://user@dummy/remote
+  $ hg pull -r 4 ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
   adding changesets
@@ -175,7 +175,7 @@ clone remote via stream
   crosschecking files in changesets and manifests
   checking files
   checked 3 changesets with 2 changes to 1 files
-  $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote
+  $ hg pull ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
   adding changesets
@@ -186,7 +186,7 @@ clone remote via stream
   (run 'hg update' to get a working copy)
   $ cd ..
   $ cd test-2
-  $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" -r 5 ssh://user@dummy/remote
+  $ hg pull -r 5 ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
   adding changesets
@@ -201,7 +201,7 @@ clone remote via stream
   crosschecking files in changesets and manifests
   checking files
   checked 5 changesets with 3 changes to 1 files
-  $ hg pull -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote
+  $ hg pull ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   searching for changes
   adding changesets

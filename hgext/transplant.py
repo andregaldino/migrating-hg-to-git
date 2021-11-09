@@ -37,7 +37,6 @@ from mercurial import (
     pycompat,
     registrar,
     revset,
-    scmutil,
     smartset,
     state as statemod,
     util,
@@ -845,7 +844,7 @@ def _dotransplant(ui, repo, *revs, **opts):
         if opts.get(b'prune'):
             prune = {
                 source[r].node()
-                for r in scmutil.revrange(source, opts.get(b'prune'))
+                for r in logcmdutil.revrange(source, opts.get(b'prune'))
             }
             matchfn = lambda x: tf(x) and x not in prune
         else:
@@ -853,7 +852,7 @@ def _dotransplant(ui, repo, *revs, **opts):
         merges = pycompat.maplist(source.lookup, opts.get(b'merge', ()))
         revmap = {}
         if revs:
-            for r in scmutil.revrange(source, revs):
+            for r in logcmdutil.revrange(source, revs):
                 revmap[int(r)] = source[r].node()
         elif opts.get(b'all') or not merges:
             if source != repo:

@@ -121,11 +121,16 @@ Specifying revisions by changeset ID
   file-3
   $ $NO_FALLBACK rhg cat -r cf8b83 file-2
   2
+  $ $NO_FALLBACK rhg cat --rev cf8b83 file-2
+  2
   $ $NO_FALLBACK rhg cat -r c file-2
   abort: ambiguous revision identifier: c
   [255]
   $ $NO_FALLBACK rhg cat -r d file-2
   2
+  $ $NO_FALLBACK rhg cat -r 0000 file-2
+  file-2: no such file in rev 000000000000
+  [1]
 
 Cat files
   $ cd $TESTTMP
@@ -135,41 +140,101 @@ Cat files
   $ echo "original content" > original
   $ hg add original
   $ hg commit -m "add original" original
+Without `--rev`
+  $ $NO_FALLBACK rhg cat original
+  original content
+With `--rev`
   $ $NO_FALLBACK rhg cat -r 0 original
   original content
 Cat copied file should not display copy metadata
   $ hg copy original copy_of_original
   $ hg commit -m "add copy of original"
+  $ $NO_FALLBACK rhg cat original
+  original content
   $ $NO_FALLBACK rhg cat -r 1 copy_of_original
   original content
 
+
 Fallback to Python
-  $ $NO_FALLBACK rhg cat original
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  $ $NO_FALLBACK rhg cat original --exclude="*.rs"
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
-  $ rhg cat original
+  $ rhg cat original --exclude="*.rs"
   original content
 
   $ FALLBACK_EXE="$RHG_FALLBACK_EXECUTABLE"
   $ unset RHG_FALLBACK_EXECUTABLE
-  $ rhg cat original
+  $ rhg cat original --exclude="*.rs"
   abort: 'rhg.on-unsupported=fallback' without 'rhg.fallback-executable' set.
   [255]
   $ RHG_FALLBACK_EXECUTABLE="$FALLBACK_EXE"
   $ export RHG_FALLBACK_EXECUTABLE
 
-  $ rhg cat original --config rhg.fallback-executable=false
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=false
   [1]
 
-  $ rhg cat original --config rhg.fallback-executable=hg-non-existent
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=hg-non-existent
   tried to fall back to a 'hg-non-existent' sub-process but got error $ENOENT$
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
 
-  $ rhg cat original --config rhg.fallback-executable=rhg
+  $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=rhg
   Blocking recursive fallback. The 'rhg.fallback-executable = rhg' config points to `rhg` itself.
-  unsupported feature: `rhg cat` without `--rev` / `-r`
+  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
+  
+  USAGE:
+      rhg cat [OPTIONS] <FILE>...
+  
+  For more information try --help
+  
   [252]
+
+Fallback with shell path segments
+  $ $NO_FALLBACK rhg cat .
+  unsupported feature: `..` or `.` path segment
+  [252]
+  $ $NO_FALLBACK rhg cat ..
+  unsupported feature: `..` or `.` path segment
+  [252]
+  $ $NO_FALLBACK rhg cat ../..
+  unsupported feature: `..` or `.` path segment
+  [252]
+
+Fallback with filesets
+  $ $NO_FALLBACK rhg cat "set:c or b"
+  unsupported feature: fileset
+  [252]
+
+Fallback with generic hooks
+  $ $NO_FALLBACK rhg cat original --config hooks.pre-cat=something
+  unsupported feature: pre-cat hook defined
+  [252]
+
+  $ $NO_FALLBACK rhg cat original --config hooks.post-cat=something
+  unsupported feature: post-cat hook defined
+  [252]
+
+  $ $NO_FALLBACK rhg cat original --config hooks.fail-cat=something
+  unsupported feature: fail-cat hook defined
+  [252]
+
+Fallback with [defaults]
+  $ $NO_FALLBACK rhg cat original --config "defaults.cat=-r null"
+  unsupported feature: `defaults` config set
+  [252]
+
 
 Requirements
   $ $NO_FALLBACK rhg debugrequirements
@@ -307,3 +372,12 @@ The blackbox extension is supported
   $ cat .hg/blackbox.log.1
   ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files (glob)
 
+Subrepos are not supported
+
+  $ touch .hgsub
+  $ $NO_FALLBACK rhg files
+  unsupported feature: subrepos (.hgsub is present)
+  [252]
+  $ rhg files
+  a
+  $ rm .hgsub

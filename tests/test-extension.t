@@ -1692,6 +1692,26 @@ Can load minimum version identical to current
   $ hg --config extensions.minversion=minversion3.py version 2>&1 | egrep '\(third'
   [1]
 
+Don't explode on py3 with a bad version number (both str vs bytes, and not enough
+parts)
+
+  $ cat > minversion4.py << EOF
+  > from mercurial import util
+  > util.version = lambda: b'3.5'
+  > minimumhgversion = '3'
+  > EOF
+  $ hg --config extensions.minversion=minversion4.py version -v
+  Mercurial Distributed SCM (version 3.5)
+  (see https://mercurial-scm.org for more information)
+  
+  Copyright (C) 2005-* Olivia Mackall and others (glob)
+  This is free software; see the source for copying conditions. There is NO
+  warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  
+  Enabled extensions:
+  
+    minversion  external  
+
 Restore HGRCPATH
 
   $ HGRCPATH=$ORGHGRCPATH

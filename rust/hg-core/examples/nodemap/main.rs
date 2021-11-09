@@ -7,7 +7,7 @@ use clap::*;
 use hg::revlog::node::*;
 use hg::revlog::nodemap::*;
 use hg::revlog::*;
-use memmap::MmapOptions;
+use memmap2::MmapOptions;
 use rand::Rng;
 use std::fs::File;
 use std::io;

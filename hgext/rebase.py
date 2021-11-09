@@ -35,6 +35,7 @@ from mercurial import (
     dirstateguard,
     error,
     extensions,
+    logcmdutil,
     merge as mergemod,
     mergestate as mergestatemod,
     mergeutil,
@@ -1302,19 +1303,19 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
     dest = None
 
     if revf:
-        rebaseset = scmutil.revrange(repo, revf)
+        rebaseset = logcmdutil.revrange(repo, revf)
         if not rebaseset:
             ui.status(_(b'empty "rev" revision set - nothing to rebase\n'))
             return None
     elif srcf:
-        src = scmutil.revrange(repo, srcf)
+        src = logcmdutil.revrange(repo, srcf)
         if not src:
             ui.status(_(b'empty "source" revision set - nothing to rebase\n'))
             return None
         # `+  (%ld)` to work around `wdir()::` being empty
         rebaseset = repo.revs(b'(%ld):: + (%ld)', src, src)
     else:
-        base = scmutil.revrange(repo, basef or [b'.'])
+        base = logcmdutil.revrange(repo, basef or [b'.'])
         if not base:
             ui.status(
                 _(b'empty "base" revision set - ' b"can't compute rebase set\n")
@@ -1322,7 +1323,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
             return None
         if destf:
             # --base does not support multiple destinations
-            dest = scmutil.revsingle(repo, destf)
+            dest = logcmdutil.revsingle(repo, destf)
         else:
             dest = repo[_destrebase(repo, base, destspace=destspace)]
             destf = bytes(dest)

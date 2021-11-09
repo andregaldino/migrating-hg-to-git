@@ -2581,10 +2581,15 @@ class revlog(object):
             self._enforceinlinesize(transaction)
         if self._docket is not None:
             # revlog-v2 always has 3 writing handles, help Pytype
-            assert self._writinghandles[2] is not None
-            self._docket.index_end = self._writinghandles[0].tell()
-            self._docket.data_end = self._writinghandles[1].tell()
-            self._docket.sidedata_end = self._writinghandles[2].tell()
+            wh1 = self._writinghandles[0]
+            wh2 = self._writinghandles[1]
+            wh3 = self._writinghandles[2]
+            assert wh1 is not None
+            assert wh2 is not None
+            assert wh3 is not None
+            self._docket.index_end = wh1.tell()
+            self._docket.data_end = wh2.tell()
+            self._docket.sidedata_end = wh3.tell()
 
         nodemaputil.setup_persistent_nodemap(transaction, self)
 

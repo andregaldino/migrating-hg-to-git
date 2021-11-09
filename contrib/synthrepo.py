@@ -57,10 +57,10 @@ from mercurial import (
     diffutil,
     error,
     hg,
+    logcmdutil,
     patch,
     pycompat,
     registrar,
-    scmutil,
 )
 from mercurial.utils import dateutil
 
@@ -180,7 +180,7 @@ def analyze(ui, repo, *revs, **opts):
 
     # If a mercurial repo is available, also model the commit history.
     if repo:
-        revs = scmutil.revrange(repo, revs)
+        revs = logcmdutil.revrange(repo, revs)
         revs.sort()
 
         progress = ui.makeprogress(

@@ -12,16 +12,6 @@ The data from the bookmark file are filtered to only contains bookmark with
 node known to the changelog. If the cache invalidation between these two bits
 goes wrong, bookmark can be dropped.
 
-global setup
-------------
-
-  $ cat >> $HGRCPATH << EOF
-  > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
-  > [server]
-  > concurrent-push-mode=check-related
-  > EOF
-
 Setup
 -----
 

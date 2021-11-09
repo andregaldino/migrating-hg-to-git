@@ -299,7 +299,7 @@ def checkworkingcopynarrowspec(repo):
     storespec = repo.svfs.tryread(FILENAME)
     wcspec = repo.vfs.tryread(DIRSTATE_FILENAME)
     if wcspec != storespec:
-        raise error.Abort(
+        raise error.StateError(
             _(b"working copy's narrowspec is stale"),
             hint=_(b"run 'hg tracked --update-working-copy'"),
         )

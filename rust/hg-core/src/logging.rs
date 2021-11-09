@@ -1,5 +1,5 @@
 use crate::errors::{HgError, HgResultExt, IoErrorContext, IoResultExt};
-use crate::repo::Vfs;
+use crate::vfs::Vfs;
 use std::io::Write;
 
 /// An utility to append to a log file with the given name, and optionally

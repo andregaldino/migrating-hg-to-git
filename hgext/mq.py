@@ -1241,7 +1241,7 @@ class queue(object):
         if opts.get(b'rev'):
             if not self.applied:
                 raise error.Abort(_(b'no patches applied'))
-            revs = scmutil.revrange(repo, opts.get(b'rev'))
+            revs = logcmdutil.revrange(repo, opts.get(b'rev'))
             revs.sort()
             revpatches = self._revpatches(repo, revs)
             realpatches += revpatches
@@ -1267,9 +1267,9 @@ class queue(object):
         if any((b'.hgsubstate' in files for files in mar)):
             return  # already listed up
         # not yet listed up
-        if substatestate in b'a?':
+        if substatestate.added or not substatestate.any_tracked:
             mar[1].append(b'.hgsubstate')
-        elif substatestate in b'r':
+        elif substatestate.removed:
             mar[2].append(b'.hgsubstate')
         else:  # modified
             mar[0].append(b'.hgsubstate')
@@ -1377,7 +1377,7 @@ class queue(object):
             self.checkpatchname(patchfn)
         inclsubs = checksubstate(repo)
         if inclsubs:
-            substatestate = repo.dirstate[b'.hgsubstate']
+            substatestate = repo.dirstate.get_entry(b'.hgsubstate')
         if opts.get(b'include') or opts.get(b'exclude') or pats:
             # detect missing files in pats
             def badfn(f, msg):
@@ -1908,7 +1908,7 @@ class queue(object):
 
             inclsubs = checksubstate(repo, patchparent)
             if inclsubs:
-                substatestate = repo.dirstate[b'.hgsubstate']
+                substatestate = repo.dirstate.get_entry(b'.hgsubstate')
 
             ph = patchheader(self.join(patchfn), self.plainmode)
             diffopts = self.diffopts(
@@ -2417,7 +2417,7 @@ class queue(object):
                 raise error.Abort(
                     _(b'option "-r" not valid when importing files')
                 )
-            rev = scmutil.revrange(repo, rev)
+            rev = logcmdutil.revrange(repo, rev)
             rev.sort(reverse=True)
         elif not files:
             raise error.Abort(_(b'no files or revisions specified'))
@@ -3638,7 +3638,7 @@ def rename(ui, repo, patch, name=None, **opts):
     if r and patch in r.dirstate:
         wctx = r[None]
         with r.wlock():
-            if r.dirstate[patch] == b'a':
+            if r.dirstate.get_entry(patch).added:
                 r.dirstate.set_untracked(patch)
                 r.dirstate.set_tracked(name)
             else:
@@ -3878,7 +3878,7 @@ def finish(ui, repo, *revrange, **opts):
         ui.status(_(b'no patches applied\n'))
         return 0
 
-    revs = scmutil.revrange(repo, revrange)
+    revs = logcmdutil.revrange(repo, revrange)
     if repo[b'.'].rev() in revs and repo[None].files():
         ui.warn(_(b'warning: uncommitted changes in the working directory\n'))
     # queue.finish may changes phases but leave the responsibility to lock the

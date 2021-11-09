@@ -1386,11 +1386,16 @@ class pulloperation(object):
         includepats=None,
         excludepats=None,
         depth=None,
+        path=None,
     ):
         # repo we pull into
         self.repo = repo
         # repo we pull from
         self.remote = remote
+        # path object used to build this remote
+        #
+        # Ideally, the remote peer would carry that directly.
+        self.remote_path = path
         # revision we try to pull (None is "all")
         self.heads = heads
         # bookmark pulled explicitly
@@ -1556,6 +1561,7 @@ def add_confirm_callback(repo, pullop):
 def pull(
     repo,
     remote,
+    path=None,
     heads=None,
     force=False,
     bookmarks=(),
@@ -1611,8 +1617,9 @@ def pull(
     pullop = pulloperation(
         repo,
         remote,
-        heads,
-        force,
+        path=path,
+        heads=heads,
+        force=force,
         bookmarks=bookmarks,
         streamclonerequested=streamclonerequested,
         includepats=includepats,
@@ -2021,6 +2028,9 @@ def _pullbookmarks(pullop):
     pullop.stepsdone.add(b'bookmarks')
     repo = pullop.repo
     remotebookmarks = pullop.remotebookmarks
+    bookmarks_mode = None
+    if pullop.remote_path is not None:
+        bookmarks_mode = pullop.remote_path.bookmarks_mode
     bookmod.updatefromremote(
         repo.ui,
         repo,
@@ -2028,6 +2038,7 @@ def _pullbookmarks(pullop):
         pullop.remote.url(),
         pullop.gettransaction,
         explicit=pullop.explicitbookmarks,
+        mode=bookmarks_mode,
     )
 
 

@@ -19,7 +19,7 @@ creating 'local'
   store created
   00changelog.i created
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -61,7 +61,7 @@ creating repo with format.usestore=false
 
   $ hg --config format.usestore=false init old
   $ checknewrepo old
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   generaldelta
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -75,7 +75,7 @@ creating repo with format.usefncache=false
   $ checknewrepo old2
   store created
   00changelog.i created
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   generaldelta
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -90,7 +90,7 @@ creating repo with format.dotencode=false
   $ checknewrepo old3
   store created
   00changelog.i created
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -107,7 +107,7 @@ creating repo with format.dotencode=false
   store created
   00changelog.i created
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
@@ -123,7 +123,7 @@ test failure
 
 init+push to remote2
 
-  $ hg init -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote2
+  $ hg init ssh://user@dummy/remote2
   $ hg incoming -R remote2 local
   comparing with local
   changeset:   0:08b9e9f63b32
@@ -133,7 +133,7 @@ init+push to remote2
   summary:     init
   
 
-  $ hg push -R local -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote2
+  $ hg push -R local ssh://user@dummy/remote2
   pushing to ssh://user@dummy/remote2
   searching for changes
   remote: adding changesets
@@ -143,7 +143,7 @@ init+push to remote2
 
 clone to remote1
 
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" local ssh://user@dummy/remote1
+  $ hg clone local ssh://user@dummy/remote1
   searching for changes
   remote: adding changesets
   remote: adding manifests
@@ -151,7 +151,7 @@ clone to remote1
   remote: added 1 changesets with 1 changes to 1 files
 
 The largefiles extension doesn't crash
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" local ssh://user@dummy/remotelf --config extensions.largefiles=
+  $ hg clone local ssh://user@dummy/remotelf --config extensions.largefiles=
   The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   searching for changes
@@ -162,14 +162,14 @@ The largefiles extension doesn't crash
 
 init to existing repo
 
-  $ hg init -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" ssh://user@dummy/remote1
+  $ hg init ssh://user@dummy/remote1
   abort: repository remote1 already exists
   abort: could not create remote repo
   [255]
 
 clone to existing repo
 
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" local ssh://user@dummy/remote1
+  $ hg clone local ssh://user@dummy/remote1
   abort: repository remote1 already exists
   abort: could not create remote repo
   [255]
@@ -226,7 +226,7 @@ creating 'local/sub/repo'
   store created
   00changelog.i created
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -249,7 +249,7 @@ init should (for consistency with clone) expand the url
   store created
   00changelog.i created
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -268,7 +268,7 @@ verify that clone also expand urls
   store created
   00changelog.i created
   dotencode
-  exp-dirstate-v2 (dirstate-v2 !)
+  exp-rc-dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -283,7 +283,7 @@ clone bookmarks
   $ hg -R local bookmark test
   $ hg -R local bookmarks
    * test                      0:08b9e9f63b32
-  $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" local ssh://user@dummy/remote-bookmarks
+  $ hg clone local ssh://user@dummy/remote-bookmarks
   searching for changes
   remote: adding changesets
   remote: adding manifests

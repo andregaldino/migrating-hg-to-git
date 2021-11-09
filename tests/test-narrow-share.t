@@ -100,7 +100,7 @@ Narrow the share and check that the main repo's working copy gets updated
   $ hg -R main files
   abort: working copy's narrowspec is stale
   (run 'hg tracked --update-working-copy')
-  [255]
+  [20]
   $ hg -R main tracked --update-working-copy
   not deleting possibly dirty file d3/f
   not deleting possibly dirty file d3/g
@@ -138,7 +138,7 @@ Widen the share and check that the main repo's working copy gets updated
   $ hg -R main files
   abort: working copy's narrowspec is stale
   (run 'hg tracked --update-working-copy')
-  [255]
+  [20]
   $ hg -R main tracked --update-working-copy
 # d1/f, d3/f should be back
   $ hg -R main files
@@ -189,7 +189,7 @@ Make it look like a repo from before narrow+share was supported
   $ hg ci -Am test
   abort: working copy's narrowspec is stale
   (run 'hg tracked --update-working-copy')
-  [255]
+  [20]
   $ hg tracked --update-working-copy
   $ hg st
   M d1/f

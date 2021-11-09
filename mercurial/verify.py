@@ -395,12 +395,13 @@ class verifier(object):
             storefiles = set()
             subdirs = set()
             revlogv1 = self.revlogv1
-            for t, f, f2, size in repo.store.datafiles():
-                if not f:
-                    self._err(None, _(b"cannot decode filename '%s'") % f2)
-                elif (size > 0 or not revlogv1) and f.startswith(b'meta/'):
+            undecodable = []
+            for t, f, size in repo.store.datafiles(undecodable=undecodable):
+                if (size > 0 or not revlogv1) and f.startswith(b'meta/'):
                     storefiles.add(_normpath(f))
                     subdirs.add(os.path.dirname(f))
+            for f in undecodable:
+                self._err(None, _(b"cannot decode filename '%s'") % f)
             subdirprogress = ui.makeprogress(
                 _(b'checking'), unit=_(b'manifests'), total=len(subdirs)
             )
@@ -459,11 +460,12 @@ class verifier(object):
         ui.status(_(b"checking files\n"))
 
         storefiles = set()
-        for rl_type, f, f2, size in repo.store.datafiles():
-            if not f:
-                self._err(None, _(b"cannot decode filename '%s'") % f2)
-            elif (size > 0 or not revlogv1) and f.startswith(b'data/'):
+        undecodable = []
+        for t, f, size in repo.store.datafiles(undecodable=undecodable):
+            if (size > 0 or not revlogv1) and f.startswith(b'data/'):
                 storefiles.add(_normpath(f))
+        for f in undecodable:
+            self._err(None, _(b"cannot decode filename '%s'") % f)
 
         state = {
             # TODO this assumes revlog storage for changelog.

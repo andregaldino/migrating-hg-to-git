@@ -9,7 +9,7 @@ name='rusthg'
 crate-type = ["cdylib"]
 
 [features]
-default = ["python27"]
+default = ["python3"]
 
 # Features to build an extension module:
 python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]
@@ -21,12 +21,10 @@ python27-bin = ["cpython/python27-sys"]
 python3-bin = ["cpython/python3-sys"]
 
 [dependencies]
+cpython = { version = "0.7.0", default-features = false }
 crossbeam-channel = "0.4"
 hg-core = { path = "../hg-core"}
-libc = '*'
+libc = "0.2"
 log = "0.4.8"
 env_logger = "0.7.1"
-
-[dependencies.cpython]
-version = "0.6.0"
-default-features = false
+stable_deref_trait = "1.2.0"

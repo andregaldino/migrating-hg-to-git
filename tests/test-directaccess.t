@@ -42,7 +42,7 @@ Testing with rev number
   $ hg exp 2 --config experimental.directaccess.revnums=False
   abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
   $ hg exp 2
   # HG changeset patch
@@ -75,7 +75,7 @@ Testing with rev number
   $ hg status --change 2 --config experimental.directaccess.revnums=False
   abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
   $ hg diff -c 2
   diff -r 29becc82797a -r 28ad74487de9 c
@@ -197,12 +197,12 @@ Commands with undefined intent should not work right now
   $ hg phase -r 28ad74
   abort: hidden revision '28ad74' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
   $ hg phase -r 2
   abort: hidden revision '2' was rewritten as: 2443a0e66469
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
 Setting a bookmark will make that changeset unhidden, so this should come in end
 

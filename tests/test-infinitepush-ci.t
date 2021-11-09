@@ -9,8 +9,6 @@ Setup
 
   $ . "$TESTDIR/library-infinitepush.sh"
   $ cat >> $HGRCPATH <<EOF
-  > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -GT "{rev}:{node|short} {desc}\n{phase}"
   > EOF

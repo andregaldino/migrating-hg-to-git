@@ -6,7 +6,7 @@ Create a repository:
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)
-  format.exp-dirstate-v2=1 (dirstate-v2 !)
+  format.exp-rc-dirstate-v2=1 (dirstate-v2 !)
   largefiles.usercache=$TESTTMP/.cache/largefiles
   lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
@@ -15,6 +15,7 @@ Create a repository:
   ui.merge=internal:merge
   ui.mergemarkers=detailed
   ui.promptecho=True
+  ui.ssh=* (glob)
   ui.timeout.warn=15
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
@@ -54,12 +55,13 @@ Writes to stdio succeed and fail appropriately
 On Python 3, stdio may be None:
 
   $ hg debuguiprompt --config ui.interactive=true 0<&-
-   abort: Bad file descriptor
+   abort: Bad file descriptor (no-rhg !)
+   abort: response expected (rhg !)
   [255]
   $ hg version -q 0<&-
   Mercurial Distributed SCM * (glob)
 
-#if py3
+#if py3 no-rhg
   $ hg version -q 1>&-
   abort: Bad file descriptor
   [255]

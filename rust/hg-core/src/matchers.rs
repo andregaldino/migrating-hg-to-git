@@ -391,8 +391,7 @@ fn roots_and_dirs(
         } = ignore_pattern;
         match syntax {
             PatternSyntax::RootGlob | PatternSyntax::Glob => {
-                let mut root = vec![];
-
+                let mut root = HgPathBuf::new();
                 for p in pattern.split(|c| *c == b'/') {
                     if p.iter().any(|c| match *c {
                         b'[' | b'{' | b'*' | b'?' => true,
@@ -400,11 +399,9 @@ fn roots_and_dirs(
                     }) {
                         break;
                     }
-                    root.push(HgPathBuf::from_bytes(p));
+                    root.push(HgPathBuf::from_bytes(p).as_ref());
                 }
-                let buf =
-                    root.iter().fold(HgPathBuf::new(), |acc, r| acc.join(r));
-                roots.push(buf);
+                roots.push(root);
             }
             PatternSyntax::Path | PatternSyntax::RelPath => {
                 let pat = HgPath::new(if pattern == b"." {

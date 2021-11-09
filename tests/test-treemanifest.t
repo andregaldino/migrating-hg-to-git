@@ -1,8 +1,3 @@
-  $ cat << EOF >> $HGRCPATH
-  > [ui]
-  > ssh="$PYTHON" "$TESTDIR/dummyssh"
-  > EOF
-
 Set up repo
 
   $ hg --config experimental.treemanifest=True init repo

@@ -365,6 +365,11 @@ internalstable = sorted(
             loaddoc(b'config', subdir=b'internals'),
         ),
         (
+            [b'dirstate-v2'],
+            _(b'dirstate-v2 file format'),
+            loaddoc(b'dirstate-v2', subdir=b'internals'),
+        ),
+        (
             [b'extensions', b'extension'],
             _(b'Extension API'),
             loaddoc(b'extensions', subdir=b'internals'),

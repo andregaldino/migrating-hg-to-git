@@ -94,7 +94,7 @@ def _dirstatecopies(repo, match=None):
     ds = repo.dirstate
     c = ds.copies().copy()
     for k in list(c):
-        if ds[k] not in b'anm' or (match and not match(k)):
+        if not ds.get_entry(k).tracked or (match and not match(k)):
             del c[k]
     return c
 

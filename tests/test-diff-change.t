@@ -119,7 +119,7 @@ as pairs even if x == y, but not for "f(x:y)" nor "x::y" (issue3474, issue4774)
   +wdir
   $ hg diff -r "2 and 1"
   abort: empty revision range
-  [255]
+  [10]
 
   $ cd ..
 

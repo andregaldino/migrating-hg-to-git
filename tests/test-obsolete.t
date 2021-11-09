@@ -203,11 +203,11 @@ check that various commands work well with filtering
   5:5601fb93a350 (draft) [tip ] add new_3_c
   $ hg log -r 6
   abort: unknown revision '6'
-  [255]
+  [10]
   $ hg log -r 4
   abort: hidden revision '4' was rewritten as: 5601fb93a350
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
   $ hg debugrevspec 'rev(6)'
   $ hg debugrevspec 'rev(4)'
   $ hg debugrevspec 'null'
@@ -1544,7 +1544,7 @@ bookmarks change
   $ hg log -r 13bedc178fce
   abort: hidden revision '13bedc178fce' was rewritten as: a9b1f8652753
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
 Empty out the test extension, as it isn't compatible with later parts
 of the test.

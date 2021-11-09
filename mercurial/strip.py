@@ -8,6 +8,7 @@ from . import (
     error,
     hg,
     lock as lockmod,
+    logcmdutil,
     mergestate as mergestatemod,
     pycompat,
     registrar,
@@ -178,7 +179,7 @@ def debugstrip(ui, repo, *revs, **opts):
 
     cl = repo.changelog
     revs = list(revs) + opts.get(b'rev')
-    revs = set(scmutil.revrange(repo, revs))
+    revs = set(logcmdutil.revrange(repo, revs))
 
     with repo.wlock():
         bookmarks = set(opts.get(b'bookmark'))
@@ -255,7 +256,9 @@ def debugstrip(ui, repo, *revs, **opts):
 
             # reset files that only changed in the dirstate too
             dirstate = repo.dirstate
-            dirchanges = [f for f in dirstate if dirstate[f] != b'n']
+            dirchanges = [
+                f for f in dirstate if not dirstate.get_entry(f).maybe_clean
+            ]
             changedfiles.extend(dirchanges)
 
             repo.dirstate.rebuild(urev, uctx.manifest(), changedfiles)

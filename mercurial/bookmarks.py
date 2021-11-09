@@ -680,8 +680,25 @@ def binarydecode(repo, stream):
     return books
 
 
-def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
-    ui.debug(b"checking for updated bookmarks\n")
+def mirroring_remote(ui, repo, remotemarks):
+    """computes the bookmark changes that set the local bookmarks to
+    remotemarks"""
+    changed = []
+    localmarks = repo._bookmarks
+    for (b, id) in pycompat.iteritems(remotemarks):
+        if id != localmarks.get(b, None) and id in repo:
+            changed.append((b, id, ui.debug, _(b"updating bookmark %s\n") % b))
+    for b in localmarks:
+        if b not in remotemarks:
+            changed.append(
+                (b, None, ui.debug, _(b"removing bookmark %s\n") % b)
+            )
+    return changed
+
+
+def merging_from_remote(ui, repo, remotemarks, path, explicit=()):
+    """computes the bookmark changes that merge remote bookmarks into the
+    local bookmarks, based on comparebookmarks"""
     localmarks = repo._bookmarks
     (
         addsrc,
@@ -752,6 +769,20 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
                 _(b"remote bookmark %s points to locally missing %s\n")
                 % (b, hex(scid)[:12])
             )
+    return changed
+
+
+def updatefromremote(
+    ui, repo, remotemarks, path, trfunc, explicit=(), mode=None
+):
+    if mode == b'ignore':
+        # This should move to an higher level to avoid fetching bookmark at all
+        return
+    ui.debug(b"checking for updated bookmarks\n")
+    if mode == b'mirror':
+        changed = mirroring_remote(ui, repo, remotemarks)
+    else:
+        changed = merging_from_remote(ui, repo, remotemarks, path, explicit)
 
     if changed:
         tr = trfunc()
@@ -760,11 +791,14 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
         for b, node, writer, msg in sorted(changed, key=key):
             changes.append((b, node))
             writer(msg)
-        localmarks.applychanges(repo, tr, changes)
+        repo._bookmarks.applychanges(repo, tr, changes)
 
 
-def incoming(ui, repo, peer):
+def incoming(ui, repo, peer, mode=None):
     """Show bookmarks incoming from other to repo"""
+    if mode == b'ignore':
+        ui.status(_(b"bookmarks exchange disabled with this path\n"))
+        return 0
     ui.status(_(b"searching for changed bookmarks\n"))
 
     with peer.commandexecutor() as e:
@@ -776,9 +810,6 @@ def incoming(ui, repo, peer):
                 },
             ).result()
         )
-
-    r = comparebookmarks(repo, remotemarks, repo._bookmarks)
-    addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
 
     incomings = []
     if ui.debugflag:
@@ -795,18 +826,36 @@ def incoming(ui, repo, peer):
         def add(b, id, st):
             incomings.append(b"   %-25s %s\n" % (b, getid(id)))
 
-    for b, scid, dcid in addsrc:
-        # i18n: "added" refers to a bookmark
-        add(b, hex(scid), _(b'added'))
-    for b, scid, dcid in advsrc:
-        # i18n: "advanced" refers to a bookmark
-        add(b, hex(scid), _(b'advanced'))
-    for b, scid, dcid in diverge:
-        # i18n: "diverged" refers to a bookmark
-        add(b, hex(scid), _(b'diverged'))
-    for b, scid, dcid in differ:
-        # i18n: "changed" refers to a bookmark
-        add(b, hex(scid), _(b'changed'))
+    if mode == b'mirror':
+        localmarks = repo._bookmarks
+        allmarks = set(remotemarks.keys()) | set(localmarks.keys())
+        for b in sorted(allmarks):
+            loc = localmarks.get(b)
+            rem = remotemarks.get(b)
+            if loc == rem:
+                continue
+            elif loc is None:
+                add(b, hex(rem), _(b'added'))
+            elif rem is None:
+                add(b, hex(repo.nullid), _(b'removed'))
+            else:
+                add(b, hex(rem), _(b'changed'))
+    else:
+        r = comparebookmarks(repo, remotemarks, repo._bookmarks)
+        addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
+
+        for b, scid, dcid in addsrc:
+            # i18n: "added" refers to a bookmark
+            add(b, hex(scid), _(b'added'))
+        for b, scid, dcid in advsrc:
+            # i18n: "advanced" refers to a bookmark
+            add(b, hex(scid), _(b'advanced'))
+        for b, scid, dcid in diverge:
+            # i18n: "diverged" refers to a bookmark
+            add(b, hex(scid), _(b'diverged'))
+        for b, scid, dcid in differ:
+            # i18n: "changed" refers to a bookmark
+            add(b, hex(scid), _(b'changed'))
 
     if not incomings:
         ui.status(_(b"no changed bookmarks found\n"))

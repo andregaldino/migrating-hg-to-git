@@ -1,0 +1,286 @@
+use cpython::exc;
+use cpython::ObjectProtocol;
+use cpython::PyBytes;
+use cpython::PyErr;
+use cpython::PyNone;
+use cpython::PyObject;
+use cpython::PyResult;
+use cpython::Python;
+use cpython::PythonObject;
+use hg::dirstate::DirstateEntry;
+use hg::dirstate::EntryState;
+use hg::dirstate::TruncatedTimestamp;
+use std::cell::Cell;
+use std::convert::TryFrom;
+
+py_class!(pub class DirstateItem |py| {
+    data entry: Cell<DirstateEntry>;
+
+    def __new__(
+        _cls,
+        wc_tracked: bool = false,
+        p1_tracked: bool = false,
+        p2_info: bool = false,
+        has_meaningful_data: bool = true,
+        has_meaningful_mtime: bool = true,
+        parentfiledata: Option<(u32, u32, (u32, u32))> = None,
+        fallback_exec: Option<bool> = None,
+        fallback_symlink: Option<bool> = None,
+
+    ) -> PyResult<DirstateItem> {
+        let mut mode_size_opt = None;
+        let mut mtime_opt = None;
+        if let Some((mode, size, mtime)) = parentfiledata {
+            if has_meaningful_data {
+                mode_size_opt = Some((mode, size))
+            }
+            if has_meaningful_mtime {
+                mtime_opt = Some(timestamp(py, mtime)?)
+            }
+        }
+        let entry = DirstateEntry::from_v2_data(
+            wc_tracked,
+            p1_tracked,
+            p2_info,
+            mode_size_opt,
+            mtime_opt,
+            fallback_exec,
+            fallback_symlink,
+        );
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    @property
+    def state(&self) -> PyResult<PyBytes> {
+        let state_byte: u8 = self.entry(py).get().state().into();
+        Ok(PyBytes::new(py, &[state_byte]))
+    }
+
+    @property
+    def mode(&self) -> PyResult<i32> {
+        Ok(self.entry(py).get().mode())
+    }
+
+    @property
+    def size(&self) -> PyResult<i32> {
+        Ok(self.entry(py).get().size())
+    }
+
+    @property
+    def mtime(&self) -> PyResult<i32> {
+        Ok(self.entry(py).get().mtime())
+    }
+
+    @property
+    def has_fallback_exec(&self) -> PyResult<bool> {
+        match self.entry(py).get().get_fallback_exec() {
+            Some(_) => Ok(true),
+            None => Ok(false),
+        }
+    }
+
+    @property
+    def fallback_exec(&self) -> PyResult<Option<bool>> {
+        match self.entry(py).get().get_fallback_exec() {
+            Some(exec) => Ok(Some(exec)),
+            None => Ok(None),
+        }
+    }
+
+    @fallback_exec.setter
+    def set_fallback_exec(&self, value: Option<PyObject>) -> PyResult<()> {
+        match value {
+            None => {self.entry(py).get().set_fallback_exec(None);},
+            Some(value) => {
+            if value.is_none(py) {
+                self.entry(py).get().set_fallback_exec(None);
+            } else {
+                self.entry(py).get().set_fallback_exec(
+                    Some(value.is_true(py)?)
+                );
+            }},
+        }
+        Ok(())
+    }
+
+    @property
+    def has_fallback_symlink(&self) -> PyResult<bool> {
+        match self.entry(py).get().get_fallback_symlink() {
+            Some(_) => Ok(true),
+            None => Ok(false),
+        }
+    }
+
+    @property
+    def fallback_symlink(&self) -> PyResult<Option<bool>> {
+        match self.entry(py).get().get_fallback_symlink() {
+            Some(symlink) => Ok(Some(symlink)),
+            None => Ok(None),
+        }
+    }
+
+    @fallback_symlink.setter
+    def set_fallback_symlink(&self, value: Option<PyObject>) -> PyResult<()> {
+        match value {
+            None => {self.entry(py).get().set_fallback_symlink(None);},
+            Some(value) => {
+            if value.is_none(py) {
+                self.entry(py).get().set_fallback_symlink(None);
+            } else {
+                self.entry(py).get().set_fallback_symlink(
+                    Some(value.is_true(py)?)
+                );
+            }},
+        }
+        Ok(())
+    }
+
+    @property
+    def tracked(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().tracked())
+    }
+
+    @property
+    def p1_tracked(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().p1_tracked())
+    }
+
+    @property
+    def added(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().added())
+    }
+
+
+    @property
+    def p2_info(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().p2_info())
+    }
+
+    @property
+    def removed(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().removed())
+    }
+
+    @property
+    def maybe_clean(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().maybe_clean())
+    }
+
+    @property
+    def any_tracked(&self) -> PyResult<bool> {
+        Ok(self.entry(py).get().any_tracked())
+    }
+
+    def v1_state(&self) -> PyResult<PyBytes> {
+        let (state, _mode, _size, _mtime) = self.entry(py).get().v1_data();
+        let state_byte: u8 = state.into();
+        Ok(PyBytes::new(py, &[state_byte]))
+    }
+
+    def v1_mode(&self) -> PyResult<i32> {
+        let (_state, mode, _size, _mtime) = self.entry(py).get().v1_data();
+        Ok(mode)
+    }
+
+    def v1_size(&self) -> PyResult<i32> {
+        let (_state, _mode, size, _mtime) = self.entry(py).get().v1_data();
+        Ok(size)
+    }
+
+    def v1_mtime(&self) -> PyResult<i32> {
+        let (_state, _mode, _size, mtime) = self.entry(py).get().v1_data();
+        Ok(mtime)
+    }
+
+    def need_delay(&self, now: (u32, u32)) -> PyResult<bool> {
+        let now = timestamp(py, now)?;
+        Ok(self.entry(py).get().need_delay(now))
+    }
+
+    def mtime_likely_equal_to(&self, other: (u32, u32)) -> PyResult<bool> {
+        if let Some(mtime) = self.entry(py).get().truncated_mtime() {
+            Ok(mtime.likely_equal(timestamp(py, other)?))
+        } else {
+            Ok(false)
+        }
+    }
+
+    @classmethod
+    def from_v1_data(
+        _cls,
+        state: PyBytes,
+        mode: i32,
+        size: i32,
+        mtime: i32,
+    ) -> PyResult<Self> {
+        let state = <[u8; 1]>::try_from(state.data(py))
+            .ok()
+            .and_then(|state| EntryState::try_from(state[0]).ok())
+            .ok_or_else(|| PyErr::new::<exc::ValueError, _>(py, "invalid state"))?;
+        let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
+        DirstateItem::create_instance(py, Cell::new(entry))
+    }
+
+    def drop_merge_data(&self) -> PyResult<PyNone> {
+        self.update(py, |entry| entry.drop_merge_data());
+        Ok(PyNone)
+    }
+
+    def set_clean(
+        &self,
+        mode: u32,
+        size: u32,
+        mtime: (u32, u32),
+    ) -> PyResult<PyNone> {
+        let mtime = timestamp(py, mtime)?;
+        self.update(py, |entry| entry.set_clean(mode, size, mtime));
+        Ok(PyNone)
+    }
+
+    def set_possibly_dirty(&self) -> PyResult<PyNone> {
+        self.update(py, |entry| entry.set_possibly_dirty());
+        Ok(PyNone)
+    }
+
+    def set_tracked(&self) -> PyResult<PyNone> {
+        self.update(py, |entry| entry.set_tracked());
+        Ok(PyNone)
+    }
+
+    def set_untracked(&self) -> PyResult<PyNone> {
+        self.update(py, |entry| entry.set_untracked());
+        Ok(PyNone)
+    }
+});
+
+impl DirstateItem {
+    pub fn new_as_pyobject(
+        py: Python<'_>,
+        entry: DirstateEntry,
+    ) -> PyResult<PyObject> {
+        Ok(DirstateItem::create_instance(py, Cell::new(entry))?.into_object())
+    }
+
+    pub fn get_entry(&self, py: Python<'_>) -> DirstateEntry {
+        self.entry(py).get()
+    }
+
+    // TODO: Use https://doc.rust-lang.org/std/cell/struct.Cell.html#method.update instead when it’s stable
+    pub fn update(&self, py: Python<'_>, f: impl FnOnce(&mut DirstateEntry)) {
+        let mut entry = self.entry(py).get();
+        f(&mut entry);
+        self.entry(py).set(entry)
+    }
+}
+
+pub(crate) fn timestamp(
+    py: Python<'_>,
+    (s, ns): (u32, u32),
+) -> PyResult<TruncatedTimestamp> {
+    TruncatedTimestamp::from_already_truncated(s, ns).map_err(|_| {
+        PyErr::new::<exc::ValueError, _>(
+            py,
+            "expected mtime truncated to 31 bits",
+        )
+    })
+}

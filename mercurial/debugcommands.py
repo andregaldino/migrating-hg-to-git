@@ -506,7 +506,7 @@ def debugcapabilities(ui, path, **opts):
 )
 def debugchangedfiles(ui, repo, rev, **opts):
     """list the stored files changes for a revision"""
-    ctx = scmutil.revsingle(repo, rev, None)
+    ctx = logcmdutil.revsingle(repo, rev, None)
     files = None
 
     if opts['compute']:
@@ -550,24 +550,9 @@ def debugcheckstate(ui, repo):
     m1 = repo[parent1].manifest()
     m2 = repo[parent2].manifest()
     errors = 0
-    for f in repo.dirstate:
-        state = repo.dirstate[f]
-        if state in b"nr" and f not in m1:
-            ui.warn(_(b"%s in state %s, but not in manifest1\n") % (f, state))
-            errors += 1
-        if state in b"a" and f in m1:
-            ui.warn(_(b"%s in state %s, but also in manifest1\n") % (f, state))
-            errors += 1
-        if state in b"m" and f not in m1 and f not in m2:
-            ui.warn(
-                _(b"%s in state %s, but not in either manifest\n") % (f, state)
-            )
-            errors += 1
-    for f in m1:
-        state = repo.dirstate[f]
-        if state not in b"nrm":
-            ui.warn(_(b"%s in manifest1, but listed as state %s") % (f, state))
-            errors += 1
+    for err in repo.dirstate.verify(m1, m2):
+        ui.warn(err[0] % err[1:])
+        errors += 1
     if errors:
         errstr = _(b".hg/dirstate inconsistent with current parent's manifest")
         raise error.Abort(errstr)
@@ -962,35 +947,29 @@ def debugstate(ui, repo, **opts):
     datesort = opts.get('datesort')
 
     if datesort:
-        keyfunc = lambda x: (
-            x[1].v1_mtime(),
-            x[0],
-        )  # sort by mtime, then by filename
+
+        def keyfunc(entry):
+            filename, _state, _mode, _size, mtime = entry
+            return (mtime, filename)
+
     else:
         keyfunc = None  # sort by filename
-    if opts['all']:
-        entries = list(repo.dirstate._map.debug_iter())
-    else:
-        entries = list(pycompat.iteritems(repo.dirstate))
+    entries = list(repo.dirstate._map.debug_iter(all=opts['all']))
     entries.sort(key=keyfunc)
-    for file_, ent in entries:
-        if ent.v1_mtime() == -1:
+    for entry in entries:
+        filename, state, mode, size, mtime = entry
+        if mtime == -1:
             timestr = b'unset               '
         elif nodates:
             timestr = b'set                 '
         else:
-            timestr = time.strftime(
-                "%Y-%m-%d %H:%M:%S ", time.localtime(ent.v1_mtime())
-            )
+            timestr = time.strftime("%Y-%m-%d %H:%M:%S ", time.localtime(mtime))
             timestr = encoding.strtolocal(timestr)
-        if ent.mode & 0o20000:
+        if mode & 0o20000:
             mode = b'lnk'
         else:
-            mode = b'%3o' % (ent.v1_mode() & 0o777 & ~util.umask)
-        ui.write(
-            b"%c %s %10d %s%s\n"
-            % (ent.v1_state(), mode, ent.v1_size(), timestr, file_)
-        )
+            mode = b'%3o' % (mode & 0o777 & ~util.umask)
+        ui.write(b"%c %s %10d %s%s\n" % (state, mode, size, timestr, filename))
     for f in repo.dirstate.copies():
         ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
 
@@ -1103,7 +1082,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         ui.status(_(b'comparing with %s\n') % urlutil.hidepassword(remoteurl))
     else:
         branches = (None, [])
-        remote_filtered_revs = scmutil.revrange(
+        remote_filtered_revs = logcmdutil.revrange(
             unfi, [b"not (::(%s))" % remote_revs]
         )
         remote_filtered_revs = frozenset(remote_filtered_revs)
@@ -1117,7 +1096,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         remote._repo = remote._repo.filtered(b'debug-discovery-remote-filter')
 
     if local_revs:
-        local_filtered_revs = scmutil.revrange(
+        local_filtered_revs = logcmdutil.revrange(
             unfi, [b"not (::(%s))" % local_revs]
         )
         local_filtered_revs = frozenset(local_filtered_revs)
@@ -1155,7 +1134,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
         def doit(pushedrevs, remoteheads, remote=remote):
             nodes = None
             if pushedrevs:
-                revs = scmutil.revrange(repo, pushedrevs)
+                revs = logcmdutil.revrange(repo, pushedrevs)
                 nodes = [repo[r].node() for r in revs]
             common, any, hds = setdiscovery.findcommonheads(
                 ui, repo, remote, ancestorsof=nodes, audit=data
@@ -1394,7 +1373,7 @@ def debugfileset(ui, repo, expr, **opts):
 
     fileset.symbols  # force import of fileset so we have predicates to optimize
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get(b'rev'), None)
+    ctx = logcmdutil.revsingle(repo, opts.get(b'rev'), None)
 
     stages = [
         (b'parsed', pycompat.identity),
@@ -1495,8 +1474,8 @@ def debug_repair_issue6528(ui, repo, **opts):
     filename.
 
     Note that this does *not* mean that this repairs future affected revisions,
-    that needs a separate fix at the exchange level that hasn't been written yet
-    (as of 5.9rc0).
+    that needs a separate fix at the exchange level that was introduced in
+    Mercurial 5.9.1.
 
     There is a `--paranoid` flag to test that the fast implementation is correct
     by checking it against the slow implementation. Since this matter is quite
@@ -2614,7 +2593,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             l.release()
     else:
         if opts[b'rev']:
-            revs = scmutil.revrange(repo, opts[b'rev'])
+            revs = logcmdutil.revrange(repo, opts[b'rev'])
             nodes = [repo[r].node() for r in revs]
             markers = list(
                 obsutil.getmarkers(
@@ -2981,16 +2960,28 @@ def debugrebuilddirstate(ui, repo, rev, **opts):
             dirstatefiles = set(dirstate)
             manifestonly = manifestfiles - dirstatefiles
             dsonly = dirstatefiles - manifestfiles
-            dsnotadded = {f for f in dsonly if dirstate[f] != b'a'}
+            dsnotadded = {f for f in dsonly if not dirstate.get_entry(f).added}
             changedfiles = manifestonly | dsnotadded
 
         dirstate.rebuild(ctx.node(), ctx.manifest(), changedfiles)
 
 
-@command(b'debugrebuildfncache', [], b'')
-def debugrebuildfncache(ui, repo):
+@command(
+    b'debugrebuildfncache',
+    [
+        (
+            b'',
+            b'only-data',
+            False,
+            _(b'only look for wrong .d files (much faster)'),
+        )
+    ],
+    b'',
+)
+def debugrebuildfncache(ui, repo, **opts):
     """rebuild the fncache file"""
-    repair.rebuildfncache(ui, repo)
+    opts = pycompat.byteskwargs(opts)
+    repair.rebuildfncache(ui, repo, opts.get(b"only_data"))
 
 
 @command(
@@ -4018,7 +4009,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     cache = {}
     ctx2str = bytes
     node2str = short
-    for rev in scmutil.revrange(repo, revs):
+    for rev in logcmdutil.revrange(repo, revs):
         ctx = repo[rev]
         ui.write(b'%s\n' % ctx2str(ctx))
         for succsset in obsutil.successorssets(
@@ -4077,7 +4068,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
             raise error.RepoError(
                 _(b'there is no Mercurial repository here (.hg not found)')
             )
-        revs = scmutil.revrange(repo, opts['rev'])
+        revs = logcmdutil.revrange(repo, opts['rev'])
 
     props = {}
     for d in opts['define']:

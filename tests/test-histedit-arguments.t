@@ -93,7 +93,7 @@ Run on a revision not ancestors of the current working directory.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg histedit -r 4
   abort: 08d98a8350f3 is not an ancestor of working directory
-  [255]
+  [10]
   $ hg up --quiet
 
 
@@ -290,7 +290,7 @@ short hash. This tests issue3893.
   created new head
   $ hg histedit -r 'heads(all())'
   abort: The specified revisions must have exactly one common root
-  [255]
+  [10]
 
 Test that trimming description using multi-byte characters
 --------------------------------------------------------------------

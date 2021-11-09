@@ -264,7 +264,7 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 		}
 
 		tuple = (dirstateItemObject *)v;
-		if (tuple->state != 'r') {
+		if (tuple->flags | dirstate_flag_wc_tracked) {
 			PyObject *normed;
 			if (table != NULL) {
 				normed = _asciitransform(k, table,

@@ -37,7 +37,6 @@
 
   $ cat >> $HGRCPATH <<EOF
   > [ui]
-  > ssh = "$PYTHON" "$TESTDIR/dummyssh"
   > username = nobody <no.reply@example.com>
   > 
   > [alias]

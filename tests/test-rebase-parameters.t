@@ -132,7 +132,7 @@ These fail:
 
   $ hg rebase --dest '1 & !1'
   abort: empty revision set
-  [255]
+  [10]
 
 These work:
 

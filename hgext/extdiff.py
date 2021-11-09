@@ -101,6 +101,7 @@ from mercurial import (
     error,
     filemerge,
     formatter,
+    logcmdutil,
     pycompat,
     registrar,
     scmutil,
@@ -558,17 +559,17 @@ def dodiff(ui, repo, cmdline, pats, opts, guitool=False):
     do3way = b'$parent2' in cmdline
 
     if change:
-        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx2 = logcmdutil.revsingle(repo, change, None)
         ctx1a, ctx1b = ctx2.p1(), ctx2.p2()
     elif from_rev or to_rev:
         repo = scmutil.unhidehashlikerevs(
             repo, [from_rev] + [to_rev], b'nowarn'
         )
-        ctx1a = scmutil.revsingle(repo, from_rev, None)
+        ctx1a = logcmdutil.revsingle(repo, from_rev, None)
         ctx1b = repo[nullrev]
-        ctx2 = scmutil.revsingle(repo, to_rev, None)
+        ctx2 = logcmdutil.revsingle(repo, to_rev, None)
     else:
-        ctx1a, ctx2 = scmutil.revpair(repo, revs)
+        ctx1a, ctx2 = logcmdutil.revpair(repo, revs)
         if not revs:
             ctx1b = repo[None].p2()
         else:

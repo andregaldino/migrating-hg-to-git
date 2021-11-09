@@ -147,7 +147,7 @@ Changing branch of an obsoleted changeset
   $ hg branch -r 4 foobar
   abort: hidden revision '4' was rewritten as: 7c1991464886
   (use --hidden to access hidden revisions)
-  [255]
+  [10]
 
   $ hg branch -r 4 --hidden foobar
   abort: cannot change branch of 3938acfb5c0f, as that creates content-divergence with 7c1991464886

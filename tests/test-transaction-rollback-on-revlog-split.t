@@ -82,15 +82,14 @@ and the second file.i entry should match the first file.i entry.
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     _
   
-  $ hg verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
+  $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!
-  checked 2 changesets with 2 changes to 1 files
   1 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
+  $ hg debugrebuildfncache --only-data
+  adding data/file.d
+  1 items added, 0 removed from fncache
+  $ hg verify -q
   $ cd ..
 
 
@@ -133,12 +132,7 @@ where the data file is left as garbage.
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     _
   
-  $ hg verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
-  checked 2 changesets with 2 changes to 1 files
+  $ hg verify -q
   $ cd ..
 
 
@@ -170,13 +164,8 @@ Repeat the original test but let hg rollback the transaction.
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     _
   
-  $ hg verify
-  checking changesets
-  checking manifests
-  crosschecking files in changesets and manifests
-  checking files
+  $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!
-  checked 2 changesets with 2 changes to 1 files
   1 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
   $ cd ..

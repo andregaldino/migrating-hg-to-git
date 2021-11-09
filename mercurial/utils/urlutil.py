@@ -503,22 +503,17 @@ def get_push_paths(repo, ui, dests):
                 yield path
 
 
-def get_pull_paths(repo, ui, sources, default_branches=()):
+def get_pull_paths(repo, ui, sources):
     """yields all the `(path, branch)` selected as pull source by `sources`"""
     if not sources:
         sources = [b'default']
     for source in sources:
         if source in ui.paths:
             for p in ui.paths[source]:
-                yield parseurl(p.rawloc, default_branches)
+                yield p
         else:
-            # Try to resolve as a local path or URI.
-            path = try_path(ui, source)
-            if path is not None:
-                url = path.rawloc
-            else:
-                url = source
-            yield parseurl(url, default_branches)
+            p = path(ui, None, source, validate_path=False)
+            yield p
 
 
 def get_unique_push_path(action, repo, ui, dest=None):
@@ -771,6 +766,28 @@ def pushrevpathoption(ui, path, value):
     return value
 
 
+SUPPORTED_BOOKMARKS_MODES = {
+    b'default',
+    b'mirror',
+    b'ignore',
+}
+
+
+@pathsuboption(b'bookmarks.mode', b'bookmarks_mode')
+def bookmarks_mode_option(ui, path, value):
+    if value not in SUPPORTED_BOOKMARKS_MODES:
+        path_name = path.name
+        if path_name is None:
+            # this is an "anonymous" path, config comes from the global one
+            path_name = b'*'
+        msg = _(b'(paths.%s:bookmarks.mode has unknown value: "%s")\n')
+        msg %= (path_name, value)
+        ui.warn(msg)
+    if value == b'default':
+        value = None
+    return value
+
+
 @pathsuboption(b'multi-urls', b'multi_urls')
 def multiurls_pathoption(ui, path, value):
     res = stringutil.parsebool(value)
@@ -818,7 +835,14 @@ def _chain_path(base_path, ui, paths):
 class path(object):
     """Represents an individual path and its configuration."""
 
-    def __init__(self, ui=None, name=None, rawloc=None, suboptions=None):
+    def __init__(
+        self,
+        ui=None,
+        name=None,
+        rawloc=None,
+        suboptions=None,
+        validate_path=True,
+    ):
         """Construct a path from its config options.
 
         ``ui`` is the ``ui`` instance the path is coming from.
@@ -856,7 +880,8 @@ class path(object):
         self.rawloc = rawloc
         self.loc = b'%s' % u
 
-        self._validate_path()
+        if validate_path:
+            self._validate_path()
 
         _path, sub_opts = ui.configsuboptions(b'paths', b'*')
         self._own_sub_opts = {}

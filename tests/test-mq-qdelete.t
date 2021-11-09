@@ -115,7 +115,7 @@ Delete the same patch twice in one command (issue2427)
 
   $ hg qfinish -a pc
   abort: unknown revision 'pc'
-  [255]
+  [10]
 
   $ hg qpush
   applying pc

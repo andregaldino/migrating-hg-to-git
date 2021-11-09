@@ -132,36 +132,6 @@ class idirstate(interfaceutil.Interface):
     def copies():
         pass
 
-    def normal(f, parentfiledata=None):
-        """Mark a file normal and clean.
-
-        parentfiledata: (mode, size, mtime) of the clean file
-
-        parentfiledata should be computed from memory (for mode,
-        size), as or close as possible from the point where we
-        determined the file was clean, to limit the risk of the
-        file having been changed by an external process between the
-        moment where the file was determined to be clean and now."""
-        pass
-
-    def normallookup(f):
-        '''Mark a file normal, but possibly dirty.'''
-
-    def otherparent(f):
-        '''Mark as coming from the other parent, always dirty.'''
-
-    def add(f):
-        '''Mark a file added.'''
-
-    def remove(f):
-        '''Mark a file removed.'''
-
-    def merge(f):
-        '''Mark a file merged.'''
-
-    def drop(f):
-        '''Drop a file from the dirstate'''
-
     def normalize(path, isknown=False, ignoremissing=False):
         """
         normalize the case of a pathname when on a casefolding filesystem

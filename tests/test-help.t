@@ -1121,6 +1121,7 @@ internals topic renders index of available sub-topics
        censor        Censor
        changegroups  Changegroups
        config        Config Registrar
+       dirstate-v2   dirstate-v2 file format
        extensions    Extension API
        mergestate    Mergestate
        requirements  Repository Requirements
@@ -1898,6 +1899,17 @@ Test section lookup
   
          Revsets specifying bookmarks will not result in the bookmark being
          pushed.
+  
+      "bookmarks.mode"
+        How bookmark will be dealt during the exchange. It support the following
+        value
+  
+        - "default": the default behavior, local and remote bookmarks are
+          "merged" on push/pull.
+        - "mirror": when pulling, replace local bookmarks by remote bookmarks.
+          This is useful to replicate a repository, or as an optimization.
+        - "ignore": ignore bookmarks during exchange. (This currently only
+          affect pulling)
   
       The following special named paths exist:
   
@@ -3564,6 +3576,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Config Registrar
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.dirstate-v2">
+  dirstate-v2
+  </a>
+  </td><td>
+  dirstate-v2 file format
   </td></tr>
   <tr><td>
   <a href="/help/internals.extensions">

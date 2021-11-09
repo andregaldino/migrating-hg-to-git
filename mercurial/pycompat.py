@@ -44,6 +44,7 @@ if not ispy3:
     FileNotFoundError = OSError
 
 else:
+    import builtins
     import concurrent.futures as futures
     import http.cookiejar as cookielib
     import http.client as httplib
@@ -55,7 +56,7 @@ else:
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
 
-    FileNotFoundError = __builtins__['FileNotFoundError']
+    FileNotFoundError = builtins.FileNotFoundError
 
 
 def identity(a):
@@ -221,6 +222,15 @@ if ispy3:
         >>> t = bytes(t)  # cast to bytes
         >>> assert type(t) is bytes
         """
+
+        # Trick pytype into not demanding Iterable[int] be passed to __new__(),
+        # since the appropriate bytes format is done internally.
+        #
+        # https://github.com/google/pytype/issues/500
+        if TYPE_CHECKING:
+
+            def __init__(self, s=b''):
+                pass
 
         def __new__(cls, s=b''):
             if isinstance(s, bytestr):
