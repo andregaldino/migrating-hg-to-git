@@ -127,6 +127,13 @@ impl ConfigLayer {
             .flat_map(|section| section.keys().map(|vec| &**vec))
     }
 
+    /// Returns whether any key is defined in the given section
+    pub fn has_non_empty_section(&self, section: &[u8]) -> bool {
+        self.sections
+            .get(section)
+            .map_or(false, |section| !section.is_empty())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.sections.is_empty()
     }

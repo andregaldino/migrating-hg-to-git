@@ -403,6 +403,13 @@ impl Config {
             .collect()
     }
 
+    /// Returns whether any key is defined in the given section
+    pub fn has_non_empty_section(&self, section: &[u8]) -> bool {
+        self.layers
+            .iter()
+            .any(|layer| layer.has_non_empty_section(section))
+    }
+
     /// Get raw values bytes from all layers (even untrusted ones) in order
     /// of precedence.
     #[cfg(test)]

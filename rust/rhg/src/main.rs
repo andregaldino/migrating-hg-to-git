@@ -626,5 +626,13 @@ fn check_unsupported(config: &Config) -> Result<(), CommandError> {
         Err(CommandError::unsupported("$HG_PENDING"))?
     }
 
+    if config.has_non_empty_section(b"encode") {
+        Err(CommandError::unsupported("[encode] config"))?
+    }
+
+    if config.has_non_empty_section(b"decode") {
+        Err(CommandError::unsupported("[decode] config"))?
+    }
+
     Ok(())
 }
