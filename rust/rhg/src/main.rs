@@ -1,4 +1,5 @@
 extern crate log;
+use crate::error::CommandError;
 use crate::ui::Ui;
 use clap::App;
 use clap::AppSettings;
@@ -20,7 +21,6 @@ mod ui;
 pub mod utils {
     pub mod path_utils;
 }
-use error::CommandError;
 
 fn main_with_result(
     process_start_time: &blackbox::ProcessStartTime,
@@ -28,7 +28,7 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
-    check_extensions(config)?;
+    check_unsupported(config)?;
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
@@ -615,4 +615,16 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
             ),
         })
     }
+}
+
+fn check_unsupported(config: &Config) -> Result<(), CommandError> {
+    check_extensions(config)?;
+
+    if std::env::var_os("HG_PENDING").is_some() {
+        // TODO: only if the value is `== repo.working_directory`?
+        // What about relative v.s. absolute paths?
+        Err(CommandError::unsupported("$HG_PENDING"))?
+    }
+
+    Ok(())
 }
