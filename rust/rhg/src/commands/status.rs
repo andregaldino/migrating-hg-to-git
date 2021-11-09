@@ -138,12 +138,12 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     }
 
     // TODO: lift these limitations
-    if invocation.config.get_bool(b"ui", b"tweakdefaults").ok() == Some(true) {
+    if invocation.config.get_bool(b"ui", b"tweakdefaults")? {
         return Err(CommandError::unsupported(
             "ui.tweakdefaults is not yet supported with rhg status",
         ));
     }
-    if invocation.config.get_bool(b"ui", b"statuscopies").ok() == Some(true) {
+    if invocation.config.get_bool(b"ui", b"statuscopies")? {
         return Err(CommandError::unsupported(
             "ui.statuscopies is not yet supported with rhg status",
         ));
@@ -263,10 +263,9 @@ fn display_status_paths(
     status_prefix: &[u8],
 ) -> Result<(), CommandError> {
     paths.sort_unstable();
-    let mut relative: bool =
-        config.get_bool(b"ui", b"relative-paths").unwrap_or(false);
+    let mut relative: bool = config.get_bool(b"ui", b"relative-paths")?;
     relative = config
-        .get_bool(b"commands", b"status.relative")
+        .get_option(b"commands", b"status.relative")?
         .unwrap_or(relative);
     if relative && !ui.plain() {
         relativize_paths(
