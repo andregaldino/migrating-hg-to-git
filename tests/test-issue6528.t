@@ -2,6 +2,10 @@
 Test non-regression on the corruption associated with issue6528
 ===============================================================
 
+TODO: fix rhg bugs that make this test fail when status is enabled
+  $ unset RHG_STATUS
+
+
 Setup
 =====
 

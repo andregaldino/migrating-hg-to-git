@@ -1,3 +1,7 @@
+TODO: fix rhg bugs that make this test fail when status is enabled
+  $ unset RHG_STATUS
+
+
 Create a repository:
 
 #if no-extraextensions

@@ -114,6 +114,7 @@ impl Config {
             b"rhg",
             b"fallback-executable",
         );
+        config.add_for_environment_variable("RHG_STATUS", b"rhg", b"status");
 
         // HGRCPATH replaces user config
         if opt_rc_path.is_none() {

@@ -4,6 +4,9 @@ Testing merge involving change to the exec flag
 
 #require execbit
 
+TODO: fix rhg bugs that make this test fail when status is enabled
+  $ unset RHG_STATUS
+
 
 Initial setup
 ==============

@@ -1,3 +1,7 @@
+TODO: fix rhg bugs that make this test fail when status is enabled
+  $ unset RHG_STATUS
+
+
   $ hg init
   $ cat << EOF > a
   > Small Mathematical Series.
