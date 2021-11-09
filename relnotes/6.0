@@ -26,6 +26,7 @@
  * `rhg cat` is even faster
  * `rhg` (Rust fast-path for `hg`) now supports the full config list syntax
  * `rhg` now parses some corner-cases for revsets correctly
+ * Fixed an `fsmonitor` on Python 3 during exception handling
  * Lots of Windows fixes
  * Lots of miscellaneous other fixes
  * Removed a CPython-specific compatibility hack to improve support for alternative Python implementations
@@ -68,3 +69,4 @@ Miscellaneous:
    anymore
   * The Rust extensions (and by extension the experimental `rhg status`) only use a tree-based dirstate in-memory, even when using dirstate-v1. See bf8837e3d7cec40fe649c47163a3154dda03fa16 for more details
   * The Rust minimum supported version is now 1.48.0 in accordance with out policy of keeping up with Debian stable
+  * The test harness plays nicer with the NixOS sandbox
