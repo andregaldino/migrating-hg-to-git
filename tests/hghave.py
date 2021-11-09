@@ -264,6 +264,13 @@ def has_executablebit():
     return not (new_file_has_exec or exec_flags_cannot_flip)
 
 
+@check("suidbit", "setuid and setgid bit")
+def has_suidbit():
+    if getattr(os, "statvfs", None) is None or getattr(os, "ST_NOSUID") is None:
+        return False
+    return bool(os.statvfs('.').f_flag & os.ST_NOSUID)
+
+
 @check("icasefs", "case insensitive file system")
 def has_icasefs():
     # Stolen from mercurial.util
