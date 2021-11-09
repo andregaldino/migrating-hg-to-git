@@ -148,6 +148,15 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             "ui.statuscopies is not yet supported with rhg status",
         ));
     }
+    if invocation
+        .config
+        .get(b"commands", b"status.terse")
+        .is_some()
+    {
+        return Err(CommandError::unsupported(
+            "status.terse is not yet supported with rhg status",
+        ));
+    }
 
     let ui = invocation.ui;
     let config = invocation.config;
