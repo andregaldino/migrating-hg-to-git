@@ -29,7 +29,7 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
-    check_unsupported(config, ui)?;
+    check_unsupported(config, repo, ui)?;
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
@@ -643,6 +643,7 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
 
 fn check_unsupported(
     config: &Config,
+    repo: Result<&Repo, &NoRepoInCwdError>,
     ui: &ui::Ui,
 ) -> Result<(), CommandError> {
     check_extensions(config)?;
@@ -651,6 +652,12 @@ fn check_unsupported(
         // TODO: only if the value is `== repo.working_directory`?
         // What about relative v.s. absolute paths?
         Err(CommandError::unsupported("$HG_PENDING"))?
+    }
+
+    if let Ok(repo) = repo {
+        if repo.has_subrepos()? {
+            Err(CommandError::unsupported("sub-repositories"))?
+        }
     }
 
     if config.has_non_empty_section(b"encode") {
