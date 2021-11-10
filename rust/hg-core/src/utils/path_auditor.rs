@@ -180,12 +180,14 @@ impl PathAuditor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::files::get_path_from_bytes;
-    use crate::utils::hg_path::path_to_hg_path_buf;
+    use std::fs::{create_dir, File};
+    use tempfile::tempdir;
 
     #[test]
     fn test_path_auditor() {
-        let auditor = PathAuditor::new(get_path_from_bytes(b"/tmp"));
+        let base_dir = tempdir().unwrap();
+        let base_dir_path = base_dir.path();
+        let auditor = PathAuditor::new(base_dir_path);
 
         let path = HgPath::new(b".hg/00changelog.i");
         assert_eq!(
@@ -201,32 +203,20 @@ mod tests {
             })
         );
 
-        use std::fs::{create_dir, File};
-        use tempfile::tempdir;
-
-        let base_dir = tempdir().unwrap();
-        let base_dir_path = base_dir.path();
-        let skip = base_dir_path.components().count() - 1;
-        let a = base_dir_path.join("a");
-        let b = base_dir_path.join("b");
-        create_dir(&a).unwrap();
-        let in_a_path = a.join("in_a");
-        File::create(in_a_path).unwrap();
-
+        create_dir(&base_dir_path.join("realdir")).unwrap();
+        File::create(&base_dir_path.join("realdir/realfile")).unwrap();
         // TODO make portable
-        std::os::unix::fs::symlink(&a, &b).unwrap();
-
-        let buf = b.join("in_a").components().skip(skip).collect::<PathBuf>();
-        eprintln!("buf: {}", buf.display());
-        let path = path_to_hg_path_buf(buf).unwrap();
+        std::os::unix::fs::symlink(
+            &base_dir_path.join("realdir"),
+            &base_dir_path.join("symlink"),
+        )
+        .unwrap();
+        let path = HgPath::new(b"symlink/realfile");
         assert_eq!(
-            auditor.audit_path(&path),
+            auditor.audit_path(path),
             Err(HgPathError::TraversesSymbolicLink {
-                path: path,
-                symlink: path_to_hg_path_buf(
-                    b.components().skip(2).collect::<PathBuf>()
-                )
-                .unwrap()
+                path: path.to_owned(),
+                symlink: HgPathBuf::from_bytes(b"symlink"),
             })
         );
     }

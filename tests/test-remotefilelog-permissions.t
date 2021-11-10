@@ -33,6 +33,8 @@
 
   $ chmod -R u+w master/.hg/remotefilelogcache
 
+#if suidbit
+
 # Test setting up shared cache with the right permissions
 # (this is hard to test in a cross platform way, so we just make sure nothing
 # crashes)
@@ -44,3 +46,5 @@
   1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ ls -ld $CACHEDIR/11
   drwxrws* $TESTTMP/hgcache/11 (glob)
+
+#endif
