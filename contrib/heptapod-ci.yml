@@ -5,7 +5,7 @@ stages:
 image: registry.heptapod.net/mercurial/ci-images/mercurial-core:$HG_CI_IMAGE_TAG
 
 variables:
-    PYTHON: python
+    PYTHON: python3
     TEST_HGMODULEPOLICY: "allow"
     HG_CI_IMAGE_TAG: "latest"
     TEST_HGTESTS_ALLOW_NETIO: "0"
@@ -30,29 +30,16 @@ variables:
         - echo "$RUNTEST_ARGS"
         - HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
 
-checks-py2:
+checks:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
 
-checks-py3:
-    <<: *runtests
-    variables:
-        RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
-        PYTHON: python3
-
-rust-cargo-test-py2: &rust_cargo_test
+rust-cargo-test:
     <<: *all
     stage: tests
     script:
-        - echo "python used, $PYTHON"
         - make rust-tests
-
-rust-cargo-test-py3:
-    stage: tests
-    <<: *rust_cargo_test
-    variables:
-        PYTHON: python3
 
 phabricator-refresh:
     stage: phabricator
@@ -67,71 +54,40 @@ phabricator-refresh:
             ./contrib/phab-refresh-stack.sh --comment "$DEFAULT_COMMENT";
         fi
 
-test-py2:
+test:
     <<: *runtests
     variables:
         RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "c"
         TEST_HGTESTS_ALLOW_NETIO: "1"
 
-test-py3:
-    <<: *runtests
-    variables:
-        RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
-        PYTHON: python3
-        TEST_HGMODULEPOLICY: "c"
-        TEST_HGTESTS_ALLOW_NETIO: "1"
-
-test-py2-pure:
+test-pure:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "py"
 
-test-py3-pure:
-    <<: *runtests
-    variables:
-        RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
-        PYTHON: python3
-        TEST_HGMODULEPOLICY: "py"
-
-test-py2-rust:
+test-rust:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
         TEST_HGMODULEPOLICY: "rust+c"
 
-test-py3-rust:
-    <<: *runtests
-    variables:
-        HGWITHRUSTEXT: cpython
-        RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
-        PYTHON: python3
-        TEST_HGMODULEPOLICY: "rust+c"
-
-test-py3-rhg:
+test-rhg:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
         RUNTEST_ARGS: "--rust --rhg --blacklist /tmp/check-tests.txt"
-        PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
 
-test-py2-chg:
+test-chg:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
         TEST_HGMODULEPOLICY: "c"
 
-test-py3-chg:
-    <<: *runtests
-    variables:
-        PYTHON: python3
-        RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
-        TEST_HGMODULEPOLICY: "c"
-
-check-pytype-py3:
+check-pytype:
     extends: .runtests_template
     before_script:
       - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
@@ -142,7 +98,6 @@ check-pytype-py3:
     variables:
         RUNTEST_ARGS: " --allow-slow-tests tests/test-check-pytype.t"
         HGTEST_SLOWTIMEOUT: "3600"
-        PYTHON: python3
         TEST_HGMODULEPOLICY: "c"
 
 # `sh.exe --login` sets a couple of extra environment variables that are defined
