@@ -18,7 +18,7 @@ Enable sparse profile
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -38,7 +38,7 @@ Requirement for sparse added when sparse is enabled
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-sparse
   fncache
   generaldelta
@@ -61,7 +61,7 @@ Requirement for sparse is removed when sparse is disabled
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)

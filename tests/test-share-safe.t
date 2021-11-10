@@ -19,7 +19,7 @@ prepare source repo
   $ hg init source
   $ cd source
   $ cat .hg/requires
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   share-safe
   $ cat .hg/store/requires
   dotencode
@@ -30,7 +30,7 @@ prepare source repo
   store
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -54,13 +54,13 @@ Create a shared repo and check the requirements are shared and read correctly
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd shared1
   $ cat .hg/requires
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   share-safe
   shared
 
   $ hg debugrequirements -R ../source
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -70,7 +70,7 @@ Create a shared repo and check the requirements are shared and read correctly
 
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -327,7 +327,7 @@ Test that upgrading using debugupgraderepo works
   $ cd non-share-safe
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -346,7 +346,7 @@ Create a share before upgrading
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg debugrequirements -R nss-share
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -394,7 +394,7 @@ Upgrade
 
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -403,7 +403,7 @@ Upgrade
   store
 
   $ cat .hg/requires
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   share-safe
 
   $ cat .hg/store/requires
@@ -485,7 +485,7 @@ Test that downgrading works too
 
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -494,7 +494,7 @@ Test that downgrading works too
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1
@@ -564,7 +564,7 @@ Testing automatic upgrade of shares when config is set
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
   $ hg debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   revlogv1

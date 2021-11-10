@@ -101,7 +101,7 @@ that uses a format that was introduced later.
 For versions that do support a format, the presence or absence of
 the corresponding requirement indicates whether to use that format.
 
-When the file contains a `exp-dirstate-v2` line,
+When the file contains a `dirstate-v2` line,
 the `dirstate-v2` format is used.
 With no such line `dirstate-v1` is used.
 

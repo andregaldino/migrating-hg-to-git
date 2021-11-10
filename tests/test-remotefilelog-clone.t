@@ -24,7 +24,7 @@
   $ cd shallow
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
@@ -61,7 +61,7 @@
   $ cd shallow2
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
@@ -113,7 +113,7 @@ check its contents separately.
   $ ls shallow3/.hg/store/data
   $ cat shallow3/.hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta

@@ -50,7 +50,7 @@ another repository of push/pull/clone on localhost:
   > EOF
   $ hg -R supported debugrequirements
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   featuresetup-test
   fncache
   generaldelta
