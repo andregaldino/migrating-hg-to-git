@@ -1061,7 +1061,7 @@ def has_repofncache():
 def has_dirstate_v2():
     # Keep this logic in sync with `newreporequirements()` in `mercurial/localrepo.py`
     return has_rust() and matchoutput(
-        'hg config format.exp-dirstate-v2', b'(?i)1|yes|true|on|always'
+        'hg config format.exp-rc-dirstate-v2', b'(?i)1|yes|true|on|always'
     )
 
 
