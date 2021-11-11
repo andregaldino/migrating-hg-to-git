@@ -179,7 +179,7 @@ fn main() {
             exit(
                 &initial_current_dir,
                 &ui,
-                OnUnsupported::from_config(&ui, &non_repo_config),
+                OnUnsupported::from_config(&non_repo_config),
                 Err(error.into()),
                 non_repo_config
                     .get_bool(b"ui", b"detailed-exit-code")
@@ -197,7 +197,7 @@ fn main() {
             exit(
                 &initial_current_dir,
                 &ui,
-                OnUnsupported::from_config(&ui, &non_repo_config),
+                OnUnsupported::from_config(&non_repo_config),
                 Err(CommandError::UnsupportedFeature {
                     message: format_bytes!(
                         b"URL-like --repository {}",
@@ -287,7 +287,7 @@ fn main() {
         Err(error) => exit(
             &initial_current_dir,
             &ui,
-            OnUnsupported::from_config(&ui, &non_repo_config),
+            OnUnsupported::from_config(&non_repo_config),
             Err(error.into()),
             // TODO: show a warning or combine with original error if
             // `get_bool` returns an error
@@ -302,7 +302,7 @@ fn main() {
     } else {
         &non_repo_config
     };
-    let on_unsupported = OnUnsupported::from_config(&ui, config);
+    let on_unsupported = OnUnsupported::from_config(config);
 
     let result = main_with_result(
         &process_start_time,
@@ -362,6 +362,20 @@ fn exit(
     ) = (&on_unsupported, &result)
     {
         let mut args = std::env::args_os();
+        let executable = match executable {
+            None => {
+                exit_no_fallback(
+                    ui,
+                    OnUnsupported::Abort,
+                    Err(CommandError::abort(
+                        "abort: 'rhg.on-unsupported=fallback' without \
+                                'rhg.fallback-executable' set.",
+                    )),
+                    false,
+                );
+            }
+            Some(executable) => executable,
+        };
         let executable_path = get_path_from_bytes(&executable);
         let this_executable = args.next().expect("exepcted argv[0] to exist");
         if executable_path == &PathBuf::from(this_executable) {
@@ -374,7 +388,8 @@ fn exit(
             ));
             on_unsupported = OnUnsupported::Abort
         } else {
-            // `args` is now `argv[1..]` since we’ve already consumed `argv[0]`
+            // `args` is now `argv[1..]` since we’ve already consumed
+            // `argv[0]`
             let mut command = Command::new(executable_path);
             command.args(args);
             if let Some(initial) = initial_current_dir {
@@ -549,13 +564,13 @@ enum OnUnsupported {
     /// Silently exit with code 252.
     AbortSilent,
     /// Try running a Python implementation
-    Fallback { executable: Vec<u8> },
+    Fallback { executable: Option<Vec<u8>> },
 }
 
 impl OnUnsupported {
     const DEFAULT: Self = OnUnsupported::Abort;
 
-    fn from_config(ui: &Ui, config: &Config) -> Self {
+    fn from_config(config: &Config) -> Self {
         match config
             .get(b"rhg", b"on-unsupported")
             .map(|value| value.to_ascii_lowercase())
@@ -566,18 +581,7 @@ impl OnUnsupported {
             Some(b"fallback") => OnUnsupported::Fallback {
                 executable: config
                     .get(b"rhg", b"fallback-executable")
-                    .unwrap_or_else(|| {
-                        exit_no_fallback(
-                            ui,
-                            Self::Abort,
-                            Err(CommandError::abort(
-                                "abort: 'rhg.on-unsupported=fallback' without \
-                                'rhg.fallback-executable' set."
-                            )),
-                            false,
-                        )
-                    })
-                    .to_owned(),
+                    .map(|x| x.to_owned()),
             },
             None => Self::DEFAULT,
             Some(_) => {
