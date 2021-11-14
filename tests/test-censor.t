@@ -552,14 +552,14 @@ Make sure the last revision is a delta against the revision we will censor
 Censor the file
 
   $ hg cat -r $B1 target | wc -l
-  50002 (re)
+   *50002 (re)
   $ hg censor -r $B1 target
   $ hg cat -r $B1 target | wc -l
-  0 (re)
+   *0 (re)
 
 Check the children is fine
 
   $ hg cat -r $B2 target | wc -l
-  50003 (re)
+   *50003 (re)
 
 #endif
