@@ -29,10 +29,10 @@ $PYTHON38_x86_SHA256 = "ad07633a1f0cd795f3bf9da33729f662281df196b4567fa795829f3b
 $PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe"
 $PYTHON38_x64_SHA256 = "7628244cb53408b50639d2c1287c659f4e29d3dfdb9084b11aed5870c0c6a48a"
 
-$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.5/python-3.9.5.exe"
-$PYTHON39_x86_SHA256 = "505129081a839b699a6ab9064b441ad922ef03767b5dd4241fd0c2166baf64de"
-$PYTHON39_x64_URL = "https://www.python.org/ftp/python/3.9.5/python-3.9.5-amd64.exe"
-$PYTHON39_x64_SHA256 = "84d5243088ba00c11e51905c704dbe041040dfff044f4e1ce5476844ee2e6eac"
+$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.9/python-3.9.9.exe"
+$PYTHON39_x86_SHA256 = "6646a5683adf14d35e8c53aab946895bc0f0b825f7acac3a62cc85ee7d0dc71a"
+$PYTHON39_X64_URL = "https://www.python.org/ftp/python/3.9.9/python-3.9.9-amd64.exe"
+$PYTHON39_x64_SHA256 = "137d59e5c0b01a8f1bdcba08344402ae658c81c6bf03b6602bd8b4e951ad0714"
 
 # PIP 19.2.3.
 $PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
