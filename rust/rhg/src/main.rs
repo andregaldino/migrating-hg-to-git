@@ -593,7 +593,8 @@ impl OnUnsupported {
     }
 }
 
-const SUPPORTED_EXTENSIONS: &[&[u8]] = &[b"blackbox", b"share"];
+const SUPPORTED_EXTENSIONS: &[&[u8]] =
+    &[b"blackbox", b"share", b"sparse", b"narrow"];
 
 fn check_extensions(config: &Config) -> Result<(), CommandError> {
     let enabled = config.get_section_keys(b"extensions");

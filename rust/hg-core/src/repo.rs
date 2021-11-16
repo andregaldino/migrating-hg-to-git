@@ -248,6 +248,14 @@ impl Repo {
             .contains(requirements::DIRSTATE_V2_REQUIREMENT)
     }
 
+    pub fn has_sparse(&self) -> bool {
+        self.requirements.contains(requirements::SPARSE_REQUIREMENT)
+    }
+
+    pub fn has_narrow(&self) -> bool {
+        self.requirements.contains(requirements::NARROW_REQUIREMENT)
+    }
+
     fn dirstate_file_contents(&self) -> Result<Vec<u8>, HgError> {
         Ok(self
             .hg_vfs()

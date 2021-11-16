@@ -191,6 +191,13 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let no_status = args.is_present("no-status");
 
     let repo = invocation.repo?;
+
+    if repo.has_sparse() || repo.has_narrow() {
+        return Err(CommandError::unsupported(
+            "rhg status is not supported for sparse checkouts or narrow clones yet"
+        ));
+    }
+
     let mut dmap = repo.dirstate_map_mut()?;
 
     let options = StatusOptions {
