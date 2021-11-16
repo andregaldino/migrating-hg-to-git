@@ -42,20 +42,21 @@ use cpython::{
     ObjectProtocol, PyClone, PyDict, PyList, PyModule, PyObject, PyResult,
     Python, PythonObject, ToPyObject,
 };
+use hg::MissingAncestors as CoreMissing;
 use hg::Revision;
-use hg::{
-    AncestorsIterator as CoreIterator, LazyAncestors as CoreLazy,
-    MissingAncestors as CoreMissing,
-};
 use std::cell::RefCell;
 use std::collections::HashSet;
+use vcsgraph::lazy_ancestors::{
+    AncestorsIterator as VCGAncestorsIterator,
+    LazyAncestors as VCGLazyAncestors,
+};
 
 py_class!(pub class AncestorsIterator |py| {
-    data inner: RefCell<Box<CoreIterator<Index>>>;
+    data inner: RefCell<Box<VCGAncestorsIterator<Index>>>;
 
     def __next__(&self) -> PyResult<Option<Revision>> {
         match self.inner(py).borrow_mut().next() {
-            Some(Err(e)) => Err(GraphError::pynew(py, e)),
+            Some(Err(e)) => Err(GraphError::pynew_from_vcsgraph(py, e)),
             None => Ok(None),
             Some(Ok(r)) => Ok(Some(r)),
         }
@@ -63,7 +64,7 @@ py_class!(pub class AncestorsIterator |py| {
 
     def __contains__(&self, rev: Revision) -> PyResult<bool> {
         self.inner(py).borrow_mut().contains(rev)
-            .map_err(|e| GraphError::pynew(py, e))
+            .map_err(|e| GraphError::pynew_from_vcsgraph(py, e))
     }
 
     def __iter__(&self) -> PyResult<Self> {
@@ -73,32 +74,35 @@ py_class!(pub class AncestorsIterator |py| {
     def __new__(_cls, index: PyObject, initrevs: PyObject, stoprev: Revision,
                 inclusive: bool) -> PyResult<AncestorsIterator> {
         let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
-        let ait = CoreIterator::new(
+        let ait = VCGAncestorsIterator::new(
             pyindex_to_graph(py, index)?,
             initvec,
             stoprev,
             inclusive,
         )
-        .map_err(|e| GraphError::pynew(py, e))?;
+        .map_err(|e| GraphError::pynew_from_vcsgraph(py, e))?;
         AncestorsIterator::from_inner(py, ait)
     }
 
 });
 
 impl AncestorsIterator {
-    pub fn from_inner(py: Python, ait: CoreIterator<Index>) -> PyResult<Self> {
+    pub fn from_inner(
+        py: Python,
+        ait: VCGAncestorsIterator<Index>,
+    ) -> PyResult<Self> {
         Self::create_instance(py, RefCell::new(Box::new(ait)))
     }
 }
 
 py_class!(pub class LazyAncestors |py| {
-    data inner: RefCell<Box<CoreLazy<Index>>>;
+    data inner: RefCell<Box<VCGLazyAncestors<Index>>>;
 
     def __contains__(&self, rev: Revision) -> PyResult<bool> {
         self.inner(py)
             .borrow_mut()
             .contains(rev)
-            .map_err(|e| GraphError::pynew(py, e))
+            .map_err(|e| GraphError::pynew_from_vcsgraph(py, e))
     }
 
     def __iter__(&self) -> PyResult<AncestorsIterator> {
@@ -114,9 +118,9 @@ py_class!(pub class LazyAncestors |py| {
         let initvec: Vec<Revision> = rev_pyiter_collect(py, &initrevs)?;
 
         let lazy =
-            CoreLazy::new(pyindex_to_graph(py, index)?,
+            VCGLazyAncestors::new(pyindex_to_graph(py, index)?,
                           initvec, stoprev, inclusive)
-                .map_err(|e| GraphError::pynew(py, e))?;
+                .map_err(|e| GraphError::pynew_from_vcsgraph(py, e))?;
 
         Self::create_instance(py, RefCell::new(Box::new(lazy)))
         }

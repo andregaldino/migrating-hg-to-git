@@ -37,6 +37,32 @@ impl GraphError {
             }
         }
     }
+
+    pub fn pynew_from_vcsgraph(
+        py: Python,
+        inner: vcsgraph::graph::GraphReadError,
+    ) -> PyErr {
+        match inner {
+            vcsgraph::graph::GraphReadError::InconsistentGraphData => {
+                GraphError::new(py, "InconsistentGraphData")
+            }
+            vcsgraph::graph::GraphReadError::InvalidKey => {
+                GraphError::new(py, "ParentOutOfRange")
+            }
+            vcsgraph::graph::GraphReadError::KeyedInvalidKey(r) => {
+                GraphError::new(py, ("ParentOutOfRange", r))
+            }
+            vcsgraph::graph::GraphReadError::WorkingDirectoryUnsupported => {
+                match py
+                    .import("mercurial.error")
+                    .and_then(|m| m.get(py, "WdirUnsupported"))
+                {
+                    Err(e) => e,
+                    Ok(cls) => PyErr::from_instance(py, cls),
+                }
+            }
+        }
+    }
 }
 
 py_exception!(rustext, HgPathPyError, RuntimeError);
