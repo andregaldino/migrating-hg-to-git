@@ -19,6 +19,12 @@ outside of hg's control.
   $ hg commit -qAm _
   $ echo aa > a
   $ hg commit -m _
+# this sleep is there to ensure current time has -at-least- one second away
+# from the current time. It ensure the mtime is not ambiguous. If the test
+# "sleep" longer this will be fine.
+# It is not used to synchronise parallele operation so it is "fine" to use it.
+  $ sleep 1
+  $ hg status
 
   $ hg debugdirstate --no-dates
   n 644          3 (set  |unset)               a (re)
