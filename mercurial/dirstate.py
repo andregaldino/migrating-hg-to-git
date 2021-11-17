@@ -66,16 +66,6 @@ class rootcache(filecache):
         return obj._join(fname)
 
 
-def _getfsnow(vfs):
-    '''Get "now" timestamp on filesystem'''
-    tmpfd, tmpname = vfs.mkstemp()
-    try:
-        return timestamp.mtime_of(os.fstat(tmpfd))
-    finally:
-        os.close(tmpfd)
-        vfs.unlink(tmpname)
-
-
 def requires_parents_change(func):
     def wrap(self, *args, **kwargs):
         if not self.pendingparentchange():
@@ -787,7 +777,7 @@ class dirstate(object):
             # https://www.mercurial-scm.org/wiki/DirstateTransactionPlan
 
             # record when mtime start to be ambiguous
-            now = _getfsnow(self._opener)
+            now = timestamp.get_fs_now(self._opener)
 
             # delay writing in-memory changes out
             tr.addfilegenerator(

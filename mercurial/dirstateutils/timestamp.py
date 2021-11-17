@@ -6,6 +6,7 @@
 from __future__ import absolute_import
 
 import functools
+import os
 import stat
 
 
@@ -52,6 +53,19 @@ class timestamp(tuple):
             # they are considered equal, so not "greater than"
             return False
         return self_subsec_nanos > other_subsec_nanos
+
+
+def get_fs_now(vfs):
+    """return a timestamp for "now" in the current vfs
+
+    This will raise an exception if no temporary files could be created.
+    """
+    tmpfd, tmpname = vfs.mkstemp()
+    try:
+        return mtime_of(os.fstat(tmpfd))
+    finally:
+        os.close(tmpfd)
+        vfs.unlink(tmpname)
 
 
 def zero():

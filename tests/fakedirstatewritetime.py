@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 from mercurial import (
     context,
-    dirstate,
     dirstatemap as dirstatemapmod,
     extensions,
     policy,
@@ -73,19 +72,19 @@ def fakewrite(ui, func):
         )
         dirstatemapmod.dirstatemap.write = wrapper
 
-    orig_dirstate_getfsnow = dirstate._getfsnow
+    orig_get_fs_now = timestamp.get_fs_now
     wrapper = lambda *args: pack_dirstate(fakenow, orig_pack_dirstate, *args)
 
     orig_module = parsers
     orig_pack_dirstate = parsers.pack_dirstate
 
     orig_module.pack_dirstate = wrapper
-    dirstate._getfsnow = lambda *args: fakenow
+    timestamp.get_fs_now = lambda *args: fakenow
     try:
         return func()
     finally:
         orig_module.pack_dirstate = orig_pack_dirstate
-        dirstate._getfsnow = orig_dirstate_getfsnow
+        timestamp.get_fs_now = orig_get_fs_now
         if has_rust_dirstate:
             dirstatemapmod.dirstatemap.write = orig_dirstatemap_write
 
