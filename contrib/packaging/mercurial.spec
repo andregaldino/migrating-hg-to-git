@@ -27,6 +27,7 @@ Name: mercurial
 Version: snapshot
 Release: 0
 License: GPLv2+
+Prefix: /
 Group: Development/Tools
 URL: https://mercurial-scm.org/
 Source0: %{name}-%{version}-%{release}.tar.gz
