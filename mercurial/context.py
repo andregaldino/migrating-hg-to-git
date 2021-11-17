@@ -46,6 +46,9 @@ from .utils import (
     dateutil,
     stringutil,
 )
+from .dirstateutils import (
+    timestamp,
+)
 
 propertycache = util.propertycache
 
@@ -1814,7 +1817,21 @@ class workingctx(committablectx):
                 ):
                     modified.append(f)
                 else:
-                    fixup.append(f)
+                    # XXX note that we have a race windows here since we gather
+                    # the stats after we compared so the file might have
+                    # changed.
+                    #
+                    # However this have always been the case and the
+                    # refactoring moving the code here is improving the
+                    # situation by narrowing the race and moving the two steps
+                    # (comparison + stat) in the same location.
+                    #
+                    # Making this code "correct" is now possible.
+                    s = self[f].lstat()
+                    mode = s.st_mode
+                    size = s.st_size
+                    mtime = timestamp.mtime_of(s)
+                    fixup.append((f, (mode, size, mtime)))
             except (IOError, OSError):
                 # A file become inaccessible in between? Mark it as deleted,
                 # matching dirstate behavior (issue5584).
@@ -1842,13 +1859,13 @@ class workingctx(committablectx):
                     if dirstate.identity() == oldid:
                         if fixup:
                             if dirstate.pendingparentchange():
-                                normal = lambda f: dirstate.update_file(
+                                normal = lambda f, pfd: dirstate.update_file(
                                     f, p1_tracked=True, wc_tracked=True
                                 )
                             else:
                                 normal = dirstate.set_clean
-                            for f in fixup:
-                                normal(f)
+                            for f, pdf in fixup:
+                                normal(f, pdf)
                             # write changes out explicitly, because nesting
                             # wlock at runtime may prevent 'wlock.release()'
                             # after this block from doing so for subsequent
@@ -1890,7 +1907,7 @@ class workingctx(committablectx):
             s.deleted.extend(deleted2)
 
             if fixup and clean:
-                s.clean.extend(fixup)
+                s.clean.extend((f for f, _ in fixup))
 
         self._poststatusfixup(s, fixup)
 
