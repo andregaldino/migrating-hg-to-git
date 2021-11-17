@@ -611,6 +611,7 @@ class dirstate(object):
         )
         if (
             parentfiledata is not None
+            and parentfiledata[2] is not None
             and parentfiledata[2] > self._lastnormaltime
         ):
             # Remember the most recent modification timeslot for status(),

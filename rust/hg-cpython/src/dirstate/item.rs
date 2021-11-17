@@ -23,7 +23,7 @@ py_class!(pub class DirstateItem |py| {
         p2_info: bool = false,
         has_meaningful_data: bool = true,
         has_meaningful_mtime: bool = true,
-        parentfiledata: Option<(u32, u32, (u32, u32))> = None,
+        parentfiledata: Option<(u32, u32, Option<(u32, u32)>)> = None,
         fallback_exec: Option<bool> = None,
         fallback_symlink: Option<bool> = None,
 
@@ -35,7 +35,9 @@ py_class!(pub class DirstateItem |py| {
                 mode_size_opt = Some((mode, size))
             }
             if has_meaningful_mtime {
-                mtime_opt = Some(timestamp(py, mtime)?)
+                if let Some(m) = mtime {
+                    mtime_opt = Some(timestamp(py, m)?);
+                }
             }
         }
         let entry = DirstateEntry::from_v2_data(

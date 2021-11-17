@@ -66,6 +66,7 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	int mtime_s;
 	int mtime_ns;
 	PyObject *parentfiledata;
+	PyObject *mtime;
 	PyObject *fallback_exec;
 	PyObject *fallback_symlink;
 	static char *keywords_name[] = {
@@ -118,9 +119,17 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	}
 
 	if (parentfiledata != Py_None) {
-		if (!PyArg_ParseTuple(parentfiledata, "ii(ii)", &mode, &size,
-		                      &mtime_s, &mtime_ns)) {
+		if (!PyArg_ParseTuple(parentfiledata, "iiO", &mode, &size,
+		                      &mtime)) {
 			return NULL;
+		}
+		if (mtime != Py_None) {
+			if (!PyArg_ParseTuple(mtime, "ii", &mtime_s,
+			                      &mtime_ns)) {
+				return NULL;
+			}
+		} else {
+			has_meaningful_mtime = 0;
 		}
 	} else {
 		has_meaningful_data = 0;
@@ -475,9 +484,18 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
                                          PyObject *args)
 {
 	int size, mode, mtime_s, mtime_ns;
-	if (!PyArg_ParseTuple(args, "ii(ii)", &mode, &size, &mtime_s,
-	                      &mtime_ns)) {
+	PyObject *mtime;
+	mtime_s = 0;
+	mtime_ns = 0;
+	if (!PyArg_ParseTuple(args, "iiO", &mode, &size, &mtime)) {
 		return NULL;
+	}
+	if (mtime != Py_None) {
+		if (!PyArg_ParseTuple(mtime, "ii", &mtime_s, &mtime_ns)) {
+			return NULL;
+		}
+	} else {
+		self->flags &= ~dirstate_flag_has_mtime;
 	}
 	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
 	              dirstate_flag_has_meaningful_data |

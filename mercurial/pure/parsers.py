@@ -130,6 +130,8 @@ class DirstateItem(object):
         if parentfiledata is None:
             has_meaningful_mtime = False
             has_meaningful_data = False
+        elif parentfiledata[2] is None:
+            has_meaningful_mtime = False
         if has_meaningful_data:
             self._mode = parentfiledata[0]
             self._size = parentfiledata[1]
