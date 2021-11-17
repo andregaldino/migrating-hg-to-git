@@ -486,15 +486,12 @@ class dirstate(object):
         return ret
 
     @requires_no_parents_change
-    def set_clean(self, filename, parentfiledata=None):
+    def set_clean(self, filename, parentfiledata):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
-        if parentfiledata:
-            (mode, size, mtime) = parentfiledata
-        else:
-            (mode, size, mtime) = self._get_filedata(filename)
         if not self._map[filename].tracked:
             self._check_new_tracked_filename(filename)
+        (mode, size, mtime) = parentfiledata
         self._map.set_clean(filename, mode, size, mtime)
         if mtime > self._lastnormaltime:
             # Remember the most recent modification timeslot for status(),
