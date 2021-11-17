@@ -1404,6 +1404,34 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
                 atomictemp=atomictemp,
             )
             if wantfiledata:
+                # XXX note that there is a race window between the time we
+                # write the clean data into the file and we stats it. So another
+                # writing process meddling with the file content right after we
+                # wrote it could cause bad stat data to be gathered.
+                #
+                # They are 2 data we gather here
+                # - the mode:
+                #       That we actually just wrote, we should not need to read
+                #       it from disk, (except not all mode might have survived
+                #       the disk round-trip, which is another issue: we should
+                #       not depends on this)
+                # - the mtime,
+                #       On system that support nanosecond precision, the mtime
+                #       could be accurate enough to tell the two writes appart.
+                #       However gathering it in a racy way make the mtime we
+                #       gather "unreliable".
+                #
+                # (note: we get the size from the data we write, which is sane)
+                #
+                # So in theory the data returned here are fully racy, but in
+                # practice "it works mostly fine".
+                #
+                # Do not be surprised if you end up reading this while looking
+                # for the causes of some buggy status. Feel free to improve
+                # this in the future, but we cannot simply stop gathering
+                # information. Otherwise `hg status` call made after a large `hg
+                # update` runs would have to redo a similar amount of work to
+                # restore and compare all files content.
                 s = wfctx.lstat()
                 mode = s.st_mode
                 mtime = timestamp.mtime_of(s)
