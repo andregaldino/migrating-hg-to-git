@@ -2172,6 +2172,71 @@ def _update(
                 mresult.len((mergestatemod.ACTION_GET,)) if wantfiledata else 0
             )
             with repo.dirstate.parentchange():
+                ### Filter Filedata
+                #
+                # We gathered "cache" information for the clean file while
+                # updating them: mtime, size and mode.
+                #
+                # At the time this comment is written, they are various issues
+                # with how we gather the `mode` and `mtime` information (see
+                # the comment in `batchget`).
+                #
+                # We are going to smooth one of this issue here : mtime ambiguity.
+                #
+                # i.e. even if the mtime gathered during `batchget` was
+                # correct[1] a change happening right after it could change the
+                # content while keeping the same mtime[2].
+                #
+                # When we reach the current code, the "on disk" part of the
+                # update operation is finished. We still assume that no other
+                # process raced that "on disk" part, but we want to at least
+                # prevent later file change to alter the content of the file
+                # right after the update operation. So quickly that the same
+                # mtime is record for the operation.
+                # To prevent such ambiguity to happens, we will only keep the
+                # "file data" for files with mtime that are stricly in the past,
+                # i.e. whose mtime is strictly lower than the current time.
+                #
+                # This protect us from race conditions from operation that could
+                # run right after this one, especially other Mercurial
+                # operation that could be waiting for the wlock to touch files
+                # content and the dirstate.
+                #
+                # In an ideal world, we could only get reliable information in
+                # `getfiledata` (from `getbatch`), however the current approach
+                # have been a successful compromise since many years.
+                #
+                # At the time this comment is written, not using any "cache"
+                # file data at all here would not be viable. As it would result is
+                # a very large amount of work (equivalent to the previous `hg
+                # update` during the next status after an update).
+                #
+                # [1] the current code cannot grantee that the `mtime` and
+                # `mode` are correct, but the result is "okay in practice".
+                # (see the comment in `batchget`).                #
+                #
+                # [2] using nano-second precision can greatly help here because
+                # it makes the "different write with same mtime" issue
+                # virtually vanish. However, dirstate v1 cannot store such
+                # precision and a bunch of python-runtime, operating-system and
+                # filesystem does not provide use with such precision, so we
+                # have to operate as if it wasn't available.
+                if getfiledata:
+                    ambiguous_mtime = {}
+                    now = timestamp.get_fs_now(repo.vfs)
+                    if now is None:
+                        # we can't write to the FS, so we won't actually update
+                        # the dirstate content anyway, no need to put cache
+                        # information.
+                        getfiledata = None
+                    else:
+                        now_sec = now[0]
+                        for f, m in pycompat.iteritems(getfiledata):
+                            if m is not None and m[2][0] >= now_sec:
+                                ambiguous_mtime[f] = (m[0], m[1], None)
+                        for f, m in pycompat.iteritems(ambiguous_mtime):
+                            getfiledata[f] = m
+
                 repo.setparents(fp1, fp2)
                 mergestatemod.recordupdates(
                     repo, mresult.actionsdict, branchmerge, getfiledata
