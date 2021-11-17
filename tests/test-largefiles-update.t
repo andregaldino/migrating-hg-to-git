@@ -68,19 +68,38 @@ Wait to make sure we get a tick so the mtime of the largefiles become valid.
 A linear merge will update standins before performing the actual merge. It will
 do a lfdirstate status walk and find 'unset'/'unsure' files, hash them, and
 update the corresponding standins.
+
 Verify that it actually marks the clean files as clean in lfdirstate so
 we don't have to hash them again next time we update.
+
+# note:
+#    We do this less agressively now, to avoid race condition, however the
+#    cache
+#    is properly set after the next status
+#
+#    The "changed" output is marked as missing-correct-output/known-bad-output
+#    for clarify
 
   $ hg up
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "f74e50bd9e55: #2"
   1 other heads for branch "default"
   $ hg debugdirstate --large --nodate
+  n 644          7 set                 large1 (missing-correct-output !)
+  n 644         13 set                 large2 (missing-correct-output !)
+  n   0         -1 unset               large1 (known-bad-output !)
+  n   0         -1 unset               large2 (known-bad-output !)
+  $ sleep 1 # so that mtime are not ambiguous
+  $ hg status
+  $ hg debugdirstate --large --nodate
   n 644          7 set                 large1
   n 644         13 set                 large2
 
 Test that lfdirstate keeps track of last modification of largefiles and
 prevents unnecessary hashing of content - also after linear/noop update
+
+(XXX Since there is a possible race during update, we only do this after the next
+status call, this is slower, but more correct)
 
   $ sleep 1
   $ hg st
@@ -91,6 +110,13 @@ prevents unnecessary hashing of content - also after linear/noop update
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "f74e50bd9e55: #2"
   1 other heads for branch "default"
+  $ hg debugdirstate --large --nodate
+  n 644          7 set                 large1 (missing-correct-output !)
+  n 644         13 set                 large2 (missing-correct-output !)
+  n   0         -1 unset               large1 (known-bad-output !)
+  n   0         -1 unset               large2 (known-bad-output !)
+  $ sleep 1 # so that mtime are not ambiguous
+  $ hg status
   $ hg debugdirstate --large --nodate
   n 644          7 set                 large1
   n 644         13 set                 large2

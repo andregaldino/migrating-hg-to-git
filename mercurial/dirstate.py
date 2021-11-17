@@ -573,13 +573,6 @@ class dirstate(object):
 
         self._dirty = True
 
-        need_parent_file_data = (
-            not possibly_dirty and not p2_info and wc_tracked and p1_tracked
-        )
-
-        if need_parent_file_data and parentfiledata is None:
-            parentfiledata = self._get_filedata(filename)
-
         self._map.reset_state(
             filename,
             wc_tracked,
