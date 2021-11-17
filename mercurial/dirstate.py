@@ -536,10 +536,6 @@ class dirstate(object):
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
 
-        parentfiledata = None
-        if wc_tracked and p1_tracked:
-            parentfiledata = self._get_filedata(filename)
-
         self._map.reset_state(
             filename,
             wc_tracked,
@@ -547,16 +543,7 @@ class dirstate(object):
             # the underlying reference might have changed, we will have to
             # check it.
             has_meaningful_mtime=False,
-            parentfiledata=parentfiledata,
         )
-        if (
-            parentfiledata is not None
-            and parentfiledata[2] > self._lastnormaltime
-        ):
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = parentfiledata[2]
 
     @requires_parents_change
     def update_file(
