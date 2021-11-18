@@ -148,6 +148,8 @@ condition (see issue5584 for detail).
   > 
   > hg update -q -C 0
   > hg cat -r 1 b > b
+  > # make sure the timestamps is not ambiguous and a write will be issued
+  > touch -t 198606251012 b
   > EOF
 
 "hg status" below should excludes "e", of which exec flag is set, for
