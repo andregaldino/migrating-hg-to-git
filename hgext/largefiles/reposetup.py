@@ -22,6 +22,8 @@ from mercurial import (
     util,
 )
 
+from mercurial.dirstateutils import timestamp
+
 from . import (
     lfcommands,
     lfutil,
@@ -210,6 +212,7 @@ def reposetup(ui, repo):
                         s.clean,
                     )
                     if parentworking:
+                        wctx = repo[None]
                         for lfile in unsure:
                             standin = lfutil.standin(lfile)
                             if standin not in ctx1:
@@ -222,7 +225,12 @@ def reposetup(ui, repo):
                             else:
                                 if listclean:
                                     clean.append(lfile)
-                                lfdirstate.set_clean(lfile)
+                                s = wctx[lfile].lstat()
+                                mode = s.st_mode
+                                size = s.st_size
+                                mtime = timestamp.mtime_of(s)
+                                cache_data = (mode, size, mtime)
+                                lfdirstate.set_clean(lfile, cache_data)
                     else:
                         tocheck = unsure + modified + added + clean
                         modified, added, clean = [], [], []

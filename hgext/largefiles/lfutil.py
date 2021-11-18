@@ -32,6 +32,7 @@ from mercurial import (
     vfs as vfsmod,
 )
 from mercurial.utils import hashutil
+from mercurial.dirstateutils import timestamp
 
 shortname = b'.hglf'
 shortnameslash = shortname + b'/'
@@ -247,6 +248,7 @@ def lfdirstatestatus(lfdirstate, repo):
         match, subrepos=[], ignored=False, clean=False, unknown=False
     )
     modified, clean = s.modified, s.clean
+    wctx = repo[None]
     for lfile in unsure:
         try:
             fctx = pctx[standin(lfile)]
@@ -256,7 +258,12 @@ def lfdirstatestatus(lfdirstate, repo):
             modified.append(lfile)
         else:
             clean.append(lfile)
-            lfdirstate.set_clean(lfile)
+            st = wctx[lfile].lstat()
+            mode = st.st_mode
+            size = st.st_size
+            mtime = timestamp.mtime_of(st)
+            cache_data = (mode, size, mtime)
+            lfdirstate.set_clean(lfile, cache_data)
     return s
 
 
