@@ -1308,11 +1308,20 @@ class dirstate(object):
             # Some matchers have yet to be implemented
             use_rust = False
 
+        # Get the time from the filesystem so we can disambiguate files that
+        # appear modified in the present or future.
+        try:
+            mtime_boundary = timestamp.get_fs_now(self._opener)
+        except OSError:
+            # In largefiles or readonly context
+            mtime_boundary = None
+
         if use_rust:
             try:
-                return self._rust_status(
+                res = self._rust_status(
                     match, listclean, listignored, listunknown
                 )
+                return res + (mtime_boundary,)
             except rustmod.FallbackError:
                 pass
 
@@ -1402,7 +1411,7 @@ class dirstate(object):
         status = scmutil.status(
             modified, added, removed, deleted, unknown, ignored, clean
         )
-        return (lookup, status)
+        return (lookup, status, mtime_boundary)
 
     def matches(self, match):
         """

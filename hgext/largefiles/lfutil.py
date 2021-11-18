@@ -244,7 +244,7 @@ def openlfdirstate(ui, repo, create=True):
 def lfdirstatestatus(lfdirstate, repo):
     pctx = repo[b'.']
     match = matchmod.always()
-    unsure, s = lfdirstate.status(
+    unsure, s, mtime_boundary = lfdirstate.status(
         match, subrepos=[], ignored=False, clean=False, unknown=False
     )
     modified, clean = s.modified, s.clean
@@ -263,6 +263,10 @@ def lfdirstatestatus(lfdirstate, repo):
             size = st.st_size
             mtime = timestamp.mtime_of(st)
             cache_data = (mode, size, mtime)
+            # We should consider using the mtime_boundary
+            # logic here, but largefile never actually had
+            # ambiguity protection before, so this confuse
+            # the tests and need more thinking.
             lfdirstate.set_clean(lfile, cache_data)
     return s
 
@@ -670,7 +674,7 @@ def updatestandinsbymatch(repo, match):
         # large.
         lfdirstate = openlfdirstate(ui, repo)
         dirtymatch = matchmod.always()
-        unsure, s = lfdirstate.status(
+        unsure, s, mtime_boundary = lfdirstate.status(
             dirtymatch, subrepos=[], ignored=False, clean=False, unknown=False
         )
         modifiedfiles = unsure + s.modified + s.added + s.removed

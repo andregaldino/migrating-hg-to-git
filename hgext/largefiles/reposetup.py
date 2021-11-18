@@ -197,7 +197,7 @@ def reposetup(ui, repo):
                     match._files = [f for f in match._files if sfindirstate(f)]
                     # Don't waste time getting the ignored and unknown
                     # files from lfdirstate
-                    unsure, s = lfdirstate.status(
+                    unsure, s, mtime_boundary = lfdirstate.status(
                         match,
                         subrepos=[],
                         ignored=False,
@@ -230,6 +230,10 @@ def reposetup(ui, repo):
                                 size = s.st_size
                                 mtime = timestamp.mtime_of(s)
                                 cache_data = (mode, size, mtime)
+                                # We should consider using the mtime_boundary
+                                # logic here, but largefile never actually had
+                                # ambiguity protection before, so this confuse
+                                # the tests and need more thinking.
                                 lfdirstate.set_clean(lfile, cache_data)
                     else:
                         tocheck = unsure + modified + added + clean

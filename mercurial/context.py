@@ -1796,13 +1796,14 @@ class workingctx(committablectx):
             sane.append(f)
         return sane
 
-    def _checklookup(self, files):
+    def _checklookup(self, files, mtime_boundary):
         # check for any possibly clean files
         if not files:
-            return [], [], []
+            return [], [], [], []
 
         modified = []
         deleted = []
+        clean = []
         fixup = []
         pctx = self._parents[0]
         # do a full compare of any files that might have changed
@@ -1816,22 +1817,35 @@ class workingctx(committablectx):
                     or pctx[f].cmp(self[f])
                 ):
                     modified.append(f)
+                elif mtime_boundary is None:
+                    clean.append(f)
                 else:
-                    # XXX note that we have a race windows here since we gather
-                    # the stats after we compared so the file might have
-                    # changed.
-                    #
-                    # However this have always been the case and the
-                    # refactoring moving the code here is improving the
-                    # situation by narrowing the race and moving the two steps
-                    # (comparison + stat) in the same location.
-                    #
-                    # Making this code "correct" is now possible.
                     s = self[f].lstat()
                     mode = s.st_mode
                     size = s.st_size
-                    mtime = timestamp.mtime_of(s)
-                    fixup.append((f, (mode, size, mtime)))
+                    file_mtime = timestamp.mtime_of(s)
+                    cache_info = (mode, size, file_mtime)
+
+                    file_second = file_mtime[0]
+                    boundary_second = mtime_boundary[0]
+                    # If the mtime of the ambiguous file is younger (or equal)
+                    # to the starting point of the `status` walk, we cannot
+                    # garantee that another, racy, write will not happen right
+                    # after with the same mtime and we cannot cache the
+                    # information.
+                    #
+                    # However is the mtime is far away in the future, this is
+                    # likely some mismatch between the current clock and
+                    # previous file system operation. So mtime more than one days
+                    # in the future are considered fine.
+                    if (
+                        boundary_second
+                        <= file_second
+                        < (3600 * 24 + boundary_second)
+                    ):
+                        clean.append(f)
+                    else:
+                        fixup.append((f, cache_info))
             except (IOError, OSError):
                 # A file become inaccessible in between? Mark it as deleted,
                 # matching dirstate behavior (issue5584).
@@ -1841,7 +1855,7 @@ class workingctx(committablectx):
                 # it's in the dirstate.
                 deleted.append(f)
 
-        return modified, deleted, fixup
+        return modified, deleted, clean, fixup
 
     def _poststatusfixup(self, status, fixup):
         """update dirstate for files that are actually clean"""
@@ -1895,17 +1909,21 @@ class workingctx(committablectx):
         subrepos = []
         if b'.hgsub' in self:
             subrepos = sorted(self.substate)
-        cmp, s = self._repo.dirstate.status(
+        cmp, s, mtime_boundary = self._repo.dirstate.status(
             match, subrepos, ignored=ignored, clean=clean, unknown=unknown
         )
 
         # check for any possibly clean files
         fixup = []
         if cmp:
-            modified2, deleted2, fixup = self._checklookup(cmp)
+            modified2, deleted2, clean_set, fixup = self._checklookup(
+                cmp, mtime_boundary
+            )
             s.modified.extend(modified2)
             s.deleted.extend(deleted2)
 
+            if clean_set and clean:
+                s.clean.extend(clean_set)
             if fixup and clean:
                 s.clean.extend((f for f, _ in fixup))
 

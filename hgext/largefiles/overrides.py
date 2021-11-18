@@ -1519,7 +1519,7 @@ def scmutiladdremove(orig, repo, matcher, prefix, uipathfn, opts=None):
         return orig(repo, matcher, prefix, uipathfn, opts)
     # Get the list of missing largefiles so we can remove them
     lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-    unsure, s = lfdirstate.status(
+    unsure, s, mtime_boundary = lfdirstate.status(
         matchmod.always(),
         subrepos=[],
         ignored=False,
@@ -1746,7 +1746,7 @@ def mergeupdate(orig, repo, node, branchmerge, force, *args, **kwargs):
         # (*1) deprecated, but used internally (e.g: "rebase --collapse")
 
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
-        unsure, s = lfdirstate.status(
+        unsure, s, mtime_boundary = lfdirstate.status(
             matchmod.always(),
             subrepos=[],
             ignored=False,

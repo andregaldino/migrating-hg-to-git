@@ -323,7 +323,7 @@ def updateworkingcopy(repo, assumeclean=False):
     removedmatch = matchmod.differencematcher(oldmatch, newmatch)
 
     ds = repo.dirstate
-    lookup, status = ds.status(
+    lookup, status, _mtime_boundary = ds.status(
         removedmatch, subrepos=[], ignored=True, clean=True, unknown=True
     )
     trackeddirty = status.modified + status.added
