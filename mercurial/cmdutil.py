@@ -2025,7 +2025,12 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
                 similarity=sim / 100.0,
             )
         except error.PatchParseError as e:
-            raise error.InputError(pycompat.bytestr(e))
+            raise error.InputError(
+                pycompat.bytestr(e),
+                hint=_(
+                    b'check that whitespace in the patch has not been mangled'
+                ),
+            )
         except error.PatchApplicationError as e:
             if not partial:
                 raise error.StateError(pycompat.bytestr(e))
@@ -2086,7 +2091,12 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
                     eolmode=None,
                 )
             except error.PatchParseError as e:
-                raise error.InputError(stringutil.forcebytestr(e))
+                raise error.InputError(
+                    stringutil.forcebytestr(e),
+                    hint=_(
+                        b'check that whitespace in the patch has not been mangled'
+                    ),
+                )
             except error.PatchApplicationError as e:
                 raise error.StateError(stringutil.forcebytestr(e))
             if opts.get(b'exact'):

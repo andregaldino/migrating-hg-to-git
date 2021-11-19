@@ -234,6 +234,7 @@ import of malformed plain diff should fail
   $ hg --cwd b import -mpatch ../broken.patch
   applying ../broken.patch
   abort: bad hunk #1
+  (check that whitespace in the patch has not been mangled)
   [10]
   $ rm -r b
 
@@ -2076,6 +2077,7 @@ test immature end of hunk
   > EOF
   applying patch from stdin
   abort: bad hunk #1: incomplete hunk
+  (check that whitespace in the patch has not been mangled)
   [10]
 
   $ hg import - <<'EOF'
@@ -2087,4 +2089,5 @@ test immature end of hunk
   > EOF
   applying patch from stdin
   abort: bad hunk #1: incomplete hunk
+  (check that whitespace in the patch has not been mangled)
   [10]

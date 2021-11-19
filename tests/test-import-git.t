@@ -519,6 +519,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: could not decode "binary2" binary patch: bad base85 character at position 6
+  (check that whitespace in the patch has not been mangled)
   [10]
 
   $ hg revert -aq
@@ -534,6 +535,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: "binary2" length is 5 bytes, should be 6
+  (check that whitespace in the patch has not been mangled)
   [10]
 
   $ hg revert -aq
@@ -548,6 +550,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: could not extract "binary2" binary data
+  (check that whitespace in the patch has not been mangled)
   [10]
 
 Simulate a copy/paste turning LF into CRLF (issue2870)
