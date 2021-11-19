@@ -174,12 +174,10 @@ class Node(object):
         )
 
 
-def pack_dirstate(map, copy_map, now):
+def pack_dirstate(map, copy_map):
     """
     Pack `map` and `copy_map` into the dirstate v2 binary format and return
     the bytearray.
-    `now` is a timestamp of the current filesystem time used to detect race
-    conditions in writing the dirstate to disk, see inline comment.
 
     The on-disk format expects a tree-like structure where the leaves are
     written first (and sorted per-directory), going up levels until the root
@@ -284,17 +282,6 @@ def pack_dirstate(map, copy_map, now):
     stack.append(current_node)
 
     for index, (path, entry) in enumerate(sorted_map, 1):
-        if entry.need_delay(now):
-            # The file was last modified "simultaneously" with the current
-            # write to dirstate (i.e. within the same second for file-
-            # systems with a granularity of 1 sec). This commonly happens
-            # for at least a couple of files on 'update'.
-            # The user could change the file without changing its size
-            # within the same second. Invalidate the file's mtime in
-            # dirstate, forcing future 'status' calls to compare the
-            # contents of the file if the size is the same. This prevents
-            # mistakenly treating such files as clean.
-            entry.set_possibly_dirty()
         nodes_with_entry_count += 1
         if path in copy_map:
             nodes_with_copy_source_count += 1

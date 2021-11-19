@@ -536,10 +536,6 @@ class DirstateItem(object):
         else:
             return self._mtime_s
 
-    def need_delay(self, now):
-        """True if the stored mtime would be ambiguous with the current time"""
-        return self.v1_state() == b'n' and self._mtime_s == now[0]
-
 
 def gettype(q):
     return int(q & 0xFFFF)
@@ -905,23 +901,11 @@ def parse_dirstate(dmap, copymap, st):
     return parents
 
 
-def pack_dirstate(dmap, copymap, pl, now):
+def pack_dirstate(dmap, copymap, pl):
     cs = stringio()
     write = cs.write
     write(b"".join(pl))
     for f, e in pycompat.iteritems(dmap):
-        if e.need_delay(now):
-            # The file was last modified "simultaneously" with the current
-            # write to dirstate (i.e. within the same second for file-
-            # systems with a granularity of 1 sec). This commonly happens
-            # for at least a couple of files on 'update'.
-            # The user could change the file without changing its size
-            # within the same second. Invalidate the file's mtime in
-            # dirstate, forcing future 'status' calls to compare the
-            # contents of the file if the size is the same. This prevents
-            # mistakenly treating such files as clean.
-            e.set_possibly_dirty()
-
         if f in copymap:
             f = b"%s\0%s" % (f, copymap[f])
         e = _pack(

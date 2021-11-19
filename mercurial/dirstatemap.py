@@ -446,11 +446,11 @@ class dirstatemap(_dirstatemapcommon):
 
     def write(self, tr, st, now):
         if self._use_dirstate_v2:
-            packed, meta = v2.pack_dirstate(self._map, self.copymap, now)
+            packed, meta = v2.pack_dirstate(self._map, self.copymap)
             self.write_v2_no_append(tr, st, meta, packed)
         else:
             packed = parsers.pack_dirstate(
-                self._map, self.copymap, self.parents(), now
+                self._map, self.copymap, self.parents()
             )
             st.write(packed)
             st.close()
@@ -658,7 +658,7 @@ if rustmod is not None:
         def write(self, tr, st, now):
             if not self._use_dirstate_v2:
                 p1, p2 = self.parents()
-                packed = self._map.write_v1(p1, p2, now)
+                packed = self._map.write_v1(p1, p2)
                 st.write(packed)
                 st.close()
                 self._dirtyparents = False
@@ -666,7 +666,7 @@ if rustmod is not None:
 
             # We can only append to an existing data file if there is one
             can_append = self.docket.uuid is not None
-            packed, meta, append = self._map.write_v2(now, can_append)
+            packed, meta, append = self._map.write_v2(can_append)
             if append:
                 docket = self.docket
                 data_filename = docket.data_filename()

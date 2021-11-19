@@ -320,21 +320,6 @@ static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 	return PyInt_FromLong(dirstate_item_c_v1_mtime(self));
 };
 
-static PyObject *dirstate_item_need_delay(dirstateItemObject *self,
-                                          PyObject *now)
-{
-	int now_s;
-	int now_ns;
-	if (!PyArg_ParseTuple(now, "ii", &now_s, &now_ns)) {
-		return NULL;
-	}
-	if (dirstate_item_c_v1_state(self) == 'n' && self->mtime_s == now_s) {
-		Py_RETURN_TRUE;
-	} else {
-		Py_RETURN_FALSE;
-	}
-};
-
 static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
                                                      PyObject *other)
 {
@@ -548,8 +533,6 @@ static PyMethodDef dirstate_item_methods[] = {
      "return a \"size\" suitable for v1 serialization"},
     {"v1_mtime", (PyCFunction)dirstate_item_v1_mtime, METH_NOARGS,
      "return a \"mtime\" suitable for v1 serialization"},
-    {"need_delay", (PyCFunction)dirstate_item_need_delay, METH_O,
-     "True if the stored mtime would be ambiguous with the current time"},
     {"mtime_likely_equal_to", (PyCFunction)dirstate_item_mtime_likely_equal_to,
      METH_O, "True if the stored mtime is likely equal to the given mtime"},
     {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth,
@@ -922,12 +905,9 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 	Py_ssize_t nbytes, pos, l;
 	PyObject *k, *v = NULL, *pn;
 	char *p, *s;
-	int now_s;
-	int now_ns;
 
-	if (!PyArg_ParseTuple(args, "O!O!O!(ii):pack_dirstate", &PyDict_Type,
-	                      &map, &PyDict_Type, &copymap, &PyTuple_Type, &pl,
-	                      &now_s, &now_ns)) {
+	if (!PyArg_ParseTuple(args, "O!O!O!:pack_dirstate", &PyDict_Type, &map,
+	                      &PyDict_Type, &copymap, &PyTuple_Type, &pl)) {
 		return NULL;
 	}
 
@@ -996,21 +976,6 @@ static PyObject *pack_dirstate(PyObject *self, PyObject *args)
 		mode = dirstate_item_c_v1_mode(tuple);
 		size = dirstate_item_c_v1_size(tuple);
 		mtime = dirstate_item_c_v1_mtime(tuple);
-		if (state == 'n' && tuple->mtime_s == now_s) {
-			/* See pure/parsers.py:pack_dirstate for why we do
-			 * this. */
-			mtime = -1;
-			mtime_unset = (PyObject *)dirstate_item_from_v1_data(
-			    state, mode, size, mtime);
-			if (!mtime_unset) {
-				goto bail;
-			}
-			if (PyDict_SetItem(map, k, mtime_unset) == -1) {
-				goto bail;
-			}
-			Py_DECREF(mtime_unset);
-			mtime_unset = NULL;
-		}
 		*p++ = state;
 		putbe32((uint32_t)mode, p);
 		putbe32((uint32_t)size, p + 4);

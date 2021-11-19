@@ -677,25 +677,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         })
     }
 
-    fn clear_known_ambiguous_mtimes(
-        &mut self,
-        paths: &[impl AsRef<HgPath>],
-    ) -> Result<(), DirstateV2ParseError> {
-        for path in paths {
-            if let Some(node) = Self::get_node_mut(
-                self.on_disk,
-                &mut self.unreachable_bytes,
-                &mut self.root,
-                path.as_ref(),
-            )? {
-                if let NodeData::Entry(entry) = &mut node.data {
-                    entry.set_possibly_dirty();
-                }
-            }
-        }
-        Ok(())
-    }
-
     fn count_dropped_path(unreachable_bytes: &mut u32, path: &Cow<HgPath>) {
         if let Cow::Borrowed(path) = path {
             *unreachable_bytes += path.len() as u32
@@ -930,29 +911,20 @@ impl OwningDirstateMap {
     pub fn pack_v1(
         &mut self,
         parents: DirstateParents,
-        now: TruncatedTimestamp,
     ) -> Result<Vec<u8>, DirstateError> {
         let map = self.get_map_mut();
-        let mut ambiguous_mtimes = Vec::new();
         // Optizimation (to be measured?): pre-compute size to avoid `Vec`
         // reallocations
         let mut size = parents.as_bytes().len();
         for node in map.iter_nodes() {
             let node = node?;
-            if let Some(entry) = node.entry()? {
+            if node.entry()?.is_some() {
                 size += packed_entry_size(
                     node.full_path(map.on_disk)?,
                     node.copy_source(map.on_disk)?,
                 );
-                if entry.need_delay(now) {
-                    ambiguous_mtimes.push(
-                        node.full_path_borrowed(map.on_disk)?
-                            .detach_from_tree(),
-                    )
-                }
             }
         }
-        map.clear_known_ambiguous_mtimes(&ambiguous_mtimes)?;
 
         let mut packed = Vec::with_capacity(size);
         packed.extend(parents.as_bytes());
@@ -978,26 +950,9 @@ impl OwningDirstateMap {
     #[timed]
     pub fn pack_v2(
         &mut self,
-        now: TruncatedTimestamp,
         can_append: bool,
     ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
         let map = self.get_map_mut();
-        let mut paths = Vec::new();
-        for node in map.iter_nodes() {
-            let node = node?;
-            if let Some(entry) = node.entry()? {
-                if entry.need_delay(now) {
-                    paths.push(
-                        node.full_path_borrowed(map.on_disk)?
-                            .detach_from_tree(),
-                    )
-                }
-            }
-        }
-        // Borrow of `self` ends here since we collect cloned paths
-
-        map.clear_known_ambiguous_mtimes(&paths)?;
-
         on_disk::write(map, can_append)
     }
 

@@ -779,25 +779,6 @@ class dirstate(object):
             # filesystem's notion of 'now'
             now = timestamp.mtime_of(util.fstat(st))
 
-        # enough 'delaywrite' prevents 'pack_dirstate' from dropping
-        # timestamp of each entries in dirstate, because of 'now > mtime'
-        delaywrite = self._ui.configint(b'debug', b'dirstate.delaywrite')
-        if delaywrite > 0:
-            # do we have any files to delay for?
-            for f, e in pycompat.iteritems(self._map):
-                if e.need_delay(now):
-                    import time  # to avoid useless import
-
-                    # rather than sleep n seconds, sleep until the next
-                    # multiple of n seconds
-                    clock = time.time()
-                    start = int(clock) - (int(clock) % delaywrite)
-                    end = start + delaywrite
-                    time.sleep(end - clock)
-                    # trust our estimate that the end is near now
-                    now = timestamp.timestamp((end, 0))
-                    break
-
         self._map.write(tr, st, now)
         self._dirty = False
 

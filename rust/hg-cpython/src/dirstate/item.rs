@@ -194,11 +194,6 @@ py_class!(pub class DirstateItem |py| {
         Ok(mtime)
     }
 
-    def need_delay(&self, now: (u32, u32)) -> PyResult<bool> {
-        let now = timestamp(py, now)?;
-        Ok(self.entry(py).get().need_delay(now))
-    }
-
     def mtime_likely_equal_to(&self, other: (u32, u32)) -> PyResult<bool> {
         if let Some(mtime) = self.entry(py).get().truncated_mtime() {
             Ok(mtime.likely_equal(timestamp(py, other)?))

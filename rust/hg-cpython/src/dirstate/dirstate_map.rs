@@ -18,7 +18,7 @@ use cpython::{
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
-    dirstate::item::{timestamp, DirstateItem},
+    dirstate::item::DirstateItem,
     pybytes_deref::PyBytesDeref,
 };
 use hg::{
@@ -194,16 +194,13 @@ py_class!(pub class DirstateMap |py| {
         &self,
         p1: PyObject,
         p2: PyObject,
-        now: (u32, u32)
     ) -> PyResult<PyBytes> {
-        let now = timestamp(py, now)?;
-
         let mut inner = self.inner(py).borrow_mut();
         let parents = DirstateParents {
             p1: extract_node_id(py, &p1)?,
             p2: extract_node_id(py, &p2)?,
         };
-        let result = inner.pack_v1(parents, now);
+        let result = inner.pack_v1(parents);
         match result {
             Ok(packed) => Ok(PyBytes::new(py, &packed)),
             Err(_) => Err(PyErr::new::<exc::OSError, _>(
@@ -218,13 +215,10 @@ py_class!(pub class DirstateMap |py| {
     /// instead of written to a new data file (False).
     def write_v2(
         &self,
-        now: (u32, u32),
         can_append: bool,
     ) -> PyResult<PyObject> {
-        let now = timestamp(py, now)?;
-
         let mut inner = self.inner(py).borrow_mut();
-        let result = inner.pack_v2(now, can_append);
+        let result = inner.pack_v2(can_append);
         match result {
             Ok((packed, tree_metadata, append)) => {
                 let packed = PyBytes::new(py, &packed);

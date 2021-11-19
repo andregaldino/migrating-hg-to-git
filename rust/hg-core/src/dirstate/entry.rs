@@ -590,16 +590,6 @@ impl DirstateEntry {
     pub fn debug_tuple(&self) -> (u8, i32, i32, i32) {
         (self.state().into(), self.mode(), self.size(), self.mtime())
     }
-
-    /// True if the stored mtime would be ambiguous with the current time
-    pub fn need_delay(&self, now: TruncatedTimestamp) -> bool {
-        if let Some(mtime) = self.mtime {
-            self.state() == EntryState::Normal
-                && mtime.truncated_seconds() == now.truncated_seconds()
-        } else {
-            false
-        }
-    }
 }
 
 impl EntryState {
