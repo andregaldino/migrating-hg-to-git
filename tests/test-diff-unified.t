@@ -46,7 +46,7 @@ invalid --unified
 
   $ hg diff --nodates -U foo
   abort: diff context lines count must be an integer, not 'foo'
-  [255]
+  [10]
 
 
   $ hg diff --nodates -U 2
@@ -87,7 +87,7 @@ invalid diff.unified
 
   $ hg --config diff.unified=foo diff --nodates
   abort: diff context lines count must be an integer, not 'foo'
-  [255]
+  [10]
 
 noprefix config and option
 
