@@ -341,7 +341,7 @@ class casecollisionauditor(object):
         if fl in self._loweredfiles and f not in self._dirstate:
             msg = _(b'possible case-folding collision for %s') % f
             if self._abort:
-                raise error.Abort(msg)
+                raise error.StateError(msg)
             self._ui.warn(_(b"warning: %s\n") % msg)
         self._loweredfiles.add(fl)
         self._newfiles.add(f)
