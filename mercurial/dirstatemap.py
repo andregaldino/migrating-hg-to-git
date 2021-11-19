@@ -444,7 +444,7 @@ class dirstatemap(_dirstatemapcommon):
         self.__getitem__ = self._map.__getitem__
         self.get = self._map.get
 
-    def write(self, tr, st, now):
+    def write(self, tr, st):
         if self._use_dirstate_v2:
             packed, meta = v2.pack_dirstate(self._map, self.copymap)
             self.write_v2_no_append(tr, st, meta, packed)
@@ -655,7 +655,7 @@ if rustmod is not None:
             self._map
             return self.identity
 
-        def write(self, tr, st, now):
+        def write(self, tr, st):
             if not self._use_dirstate_v2:
                 p1, p2 = self.parents()
                 packed = self._map.write_v1(p1, p2)

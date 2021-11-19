@@ -733,20 +733,11 @@ class dirstate(object):
 
         filename = self._filename
         if tr:
-            # 'dirstate.write()' is not only for writing in-memory
-            # changes out, but also for dropping ambiguous timestamp.
-            # delayed writing re-raise "ambiguous timestamp issue".
-            # See also the wiki page below for detail:
-            # https://www.mercurial-scm.org/wiki/DirstateTransactionPlan
-
-            # record when mtime start to be ambiguous
-            now = timestamp.get_fs_now(self._opener)
-
             # delay writing in-memory changes out
             tr.addfilegenerator(
                 b'dirstate',
                 (self._filename,),
-                lambda f: self._writedirstate(tr, f, now=now),
+                lambda f: self._writedirstate(tr, f),
                 location=b'plain',
             )
             return
@@ -765,7 +756,7 @@ class dirstate(object):
         """
         self._plchangecallbacks[category] = callback
 
-    def _writedirstate(self, tr, st, now=None):
+    def _writedirstate(self, tr, st):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
             for c, callback in sorted(
@@ -774,12 +765,7 @@ class dirstate(object):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
 
-        if now is None:
-            # use the modification time of the newly created temporary file as the
-            # filesystem's notion of 'now'
-            now = timestamp.mtime_of(util.fstat(st))
-
-        self._map.write(tr, st, now)
+        self._map.write(tr, st)
         self._dirty = False
 
     def _dirignore(self, f):
