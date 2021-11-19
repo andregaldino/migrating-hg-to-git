@@ -519,7 +519,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: could not decode "binary2" binary patch: bad base85 character at position 6
-  [255]
+  [10]
 
   $ hg revert -aq
   $ hg import -d "1000000 0" -m rename-as-binary - <<"EOF"
@@ -534,7 +534,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: "binary2" length is 5 bytes, should be 6
-  [255]
+  [10]
 
   $ hg revert -aq
   $ hg import -d "1000000 0" -m rename-as-binary - <<"EOF"
@@ -548,7 +548,7 @@ Invalid base85 content
   > EOF
   applying patch from stdin
   abort: could not extract "binary2" binary data
-  [255]
+  [10]
 
 Simulate a copy/paste turning LF into CRLF (issue2870)
 
@@ -748,7 +748,7 @@ Pure copy with existing destination
   > EOF
   applying patch from stdin
   abort: cannot create b: destination already exists
-  [255]
+  [20]
   $ cat b
   b
 
@@ -768,7 +768,7 @@ Copy and changes with existing destination
   cannot create b: destination already exists
   1 out of 1 hunks FAILED -- saving rejects to file b.rej
   abort: patch failed to apply
-  [255]
+  [20]
   $ cat b
   b
 
@@ -791,7 +791,7 @@ Copy and changes with existing destination
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file linkb.rej
   abort: patch failed to apply
-  [255]
+  [20]
   $ hg st
   ? b.rej
   ? linkb.rej

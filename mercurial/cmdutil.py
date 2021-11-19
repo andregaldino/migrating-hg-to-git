@@ -522,8 +522,10 @@ def dorecord(
         # 1. filter patch, since we are intending to apply subset of it
         try:
             chunks, newopts = filterfn(ui, original_headers, match)
-        except error.PatchError as err:
+        except error.PatchParseError as err:
             raise error.InputError(_(b'error parsing patch: %s') % err)
+        except error.PatchApplicationError as err:
+            raise error.StateError(_(b'error applying patch: %s') % err)
         opts.update(newopts)
 
         # We need to keep a backup of files that have been newly added and
@@ -608,8 +610,10 @@ def dorecord(
                     ui.debug(b'applying patch\n')
                     ui.debug(fp.getvalue())
                     patch.internalpatch(ui, repo, fp, 1, eolmode=None)
-                except error.PatchError as err:
+                except error.PatchParseError as err:
                     raise error.InputError(pycompat.bytestr(err))
+                except error.PatchApplicationError as err:
+                    raise error.StateError(pycompat.bytestr(err))
             del fp
 
             # 4. We prepared working directory according to filtered
@@ -2020,9 +2024,11 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
                 eolmode=None,
                 similarity=sim / 100.0,
             )
-        except error.PatchError as e:
+        except error.PatchParseError as e:
+            raise error.InputError(pycompat.bytestr(e))
+        except error.PatchApplicationError as e:
             if not partial:
-                raise error.Abort(pycompat.bytestr(e))
+                raise error.StateError(pycompat.bytestr(e))
             if partial:
                 rejects = True
 
@@ -2079,8 +2085,10 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
                     files,
                     eolmode=None,
                 )
-            except error.PatchError as e:
-                raise error.Abort(stringutil.forcebytestr(e))
+            except error.PatchParseError as e:
+                raise error.InputError(stringutil.forcebytestr(e))
+            except error.PatchApplicationError as e:
+                raise error.StateError(stringutil.forcebytestr(e))
             if opts.get(b'exact'):
                 editor = None
             else:
@@ -3674,8 +3682,10 @@ def _performrevert(
             if operation == b'discard':
                 chunks = patch.reversehunks(chunks)
 
-        except error.PatchError as err:
-            raise error.Abort(_(b'error parsing patch: %s') % err)
+        except error.PatchParseError as err:
+            raise error.InputError(_(b'error parsing patch: %s') % err)
+        except error.PatchApplicationError as err:
+            raise error.StateError(_(b'error applying patch: %s') % err)
 
         # FIXME: when doing an interactive revert of a copy, there's no way of
         # performing a partial revert of the added file, the only option is
@@ -3710,8 +3720,10 @@ def _performrevert(
         if dopatch:
             try:
                 patch.internalpatch(repo.ui, repo, fp, 1, eolmode=None)
-            except error.PatchError as err:
-                raise error.Abort(pycompat.bytestr(err))
+            except error.PatchParseError as err:
+                raise error.InputError(pycompat.bytestr(err))
+            except error.PatchApplicationError as err:
+                raise error.StateError(pycompat.bytestr(err))
         del fp
     else:
         for f in actions[b'revert'][0]:
