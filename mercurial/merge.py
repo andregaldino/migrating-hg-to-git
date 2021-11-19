@@ -542,7 +542,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
                 hint=_(b'merging in the other direction may work'),
             )
         else:
-            raise error.Abort(
+            raise error.StateError(
                 _(b'conflict in file \'%s\' is outside narrow clone') % f
             )
 

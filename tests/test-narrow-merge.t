@@ -101,4 +101,4 @@ Refuses merge of conflicting outside changes
   $ hg merge 'desc("conflicting outside/f1")'
   abort: conflict in file 'outside/f1' is outside narrow clone (flat !)
   abort: conflict in file 'outside/' is outside narrow clone (tree !)
-  [255]
+  [20]
