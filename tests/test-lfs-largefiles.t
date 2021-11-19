@@ -290,7 +290,7 @@ The requirement is added to the destination repo.
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   lfs

@@ -25,6 +25,12 @@
 #define PyInt_FromLong PyLong_FromLong
 #define PyInt_FromSsize_t PyLong_FromSsize_t
 #define PyInt_AsLong PyLong_AsLong
+#else
+/* Windows on Python 2.7 doesn't define S_IFLNK. Python 3+ defines via
+ * pyport.h. */
+#ifndef S_IFLNK
+#define S_IFLNK 0120000
+#endif
 #endif
 
 static const char *const versionerrortext = "Python minor version mismatch";

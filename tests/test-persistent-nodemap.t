@@ -988,9 +988,10 @@ truncate the file
   $ datafilepath=`ls corruption-test-repo/.hg/store/00changelog*.nd`
   $ f -s $datafilepath
   corruption-test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
-  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp status=noxfer
+  $ dd if=$datafilepath bs=1000 count=10 of=$datafilepath-tmp
   10+0 records in
   10+0 records out
+  * bytes * (glob)
   $ mv $datafilepath-tmp $datafilepath
   $ f -s $datafilepath
   corruption-test-repo/.hg/store/00changelog-*.nd: size=10000 (glob)

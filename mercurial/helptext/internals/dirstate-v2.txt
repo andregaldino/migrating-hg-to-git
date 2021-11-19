@@ -12,7 +12,7 @@ It is made of a flat sequence of unordered variable-size entries,
 so accessing any information in it requires parsing all of it.
 Similarly, saving changes requires rewriting the entire file.
 
-The newer `dirsate-v2` file format is designed to fix these limitations
+The newer `dirstate-v2` file format is designed to fix these limitations
 and make `hg status` faster.
 
 User guide
@@ -33,18 +33,18 @@ Since the dirstate is entirely local and not relevant to the wire protocol,
 When `share-safe` is enabled, different repositories sharing the same store
 can use different dirstate formats.
 
-Enabling `dirsate-v2` for new local repositories
+Enabling `dirstate-v2` for new local repositories
 ------------------------------------------------
 
 When creating a new local repository such as with `hg init` or `hg clone`,
-the `exp-dirstate-v2` boolean in the `format` configuration section
+the `exp-rc-dirstate-v2` boolean in the `format` configuration section
 controls whether to use this file format.
 This is disabled by default as of this writing.
 To enable it for a single repository, run for example::
 
-    $ hg init my-project --config format.exp-dirstate-v2=1
+    $ hg init my-project --config format.exp-rc-dirstate-v2=1
 
-Checking the format of an existing local repsitory
+Checking the format of an existing local repository
 --------------------------------------------------
 
 The `debugformat` commands prints information about
@@ -63,15 +63,15 @@ Upgrading or downgrading an existing local repository
 The `debugupgrade` command does various upgrades or downgrades
 on a local repository
 based on the current Mercurial version and on configuration.
-The same `format.exp-dirstate-v2` configuration is used again.
+The same `format.exp-rc-dirstate-v2` configuration is used again.
 
 Example to upgrade::
 
-    $ hg debugupgrade --config format.exp-dirstate-v2=1
+    $ hg debugupgrade --config format.exp-rc-dirstate-v2=1
 
 Example to downgrade to `dirstate-v1`::
 
-    $ hg debugupgrade --config format.exp-dirstate-v2=0
+    $ hg debugupgrade --config format.exp-rc-dirstate-v2=0
 
 Both of this commands do nothing but print a list of proposed changes,
 which may include changes unrelated to the dirstate.
@@ -96,19 +96,19 @@ Requirements file
 The `.hg/requires` file indicates which of various optional file formats
 are used by a given repository.
 Mercurial aborts when seeing a requirement it does not know about,
-which avoids older version accidentally messing up a respository
+which avoids older version accidentally messing up a repository
 that uses a format that was introduced later.
 For versions that do support a format, the presence or absence of
 the corresponding requirement indicates whether to use that format.
 
-When the file contains a `exp-dirstate-v2` line,
+When the file contains a `dirstate-v2` line,
 the `dirstate-v2` format is used.
 With no such line `dirstate-v1` is used.
 
 High level description
 ----------------------
 
-Whereas `dirstate-v1` uses a single `.hg/disrtate` file,
+Whereas `dirstate-v1` uses a single `.hg/dirstate` file,
 in `dirstate-v2` that file is a "docket" file
 that only contains some metadata
 and points to separate data file named `.hg/dirstate.{ID}`,
@@ -173,7 +173,7 @@ counted in bytes from the start of the file:
 * Offset 120:
   The used size of the data file, as a 32-bit big-endian integer.
   The actual size of the data file may be larger
-  (if another Mercurial processis in appending to it
+  (if another Mercurial process is appending to it
   but has not updated the docket yet).
   That extra data must be ignored.
 
@@ -303,15 +303,15 @@ nodes must be next to each other and sorted by their path.
 Contiguity lets the parent refer to them all
 by their count and a single pseudo-pointer,
 instead of storing one pseudo-pointer per child node.
-Sorting allows using binary seach to find a child node with a given name
+Sorting allows using binary search to find a child node with a given name
 in `O(log(n))` byte sequence comparisons.
 
-The current implemention writes paths and child node before a given node
+The current implementation writes paths and child node before a given node
 for ease of figuring out the value of pseudo-pointers by the time the are to be
 written, but this is not an obligation and readers must not rely on it.
 
 A path is stored as a byte string anywhere in the file, without delimiter.
-It is refered to by one or more node by a pseudo-pointer to its start, and its
+It is referred to by one or more node by a pseudo-pointer to its start, and its
 length in bytes. Since there is no delimiter,
 when a path is a substring of another the same bytes could be reused,
 although the implementation does not exploit this as of this writing.
@@ -418,7 +418,7 @@ Node components are:
   as a 32-bit integer.
   When `mtime` is used,
   this is the number of nanoseconds since `mtime.seconds`,
-  always stritctly less than one billion.
+  always strictly less than one billion.
 
   This may be zero if more precision is not available.
   (This can happen because of limitations in any of Mercurial, Python,
@@ -503,8 +503,8 @@ by enabling it to skip `readdir` in more cases.
     file system.
 
     * When `HAS_MTIME` is set a directory has been seen on the file system and
-      `mtime` matches its last modificiation time. However, `HAS_MTIME` not being set
-      does not indicate the lack of directory on the file system.
+      `mtime` matches its last modification time. However, `HAS_MTIME` not
+      being set does not indicate the lack of directory on the file system.
 
     * When not tracked anywhere, this node does not represent an ignored or
       unknown file on disk.
@@ -562,8 +562,8 @@ by enabling it to skip `readdir` in more cases.
     where present.
 
     Also note that having this flag unset does not imply that no "unknown"
-    children have been recorded. Some might be present, but there is no garantee
-    that is will be all of them.
+    children have been recorded. Some might be present, but there is
+    no guarantee that is will be all of them.
 
 `ALL_IGNORED_RECORDED`
     If set, all "ignored" children existing on disk (at the time of the last
@@ -575,8 +575,8 @@ by enabling it to skip `readdir` in more cases.
     where present.
 
     Also note that having this flag unset does not imply that no "ignored"
-    children have been recorded. Some might be present, but there is no garantee
-    that is will be all of them.
+    children have been recorded. Some might be present, but there is
+    no guarantee that is will be all of them.
 
 `HAS_FALLBACK_EXEC`
     If this flag is set, the entry carries "fallback" information for the
@@ -612,5 +612,5 @@ by enabling it to skip `readdir` in more cases.
     This flag is relevant only when `HAS_FILE_MTIME` is set.  When set, the
     `mtime` stored in the entry is only valid for comparison with timestamps
     that have nanosecond information. If available timestamp does not carries
-    nanosecond information, the `mtime` should be ignored and no optimisation
+    nanosecond information, the `mtime` should be ignored and no optimization
     can be applied.

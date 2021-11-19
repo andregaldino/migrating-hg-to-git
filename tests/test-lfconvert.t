@@ -96,7 +96,7 @@ Test link+rename largefile codepath
 "lfconvert" adds 'largefiles' to .hg/requires.
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   largefiles

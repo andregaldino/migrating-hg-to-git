@@ -107,7 +107,6 @@ check-pytype:
 # that satisfies the various shebang lines and delegates to `py -3`.
 .window_runtests_template: &windows_runtests
     <<: *all
-    when: manual  # we don't have any Windows runners anymore at the moment
     stage: tests
     before_script:
       - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && ls -1 tests/test-check-*.* > C:/Temp/check-tests.txt'

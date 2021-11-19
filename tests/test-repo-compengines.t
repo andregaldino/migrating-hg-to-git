@@ -11,7 +11,7 @@ A new repository uses zlib storage, which doesn't need a requirement
   $ cd default
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -61,7 +61,7 @@ with that engine or a requirement
 
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -81,7 +81,7 @@ with that engine or a requirement
   $ cd zstd
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)
@@ -186,7 +186,7 @@ checking details of none compression
   $ cat none-compression/.hg/requires
   dotencode
   exp-compression-none
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   fncache
   generaldelta
   persistent-nodemap (rust !)

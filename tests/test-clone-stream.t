@@ -96,7 +96,7 @@ Name with special characters
 
 name causing issue6581
 
-  $ mkdir --parents container/isam-build-centos7/
+  $ mkdir -p container/isam-build-centos7/
   $ touch container/isam-build-centos7/bazel-coverage-generator-sandboxfs-compatibility-0758e3e4f6057904d44399bd666faba9e7f40686.patch
 
 Add all that

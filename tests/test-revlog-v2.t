@@ -22,7 +22,7 @@ Can create and open repo with revlog v2 requirement
   $ cd new-repo
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-revlogv2.2
   fncache
   generaldelta

@@ -27,7 +27,7 @@ Shallow clone from full
   $ cd shallow
   $ cat .hg/requires
   dotencode
-  exp-rc-dirstate-v2 (dirstate-v2 !)
+  dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
   fncache
   generaldelta
