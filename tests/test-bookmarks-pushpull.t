@@ -357,7 +357,7 @@ demand that one of the bookmarks is activated
   (leaving bookmark V)
   $ hg push -B . ../a
   abort: no active bookmark
-  [255]
+  [10]
   $ hg update -r V
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (activating bookmark V)

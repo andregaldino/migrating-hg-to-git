@@ -127,20 +127,20 @@ Early options must come first if HGPLAIN=+strictflags is specified:
 #if no-chg
   $ HGPLAIN=+strictflags hg log -b --config='hooks.pre-log=false' default
   abort: unknown revision '--config=hooks.pre-log=false'
-  [255]
+  [10]
   $ HGPLAIN=+strictflags hg log -b -R. default
   abort: unknown revision '-R.'
-  [255]
+  [10]
   $ HGPLAIN=+strictflags hg log -b --cwd=. default
   abort: unknown revision '--cwd=.'
-  [255]
+  [10]
 #endif
   $ HGPLAIN=+strictflags hg log -b --debugger default
   abort: unknown revision '--debugger'
-  [255]
+  [10]
   $ HGPLAIN=+strictflags hg log -b --config='alias.log=!echo pwned' default
   abort: unknown revision '--config=alias.log=!echo pwned'
-  [255]
+  [10]
 
   $ HGPLAIN=+strictflags hg log --config='hooks.pre-log=false' -b default
   abort: option --config may not be abbreviated

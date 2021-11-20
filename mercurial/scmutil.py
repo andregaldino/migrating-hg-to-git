@@ -180,6 +180,8 @@ def callcatch(ui, func):
             )
         )
     except error.RepoError as inst:
+        if isinstance(inst, error.RepoLookupError):
+            detailed_exit_code = 10
         ui.error(_(b"abort: %s\n") % inst)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)

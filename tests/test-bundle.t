@@ -716,7 +716,7 @@ test bundle with # in the filename (issue2154):
   $ hg incoming '../test#bundle.hg'
   comparing with ../test
   abort: unknown revision 'bundle.hg'
-  [255]
+  [10]
 
 note that percent encoding is not handled:
 

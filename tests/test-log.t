@@ -1417,7 +1417,7 @@ are specified (issue5100):
 
   $ hg log -b 're:.*'
   abort: unknown revision 're:.*'
-  [255]
+  [10]
   $ hg log -k 're:.*'
   $ hg log -u 're:.*'
 
@@ -1544,7 +1544,7 @@ log -b dummy
 
   $ hg log -b dummy
   abort: unknown revision 'dummy'
-  [255]
+  [10]
 
 
 log -b .

@@ -278,7 +278,7 @@ rename bookmark using . with no active bookmark
   $ hg book -i rename-me
   $ hg book -m . renamed
   abort: no active bookmark
-  [255]
+  [10]
   $ hg up -q Y
   $ hg book -d rename-me
 
@@ -298,7 +298,7 @@ delete bookmark using . with no active bookmark
   $ hg book -i delete-me
   $ hg book -d .
   abort: no active bookmark
-  [255]
+  [10]
   $ hg up -q Y
   $ hg book -d delete-me
 
