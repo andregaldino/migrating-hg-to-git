@@ -610,7 +610,7 @@ check illegal path components
 
   $ hg rename d1/d11/a1 .hg/foo
   abort: path contains illegal component: .hg/foo
-  [255]
+  [10]
   $ hg status -C
   $ hg rename d1/d11/a1 ../foo
   abort: ../foo not under root '$TESTTMP'
@@ -620,7 +620,7 @@ check illegal path components
   $ mv d1/d11/a1 .hg/foo
   $ hg rename --after d1/d11/a1 .hg/foo
   abort: path contains illegal component: .hg/foo
-  [255]
+  [10]
   $ hg status -C
   ! d1/d11/a1
   $ hg update -C
@@ -629,11 +629,11 @@ check illegal path components
 
   $ hg rename d1/d11/a1 .hg
   abort: path contains illegal component: .hg/a1
-  [255]
+  [10]
   $ hg --config extensions.largefiles= rename d1/d11/a1 .hg
   The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   abort: path contains illegal component: .hg/a1
-  [255]
+  [10]
   $ hg status -C
   $ hg rename d1/d11/a1 ..
   abort: ../a1 not under root '$TESTTMP'
@@ -647,7 +647,7 @@ check illegal path components
   $ mv d1/d11/a1 .hg
   $ hg rename --after d1/d11/a1 .hg
   abort: path contains illegal component: .hg/a1
-  [255]
+  [10]
   $ hg status -C
   ! d1/d11/a1
   $ hg update -C
@@ -656,7 +656,7 @@ check illegal path components
 
   $ (cd d1/d11; hg rename ../../d2/b ../../.hg/foo)
   abort: path contains illegal component: .hg/foo
-  [255]
+  [10]
   $ hg status -C
   $ (cd d1/d11; hg rename ../../d2/b ../../../foo)
   abort: ../../../foo not under root '$TESTTMP'

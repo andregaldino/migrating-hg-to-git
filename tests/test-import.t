@@ -1085,7 +1085,7 @@ test paths outside repo root
   > EOF
   applying patch from stdin
   abort: path contains illegal component: ../outside/foo
-  [255]
+  [10]
   $ cd ..
 
 

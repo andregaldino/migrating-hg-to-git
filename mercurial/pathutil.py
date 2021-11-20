@@ -79,20 +79,24 @@ class pathauditor(object):
             return
         # AIX ignores "/" at end of path, others raise EISDIR.
         if util.endswithsep(path):
-            raise error.Abort(_(b"path ends in directory separator: %s") % path)
+            raise error.InputError(
+                _(b"path ends in directory separator: %s") % path
+            )
         parts = util.splitpath(path)
         if (
             os.path.splitdrive(path)[0]
             or _lowerclean(parts[0]) in (b'.hg', b'.hg.', b'')
             or pycompat.ospardir in parts
         ):
-            raise error.Abort(_(b"path contains illegal component: %s") % path)
+            raise error.InputError(
+                _(b"path contains illegal component: %s") % path
+            )
         # Windows shortname aliases
         for p in parts:
             if b"~" in p:
                 first, last = p.split(b"~", 1)
                 if last.isdigit() and first.upper() in [b"HG", b"HG8B6C"]:
-                    raise error.Abort(
+                    raise error.InputError(
                         _(b"path contains illegal component: %s") % path
                     )
         if b'.hg' in _lowerclean(path):
@@ -101,7 +105,7 @@ class pathauditor(object):
                 if p in lparts[1:]:
                     pos = lparts.index(p)
                     base = os.path.join(*parts[:pos])
-                    raise error.Abort(
+                    raise error.InputError(
                         _(b"path '%s' is inside nested repo %r")
                         % (path, pycompat.bytestr(base))
                     )

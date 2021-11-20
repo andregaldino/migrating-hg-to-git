@@ -10,7 +10,7 @@ on commit:
   $ echo 'sub/.hg = sub/.hg' >> .hgsub
   $ hg ci -qAm 'add subrepo "sub/.hg"'
   abort: path 'sub/.hg' is inside nested repo 'sub'
-  [255]
+  [10]
 
 prepare tampered repo (including the commit above):
 
@@ -34,7 +34,7 @@ on clone (and update):
 
   $ hg clone -q hgname hgname2
   abort: path 'sub/.hg' is inside nested repo 'sub'
-  [255]
+  [10]
 
 Test absolute path
 ------------------
@@ -47,7 +47,7 @@ on commit:
   $ echo '/sub = sub' >> .hgsub
   $ hg ci -qAm 'add subrepo "/sub"'
   abort: path contains illegal component: /sub
-  [255]
+  [10]
 
 prepare tampered repo (including the commit above):
 
@@ -71,7 +71,7 @@ on clone (and update):
 
   $ hg clone -q absolutepath absolutepath2
   abort: path contains illegal component: /sub
-  [255]
+  [10]
 
 Test root path
 --------------
@@ -84,7 +84,7 @@ on commit:
   $ echo '/ = sub' >> .hgsub
   $ hg ci -qAm 'add subrepo "/"'
   abort: path ends in directory separator: /
-  [255]
+  [10]
 
 prepare tampered repo (including the commit above):
 
@@ -108,7 +108,7 @@ on clone (and update):
 
   $ hg clone -q rootpath rootpath2
   abort: path ends in directory separator: /
-  [255]
+  [10]
 
 Test empty path
 ---------------
@@ -197,7 +197,7 @@ on commit:
   $ echo '../sub = ../sub' >> .hgsub
   $ hg ci -qAm 'add subrepo "../sub"'
   abort: path contains illegal component: ../sub
-  [255]
+  [10]
 
 prepare tampered repo (including the commit above):
 
@@ -221,7 +221,7 @@ on clone (and update):
 
   $ hg clone -q main main2
   abort: path contains illegal component: ../sub
-  [255]
+  [10]
   $ cd ..
 
 Test variable expansion
@@ -718,7 +718,7 @@ on clone (and update):
 
   $ hg clone -q driveletter driveletter2
   abort: path contains illegal component: X:
-  [255]
+  [10]
 
 #else
 
