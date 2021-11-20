@@ -995,7 +995,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
 
     def tempfromcontext(prefix, ctx):
         f, name = maketempfrompath(prefix, ctx.path())
-        data = repo.wwritedata(ctx.path(), ctx.data())
+        data = ctx.decodeddata()
         f.write(data)
         f.close()
         return name
