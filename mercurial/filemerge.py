@@ -846,7 +846,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
         return True, r, False
 
 
-def _formatconflictmarker(ctx, template, label, pad):
+def _formatlabel(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.
 
     Pad is the minimum width of the label prefix, so that multiple markers
@@ -893,11 +893,11 @@ def _formatlabels(repo, fcd, fco, fca, labels, tool=None):
     pad = max(len(l) for l in labels)
 
     newlabels = [
-        _formatconflictmarker(cd, tmpl, labels[0], pad),
-        _formatconflictmarker(co, tmpl, labels[1], pad),
+        _formatlabel(cd, tmpl, labels[0], pad),
+        _formatlabel(co, tmpl, labels[1], pad),
     ]
     if len(labels) > 2:
-        newlabels.append(_formatconflictmarker(ca, tmpl, labels[2], pad))
+        newlabels.append(_formatlabel(ca, tmpl, labels[2], pad))
     return newlabels
 
 
