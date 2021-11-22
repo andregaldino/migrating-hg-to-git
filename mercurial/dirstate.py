@@ -452,11 +452,13 @@ class dirstate(object):
         return self._map.copymap
 
     @requires_no_parents_change
-    def set_tracked(self, filename):
+    def set_tracked(self, filename, reset_copy=False):
         """a "public" method for generic code to mark a file as tracked
 
         This function is to be called outside of "update/merge" case. For
         example by a command like `hg add X`.
+
+        if reset_copy is set, any existing copy information will be dropped.
 
         return True the file was previously untracked, False otherwise.
         """
@@ -464,7 +466,10 @@ class dirstate(object):
         entry = self._map.get(filename)
         if entry is None or not entry.tracked:
             self._check_new_tracked_filename(filename)
-        return self._map.set_tracked(filename)
+        pre_tracked = self._map.set_tracked(filename)
+        if reset_copy:
+            self._map.copymap.pop(filename, None)
+        return pre_tracked
 
     @requires_no_parents_change
     def set_untracked(self, filename):

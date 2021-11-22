@@ -320,7 +320,7 @@ Also true for move overwriting an existing file
 
   $ hg mv --force a b/b
   $ hg revert b/b
-  $ hg status a b/b
+  $ hg status a b/b --copies
 
   $ cd ..
 

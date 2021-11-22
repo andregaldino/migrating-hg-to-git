@@ -3646,15 +3646,14 @@ def _performrevert(
         prntstatusmsg(b'drop', f)
         repo.dirstate.set_untracked(f)
 
-    normal = None
-    if node == parent:
-        # We're reverting to our parent. If possible, we'd like status
-        # to report the file as clean. We have to use normallookup for
-        # merges to avoid losing information about merged/dirty files.
-        if p2 != repo.nullid:
-            normal = repo.dirstate.set_tracked
-        else:
-            normal = repo.dirstate.set_clean
+    # We are reverting to our parent. If possible, we had like `hg status`
+    # to report the file as clean. We have to be less agressive for
+    # merges to avoid losing information about copy introduced by the merge.
+    # This might comes with bugs ?
+    reset_copy = p2 == repo.nullid
+
+    def normal(filename):
+        return repo.dirstate.set_tracked(filename, reset_copy=reset_copy)
 
     newlyaddedandmodifiedfiles = set()
     if interactive:
@@ -3749,9 +3748,6 @@ def _performrevert(
             checkout(f)
             repo.dirstate.set_tracked(f)
 
-    normal = repo.dirstate.set_tracked
-    if node == parent and p2 == repo.nullid:
-        normal = repo.dirstate.set_clean
     for f in actions[b'undelete'][0]:
         if interactive:
             choice = repo.ui.promptchoice(
