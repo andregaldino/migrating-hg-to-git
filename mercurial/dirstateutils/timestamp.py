@@ -9,6 +9,8 @@ import functools
 import os
 import stat
 
+from .. import error
+
 
 rangemask = 0x7FFFFFFF
 
@@ -34,25 +36,14 @@ class timestamp(tuple):
         return super(timestamp, cls).__new__(cls, value)
 
     def __eq__(self, other):
-        self_secs, self_subsec_nanos = self
-        other_secs, other_subsec_nanos = other
-        return self_secs == other_secs and (
-            self_subsec_nanos == other_subsec_nanos
-            or self_subsec_nanos == 0
-            or other_subsec_nanos == 0
+        raise error.ProgrammingError(
+            'timestamp should never be compared directly'
         )
 
     def __gt__(self, other):
-        self_secs, self_subsec_nanos = self
-        other_secs, other_subsec_nanos = other
-        if self_secs > other_secs:
-            return True
-        if self_secs < other_secs:
-            return False
-        if self_subsec_nanos == 0 or other_subsec_nanos == 0:
-            # they are considered equal, so not "greater than"
-            return False
-        return self_subsec_nanos > other_subsec_nanos
+        raise error.ProgrammingError(
+            'timestamp should never be compared directly'
+        )
 
 
 def get_fs_now(vfs):
