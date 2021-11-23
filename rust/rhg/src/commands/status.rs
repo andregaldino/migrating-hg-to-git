@@ -309,13 +309,14 @@ fn cat_file_is_modified(
     manifest: &Manifest,
     hg_path: &HgPath,
 ) -> Result<bool, HgError> {
-    let file_node = manifest
+    let entry = manifest
         .find_file(hg_path)?
         .expect("ambgious file not in p1");
     let filelog = repo.filelog(hg_path)?;
-    let filelog_entry = filelog.data_for_node(file_node).map_err(|_| {
-        HgError::corrupted("filelog missing node from manifest")
-    })?;
+    let filelog_entry =
+        filelog.data_for_node(entry.node_id()?).map_err(|_| {
+            HgError::corrupted("filelog missing node from manifest")
+        })?;
     let contents_in_p1 = filelog_entry.data()?;
 
     let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");

@@ -4,6 +4,7 @@ use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
 use crate::utils::hg_path::HgPath;
+use crate::utils::SliceExt;
 
 /// A specialized `Revlog` to work with `manifest` data format.
 pub struct Manifestlog {
@@ -55,50 +56,64 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    /// Return an iterator over the lines of the entry.
-    pub fn lines(&self) -> impl Iterator<Item = &[u8]> {
+    pub fn iter(
+        &self,
+    ) -> impl Iterator<Item = Result<ManifestEntry, HgError>> {
         self.bytes
             .split(|b| b == &b'\n')
             .filter(|line| !line.is_empty())
-    }
-
-    /// Return an iterator over the files of the entry.
-    pub fn files(&self) -> impl Iterator<Item = Result<&HgPath, HgError>> {
-        self.lines().filter(|line| !line.is_empty()).map(|line| {
-            let pos =
-                line.iter().position(|x| x == &b'\0').ok_or_else(|| {
+            .map(|line| {
+                let (path, rest) = line.split_2(b'\0').ok_or_else(|| {
                     HgError::corrupted("manifest line should contain \\0")
                 })?;
-            Ok(HgPath::new(&line[..pos]))
-        })
-    }
-
-    /// Return an iterator over the files of the entry.
-    pub fn files_with_nodes(
-        &self,
-    ) -> impl Iterator<Item = Result<(&HgPath, &[u8]), HgError>> {
-        self.lines().filter(|line| !line.is_empty()).map(|line| {
-            let pos =
-                line.iter().position(|x| x == &b'\0').ok_or_else(|| {
-                    HgError::corrupted("manifest line should contain \\0")
-                })?;
-            let hash_start = pos + 1;
-            let hash_end = hash_start + 40;
-            Ok((HgPath::new(&line[..pos]), &line[hash_start..hash_end]))
-        })
+                let path = HgPath::new(path);
+                let (hex_node_id, flags) = match rest.split_last() {
+                    Some((&b'x', rest)) => (rest, Some(b'x')),
+                    Some((&b'l', rest)) => (rest, Some(b'l')),
+                    Some((&b't', rest)) => (rest, Some(b't')),
+                    _ => (rest, None),
+                };
+                Ok(ManifestEntry {
+                    path,
+                    hex_node_id,
+                    flags,
+                })
+            })
     }
 
     /// If the given path is in this manifest, return its filelog node ID
-    pub fn find_file(&self, path: &HgPath) -> Result<Option<Node>, HgError> {
+    pub fn find_file(
+        &self,
+        path: &HgPath,
+    ) -> Result<Option<ManifestEntry>, HgError> {
         // TODO: use binary search instead of linear scan. This may involve
         // building (and caching) an index of the byte indicex of each manifest
         // line.
-        for entry in self.files_with_nodes() {
-            let (manifest_path, node) = entry?;
-            if manifest_path == path {
-                return Ok(Some(Node::from_hex_for_repo(node)?));
+
+        // TODO: use try_find when available (if still using linear scan)
+        // https://github.com/rust-lang/rust/issues/63178
+        for entry in self.iter() {
+            let entry = entry?;
+            if entry.path == path {
+                return Ok(Some(entry));
             }
         }
         Ok(None)
+    }
+}
+
+/// `Manifestlog` entry which knows how to interpret the `manifest` data bytes.
+#[derive(Debug)]
+pub struct ManifestEntry<'manifest> {
+    pub path: &'manifest HgPath,
+    pub hex_node_id: &'manifest [u8],
+
+    /// `Some` values are b'x', b'l', or 't'
+    pub flags: Option<u8>,
+}
+
+impl ManifestEntry<'_> {
+    pub fn node_id(&self) -> Result<Node, HgError> {
+        Node::from_hex_for_repo(self.hex_node_id)
     }
 }

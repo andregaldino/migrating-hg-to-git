@@ -12,6 +12,8 @@ use crate::revlog::Node;
 use crate::utils::hg_path::HgPath;
 
 use crate::errors::HgError;
+use crate::manifest::Manifest;
+use crate::manifest::ManifestEntry;
 use itertools::put_back;
 use itertools::PutBack;
 use std::cmp::Ordering;
@@ -29,39 +31,33 @@ pub struct CatOutput<'a> {
 }
 
 // Find an item in an iterator over a sorted collection.
-fn find_item<'a, D, I: Iterator<Item = Result<(&'a HgPath, D), HgError>>>(
-    i: &mut PutBack<I>,
+fn find_item<'a>(
+    i: &mut PutBack<impl Iterator<Item = Result<ManifestEntry<'a>, HgError>>>,
     needle: &HgPath,
-) -> Result<Option<D>, HgError> {
+) -> Result<Option<Node>, HgError> {
     loop {
         match i.next() {
             None => return Ok(None),
             Some(result) => {
-                let (path, value) = result?;
-                match needle.as_bytes().cmp(path.as_bytes()) {
+                let entry = result?;
+                match needle.as_bytes().cmp(entry.path.as_bytes()) {
                     Ordering::Less => {
-                        i.put_back(Ok((path, value)));
+                        i.put_back(Ok(entry));
                         return Ok(None);
                     }
                     Ordering::Greater => continue,
-                    Ordering::Equal => return Ok(Some(value)),
+                    Ordering::Equal => return Ok(Some(entry.node_id()?)),
                 }
             }
         }
     }
 }
 
-fn find_files_in_manifest<
-    'manifest,
-    'query,
-    Data,
-    Manifest: Iterator<Item = Result<(&'manifest HgPath, Data), HgError>>,
-    Query: Iterator<Item = &'query HgPath>,
->(
-    manifest: Manifest,
-    query: Query,
-) -> Result<(Vec<(&'query HgPath, Data)>, Vec<&'query HgPath>), HgError> {
-    let mut manifest = put_back(manifest);
+fn find_files_in_manifest<'query>(
+    manifest: &Manifest,
+    query: impl Iterator<Item = &'query HgPath>,
+) -> Result<(Vec<(&'query HgPath, Node)>, Vec<&'query HgPath>), HgError> {
+    let mut manifest = put_back(manifest.iter());
     let mut res = vec![];
     let mut missing = vec![];
 
@@ -96,14 +92,13 @@ pub fn cat<'a>(
     files.sort_unstable();
 
     let (found, missing) = find_files_in_manifest(
-        manifest.files_with_nodes(),
+        &manifest,
         files.into_iter().map(|f| f.as_ref()),
     )?;
 
-    for (file_path, node_bytes) in found {
+    for (file_path, file_node) in found {
         found_any = true;
         let file_log = repo.filelog(file_path)?;
-        let file_node = Node::from_hex_for_repo(node_bytes)?;
         results.push((
             file_path,
             file_log.data_for_node(file_node)?.into_data()?,

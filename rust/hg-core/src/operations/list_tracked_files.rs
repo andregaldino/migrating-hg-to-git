@@ -77,6 +77,6 @@ pub struct FilesForRev(Manifest);
 
 impl FilesForRev {
     pub fn iter(&self) -> impl Iterator<Item = Result<&HgPath, HgError>> {
-        self.0.files()
+        self.0.iter().map(|entry| Ok(entry?.path))
     }
 }
