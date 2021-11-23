@@ -261,13 +261,10 @@ def lfdirstatestatus(lfdirstate, repo):
             st = wctx[lfile].lstat()
             mode = st.st_mode
             size = st.st_size
-            mtime = timestamp.mtime_of(st)
-            cache_data = (mode, size, mtime)
-            # We should consider using the mtime_boundary
-            # logic here, but largefile never actually had
-            # ambiguity protection before, so this confuse
-            # the tests and need more thinking.
-            lfdirstate.set_clean(lfile, cache_data)
+            mtime = timestamp.reliable_mtime_of(st, mtime_boundary)
+            if mtime is not None:
+                cache_data = (mode, size, mtime)
+                lfdirstate.set_clean(lfile, cache_data)
     return s
 
 
