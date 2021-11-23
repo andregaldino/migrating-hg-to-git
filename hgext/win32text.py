@@ -47,6 +47,8 @@ import re
 from mercurial.i18n import _
 from mercurial.node import short
 from mercurial import (
+    cmdutil,
+    extensions,
     pycompat,
     registrar,
 )
@@ -215,6 +217,23 @@ def reposetup(ui, repo):
         repo.adddatafilter(name, fn)
 
 
+def wrap_revert(orig, repo, ctx, names, uipathfn, actions, *args, **kwargs):
+    # reset dirstate cache for file we touch
+    ds = repo.dirstate
+    with ds.parentchange():
+        for filename in actions[b'revert'][0]:
+            entry = ds.get_entry(filename)
+            if entry is not None:
+                if entry.p1_tracked:
+                    ds.update_file(
+                        filename,
+                        entry.tracked,
+                        p1_tracked=True,
+                        p2_info=entry.p2_info,
+                    )
+    return orig(repo, ctx, names, uipathfn, actions, *args, **kwargs)
+
+
 def extsetup(ui):
     # deprecated config: win32text.warn
     if ui.configbool(b'win32text', b'warn'):
@@ -224,3 +243,4 @@ def extsetup(ui):
                 b"https://mercurial-scm.org/wiki/Win32TextExtension\n"
             )
         )
+    extensions.wrapfunction(cmdutil, '_performrevert', wrap_revert)

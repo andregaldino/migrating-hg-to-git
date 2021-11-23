@@ -418,7 +418,6 @@ Disable warning:
   $ hg revert -a
   reverting linefeed
   $ hg st -q
-  M linefeed (known-bad-output !)
   $ cat linefeed
   % just linefeed\r (esc)
 
