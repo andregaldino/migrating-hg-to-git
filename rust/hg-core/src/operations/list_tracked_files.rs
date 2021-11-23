@@ -76,7 +76,7 @@ pub fn list_rev_tracked_files(
 pub struct FilesForRev(Manifest);
 
 impl FilesForRev {
-    pub fn iter(&self) -> impl Iterator<Item = &HgPath> {
+    pub fn iter(&self) -> impl Iterator<Item = Result<&HgPath, HgError>> {
         self.0.files()
     }
 }

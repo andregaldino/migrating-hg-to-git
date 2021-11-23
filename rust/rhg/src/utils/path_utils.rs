@@ -5,6 +5,7 @@
 
 use crate::error::CommandError;
 use crate::ui::UiError;
+use hg::errors::HgError;
 use hg::repo::Repo;
 use hg::utils::current_dir;
 use hg::utils::files::{get_bytes_from_path, relativize_path};
@@ -14,7 +15,7 @@ use std::borrow::Cow;
 
 pub fn relativize_paths(
     repo: &Repo,
-    paths: impl IntoIterator<Item = impl AsRef<HgPath>>,
+    paths: impl IntoIterator<Item = Result<impl AsRef<HgPath>, HgError>>,
     mut callback: impl FnMut(Cow<[u8]>) -> Result<(), UiError>,
 ) -> Result<(), CommandError> {
     let cwd = current_dir()?;
@@ -38,10 +39,10 @@ pub fn relativize_paths(
 
     for file in paths {
         if outside_repo {
-            let file = repo_root_hgpath.join(file.as_ref());
+            let file = repo_root_hgpath.join(file?.as_ref());
             callback(relativize_path(&file, &cwd_hgpath))?;
         } else {
-            callback(relativize_path(file.as_ref(), &cwd_hgpath))?;
+            callback(relativize_path(file?.as_ref(), &cwd_hgpath))?;
         }
     }
     Ok(())

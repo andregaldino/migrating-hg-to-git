@@ -279,7 +279,7 @@ fn display_status_paths(
     if relative && !ui.plain() {
         relativize_paths(
             repo,
-            paths,
+            paths.iter().map(Ok),
             |path: Cow<[u8]>| -> Result<(), UiError> {
                 ui.write_stdout(
                     &[status_prefix, b" ", path.as_ref(), b"\n"].concat(),

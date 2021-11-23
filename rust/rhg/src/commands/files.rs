@@ -3,6 +3,7 @@ use crate::ui::Ui;
 use crate::ui::UiError;
 use crate::utils::path_utils::relativize_paths;
 use clap::Arg;
+use hg::errors::HgError;
 use hg::operations::list_rev_tracked_files;
 use hg::operations::Dirstate;
 use hg::repo::Repo;
@@ -45,14 +46,14 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     } else {
         let distate = Dirstate::new(repo)?;
         let files = distate.tracked_files()?;
-        display_files(invocation.ui, repo, files)
+        display_files(invocation.ui, repo, files.into_iter().map(Ok))
     }
 }
 
 fn display_files<'a>(
     ui: &Ui,
     repo: &Repo,
-    files: impl IntoIterator<Item = &'a HgPath>,
+    files: impl IntoIterator<Item = Result<&'a HgPath, HgError>>,
 ) -> Result<(), CommandError> {
     let mut stdout = ui.stdout_buffer();
     let mut any = false;

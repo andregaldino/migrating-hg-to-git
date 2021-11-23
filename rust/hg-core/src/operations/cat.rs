@@ -11,6 +11,7 @@ use crate::revlog::Node;
 
 use crate::utils::hg_path::HgPath;
 
+use crate::errors::HgError;
 use itertools::put_back;
 use itertools::PutBack;
 use std::cmp::Ordering;
@@ -28,21 +29,24 @@ pub struct CatOutput<'a> {
 }
 
 // Find an item in an iterator over a sorted collection.
-fn find_item<'a, 'b, 'c, D, I: Iterator<Item = (&'a HgPath, D)>>(
+fn find_item<'a, D, I: Iterator<Item = Result<(&'a HgPath, D), HgError>>>(
     i: &mut PutBack<I>,
-    needle: &'b HgPath,
-) -> Option<D> {
+    needle: &HgPath,
+) -> Result<Option<D>, HgError> {
     loop {
         match i.next() {
-            None => return None,
-            Some(val) => match needle.as_bytes().cmp(val.0.as_bytes()) {
-                Ordering::Less => {
-                    i.put_back(val);
-                    return None;
+            None => return Ok(None),
+            Some(result) => {
+                let (path, value) = result?;
+                match needle.as_bytes().cmp(path.as_bytes()) {
+                    Ordering::Less => {
+                        i.put_back(Ok((path, value)));
+                        return Ok(None);
+                    }
+                    Ordering::Greater => continue,
+                    Ordering::Equal => return Ok(Some(value)),
                 }
-                Ordering::Greater => continue,
-                Ordering::Equal => return Some(val.1),
-            },
+            }
         }
     }
 }
@@ -51,23 +55,23 @@ fn find_files_in_manifest<
     'manifest,
     'query,
     Data,
-    Manifest: Iterator<Item = (&'manifest HgPath, Data)>,
+    Manifest: Iterator<Item = Result<(&'manifest HgPath, Data), HgError>>,
     Query: Iterator<Item = &'query HgPath>,
 >(
     manifest: Manifest,
     query: Query,
-) -> (Vec<(&'query HgPath, Data)>, Vec<&'query HgPath>) {
+) -> Result<(Vec<(&'query HgPath, Data)>, Vec<&'query HgPath>), HgError> {
     let mut manifest = put_back(manifest);
     let mut res = vec![];
     let mut missing = vec![];
 
     for file in query {
-        match find_item(&mut manifest, file) {
+        match find_item(&mut manifest, file)? {
             None => missing.push(file),
             Some(item) => res.push((file, item)),
         }
     }
-    return (res, missing);
+    return Ok((res, missing));
 }
 
 /// Output the given revision of files
@@ -94,7 +98,7 @@ pub fn cat<'a>(
     let (found, missing) = find_files_in_manifest(
         manifest.files_with_nodes(),
         files.into_iter().map(|f| f.as_ref()),
-    );
+    )?;
 
     for (file_path, node_bytes) in found {
         found_any = true;

@@ -63,26 +63,28 @@ impl Manifest {
     }
 
     /// Return an iterator over the files of the entry.
-    pub fn files(&self) -> impl Iterator<Item = &HgPath> {
+    pub fn files(&self) -> impl Iterator<Item = Result<&HgPath, HgError>> {
         self.lines().filter(|line| !line.is_empty()).map(|line| {
-            let pos = line
-                .iter()
-                .position(|x| x == &b'\0')
-                .expect("manifest line should contain \\0");
-            HgPath::new(&line[..pos])
+            let pos =
+                line.iter().position(|x| x == &b'\0').ok_or_else(|| {
+                    HgError::corrupted("manifest line should contain \\0")
+                })?;
+            Ok(HgPath::new(&line[..pos]))
         })
     }
 
     /// Return an iterator over the files of the entry.
-    pub fn files_with_nodes(&self) -> impl Iterator<Item = (&HgPath, &[u8])> {
+    pub fn files_with_nodes(
+        &self,
+    ) -> impl Iterator<Item = Result<(&HgPath, &[u8]), HgError>> {
         self.lines().filter(|line| !line.is_empty()).map(|line| {
-            let pos = line
-                .iter()
-                .position(|x| x == &b'\0')
-                .expect("manifest line should contain \\0");
+            let pos =
+                line.iter().position(|x| x == &b'\0').ok_or_else(|| {
+                    HgError::corrupted("manifest line should contain \\0")
+                })?;
             let hash_start = pos + 1;
             let hash_end = hash_start + 40;
-            (HgPath::new(&line[..pos]), &line[hash_start..hash_end])
+            Ok((HgPath::new(&line[..pos]), &line[hash_start..hash_end]))
         })
     }
 
@@ -91,7 +93,8 @@ impl Manifest {
         // TODO: use binary search instead of linear scan. This may involve
         // building (and caching) an index of the byte indicex of each manifest
         // line.
-        for (manifest_path, node) in self.files_with_nodes() {
+        for entry in self.files_with_nodes() {
+            let (manifest_path, node) = entry?;
             if manifest_path == path {
                 return Ok(Some(Node::from_hex_for_repo(node)?));
             }
