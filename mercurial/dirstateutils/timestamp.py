@@ -99,3 +99,28 @@ def mtime_of(stat_result):
         subsec_nanos = nanos % billion
 
     return timestamp((secs, subsec_nanos))
+
+
+def reliable_mtime_of(stat_result, present_mtime):
+    """same as `mtime_of`, but return None if the date might be ambiguous
+
+    A modification time is reliable if it is older than "present_time" (or
+    sufficiently in the futur).
+
+    Otherwise a concurrent modification might happens with the same mtime.
+    """
+    file_mtime = mtime_of(stat_result)
+    file_second = file_mtime[0]
+    boundary_second = present_mtime[0]
+    # If the mtime of the ambiguous file is younger (or equal) to the starting
+    # point of the `status` walk, we cannot garantee that another, racy, write
+    # will not happen right after with the same mtime and we cannot cache the
+    # information.
+    #
+    # However is the mtime is far away in the future, this is likely some
+    # mismatch between the current clock and previous file system operation. So
+    # mtime more than one days in the future are considered fine.
+    if boundary_second <= file_second < (3600 * 24 + boundary_second):
+        return None
+    else:
+        return file_mtime

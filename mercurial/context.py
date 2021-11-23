@@ -1823,29 +1823,12 @@ class workingctx(committablectx):
                     s = self[f].lstat()
                     mode = s.st_mode
                     size = s.st_size
-                    file_mtime = timestamp.mtime_of(s)
-                    cache_info = (mode, size, file_mtime)
-
-                    file_second = file_mtime[0]
-                    boundary_second = mtime_boundary[0]
-                    # If the mtime of the ambiguous file is younger (or equal)
-                    # to the starting point of the `status` walk, we cannot
-                    # garantee that another, racy, write will not happen right
-                    # after with the same mtime and we cannot cache the
-                    # information.
-                    #
-                    # However is the mtime is far away in the future, this is
-                    # likely some mismatch between the current clock and
-                    # previous file system operation. So mtime more than one days
-                    # in the future are considered fine.
-                    if (
-                        boundary_second
-                        <= file_second
-                        < (3600 * 24 + boundary_second)
-                    ):
-                        clean.append(f)
-                    else:
+                    file_mtime = timestamp.reliable_mtime_of(s, mtime_boundary)
+                    if file_mtime is not None:
+                        cache_info = (mode, size, file_mtime)
                         fixup.append((f, cache_info))
+                    else:
+                        clean.append(f)
             except (IOError, OSError):
                 # A file become inaccessible in between? Mark it as deleted,
                 # matching dirstate behavior (issue5584).
