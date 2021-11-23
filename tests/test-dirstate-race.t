@@ -89,6 +89,7 @@ anyway.
   > rm b && rm -r dir1 && rm d && mkdir d && rm e && mkdir e
   > EOF
 
+  $ sleep 1 # ensure non-ambiguous mtime
   $ hg status --config extensions.dirstaterace=$TESTTMP/dirstaterace.py
   M d
   M e
