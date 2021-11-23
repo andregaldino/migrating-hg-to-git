@@ -227,7 +227,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             CommandError::from((e, &*format!("{:x}", p1.short())))
         })?;
         for to_check in ds_status.unsure {
-            if cat_file_is_modified(repo, &manifest, &to_check)? {
+            if unsure_is_modified(repo, &manifest, &to_check)? {
                 if display_states.modified {
                     ds_status.modified.push(to_check);
                 }
@@ -304,7 +304,7 @@ fn display_status_paths(
 /// to time resolution limits.
 ///
 /// TODO: detect permission bits and similar metadata modifications
-fn cat_file_is_modified(
+fn unsure_is_modified(
     repo: &Repo,
     manifest: &Manifest,
     hg_path: &HgPath,
