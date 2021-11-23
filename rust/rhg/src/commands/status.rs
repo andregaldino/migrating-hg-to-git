@@ -11,11 +11,12 @@ use crate::utils::path_utils::relativize_paths;
 use clap::{Arg, SubCommand};
 use hg;
 use hg::config::Config;
-use hg::dirstate::TruncatedTimestamp;
+use hg::dirstate::{has_exec_bit, TruncatedTimestamp};
 use hg::errors::HgError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
 use hg::repo::Repo;
+use hg::utils::files::get_bytes_from_os_string;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
@@ -302,16 +303,30 @@ fn display_status_paths(
 ///
 /// This meant to be used for those that the dirstate cannot resolve, due
 /// to time resolution limits.
-///
-/// TODO: detect permission bits and similar metadata modifications
 fn unsure_is_modified(
     repo: &Repo,
     manifest: &Manifest,
     hg_path: &HgPath,
 ) -> Result<bool, HgError> {
+    let vfs = repo.working_directory_vfs();
+    let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
+    let fs_metadata = vfs.symlink_metadata(&fs_path)?;
+    let is_symlink = fs_metadata.file_type().is_symlink();
+    // TODO: Also account for `FALLBACK_SYMLINK` and `FALLBACK_EXEC` from the dirstate
+    let fs_flags = if is_symlink {
+        Some(b'l')
+    } else if has_exec_bit(&fs_metadata) {
+        Some(b'x')
+    } else {
+        None
+    };
+
     let entry = manifest
         .find_file(hg_path)?
         .expect("ambgious file not in p1");
+    if entry.flags != fs_flags {
+        return Ok(true);
+    }
     let filelog = repo.filelog(hg_path)?;
     let filelog_entry =
         filelog.data_for_node(entry.node_id()?).map_err(|_| {
@@ -319,7 +334,10 @@ fn unsure_is_modified(
         })?;
     let contents_in_p1 = filelog_entry.data()?;
 
-    let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
-    let fs_contents = repo.working_directory_vfs().read(fs_path)?;
+    let fs_contents = if is_symlink {
+        get_bytes_from_os_string(vfs.read_link(fs_path)?.into_os_string())
+    } else {
+        vfs.read(fs_path)?
+    };
     return Ok(contents_in_p1 != &*fs_contents);
 }

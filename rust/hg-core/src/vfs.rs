@@ -16,6 +16,22 @@ impl Vfs<'_> {
         self.base.join(relative_path)
     }
 
+    pub fn symlink_metadata(
+        &self,
+        relative_path: impl AsRef<Path>,
+    ) -> Result<std::fs::Metadata, HgError> {
+        let path = self.join(relative_path);
+        std::fs::symlink_metadata(&path).when_reading_file(&path)
+    }
+
+    pub fn read_link(
+        &self,
+        relative_path: impl AsRef<Path>,
+    ) -> Result<PathBuf, HgError> {
+        let path = self.join(relative_path);
+        std::fs::read_link(&path).when_reading_file(&path)
+    }
+
     pub fn read(
         &self,
         relative_path: impl AsRef<Path>,

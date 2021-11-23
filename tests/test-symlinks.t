@@ -11,10 +11,6 @@
   > EOF
 #endif
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
-
 == tests added in 0.7 ==
 
   $ hg init test-symlinks-0.7; cd test-symlinks-0.7;

@@ -580,10 +580,8 @@ impl DirstateEntry {
         &self,
         filesystem_metadata: &std::fs::Metadata,
     ) -> bool {
-        use std::os::unix::fs::MetadataExt;
-        const EXEC_BIT_MASK: u32 = 0o100;
-        let dirstate_exec_bit = (self.mode() as u32) & EXEC_BIT_MASK;
-        let fs_exec_bit = filesystem_metadata.mode() & EXEC_BIT_MASK;
+        let dirstate_exec_bit = (self.mode() as u32 & EXEC_BIT_MASK) != 0;
+        let fs_exec_bit = has_exec_bit(filesystem_metadata);
         dirstate_exec_bit != fs_exec_bit
     }
 
@@ -640,4 +638,12 @@ impl Into<u8> for EntryState {
             EntryState::Merged => b'm',
         }
     }
+}
+
+const EXEC_BIT_MASK: u32 = 0o100;
+
+pub fn has_exec_bit(metadata: &std::fs::Metadata) -> bool {
+    // TODO: How to handle executable permissions on Windows?
+    use std::os::unix::fs::MetadataExt;
+    (metadata.mode() & EXEC_BIT_MASK) != 0
 }
