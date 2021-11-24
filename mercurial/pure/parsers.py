@@ -551,6 +551,8 @@ class DirstateItem(object):
             return AMBIGUOUS_TIME
         elif not self._p1_tracked:
             return AMBIGUOUS_TIME
+        elif self._mtime_second_ambiguous:
+            return AMBIGUOUS_TIME
         else:
             return self._mtime_s
 

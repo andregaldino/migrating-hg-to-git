@@ -269,7 +269,8 @@ static inline int dirstate_item_c_v1_mtime(dirstateItemObject *self)
 	} else if (!(self->flags & dirstate_flag_has_mtime) ||
 	           !(self->flags & dirstate_flag_p1_tracked) ||
 	           !(self->flags & dirstate_flag_wc_tracked) ||
-	           (self->flags & dirstate_flag_p2_info)) {
+	           (self->flags & dirstate_flag_p2_info) ||
+	           (self->flags & dirstate_flag_mtime_second_ambiguous)) {
 		return ambiguous_time;
 	} else {
 		return self->mtime_s;

@@ -454,7 +454,11 @@ impl DirstateEntry {
         } else if !self.flags.contains(Flags::P1_TRACKED) {
             MTIME_UNSET
         } else if let Some(mtime) = self.mtime {
-            i32::try_from(mtime.truncated_seconds()).unwrap()
+            if mtime.second_ambiguous {
+                MTIME_UNSET
+            } else {
+                i32::try_from(mtime.truncated_seconds()).unwrap()
+            }
         } else {
             MTIME_UNSET
         }
