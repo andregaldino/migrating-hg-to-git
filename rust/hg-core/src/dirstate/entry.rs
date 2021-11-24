@@ -43,7 +43,10 @@ pub struct TruncatedTimestamp {
     truncated_seconds: u32,
     /// Always in the `0 .. 1_000_000_000` range.
     nanoseconds: u32,
-    second_ambiguous: bool,
+    /// TODO this should be in DirstateEntry, but the current code needs
+    /// refactoring to use DirstateEntry instead of TruncatedTimestamp for
+    /// comparison.
+    pub second_ambiguous: bool,
 }
 
 impl TruncatedTimestamp {

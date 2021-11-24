@@ -483,6 +483,8 @@ class DirstateItem(object):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime_s is not None:
             flags |= DIRSTATE_V2_HAS_MTIME
+        if self._mtime_second_ambiguous:
+            flags |= DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS
 
         if self._fallback_exec is not None:
             flags |= DIRSTATE_V2_HAS_FALLBACK_EXEC

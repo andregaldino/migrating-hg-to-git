@@ -465,6 +465,9 @@ impl Node {
         };
         let mtime = if let Some(m) = mtime_opt {
             flags.insert(Flags::HAS_MTIME);
+            if m.second_ambiguous {
+                flags.insert(Flags::MTIME_SECOND_AMBIGUOUS);
+            };
             m.into()
         } else {
             PackedTruncatedTimestamp::null()
