@@ -102,16 +102,23 @@ def reliable_mtime_of(stat_result, present_mtime):
     """
     file_mtime = mtime_of(stat_result)
     file_second = file_mtime[0]
+    file_ns = file_mtime[1]
     boundary_second = present_mtime[0]
+    boundary_ns = present_mtime[1]
     # If the mtime of the ambiguous file is younger (or equal) to the starting
     # point of the `status` walk, we cannot garantee that another, racy, write
     # will not happen right after with the same mtime and we cannot cache the
     # information.
     #
-    # However is the mtime is far away in the future, this is likely some
+    # However if the mtime is far away in the future, this is likely some
     # mismatch between the current clock and previous file system operation. So
     # mtime more than one days in the future are considered fine.
-    if boundary_second <= file_second < (3600 * 24 + boundary_second):
+    if boundary_second == file_second:
+        if file_ns and boundary_ns:
+            if file_ns < boundary_ns:
+                return timestamp((file_second, file_ns, True))
+        return None
+    elif boundary_second < file_second < (3600 * 24 + boundary_second):
         return None
     else:
         return file_mtime
