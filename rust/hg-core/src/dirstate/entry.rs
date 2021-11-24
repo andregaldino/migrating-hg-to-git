@@ -130,10 +130,17 @@ impl TruncatedTimestamp {
     /// in that way, doing a simple comparison would cause many false
     /// negatives.
     pub fn likely_equal(self, other: Self) -> bool {
-        self.truncated_seconds == other.truncated_seconds
-            && (self.nanoseconds == other.nanoseconds
-                || self.nanoseconds == 0
-                || other.nanoseconds == 0)
+        if self.truncated_seconds != other.truncated_seconds {
+            false
+        } else if self.nanoseconds == 0 || other.nanoseconds == 0 {
+            if self.second_ambiguous {
+                false
+            } else {
+                true
+            }
+        } else {
+            self.nanoseconds == other.nanoseconds
+        }
     }
 
     pub fn likely_equal_to_mtime_of(

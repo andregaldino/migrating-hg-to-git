@@ -310,9 +310,21 @@ class DirstateItem(object):
             return False
         self_ns = self._mtime_ns
         other_sec, other_ns, second_ambiguous = other_mtime
-        return self_sec == other_sec and (
-            self_ns == other_ns or self_ns == 0 or other_ns == 0
-        )
+        if self_sec != other_sec:
+            # seconds are different theses mtime are definitly not equal
+            return False
+        elif other_ns == 0 or self_ns == 0:
+            # at least one side as no nano-seconds information
+
+            if self._mtime_second_ambiguous:
+                # We cannot trust the mtime in this case
+                return False
+            else:
+                # the "seconds" value was reliable on its own. We are good to go.
+                return True
+        else:
+            # We have nano second information, let us use them !
+            return self_ns == other_ns
 
     @property
     def state(self):
