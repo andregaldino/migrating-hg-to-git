@@ -149,10 +149,6 @@ class DirstateItem(object):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
         has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_MTIME)
-        if flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS:
-            # The current code is not able to do the more subtle comparison that the
-            # MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
-            has_meaningful_mtime = False
         mode = None
 
         if flags & +DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED:
@@ -179,13 +175,15 @@ class DirstateItem(object):
                 mode |= stat.S_IFLNK
             else:
                 mode |= stat.S_IFREG
+
+        second_ambiguous = flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS
         return cls(
             wc_tracked=bool(flags & DIRSTATE_V2_WDIR_TRACKED),
             p1_tracked=bool(flags & DIRSTATE_V2_P1_TRACKED),
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
             has_meaningful_mtime=has_meaningful_mtime,
-            parentfiledata=(mode, size, (mtime_s, mtime_ns, False)),
+            parentfiledata=(mode, size, (mtime_s, mtime_ns, second_ambiguous)),
             fallback_exec=fallback_exec,
             fallback_symlink=fallback_symlink,
         )

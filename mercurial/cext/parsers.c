@@ -450,14 +450,6 @@ static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
 		              dirstate_flag_has_meaningful_data |
 		              dirstate_flag_has_mtime);
 	}
-	if (t->flags & dirstate_flag_mtime_second_ambiguous) {
-		/* The current code is not able to do the more subtle comparison
-		 * that the MTIME_SECOND_AMBIGUOUS requires. So we ignore the
-		 * mtime */
-		t->flags &= ~(dirstate_flag_mtime_second_ambiguous |
-		              dirstate_flag_has_meaningful_data |
-		              dirstate_flag_has_mtime);
-	}
 	t->mode = 0;
 	if (t->flags & dirstate_flag_has_meaningful_data) {
 		if (t->flags & dirstate_flag_mode_exec_perm) {

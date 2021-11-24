@@ -371,11 +371,12 @@ impl Node {
         let mtime = if self.flags().contains(Flags::HAS_MTIME)
             && !self.flags().contains(Flags::DIRECTORY)
             && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
-            // The current code is not able to do the more subtle comparison that the
-            // MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
-            && !self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS)
         {
-            Some(self.mtime.try_into()?)
+            let mut m: TruncatedTimestamp = self.mtime.try_into()?;
+            if self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS) {
+                m.second_ambiguous = true;
+            }
+            Some(m)
         } else {
             None
         };
