@@ -55,7 +55,7 @@ def fakewrite(ui, func):
     # parsing 'fakenow' in YYYYmmddHHMM format makes comparison between
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
     fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
-    fakenow = timestamp.timestamp((fakenow, 0))
+    fakenow = timestamp.timestamp((fakenow, 0, False))
 
     if has_rust_dirstate:
         # The Rust implementation does not use public parse/pack dirstate

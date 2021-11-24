@@ -31,8 +31,8 @@ class timestamp(tuple):
     """
 
     def __new__(cls, value):
-        truncated_seconds, subsec_nanos = value
-        value = (truncated_seconds & rangemask, subsec_nanos)
+        truncated_seconds, subsec_nanos, second_ambiguous = value
+        value = (truncated_seconds & rangemask, subsec_nanos, second_ambiguous)
         return super(timestamp, cls).__new__(cls, value)
 
     def __eq__(self, other):
@@ -89,7 +89,7 @@ def mtime_of(stat_result):
         secs = nanos // billion
         subsec_nanos = nanos % billion
 
-    return timestamp((secs, subsec_nanos))
+    return timestamp((secs, subsec_nanos, False))
 
 
 def reliable_mtime_of(stat_result, present_mtime):

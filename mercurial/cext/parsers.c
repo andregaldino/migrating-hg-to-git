@@ -61,6 +61,7 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	int p2_info;
 	int has_meaningful_data;
 	int has_meaningful_mtime;
+	int mtime_second_ambiguous;
 	int mode;
 	int size;
 	int mtime_s;
@@ -79,6 +80,7 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 	p2_info = 0;
 	has_meaningful_mtime = 1;
 	has_meaningful_data = 1;
+	mtime_second_ambiguous = 0;
 	parentfiledata = Py_None;
 	fallback_exec = Py_None;
 	fallback_symlink = Py_None;
@@ -124,8 +126,8 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 			return NULL;
 		}
 		if (mtime != Py_None) {
-			if (!PyArg_ParseTuple(mtime, "ii", &mtime_s,
-			                      &mtime_ns)) {
+			if (!PyArg_ParseTuple(mtime, "iii", &mtime_s, &mtime_ns,
+			                      &mtime_second_ambiguous)) {
 				return NULL;
 			}
 		} else {
@@ -139,6 +141,9 @@ static PyObject *dirstate_item_new(PyTypeObject *subtype, PyObject *args,
 		t->flags |= dirstate_flag_has_meaningful_data;
 		t->mode = mode;
 		t->size = size;
+		if (mtime_second_ambiguous) {
+			t->flags |= dirstate_flag_mtime_second_ambiguous;
+		}
 	} else {
 		t->mode = 0;
 		t->size = 0;
@@ -325,7 +330,9 @@ static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
 {
 	int other_s;
 	int other_ns;
-	if (!PyArg_ParseTuple(other, "ii", &other_s, &other_ns)) {
+	int other_second_ambiguous;
+	if (!PyArg_ParseTuple(other, "iii", &other_s, &other_ns,
+	                      &other_second_ambiguous)) {
 		return NULL;
 	}
 	if ((self->flags & dirstate_flag_has_mtime) &&
@@ -468,15 +475,17 @@ static PyObject *dirstate_item_set_possibly_dirty(dirstateItemObject *self)
 static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
                                          PyObject *args)
 {
-	int size, mode, mtime_s, mtime_ns;
+	int size, mode, mtime_s, mtime_ns, mtime_second_ambiguous;
 	PyObject *mtime;
 	mtime_s = 0;
 	mtime_ns = 0;
+	mtime_second_ambiguous = 0;
 	if (!PyArg_ParseTuple(args, "iiO", &mode, &size, &mtime)) {
 		return NULL;
 	}
 	if (mtime != Py_None) {
-		if (!PyArg_ParseTuple(mtime, "ii", &mtime_s, &mtime_ns)) {
+		if (!PyArg_ParseTuple(mtime, "iii", &mtime_s, &mtime_ns,
+		                      &mtime_second_ambiguous)) {
 			return NULL;
 		}
 	} else {
@@ -485,6 +494,9 @@ static PyObject *dirstate_item_set_clean(dirstateItemObject *self,
 	self->flags = dirstate_flag_wc_tracked | dirstate_flag_p1_tracked |
 	              dirstate_flag_has_meaningful_data |
 	              dirstate_flag_has_mtime;
+	if (mtime_second_ambiguous) {
+		self->flags |= dirstate_flag_mtime_second_ambiguous;
+	}
 	self->mode = mode;
 	self->size = size;
 	self->mtime_s = mtime_s;

@@ -43,6 +43,7 @@ pub struct TruncatedTimestamp {
     truncated_seconds: u32,
     /// Always in the `0 .. 1_000_000_000` range.
     nanoseconds: u32,
+    second_ambiguous: bool,
 }
 
 impl TruncatedTimestamp {
@@ -50,11 +51,16 @@ impl TruncatedTimestamp {
     /// and truncate the seconds components to its lower 31 bits.
     ///
     /// Panics if the nanoseconds components is not in the expected range.
-    pub fn new_truncate(seconds: i64, nanoseconds: u32) -> Self {
+    pub fn new_truncate(
+        seconds: i64,
+        nanoseconds: u32,
+        second_ambiguous: bool,
+    ) -> Self {
         assert!(nanoseconds < NSEC_PER_SEC);
         Self {
             truncated_seconds: seconds as u32 & RANGE_MASK_31BIT,
             nanoseconds,
+            second_ambiguous,
         }
     }
 
@@ -63,6 +69,7 @@ impl TruncatedTimestamp {
     pub fn from_already_truncated(
         truncated_seconds: u32,
         nanoseconds: u32,
+        second_ambiguous: bool,
     ) -> Result<Self, DirstateV2ParseError> {
         if truncated_seconds & !RANGE_MASK_31BIT == 0
             && nanoseconds < NSEC_PER_SEC
@@ -70,6 +77,7 @@ impl TruncatedTimestamp {
             Ok(Self {
                 truncated_seconds,
                 nanoseconds,
+                second_ambiguous,
             })
         } else {
             Err(DirstateV2ParseError)
@@ -83,7 +91,7 @@ impl TruncatedTimestamp {
             let seconds = metadata.mtime();
             // i64 -> u32 with value always in the `0 .. NSEC_PER_SEC` range
             let nanoseconds = metadata.mtime_nsec().try_into().unwrap();
-            Ok(Self::new_truncate(seconds, nanoseconds))
+            Ok(Self::new_truncate(seconds, nanoseconds, false))
         }
         #[cfg(not(unix))]
         {
@@ -168,7 +176,7 @@ impl From<SystemTime> for TruncatedTimestamp {
                 }
             }
         };
-        Self::new_truncate(seconds, nanoseconds)
+        Self::new_truncate(seconds, nanoseconds, false)
     }
 }
 
@@ -258,9 +266,10 @@ impl DirstateEntry {
                     let mode = u32::try_from(mode).unwrap();
                     let size = u32::try_from(size).unwrap();
                     let mtime = u32::try_from(mtime).unwrap();
-                    let mtime =
-                        TruncatedTimestamp::from_already_truncated(mtime, 0)
-                            .unwrap();
+                    let mtime = TruncatedTimestamp::from_already_truncated(
+                        mtime, 0, false,
+                    )
+                    .unwrap();
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
                         mode_size: Some((mode, size)),

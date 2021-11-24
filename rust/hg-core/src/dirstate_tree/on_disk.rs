@@ -773,6 +773,7 @@ impl TryFrom<PackedTruncatedTimestamp> for TruncatedTimestamp {
         Self::from_already_truncated(
             timestamp.truncated_seconds.get(),
             timestamp.nanoseconds.get(),
+            false,
         )
     }
 }

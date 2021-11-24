@@ -104,6 +104,7 @@ class DirstateItem(object):
     _mtime_ns = attr.ib()
     _fallback_exec = attr.ib()
     _fallback_symlink = attr.ib()
+    _mtime_second_ambiguous = attr.ib()
 
     def __init__(
         self,
@@ -127,6 +128,7 @@ class DirstateItem(object):
         self._size = None
         self._mtime_s = None
         self._mtime_ns = None
+        self._mtime_second_ambiguous = False
         if parentfiledata is None:
             has_meaningful_mtime = False
             has_meaningful_data = False
@@ -136,7 +138,11 @@ class DirstateItem(object):
             self._mode = parentfiledata[0]
             self._size = parentfiledata[1]
         if has_meaningful_mtime:
-            self._mtime_s, self._mtime_ns = parentfiledata[2]
+            (
+                self._mtime_s,
+                self._mtime_ns,
+                self._mtime_second_ambiguous,
+            ) = parentfiledata[2]
 
     @classmethod
     def from_v2_data(cls, flags, size, mtime_s, mtime_ns):
@@ -179,7 +185,7 @@ class DirstateItem(object):
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
             has_meaningful_mtime=has_meaningful_mtime,
-            parentfiledata=(mode, size, (mtime_s, mtime_ns)),
+            parentfiledata=(mode, size, (mtime_s, mtime_ns, False)),
             fallback_exec=fallback_exec,
             fallback_symlink=fallback_symlink,
         )
@@ -216,13 +222,13 @@ class DirstateItem(object):
                     wc_tracked=True,
                     p1_tracked=True,
                     has_meaningful_mtime=False,
-                    parentfiledata=(mode, size, (42, 0)),
+                    parentfiledata=(mode, size, (42, 0, False)),
                 )
             else:
                 return cls(
                     wc_tracked=True,
                     p1_tracked=True,
-                    parentfiledata=(mode, size, (mtime, 0)),
+                    parentfiledata=(mode, size, (mtime, 0, False)),
                 )
         else:
             raise RuntimeError(b'unknown state: %s' % state)
@@ -248,7 +254,7 @@ class DirstateItem(object):
         self._p1_tracked = True
         self._mode = mode
         self._size = size
-        self._mtime_s, self._mtime_ns = mtime
+        self._mtime_s, self._mtime_ns, self._mtime_second_ambiguous = mtime
 
     def set_tracked(self):
         """mark a file as tracked in the working copy
@@ -303,7 +309,7 @@ class DirstateItem(object):
         if self_sec is None:
             return False
         self_ns = self._mtime_ns
-        other_sec, other_ns = other_mtime
+        other_sec, other_ns, second_ambiguous = other_mtime
         return self_sec == other_sec and (
             self_ns == other_ns or self_ns == 0 or other_ns == 0
         )
