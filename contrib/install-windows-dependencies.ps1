@@ -34,6 +34,11 @@ $PYTHON39_x86_SHA256 = "6646a5683adf14d35e8c53aab946895bc0f0b825f7acac3a62cc85ee
 $PYTHON39_X64_URL = "https://www.python.org/ftp/python/3.9.9/python-3.9.9-amd64.exe"
 $PYTHON39_x64_SHA256 = "137d59e5c0b01a8f1bdcba08344402ae658c81c6bf03b6602bd8b4e951ad0714"
 
+$PYTHON310_x86_URL = "https://www.python.org/ftp/python/3.10.0/python-3.10.0.exe"
+$PYTHON310_x86_SHA256 = "ea896eeefb1db9e12fb89ec77a6e28c9fe52b4a162a34c85d9688be2ec2392e8"
+$PYTHON310_X64_URL = "https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe"
+$PYTHON310_x64_SHA256 = "cb580eb7dc55f9198e650f016645023e8b2224cf7d033857d12880b46c5c94ef"
+
 # PIP 19.2.3.
 $PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
 $PIP_SHA256 = "57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe"
@@ -132,6 +137,8 @@ function Install-Dependencies($prefix) {
     Secure-Download $PYTHON38_x64_URL ${prefix}\assets\python38-x64.exe $PYTHON38_x64_SHA256
     Secure-Download $PYTHON39_x86_URL ${prefix}\assets\python39-x86.exe $PYTHON39_x86_SHA256
     Secure-Download $PYTHON39_x64_URL ${prefix}\assets\python39-x64.exe $PYTHON39_x64_SHA256
+    Secure-Download $PYTHON310_x86_URL ${prefix}\assets\python310-x86.exe $PYTHON310_x86_SHA256
+    Secure-Download $PYTHON310_x64_URL ${prefix}\assets\python310-x64.exe $PYTHON310_x64_SHA256
     Secure-Download $PIP_URL ${pip} $PIP_SHA256
     Secure-Download $VS_BUILD_TOOLS_URL ${prefix}\assets\vs_buildtools.exe $VS_BUILD_TOOLS_SHA256
     Secure-Download $INNO_SETUP_URL ${prefix}\assets\InnoSetup.exe $INNO_SETUP_SHA256
@@ -146,6 +153,8 @@ function Install-Dependencies($prefix) {
 #    Install-Python3 "Python 3.8 64-bit" ${prefix}\assets\python38-x64.exe ${prefix}\python38-x64 ${pip}
     Install-Python3 "Python 3.9 32-bit" ${prefix}\assets\python39-x86.exe ${prefix}\python39-x86 ${pip}
     Install-Python3 "Python 3.9 64-bit" ${prefix}\assets\python39-x64.exe ${prefix}\python39-x64 ${pip}
+    Install-Python3 "Python 3.10 32-bit" ${prefix}\assets\python310-x86.exe ${prefix}\python310-x86 ${pip}
+    Install-Python3 "Python 3.10 64-bit" ${prefix}\assets\python310-x64.exe ${prefix}\python310-x64 ${pip}
 
     Write-Output "installing Visual Studio 2017 Build Tools and SDKs"
     Invoke-Process ${prefix}\assets\vs_buildtools.exe "--quiet --wait --norestart --nocache --channelUri https://aka.ms/vs/15/release/channel --add Microsoft.VisualStudio.Workload.MSBuildTools --add Microsoft.VisualStudio.Component.Windows10SDK.17763 --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.Windows10SDK --add Microsoft.VisualStudio.Component.VC.140"
