@@ -96,7 +96,7 @@ def reliable_mtime_of(stat_result, present_mtime):
     """same as `mtime_of`, but return None if the date might be ambiguous
 
     A modification time is reliable if it is older than "present_time" (or
-    sufficiently in the futur).
+    sufficiently in the future).
 
     Otherwise a concurrent modification might happens with the same mtime.
     """

@@ -61,16 +61,21 @@ pub fn status<'tree, 'on_disk: 'tree>(
             (Box::new(|&_| true), vec![], None)
         };
 
+    let filesystem_time_at_status_start = filesystem_now(&root_dir).ok();
+    let outcome = DirstateStatus {
+        filesystem_time_at_status_start,
+        ..Default::default()
+    };
     let common = StatusCommon {
         dmap,
         options,
         matcher,
         ignore_fn,
-        outcome: Default::default(),
+        outcome: Mutex::new(outcome),
         ignore_patterns_have_changed: patterns_changed,
         new_cachable_directories: Default::default(),
         outated_cached_directories: Default::default(),
-        filesystem_time_at_status_start: filesystem_now(&root_dir).ok(),
+        filesystem_time_at_status_start,
     };
     let is_at_repo_root = true;
     let hg_path = &BorrowedPath::OnDisk(HgPath::new(""));

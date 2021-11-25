@@ -9,9 +9,6 @@
   > EOF
 #endif
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
 Checking the size/permissions/file-type of files stored in the
 dirstate after an update where the files are changed concurrently
 outside of hg's control.

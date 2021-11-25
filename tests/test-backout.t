@@ -172,8 +172,7 @@ transaction: in-memory dirstate changes should be written into
   $ hg status -A
   C c
   $ hg debugstate --no-dates
-  n 644         12 set                 c (no-rhg !)
-  n   0         -1 unset               c (rhg known-bad-output !)
+  n 644         12 set                 c
   $ hg backout -d '6 0' -m 'to be rollback-ed soon' -r .
   removing c
   adding b

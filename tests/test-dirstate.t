@@ -9,10 +9,6 @@
   > EOF
 #endif
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
-
 ------ Test dirstate._dirs refcounting
 
   $ hg init t

@@ -102,6 +102,35 @@ impl TruncatedTimestamp {
         }
     }
 
+    /// Returns whether this timestamp is reliable as the "mtime" of a file.
+    ///
+    /// A modification time is reliable if it is older than `boundary` (or
+    /// sufficiently in the future).
+    ///
+    /// Otherwise a concurrent modification might happens with the same mtime.
+    pub fn is_reliable_mtime(&self, boundary: &Self) -> bool {
+        // If the mtime of the ambiguous file is younger (or equal) to the
+        // starting point of the `status` walk, we cannot garantee that
+        // another, racy, write will not happen right after with the same mtime
+        // and we cannot cache the information.
+        //
+        // However if the mtime is far away in the future, this is likely some
+        // mismatch between the current clock and previous file system
+        // operation. So mtime more than one days in the future are considered
+        // fine.
+        if self.truncated_seconds == boundary.truncated_seconds {
+            self.nanoseconds != 0
+                && boundary.nanoseconds != 0
+                && self.nanoseconds < boundary.nanoseconds
+        } else {
+            // `truncated_seconds` is less than 2**31,
+            // so this does not overflow `u32`:
+            let one_day_later = boundary.truncated_seconds + 24 * 3600;
+            self.truncated_seconds < boundary.truncated_seconds
+                || self.truncated_seconds > one_day_later
+        }
+    }
+
     /// The lower 31 bits of the number of seconds since the epoch.
     pub fn truncated_seconds(&self) -> u32 {
         self.truncated_seconds
@@ -191,7 +220,7 @@ impl From<SystemTime> for TruncatedTimestamp {
 }
 
 const NSEC_PER_SEC: u32 = 1_000_000_000;
-const RANGE_MASK_31BIT: u32 = 0x7FFF_FFFF;
+pub const RANGE_MASK_31BIT: u32 = 0x7FFF_FFFF;
 
 pub const MTIME_UNSET: i32 = -1;
 

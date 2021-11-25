@@ -73,6 +73,10 @@ pub struct StatusOptions {
 
 #[derive(Debug, Default)]
 pub struct DirstateStatus<'a> {
+    /// The current time at the start of the `status()` algorithm, as measured
+    /// and possibly truncated by the filesystem.
+    pub filesystem_time_at_status_start: Option<std::time::SystemTime>,
+
     /// Tracked files whose contents have changed since the parent revision
     pub modified: Vec<HgPathCow<'a>>,
 
