@@ -6,9 +6,10 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::error::CommandError;
-use crate::ui::{Ui, UiError};
+use crate::ui::Ui;
 use crate::utils::path_utils::relativize_paths;
 use clap::{Arg, SubCommand};
+use format_bytes::format_bytes;
 use hg;
 use hg::config::Config;
 use hg::dirstate::{has_exec_bit, TruncatedTimestamp};
@@ -20,7 +21,6 @@ use hg::utils::files::get_bytes_from_os_string;
 use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
-use std::borrow::Cow;
 
 pub const HELP_TEXT: &str = "
 Show changed files in the working directory
@@ -81,6 +81,12 @@ pub fn args() -> clap::App<'static, 'static> {
                 .help("show only ignored files")
                 .short("-i")
                 .long("--ignored"),
+        )
+        .arg(
+            Arg::with_name("no-status")
+                .help("hide status prefix")
+                .short("-n")
+                .long("--no-status"),
         )
 }
 
@@ -182,6 +188,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             requested
         }
     };
+    let no_status = args.is_present("no-status");
 
     let repo = invocation.repo?;
     let mut dmap = repo.dirstate_map_mut()?;
@@ -240,25 +247,74 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         }
     }
     if display_states.modified {
-        display_status_paths(ui, repo, config, &mut ds_status.modified, b"M")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.modified,
+            b"M",
+        )?;
     }
     if display_states.added {
-        display_status_paths(ui, repo, config, &mut ds_status.added, b"A")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.added,
+            b"A",
+        )?;
     }
     if display_states.removed {
-        display_status_paths(ui, repo, config, &mut ds_status.removed, b"R")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.removed,
+            b"R",
+        )?;
     }
     if display_states.deleted {
-        display_status_paths(ui, repo, config, &mut ds_status.deleted, b"!")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.deleted,
+            b"!",
+        )?;
     }
     if display_states.unknown {
-        display_status_paths(ui, repo, config, &mut ds_status.unknown, b"?")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.unknown,
+            b"?",
+        )?;
     }
     if display_states.ignored {
-        display_status_paths(ui, repo, config, &mut ds_status.ignored, b"I")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.ignored,
+            b"I",
+        )?;
     }
     if display_states.clean {
-        display_status_paths(ui, repo, config, &mut ds_status.clean, b"C")?;
+        display_status_paths(
+            ui,
+            repo,
+            config,
+            no_status,
+            &mut ds_status.clean,
+            b"C",
+        )?;
     }
     Ok(())
 }
@@ -269,6 +325,7 @@ fn display_status_paths(
     ui: &Ui,
     repo: &Repo,
     config: &Config,
+    no_status: bool,
     paths: &mut [HgPathCow],
     status_prefix: &[u8],
 ) -> Result<(), CommandError> {
@@ -277,23 +334,23 @@ fn display_status_paths(
     relative = config
         .get_option(b"commands", b"status.relative")?
         .unwrap_or(relative);
+    let print_path = |path: &[u8]| {
+        // TODO optim, probably lots of unneeded copies here, especially
+        // if out stream is buffered
+        if no_status {
+            ui.write_stdout(&format_bytes!(b"{}\n", path))
+        } else {
+            ui.write_stdout(&format_bytes!(b"{} {}\n", status_prefix, path))
+        }
+    };
+
     if relative && !ui.plain() {
-        relativize_paths(
-            repo,
-            paths.iter().map(Ok),
-            |path: Cow<[u8]>| -> Result<(), UiError> {
-                ui.write_stdout(
-                    &[status_prefix, b" ", path.as_ref(), b"\n"].concat(),
-                )
-            },
-        )?;
+        relativize_paths(repo, paths.iter().map(Ok), |path| {
+            print_path(&path)
+        })?;
     } else {
         for path in paths {
-            // Same TODO as in commands::root
-            let bytes: &[u8] = path.as_bytes();
-            // TODO optim, probably lots of unneeded copies here, especially
-            // if out stream is buffered
-            ui.write_stdout(&[status_prefix, b" ", bytes, b"\n"].concat())?;
+            print_path(path.as_bytes())?
         }
     }
     Ok(())

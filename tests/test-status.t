@@ -222,6 +222,13 @@ hg status:
   ! deleted
   ? unknown
 
+hg status -n:
+  $ env RHG_STATUS=1 RHG_ON_UNSUPPORTED=abort hg status -n
+  added
+  removed
+  deleted
+  unknown
+
 hg status modified added removed deleted unknown never-existed ignored:
 
   $ hg status modified added removed deleted unknown never-existed ignored
