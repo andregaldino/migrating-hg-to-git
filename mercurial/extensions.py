@@ -307,15 +307,12 @@ def loadall(ui, whitelist=None):
             except Exception as inst:
                 msg = stringutil.forcebytestr(inst)
                 if path:
-                    ui.warn(
-                        _(b"*** failed to import extension %s from %s: %s\n")
-                        % (name, path, msg)
-                    )
+                    error_msg = _(b"failed to import extension %s from %s: %s")
+                    error_msg %= (name, path, msg)
                 else:
-                    ui.warn(
-                        _(b"*** failed to import extension %s: %s\n")
-                        % (name, msg)
-                    )
+                    error_msg = _(b"failed to import extension %s: %s")
+                    error_msg %= (name, msg)
+                ui.warn((b"*** %s\n") % error_msg)
                 if isinstance(inst, error.Hint) and inst.hint:
                     ui.warn(_(b"*** (%s)\n") % inst.hint)
                 ui.traceback()
