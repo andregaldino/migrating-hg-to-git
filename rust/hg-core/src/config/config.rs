@@ -362,6 +362,15 @@ impl Config {
         Ok(self.get_option(section, item)?.unwrap_or(false))
     }
 
+    /// Returns `true` if the extension is enabled, `false` otherwise
+    pub fn is_extension_enabled(&self, extension: &[u8]) -> bool {
+        let value = self.get(b"extensions", extension);
+        match value {
+            Some(c) => !c.starts_with(b"!"),
+            None => false,
+        }
+    }
+
     /// If there is an `item` value in `section`, parse and return a list of
     /// byte strings.
     pub fn get_list(
