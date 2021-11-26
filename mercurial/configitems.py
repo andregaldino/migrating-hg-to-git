@@ -1281,7 +1281,7 @@ coreconfigitem(
 )
 coreconfigitem(
     b'extensions',
-    b'.*',
+    b'[^:]*',
     default=None,
     generic=True,
 )

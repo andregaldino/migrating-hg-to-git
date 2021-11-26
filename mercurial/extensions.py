@@ -282,6 +282,7 @@ def loadall(ui, whitelist=None):
     result = ui.configitems(b"extensions")
     if whitelist is not None:
         result = [(k, v) for (k, v) in result if k in whitelist]
+    result = [(k, v) for (k, v) in result if b':' not in k]
     newindex = len(_order)
     ui.log(
         b'extension',
