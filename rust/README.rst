@@ -6,15 +6,18 @@ This directory contains various Rust code for the Mercurial project.
 Rust is not required to use (or build) Mercurial, but using it
 improves performance in some areas.
 
-There are currently three independent rust projects:
-- chg. An implementation of chg, in rust instead of C.
-- hgcli. A project that provide a (mostly) self-contained "hg" binary,
+There are currently four independent Rust projects:
+- chg. An implementation of chg, in Rust instead of C.
+- hgcli. A project that provides a (mostly) self-contained "hg" binary,
   for ease of deployment and a bit of speed, using PyOxidizer. See
   hgcli/README.md.
 - hg-core (and hg-cpython): implementation of some
-  functionality of mercurial in rust, e.g. ancestry computations in
+  functionality of mercurial in Rust, e.g. ancestry computations in
   revision graphs, status or pull discovery. The top-level ``Cargo.toml`` file
   defines a workspace containing these crates.
+- rhg: a pure Rust implementation of Mercurial, with a fallback mechanism for
+  unsupported invocations. It reuses the logic `hg-core` but completely forgoes
+  interaction with Python. See `rust/rhg/README.md` for more details.
 
 Using Rust code
 ===============
