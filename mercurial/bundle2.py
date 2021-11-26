@@ -2419,7 +2419,7 @@ def handlebookmark(op, inpart):
             op.records.add(b'bookmarks', record)
     else:
         raise error.ProgrammingError(
-            b'unkown bookmark mode: %s' % bookmarksmode
+            b'unknown bookmark mode: %s' % bookmarksmode
         )
 
 

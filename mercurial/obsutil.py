@@ -218,7 +218,7 @@ def exclusivemarkers(repo, nodes):
 
         or
 
-        # (A0 rewritten as AX; AX rewritten as A1; AX is unkown locally)
+        # (A0 rewritten as AX; AX rewritten as A1; AX is unknown locally)
         #
         # <-1- A0 <-2- AX <-3- A1 # Marker "2,3" are exclusive to A1
 

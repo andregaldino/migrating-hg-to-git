@@ -535,7 +535,7 @@ class hgdist(Distribution):
             # (see mercurial/__modulepolicy__.py)
             if hgrustext != 'cpython' and hgrustext is not None:
                 if hgrustext:
-                    msg = 'unkown HGWITHRUSTEXT value: %s' % hgrustext
+                    msg = 'unknown HGWITHRUSTEXT value: %s' % hgrustext
                     printf(msg, file=sys.stderr)
                 hgrustext = None
             self.rust = hgrustext is not None

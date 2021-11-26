@@ -29,7 +29,7 @@ purge without the extension
   $ hg st
   $ touch foo
   $ hg purge
-  permanently delete 1 unkown files? (yN) n
+  permanently delete 1 unknown files? (yN) n
   abort: removal cancelled
   [250]
   $ hg st
@@ -93,7 +93,7 @@ delete an untracked file
   untracked_file
   untracked_file_readonly
   $ hg purge --confirm
-  permanently delete 2 unkown files? (yN) n
+  permanently delete 2 unknown files? (yN) n
   abort: removal cancelled
   [250]
   $ hg purge -v
@@ -156,7 +156,7 @@ delete only part of the tree
   $ hg purge -p ../untracked_directory
   untracked_directory/nested_directory
   $ hg purge --confirm
-  permanently delete 1 unkown files? (yN) n
+  permanently delete 1 unknown files? (yN) n
   abort: removal cancelled
   [250]
   $ hg purge -v ../untracked_directory
@@ -203,7 +203,7 @@ skip ignored files if -i or --all not specified
   ignored
   untracked_file
   $ hg purge --confirm --all
-  permanently delete 1 unkown and 1 ignored files? (yN) n
+  permanently delete 1 unknown and 1 ignored files? (yN) n
   abort: removal cancelled
   [250]
   $ hg purge -v --all

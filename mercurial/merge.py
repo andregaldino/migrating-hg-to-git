@@ -2479,13 +2479,13 @@ def purge(
 
         if confirm:
             nb_ignored = len(status.ignored)
-            nb_unkown = len(status.unknown)
-            if nb_unkown and nb_ignored:
-                msg = _(b"permanently delete %d unkown and %d ignored files?")
-                msg %= (nb_unkown, nb_ignored)
-            elif nb_unkown:
-                msg = _(b"permanently delete %d unkown files?")
-                msg %= nb_unkown
+            nb_unknown = len(status.unknown)
+            if nb_unknown and nb_ignored:
+                msg = _(b"permanently delete %d unknown and %d ignored files?")
+                msg %= (nb_unknown, nb_ignored)
+            elif nb_unknown:
+                msg = _(b"permanently delete %d unknown files?")
+                msg %= nb_unknown
             elif nb_ignored:
                 msg = _(b"permanently delete %d ignored files?")
                 msg %= nb_ignored
