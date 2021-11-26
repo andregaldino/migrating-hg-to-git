@@ -219,6 +219,12 @@ pub fn utf8_to_local(s: &str) -> Cow<[u8]> {
     Cow::Borrowed(bytes)
 }
 
+/// Decode user system bytes to Rust string.
+pub fn local_to_utf8(s: &[u8]) -> Cow<str> {
+    // TODO decode from the user's system
+    String::from_utf8_lossy(s)
+}
+
 /// Should formatted output be used?
 ///
 /// Note: rhg does not have the formatter mechanism yet,

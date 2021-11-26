@@ -1,6 +1,6 @@
 extern crate log;
 use crate::error::CommandError;
-use crate::ui::Ui;
+use crate::ui::{local_to_utf8, Ui};
 use clap::App;
 use clap::AppSettings;
 use clap::Arg;
@@ -383,7 +383,7 @@ fn exit(
 ) -> ! {
     if let (
         OnUnsupported::Fallback { executable },
-        Err(CommandError::UnsupportedFeature { .. }),
+        Err(CommandError::UnsupportedFeature { message }),
     ) = (&on_unsupported, &result)
     {
         let mut args = std::env::args_os();
@@ -413,6 +413,8 @@ fn exit(
             ));
             on_unsupported = OnUnsupported::Abort
         } else {
+            log::debug!("falling back (see trace-level log)");
+            log::trace!("{}", local_to_utf8(message));
             // `args` is now `argv[1..]` since we’ve already consumed
             // `argv[0]`
             let mut command = Command::new(executable_path);
