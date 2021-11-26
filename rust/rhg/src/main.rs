@@ -110,18 +110,23 @@ fn main_with_result(
         }
     }
 
-    let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
-    blackbox.log_command_start();
-    let result = run(&invocation);
-    blackbox.log_command_end(exit_code(
-        &result,
-        // TODO: show a warning or combine with original error if `get_bool`
-        // returns an error
-        config
-            .get_bool(b"ui", b"detailed-exit-code")
-            .unwrap_or(false),
-    ));
-    result
+    if config.is_extension_enabled(b"blackbox") {
+        let blackbox =
+            blackbox::Blackbox::new(&invocation, process_start_time)?;
+        blackbox.log_command_start();
+        let result = run(&invocation);
+        blackbox.log_command_end(exit_code(
+            &result,
+            // TODO: show a warning or combine with original error if
+            // `get_bool` returns an error
+            config
+                .get_bool(b"ui", b"detailed-exit-code")
+                .unwrap_or(false),
+        ));
+        result
+    } else {
+        run(&invocation)
+    }
 }
 
 fn main() {
