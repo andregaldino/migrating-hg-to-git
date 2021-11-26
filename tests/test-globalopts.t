@@ -414,6 +414,7 @@ Testing -h/--help:
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   
@@ -548,6 +549,7 @@ Testing -h/--help:
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   

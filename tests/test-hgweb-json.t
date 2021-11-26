@@ -2324,6 +2324,10 @@ help/ shows help topics
         "topic": "revisions"
       },
       {
+        "summary": "Rust in Mercurial",
+        "topic": "rust"
+      },
+      {
         "summary": "Using Mercurial from scripts and automation",
         "topic": "scripting"
       },

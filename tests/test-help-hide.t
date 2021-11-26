@@ -113,6 +113,7 @@ Test hiding some commands (which also happens to hide an entire category).
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   
@@ -251,6 +252,7 @@ Test hiding some topics.
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   
