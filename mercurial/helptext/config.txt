@@ -892,6 +892,35 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Enabled by default.
 
+``exp-rc-dirstate-v2``
+    Enable or disable the experimental "dirstate-v2" feature. The dirstate
+    functionality is shared by all commands interacting with the working copy.
+    The new version is more robust, faster and stores more information.
+
+    The performance-improving version of this feature is currently only
+    implemented in Rust (see :hg:`help rust`), so people not using a version of
+    Mercurial compiled with the Rust parts might actually suffer some slowdown.
+    For this reason, such versions will by default refuse to access repositories
+    with "dirstate-v2" enabled.
+
+    This behavior can be adjusted via configuration: check
+    :hg:`help config.storage.dirstate-v2.slow-path` for details.
+
+    Repositories with this on-disk format require Mercurial 6.0 or above.
+
+    By default this format variant is disabled if the fast implementation is not
+    available, and enabled by default if the fast implementation is available.
+
+    To accomodate installations of Mercurial without the fast implementation,
+    you can downgrade your repository. To do so run the following command:
+
+    $ hg debugupgraderepo \
+          --run \
+          --config format.exp-rc-dirstate-v2=False \
+          --config storage.dirstate-v2.slow-path=allow
+
+    For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
+
 ``use-persistent-nodemap``
     Enable or disable the "persistent-nodemap" feature which improves
     performance if the rust extensions are available.
