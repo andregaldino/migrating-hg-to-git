@@ -1944,3 +1944,94 @@ Prohibit the use of unicode strings as the default value of options
   hg: unknown command 'dummy'
   (did you mean summary?)
   [10]
+
+Check the mandatory extension feature
+-------------------------------------
+
+  $ hg init mandatory-extensions
+  $ cat > $TESTTMP/mandatory-extensions/.hg/good.py << EOF
+  > pass
+  > EOF
+  $ cat > $TESTTMP/mandatory-extensions/.hg/bad.py << EOF
+  > raise RuntimeError("babar")
+  > EOF
+  $ cat > $TESTTMP/mandatory-extensions/.hg/syntax.py << EOF
+  > def (
+  > EOF
+
+Check that the good one load :
+
+  $ cat > $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > [extensions]
+  > good = $TESTTMP/mandatory-extensions/.hg/good.py
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  000000000000 tip
+
+Make it mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > good:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  000000000000 tip
+
+Check that the bad one does not load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad = $TESTTMP/mandatory-extensions/.hg/bad.py
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  000000000000 tip
+
+Make it mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
+
+Make it not mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad:required = no
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  000000000000 tip
+
+Same check with the syntax error one
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad = !
+  > syntax = $TESTTMP/mandatory-extensions/.hg/syntax.py
+  > syntax:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "syntax" from $TESTTMP/mandatory-extensions/.hg/syntax.py: invalid syntax (*syntax.py, line 1) (glob)
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
+
+Same check with a missing one
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > syntax = !
+  > syntax:required =
+  > missing = foo/bar/baz/I/do/not/exist/
+  > missing:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "missing" from foo/bar/baz/I/do/not/exist/: [Errno 2] $ENOENT$: 'foo/bar/baz/I/do/not/exist'
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]

@@ -314,10 +314,23 @@ def loadall(ui, whitelist=None):
                 else:
                     error_msg = _(b'failed to import extension "%s": %s')
                     error_msg %= (name, msg)
-                ui.warn((b"*** %s\n") % error_msg)
-                if isinstance(inst, error.Hint) and inst.hint:
-                    ui.warn(_(b"*** (%s)\n") % inst.hint)
-                ui.traceback()
+
+                ext_options = ui.configsuboptions(b"extensions", name)[1]
+                if stringutil.parsebool(ext_options.get(b"required", b'no')):
+                    hint = None
+                    if isinstance(inst, error.Hint) and inst.hint:
+                        hint = inst.hint
+                    if hint is None:
+                        hint = _(
+                            b"loading of this extension was required, "
+                            b"see `hg help config.extensions` for details"
+                        )
+                    raise error.Abort(error_msg, hint=hint)
+                else:
+                    ui.warn((b"*** %s\n") % error_msg)
+                    if isinstance(inst, error.Hint) and inst.hint:
+                        ui.warn(_(b"*** (%s)\n") % inst.hint)
+                    ui.traceback()
 
     ui.log(
         b'extension',

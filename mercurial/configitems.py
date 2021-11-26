@@ -1286,6 +1286,12 @@ coreconfigitem(
     generic=True,
 )
 coreconfigitem(
+    b'extensions',
+    b'[^:]*:required',
+    default=False,
+    generic=True,
+)
+coreconfigitem(
     b'extdata',
     b'.*',
     default=None,

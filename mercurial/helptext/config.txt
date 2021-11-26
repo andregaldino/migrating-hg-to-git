@@ -850,6 +850,17 @@ Example for ``~/.hgrc``::
   # (this extension will get loaded from the file specified)
   myfeature = ~/.hgext/myfeature.py
 
+If an extension fails to load, a warning will be issued, and Mercurial will
+proceed. To enforce that an extension must be loaded, one can set the `required`
+suboption in the config::
+
+  [extensions]
+  myfeature = ~/.hgext/myfeature.py
+  myfeature:required = yes
+
+To debug extension loading issue, one can add `--traceback` to their mercurial
+invocation.
+
 
 ``format``
 ----------
