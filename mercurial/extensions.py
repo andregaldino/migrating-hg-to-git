@@ -291,6 +291,8 @@ def loadall(ui, whitelist=None):
     )
     ui.log(b'extension', b'- processing %d entries\n', len(result))
     with util.timedcm('load all extensions') as stats:
+        default_sub_options = ui.configsuboptions(b"extensions", b"*")[1]
+
         for (name, path) in result:
             if path:
                 if path[0:1] == b'!':
@@ -315,8 +317,10 @@ def loadall(ui, whitelist=None):
                     error_msg = _(b'failed to import extension "%s": %s')
                     error_msg %= (name, msg)
 
+                options = default_sub_options.copy()
                 ext_options = ui.configsuboptions(b"extensions", name)[1]
-                if stringutil.parsebool(ext_options.get(b"required", b'no')):
+                options.update(ext_options)
+                if stringutil.parsebool(options.get(b"required", b'no')):
                     hint = None
                     if isinstance(inst, error.Hint) and inst.hint:
                         hint = inst.hint

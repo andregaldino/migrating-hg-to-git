@@ -861,6 +861,13 @@ suboption in the config::
 To debug extension loading issue, one can add `--traceback` to their mercurial
 invocation.
 
+A default setting can we set using the special `*` extension key::
+
+  [extensions]
+  *:required = yes
+  myfeature = ~/.hgext/myfeature.py
+  rebase=
+
 
 ``format``
 ----------

@@ -2035,3 +2035,20 @@ Same check with a missing one
   abort: failed to import extension "missing" from foo/bar/baz/I/do/not/exist/: [Errno 2] $ENOENT$: 'foo/bar/baz/I/do/not/exist'
   (loading of this extension was required, see `hg help config.extensions` for details)
   [255]
+
+Have a "default" setting for the suboption:
+
+  $ cat > $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > [extensions]
+  > bad = $TESTTMP/mandatory-extensions/.hg/bad.py
+  > bad:required = no
+  > good = $TESTTMP/mandatory-extensions/.hg/good.py
+  > syntax = $TESTTMP/mandatory-extensions/.hg/syntax.py
+  > *:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  abort: failed to import extension "syntax" from $TESTTMP/mandatory-extensions/.hg/syntax.py: invalid syntax (*syntax.py, line 1) (glob)
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
