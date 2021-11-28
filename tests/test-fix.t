@@ -1795,10 +1795,10 @@ fixed.
   >        --config "fix.log:pattern=glob:**.log"
 
   $ cat $LOGFILE | sort | uniq -c
-        4 bar.log
-        4 baz.log
-        3 foo.log
-        2 qux.log
+  \s*4 bar.log (re)
+  \s*4 baz.log (re)
+  \s*3 foo.log (re)
+  \s*2 qux.log (re)
 
   $ cd ..
 
