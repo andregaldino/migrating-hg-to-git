@@ -553,7 +553,7 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
 /// `dirstate_map.on_disk` (true), instead of written to a new data file
 /// (false).
 pub(super) fn write(
-    dirstate_map: &mut DirstateMap,
+    dirstate_map: &DirstateMap,
     can_append: bool,
 ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
     let append = can_append && dirstate_map.write_should_append();

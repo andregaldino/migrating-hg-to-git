@@ -195,7 +195,7 @@ py_class!(pub class DirstateMap |py| {
         p1: PyObject,
         p2: PyObject,
     ) -> PyResult<PyBytes> {
-        let mut inner = self.inner(py).borrow_mut();
+        let inner = self.inner(py).borrow();
         let parents = DirstateParents {
             p1: extract_node_id(py, &p1)?,
             p2: extract_node_id(py, &p2)?,
@@ -217,7 +217,7 @@ py_class!(pub class DirstateMap |py| {
         &self,
         can_append: bool,
     ) -> PyResult<PyObject> {
-        let mut inner = self.inner(py).borrow_mut();
+        let inner = self.inner(py).borrow();
         let result = inner.pack_v2(can_append);
         match result {
             Ok((packed, tree_metadata, append)) => {

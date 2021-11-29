@@ -909,10 +909,10 @@ impl OwningDirstateMap {
 
     #[timed]
     pub fn pack_v1(
-        &mut self,
+        &self,
         parents: DirstateParents,
     ) -> Result<Vec<u8>, DirstateError> {
-        let map = self.get_map_mut();
+        let map = self.get_map();
         // Optizimation (to be measured?): pre-compute size to avoid `Vec`
         // reallocations
         let mut size = parents.as_bytes().len();
@@ -949,10 +949,10 @@ impl OwningDirstateMap {
     /// (false).
     #[timed]
     pub fn pack_v2(
-        &mut self,
+        &self,
         can_append: bool,
     ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
-        let map = self.get_map_mut();
+        let map = self.get_map();
         on_disk::write(map, can_append)
     }
 
