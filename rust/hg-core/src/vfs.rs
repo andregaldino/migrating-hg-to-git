@@ -1,6 +1,6 @@
 use crate::errors::{HgError, IoErrorContext, IoResultExt};
 use memmap2::{Mmap, MmapOptions};
-use std::io::ErrorKind;
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 /// Filesystem access abstraction for the contents of a given "base" diretory
@@ -105,7 +105,28 @@ impl Vfs<'_> {
     ) -> Result<(), HgError> {
         let link_path = self.join(relative_link_path);
         std::os::unix::fs::symlink(target_path, &link_path)
-            .with_context(|| IoErrorContext::WritingFile(link_path))
+            .when_writing_file(&link_path)
+    }
+
+    /// Write `contents` into a temporary file, then rename to `relative_path`.
+    /// This makes writing to a file "atomic": a reader opening that path will
+    /// see either the previous contents of the file or the complete new
+    /// content, never a partial write.
+    pub fn atomic_write(
+        &self,
+        relative_path: impl AsRef<Path>,
+        contents: &[u8],
+    ) -> Result<(), HgError> {
+        let mut tmp = tempfile::NamedTempFile::new_in(self.base)
+            .when_writing_file(self.base)?;
+        tmp.write_all(contents)
+            .and_then(|()| tmp.flush())
+            .when_writing_file(tmp.path())?;
+        let path = self.join(relative_path);
+        tmp.persist(&path)
+            .map_err(|e| e.error)
+            .when_writing_file(&path)?;
+        Ok(())
     }
 }
 

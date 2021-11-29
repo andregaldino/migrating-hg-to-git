@@ -151,6 +151,8 @@ pub trait IoResultExt<T> {
     /// Converts a `Result` with `std::io::Error` into one with `HgError`.
     fn when_reading_file(self, path: &std::path::Path) -> Result<T, HgError>;
 
+    fn when_writing_file(self, path: &std::path::Path) -> Result<T, HgError>;
+
     fn with_context(
         self,
         context: impl FnOnce() -> IoErrorContext,
@@ -160,6 +162,10 @@ pub trait IoResultExt<T> {
 impl<T> IoResultExt<T> for std::io::Result<T> {
     fn when_reading_file(self, path: &std::path::Path) -> Result<T, HgError> {
         self.with_context(|| IoErrorContext::ReadingFile(path.to_owned()))
+    }
+
+    fn when_writing_file(self, path: &std::path::Path) -> Result<T, HgError> {
+        self.with_context(|| IoErrorContext::WritingFile(path.to_owned()))
     }
 
     fn with_context(
