@@ -16,10 +16,8 @@ Same with share-safe
   $ echo x > hide
   $ hg ci -Aqm 'initial'
 
-Verify basic --include
+Regression test: checks that this command correctly locks the store
+before updating the store [requirements] config.
 
   $ hg up -q 0
   $ hg debugsparse --include 'hide'
-  devel-warn: write with no lock: "requires" at: *mercurial/scmutil.py:1558 (writerequires) (glob)
-
-TODO: bug in sparse when used together with safe-share^

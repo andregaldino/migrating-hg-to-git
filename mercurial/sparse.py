@@ -718,7 +718,7 @@ def updateconfig(
 
     The new config is written out and a working directory refresh is performed.
     """
-    with repo.wlock(), repo.dirstate.parentchange():
+    with repo.wlock(), repo.lock(), repo.dirstate.parentchange():
         raw = repo.vfs.tryread(b'sparse')
         oldinclude, oldexclude, oldprofiles = parseconfig(
             repo.ui, raw, b'sparse'
