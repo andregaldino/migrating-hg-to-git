@@ -16,7 +16,7 @@ use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
 use crate::{requirements, NodePrefix};
 use crate::{DirstateError, Revision};
-use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
@@ -27,8 +27,7 @@ pub struct Repo {
     store: PathBuf,
     requirements: HashSet<String>,
     config: Config,
-    // None means not known/initialized yet
-    dirstate_parents: Cell<Option<DirstateParents>>,
+    dirstate_parents: LazyCell<DirstateParents, HgError>,
     dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
     changelog: LazyCell<Changelog, HgError>,
     manifestlog: LazyCell<Manifestlog, HgError>,
@@ -203,7 +202,7 @@ impl Repo {
             store: store_path,
             dot_hg,
             config: repo_config,
-            dirstate_parents: Cell::new(None),
+            dirstate_parents: LazyCell::new(Self::read_dirstate_parents),
             dirstate_map: LazyCell::new(Self::new_dirstate_map),
             changelog: LazyCell::new(Changelog::open),
             manifestlog: LazyCell::new(Manifestlog::open),
@@ -273,9 +272,10 @@ impl Repo {
     }
 
     pub fn dirstate_parents(&self) -> Result<DirstateParents, HgError> {
-        if let Some(parents) = self.dirstate_parents.get() {
-            return Ok(parents);
-        }
+        Ok(*self.dirstate_parents.get_or_init(self)?)
+    }
+
+    fn read_dirstate_parents(&self) -> Result<DirstateParents, HgError> {
         let dirstate = self.dirstate_file_contents()?;
         let parents = if dirstate.is_empty() {
             DirstateParents::NULL
@@ -285,20 +285,20 @@ impl Repo {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
                 .clone()
         };
-        self.dirstate_parents.set(Some(parents));
+        self.dirstate_parents.set(parents);
         Ok(parents)
     }
 
     fn new_dirstate_map(&self) -> Result<OwningDirstateMap, DirstateError> {
         let dirstate_file_contents = self.dirstate_file_contents()?;
         if dirstate_file_contents.is_empty() {
-            self.dirstate_parents.set(Some(DirstateParents::NULL));
+            self.dirstate_parents.set(DirstateParents::NULL);
             Ok(OwningDirstateMap::new_empty(Vec::new()))
         } else if self.has_dirstate_v2() {
             let docket = crate::dirstate_tree::on_disk::read_docket(
                 &dirstate_file_contents,
             )?;
-            self.dirstate_parents.set(Some(docket.parents()));
+            self.dirstate_parents.set(docket.parents());
             let data_size = docket.data_size();
             let metadata = docket.tree_metadata();
             let mut map = if let Some(data_mmap) = self
@@ -318,7 +318,7 @@ impl Repo {
             let (on_disk, placeholder) = map.get_pair_mut();
             let (inner, parents) = DirstateMap::new_v1(on_disk)?;
             self.dirstate_parents
-                .set(Some(parents.unwrap_or(DirstateParents::NULL)));
+                .set(parents.unwrap_or(DirstateParents::NULL));
             *placeholder = inner;
             Ok(map)
         }
@@ -402,6 +402,10 @@ impl<T, E> LazyCell<T, E> {
         }
     }
 
+    fn set(&self, value: T) {
+        *self.value.borrow_mut() = Some(value)
+    }
+
     fn get_or_init(&self, repo: &Repo) -> Result<Ref<T>, E> {
         let mut borrowed = self.value.borrow();
         if borrowed.is_none() {
@@ -415,7 +419,7 @@ impl<T, E> LazyCell<T, E> {
         Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
     }
 
-    pub fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
+    fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
         let mut borrowed = self.value.borrow_mut();
         if borrowed.is_none() {
             *borrowed = Some((self.init)(repo)?);
