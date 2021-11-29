@@ -480,6 +480,7 @@ subcommands! {
     cat
     debugdata
     debugrequirements
+    debugignorerhg
     files
     root
     config

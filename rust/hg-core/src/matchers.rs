@@ -561,11 +561,11 @@ fn build_match<'a, 'b>(
 /// Parses all "ignore" files with their recursive includes and returns a
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
-pub fn get_ignore_function<'a>(
+pub fn get_ignore_matcher<'a>(
     mut all_pattern_files: Vec<PathBuf>,
     root_dir: &Path,
     inspect_pattern_bytes: &mut impl FnMut(&[u8]),
-) -> PatternResult<(IgnoreFnType<'a>, Vec<PatternFileWarning>)> {
+) -> PatternResult<(IncludeMatcher<'a>, Vec<PatternFileWarning>)> {
     let mut all_patterns = vec![];
     let mut all_warnings = vec![];
 
@@ -588,10 +588,25 @@ pub fn get_ignore_function<'a>(
         all_warnings.extend(warnings);
     }
     let matcher = IncludeMatcher::new(all_patterns)?;
-    Ok((
-        Box::new(move |path: &HgPath| matcher.matches(path)),
-        all_warnings,
-    ))
+    Ok((matcher, all_warnings))
+}
+
+/// Parses all "ignore" files with their recursive includes and returns a
+/// function that checks whether a given file (in the general sense) should be
+/// ignored.
+pub fn get_ignore_function<'a>(
+    all_pattern_files: Vec<PathBuf>,
+    root_dir: &Path,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
+) -> PatternResult<(IgnoreFnType<'a>, Vec<PatternFileWarning>)> {
+    let res =
+        get_ignore_matcher(all_pattern_files, root_dir, inspect_pattern_bytes);
+    res.map(|(matcher, all_warnings)| {
+        let res: IgnoreFnType<'a> =
+            Box::new(move |path: &HgPath| matcher.matches(path));
+
+        (res, all_warnings)
+    })
 }
 
 impl<'a> IncludeMatcher<'a> {
@@ -625,6 +640,10 @@ impl<'a> IncludeMatcher<'a> {
             .chain(self.roots.iter())
             .chain(self.parents.iter());
         DirsChildrenMultiset::new(thing, Some(&self.parents))
+    }
+
+    pub fn debug_get_patterns(&self) -> &[u8] {
+        self.patterns.as_ref()
     }
 }
 
