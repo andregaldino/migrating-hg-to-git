@@ -1601,7 +1601,7 @@ loading it
   > EOF
 
   $ hg debugrevspec "custom1()"
-  *** failed to import extension custompredicate from $TESTTMP/custompredicate.py: intentional failure of loading extension
+  *** failed to import extension "custompredicate" from $TESTTMP/custompredicate.py: intentional failure of loading extension
   hg: parse error: unknown identifier: custom1
   [10]
 

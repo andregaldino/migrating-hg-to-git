@@ -649,7 +649,7 @@ Python 3's lazy importer verifies modules exist before returning the lazy
 module stub. Our custom lazy importer for Python 2 always returns a stub.
 
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity) || true
-  *** failed to import extension checkrelativity from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist' (py3 !)
+  *** failed to import extension "checkrelativity" from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist'
   hg: unknown command 'checkrelativity' (py3 !)
   (use 'hg help' for a list of commands) (py3 !)
 
@@ -1882,7 +1882,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   > EOF
 
   $ hg deprecatedcmd > /dev/null
-  *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
+  *** failed to import extension "deprecatedcmd" from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
   hg: unknown command 'deprecatedcmd'
   (use 'hg help' for a list of commands)
@@ -1891,7 +1891,7 @@ Prohibit registration of commands that don't use @command (issue5137)
  the extension shouldn't be loaded at all so the mq works:
 
   $ hg qseries --config extensions.mq= > /dev/null
-  *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
+  *** failed to import extension "deprecatedcmd" from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
 
   $ cd ..
@@ -1939,7 +1939,7 @@ Prohibit the use of unicode strings as the default value of options
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode *'value' found in cmdtable.dummy (glob)
+  *** failed to import extension "test_unicode_default_value" from $TESTTMP/test_unicode_default_value.py: unicode 'value' found in cmdtable.dummy
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)

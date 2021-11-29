@@ -40,7 +40,7 @@
   > EOF
 
   $ hg config extensions
-  \*\*\* failed to import extension lfs from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
+  \*\*\* failed to import extension "lfs" from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
   abort: repository requires features unknown to this Mercurial: lfs
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]

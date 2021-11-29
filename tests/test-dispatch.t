@@ -84,7 +84,7 @@ However, we can't prevent it from loading extensions and configs:
   > raise Exception('bad')
   > EOF
   $ hg log -b '--config=extensions.bad=bad.py' default
-  *** failed to import extension bad from bad.py: bad
+  *** failed to import extension "bad" from bad.py: bad
   abort: option --config may not be abbreviated
   [10]
 

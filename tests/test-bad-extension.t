@@ -52,16 +52,16 @@ another bad extension
   > EOF
 
   $ hg -q help help 2>&1 |grep extension
-  *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
-  *** failed to import extension badext2: No module named *badext2* (glob)
+  *** failed to import extension "badext" from $TESTTMP/badext.py: bit bucket overflow
+  *** failed to import extension "badext2": No module named 'badext2'
 
 show traceback
 
   $ hg -q help help --traceback 2>&1 | egrep ' extension|^Exception|Traceback|ImportError|ModuleNotFound'
-  *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
+  *** failed to import extension "badext" from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
-  *** failed to import extension badext2: No module named *badext2* (glob)
+  *** failed to import extension "badext2": No module named 'badext2'
   Traceback (most recent call last):
   ImportError: No module named badext2 (no-py3 !)
   ImportError: No module named 'hgext.badext2' (py3 no-py36 !)
@@ -101,7 +101,7 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   YYYY/MM/DD HH:MM:SS (PID)>     - invoking registered callbacks: gpg
   YYYY/MM/DD HH:MM:SS (PID)>     > callbacks completed in * (glob)
   YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: badext
-  *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
+  *** failed to import extension "badext" from $TESTTMP/badext.py: bit bucket overflow
   Traceback (most recent call last):
   Exception: bit bucket overflow
   YYYY/MM/DD HH:MM:SS (PID)>   - loading extension: baddocext
@@ -123,7 +123,7 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
   Traceback (most recent call last): (py3 !)
   ImportError: No module named 'hgext3rd.badext2' (py3 no-py36 !)
   ModuleNotFoundError: No module named 'hgext3rd.badext2' (py36 !)
-  *** failed to import extension badext2: No module named *badext2* (glob)
+  *** failed to import extension "badext2": No module named 'badext2'
   Traceback (most recent call last):
   ImportError: No module named 'hgext.badext2' (py3 no-py36 !)
   ModuleNotFoundError: No module named 'hgext.badext2' (py36 !)
@@ -160,8 +160,8 @@ show traceback for ImportError of hgext.name if devel.debug.extensions is set
 confirm that there's no crash when an extension's documentation is bad
 
   $ hg help --keyword baddocext
-  *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow
-  *** failed to import extension badext2: No module named *badext2* (glob)
+  *** failed to import extension "badext" from $TESTTMP/badext.py: bit bucket overflow
+  *** failed to import extension "badext2": No module named 'badext2'
   Topics:
   
    extensions Using Additional Features

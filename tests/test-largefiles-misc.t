@@ -41,7 +41,7 @@ common commands affecting largefile.
   > EOF
 
   $ hg config extensions
-  \*\*\* failed to import extension largefiles from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
+  \*\*\* failed to import extension "largefiles" from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
   abort: repository requires features unknown to this Mercurial: largefiles
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
