@@ -544,7 +544,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
                 name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
             )
         )
-        conflicts = m3.conflicts
+        conflicts = m3.conflicts and not mode == b'union'
 
     # merge flags if necessary
     flags = localctx.flags()
@@ -562,5 +562,5 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     else:
         localctx.write(mergedtext, flags)
 
-    if conflicts and not mode == b'union':
+    if conflicts:
         return 1
