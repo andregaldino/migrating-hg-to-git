@@ -28,6 +28,7 @@ pub struct Repo {
     requirements: HashSet<String>,
     config: Config,
     dirstate_parents: LazyCell<DirstateParents, HgError>,
+    dirstate_data_file_uuid: LazyCell<Option<Vec<u8>>, HgError>,
     dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
     changelog: LazyCell<Changelog, HgError>,
     manifestlog: LazyCell<Manifestlog, HgError>,
@@ -203,6 +204,9 @@ impl Repo {
             dot_hg,
             config: repo_config,
             dirstate_parents: LazyCell::new(Self::read_dirstate_parents),
+            dirstate_data_file_uuid: LazyCell::new(
+                Self::read_dirstate_data_file_uuid,
+            ),
             dirstate_map: LazyCell::new(Self::new_dirstate_map),
             changelog: LazyCell::new(Changelog::open),
             manifestlog: LazyCell::new(Manifestlog::open),
@@ -278,9 +282,16 @@ impl Repo {
     fn read_dirstate_parents(&self) -> Result<DirstateParents, HgError> {
         let dirstate = self.dirstate_file_contents()?;
         let parents = if dirstate.is_empty() {
+            if self.has_dirstate_v2() {
+                self.dirstate_data_file_uuid.set(None);
+            }
             DirstateParents::NULL
         } else if self.has_dirstate_v2() {
-            crate::dirstate_tree::on_disk::read_docket(&dirstate)?.parents()
+            let docket =
+                crate::dirstate_tree::on_disk::read_docket(&dirstate)?;
+            self.dirstate_data_file_uuid
+                .set(Some(docket.uuid.to_owned()));
+            docket.parents()
         } else {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
                 .clone()
@@ -289,16 +300,40 @@ impl Repo {
         Ok(parents)
     }
 
+    fn read_dirstate_data_file_uuid(
+        &self,
+    ) -> Result<Option<Vec<u8>>, HgError> {
+        assert!(
+            self.has_dirstate_v2(),
+            "accessing dirstate data file ID without dirstate-v2"
+        );
+        let dirstate = self.dirstate_file_contents()?;
+        if dirstate.is_empty() {
+            self.dirstate_parents.set(DirstateParents::NULL);
+            Ok(None)
+        } else {
+            let docket =
+                crate::dirstate_tree::on_disk::read_docket(&dirstate)?;
+            self.dirstate_parents.set(docket.parents());
+            Ok(Some(docket.uuid.to_owned()))
+        }
+    }
+
     fn new_dirstate_map(&self) -> Result<OwningDirstateMap, DirstateError> {
         let dirstate_file_contents = self.dirstate_file_contents()?;
         if dirstate_file_contents.is_empty() {
             self.dirstate_parents.set(DirstateParents::NULL);
+            if self.has_dirstate_v2() {
+                self.dirstate_data_file_uuid.set(None);
+            }
             Ok(OwningDirstateMap::new_empty(Vec::new()))
         } else if self.has_dirstate_v2() {
             let docket = crate::dirstate_tree::on_disk::read_docket(
                 &dirstate_file_contents,
             )?;
             self.dirstate_parents.set(docket.parents());
+            self.dirstate_data_file_uuid
+                .set(Some(docket.uuid.to_owned()));
             let data_size = docket.data_size();
             let metadata = docket.tree_metadata();
             let mut map = if let Some(data_mmap) = self

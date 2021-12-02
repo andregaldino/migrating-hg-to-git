@@ -61,7 +61,7 @@ struct DocketHeader {
 
 pub struct Docket<'on_disk> {
     header: &'on_disk DocketHeader,
-    uuid: &'on_disk [u8],
+    pub uuid: &'on_disk [u8],
 }
 
 /// Fields are documented in the *Tree metadata in the docket file*
