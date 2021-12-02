@@ -2,9 +2,10 @@ use crate::changelog::Changelog;
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::dirstate::DirstateParents;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
+use crate::dirstate_tree::on_disk::Docket as DirstateDocket;
 use crate::dirstate_tree::owning::OwningDirstateMap;
-use crate::errors::HgError;
 use crate::errors::HgResultExt;
+use crate::errors::{HgError, IoResultExt};
 use crate::exit_codes;
 use crate::lock::{try_with_lock_no_wait, LockError};
 use crate::manifest::{Manifest, Manifestlog};
@@ -18,6 +19,9 @@ use crate::{requirements, NodePrefix};
 use crate::{DirstateError, Revision};
 use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
 
 /// A repository on disk
@@ -415,6 +419,70 @@ impl Repo {
 
     pub fn filelog(&self, path: &HgPath) -> Result<Filelog, HgError> {
         Filelog::open(self, path)
+    }
+
+    /// Write to disk any updates that were made through `dirstate_map_mut`.
+    ///
+    /// The "wlock" must be held while calling this.
+    /// See for example `try_with_wlock_no_wait`.
+    ///
+    /// TODO: have a `WritableRepo` type only accessible while holding the
+    /// lock?
+    pub fn write_dirstate(&self) -> Result<(), DirstateError> {
+        let map = self.dirstate_map()?;
+        // TODO: Maintain a `DirstateMap::dirty` flag, and return early here if
+        // it’s unset
+        let parents = self.dirstate_parents()?;
+        let packed_dirstate = if self.has_dirstate_v2() {
+            let uuid = self.dirstate_data_file_uuid.get_or_init(self)?;
+            let mut uuid = uuid.as_ref();
+            let can_append = uuid.is_some();
+            let (data, tree_metadata, append) = map.pack_v2(can_append)?;
+            if !append {
+                uuid = None
+            }
+            let uuid = if let Some(uuid) = uuid {
+                std::str::from_utf8(uuid)
+                    .map_err(|_| {
+                        HgError::corrupted("non-UTF-8 dirstate data file ID")
+                    })?
+                    .to_owned()
+            } else {
+                DirstateDocket::new_uid()
+            };
+            let data_filename = format!("dirstate.{}", uuid);
+            let data_filename = self.hg_vfs().join(data_filename);
+            let mut options = std::fs::OpenOptions::new();
+            if append {
+                options.append(true);
+            } else {
+                options.write(true).create_new(true);
+            }
+            let data_size = (|| {
+                // TODO: loop and try another random ID if !append and this
+                // returns `ErrorKind::AlreadyExists`? Collision chance of two
+                // random IDs is one in 2**32
+                let mut file = options.open(&data_filename)?;
+                file.write_all(&data)?;
+                file.flush()?;
+                // TODO: use https://doc.rust-lang.org/std/io/trait.Seek.html#method.stream_position when we require Rust 1.51+
+                file.seek(SeekFrom::Current(0))
+            })()
+            .when_writing_file(&data_filename)?;
+            DirstateDocket::serialize(
+                parents,
+                tree_metadata,
+                data_size,
+                uuid.as_bytes(),
+            )
+            .map_err(|_: std::num::TryFromIntError| {
+                HgError::corrupted("overflow in dirstate docket serialization")
+            })?
+        } else {
+            map.pack_v1(parents)?
+        };
+        self.hg_vfs().atomic_write("dirstate", &packed_dirstate)?;
+        Ok(())
     }
 }
 

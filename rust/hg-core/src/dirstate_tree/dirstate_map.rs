@@ -951,7 +951,7 @@ impl OwningDirstateMap {
     pub fn pack_v2(
         &self,
         can_append: bool,
-    ) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
+    ) -> Result<(Vec<u8>, on_disk::TreeMetadata, bool), DirstateError> {
         let map = self.get_map();
         on_disk::write(map, can_append)
     }

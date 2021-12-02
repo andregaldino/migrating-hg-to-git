@@ -174,6 +174,12 @@ impl Node {
             data: self.data,
         }
     }
+
+    pub fn pad_to_256_bits(&self) -> [u8; 32] {
+        let mut bits = [0; 32];
+        bits[..NODE_BYTES_LENGTH].copy_from_slice(&self.data);
+        bits
+    }
 }
 
 /// The beginning of a binary revision SHA.

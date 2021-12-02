@@ -14,8 +14,10 @@ use bitflags::bitflags;
 use bytes_cast::unaligned::{U16Be, U32Be};
 use bytes_cast::BytesCast;
 use format_bytes::format_bytes;
+use rand::Rng;
 use std::borrow::Cow;
 use std::convert::{TryFrom, TryInto};
+use std::fmt::Write;
 
 /// Added at the start of `.hg/dirstate` when the "v2" format is used.
 /// This a redundant sanity check more than an actual "magic number" since
@@ -68,7 +70,7 @@ pub struct Docket<'on_disk> {
 /// section of `mercurial/helptext/internals/dirstate-v2.txt`
 #[derive(BytesCast)]
 #[repr(C)]
-struct TreeMetadata {
+pub struct TreeMetadata {
     root_nodes: ChildNodes,
     nodes_with_entry_count: Size,
     nodes_with_copy_source_count: Size,
@@ -186,7 +188,51 @@ impl From<DirstateV2ParseError> for crate::DirstateError {
     }
 }
 
+impl TreeMetadata {
+    pub fn as_bytes(&self) -> &[u8] {
+        BytesCast::as_bytes(self)
+    }
+}
+
 impl<'on_disk> Docket<'on_disk> {
+    /// Generate the identifier for a new data file
+    ///
+    /// TODO: support the `HGTEST_UUIDFILE` environment variable.
+    /// See `mercurial/revlogutils/docket.py`
+    pub fn new_uid() -> String {
+        const ID_LENGTH: usize = 8;
+        let mut id = String::with_capacity(ID_LENGTH);
+        let mut rng = rand::thread_rng();
+        for _ in 0..ID_LENGTH {
+            // One random hexadecimal digit.
+            // `unwrap` never panics because `impl Write for String`
+            // never returns an error.
+            write!(&mut id, "{:x}", rng.gen_range(0, 16)).unwrap();
+        }
+        id
+    }
+
+    pub fn serialize(
+        parents: DirstateParents,
+        tree_metadata: TreeMetadata,
+        data_size: u64,
+        uuid: &[u8],
+    ) -> Result<Vec<u8>, std::num::TryFromIntError> {
+        let header = DocketHeader {
+            marker: *V2_FORMAT_MARKER,
+            parent_1: parents.p1.pad_to_256_bits(),
+            parent_2: parents.p2.pad_to_256_bits(),
+            metadata: tree_metadata,
+            data_size: u32::try_from(data_size)?.into(),
+            uuid_size: uuid.len().try_into()?,
+        };
+        let header = header.as_bytes();
+        let mut docket = Vec::with_capacity(header.len() + uuid.len());
+        docket.extend_from_slice(header);
+        docket.extend_from_slice(uuid);
+        Ok(docket)
+    }
+
     pub fn parents(&self) -> DirstateParents {
         use crate::Node;
         let p1 = Node::try_from(&self.header.parent_1[..USED_NODE_ID_BYTES])
@@ -555,7 +601,7 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
 pub(super) fn write(
     dirstate_map: &DirstateMap,
     can_append: bool,
-) -> Result<(Vec<u8>, Vec<u8>, bool), DirstateError> {
+) -> Result<(Vec<u8>, TreeMetadata, bool), DirstateError> {
     let append = can_append && dirstate_map.write_should_append();
 
     // This ignores the space for paths, and for nodes without an entry.
@@ -581,7 +627,7 @@ pub(super) fn write(
         unused: [0; 4],
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
-    Ok((writer.out, meta.as_bytes().to_vec(), append))
+    Ok((writer.out, meta, append))
 }
 
 struct Writer<'dmap, 'on_disk> {

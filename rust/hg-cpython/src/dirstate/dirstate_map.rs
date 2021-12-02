@@ -222,7 +222,7 @@ py_class!(pub class DirstateMap |py| {
         match result {
             Ok((packed, tree_metadata, append)) => {
                 let packed = PyBytes::new(py, &packed);
-                let tree_metadata = PyBytes::new(py, &tree_metadata);
+                let tree_metadata = PyBytes::new(py, tree_metadata.as_bytes());
                 let tuple = (packed, tree_metadata, append);
                 Ok(tuple.to_py_object(py).into_object())
             },
