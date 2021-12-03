@@ -221,6 +221,11 @@ Cases are run as shown in that table, row by row.
   parent=1
   M foo
 
+  $ revtest '--merge none dirty linear' dirty 1 2 --merge
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  parent=2
+  M foo
+
   $ revtest 'none dirty linear' dirty 1 2 --clean
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=2
