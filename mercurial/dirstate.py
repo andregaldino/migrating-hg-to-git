@@ -591,14 +591,6 @@ class dirstate(object):
                 msg %= (pycompat.bytestr(d), pycompat.bytestr(filename))
                 raise error.Abort(msg)
 
-    def _get_filedata(self, filename):
-        """returns"""
-        s = os.lstat(self._join(filename))
-        mode = s.st_mode
-        size = s.st_size
-        mtime = timestamp.mtime_of(s)
-        return (mode, size, mtime)
-
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
             exists = os.path.lexists(os.path.join(self._root, path))
