@@ -158,47 +158,47 @@ Cases are run as shown in that table, row by row.
   parent=3
   M sub/suba
 
-  $ revtest '-C dirty linear'   dirty 1 2 -C
+  $ revtest '--clean dirty linear'   dirty 1 2 --clean
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=2
 
-  $ revtest '-c dirty linear'   dirty 1 2 -c
+  $ revtest '--check dirty linear'   dirty 1 2 --check
   abort: uncommitted changes
   parent=1
   M foo
 
-  $ revtest '-m dirty linear'   dirty 1 2 -m
+  $ revtest '--merge dirty linear'   dirty 1 2 --merge
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=2
   M foo
 
-  $ revtest '-m dirty cross'  dirty 3 4 -m
+  $ revtest '--merge dirty cross'  dirty 3 4 --merge
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=4
   M foo
 
-  $ revtest '-c dirtysub linear'   dirtysub 1 2 -c
+  $ revtest '--check dirtysub linear'   dirtysub 1 2 --check
   abort: uncommitted changes in subrepository "sub"
   parent=1
   M sub/suba
 
-  $ norevtest '-c clean same'   clean 2 -c
+  $ norevtest '--check clean same'   clean 2 -c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "bd10386d478c: 2"
   1 other heads for branch "default"
   parent=2
 
-  $ revtest '-cC dirty linear'  dirty 1 2 -cC
+  $ revtest '--check --clean dirty linear'  dirty 1 2 "--check --clean"
   abort: cannot specify both --clean and --check
   parent=1
   M foo
 
-  $ revtest '-mc dirty linear'  dirty 1 2 -mc
+  $ revtest '--merge -checkc dirty linear'  dirty 1 2 "--merge --check"
   abort: cannot specify both --check and --merge
   parent=1
   M foo
 
-  $ revtest '-mC dirty linear'  dirty 1 2 -mC
+  $ revtest '--merge -clean dirty linear'  dirty 1 2 "--merge --clean"
   abort: cannot specify both --clean and --merge
   parent=1
   M foo
@@ -211,12 +211,17 @@ Cases are run as shown in that table, row by row.
   parent=1
   M foo
 
-  $ revtest 'none dirty linear' dirty 1 2 -c
+  $ revtest 'none dirty linear' dirty 1 2 --check
   abort: uncommitted changes
   parent=1
   M foo
 
-  $ revtest 'none dirty linear' dirty 1 2 -C
+  $ revtest '--merge none dirty linear' dirty 1 2 --check
+  abort: uncommitted changes
+  parent=1
+  M foo
+
+  $ revtest 'none dirty linear' dirty 1 2 --clean
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=2
 
@@ -232,12 +237,12 @@ Cases are run as shown in that table, row by row.
   parent=2
   M foo
 
-  $ revtest 'none dirty linear' dirty 1 2 -c
+  $ revtest 'none dirty linear' dirty 1 2 --check
   abort: uncommitted changes
   parent=1
   M foo
 
-  $ revtest 'none dirty linear' dirty 1 2 -C
+  $ revtest 'none dirty linear' dirty 1 2 --clean
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   parent=2
 
