@@ -1385,8 +1385,8 @@ Abort unshelve while merging (issue5123)
   unshelving change 'default-01'
   rebasing shelved changes
   merging bar1
-  merging bar2
   warning: conflicts while merging bar1! (edit, then use 'hg resolve --mark')
+  merging bar2
   warning: conflicts while merging bar2! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [240]

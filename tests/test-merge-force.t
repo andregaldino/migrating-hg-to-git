@@ -218,27 +218,27 @@ Merge with remote
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content1_content4-tracked
+  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content2_content1-tracked
   merging content1_content2_content2_content4-tracked
+  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content3_content1-tracked
   merging content1_content2_content3_content3-tracked
+  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content3_content4-tracked
+  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_missing_content1-tracked
   merging content1_content2_missing_content4-tracked
-  merging missing_content2_content2_content4-tracked
-  merging missing_content2_content3_content3-tracked
-  merging missing_content2_content3_content4-tracked
-  merging missing_content2_missing_content4-tracked
-  merging missing_content2_missing_content4-untracked
-  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content2_content4-tracked
   warning: conflicts while merging missing_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content3-tracked
   warning: conflicts while merging missing_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content4-tracked
   warning: conflicts while merging missing_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-tracked
   warning: conflicts while merging missing_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-untracked
   warning: conflicts while merging missing_content2_missing_content4-untracked! (edit, then use 'hg resolve --mark')
   18 files updated, 3 files merged, 8 files removed, 35 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -735,6 +735,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content1_content4-tracked
+  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content1_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -752,6 +753,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content2_content4-tracked
+  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content2_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -769,10 +771,12 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content3_content3-tracked
+  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content3_content3-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content3_content4-tracked
+  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content3_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -790,6 +794,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_missing_content4-tracked
+  warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_missing_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -812,19 +817,14 @@ Re-resolve and check status
   You can use (c)hanged version, (d)elete, or leave (u)nresolved.
   What do you want to do? u
   merging missing_content2_content2_content4-tracked
-  merging missing_content2_content3_content3-tracked
-  merging missing_content2_content3_content4-tracked
-  merging missing_content2_missing_content4-tracked
-  merging missing_content2_missing_content4-untracked
-  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging missing_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content3-tracked
   warning: conflicts while merging missing_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content4-tracked
   warning: conflicts while merging missing_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-tracked
   warning: conflicts while merging missing_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-untracked
   warning: conflicts while merging missing_content2_missing_content4-untracked! (edit, then use 'hg resolve --mark')
   [1]
   $ checkstatus > $TESTTMP/status2 2>&1

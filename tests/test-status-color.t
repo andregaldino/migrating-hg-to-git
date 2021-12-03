@@ -375,8 +375,8 @@ test 'resolve -l'
   created new head
   $ hg merge
   merging a
-  merging b
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  merging b
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon

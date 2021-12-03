@@ -93,11 +93,10 @@ Criss cross merging
    f1: remote is newer -> g
   getting f1
    preserving f2 for resolve of f2
-   f2: versions differ -> m (premerge)
+   f2: versions differ -> m
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   merging f2
   my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
-   f2: versions differ -> m (merge)
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved

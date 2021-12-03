@@ -212,7 +212,7 @@ Graft out of order, skipping a merge and a duplicate
    ancestor: 68795b066622, local: ef0ef43d49e7+, remote: 5d205f8b35b6
   starting 4 threads for background file closing (?)
    preserving b for resolve of b
-   b: local copied/moved from a -> m (premerge)
+   b: local copied/moved from a -> m
   picked tool ':merge' for b (binary False symlink False changedelete False)
   merging b and a to b
   my b@ef0ef43d49e7+ other a@5d205f8b35b6 ancestor a@68795b066622
@@ -242,11 +242,10 @@ Graft out of order, skipping a merge and a duplicate
    d: remote is newer -> g
   getting d
    preserving e for resolve of e
-   e: versions differ -> m (premerge)
+   e: versions differ -> m
   picked tool ':merge' for e (binary False symlink False changedelete False)
   merging e
   my e@1905859650ec+ other e@9c233e8e184d ancestor e@4c60f11aa304
-   e: versions differ -> m (merge)
   picked tool ':merge' for e (binary False symlink False changedelete False)
   my e@1905859650ec+ other e@9c233e8e184d ancestor e@4c60f11aa304
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
@@ -855,8 +854,8 @@ graft --continue after --base with conflits
   $ hg graft -r 6 --base 5
   grafting 6:25a2b029d3ae "6"
   merging d
-  merging e
   warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  merging e
   abort: unresolved conflicts, can't continue
   (use 'hg resolve' and 'hg graft --continue')
   [1]

@@ -24,8 +24,8 @@ Testing on-failure=continue
   $ hg rebase -s 1 -d 2 --tool false
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   merging a failed!
+  merging b
   merging b failed!
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
@@ -42,7 +42,6 @@ Testing on-failure=halt
   $ hg rebase -s 1 -d 2 --tool false
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   merging a failed!
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
@@ -67,9 +66,9 @@ Testing on-failure=prompt
   > EOS
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   merging a failed!
   continue merge operation (yn)? y
+  merging b
   merging b failed!
   continue merge operation (yn)? n
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -94,9 +93,9 @@ Check that successful tool with failed post-check halts the merge
   > EOS
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
    output file a appears unchanged
   was merge successful (yn)? y
+  merging b
    output file b appears unchanged
   was merge successful (yn)? n
   merging b failed!
@@ -122,7 +121,6 @@ Check that conflicts with conflict check also halts the merge
   $ hg rebase -s 1 -d 2 --tool true
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   merging a failed!
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
@@ -141,8 +139,8 @@ Check that always-prompt also can halt the merge
   > EOS
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   was merge of 'a' successful (yn)? y
+  merging b
   was merge of 'b' successful (yn)? n
   merging b failed!
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
@@ -159,8 +157,8 @@ Check that successful tool otherwise allows the merge to continue
   $ hg rebase -s 1 -d 2 --tool echo --keep --config merge-tools.echo.premerge=keep
   rebasing 1:1f28a51c3c9b "c"
   merging a
-  merging b
   $TESTTMP/repo/a *a~base* *a~other* (glob)
+  merging b
   $TESTTMP/repo/b *b~base* *b~other* (glob)
 
 Check that unshelve isn't broken by halting the merge
@@ -187,7 +185,6 @@ Check that unshelve isn't broken by halting the merge
   unshelving change 'default'
   rebasing shelved changes
   merging shelve_file1
-  merging shelve_file2
   merging shelve_file1 failed!
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [240]
@@ -195,7 +192,6 @@ Check that unshelve isn't broken by halting the merge
   M shelve_file1
   M shelve_file2
   ? shelve_file1.orig
-  ? shelve_file2.orig
   # The repository is in an unfinished *unshelve* state.
   
   # Unresolved merge conflicts:
@@ -210,7 +206,6 @@ Check that unshelve isn't broken by halting the merge
   
   $ hg resolve --tool false --all --re-merge
   merging shelve_file1
-  merging shelve_file2
   merging shelve_file1 failed!
   merge halted after failed merge (see hg resolve)
   [240]

@@ -6130,7 +6130,6 @@ def resolve(ui, repo, *pats, **opts):
         ret = 0
         didwork = False
 
-        tocomplete = []
         hasconflictmarkers = []
         if mark:
             markcheck = ui.config(b'commands', b'resolve.mark-check')
@@ -6183,24 +6182,20 @@ def resolve(ui, repo, *pats, **opts):
                     # preresolve file
                     overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                     with ui.configoverride(overrides, b'resolve'):
-                        complete, r = ms.preresolve(f, wctx)
-                    if not complete:
-                        tocomplete.append(f)
-                    elif r:
+                        r = ms.resolve(f, wctx)
+                    if r:
                         ret = 1
                 finally:
                     ms.commit()
 
-                # replace filemerge's .orig file with our resolve file, but only
-                # for merges that are complete
-                if complete:
-                    try:
-                        util.rename(
-                            a + b".resolve", scmutil.backuppath(ui, repo, f)
-                        )
-                    except OSError as inst:
-                        if inst.errno != errno.ENOENT:
-                            raise
+                # replace filemerge's .orig file with our resolve file
+                try:
+                    util.rename(
+                        a + b".resolve", scmutil.backuppath(ui, repo, f)
+                    )
+                except OSError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise
 
         if hasconflictmarkers:
             ui.warn(
@@ -6217,25 +6212,6 @@ def resolve(ui, repo, *pats, **opts):
                     _(b'conflict markers detected'),
                     hint=_(b'use --all to mark anyway'),
                 )
-
-        for f in tocomplete:
-            try:
-                # resolve file
-                overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
-                with ui.configoverride(overrides, b'resolve'):
-                    r = ms.resolve(f, wctx)
-                if r:
-                    ret = 1
-            finally:
-                ms.commit()
-
-            # replace filemerge's .orig file with our resolve file
-            a = repo.wjoin(f)
-            try:
-                util.rename(a + b".resolve", scmutil.backuppath(ui, repo, f))
-            except OSError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
 
         ms.commit()
         branchmerge = repo.dirstate.p2() != repo.nullid

@@ -408,17 +408,14 @@ class _mergestate_base(object):
 
         return complete, merge_ret
 
-    def preresolve(self, dfile, wctx):
-        """run premerge process for dfile
-
-        Returns whether the merge is complete, and the exit code."""
-        return self._resolve(True, dfile, wctx)
-
     def resolve(self, dfile, wctx):
-        """run merge process (assuming premerge was run) for dfile
+        """run merge process for dfile
 
         Returns the exit code of the merge."""
-        return self._resolve(False, dfile, wctx)[1]
+        complete, r = self._resolve(True, dfile, wctx)
+        if not complete:
+            r = self._resolve(False, dfile, wctx)[1]
+        return r
 
     def counts(self):
         """return counts for updated, merged and removed files in this

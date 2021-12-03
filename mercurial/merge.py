@@ -1718,10 +1718,8 @@ def applyupdates(
     )
 
     try:
-        # premerge
-        tocomplete = []
         for f, args, msg in mergeactions:
-            repo.ui.debug(b" %s: %s -> m (premerge)\n" % (f, msg))
+            repo.ui.debug(b" %s: %s -> m\n" % (f, msg))
             ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f)
             if f == b'.hgsubstate':  # subrepo states need updating
@@ -1730,16 +1728,6 @@ def applyupdates(
                 )
                 continue
             wctx[f].audit()
-            complete, r = ms.preresolve(f, wctx)
-            if not complete:
-                numupdates += 1
-                tocomplete.append((f, args, msg))
-
-        # merge
-        for f, args, msg in tocomplete:
-            repo.ui.debug(b" %s: %s -> m (merge)\n" % (f, msg))
-            ms.addcommitinfo(f, {b'merged': b'yes'})
-            progress.increment(item=f, total=numupdates)
             ms.resolve(f, wctx)
 
     except error.InterventionRequired:
