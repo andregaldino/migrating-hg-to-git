@@ -313,16 +313,15 @@ class _mergestate_base(object):
         """return extras stored with the mergestate for the given filename"""
         return self._stateextras[filename]
 
-    def _resolve(self, preresolve, dfile, wctx):
+    def _resolve(self, dfile, wctx):
         """rerun merge process for file path `dfile`.
-        Returns whether the merge was completed and the return value of merge
-        obtained from filemerge._filemerge().
+        Returns the return value of merge obtained from filemerge._filemerge().
         """
         if self[dfile] in (
             MERGE_RECORD_RESOLVED,
             LEGACY_RECORD_DRIVER_RESOLVED,
         ):
-            return True, 0
+            return 0
         stateentry = self._state[dfile]
         state, localkey, lfile, afile, anode, ofile, onode, flags = stateentry
         octx = self._repo[self._other]
@@ -341,33 +340,31 @@ class _mergestate_base(object):
         fla = fca.flags()
         if b'x' in flags + flo + fla and b'l' not in flags + flo + fla:
             if fca.rev() == nullrev and flags != flo:
-                if preresolve:
-                    self._repo.ui.warn(
-                        _(
-                            b'warning: cannot merge flags for %s '
-                            b'without common ancestor - keeping local flags\n'
-                        )
-                        % afile
+                self._repo.ui.warn(
+                    _(
+                        b'warning: cannot merge flags for %s '
+                        b'without common ancestor - keeping local flags\n'
                     )
+                    % afile
+                )
             elif flags == fla:
                 flags = flo
-        if preresolve:
-            # restore local
-            if localkey != self._repo.nodeconstants.nullhex:
-                self._restore_backup(wctx[dfile], localkey, flags)
-            else:
-                wctx[dfile].remove(ignoremissing=True)
-            complete, merge_ret, deleted = filemerge.premerge(
-                self._repo,
-                wctx,
-                self._local,
-                lfile,
-                fcd,
-                fco,
-                fca,
-                labels=self._labels,
-            )
+        # restore local
+        if localkey != self._repo.nodeconstants.nullhex:
+            self._restore_backup(wctx[dfile], localkey, flags)
         else:
+            wctx[dfile].remove(ignoremissing=True)
+        complete, merge_ret, deleted = filemerge.premerge(
+            self._repo,
+            wctx,
+            self._local,
+            lfile,
+            fcd,
+            fco,
+            fca,
+            labels=self._labels,
+        )
+        if not complete:
             complete, merge_ret, deleted = filemerge.filemerge(
                 self._repo,
                 wctx,
@@ -406,16 +403,13 @@ class _mergestate_base(object):
                 # else: regular merges (no action necessary)
             self._results[dfile] = merge_ret, action
 
-        return complete, merge_ret
+        return merge_ret
 
     def resolve(self, dfile, wctx):
         """run merge process for dfile
 
         Returns the exit code of the merge."""
-        complete, r = self._resolve(True, dfile, wctx)
-        if not complete:
-            r = self._resolve(False, dfile, wctx)[1]
-        return r
+        return self._resolve(dfile, wctx)
 
     def counts(self):
         """return counts for updated, merged and removed files in this
