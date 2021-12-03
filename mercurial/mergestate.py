@@ -313,10 +313,10 @@ class _mergestate_base(object):
         """return extras stored with the mergestate for the given filename"""
         return self._stateextras[filename]
 
-    def _resolve(self, dfile, wctx):
-        """rerun merge process for file path `dfile`.
-        Returns the return value of merge obtained from filemerge._filemerge().
-        """
+    def resolve(self, dfile, wctx):
+        """run merge process for dfile
+
+        Returns the exit code of the merge."""
         if self[dfile] in (
             MERGE_RECORD_RESOLVED,
             LEGACY_RECORD_DRIVER_RESOLVED,
@@ -404,12 +404,6 @@ class _mergestate_base(object):
             self._results[dfile] = merge_ret, action
 
         return merge_ret
-
-    def resolve(self, dfile, wctx):
-        """run merge process for dfile
-
-        Returns the exit code of the merge."""
-        return self._resolve(dfile, wctx)
 
     def counts(self):
         """return counts for updated, merged and removed files in this
