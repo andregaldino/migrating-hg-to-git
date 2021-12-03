@@ -11,6 +11,7 @@ Mercurial XXX.
 
 == Bug Fixes ==
 
+The `--no-check` and `--no-merge` now properly overwrite the behavior from `commands.update.check`.
 
 == Backwards Compatibility Changes ==
 

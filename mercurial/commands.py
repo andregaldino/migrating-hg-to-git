@@ -7832,9 +7832,9 @@ def update(ui, repo, node=None, **opts):
         raise error.InputError(_(b"you can't specify a revision and a date"))
 
     updatecheck = None
-    if check:
+    if check or merge is not None and not merge:
         updatecheck = b'abort'
-    elif merge:
+    elif merge or check is not None and not check:
         updatecheck = b'none'
 
     with repo.wlock():
