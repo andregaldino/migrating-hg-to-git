@@ -354,7 +354,7 @@ class _mergestate_base(object):
             self._restore_backup(wctx[dfile], localkey, flags)
         else:
             wctx[dfile].remove(ignoremissing=True)
-        complete, merge_ret, deleted = filemerge.premerge(
+        complete, merge_ret, deleted = filemerge.filemerge(
             self._repo,
             wctx,
             self._local,
@@ -364,17 +364,6 @@ class _mergestate_base(object):
             fca,
             labels=self._labels,
         )
-        if not complete:
-            complete, merge_ret, deleted = filemerge.filemerge(
-                self._repo,
-                wctx,
-                self._local,
-                lfile,
-                fcd,
-                fco,
-                fca,
-                labels=self._labels,
-            )
         if merge_ret is None:
             # If return value of merge is None, then there are no real conflict
             del self._state[dfile]

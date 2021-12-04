@@ -1277,16 +1277,15 @@ def _workingpath(repo, ctx):
     return repo.wjoin(ctx.path())
 
 
-def premerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
-    return _filemerge(
+def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
+    complete, merge_ret, deleted = _filemerge(
         True, repo, wctx, mynode, orig, fcd, fco, fca, labels=labels
     )
-
-
-def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
-    return _filemerge(
-        False, repo, wctx, mynode, orig, fcd, fco, fca, labels=labels
-    )
+    if not complete:
+        complete, merge_ret, deleted = _filemerge(
+            False, repo, wctx, mynode, orig, fcd, fco, fca, labels=labels
+        )
+    return complete, merge_ret, deleted
 
 
 def loadinternalmerge(ui, extname, registrarobj):
