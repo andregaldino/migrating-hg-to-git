@@ -578,7 +578,6 @@ merge-patterns specifies executable not found in PATH and gets warning:
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=nonexistentmergetool
   couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -604,7 +603,6 @@ merge-patterns specifies executable with bogus path and gets warning:
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=/nonexistent/mergetool
   couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -1837,7 +1835,6 @@ missingbinary is a merge-tool that doesn't exist:
   $ hg merge -y -r 2 --config ui.merge=missingbinary
   couldn't find merge tool missingbinary (for pattern f)
   merging f
-  couldn't find merge tool missingbinary (for pattern f)
   revision 1
   space
   revision 0

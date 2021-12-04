@@ -97,8 +97,6 @@ $4 = expected result
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@e300d1c794ec+ other rev@4ce40f5aca24 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@e300d1c794ec+ other rev@4ce40f5aca24 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   0 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -135,8 +133,6 @@ $4 = expected result
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@86a2aa42fc76+ other rev@f4db7e329e71 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@86a2aa42fc76+ other rev@f4db7e329e71 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -175,8 +171,6 @@ $4 = expected result
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@e300d1c794ec+ other rev@bdb19105162a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@e300d1c794ec+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   0 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -212,8 +206,6 @@ $4 = expected result
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@02963e448370+ other rev@f4db7e329e71 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@02963e448370+ other rev@f4db7e329e71 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   0 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -244,8 +236,6 @@ $4 = expected result
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@94b33a1b7f2d+ other rev@4ce40f5aca24 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@94b33a1b7f2d+ other rev@4ce40f5aca24 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
@@ -274,8 +264,6 @@ $4 = expected result
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@86a2aa42fc76+ other rev@97c705ade336 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@86a2aa42fc76+ other rev@97c705ade336 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -309,8 +297,6 @@ $4 = expected result
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@94b33a1b7f2d+ other rev@bdb19105162a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@94b33a1b7f2d+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   1 files updated, 1 files merged, 1 files removed, 0 files unresolved
@@ -338,8 +324,6 @@ $4 = expected result
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@02963e448370+ other rev@97c705ade336 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@02963e448370+ other rev@97c705ade336 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -370,15 +354,11 @@ $4 = expected result
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
   my b@62e7bf090eba+ other b@49b6d8032493 ancestor a@924404dff337
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@62e7bf090eba+ other b@49b6d8032493 ancestor a@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@62e7bf090eba+ other rev@49b6d8032493 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@62e7bf090eba+ other rev@49b6d8032493 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -419,8 +399,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@02963e448370+ other rev@fe905ef2c33e ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@02963e448370+ other rev@fe905ef2c33e ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
@@ -449,15 +427,11 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
   my b@86a2aa42fc76+ other b@af30c7647fc7 ancestor b@000000000000
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@86a2aa42fc76+ other b@af30c7647fc7 ancestor b@000000000000
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@86a2aa42fc76+ other rev@af30c7647fc7 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@86a2aa42fc76+ other rev@af30c7647fc7 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -489,15 +463,11 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
   my b@59318016310c+ other b@bdb19105162a ancestor b@000000000000
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@59318016310c+ other b@bdb19105162a ancestor b@000000000000
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@59318016310c+ other rev@bdb19105162a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@59318016310c+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -532,8 +502,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   1 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -564,15 +532,11 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b
   my b@59318016310c+ other b@bdb19105162a ancestor b@000000000000
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@59318016310c+ other b@bdb19105162a ancestor b@000000000000
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@59318016310c+ other rev@bdb19105162a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@59318016310c+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -607,8 +571,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@86a2aa42fc76+ other rev@8dbce441892a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   1 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -641,8 +603,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@0b76e65c8289+ other rev@4ce40f5aca24 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@0b76e65c8289+ other rev@4ce40f5aca24 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -677,8 +637,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@02963e448370+ other rev@8dbce441892a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@02963e448370+ other rev@8dbce441892a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   0 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -711,8 +669,6 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
   my rev@0b76e65c8289+ other rev@bdb19105162a ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
-  my rev@0b76e65c8289+ other rev@bdb19105162a ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
   0 files updated, 2 files merged, 0 files removed, 0 files unresolved
@@ -744,15 +700,11 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging a and b to b
   my b@e300d1c794ec+ other b@49b6d8032493 ancestor a@924404dff337
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@e300d1c794ec+ other b@49b6d8032493 ancestor a@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@e300d1c794ec+ other rev@49b6d8032493 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@e300d1c794ec+ other rev@49b6d8032493 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -784,15 +736,11 @@ m "um a c" "um x c" "      " "10 do merge with no ancestor"
   picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
   merging b and a to b
   my b@62e7bf090eba+ other a@f4db7e329e71 ancestor a@924404dff337
-  picked tool '* ../merge' for b (binary False symlink False changedelete False) (glob)
-  my b@62e7bf090eba+ other a@f4db7e329e71 ancestor a@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/b* * * (glob)
   merge tool returned: 0
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@62e7bf090eba+ other rev@f4db7e329e71 ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@62e7bf090eba+ other rev@f4db7e329e71 ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0
@@ -834,8 +782,6 @@ m "nm a b" "um x a" "      " "22 get a, keep b"
    rev: versions differ -> m
   picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   merging rev
-  my rev@02963e448370+ other rev@2b958612230f ancestor rev@924404dff337
-  picked tool '* ../merge' for rev (binary False symlink False changedelete False) (glob)
   my rev@02963e448370+ other rev@2b958612230f ancestor rev@924404dff337
   launching merge tool: * ../merge *$TESTTMP/t/t/rev* * * (glob)
   merge tool returned: 0

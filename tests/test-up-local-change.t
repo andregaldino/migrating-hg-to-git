@@ -50,8 +50,6 @@
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a
   my a@c19d34741b0a+ other a@1e71731e6fbb ancestor a@c19d34741b0a
-  picked tool 'true' for a (binary False symlink False changedelete False)
-  my a@c19d34741b0a+ other a@1e71731e6fbb ancestor a@c19d34741b0a
   launching merge tool: true *$TESTTMP/r2/a* * * (glob)
   merge tool returned: 0
   1 files updated, 1 files merged, 0 files removed, 0 files unresolved
@@ -75,8 +73,6 @@
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a
   my a@1e71731e6fbb+ other a@c19d34741b0a ancestor a@1e71731e6fbb
-  picked tool 'true' for a (binary False symlink False changedelete False)
-  my a@1e71731e6fbb+ other a@c19d34741b0a ancestor a@1e71731e6fbb
   launching merge tool: true *$TESTTMP/r2/a* * * (glob)
   merge tool returned: 0
   0 files updated, 1 files merged, 1 files removed, 0 files unresolved
@@ -96,8 +92,6 @@
    a: versions differ -> m
   picked tool 'true' for a (binary False symlink False changedelete False)
   merging a
-  my a@c19d34741b0a+ other a@1e71731e6fbb ancestor a@c19d34741b0a
-  picked tool 'true' for a (binary False symlink False changedelete False)
   my a@c19d34741b0a+ other a@1e71731e6fbb ancestor a@c19d34741b0a
   launching merge tool: true *$TESTTMP/r2/a* * * (glob)
   merge tool returned: 0

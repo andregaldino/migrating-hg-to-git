@@ -668,12 +668,10 @@ def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
 # largefiles. This will handle identical edits without prompting the user.
 @eh.wrapfunction(filemerge, b'_filemerge')
 def overridefilemerge(
-    origfn, premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None
+    origfn, repo, wctx, mynode, orig, fcd, fco, fca, labels=None
 ):
     if not lfutil.isstandin(orig) or fcd.isabsent() or fco.isabsent():
-        return origfn(
-            premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=labels
-        )
+        return origfn(repo, wctx, mynode, orig, fcd, fco, fca, labels=labels)
 
     ahash = lfutil.readasstandin(fca).lower()
     dhash = lfutil.readasstandin(fcd).lower()

@@ -97,8 +97,6 @@ Criss cross merging
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   merging f2
   my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
-  picked tool ':dump' for f2 (binary False symlink False changedelete False)
-  my f2@3b08d01b0ab5+ other f2@adfe50279922 ancestor f2@0f6b37dbe527
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
