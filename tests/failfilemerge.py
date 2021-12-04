@@ -14,4 +14,4 @@ def failfilemerge(*args, **kwargs):
 
 
 def extsetup(ui):
-    extensions.wrapfunction(filemerge, '_filemerge', failfilemerge)
+    extensions.wrapfunction(filemerge, 'filemerge', failfilemerge)

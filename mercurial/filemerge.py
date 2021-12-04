@@ -1027,7 +1027,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
                 util.unlink(d)
 
 
-def _filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
+def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory
 
     premerge = whether this is a premerge
@@ -1275,10 +1275,6 @@ def _check(repo, r, ui, tool, fcd, files):
 
 def _workingpath(repo, ctx):
     return repo.wjoin(ctx.path())
-
-
-def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
-    return _filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=labels)
 
 
 def loadinternalmerge(ui, extname, registrarobj):

@@ -666,7 +666,7 @@ def mergerecordupdates(orig, repo, actions, branchmerge, getfiledata):
 
 # Override filemerge to prompt the user about how they wish to merge
 # largefiles. This will handle identical edits without prompting the user.
-@eh.wrapfunction(filemerge, b'_filemerge')
+@eh.wrapfunction(filemerge, b'filemerge')
 def overridefilemerge(
     origfn, repo, wctx, mynode, orig, fcd, fco, fca, labels=None
 ):
