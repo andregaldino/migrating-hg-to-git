@@ -90,6 +90,43 @@ def upgraderepo(
 
     # check if we need to touch revlog and if so, which ones
 
+    touched_revlogs = set()
+    overwrite_msg = _(b'warning: ignoring %14s, as upgrade is changing: %s\n')
+    msg_issued = False
+
+    FL = upgrade_engine.UPGRADE_FILELOGS
+    MN = upgrade_engine.UPGRADE_MANIFEST
+    CL = upgrade_engine.UPGRADE_CHANGELOG
+
+    for action in sorted(up_actions + removed_actions, key=lambda a: a.name):
+        # optimisation does not "requires anything, they just needs it.
+        if action.type != upgrade_actions.FORMAT_VARIANT:
+            continue
+
+        if action.touches_filelogs and FL not in touched_revlogs:
+            if FL in specified_revlogs:
+                if not specified_revlogs[FL]:
+                    msg = overwrite_msg % (b'--no-filelogs', action.name)
+                    ui.warn(msg)
+                    msg_issued = True
+            touched_revlogs.add(FL)
+        if action.touches_manifests and MN not in touched_revlogs:
+            if MN in specified_revlogs:
+                if not specified_revlogs[MN]:
+                    msg = overwrite_msg % (b'--no-manifest', action.name)
+                    ui.warn(msg)
+                    msg_issued = True
+            touched_revlogs.add(MN)
+        if action.touches_changelog and CL not in touched_revlogs:
+            if CL in specified_revlogs:
+                if not specified_revlogs[CL]:
+                    msg = overwrite_msg % (b'--no-changelog', action.name)
+                    ui.warn(msg)
+                    msg_issued = True
+            touched_revlogs.add(CL)
+    if msg_issued:
+        ui.warn((b"\n"))
+
     revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
     if specified_revlogs:
         # we have some limitation on revlogs to be recloned

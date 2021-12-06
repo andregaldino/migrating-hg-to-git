@@ -944,6 +944,22 @@ Check you can't skip revlog clone during important format downgrade
 
   $ echo "[format]" > .hg/hgrc
   $ echo "sparse-revlog=no" >> .hg/hgrc
+  $ hg debugupgrade --optimize re-delta-parent --no-manifest --no-backup --quiet
+  warning: ignoring  --no-manifest, as upgrade is changing: sparserevlog
+  
+  ignoring revlogs selection flags, format requirements change: sparserevlog
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
+     preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
+     removed: sparserevlog
+  
+  optimisations: re-delta-parent
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugupgrade --optimize re-delta-parent --run --manifest --no-backup --debug --traceback
   ignoring revlogs selection flags, format requirements change: sparserevlog
   upgrade will perform the following actions:
