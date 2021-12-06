@@ -399,11 +399,10 @@ def _underlyingfctxifabsent(filectx):
         return filectx
 
 
-def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
+def _premerge(repo, fcd, fco, fca, toolconf, backup, labels=None):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink or fcd.isabsent() or fco.isabsent():
         return 1
-    unused, unused, unused, backup = files
 
     ui = repo.ui
 
@@ -463,7 +462,7 @@ def _mergecheck(repo, mynode, orig, fcd, fco, fca, toolconf):
     return True
 
 
-def _merge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, mode):
+def _merge(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels, mode):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
@@ -484,13 +483,13 @@ def _merge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, mode):
     ),
     precheck=_mergecheck,
 )
-def _iunion(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _iunion(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will use both left and right sides for conflict regions.
     No markers are inserted."""
     return _merge(
-        repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, b'union'
+        repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels, b'union'
     )
 
 
@@ -503,14 +502,14 @@ def _iunion(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     ),
     precheck=_mergecheck,
 )
-def _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Markers will have two sections, one for each side
     of merge."""
     return _merge(
-        repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, b'merge'
+        repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels, b'merge'
     )
 
 
@@ -523,7 +522,7 @@ def _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     ),
     precheck=_mergecheck,
 )
-def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
@@ -533,7 +532,7 @@ def _imerge3(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
-    return _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels)
+    return _imerge(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels)
 
 
 @internaltool(
@@ -565,7 +564,7 @@ def _imerge3alwaysgood(*args, **kwargs):
     precheck=_mergecheck,
 )
 def _imerge_diff(
-    repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None
+    repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None
 ):
     """
     Uses the internal non-interactive simple merge algorithm for merging
@@ -578,7 +577,16 @@ def _imerge_diff(
     if len(labels) < 3:
         labels.append(b'base')
     return _merge(
-        repo, mynode, orig, fcd, fco, fca, toolconf, files, labels, b'mergediff'
+        repo,
+        mynode,
+        orig,
+        fcd,
+        fco,
+        fca,
+        toolconf,
+        backup,
+        labels,
+        b'mergediff',
     )
 
 
@@ -590,7 +598,7 @@ def _imergeauto(
     fco,
     fca,
     toolconf,
-    files,
+    backup,
     labels=None,
     localorother=None,
 ):
@@ -631,7 +639,9 @@ def _imergeother(*args, **kwargs):
         b"tool of your choice)\n"
     ),
 )
-def _itagmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _itagmerge(
+    repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None
+):
     """
     Uses the internal tag merge algorithm (experimental).
     """
@@ -640,7 +650,7 @@ def _itagmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 
 
 @internaltool(b'dump', fullmerge, binary=True, symlink=True)
-def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Creates three versions of the files to merge, containing the
     contents of local, other and base. These files can then be used to
@@ -669,16 +679,20 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
 
 
 @internaltool(b'forcedump', mergeonly, binary=True, symlink=True)
-def _forcedump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _forcedump(
+    repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None
+):
     """
     Creates three versions of the files as same as :dump, but omits premerge.
     """
     return _idump(
-        repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=labels
+        repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=labels
     )
 
 
-def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+def _xmergeimm(
+    repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels=None
+):
     # In-memory merge simply raises an exception on all external merge tools,
     # for now.
     #
@@ -746,7 +760,7 @@ def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
     ui.status(t.renderdefault(props))
 
 
-def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
+def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, backup, labels):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
@@ -755,7 +769,6 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
             % (tool, uipathfn(fcd.path()))
         )
         return False, 1, None
-    unused, unused, unused, backup = files
     localpath = _workingpath(repo, fcd)
     args = _toolstr(repo.ui, tool, b"args")
 
@@ -1119,7 +1132,6 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         return True, 1, False
 
     backup = _makebackup(repo, ui, wctx, fcd)
-    files = (None, None, None, backup)
     r = 1
     try:
         internalmarkerstyle = ui.config(b'ui', b'mergemarkers')
@@ -1154,7 +1166,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 )
 
             r = _premerge(
-                repo, fcd, fco, fca, toolconf, files, labels=premergelabels
+                repo, fcd, fco, fca, toolconf, backup, labels=premergelabels
             )
             # we're done if premerge was successful (r is 0)
             if not r:
@@ -1168,12 +1180,12 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             fco,
             fca,
             toolconf,
-            files,
+            backup,
             labels=formattedlabels,
         )
 
         if needcheck:
-            r = _check(repo, r, ui, tool, fcd, files)
+            r = _check(repo, r, ui, tool, fcd, backup)
 
         if r:
             if onfailure:
@@ -1222,10 +1234,9 @@ def hasconflictmarkers(data):
     )
 
 
-def _check(repo, r, ui, tool, fcd, files):
+def _check(repo, r, ui, tool, fcd, backup):
     fd = fcd.path()
     uipathfn = scmutil.getuipathfn(repo)
-    unused, unused, unused, backup = files
 
     if not r and (
         _toolbool(ui, tool, b"checkconflicts")
