@@ -85,9 +85,6 @@ def upgraderepo(
     )
     removed_actions = upgrade_actions.find_format_downgrades(repo)
 
-    removedreqs = repo.requirements - newreqs
-    addedreqs = newreqs - repo.requirements
-
     # check if we need to touch revlog and if so, which ones
 
     touched_revlogs = set()
@@ -158,20 +155,6 @@ def upgraderepo(
         ui.warn((b"\n"))
     elif msg_issued >= 1:
         ui.status((b"\n"))
-
-    # check the consistency of the revlog selection with the planned action
-
-    if touched_revlogs != upgrade_engine.UPGRADE_ALL_REVLOGS:
-        incompatible = upgrade_actions.RECLONES_REQUIREMENTS & (
-            removedreqs | addedreqs
-        )
-        if incompatible:
-            msg = _(
-                b'ignoring revlogs selection flags, format requirements '
-                b'change: %s\n'
-            )
-            ui.warn(msg % b', '.join(sorted(incompatible)))
-            touched_revlogs = upgrade_engine.UPGRADE_ALL_REVLOGS
 
     upgrade_op = upgrade_actions.UpgradeOperation(
         ui,
