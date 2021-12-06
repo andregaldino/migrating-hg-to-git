@@ -924,7 +924,7 @@ def _restorebackup(fcd, back):
     fcd.write(back.data(), fcd.flags())
 
 
-def _makebackup(repo, ui, wctx, fcd, premerge):
+def _makebackup(repo, ui, wctx, fcd):
     """Makes and returns a filectx-like object for ``fcd``'s backup file.
 
     In addition to preserving the user's pre-existing modifications to `fcd`
@@ -932,8 +932,8 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
     merge changed anything, and determine what line endings the new file should
     have.
 
-    Backups only need to be written once (right before the premerge) since their
-    content doesn't change afterwards.
+    Backups only need to be written once since their content doesn't change
+    afterwards.
     """
     if fcd.isabsent():
         return None
@@ -950,20 +950,18 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
         # merging in-memory, we must redirect the backup to the memory context
         # so we don't disturb the working directory.
         relpath = back[len(repo.wvfs.base) + 1 :]
-        if premerge:
-            wctx[relpath].write(fcd.data(), fcd.flags())
+        wctx[relpath].write(fcd.data(), fcd.flags())
         return wctx[relpath]
     else:
-        if premerge:
-            # Otherwise, write to wherever path the user specified the backups
-            # should go. We still need to switch based on whether the source is
-            # in-memory so we can use the fast path of ``util.copy`` if both are
-            # on disk.
-            if isinstance(fcd, context.overlayworkingfilectx):
-                util.writefile(back, fcd.data())
-            else:
-                a = _workingpath(repo, fcd)
-                util.copyfile(a, back)
+        # Otherwise, write to wherever path the user specified the backups
+        # should go. We still need to switch based on whether the source is
+        # in-memory so we can use the fast path of ``util.copy`` if both are
+        # on disk.
+        if isinstance(fcd, context.overlayworkingfilectx):
+            util.writefile(back, fcd.data())
+        else:
+            a = _workingpath(repo, fcd)
+            util.copyfile(a, back)
         # A arbitraryfilectx is returned, so we can run the same functions on
         # the backup context regardless of where it lives.
         return context.arbitraryfilectx(back, repo=repo)
@@ -1121,7 +1119,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             ui.warn(onfailure % fduipath)
         return True, 1, False
 
-    back = _makebackup(repo, ui, wctx, fcd, True)
+    back = _makebackup(repo, ui, wctx, fcd)
     files = (None, None, None, back)
     r = 1
     try:
