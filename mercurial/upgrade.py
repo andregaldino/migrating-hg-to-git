@@ -45,24 +45,11 @@ def upgraderepo(
         optimize = {}
     repo = repo.unfiltered()
 
-    revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
     specentries = (
         (upgrade_engine.UPGRADE_CHANGELOG, changelog),
         (upgrade_engine.UPGRADE_MANIFEST, manifest),
         (upgrade_engine.UPGRADE_FILELOGS, filelogs),
     )
-    specified = [(y, x) for (y, x) in specentries if x is not None]
-    if specified:
-        # we have some limitation on revlogs to be recloned
-        if any(x for y, x in specified):
-            revlogs = set()
-            for upgrade, enabled in specified:
-                if enabled:
-                    revlogs.add(upgrade)
-        else:
-            # none are enabled
-            for upgrade, __ in specified:
-                revlogs.discard(upgrade)
 
     # Ensure the repository can be upgraded.
     upgrade_actions.check_source_requirements(repo)
@@ -98,6 +85,24 @@ def upgraderepo(
 
     removedreqs = repo.requirements - newreqs
     addedreqs = newreqs - repo.requirements
+
+    # check if we need to touch revlog and if so, which ones
+
+    revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
+    specified = [(y, x) for (y, x) in specentries if x is not None]
+    if specified:
+        # we have some limitation on revlogs to be recloned
+        if any(x for y, x in specified):
+            revlogs = set()
+            for upgrade, enabled in specified:
+                if enabled:
+                    revlogs.add(upgrade)
+        else:
+            # none are enabled
+            for upgrade, __ in specified:
+                revlogs.discard(upgrade)
+
+    # check the consistency of the revlog selection with the planned action
 
     if revlogs != upgrade_engine.UPGRADE_ALL_REVLOGS:
         incompatible = upgrade_actions.RECLONES_REQUIREMENTS & (
