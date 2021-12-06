@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import stat
 
 from ..i18n import _
@@ -633,16 +634,29 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
         util.copyfile(
             srcrepo.vfs.join(b'requires'), backupvfs.join(b'requires')
         )
-        util.copyfile(
-            srcrepo.vfs.join(b'dirstate'), backupvfs.join(b'dirstate')
-        )
+        try:
+            util.copyfile(
+                srcrepo.vfs.join(b'dirstate'), backupvfs.join(b'dirstate')
+            )
+        except (IOError, OSError) as e:
+            # The dirstate does not exist on an empty repo or a repo with no
+            # revision checked out
+            if e.errno != errno.ENOENT:
+                raise
 
     assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
     srcrepo.dirstate._map.preload()
     srcrepo.dirstate._use_dirstate_v2 = new == b'v2'
     srcrepo.dirstate._map._use_dirstate_v2 = srcrepo.dirstate._use_dirstate_v2
     srcrepo.dirstate._dirty = True
-    srcrepo.vfs.unlink(b'dirstate')
+    try:
+        srcrepo.vfs.unlink(b'dirstate')
+    except (IOError, OSError) as e:
+        # The dirstate does not exist on an empty repo or a repo with no
+        # revision checked out
+        if e.errno != errno.ENOENT:
+            raise
+
     srcrepo.dirstate.write(None)
 
     scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)

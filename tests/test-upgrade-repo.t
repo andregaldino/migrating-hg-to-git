@@ -1701,3 +1701,66 @@ Downgrade from dirstate-v2
   $ hg debugformat -v | grep dirstate-v2
   dirstate-v2:         no     no      no
   $ hg status
+
+  $ cd ..
+
+dirstate-v2: upgrade and downgrade from and empty repository:
+-------------------------------------------------------------
+
+  $ hg init --config format.exp-rc-dirstate-v2=no dirstate-v2-empty
+  $ cd dirstate-v2-empty
+  $ hg debugformat | grep dirstate-v2
+  dirstate-v2:         no
+
+upgrade
+
+  $ hg debugupgraderepo --run --config format.exp-rc-dirstate-v2=yes
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: dirstate-v2
+  
+  dirstate-v2
+     "hg status" will be faster
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/dirstate-v2-empty/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  upgrading to dirstate-v2 from v1
+  replaced files will be backed up at $TESTTMP/dirstate-v2-empty/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/dirstate-v2-empty/.hg/upgrade.* (glob)
+  $ hg debugformat | grep dirstate-v2
+  dirstate-v2:        yes
+
+downgrade
+
+  $ hg debugupgraderepo --run --config format.exp-rc-dirstate-v2=no
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     removed: dirstate-v2
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage upgraded data: $TESTTMP/dirstate-v2-empty/.hg/upgrade.* (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  downgrading from dirstate-v2 to v1
+  replaced files will be backed up at $TESTTMP/dirstate-v2-empty/.hg/upgradebackup.* (glob)
+  removing temporary repository $TESTTMP/dirstate-v2-empty/.hg/upgrade.* (glob)
+  $ hg debugformat | grep dirstate-v2
+  dirstate-v2:         no
+
+  $ cd ..
