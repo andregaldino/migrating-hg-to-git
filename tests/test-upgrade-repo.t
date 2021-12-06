@@ -401,6 +401,10 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchdefault|compression:       ][formatvariant.repo.mismatchdefault| zlib][formatvariant.config.special|   zlib][formatvariant.default|    zstd] (zstd !)
   [formatvariant.name.uptodate|compression-level: ][formatvariant.repo.uptodate| default][formatvariant.config.default| default][formatvariant.default| default]
   $ hg debugupgraderepo
+  note:    selecting all-filelogs for processing to change: dotencode
+  note:    selecting all-manifestlogs for processing to change: dotencode
+  note:    selecting changelog for processing to change: dotencode
+  
   repository lacks features recommended by current config options:
   
   fncache
@@ -473,6 +477,10 @@ Various sub-optimal detections work
   
 
   $ hg --config format.dotencode=false debugupgraderepo
+  note:    selecting all-filelogs for processing to change: fncache
+  note:    selecting all-manifestlogs for processing to change: fncache
+  note:    selecting changelog for processing to change: fncache
+  
   repository lacks features recommended by current config options:
   
   fncache
@@ -567,6 +575,10 @@ make sure we have a .d file
   .hg/store/data/f2.i
 
   $ hg debugupgraderepo --run --config format.sparse-revlog=false
+  note:    selecting all-filelogs for processing to change: generaldelta
+  note:    selecting all-manifestlogs for processing to change: generaldelta
+  note:    selecting changelog for processing to change: generaldelta
+  
   upgrade will perform the following actions:
   
   requirements
@@ -671,6 +683,10 @@ unless --no-backup is passed
 
   $ rm -rf .hg/upgradebackup.*/
   $ hg debugupgraderepo --run --no-backup
+  note:    selecting all-filelogs for processing to change: sparserevlog
+  note:    selecting all-manifestlogs for processing to change: sparserevlog
+  note:    selecting changelog for processing to change: sparserevlog
+  
   upgrade will perform the following actions:
   
   requirements
@@ -961,6 +977,9 @@ Check you can't skip revlog clone during important format downgrade
     - manifest
   
   $ hg debugupgrade --optimize re-delta-parent --run --manifest --no-backup --debug --traceback
+  note:    selecting all-filelogs for processing to change: sparserevlog
+  note:    selecting changelog for processing to change: sparserevlog
+  
   ignoring revlogs selection flags, format requirements change: sparserevlog
   upgrade will perform the following actions:
   
@@ -1016,6 +1035,9 @@ Check you can't skip revlog clone during important format upgrade
 
   $ echo "sparse-revlog=yes" >> .hg/hgrc
   $ hg debugupgrade --optimize re-delta-parent --run --manifest --no-backup --debug --traceback
+  note:    selecting all-filelogs for processing to change: sparserevlog
+  note:    selecting changelog for processing to change: sparserevlog
+  
   ignoring revlogs selection flags, format requirements change: sparserevlog
   upgrade will perform the following actions:
   

@@ -92,7 +92,8 @@ def upgraderepo(
 
     touched_revlogs = set()
     overwrite_msg = _(b'warning: ignoring %14s, as upgrade is changing: %s\n')
-    msg_issued = False
+    select_msg = _(b'note:    selecting %s for processing to change: %s\n')
+    msg_issued = 0
 
     FL = upgrade_engine.UPGRADE_FILELOGS
     MN = upgrade_engine.UPGRADE_MANIFEST
@@ -108,24 +109,43 @@ def upgraderepo(
                 if not specified_revlogs[FL]:
                     msg = overwrite_msg % (b'--no-filelogs', action.name)
                     ui.warn(msg)
-                    msg_issued = True
+                    msg_issued = 2
+            else:
+                msg = select_msg % (b'all-filelogs', action.name)
+                ui.status(msg)
+                if not ui.quiet:
+                    msg_issued = 1
             touched_revlogs.add(FL)
+
         if action.touches_manifests and MN not in touched_revlogs:
             if MN in specified_revlogs:
                 if not specified_revlogs[MN]:
                     msg = overwrite_msg % (b'--no-manifest', action.name)
                     ui.warn(msg)
-                    msg_issued = True
+                    msg_issued = 2
+            else:
+                msg = select_msg % (b'all-manifestlogs', action.name)
+                ui.status(msg)
+                if not ui.quiet:
+                    msg_issued = 1
             touched_revlogs.add(MN)
+
         if action.touches_changelog and CL not in touched_revlogs:
             if CL in specified_revlogs:
                 if not specified_revlogs[CL]:
                     msg = overwrite_msg % (b'--no-changelog', action.name)
                     ui.warn(msg)
                     msg_issued = True
+            else:
+                msg = select_msg % (b'changelog', action.name)
+                ui.status(msg)
+                if not ui.quiet:
+                    msg_issued = 1
             touched_revlogs.add(CL)
-    if msg_issued:
+    if msg_issued >= 2:
         ui.warn((b"\n"))
+    elif msg_issued >= 1:
+        ui.status((b"\n"))
 
     revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
     if specified_revlogs:
