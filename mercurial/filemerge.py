@@ -293,9 +293,9 @@ def _eoltype(data):
     return None  # unknown
 
 
-def _matcheol(file, back):
+def _matcheol(file, backup):
     """Convert EOL markers in a file to match origfile"""
-    tostyle = _eoltype(back.data())  # No repo.wread filters?
+    tostyle = _eoltype(backup.data())  # No repo.wread filters?
     if tostyle:
         data = util.readfile(file)
         style = _eoltype(data)
@@ -403,7 +403,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink or fcd.isabsent() or fco.isabsent():
         return 1
-    unused, unused, unused, back = files
+    unused, unused, unused, backup = files
 
     ui = repo.ui
 
@@ -438,7 +438,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
             return 0
         if premerge not in validkeep:
             # restore from backup and try again
-            _restorebackup(fcd, back)
+            _restorebackup(fcd, backup)
     return 1  # continue merging
 
 
@@ -755,12 +755,12 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels):
             % (tool, uipathfn(fcd.path()))
         )
         return False, 1, None
-    unused, unused, unused, back = files
+    unused, unused, unused, backup = files
     localpath = _workingpath(repo, fcd)
     args = _toolstr(repo.ui, tool, b"args")
 
     with _maketempfiles(
-        repo, fco, fca, repo.wvfs.join(back.path()), b"$output" in args
+        repo, fco, fca, repo.wvfs.join(backup.path()), b"$output" in args
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
@@ -918,10 +918,10 @@ def partextras(labels):
     }
 
 
-def _restorebackup(fcd, back):
+def _restorebackup(fcd, backup):
     # TODO: Add a workingfilectx.write(otherfilectx) path so we can use
     # util.copy here instead.
-    fcd.write(back.data(), fcd.flags())
+    fcd.write(backup.data(), fcd.flags())
 
 
 def _makebackup(repo, ui, wctx, fcd):
@@ -941,15 +941,15 @@ def _makebackup(repo, ui, wctx, fcd):
     # merge -> filemerge). (I suspect the fileset import is the weakest link)
     from . import context
 
-    back = scmutil.backuppath(ui, repo, fcd.path())
-    inworkingdir = back.startswith(repo.wvfs.base) and not back.startswith(
+    backup = scmutil.backuppath(ui, repo, fcd.path())
+    inworkingdir = backup.startswith(repo.wvfs.base) and not backup.startswith(
         repo.vfs.base
     )
     if isinstance(fcd, context.overlayworkingfilectx) and inworkingdir:
         # If the backup file is to be in the working directory, and we're
         # merging in-memory, we must redirect the backup to the memory context
         # so we don't disturb the working directory.
-        relpath = back[len(repo.wvfs.base) + 1 :]
+        relpath = backup[len(repo.wvfs.base) + 1 :]
         wctx[relpath].write(fcd.data(), fcd.flags())
         return wctx[relpath]
     else:
@@ -958,13 +958,13 @@ def _makebackup(repo, ui, wctx, fcd):
         # in-memory so we can use the fast path of ``util.copy`` if both are
         # on disk.
         if isinstance(fcd, context.overlayworkingfilectx):
-            util.writefile(back, fcd.data())
+            util.writefile(backup, fcd.data())
         else:
             a = _workingpath(repo, fcd)
-            util.copyfile(a, back)
+            util.copyfile(a, backup)
         # A arbitraryfilectx is returned, so we can run the same functions on
         # the backup context regardless of where it lives.
-        return context.arbitraryfilectx(back, repo=repo)
+        return context.arbitraryfilectx(backup, repo=repo)
 
 
 @contextlib.contextmanager
@@ -1118,8 +1118,8 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             ui.warn(onfailure % fduipath)
         return True, 1, False
 
-    back = _makebackup(repo, ui, wctx, fcd)
-    files = (None, None, None, back)
+    backup = _makebackup(repo, ui, wctx, fcd)
+    files = (None, None, None, backup)
     r = 1
     try:
         internalmarkerstyle = ui.config(b'ui', b'mergemarkers')
@@ -1188,8 +1188,8 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
         return True, r, deleted
     finally:
-        if not r and back is not None:
-            back.remove()
+        if not r and backup is not None:
+            backup.remove()
 
 
 def _haltmerge():
@@ -1225,7 +1225,7 @@ def hasconflictmarkers(data):
 def _check(repo, r, ui, tool, fcd, files):
     fd = fcd.path()
     uipathfn = scmutil.getuipathfn(repo)
-    unused, unused, unused, back = files
+    unused, unused, unused, backup = files
 
     if not r and (
         _toolbool(ui, tool, b"checkconflicts")
@@ -1252,7 +1252,7 @@ def _check(repo, r, ui, tool, fcd, files):
             or b'changed' in _toollist(ui, tool, b"check")
         )
     ):
-        if back is not None and not fcd.cmp(back):
+        if backup is not None and not fcd.cmp(backup):
             if ui.promptchoice(
                 _(
                     b" output file %s appears unchanged\n"
@@ -1264,8 +1264,8 @@ def _check(repo, r, ui, tool, fcd, files):
             ):
                 r = 1
 
-    if back is not None and _toolbool(ui, tool, b"fixeol"):
-        _matcheol(_workingpath(repo, fcd), back)
+    if backup is not None and _toolbool(ui, tool, b"fixeol"):
+        _matcheol(_workingpath(repo, fcd), backup)
 
     return r
 
