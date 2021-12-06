@@ -99,6 +99,18 @@ def upgraderepo(
     MN = upgrade_engine.UPGRADE_MANIFEST
     CL = upgrade_engine.UPGRADE_CHANGELOG
 
+    if optimizations:
+        if any(specified_revlogs.values()):
+            # we have some limitation on revlogs to be recloned
+            for rl, enabled in specified_revlogs.items():
+                if enabled:
+                    touched_revlogs.add(rl)
+        else:
+            touched_revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
+            for rl, enabled in specified_revlogs.items():
+                if not enabled:
+                    touched_revlogs.discard(rl)
+
     for action in sorted(up_actions + removed_actions, key=lambda a: a.name):
         # optimisation does not "requires anything, they just needs it.
         if action.type != upgrade_actions.FORMAT_VARIANT:
@@ -147,22 +159,9 @@ def upgraderepo(
     elif msg_issued >= 1:
         ui.status((b"\n"))
 
-    revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
-    if specified_revlogs:
-        # we have some limitation on revlogs to be recloned
-        if any(specified_revlogs.values()):
-            revlogs = set()
-            for upgrade, enabled in specified_revlogs.items():
-                if enabled:
-                    revlogs.add(upgrade)
-        else:
-            # none are enabled
-            for upgrade in specified_revlogs.keys():
-                revlogs.discard(upgrade)
-
     # check the consistency of the revlog selection with the planned action
 
-    if revlogs != upgrade_engine.UPGRADE_ALL_REVLOGS:
+    if touched_revlogs != upgrade_engine.UPGRADE_ALL_REVLOGS:
         incompatible = upgrade_actions.RECLONES_REQUIREMENTS & (
             removedreqs | addedreqs
         )
@@ -172,7 +171,7 @@ def upgraderepo(
                 b'change: %s\n'
             )
             ui.warn(msg % b', '.join(sorted(incompatible)))
-            revlogs = upgrade_engine.UPGRADE_ALL_REVLOGS
+            touched_revlogs = upgrade_engine.UPGRADE_ALL_REVLOGS
 
     upgrade_op = upgrade_actions.UpgradeOperation(
         ui,
@@ -180,7 +179,7 @@ def upgraderepo(
         repo.requirements,
         up_actions,
         removed_actions,
-        revlogs,
+        touched_revlogs,
         backup,
     )
 

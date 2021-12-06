@@ -213,10 +213,7 @@ An upgrade of a repository created with recommended settings only suggests optim
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -238,10 +235,7 @@ An upgrade of a repository created with recommended settings only suggests optim
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, sparserevlog, store (rust !)
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
 
 --optimize can be used to add optimizations
@@ -963,7 +957,6 @@ Check you can't skip revlog clone during important format downgrade
   $ hg debugupgrade --optimize re-delta-parent --no-manifest --no-backup --quiet
   warning: ignoring  --no-manifest, as upgrade is changing: sparserevlog
   
-  ignoring revlogs selection flags, format requirements change: sparserevlog
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store (no-rust !)
      preserved: dotencode, fncache, generaldelta, persistent-nodemap, revlogv1, store (rust !)
@@ -980,7 +973,6 @@ Check you can't skip revlog clone during important format downgrade
   note:    selecting all-filelogs for processing to change: sparserevlog
   note:    selecting changelog for processing to change: sparserevlog
   
-  ignoring revlogs selection flags, format requirements change: sparserevlog
   upgrade will perform the following actions:
   
   requirements
@@ -1038,7 +1030,6 @@ Check you can't skip revlog clone during important format upgrade
   note:    selecting all-filelogs for processing to change: sparserevlog
   note:    selecting changelog for processing to change: sparserevlog
   
-  ignoring revlogs selection flags, format requirements change: sparserevlog
   upgrade will perform the following actions:
   
   requirements
@@ -1695,10 +1686,7 @@ Upgrade to dirstate-v2
   dirstate-v2
      "hg status" will be faster
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
@@ -1724,10 +1712,7 @@ Downgrade from dirstate-v2
      preserved: * (glob)
      removed: dirstate-v2
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
@@ -1762,10 +1747,7 @@ upgrade
   dirstate-v2
      "hg status" will be faster
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
@@ -1786,10 +1768,7 @@ downgrade
      preserved: * (glob)
      removed: dirstate-v2
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
