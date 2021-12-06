@@ -1638,21 +1638,8 @@ Demonstrate that nothing to perform upgrade will still run all the way through
 
 Upgrade to dirstate-v2
 
-  $ hg debugformat -v --config format.exp-rc-dirstate-v2=1
-  format-variant     repo config default
-  fncache:            yes    yes     yes
+  $ hg debugformat -v --config format.exp-rc-dirstate-v2=1 | grep dirstate-v2
   dirstate-v2:         no    yes      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap: yes    yes      no
-  copies-sdc:          no     no      no
-  revlog-v2:          yes    yes      no
-  changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zstd   zstd    zstd
-  compression-level:  default default default
   $ hg debugupgraderepo --config format.exp-rc-dirstate-v2=1 --run
   upgrade will perform the following actions:
   
@@ -1677,21 +1664,8 @@ Upgrade to dirstate-v2
   removing temporary repository $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
   $ ls .hg/upgradebackup.*/dirstate
   .hg/upgradebackup.*/dirstate (glob)
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
+  $ hg debugformat -v | grep dirstate-v2
   dirstate-v2:        yes     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap: yes    yes      no
-  copies-sdc:          no     no      no
-  revlog-v2:          yes    yes      no
-  changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zstd   zstd    zstd
-  compression-level:  default default default
   $ hg status
   $ dd status=none bs=12 count=1 if=.hg/dirstate
   dirstate-v2
@@ -1717,21 +1691,8 @@ Downgrade from dirstate-v2
   downgrading from dirstate-v2 to v1
   replaced files will be backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
   removing temporary repository $TESTTMP/sparserevlogrepo/.hg/upgrade.* (glob)
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
+  $ hg debugformat -v | grep dirstate-v2
   dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap: yes    yes      no
-  copies-sdc:          no     no      no
-  revlog-v2:          yes    yes      no
-  changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zstd   zstd    zstd
-  compression-level:  default default default
   $ hg status
 
 #endif
