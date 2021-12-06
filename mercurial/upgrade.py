@@ -45,11 +45,13 @@ def upgraderepo(
         optimize = {}
     repo = repo.unfiltered()
 
-    specentries = (
-        (upgrade_engine.UPGRADE_CHANGELOG, changelog),
-        (upgrade_engine.UPGRADE_MANIFEST, manifest),
-        (upgrade_engine.UPGRADE_FILELOGS, filelogs),
-    )
+    specified_revlogs = {}
+    if changelog is not None:
+        specified_revlogs[upgrade_engine.UPGRADE_CHANGELOG] = changelog
+    if manifest is not None:
+        specified_revlogs[upgrade_engine.UPGRADE_MANIFEST] = manifest
+    if filelogs is not None:
+        specified_revlogs[upgrade_engine.UPGRADE_FILELOGS] = filelogs
 
     # Ensure the repository can be upgraded.
     upgrade_actions.check_source_requirements(repo)
@@ -89,17 +91,16 @@ def upgraderepo(
     # check if we need to touch revlog and if so, which ones
 
     revlogs = set(upgrade_engine.UPGRADE_ALL_REVLOGS)
-    specified = [(y, x) for (y, x) in specentries if x is not None]
-    if specified:
+    if specified_revlogs:
         # we have some limitation on revlogs to be recloned
-        if any(x for y, x in specified):
+        if any(specified_revlogs.values()):
             revlogs = set()
-            for upgrade, enabled in specified:
+            for upgrade, enabled in specified_revlogs.items():
                 if enabled:
                     revlogs.add(upgrade)
         else:
             # none are enabled
-            for upgrade, __ in specified:
+            for upgrade in specified_revlogs.keys():
                 revlogs.discard(upgrade)
 
     # check the consistency of the revlog selection with the planned action
