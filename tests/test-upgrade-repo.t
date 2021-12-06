@@ -1634,7 +1634,14 @@ Demonstrate that nothing to perform upgrade will still run all the way through
   $ hg debugupgraderepo --run
   nothing to do
 
-#if rust
+#if no-rust
+
+  $ cat << EOF >> $HGRCPATH
+  > [storage]
+  > dirstate-v2.slow-path = allow
+  > EOF
+
+#endif
 
 Upgrade to dirstate-v2
 
@@ -1644,7 +1651,7 @@ Upgrade to dirstate-v2
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
+     preserved: * (glob)
      added: dirstate-v2
   
   dirstate-v2
@@ -1676,7 +1683,7 @@ Downgrade from dirstate-v2
   upgrade will perform the following actions:
   
   requirements
-     preserved: dotencode, exp-revlogv2.2, fncache, generaldelta, persistent-nodemap, revlog-compression-zstd, sparserevlog, store
+     preserved: * (glob)
      removed: dirstate-v2
   
   processed revlogs:
@@ -1694,5 +1701,3 @@ Downgrade from dirstate-v2
   $ hg debugformat -v | grep dirstate-v2
   dirstate-v2:         no     no      no
   $ hg status
-
-#endif
