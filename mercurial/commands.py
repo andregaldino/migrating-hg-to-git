@@ -6873,9 +6873,9 @@ def status(ui, repo, *pats, **opts):
 
     cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
-    revs = opts.get(b'rev')
-    change = opts.get(b'change')
-    terse = opts.get(b'terse')
+    revs = opts.get(b'rev', [])
+    change = opts.get(b'change', b'')
+    terse = opts.get(b'terse', _NOTTERSE)
     if terse is _NOTTERSE:
         if revs:
             terse = b''
