@@ -516,25 +516,23 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {
-        b"localorother": opts.get("localorother", None),
-        b'minimize': True,
+        "localorother": opts.get("localorother", None),
+        'minimize': True,
     }
     if mode == b'union':
-        extrakwargs[b'start_marker'] = None
-        extrakwargs[b'mid_marker'] = None
-        extrakwargs[b'end_marker'] = None
+        extrakwargs['start_marker'] = None
+        extrakwargs['mid_marker'] = None
+        extrakwargs['end_marker'] = None
     elif name_base is not None:
-        extrakwargs[b'base_marker'] = b'|||||||'
-        extrakwargs[b'name_base'] = name_base
-        extrakwargs[b'minimize'] = False
+        extrakwargs['base_marker'] = b'|||||||'
+        extrakwargs['name_base'] = name_base
+        extrakwargs['minimize'] = False
 
     if mode == b'mergediff':
         lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
     else:
         lines = list(
-            m3.merge_lines(
-                name_a=name_a, name_b=name_b, **pycompat.strkwargs(extrakwargs)
-            )
+            m3.merge_lines(name_a=name_a, name_b=name_b, **extrakwargs)
         )
         conflicts = m3.conflicts and not mode == b'union'
 
