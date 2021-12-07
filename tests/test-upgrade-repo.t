@@ -1667,7 +1667,7 @@ Upgrade to dirstate-v2
   $ hg debugformat -v | grep dirstate-v2
   dirstate-v2:        yes     no      no
   $ hg status
-  $ dd status=none bs=12 count=1 if=.hg/dirstate
+  $ dd bs=12 count=1 if=.hg/dirstate 2> /dev/null
   dirstate-v2
 
 Downgrade from dirstate-v2
