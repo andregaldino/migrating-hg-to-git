@@ -1649,22 +1649,10 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > [format]
   > exp-use-copies-side-data-changeset = yes
   > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
+  $ hg debugformat -v | egrep 'changelog-v2|revlog-v2|copies-sdc'
   copies-sdc:          no    yes      no
   revlog-v2:           no     no      no
   changelog-v2:        no    yes      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
   $ hg debugupgraderepo --run --quiet
   upgrade will perform the following actions:
   
@@ -1689,22 +1677,10 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > enabled=yes
   > numcpus=8
   > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
+  $ hg debugformat -v  | egrep 'changelog-v2|revlog-v2|copies-sdc'
   copies-sdc:          no    yes      no
   revlog-v2:           no     no      no
   changelog-v2:        no    yes      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
   $ hg debugupgraderepo --run --quiet
   upgrade will perform the following actions:
   
