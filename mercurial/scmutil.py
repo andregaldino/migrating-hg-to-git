@@ -2197,6 +2197,9 @@ def unhidehashlikerevs(repo, specs, hiddentype):
 
     returns a repo object with the required changesets unhidden
     """
+    if not specs:
+        return repo
+
     if not repo.filtername or not repo.ui.configbool(
         b'experimental', b'directaccess'
     ):
