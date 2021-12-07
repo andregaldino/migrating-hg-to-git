@@ -16,7 +16,6 @@ from . import (
     error,
     pycompat,
     util,
-    wireprotoserver,
     wireprototypes,
     wireprotov1peer,
     wireprotov1server,
@@ -288,10 +287,6 @@ def _performhandshake(ui, stdin, stdout, stderr):
     # Generate a random token to help identify responses to version 2
     # upgrade request.
     token = pycompat.sysbytes(str(uuid.uuid4()))
-    upgradecaps = [
-        (b'proto', wireprotoserver.SSHV2),
-    ]
-    upgradecaps = util.urlreq.urlencode(upgradecaps)
 
     try:
         pairsarg = b'%s-%s' % (b'0' * 40, b'0' * 40)
@@ -301,11 +296,6 @@ def _performhandshake(ui, stdin, stdout, stderr):
             b'pairs %d\n' % len(pairsarg),
             pairsarg,
         ]
-
-        # Request upgrade to version 2 if configured.
-        if ui.configbool(b'experimental', b'sshpeer.advertise-v2'):
-            ui.debug(b'sending upgrade request: %s %s\n' % (token, upgradecaps))
-            handshake.insert(0, b'upgrade %s %s\n' % (token, upgradecaps))
 
         if requestlog:
             ui.debug(b'devel-peer-request: hello+between\n')
@@ -365,24 +355,6 @@ def _performhandshake(ui, stdin, stdout, stderr):
             if l.startswith(b'capabilities:'):
                 caps.update(l[:-1].split(b':')[1].split())
                 break
-    elif protoname == wireprotoserver.SSHV2:
-        # We see a line with number of bytes to follow and then a value
-        # looking like ``capabilities: *``.
-        line = stdout.readline()
-        try:
-            valuelen = int(line)
-        except ValueError:
-            badresponse()
-
-        capsline = stdout.read(valuelen)
-        if not capsline.startswith(b'capabilities: '):
-            badresponse()
-
-        ui.debug(b'remote: %s\n' % capsline)
-
-        caps.update(capsline.split(b':')[1].split())
-        # Trailing newline.
-        stdout.read(1)
 
     # Error if we couldn't find capabilities, this means:
     #
@@ -601,14 +573,6 @@ class sshv1peer(wireprotov1peer.wirepeer):
             self._readerr()
 
 
-class sshv2peer(sshv1peer):
-    """A peer that speakers version 2 of the transport protocol."""
-
-    # Currently version 2 is identical to version 1 post handshake.
-    # And handshake is performed before the peer is instantiated. So
-    # we need no custom code.
-
-
 def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
     """Make a peer instance from existing pipes.
 
@@ -631,17 +595,6 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
 
     if protoname == wireprototypes.SSHV1:
         return sshv1peer(
-            ui,
-            path,
-            proc,
-            stdin,
-            stdout,
-            stderr,
-            caps,
-            autoreadstderr=autoreadstderr,
-        )
-    elif protoname == wireprototypes.SSHV2:
-        return sshv2peer(
             ui,
             path,
             proc,

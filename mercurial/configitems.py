@@ -1102,16 +1102,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'httppeer.advertise-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'httppeer.v2-encoder-order',
-    default=None,
-)
-coreconfigitem(
-    b'experimental',
     b'httppostargs',
     default=False,
 )
@@ -1211,11 +1201,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'sshserver.support-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
     b'sparse-read',
     default=False,
 )
@@ -1237,26 +1222,6 @@ coreconfigitem(
 coreconfigitem(
     b'experimental',
     b'update.atomic-file',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'sshpeer.advertise-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.apiserver',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.api.http-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.api.debugreflect',
     default=False,
 )
 coreconfigitem(

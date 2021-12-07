@@ -91,7 +91,6 @@ from . import (
     vfs as vfsmod,
     wireprotoframing,
     wireprotoserver,
-    wireprotov2peer,
 )
 from .interfaces import repository
 from .utils import (
@@ -4352,8 +4351,8 @@ def debugwireproto(ui, repo, path=None, **opts):
 
     ``--peer`` can be used to bypass the handshake protocol and construct a
     peer instance using the specified class type. Valid values are ``raw``,
-    ``http2``, ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending
-    raw data payloads and don't support higher-level command actions.
+    ``ssh1``. ``raw`` instances only allow sending raw data payloads and
+    don't support higher-level command actions.
 
     ``--noreadstderr`` can be used to disable automatic reading from stderr
     of the peer (for SSH connections only). Disabling automatic reading of
@@ -4528,13 +4527,11 @@ def debugwireproto(ui, repo, path=None, **opts):
 
     if opts[b'peer'] and opts[b'peer'] not in (
         b'raw',
-        b'http2',
         b'ssh1',
-        b'ssh2',
     ):
         raise error.Abort(
             _(b'invalid value for --peer'),
-            hint=_(b'valid values are "raw", "ssh1", and "ssh2"'),
+            hint=_(b'valid values are "raw" and "ssh1"'),
         )
 
     if path and opts[b'localssh']:
@@ -4602,18 +4599,6 @@ def debugwireproto(ui, repo, path=None, **opts):
                 None,
                 autoreadstderr=autoreadstderr,
             )
-        elif opts[b'peer'] == b'ssh2':
-            ui.write(_(b'creating ssh peer for wire protocol version 2\n'))
-            peer = sshpeer.sshv2peer(
-                ui,
-                url,
-                proc,
-                stdin,
-                stdout,
-                stderr,
-                None,
-                autoreadstderr=autoreadstderr,
-            )
         elif opts[b'peer'] == b'raw':
             ui.write(_(b'using raw connection to peer\n'))
             peer = None
@@ -4666,34 +4651,7 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         opener = urlmod.opener(ui, authinfo, **openerargs)
 
-        if opts[b'peer'] == b'http2':
-            ui.write(_(b'creating http peer for wire protocol version 2\n'))
-            # We go through makepeer() because we need an API descriptor for
-            # the peer instance to be useful.
-            maybe_silent = (
-                ui.silent()
-                if opts[b'nologhandshake']
-                else util.nullcontextmanager()
-            )
-            with maybe_silent, ui.configoverride(
-                {(b'experimental', b'httppeer.advertise-v2'): True}
-            ):
-                peer = httppeer.makepeer(ui, path, opener=opener)
-
-            if not isinstance(peer, httppeer.httpv2peer):
-                raise error.Abort(
-                    _(
-                        b'could not instantiate HTTP peer for '
-                        b'wire protocol version 2'
-                    ),
-                    hint=_(
-                        b'the server may not have the feature '
-                        b'enabled or is not allowing this '
-                        b'client version'
-                    ),
-                )
-
-        elif opts[b'peer'] == b'raw':
+        if opts[b'peer'] == b'raw':
             ui.write(_(b'using raw connection to peer\n'))
             peer = None
         elif opts[b'peer']:
@@ -4774,17 +4732,10 @@ def debugwireproto(ui, repo, path=None, **opts):
                 with peer.commandexecutor() as e:
                     res = e.callcommand(command, args).result()
 
-                if isinstance(res, wireprotov2peer.commandresponse):
-                    val = res.objects()
-                    ui.status(
-                        _(b'response: %s\n')
-                        % stringutil.pprint(val, bprefix=True, indent=2)
-                    )
-                else:
-                    ui.status(
-                        _(b'response: %s\n')
-                        % stringutil.pprint(res, bprefix=True, indent=2)
-                    )
+                ui.status(
+                    _(b'response: %s\n')
+                    % stringutil.pprint(res, bprefix=True, indent=2)
+                )
 
         elif action == b'batchbegin':
             if batchedcommands is not None:

@@ -22,7 +22,6 @@ from . import (
     changegroup,
     discovery,
     error,
-    exchangev2,
     lock as lockmod,
     logexchange,
     narrowspec,
@@ -1666,21 +1665,17 @@ def pull(
         ):
             add_confirm_callback(repo, pullop)
 
-        # Use the modern wire protocol, if available.
-        if remote.capable(b'command-changesetdata'):
-            exchangev2.pull(pullop)
-        else:
-            # This should ideally be in _pullbundle2(). However, it needs to run
-            # before discovery to avoid extra work.
-            _maybeapplyclonebundle(pullop)
-            streamclone.maybeperformlegacystreamclone(pullop)
-            _pulldiscovery(pullop)
-            if pullop.canusebundle2:
-                _fullpullbundle2(repo, pullop)
-            _pullchangeset(pullop)
-            _pullphase(pullop)
-            _pullbookmarks(pullop)
-            _pullobsolete(pullop)
+        # This should ideally be in _pullbundle2(). However, it needs to run
+        # before discovery to avoid extra work.
+        _maybeapplyclonebundle(pullop)
+        streamclone.maybeperformlegacystreamclone(pullop)
+        _pulldiscovery(pullop)
+        if pullop.canusebundle2:
+            _fullpullbundle2(repo, pullop)
+        _pullchangeset(pullop)
+        _pullphase(pullop)
+        _pullbookmarks(pullop)
+        _pullobsolete(pullop)
 
     # storing remotenames
     if repo.ui.configbool(b'experimental', b'remotenames'):

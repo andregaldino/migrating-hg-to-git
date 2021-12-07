@@ -21,10 +21,6 @@ from .utils import compression
 
 # Names of the SSH protocol implementations.
 SSHV1 = b'ssh-v1'
-# These are advertised over the wire. Increment the counters at the end
-# to reflect BC breakages.
-SSHV2 = b'exp-ssh-v2-0003'
-HTTP_WIREPROTO_V2 = b'exp-http-v2-0003'
 
 NARROWCAP = b'exp-narrow-1'
 ELLIPSESCAP1 = b'exp-ellipses-1'
@@ -37,18 +33,9 @@ TRANSPORTS = {
         b'transport': b'ssh',
         b'version': 1,
     },
-    SSHV2: {
-        b'transport': b'ssh',
-        # TODO mark as version 2 once all commands are implemented.
-        b'version': 1,
-    },
     b'http-v1': {
         b'transport': b'http',
         b'version': 1,
-    },
-    HTTP_WIREPROTO_V2: {
-        b'transport': b'http',
-        b'version': 2,
     },
 }
 
