@@ -3566,16 +3566,6 @@ def newreporequirements(ui, createopts):
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
-    # If the repo is being created from a shared repository, we copy
-    # its requirements.
-    if b'sharedrepo' in createopts:
-        requirements = set(createopts[b'sharedrepo'].requirements)
-        if createopts.get(b'sharedrelative'):
-            requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
-        else:
-            requirements.add(requirementsmod.SHARED_REQUIREMENT)
-
-        return requirements
 
     if b'backend' not in createopts:
         raise error.ProgrammingError(
@@ -3670,6 +3660,17 @@ def newreporequirements(ui, createopts):
     # requirement
     if ui.configbool(b'format', b'use-share-safe'):
         requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
+
+    # If the repo is being created from a shared repository, we copy
+    # its requirements.
+    if b'sharedrepo' in createopts:
+        requirements = set(createopts[b'sharedrepo'].requirements)
+        if createopts.get(b'sharedrelative'):
+            requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
+        else:
+            requirements.add(requirementsmod.SHARED_REQUIREMENT)
+
+        return requirements
 
     return requirements
 
