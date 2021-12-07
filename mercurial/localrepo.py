@@ -1,4 +1,5 @@
 # localrepo.py - read/write repository class for mercurial
+# coding: utf-8
 #
 # Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
@@ -3661,16 +3662,35 @@ def newreporequirements(ui, createopts):
     if ui.configbool(b'format', b'use-share-safe'):
         requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
 
-    # If the repo is being created from a shared repository, we copy
-    # its requirements.
+    # if we are creating a share-repo¹  we have to handle requirement
+    # differently.
+    #
+    # [1] (i.e. reusing the store from another repository, just having a
+    # working copy)
     if b'sharedrepo' in createopts:
-        requirements = set(createopts[b'sharedrepo'].requirements)
+        source_requirements = set(createopts[b'sharedrepo'].requirements)
+
+        if requirementsmod.SHARESAFE_REQUIREMENT not in source_requirements:
+            # share to an old school repository, we have to copy the
+            # requirements and hope for the best.
+            requirements = source_requirements
+        else:
+            # We have control on the working copy only, so "copy" the non
+            # working copy part over, ignoring previous logic.
+            to_drop = set()
+            for req in requirements:
+                if req in requirementsmod.WORKING_DIR_REQUIREMENTS:
+                    continue
+                if req in source_requirements:
+                    continue
+                to_drop.add(req)
+            requirements -= to_drop
+            requirements |= source_requirements
+
         if createopts.get(b'sharedrelative'):
             requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
         else:
             requirements.add(requirementsmod.SHARED_REQUIREMENT)
-
-        return requirements
 
     return requirements
 
