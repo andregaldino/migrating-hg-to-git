@@ -3,7 +3,6 @@ use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
 
-use byteorder::{BigEndian, ByteOrder};
 use flate2::read::ZlibDecoder;
 use micro_timer::timed;
 use sha1::{Digest, Sha1};
@@ -74,13 +73,6 @@ impl Revlog {
             match repo.store_vfs().mmap_open_opt(&index_path)? {
                 None => Index::new(Box::new(vec![])),
                 Some(index_mmap) => {
-                    let version = get_version(&index_mmap)?;
-                    if version != 1 {
-                        // A proper new version should have had a repo/store
-                        // requirement.
-                        return Err(HgError::corrupted("corrupted revlog"));
-                    }
-
                     let index = Index::new(Box::new(index_mmap))?;
                     Ok(index)
                 }
@@ -387,19 +379,6 @@ impl<'a> RevlogEntry<'a> {
     }
 }
 
-/// Format version of the revlog.
-pub fn get_version(index_bytes: &[u8]) -> Result<u16, HgError> {
-    if index_bytes.len() == 0 {
-        return Ok(1);
-    };
-    if index_bytes.len() < 4 {
-        return Err(HgError::corrupted(
-            "corrupted revlog: can't read the index format header",
-        ));
-    };
-    Ok(BigEndian::read_u16(&index_bytes[2..=3]))
-}
-
 /// Calculate the hash of a revision given its data and its parents.
 fn hash(
     data: &[u8],
@@ -417,21 +396,4 @@ fn hash(
     }
     hasher.update(data);
     *hasher.finalize().as_ref()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use super::super::index::IndexEntryBuilder;
-
-    #[test]
-    fn version_test() {
-        let bytes = IndexEntryBuilder::new()
-            .is_first(true)
-            .with_version(1)
-            .build();
-
-        assert_eq!(get_version(&bytes).map_err(|_err| ()), Ok(1))
-    }
 }
