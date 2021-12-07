@@ -19,12 +19,10 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .node import nullrev
 from . import (
     error,
     mdiff,
     pycompat,
-    util,
 )
 from .utils import stringutil
 
@@ -424,12 +422,6 @@ def _picklabels(defaults, overrides):
     return result
 
 
-def is_not_null(ctx):
-    if not util.safehasattr(ctx, "node"):
-        return False
-    return ctx.rev() != nullrev
-
-
 def _mergediff(m3, name_a, name_b, name_base):
     lines = []
     conflicts = False
@@ -546,21 +538,13 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         )
         conflicts = m3.conflicts and not mode == b'union'
 
-    # merge flags if necessary
-    flags = localctx.flags()
-    localflags = set(pycompat.iterbytestr(flags))
-    otherflags = set(pycompat.iterbytestr(otherctx.flags()))
-    if is_not_null(basectx) and localflags != otherflags:
-        baseflags = set(pycompat.iterbytestr(basectx.flags()))
-        commonflags = localflags & otherflags
-        addedflags = (localflags ^ otherflags) - baseflags
-        flags = b''.join(sorted(commonflags | addedflags))
-
     mergedtext = b''.join(lines)
     if opts.get('print'):
         ui.fout.write(mergedtext)
     else:
-        localctx.write(mergedtext, flags)
+        # localctx.flags() already has the merged flags (done in
+        # mergestate.resolve())
+        localctx.write(mergedtext, localctx.flags())
 
     if conflicts:
         return 1
