@@ -11,6 +11,7 @@ use hg::exit_codes;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
@@ -598,11 +599,23 @@ impl OnUnsupported {
     }
 }
 
+/// The `*` extension is an edge-case for config sub-options that apply to all
+/// extensions. For now, only `:required` exists, but that may change in the
+/// future.
 const SUPPORTED_EXTENSIONS: &[&[u8]] =
-    &[b"blackbox", b"share", b"sparse", b"narrow"];
+    &[b"blackbox", b"share", b"sparse", b"narrow", b"*"];
 
 fn check_extensions(config: &Config) -> Result<(), CommandError> {
-    let enabled = config.get_section_keys(b"extensions");
+    let enabled: HashSet<&[u8]> = config
+        .get_section_keys(b"extensions")
+        .into_iter()
+        .map(|extension| {
+            // Ignore extension suboptions. Only `required` exists for now.
+            // `rhg` either supports an extension or doesn't, so it doesn't
+            // make sense to consider the loading of an extension.
+            extension.split_2(b':').unwrap_or((extension, b"")).0
+        })
+        .collect();
 
     let mut unsupported = enabled;
     for supported in SUPPORTED_EXTENSIONS {

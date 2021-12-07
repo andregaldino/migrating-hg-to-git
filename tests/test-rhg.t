@@ -380,3 +380,13 @@ Subrepos are not supported
   $ rhg files
   a
   $ rm .hgsub
+
+The `:required` extension suboptions are correctly ignored
+
+  $ echo "[extensions]" >> $HGRCPATH
+  $ echo "blackbox:required = yes" >> $HGRCPATH
+  $ rhg files
+  a
+  $ echo "*:required = yes" >> $HGRCPATH
+  $ rhg files
+  a
