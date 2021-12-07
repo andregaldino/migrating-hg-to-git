@@ -191,11 +191,20 @@ impl Revlog {
         // Todo return -> Cow
         let mut entry = self.get_entry(rev)?;
         let mut delta_chain = vec![];
-        while let Some(base_rev) = entry.base_rev {
+
+        // The meaning of `base_rev_or_base_of_delta_chain` depends on
+        // generaldelta. See the doc on `ENTRY_DELTA_BASE` in
+        // `mercurial/revlogutils/constants.py` and the code in
+        // [_chaininfo] and in [index_deltachain].
+        let uses_generaldelta = self.index.uses_generaldelta();
+        while let Some(base_rev) = entry.base_rev_or_base_of_delta_chain {
+            let base_rev = if uses_generaldelta {
+                base_rev
+            } else {
+                entry.rev - 1
+            };
             delta_chain.push(entry);
-            entry = self
-                .get_entry(base_rev)
-                .map_err(|_| RevlogError::corrupted())?;
+            entry = self.get_entry_internal(base_rev)?;
         }
 
         // TODO do not look twice in the index
@@ -291,13 +300,25 @@ impl Revlog {
             bytes: data,
             compressed_len: index_entry.compressed_len(),
             uncompressed_len: index_entry.uncompressed_len(),
-            base_rev: if index_entry.base_revision() == rev {
+            base_rev_or_base_of_delta_chain: if index_entry
+                .base_revision_or_base_of_delta_chain()
+                == rev
+            {
                 None
             } else {
-                Some(index_entry.base_revision())
+                Some(index_entry.base_revision_or_base_of_delta_chain())
             },
         };
         Ok(entry)
+    }
+
+    /// when resolving internal references within revlog, any errors
+    /// should be reported as corruption, instead of e.g. "invalid revision"
+    fn get_entry_internal(
+        &self,
+        rev: Revision,
+    ) -> Result<RevlogEntry, RevlogError> {
+        return self.get_entry(rev).map_err(|_| RevlogError::corrupted());
     }
 }
 
@@ -309,7 +330,7 @@ pub struct RevlogEntry<'a> {
     bytes: &'a [u8],
     compressed_len: usize,
     uncompressed_len: usize,
-    base_rev: Option<Revision>,
+    base_rev_or_base_of_delta_chain: Option<Revision>,
 }
 
 impl<'a> RevlogEntry<'a> {
@@ -375,7 +396,7 @@ impl<'a> RevlogEntry<'a> {
     /// Tell if the entry is a snapshot or a delta
     /// (influences on decompression).
     fn is_delta(&self) -> bool {
-        self.base_rev.is_some()
+        self.base_rev_or_base_of_delta_chain.is_some()
     }
 }
 

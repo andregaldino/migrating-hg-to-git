@@ -84,6 +84,7 @@ pub struct Index {
     /// Offsets of starts of index blocks.
     /// Only needed when the index is interleaved with data.
     offsets: Option<Vec<usize>>,
+    uses_generaldelta: bool,
 }
 
 impl Index {
@@ -99,6 +100,11 @@ impl Index {
             // requirement.
             return Err(HgError::corrupted("unsupported revlog version"));
         }
+
+        // This is only correct because we know version is REVLOGV1.
+        // In v2 we always use generaldelta, while in v0 we never use
+        // generaldelta. Similar for [is_inline] (it's only used in v1).
+        let uses_generaldelta = header.format_flags().uses_generaldelta();
 
         if header.format_flags().is_inline() {
             let mut offset: usize = 0;
@@ -119,6 +125,7 @@ impl Index {
                 Ok(Self {
                     bytes,
                     offsets: Some(offsets),
+                    uses_generaldelta,
                 })
             } else {
                 Err(HgError::corrupted("unexpected inline revlog length")
@@ -128,8 +135,13 @@ impl Index {
             Ok(Self {
                 bytes,
                 offsets: None,
+                uses_generaldelta,
             })
         }
+    }
+
+    pub fn uses_generaldelta(&self) -> bool {
+        self.uses_generaldelta
     }
 
     /// Value of the inline flag.
@@ -259,7 +271,7 @@ impl<'a> IndexEntry<'a> {
     }
 
     /// Return the revision upon which the data has been derived.
-    pub fn base_revision(&self) -> Revision {
+    pub fn base_revision_or_base_of_delta_chain(&self) -> Revision {
         // TODO Maybe return an Option when base_revision == rev?
         //      Requires to add rev to IndexEntry
 
@@ -297,7 +309,7 @@ mod tests {
         offset: usize,
         compressed_len: usize,
         uncompressed_len: usize,
-        base_revision: Revision,
+        base_revision_or_base_of_delta_chain: Revision,
     }
 
     #[cfg(test)]
@@ -311,7 +323,7 @@ mod tests {
                 offset: 0,
                 compressed_len: 0,
                 uncompressed_len: 0,
-                base_revision: 0,
+                base_revision_or_base_of_delta_chain: 0,
             }
         }
 
@@ -350,8 +362,11 @@ mod tests {
             self
         }
 
-        pub fn with_base_revision(&mut self, value: Revision) -> &mut Self {
-            self.base_revision = value;
+        pub fn with_base_revision_or_base_of_delta_chain(
+            &mut self,
+            value: Revision,
+        ) -> &mut Self {
+            self.base_revision_or_base_of_delta_chain = value;
             self
         }
 
@@ -374,7 +389,9 @@ mod tests {
             bytes.extend(&[0u8; 2]); // Revision flags.
             bytes.extend(&(self.compressed_len as u32).to_be_bytes());
             bytes.extend(&(self.uncompressed_len as u32).to_be_bytes());
-            bytes.extend(&self.base_revision.to_be_bytes());
+            bytes.extend(
+                &self.base_revision_or_base_of_delta_chain.to_be_bytes(),
+            );
             bytes
         }
     }
@@ -480,14 +497,16 @@ mod tests {
     }
 
     #[test]
-    fn test_base_revision() {
-        let bytes = IndexEntryBuilder::new().with_base_revision(1).build();
+    fn test_base_revision_or_base_of_delta_chain() {
+        let bytes = IndexEntryBuilder::new()
+            .with_base_revision_or_base_of_delta_chain(1)
+            .build();
         let entry = IndexEntry {
             bytes: &bytes,
             offset_override: None,
         };
 
-        assert_eq!(entry.base_revision(), 1)
+        assert_eq!(entry.base_revision_or_base_of_delta_chain(), 1)
     }
 
     #[test]
