@@ -503,13 +503,6 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         # repository usually sees) might be more useful.
         return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
 
-    mode = opts.get('mode', b'merge')
-    name_a, name_b, name_base = None, None, None
-    if mode != b'union':
-        name_a, name_b, name_base = _picklabels(
-            [localctx.path(), otherctx.path(), None], opts.get('label', [])
-        )
-
     try:
         localtext = readctx(localctx)
         basetext = readctx(basectx)
@@ -519,26 +512,31 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     conflicts = False
+    mode = opts.get('mode', b'merge')
     if mode == b'union':
         lines = _resolve(m3, (1, 2))
     elif mode == b'local':
         lines = _resolve(m3, (1,))
     elif mode == b'other':
         lines = _resolve(m3, (2,))
-    elif mode == b'mergediff':
-        lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
     else:
-        extrakwargs = {
-            'minimize': True,
-        }
-        if name_base is not None:
-            extrakwargs['base_marker'] = b'|||||||'
-            extrakwargs['name_base'] = name_base
-            extrakwargs['minimize'] = False
-        lines = list(
-            m3.merge_lines(name_a=name_a, name_b=name_b, **extrakwargs)
+        name_a, name_b, name_base = _picklabels(
+            [localctx.path(), otherctx.path(), None], opts.get('label', [])
         )
-        conflicts = m3.conflicts
+        if mode == b'mergediff':
+            lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
+        else:
+            extrakwargs = {
+                'minimize': True,
+            }
+            if name_base is not None:
+                extrakwargs['base_marker'] = b'|||||||'
+                extrakwargs['name_base'] = name_base
+                extrakwargs['minimize'] = False
+            lines = list(
+                m3.merge_lines(name_a=name_a, name_b=name_b, **extrakwargs)
+            )
+            conflicts = m3.conflicts
 
     mergedtext = b''.join(lines)
     if opts.get('print'):
