@@ -147,7 +147,7 @@ def delete_nodemap(tr, repo, revlog):
     if revlog._nodemap_file is None:
         msg = "calling persist nodemap on a revlog without the feature enabled"
         raise error.ProgrammingError(msg)
-    repo.svfs.unlink(revlog._nodemap_file)
+    repo.svfs.tryunlink(revlog._nodemap_file)
 
 
 def persist_nodemap(tr, revlog, pending=False, force=False):

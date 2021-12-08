@@ -18,13 +18,8 @@ DOCKER=$($BUILDDIR/hg-docker docker-path)
 
 CONTAINER=hg-docker-$PLATFORM
 
-if [[ -z "${HG_DOCKER_OWN_USER}" ]]; then
-    DOCKERUID=1000
-    DOCKERGID=1000
-else
-    DOCKERUID=$(id -u)
-    DOCKERGID=$(id -g)
-fi
+DOCKERUID=$(id -u)
+DOCKERGID=$(id -g)
 
 $BUILDDIR/hg-docker build \
     --build-arg UID=$DOCKERUID \

@@ -176,7 +176,7 @@ PyObject *encodedir(PyObject *self, PyObject *args)
 
 	if (newobj) {
 		assert(PyBytes_Check(newobj));
-		Py_SIZE(newobj)--;
+		Py_SET_SIZE(newobj, Py_SIZE(newobj) - 1);
 		_encodedir(PyBytes_AS_STRING(newobj), newlen, path, len + 1);
 	}
 
@@ -791,7 +791,7 @@ PyObject *pathencode(PyObject *self, PyObject *args)
 
 		if (newobj) {
 			assert(PyBytes_Check(newobj));
-			Py_SIZE(newobj)--;
+			Py_SET_SIZE(newobj, Py_SIZE(newobj) - 1);
 			basicencode(PyBytes_AS_STRING(newobj), newlen, path,
 			            len + 1);
 		}
