@@ -882,16 +882,8 @@ Check we deny its usage on older repository
 
   $ hg init no-internal-phase --config format.internal-phase=no
   $ cd no-internal-phase
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
-  revlog-compression-zstd (zstd !)
-  revlogv1
-  sparserevlog
-  store
+  $ hg debugrequires | grep internal-phase
+  [1]
   $ echo X > X
   $ hg add X
   $ hg status
@@ -911,17 +903,8 @@ Check it works fine with repository that supports it.
 
   $ hg init internal-phase --config format.internal-phase=yes
   $ cd internal-phase
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
+  $ hg debugrequires | grep internal-phase
   internal-phase
-  persistent-nodemap (rust !)
-  revlog-compression-zstd (zstd !)
-  revlogv1
-  sparserevlog
-  store
   $ mkcommit A
   test-debug-phase: new rev 0:  x -> 1
   test-hook-close-phase: 4a2df7238c3b48766b5e22fafbb8a2f506ec8256:   -> draft
