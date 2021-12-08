@@ -484,6 +484,17 @@ def _mergediff(m3, name_a, name_b, name_base):
     return lines, conflicts
 
 
+def _resolve(m3, sides):
+    lines = []
+    for group in m3.merge_groups():
+        if group[0] == b'conflict':
+            for side in sides:
+                lines.extend(group[side + 1])
+        else:
+            lines.extend(group[1])
+    return lines
+
+
 def simplemerge(ui, localctx, basectx, otherctx, **opts):
     """Performs the simplemerge algorithm.
 
@@ -515,30 +526,27 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         return 1
 
     m3 = Merge3Text(basetext, localtext, othertext)
-    extrakwargs = {
-        "localorother": None,
-        'minimize': True,
-    }
+    conflicts = False
     if mode == b'union':
-        extrakwargs['start_marker'] = None
-        extrakwargs['mid_marker'] = None
-        extrakwargs['end_marker'] = None
+        lines = _resolve(m3, (1, 2))
     elif mode == b'local':
-        extrakwargs['localorother'] = b'local'
+        lines = _resolve(m3, (1,))
     elif mode == b'other':
-        extrakwargs['localorother'] = b'other'
-    elif name_base is not None:
-        extrakwargs['base_marker'] = b'|||||||'
-        extrakwargs['name_base'] = name_base
-        extrakwargs['minimize'] = False
-
-    if mode == b'mergediff':
+        lines = _resolve(m3, (2,))
+    elif mode == b'mergediff':
         lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
     else:
+        extrakwargs = {
+            'minimize': True,
+        }
+        if name_base is not None:
+            extrakwargs['base_marker'] = b'|||||||'
+            extrakwargs['name_base'] = name_base
+            extrakwargs['minimize'] = False
         lines = list(
             m3.merge_lines(name_a=name_a, name_b=name_b, **extrakwargs)
         )
-        conflicts = m3.conflicts and not mode == b'union'
+        conflicts = m3.conflicts
 
     mergedtext = b''.join(lines)
     if opts.get('print'):
