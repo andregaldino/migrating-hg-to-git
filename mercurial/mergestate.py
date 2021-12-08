@@ -354,7 +354,7 @@ class _mergestate_base(object):
             self._restore_backup(wctx[dfile], localkey, flags)
         else:
             wctx[dfile].remove(ignoremissing=True)
-        complete, merge_ret, deleted = filemerge.filemerge(
+        merge_ret, deleted = filemerge.filemerge(
             self._repo,
             wctx,
             self._local,
@@ -371,26 +371,25 @@ class _mergestate_base(object):
         elif not merge_ret:
             self.mark(dfile, MERGE_RECORD_RESOLVED)
 
-        if complete:
-            action = None
-            if deleted:
-                if fcd.isabsent():
-                    # dc: local picked. Need to drop if present, which may
-                    # happen on re-resolves.
-                    action = ACTION_FORGET
-                else:
-                    # cd: remote picked (or otherwise deleted)
-                    action = ACTION_REMOVE
+        action = None
+        if deleted:
+            if fcd.isabsent():
+                # dc: local picked. Need to drop if present, which may
+                # happen on re-resolves.
+                action = ACTION_FORGET
             else:
-                if fcd.isabsent():  # dc: remote picked
-                    action = ACTION_GET
-                elif fco.isabsent():  # cd: local picked
-                    if dfile in self.localctx:
-                        action = ACTION_ADD_MODIFIED
-                    else:
-                        action = ACTION_ADD
-                # else: regular merges (no action necessary)
-            self._results[dfile] = merge_ret, action
+                # cd: remote picked (or otherwise deleted)
+                action = ACTION_REMOVE
+        else:
+            if fcd.isabsent():  # dc: remote picked
+                action = ACTION_GET
+            elif fco.isabsent():  # cd: local picked
+                if dfile in self.localctx:
+                    action = ACTION_ADD_MODIFIED
+                else:
+                    action = ACTION_ADD
+            # else: regular merges (no action necessary)
+        self._results[dfile] = merge_ret, action
 
         return merge_ret
 

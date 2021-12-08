@@ -1031,7 +1031,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     a boolean indicating whether the file was deleted from disk."""
 
     if not fco.cmp(fcd):  # files identical?
-        return True, None, False
+        return None, False
 
     ui = repo.ui
     fd = fcd.path()
@@ -1089,8 +1089,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     toolconf = tool, toolpath, binary, symlink, scriptfn
 
     if mergetype == nomerge:
-        r, deleted = func(repo, mynode, fcd, fco, fca, toolconf, labels)
-        return True, r, deleted
+        return func(repo, mynode, fcd, fco, fca, toolconf, labels)
 
     if orig != fco.path():
         ui.status(
@@ -1109,7 +1108,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                     b'in-memory merge does not support merge conflicts'
                 )
             ui.warn(onfailure % fduipath)
-        return True, 1, False
+        return 1, False
 
     backup = _makebackup(repo, ui, wctx, fcd)
     r = 1
@@ -1150,7 +1149,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             )
             # we're done if premerge was successful (r is 0)
             if not r:
-                return not r, r, False
+                return r, False
 
         needcheck, r, deleted = func(
             repo,
@@ -1177,7 +1176,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 ui.warn(onfailure % fduipath)
             _onfilemergefailure(ui)
 
-        return True, r, deleted
+        return r, deleted
     finally:
         if not r and backup is not None:
             backup.remove()

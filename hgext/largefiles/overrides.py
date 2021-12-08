@@ -695,7 +695,7 @@ def overridefilemerge(
         )
     ):
         repo.wwrite(fcd.path(), fco.data(), fco.flags())
-    return True, 0, False
+    return 0, False
 
 
 @eh.wrapfunction(copiesmod, b'pathcopies')
