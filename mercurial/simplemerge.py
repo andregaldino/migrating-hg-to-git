@@ -516,13 +516,17 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {
-        "localorother": opts.get("localorother", None),
+        "localorother": None,
         'minimize': True,
     }
     if mode == b'union':
         extrakwargs['start_marker'] = None
         extrakwargs['mid_marker'] = None
         extrakwargs['end_marker'] = None
+    elif mode == b'local':
+        extrakwargs['localorother'] = b'local'
+    elif mode == b'other':
+        extrakwargs['localorother'] = b'other'
     elif name_base is not None:
         extrakwargs['base_marker'] = b'|||||||'
         extrakwargs['name_base'] = name_base
