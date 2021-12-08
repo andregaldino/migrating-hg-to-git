@@ -96,7 +96,6 @@ class Merge3Text(object):
         mid_marker=b'=======',
         end_marker=b'>>>>>>>',
         base_marker=None,
-        localorother=None,
         minimize=False,
     ):
         """Return merge in cvs-like form."""
@@ -128,28 +127,21 @@ class Merge3Text(object):
                 for i in range(t[1], t[2]):
                     yield self.b[i]
             elif what == b'conflict':
-                if localorother == b'local':
-                    for i in range(t[3], t[4]):
-                        yield self.a[i]
-                elif localorother == b'other':
-                    for i in range(t[5], t[6]):
-                        yield self.b[i]
-                else:
-                    self.conflicts = True
-                    if start_marker is not None:
-                        yield start_marker + newline
-                    for i in range(t[3], t[4]):
-                        yield self.a[i]
-                    if base_marker is not None:
-                        yield base_marker + newline
-                        for i in range(t[1], t[2]):
-                            yield self.base[i]
-                    if mid_marker is not None:
-                        yield mid_marker + newline
-                    for i in range(t[5], t[6]):
-                        yield self.b[i]
-                    if end_marker is not None:
-                        yield end_marker + newline
+                self.conflicts = True
+                if start_marker is not None:
+                    yield start_marker + newline
+                for i in range(t[3], t[4]):
+                    yield self.a[i]
+                if base_marker is not None:
+                    yield base_marker + newline
+                    for i in range(t[1], t[2]):
+                        yield self.base[i]
+                if mid_marker is not None:
+                    yield mid_marker + newline
+                for i in range(t[5], t[6]):
+                    yield self.b[i]
+                if end_marker is not None:
+                    yield end_marker + newline
             else:
                 raise ValueError(what)
 
