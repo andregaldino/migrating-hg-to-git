@@ -288,7 +288,7 @@ parameters are available, but not --authormap, --branchmap, etc.
 
 The requirement is added to the destination repo.
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache

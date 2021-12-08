@@ -34,7 +34,7 @@ The clone directory should only contain f1 and f2
   f2
 
 Requirements should contain narrowhg
-  $ cat narrowclone1/.hg/requires | grep narrowhg
+  $ hg debugrequires -R narrowclone1 | grep narrowhg
   narrowhg-experimental
 
 NarrowHG should track f1 and f2

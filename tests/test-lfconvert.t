@@ -94,7 +94,7 @@ Test link+rename largefile codepath
   1276481102f218c981e0324180bafd9f  sub/maybelarge.dat
 
 "lfconvert" adds 'largefiles' to .hg/requires.
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache

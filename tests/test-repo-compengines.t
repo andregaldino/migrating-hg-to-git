@@ -9,7 +9,7 @@ A new repository uses zlib storage, which doesn't need a requirement
 
   $ hg init default
   $ cd default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -59,7 +59,7 @@ with that engine or a requirement
   $ touch bar
   $ hg --config format.revlog-compression=none -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -79,7 +79,7 @@ with that engine or a requirement
 
   $ hg --config format.revlog-compression=zstd init zstd
   $ cd zstd
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -183,7 +183,7 @@ checking details of none compression
   summary:     some-commit
   
 
-  $ cat none-compression/.hg/requires
+  $ hg debugrequires -R none-compression/
   dotencode
   exp-compression-none
   dirstate-v2 (dirstate-v2 !)

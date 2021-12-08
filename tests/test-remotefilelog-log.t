@@ -25,7 +25,7 @@ Shallow clone from full
   searching for changes
   no changes found
   $ cd shallow
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1

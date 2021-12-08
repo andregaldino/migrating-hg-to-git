@@ -16,7 +16,7 @@
 
 Enable sparse profile
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -36,7 +36,7 @@ Enable sparse profile
 
 Requirement for sparse added when sparse is enabled
 
-  $ cat .hg/requires
+  $ hg debugrequires --config extensions.sparse=
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-sparse
@@ -59,7 +59,7 @@ Requirement for sparse is removed when sparse is disabled
 
   $ hg debugsparse --reset --config extensions.sparse=
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache

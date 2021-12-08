@@ -20,7 +20,7 @@ Can create and open repo with revlog v2 requirement
 
   $ hg init new-repo
   $ cd new-repo
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-revlogv2.2

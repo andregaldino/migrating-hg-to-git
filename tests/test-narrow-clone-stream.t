@@ -61,7 +61,7 @@ Cloning a specific file when stream clone is supported
 
 Making sure we have the correct set of requirements
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode (tree !)
   dotencode (flat-fncache !)
   dirstate-v2 (dirstate-v2 !)

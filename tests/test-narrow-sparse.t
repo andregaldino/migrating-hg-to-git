@@ -56,7 +56,7 @@ XXX: we should have a flag in `hg debugsparse` to list the sparse profile
   $ test -f .hg/sparse
   [1]
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache

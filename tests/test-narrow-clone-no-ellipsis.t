@@ -22,7 +22,7 @@ narrow clone a file, f10
   added 40 changesets with 1 changes to 1 files
   new changesets *:* (glob)
   $ cd narrow
-  $ cat .hg/requires | grep -v generaldelta
+  $ hg debugrequires | grep -v generaldelta
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache

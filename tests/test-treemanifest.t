@@ -5,7 +5,7 @@ Set up repo
 
 Requirements get set on init
 
-  $ grep treemanifest .hg/requires
+  $ hg debugrequires | grep treemanifest
   treemanifest
 
 Without directories, looks like any other repo
@@ -229,7 +229,7 @@ Create clone with tree manifests enabled
   $ cd repo-mixed
   $ test -d .hg/store/meta
   [1]
-  $ grep treemanifest .hg/requires
+  $ hg debugrequires | grep treemanifest
   treemanifest
 
 Should be possible to push updates from flat to tree manifest repo
@@ -373,7 +373,7 @@ Pushing from treemanifest repo to an empty repo makes that a treemanifest repo
   > [experimental]
   > changegroup3=yes
   > EOF
-  $ grep treemanifest empty-repo/.hg/requires
+  $ hg debugrequires -R empty-repo | grep treemanifest
   [1]
   $ hg push -R repo -r 0 empty-repo
   pushing to empty-repo
@@ -382,13 +382,13 @@ Pushing from treemanifest repo to an empty repo makes that a treemanifest repo
   adding manifests
   adding file changes
   added 1 changesets with 2 changes to 2 files
-  $ grep treemanifest empty-repo/.hg/requires
+  $ hg debugrequires -R empty-repo | grep treemanifest
   treemanifest
 
 Pushing to an empty repo works
 
   $ hg --config experimental.treemanifest=1 init clone
-  $ grep treemanifest clone/.hg/requires
+  $ hg debugrequires -R clone | grep treemanifest
   treemanifest
   $ hg push -R repo clone
   pushing to clone
@@ -397,7 +397,7 @@ Pushing to an empty repo works
   adding manifests
   adding file changes
   added 11 changesets with 15 changes to 10 files (+3 heads)
-  $ grep treemanifest clone/.hg/requires
+  $ hg debugrequires -R clone | grep treemanifest
   treemanifest
   $ hg -R clone verify
   checking changesets
@@ -682,7 +682,7 @@ We can clone even with the knob turned off and we'll get a treemanifest repo.
 No server errors.
   $ cat deeprepo/errors.log
 requires got updated to include treemanifest
-  $ cat deepclone/.hg/requires | grep treemanifest
+  $ hg debugrequires -R deepclone | grep treemanifest
   treemanifest
 Tree manifest revlogs exist.
   $ find deepclone/.hg/store/meta | sort
@@ -730,7 +730,7 @@ Create clones using old repo formats to use in later tests
   updating to branch default
   8 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd deeprepo-basicstore
-  $ grep store .hg/requires
+  $ hg debugrequires | grep store
   [1]
   $ hg serve -p $HGPORT1 -d --pid-file=hg.pid --errorlog=errors.log
   $ cat hg.pid >> $DAEMON_PIDS
@@ -747,7 +747,7 @@ Create clones using old repo formats to use in later tests
   updating to branch default
   8 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd deeprepo-encodedstore
-  $ grep fncache .hg/requires
+  $ hg debugrequires | grep fncache
   [1]
   $ hg serve -p $HGPORT2 -d --pid-file=hg.pid --errorlog=errors.log
   $ cat hg.pid >> $DAEMON_PIDS

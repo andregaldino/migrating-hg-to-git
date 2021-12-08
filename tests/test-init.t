@@ -9,7 +9,7 @@ This test tries to exercise the ssh functionality with a dummy script
   >    if [ -f "$name"/.hg/00changelog.i ]; then
   >    echo 00changelog.i created
   >    fi
-  >    cat "$name"/.hg/requires
+  >    hg debugrequires -R "$name"
   > }
 
 creating 'local'

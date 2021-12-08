@@ -624,7 +624,7 @@ Original requirements backed up
 
 generaldelta added to original requirements files
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
