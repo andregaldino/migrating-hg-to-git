@@ -352,9 +352,13 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
                     let fs_metadata = repo
                         .working_directory_vfs()
                         .symlink_metadata(&fs_path)?;
-                    let mtime = TruncatedTimestamp::for_mtime_of(&fs_metadata)
-                        .when_reading_file(&fs_path)?;
-                    if mtime.is_reliable_mtime(&mtime_boundary) {
+                    if let Some(mtime) =
+                        TruncatedTimestamp::for_reliable_mtime_of(
+                            &fs_metadata,
+                            &mtime_boundary,
+                        )
+                        .when_reading_file(&fs_path)?
+                    {
                         let mode = fs_metadata.mode();
                         let size = fs_metadata.len() as u32 & RANGE_MASK_31BIT;
                         let mut entry = dmap

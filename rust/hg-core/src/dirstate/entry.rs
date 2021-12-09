@@ -87,6 +87,10 @@ impl TruncatedTimestamp {
         }
     }
 
+    /// Returns a `TruncatedTimestamp` for the modification time of `metadata`.
+    ///
+    /// Propagates errors from `std` on platforms where modification time
+    /// is not available at all.
     pub fn for_mtime_of(metadata: &fs::Metadata) -> io::Result<Self> {
         #[cfg(unix)]
         {
@@ -102,13 +106,18 @@ impl TruncatedTimestamp {
         }
     }
 
-    /// Returns whether this timestamp is reliable as the "mtime" of a file.
+    /// Like `for_mtime_of`, but may return `None` or a value with
+    /// `second_ambiguous` set if the mtime is not "reliable".
     ///
     /// A modification time is reliable if it is older than `boundary` (or
     /// sufficiently in the future).
     ///
     /// Otherwise a concurrent modification might happens with the same mtime.
-    pub fn is_reliable_mtime(&self, boundary: &Self) -> bool {
+    pub fn for_reliable_mtime_of(
+        metadata: &fs::Metadata,
+        boundary: &Self,
+    ) -> io::Result<Option<Self>> {
+        let mut mtime = Self::for_mtime_of(metadata)?;
         // If the mtime of the ambiguous file is younger (or equal) to the
         // starting point of the `status` walk, we cannot garantee that
         // another, racy, write will not happen right after with the same mtime
@@ -118,16 +127,23 @@ impl TruncatedTimestamp {
         // mismatch between the current clock and previous file system
         // operation. So mtime more than one days in the future are considered
         // fine.
-        if self.truncated_seconds == boundary.truncated_seconds {
-            self.nanoseconds != 0
+        let reliable = if mtime.truncated_seconds == boundary.truncated_seconds
+        {
+            mtime.second_ambiguous = true;
+            mtime.nanoseconds != 0
                 && boundary.nanoseconds != 0
-                && self.nanoseconds < boundary.nanoseconds
+                && mtime.nanoseconds < boundary.nanoseconds
         } else {
             // `truncated_seconds` is less than 2**31,
             // so this does not overflow `u32`:
             let one_day_later = boundary.truncated_seconds + 24 * 3600;
-            self.truncated_seconds < boundary.truncated_seconds
-                || self.truncated_seconds > one_day_later
+            mtime.truncated_seconds < boundary.truncated_seconds
+                || mtime.truncated_seconds > one_day_later
+        };
+        if reliable {
+            Ok(Some(mtime))
+        } else {
+            Ok(None)
         }
     }
 
