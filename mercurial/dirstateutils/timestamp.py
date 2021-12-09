@@ -21,13 +21,16 @@ class timestamp(tuple):
     A Unix timestamp with optional nanoseconds precision,
     modulo 2**31 seconds.
 
-    A 2-tuple containing:
+    A 3-tuple containing:
 
     `truncated_seconds`: seconds since the Unix epoch,
     truncated to its lower 31 bits
 
     `subsecond_nanoseconds`: number of nanoseconds since `truncated_seconds`.
     When this is zero, the sub-second precision is considered unknown.
+
+    `second_ambiguous`: whether this timestamp is still "reliable"
+    (see `reliable_mtime_of`) if we drop its sub-second component.
     """
 
     def __new__(cls, value):
@@ -93,7 +96,8 @@ def mtime_of(stat_result):
 
 
 def reliable_mtime_of(stat_result, present_mtime):
-    """same as `mtime_of`, but return None if the date might be ambiguous
+    """Same as `mtime_of`, but return `None` or a `Timestamp` with
+    `second_ambiguous` set if the date might be ambiguous.
 
     A modification time is reliable if it is older than "present_time" (or
     sufficiently in the future).
