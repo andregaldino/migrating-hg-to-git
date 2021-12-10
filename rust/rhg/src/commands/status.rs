@@ -255,75 +255,36 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             }
         }
     }
+    let relative_paths = (!ui.plain())
+        && config
+            .get_option(b"commands", b"status.relative")?
+            .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);
+    let output = DisplayStatusPaths {
+        ui,
+        repo,
+        no_status,
+        relative_paths,
+    };
     if display_states.modified {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.modified,
-            b"M",
-        )?;
+        output.display(b"M", ds_status.modified)?;
     }
     if display_states.added {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.added,
-            b"A",
-        )?;
+        output.display(b"A", ds_status.added)?;
     }
     if display_states.removed {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.removed,
-            b"R",
-        )?;
+        output.display(b"R", ds_status.removed)?;
     }
     if display_states.deleted {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.deleted,
-            b"!",
-        )?;
+        output.display(b"!", ds_status.deleted)?;
     }
     if display_states.unknown {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.unknown,
-            b"?",
-        )?;
+        output.display(b"?", ds_status.unknown)?;
     }
     if display_states.ignored {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.ignored,
-            b"I",
-        )?;
+        output.display(b"I", ds_status.ignored)?;
     }
     if display_states.clean {
-        display_status_paths(
-            ui,
-            repo,
-            config,
-            no_status,
-            &mut ds_status.clean,
-            b"C",
-        )?;
+        output.display(b"C", ds_status.clean)?;
     }
 
     let mut dirstate_write_needed = ds_status.dirty;
@@ -416,41 +377,47 @@ fn ignore_files(repo: &Repo, config: &Config) -> Vec<PathBuf> {
     ignore_files
 }
 
-// Probably more elegant to use a Deref or Borrow trait rather than
-// harcode HgPathBuf, but probably not really useful at this point
-fn display_status_paths(
-    ui: &Ui,
-    repo: &Repo,
-    config: &Config,
+struct DisplayStatusPaths<'a> {
+    ui: &'a Ui,
+    repo: &'a Repo,
     no_status: bool,
-    paths: &mut [HgPathCow],
-    status_prefix: &[u8],
-) -> Result<(), CommandError> {
-    paths.sort_unstable();
-    let mut relative: bool = config.get_bool(b"ui", b"relative-paths")?;
-    relative = config
-        .get_option(b"commands", b"status.relative")?
-        .unwrap_or(relative);
-    let print_path = |path: &[u8]| {
-        // TODO optim, probably lots of unneeded copies here, especially
-        // if out stream is buffered
-        if no_status {
-            ui.write_stdout(&format_bytes!(b"{}\n", path))
-        } else {
-            ui.write_stdout(&format_bytes!(b"{} {}\n", status_prefix, path))
-        }
-    };
+    relative_paths: bool,
+}
 
-    if relative && !ui.plain() {
-        relativize_paths(repo, paths.iter().map(Ok), |path| {
-            print_path(&path)
-        })?;
-    } else {
-        for path in paths {
-            print_path(path.as_bytes())?
+impl DisplayStatusPaths<'_> {
+    // Probably more elegant to use a Deref or Borrow trait rather than
+    // harcode HgPathBuf, but probably not really useful at this point
+    fn display(
+        &self,
+        status_prefix: &[u8],
+        mut paths: Vec<HgPathCow>,
+    ) -> Result<(), CommandError> {
+        paths.sort_unstable();
+        let print_path = |path: &[u8]| {
+            // TODO optim, probably lots of unneeded copies here, especially
+            // if out stream is buffered
+            if self.no_status {
+                self.ui.write_stdout(&format_bytes!(b"{}\n", path))
+            } else {
+                self.ui.write_stdout(&format_bytes!(
+                    b"{} {}\n",
+                    status_prefix,
+                    path
+                ))
+            }
+        };
+
+        if self.relative_paths {
+            relativize_paths(self.repo, paths.iter().map(Ok), |path| {
+                print_path(&path)
+            })?;
+        } else {
+            for path in paths {
+                print_path(path.as_bytes())?
+            }
         }
+        Ok(())
     }
-    Ok(())
 }
 
 /// Check if a file is modified by comparing actual repo store and file system.
