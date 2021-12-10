@@ -155,6 +155,24 @@ impl Graph for Index {
     }
 }
 
+impl vcsgraph::graph::Graph for Index {
+    fn parents(
+        &self,
+        rev: Revision,
+    ) -> Result<vcsgraph::graph::Parents, vcsgraph::graph::GraphReadError>
+    {
+        match Graph::parents(self, rev) {
+            Ok(parents) => Ok(vcsgraph::graph::Parents(parents)),
+            Err(GraphError::ParentOutOfRange(rev)) => {
+                Err(vcsgraph::graph::GraphReadError::KeyedInvalidKey(rev))
+            }
+            Err(GraphError::WorkingDirectoryUnsupported) => Err(
+                vcsgraph::graph::GraphReadError::WorkingDirectoryUnsupported,
+            ),
+        }
+    }
+}
+
 impl RevlogIndex for Index {
     /// Note C return type is Py_ssize_t (hence signed), but we shall
     /// force it to unsigned, because it's a length
