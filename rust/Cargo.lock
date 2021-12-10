@@ -369,6 +369,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "hg-core"
 version = "0.1.0"
 dependencies = [
@@ -413,6 +419,7 @@ dependencies = [
  "libc",
  "log",
  "stable_deref_trait",
+ "vcsgraph",
 ]
 
 [[package]]
@@ -985,6 +992,17 @@ name = "vcpkg"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b00bca6106a5e23f3eee943593759b7fcddb00554332e856d990c893966879fb"
+
+[[package]]
+name = "vcsgraph"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cb68c231e2575f7503a7c19213875f9d4ec2e84e963a56ce3de4b6bee351ef7"
+dependencies = [
+ "hex",
+ "rand",
+ "sha-1",
+]
 
 [[package]]
 name = "vec_map"
