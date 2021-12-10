@@ -941,6 +941,7 @@ It is still not set when there are unknown files
 Now the directory is eligible for caching, so its mtime is save in the dirstate
 
   $ rm subdir/unknown
+  $ sleep 0.1 # ensure the kernel’s internal clock for mtimes has ticked
   $ hg status
   $ hg debugdirstate --all --no-dates | grep '^ '
       0         -1 set                 subdir
