@@ -2207,7 +2207,7 @@ def _update(
                 # it makes the "different write with same mtime" issue
                 # virtually vanish. However, dirstate v1 cannot store such
                 # precision and a bunch of python-runtime, operating-system and
-                # filesystem does not provide use with such precision, so we
+                # filesystem does not provide use with such precision, so we
                 # have to operate as if it wasn't available.
                 if getfiledata:
                     ambiguous_mtime = {}
