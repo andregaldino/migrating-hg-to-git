@@ -7,7 +7,7 @@
 
 use crate::error::CommandError;
 use crate::ui::Ui;
-use crate::utils::path_utils::relativize_paths;
+use crate::utils::path_utils::RelativizePaths;
 use clap::{Arg, SubCommand};
 use format_bytes::format_bytes;
 use hg;
@@ -261,9 +261,12 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);
     let output = DisplayStatusPaths {
         ui,
-        repo,
         no_status,
-        relative_paths,
+        relativize: if relative_paths {
+            Some(RelativizePaths::new(repo)?)
+        } else {
+            None
+        },
     };
     if display_states.modified {
         output.display(b"M", ds_status.modified)?;
@@ -379,9 +382,8 @@ fn ignore_files(repo: &Repo, config: &Config) -> Vec<PathBuf> {
 
 struct DisplayStatusPaths<'a> {
     ui: &'a Ui,
-    repo: &'a Repo,
     no_status: bool,
-    relative_paths: bool,
+    relativize: Option<RelativizePaths>,
 }
 
 impl DisplayStatusPaths<'_> {
@@ -393,27 +395,24 @@ impl DisplayStatusPaths<'_> {
         mut paths: Vec<HgPathCow>,
     ) -> Result<(), CommandError> {
         paths.sort_unstable();
-        let print_path = |path: &[u8]| {
+        for path in paths {
+            let relative;
+            let path = if let Some(relativize) = &self.relativize {
+                relative = relativize.relativize(&path);
+                &*relative
+            } else {
+                path.as_bytes()
+            };
             // TODO optim, probably lots of unneeded copies here, especially
             // if out stream is buffered
             if self.no_status {
-                self.ui.write_stdout(&format_bytes!(b"{}\n", path))
+                self.ui.write_stdout(&format_bytes!(b"{}\n", path))?
             } else {
                 self.ui.write_stdout(&format_bytes!(
                     b"{} {}\n",
                     status_prefix,
                     path
-                ))
-            }
-        };
-
-        if self.relative_paths {
-            relativize_paths(self.repo, paths.iter().map(Ok), |path| {
-                print_path(&path)
-            })?;
-        } else {
-            for path in paths {
-                print_path(path.as_bytes())?
+                ))?
             }
         }
         Ok(())

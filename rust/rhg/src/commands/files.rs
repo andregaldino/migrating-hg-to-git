@@ -1,14 +1,12 @@
 use crate::error::CommandError;
 use crate::ui::Ui;
-use crate::ui::UiError;
-use crate::utils::path_utils::relativize_paths;
+use crate::utils::path_utils::RelativizePaths;
 use clap::Arg;
 use hg::errors::HgError;
 use hg::operations::list_rev_tracked_files;
 use hg::operations::Dirstate;
 use hg::repo::Repo;
 use hg::utils::hg_path::HgPath;
-use std::borrow::Cow;
 
 pub const HELP_TEXT: &str = "
 List tracked files.
@@ -86,11 +84,14 @@ fn display_files<'a>(
     let mut stdout = ui.stdout_buffer();
     let mut any = false;
 
-    relativize_paths(repo, files, |path: Cow<[u8]>| -> Result<(), UiError> {
+    let relativize = RelativizePaths::new(repo)?;
+    for result in files {
+        let path = result?;
+        stdout.write_all(&relativize.relativize(path))?;
+        stdout.write_all(b"\n")?;
         any = true;
-        stdout.write_all(path.as_ref())?;
-        stdout.write_all(b"\n")
-    })?;
+    }
+
     stdout.flush()?;
     if any {
         Ok(())
