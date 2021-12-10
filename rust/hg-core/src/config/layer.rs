@@ -127,6 +127,17 @@ impl ConfigLayer {
             .flat_map(|section| section.keys().map(|vec| &**vec))
     }
 
+    /// Returns the (key, value) pairs defined in the given section
+    pub fn iter_section<'layer>(
+        &'layer self,
+        section: &[u8],
+    ) -> impl Iterator<Item = (&'layer [u8], &'layer [u8])> {
+        self.sections
+            .get(section)
+            .into_iter()
+            .flat_map(|section| section.iter().map(|(k, v)| (&**k, &*v.bytes)))
+    }
+
     /// Returns whether any key is defined in the given section
     pub fn has_non_empty_section(&self, section: &[u8]) -> bool {
         self.sections

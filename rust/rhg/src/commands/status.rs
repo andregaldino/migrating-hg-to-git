@@ -21,10 +21,12 @@ use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
 use hg::repo::Repo;
 use hg::utils::files::get_bytes_from_os_string;
+use hg::utils::files::get_path_from_bytes;
 use hg::utils::hg_path::{hg_path_to_path_buf, HgPath};
 use hg::{HgPathCow, StatusOptions};
 use log::{info, warn};
 use std::io;
+use std::path::PathBuf;
 
 pub const HELP_TEXT: &str = "
 Show changed files in the working directory
@@ -213,11 +215,10 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         list_ignored: display_states.ignored,
         collect_traversed_dirs: false,
     };
-    let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
     let (mut ds_status, pattern_warnings) = dmap.status(
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
-        vec![ignore_file],
+        ignore_files(repo, config),
         options,
     )?;
     if !pattern_warnings.is_empty() {
@@ -394,6 +395,25 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         }
     }
     Ok(())
+}
+
+fn ignore_files(repo: &Repo, config: &Config) -> Vec<PathBuf> {
+    let mut ignore_files = Vec::new();
+    let repo_ignore = repo.working_directory_vfs().join(".hgignore");
+    if repo_ignore.exists() {
+        ignore_files.push(repo_ignore)
+    }
+    for (key, value) in config.iter_section(b"ui") {
+        if key == b"ignore" || key.starts_with(b"ignore.") {
+            let path = get_path_from_bytes(value);
+            // TODO: expand "~/" and environment variable here, like Python
+            // does with `os.path.expanduser` and `os.path.expandvars`
+
+            let joined = repo.working_directory_path().join(path);
+            ignore_files.push(joined);
+        }
+    }
+    ignore_files
 }
 
 // Probably more elegant to use a Deref or Borrow trait rather than

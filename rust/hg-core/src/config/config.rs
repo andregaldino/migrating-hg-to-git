@@ -419,6 +419,59 @@ impl Config {
             .any(|layer| layer.has_non_empty_section(section))
     }
 
+    /// Yields (key, value) pairs for everything in the given section
+    pub fn iter_section<'a>(
+        &'a self,
+        section: &'a [u8],
+    ) -> impl Iterator<Item = (&[u8], &[u8])> + 'a {
+        // TODO: Use `Iterator`’s `.peekable()` when its `peek_mut` is
+        // available:
+        // https://doc.rust-lang.org/nightly/std/iter/struct.Peekable.html#method.peek_mut
+        struct Peekable<I: Iterator> {
+            iter: I,
+            /// Remember a peeked value, even if it was None.
+            peeked: Option<Option<I::Item>>,
+        }
+
+        impl<I: Iterator> Peekable<I> {
+            fn new(iter: I) -> Self {
+                Self { iter, peeked: None }
+            }
+
+            fn next(&mut self) {
+                self.peeked = None
+            }
+
+            fn peek_mut(&mut self) -> Option<&mut I::Item> {
+                let iter = &mut self.iter;
+                self.peeked.get_or_insert_with(|| iter.next()).as_mut()
+            }
+        }
+
+        // Deduplicate keys redefined in multiple layers
+        let mut keys_already_seen = HashSet::new();
+        let mut key_is_new =
+            move |&(key, _value): &(&'a [u8], &'a [u8])| -> bool {
+                keys_already_seen.insert(key)
+            };
+        // This is similar to `flat_map` + `filter_map`, except with a single
+        // closure that owns `key_is_new` (and therefore the
+        // `keys_already_seen` set):
+        let mut layer_iters = Peekable::new(
+            self.layers
+                .iter()
+                .rev()
+                .map(move |layer| layer.iter_section(section)),
+        );
+        std::iter::from_fn(move || loop {
+            if let Some(pair) = layer_iters.peek_mut()?.find(&mut key_is_new) {
+                return Some(pair);
+            } else {
+                layer_iters.next();
+            }
+        })
+    }
+
     /// Get raw values bytes from all layers (even untrusted ones) in order
     /// of precedence.
     #[cfg(test)]
