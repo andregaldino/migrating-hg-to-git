@@ -309,6 +309,25 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
             NodeRef::OnDisk(node) => node.copy_source(on_disk),
         }
     }
+    /// Returns a `BorrowedPath`, which can be turned into a `Cow<'on_disk,
+    /// HgPath>` detached from `'tree`
+    pub(super) fn copy_source_borrowed(
+        &self,
+        on_disk: &'on_disk [u8],
+    ) -> Result<Option<BorrowedPath<'tree, 'on_disk>>, DirstateV2ParseError>
+    {
+        Ok(match self {
+            NodeRef::InMemory(_path, node) => {
+                node.copy_source.as_ref().map(|source| match source {
+                    Cow::Borrowed(on_disk) => BorrowedPath::OnDisk(on_disk),
+                    Cow::Owned(in_memory) => BorrowedPath::InMemory(in_memory),
+                })
+            }
+            NodeRef::OnDisk(node) => node
+                .copy_source(on_disk)?
+                .map(|source| BorrowedPath::OnDisk(source)),
+        })
+    }
 
     pub(super) fn entry(
         &self,

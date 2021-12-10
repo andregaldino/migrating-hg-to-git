@@ -13,6 +13,7 @@ use format_bytes::format_bytes;
 use hg;
 use hg::config::Config;
 use hg::dirstate::has_exec_bit;
+use hg::dirstate::status::StatusPath;
 use hg::dirstate::TruncatedTimestamp;
 use hg::dirstate::RANGE_MASK_31BIT;
 use hg::errors::{HgError, IoResultExt};
@@ -23,7 +24,7 @@ use hg::repo::Repo;
 use hg::utils::files::get_bytes_from_os_string;
 use hg::utils::files::get_path_from_bytes;
 use hg::utils::hg_path::{hg_path_to_path_buf, HgPath};
-use hg::{HgPathCow, StatusOptions};
+use hg::StatusOptions;
 use log::{info, warn};
 use std::io;
 use std::path::PathBuf;
@@ -87,6 +88,12 @@ pub fn args() -> clap::App<'static, 'static> {
                 .help("show only ignored files")
                 .short("-i")
                 .long("--ignored"),
+        )
+        .arg(
+            Arg::with_name("copies")
+                .help("show source of copied files (DEFAULT: ui.statuscopies)")
+                .short("-C")
+                .long("--copies"),
         )
         .arg(
             Arg::with_name("no-status")
@@ -174,7 +181,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let ui = invocation.ui;
     let config = invocation.config;
     let args = invocation.subcommand_args;
-    let display_states = if args.is_present("all") {
+    let all = args.is_present("all");
+    let display_states = if all {
         // TODO when implementing `--quiet`: it excludes clean files
         // from `--all`
         ALL_DISPLAY_STATES
@@ -195,6 +203,9 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         }
     };
     let no_status = args.is_present("no-status");
+    let list_copies = all
+        || args.is_present("copies")
+        || config.get_bool(b"ui", b"statuscopies")?;
 
     let repo = invocation.repo?;
 
@@ -213,6 +224,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         list_clean: display_states.clean,
         list_unknown: display_states.unknown,
         list_ignored: display_states.ignored,
+        list_copies,
         collect_traversed_dirs: false,
     };
     let (mut ds_status, pattern_warnings) = dmap.status(
@@ -231,7 +243,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     if !ds_status.unsure.is_empty() {
         info!(
             "Files to be rechecked by retrieval from filelog: {:?}",
-            &ds_status.unsure
+            ds_status.unsure.iter().map(|s| &s.path).collect::<Vec<_>>()
         );
     }
     let mut fixup = Vec::new();
@@ -243,7 +255,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             CommandError::from((e, &*format!("{:x}", p1.short())))
         })?;
         for to_check in ds_status.unsure {
-            if unsure_is_modified(repo, &manifest, &to_check)? {
+            if unsure_is_modified(repo, &manifest, &to_check.path)? {
                 if display_states.modified {
                     ds_status.modified.push(to_check);
                 }
@@ -251,7 +263,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
                 if display_states.clean {
                     ds_status.clean.push(to_check.clone());
                 }
-                fixup.push(to_check.into_owned())
+                fixup.push(to_check.path.into_owned())
             }
         }
     }
@@ -392,10 +404,10 @@ impl DisplayStatusPaths<'_> {
     fn display(
         &self,
         status_prefix: &[u8],
-        mut paths: Vec<HgPathCow>,
+        mut paths: Vec<StatusPath<'_>>,
     ) -> Result<(), CommandError> {
         paths.sort_unstable();
-        for path in paths {
+        for StatusPath { path, copy_source } in paths {
             let relative;
             let path = if let Some(relativize) = &self.relativize {
                 relative = relativize.relativize(&path);
@@ -412,6 +424,12 @@ impl DisplayStatusPaths<'_> {
                     b"{} {}\n",
                     status_prefix,
                     path
+                ))?
+            }
+            if let Some(source) = copy_source {
+                self.ui.write_stdout(&format_bytes!(
+                    b"  {}\n",
+                    source.as_bytes()
                 ))?
             }
         }

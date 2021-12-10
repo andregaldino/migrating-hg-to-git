@@ -1,5 +1,6 @@
 use crate::dirstate::entry::TruncatedTimestamp;
 use crate::dirstate::status::IgnoreFnType;
+use crate::dirstate::status::StatusPath;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
@@ -15,6 +16,7 @@ use crate::BadMatch;
 use crate::DirstateStatus;
 use crate::EntryState;
 use crate::HgPathBuf;
+use crate::HgPathCow;
 use crate::PatternFileWarning;
 use crate::StatusError;
 use crate::StatusOptions;
@@ -146,7 +148,65 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
     filesystem_time_at_status_start: Option<SystemTime>,
 }
 
+enum Outcome {
+    Modified,
+    Added,
+    Removed,
+    Deleted,
+    Clean,
+    Ignored,
+    Unknown,
+    Unsure,
+}
+
 impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
+    fn push_outcome(
+        &self,
+        which: Outcome,
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        let path = dirstate_node
+            .full_path_borrowed(self.dmap.on_disk)?
+            .detach_from_tree();
+        let copy_source = if self.options.list_copies {
+            dirstate_node
+                .copy_source_borrowed(self.dmap.on_disk)?
+                .map(|source| source.detach_from_tree())
+        } else {
+            None
+        };
+        self.push_outcome_common(which, path, copy_source);
+        Ok(())
+    }
+
+    fn push_outcome_without_copy_source(
+        &self,
+        which: Outcome,
+        path: &BorrowedPath<'_, 'on_disk>,
+    ) {
+        self.push_outcome_common(which, path.detach_from_tree(), None)
+    }
+
+    fn push_outcome_common(
+        &self,
+        which: Outcome,
+        path: HgPathCow<'on_disk>,
+        copy_source: Option<HgPathCow<'on_disk>>,
+    ) {
+        let mut outcome = self.outcome.lock().unwrap();
+        let vec = match which {
+            Outcome::Modified => &mut outcome.modified,
+            Outcome::Added => &mut outcome.added,
+            Outcome::Removed => &mut outcome.removed,
+            Outcome::Deleted => &mut outcome.deleted,
+            Outcome::Clean => &mut outcome.clean,
+            Outcome::Ignored => &mut outcome.ignored,
+            Outcome::Unknown => &mut outcome.unknown,
+            Outcome::Unsure => &mut outcome.unsure,
+        };
+        vec.push(StatusPath { path, copy_source });
+    }
+
     fn read_dir(
         &self,
         hg_path: &HgPath,
@@ -347,10 +407,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             // If we previously had a file here, it was removed (with
             // `hg rm` or similar) or deleted before it could be
             // replaced by a directory or something else.
-            self.mark_removed_or_deleted_if_file(
-                &hg_path,
-                dirstate_node.state()?,
-            );
+            self.mark_removed_or_deleted_if_file(&dirstate_node)?;
         }
         if file_type.is_dir() {
             if self.options.collect_traversed_dirs {
@@ -381,24 +438,13 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             if file_or_symlink && self.matcher.matches(hg_path) {
                 if let Some(state) = dirstate_node.state()? {
                     match state {
-                        EntryState::Added => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .added
-                            .push(hg_path.detach_from_tree()),
+                        EntryState::Added => {
+                            self.push_outcome(Outcome::Added, &dirstate_node)?
+                        }
                         EntryState::Removed => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .removed
-                            .push(hg_path.detach_from_tree()),
+                            .push_outcome(Outcome::Removed, &dirstate_node)?,
                         EntryState::Merged => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .modified
-                            .push(hg_path.detach_from_tree()),
+                            .push_outcome(Outcome::Modified, &dirstate_node)?,
                         EntryState::Normal => self
                             .handle_normal_file(&dirstate_node, fs_metadata)?,
                     }
@@ -510,7 +556,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let entry = dirstate_node
             .entry()?
             .expect("handle_normal_file called with entry-less node");
-        let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let mode_changed =
             || self.options.check_exec && entry.mode_changed(fs_metadata);
         let size = entry.size();
@@ -518,20 +563,12 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         if size >= 0 && size_changed && fs_metadata.file_type().is_symlink() {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
-            self.outcome
-                .lock()
-                .unwrap()
-                .unsure
-                .push(hg_path.detach_from_tree())
+            self.push_outcome(Outcome::Unsure, dirstate_node)?
         } else if dirstate_node.has_copy_source()
             || entry.is_from_other_parent()
             || (size >= 0 && (size_changed || mode_changed()))
         {
-            self.outcome
-                .lock()
-                .unwrap()
-                .modified
-                .push(hg_path.detach_from_tree())
+            self.push_outcome(Outcome::Modified, dirstate_node)?
         } else {
             let mtime_looks_clean;
             if let Some(dirstate_mtime) = entry.truncated_mtime() {
@@ -548,17 +585,9 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
                 mtime_looks_clean = false
             };
             if !mtime_looks_clean {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .unsure
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome(Outcome::Unsure, dirstate_node)?
             } else if self.options.list_clean {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .clean
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome(Outcome::Clean, dirstate_node)?
             }
         }
         Ok(())
@@ -570,10 +599,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
         self.check_for_outdated_directory_cache(&dirstate_node)?;
-        self.mark_removed_or_deleted_if_file(
-            &dirstate_node.full_path_borrowed(self.dmap.on_disk)?,
-            dirstate_node.state()?,
-        );
+        self.mark_removed_or_deleted_if_file(&dirstate_node)?;
         dirstate_node
             .children(self.dmap.on_disk)?
             .par_iter()
@@ -587,26 +613,19 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     /// Does nothing on a "directory" node
     fn mark_removed_or_deleted_if_file(
         &self,
-        hg_path: &BorrowedPath<'tree, 'on_disk>,
-        dirstate_node_state: Option<EntryState>,
-    ) {
-        if let Some(state) = dirstate_node_state {
-            if self.matcher.matches(hg_path) {
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        if let Some(state) = dirstate_node.state()? {
+            let path = dirstate_node.full_path(self.dmap.on_disk)?;
+            if self.matcher.matches(path) {
                 if let EntryState::Removed = state {
-                    self.outcome
-                        .lock()
-                        .unwrap()
-                        .removed
-                        .push(hg_path.detach_from_tree())
+                    self.push_outcome(Outcome::Removed, dirstate_node)?
                 } else {
-                    self.outcome
-                        .lock()
-                        .unwrap()
-                        .deleted
-                        .push(hg_path.detach_from_tree())
+                    self.push_outcome(Outcome::Deleted, &dirstate_node)?
                 }
             }
         }
+        Ok(())
     }
 
     /// Something in the filesystem has no corresponding dirstate node
@@ -684,19 +703,17 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let is_ignored = has_ignored_ancestor || (self.ignore_fn)(&hg_path);
         if is_ignored {
             if self.options.list_ignored {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .ignored
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome_without_copy_source(
+                    Outcome::Ignored,
+                    hg_path,
+                )
             }
         } else {
             if self.options.list_unknown {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .unknown
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome_without_copy_source(
+                    Outcome::Unknown,
+                    hg_path,
+                )
             }
         }
         is_ignored

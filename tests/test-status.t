@@ -9,10 +9,6 @@
   > EOF
 #endif
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
-
   $ hg init repo1
   $ cd repo1
   $ mkdir a b a/1 b/1 b/2
@@ -223,7 +219,7 @@ hg status:
   ? unknown
 
 hg status -n:
-  $ env RHG_STATUS=1 RHG_ON_UNSUPPORTED=abort hg status -n
+  $ env RHG_ON_UNSUPPORTED=abort hg status -n
   added
   removed
   deleted

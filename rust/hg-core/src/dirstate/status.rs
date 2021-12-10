@@ -66,41 +66,43 @@ pub struct StatusOptions {
     pub list_clean: bool,
     pub list_unknown: bool,
     pub list_ignored: bool,
+    /// Whether to populate `StatusPath::copy_source`
+    pub list_copies: bool,
     /// Whether to collect traversed dirs for applying a callback later.
     /// Used by `hg purge` for example.
     pub collect_traversed_dirs: bool,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct DirstateStatus<'a> {
     /// The current time at the start of the `status()` algorithm, as measured
     /// and possibly truncated by the filesystem.
     pub filesystem_time_at_status_start: Option<std::time::SystemTime>,
 
     /// Tracked files whose contents have changed since the parent revision
-    pub modified: Vec<HgPathCow<'a>>,
+    pub modified: Vec<StatusPath<'a>>,
 
     /// Newly-tracked files that were not present in the parent
-    pub added: Vec<HgPathCow<'a>>,
+    pub added: Vec<StatusPath<'a>>,
 
     /// Previously-tracked files that have been (re)moved with an hg command
-    pub removed: Vec<HgPathCow<'a>>,
+    pub removed: Vec<StatusPath<'a>>,
 
     /// (Still) tracked files that are missing, (re)moved with an non-hg
     /// command
-    pub deleted: Vec<HgPathCow<'a>>,
+    pub deleted: Vec<StatusPath<'a>>,
 
     /// Tracked files that are up to date with the parent.
     /// Only pupulated if `StatusOptions::list_clean` is true.
-    pub clean: Vec<HgPathCow<'a>>,
+    pub clean: Vec<StatusPath<'a>>,
 
     /// Files in the working directory that are ignored with `.hgignore`.
     /// Only pupulated if `StatusOptions::list_ignored` is true.
-    pub ignored: Vec<HgPathCow<'a>>,
+    pub ignored: Vec<StatusPath<'a>>,
 
     /// Files in the working directory that are neither tracked nor ignored.
     /// Only pupulated if `StatusOptions::list_unknown` is true.
-    pub unknown: Vec<HgPathCow<'a>>,
+    pub unknown: Vec<StatusPath<'a>>,
 
     /// Was explicitly matched but cannot be found/accessed
     pub bad: Vec<(HgPathCow<'a>, BadMatch)>,
@@ -108,7 +110,7 @@ pub struct DirstateStatus<'a> {
     /// Either clean or modified, but we can’t tell from filesystem metadata
     /// alone. The file contents need to be read and compared with that in
     /// the parent.
-    pub unsure: Vec<HgPathCow<'a>>,
+    pub unsure: Vec<StatusPath<'a>>,
 
     /// Only filled if `collect_traversed_dirs` is `true`
     pub traversed: Vec<HgPathCow<'a>>,
@@ -116,6 +118,12 @@ pub struct DirstateStatus<'a> {
     /// Whether `status()` made changed to the `DirstateMap` that should be
     /// written back to disk
     pub dirty: bool,
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct StatusPath<'a> {
+    pub path: HgPathCow<'a>,
+    pub copy_source: Option<HgPathCow<'a>>,
 }
 
 #[derive(Debug, derive_more::From)]
