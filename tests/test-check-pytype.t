@@ -10,7 +10,6 @@ endeavor to empty this list out over time, as some of these are
 probably hiding real problems.
 
 mercurial/bundlerepo.py       # no vfs and ui attrs on bundlerepo
-mercurial/changegroup.py      # mysterious incorrect type detection
 mercurial/chgserver.py        # [attribute-error]
 mercurial/cmdutil.py          # No attribute 'markcopied' on mercurial.context.filectx [attribute-error]
 mercurial/context.py          # many [attribute-error]
@@ -56,7 +55,6 @@ development, but may be a hinderance for CI testing.
 
   $ pytype -V 3.6 --keep-going --jobs auto mercurial \
   >    -x mercurial/bundlerepo.py \
-  >    -x mercurial/changegroup.py \
   >    -x mercurial/chgserver.py \
   >    -x mercurial/cmdutil.py \
   >    -x mercurial/context.py \
