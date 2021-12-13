@@ -246,7 +246,6 @@ def _changesetforwardcopies(a, b, match):
         return {}
 
     repo = a.repo().unfiltered()
-    children = {}
 
     cl = repo.changelog
     isancestor = cl.isancestorrev
