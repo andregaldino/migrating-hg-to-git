@@ -579,10 +579,12 @@ def _capabilitiesv2(repo, proto):
         ):
             continue
 
+        # pytype: disable=unsupported-operands
         caps[b'commands'][command] = {
             b'args': args,
             b'permissions': [entry.permission],
         }
+        # pytype: enable=unsupported-operands
 
         if entry.extracapabilitiesfn:
             extracaps = entry.extracapabilitiesfn(repo, proto)
@@ -608,7 +610,9 @@ def _capabilitiesv2(repo, proto):
                 if key in target:
                     entry[key] = target[key]
 
+            # pytype: disable=attribute-error
             caps[b'redirect'][b'targets'].append(entry)
+            # pytype: enable=attribute-error
 
     return proto.addcapabilities(repo, caps)
 

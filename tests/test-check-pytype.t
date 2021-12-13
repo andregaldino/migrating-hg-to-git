@@ -44,7 +44,6 @@ mercurial/wireprotoframing.py # [unsupported-operands], [attribute-error], [impo
 mercurial/wireprotoserver.py  # line 253, in _availableapis: No attribute '__iter__' on Callable[[Any, Any], Any] [attribute-error]
 mercurial/wireprotov1peer.py  # [attribute-error]
 mercurial/wireprotov1server.py  # BUG?: BundleValueError handler accesses subclass's attrs
-mercurial/wireprotov2server.py  # [unsupported-operands], [attribute-error]
 
 TODO: use --no-cache on test server?  Caching the files locally helps during
 development, but may be a hinderance for CI testing.
@@ -85,7 +84,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/wireprotoserver.py \
   >    -x mercurial/wireprotov1peer.py \
   >    -x mercurial/wireprotov1server.py \
-  >    -x mercurial/wireprotov2server.py \
   >  > $TESTTMP/pytype-output.txt || cat $TESTTMP/pytype-output.txt
 
 Only show the results on a failure, because the output on success is also
