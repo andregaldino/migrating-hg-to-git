@@ -266,7 +266,10 @@ def has_executablebit():
 
 @check("suidbit", "setuid and setgid bit")
 def has_suidbit():
-    if getattr(os, "statvfs", None) is None or getattr(os, "ST_NOSUID") is None:
+    if (
+        getattr(os, "statvfs", None) is None
+        or getattr(os, "ST_NOSUID", None) is None
+    ):
         return False
     return bool(os.statvfs('.').f_flag & os.ST_NOSUID)
 
