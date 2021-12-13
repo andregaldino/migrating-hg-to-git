@@ -289,7 +289,7 @@ def _changesetforwardcopies(a, b, match):
         # no common revision to track copies from
         return {}
     if has_graph_roots:
-        # this deal with the special case mentionned in the [1] footnotes. We
+        # this deal with the special case mentioned in the [1] footnotes. We
         # must filter out revisions that leads to non-common graphroots.
         roots = list(roots)
         m = min(roots)
@@ -300,11 +300,11 @@ def _changesetforwardcopies(a, b, match):
 
     if repo.filecopiesmode == b'changeset-sidedata':
         # When using side-data, we will process the edges "from" the children.
-        # We iterate over the childre, gathering previous collected data for
+        # We iterate over the children, gathering previous collected data for
         # the parents. Do know when the parents data is no longer necessary, we
         # keep a counter of how many children each revision has.
         #
-        # An interresting property of `children_count` is that it only contains
+        # An interesting property of `children_count` is that it only contains
         # revision that will be relevant for a edge of the graph. So if a
         # children has parent not in `children_count`, that edges should not be
         # processed.
