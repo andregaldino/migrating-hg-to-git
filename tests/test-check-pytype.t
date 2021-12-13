@@ -26,7 +26,6 @@ mercurial/httppeer.py         # [attribute-error], [wrong-arg-types]
 mercurial/interfaces          # No attribute 'capabilities' on peer [attribute-error]
 mercurial/keepalive.py        # [attribute-error]
 mercurial/localrepo.py        # [attribute-error]
-mercurial/lsprof.py           # unguarded import
 mercurial/manifest.py         # [unsupported-operands], [wrong-arg-types]
 mercurial/minirst.py          # [unsupported-operands], [attribute-error]
 mercurial/patch.py            # [wrong-arg-types]
@@ -71,7 +70,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/interfaces \
   >    -x mercurial/keepalive.py \
   >    -x mercurial/localrepo.py \
-  >    -x mercurial/lsprof.py \
   >    -x mercurial/manifest.py \
   >    -x mercurial/minirst.py \
   >    -x mercurial/patch.py \
