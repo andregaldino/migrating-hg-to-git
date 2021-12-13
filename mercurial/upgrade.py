@@ -42,7 +42,7 @@ def upgraderepo(
 ):
     """Upgrade a repository in place."""
     if optimize is None:
-        optimize = {}
+        optimize = set()
     repo = repo.unfiltered()
 
     specified_revlogs = {}

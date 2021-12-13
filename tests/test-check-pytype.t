@@ -40,7 +40,6 @@ mercurial/statprof.py         # bytes vs str on TextIO.write() [wrong-arg-types]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
-mercurial/upgrade.py          # line 84, in upgraderepo: No attribute 'discard' on Dict[nothing, nothing] [attribute-error]
 mercurial/util.py             # [attribute-error], [wrong-arg-count]
 mercurial/utils/procutil.py   # [attribute-error], [module-attr], [bad-return-type]
 mercurial/utils/stringutil.py # [module-attr], [wrong-arg-count]
@@ -88,7 +87,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/thirdparty \
   >    -x mercurial/ui.py \
   >    -x mercurial/unionrepo.py \
-  >    -x mercurial/upgrade.py \
   >    -x mercurial/utils/procutil.py \
   >    -x mercurial/utils/stringutil.py \
   >    -x mercurial/utils/memorytop.py \
