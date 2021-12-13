@@ -516,7 +516,7 @@ def display(fp=None, format=3, data=None, **kwargs):
     elif format == DisplayFormats.Chrome:
         write_to_chrome(data, fp, **kwargs)
     else:
-        raise Exception(b"Invalid display format")
+        raise Exception("Invalid display format")
 
     if format not in (DisplayFormats.Json, DisplayFormats.Chrome):
         fp.write(b'---\n')
@@ -625,7 +625,7 @@ def display_by_method(data, fp):
 
 def display_about_method(data, fp, function=None, **kwargs):
     if function is None:
-        raise Exception(b"Invalid function")
+        raise Exception("Invalid function")
 
     filename = None
     if b':' in function:
@@ -1080,7 +1080,7 @@ def main(argv=None):
             printusage()
             return 0
         else:
-            assert False, b"unhandled option %s" % o
+            assert False, "unhandled option %s" % o
 
     if not path:
         print('must specify --file to load')
