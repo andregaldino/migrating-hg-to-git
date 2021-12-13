@@ -11,10 +11,6 @@
   > EOF
 #endif
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
-
   $ hg init t
   $ cd t
 
@@ -82,7 +78,7 @@ TODO: fix rhg bugs that make this test fail when status is enabled
 (fsmonitor makes "hg status" avoid accessing to "dir")
 
   $ hg status
-  dir: Permission denied
+  dir: Permission denied* (glob)
   M a
 
 #endif

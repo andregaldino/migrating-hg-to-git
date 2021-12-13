@@ -237,8 +237,20 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         warn!("Pattern warnings: {:?}", &pattern_warnings);
     }
 
-    if !ds_status.bad.is_empty() {
-        warn!("Bad matches {:?}", &(ds_status.bad))
+    for (path, error) in ds_status.bad {
+        let error = match error {
+            hg::BadMatch::OsError(code) => {
+                std::io::Error::from_raw_os_error(code).to_string()
+            }
+            hg::BadMatch::BadType(ty) => {
+                format!("unsupported file type (type is {})", ty)
+            }
+        };
+        ui.write_stderr(&format_bytes!(
+            b"{}: {}\n",
+            path.as_bytes(),
+            error.as_bytes()
+        ))?
     }
     if !ds_status.unsure.is_empty() {
         info!(
