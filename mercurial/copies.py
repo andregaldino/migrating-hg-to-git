@@ -448,7 +448,11 @@ def _combine_changeset_copies(
 
         # filter out internal details and return a {dest: source mapping}
         final_copies = {}
-        for dest, (tt, source) in all_copies[targetrev].items():
+
+        targetrev_items = all_copies[targetrev]
+        assert targetrev_items is not None  # help pytype
+
+        for dest, (tt, source) in targetrev_items.items():
             if source is not None:
                 final_copies[dest] = source
     if not alwaysmatch:
