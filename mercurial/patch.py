@@ -109,7 +109,9 @@ def split(stream):
     def mimesplit(stream, cur):
         def msgfp(m):
             fp = stringio()
+            # pytype: disable=wrong-arg-types
             g = mail.Generator(fp, mangle_from_=False)
+            # pytype: enable=wrong-arg-types
             g.flatten(m)
             fp.seek(0)
             return fp

@@ -26,7 +26,6 @@ mercurial/keepalive.py        # [attribute-error]
 mercurial/localrepo.py        # [attribute-error]
 mercurial/manifest.py         # [unsupported-operands], [wrong-arg-types]
 mercurial/minirst.py          # [unsupported-operands], [attribute-error]
-mercurial/patch.py            # [wrong-arg-types]
 mercurial/pure/osutil.py      # [invalid-typevar], [not-callable]
 mercurial/pure/parsers.py     # [attribute-error]
 mercurial/pycompat.py         # bytes vs str issues
@@ -65,7 +64,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/localrepo.py \
   >    -x mercurial/manifest.py \
   >    -x mercurial/minirst.py \
-  >    -x mercurial/patch.py \
   >    -x mercurial/pure/osutil.py \
   >    -x mercurial/pure/parsers.py \
   >    -x mercurial/pycompat.py \
