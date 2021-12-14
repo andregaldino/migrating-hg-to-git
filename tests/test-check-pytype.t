@@ -34,7 +34,6 @@ mercurial/sslutil.py          # [attribute-error]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
-mercurial/util.py             # [attribute-error], [wrong-arg-count]
 mercurial/utils/procutil.py   # [attribute-error], [module-attr], [bad-return-type]
 mercurial/utils/memorytop.py  # not 3.6 compatible
 mercurial/win32.py            # [not-callable]
