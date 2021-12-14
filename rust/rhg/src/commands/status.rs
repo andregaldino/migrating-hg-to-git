@@ -479,11 +479,23 @@ fn unsure_is_modified(
         return Ok(true);
     }
     let filelog = repo.filelog(hg_path)?;
+    let fs_len = fs_metadata.len();
+    // TODO: check `fs_len` here like below, but based on
+    // `RevlogEntry::uncompressed_len` without decompressing the full filelog
+    // contents where possible. This is only valid if the revlog data does not
+    // contain metadata. See how Python’s `revlog.rawsize` calls
+    // `storageutil.filerevisioncopied`.
+    // (Maybe also check for content-modifying flags? See `revlog.size`.)
     let filelog_entry =
         filelog.data_for_node(entry.node_id()?).map_err(|_| {
             HgError::corrupted("filelog missing node from manifest")
         })?;
     let contents_in_p1 = filelog_entry.data()?;
+    if contents_in_p1.len() as u64 != fs_len {
+        // No need to read the file contents:
+        // it cannot be equal if it has a different length.
+        return Ok(true);
+    }
 
     let fs_contents = if is_symlink {
         get_bytes_from_os_string(vfs.read_link(fs_path)?.into_os_string())
