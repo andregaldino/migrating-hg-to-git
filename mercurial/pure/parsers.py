@@ -880,18 +880,43 @@ class IndexChangelogV2(IndexObject2):
 
     def _unpack_entry(self, rev, data, r=True):
         items = self.index_format.unpack(data)
-        entry = items[:3] + (rev, rev) + items[3:8]
-        data_comp = items[8] & 3
-        sidedata_comp = (items[8] >> 2) & 3
-        return entry + (data_comp, sidedata_comp)
+        return (
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_OFFSET],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSED_LENGTH],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_UNCOMPRESSED_LENGTH],
+            rev,
+            rev,
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_PARENT_1],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_PARENT_2],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_NODEID],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_SIDEDATA_OFFSET],
+            items[
+                revlog_constants.INDEX_ENTRY_V2_IDX_SIDEDATA_COMPRESSED_LENGTH
+            ],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] & 3,
+            (items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] >> 2)
+            & 3,
+        )
 
     def _pack_entry(self, rev, entry):
-        assert entry[3] == rev, entry[3]
-        assert entry[4] == rev, entry[4]
-        data = entry[:3] + entry[5:10]
-        data_comp = entry[10] & 3
-        sidedata_comp = (entry[11] & 3) << 2
-        data += (data_comp | sidedata_comp,)
+
+        base = entry[revlog_constants.ENTRY_DELTA_BASE]
+        link_rev = entry[revlog_constants.ENTRY_LINK_REV]
+        assert base == rev, (base, rev)
+        assert link_rev == rev, (link_rev, rev)
+        data = (
+            entry[revlog_constants.ENTRY_DATA_OFFSET],
+            entry[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_DATA_UNCOMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_PARENT_1],
+            entry[revlog_constants.ENTRY_PARENT_2],
+            entry[revlog_constants.ENTRY_NODE_ID],
+            entry[revlog_constants.ENTRY_SIDEDATA_OFFSET],
+            entry[revlog_constants.ENTRY_SIDEDATA_COMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_DATA_COMPRESSION_MODE] & 3
+            | (entry[revlog_constants.ENTRY_SIDEDATA_COMPRESSION_MODE] & 3)
+            << 2,
+        )
         return self.index_format.pack(*data)
 
 
