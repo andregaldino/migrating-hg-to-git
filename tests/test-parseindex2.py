@@ -57,6 +57,7 @@ def py_parseindex(data, inline):
                 0,
                 constants.COMP_MODE_INLINE,
                 constants.COMP_MODE_INLINE,
+                constants.RANK_UNKNOWN,
             )
             nodemap[e[7]] = n
             append(e)
@@ -72,6 +73,7 @@ def py_parseindex(data, inline):
                 0,
                 constants.COMP_MODE_INLINE,
                 constants.COMP_MODE_INLINE,
+                constants.RANK_UNKNOWN,
             )
             nodemap[e[7]] = n
             append(e)
@@ -268,6 +270,7 @@ class parseindex2tests(unittest.TestCase):
             0,
             constants.COMP_MODE_INLINE,
             constants.COMP_MODE_INLINE,
+            constants.RANK_UNKNOWN,
         )
         index, junk = parsers.parse_index2(data_inlined, True)
         got = index[-1]
@@ -303,6 +306,7 @@ class parseindex2tests(unittest.TestCase):
                 0,
                 constants.COMP_MODE_INLINE,
                 constants.COMP_MODE_INLINE,
+                constants.RANK_UNKNOWN,
             )
             index.append(e)
 

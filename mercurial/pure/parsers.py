@@ -584,6 +584,7 @@ class BaseIndexObject(object):
         0,
         revlog_constants.COMP_MODE_INLINE,
         revlog_constants.COMP_MODE_INLINE,
+        revlog_constants.RANK_UNKNOWN,
     )
 
     @util.propertycache
@@ -671,6 +672,7 @@ class BaseIndexObject(object):
             0,
             revlog_constants.COMP_MODE_INLINE,
             revlog_constants.COMP_MODE_INLINE,
+            revlog_constants.RANK_UNKNOWN,
         )
         return r
 
@@ -853,7 +855,7 @@ class IndexObject2(IndexObject):
         entry = data[:10]
         data_comp = data[10] & 3
         sidedata_comp = (data[10] & (3 << 2)) >> 2
-        return entry + (data_comp, sidedata_comp)
+        return entry + (data_comp, sidedata_comp, revlog_constants.RANK_UNKNOWN)
 
     def _pack_entry(self, rev, entry):
         data = entry[:10]
@@ -896,6 +898,7 @@ class IndexChangelogV2(IndexObject2):
             items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] & 3,
             (items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] >> 2)
             & 3,
+            revlog_constants.RANK_UNKNOWN,
         )
 
     def _pack_entry(self, rev, entry):

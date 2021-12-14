@@ -103,6 +103,17 @@ ENTRY_DATA_COMPRESSION_MODE = 10
 #            (see "COMP_MODE_*" constants for details)
 ENTRY_SIDEDATA_COMPRESSION_MODE = 11
 
+#    [12] Revision rank:
+#            The number of revision under this one.
+#
+#            Formally this is defined as : rank(X) = len(ancestors(X) + X)
+#
+#            If rank == -1; then we do not have this information available.
+#            Only `null` has a rank of 0.
+ENTRY_RANK = 12
+
+RANK_UNKNOWN = -1
+
 ### main revlog header
 
 # We cannot rely on  Struct.format is inconsistent for python <=3.6 versus above

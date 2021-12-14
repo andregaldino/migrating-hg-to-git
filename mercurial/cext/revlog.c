@@ -120,9 +120,11 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const tuple_format = PY23("Kiiiiiis#KiBB", "Kiiiiiiy#KiBB");
+static const char *const tuple_format =
+    PY23("Kiiiiiis#KiBBi", "Kiiiiiiy#KiBBi");
 #else
-static const char *const tuple_format = PY23("kiiiiiis#kiBB", "kiiiiiiy#kiBB");
+static const char *const tuple_format =
+    PY23("kiiiiiis#kiBBi", "kiiiiiiy#kiBBi");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -135,6 +137,7 @@ static const long format_v1 = 1; /* Internal only, could be any number */
 static const long format_v2 = 2; /* Internal only, could be any number */
 
 static const char comp_mode_inline = 2;
+static const char rank_unknown = -1;
 
 static void raise_revlog_error(void)
 {
@@ -352,7 +355,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
 	                     base_rev, link_rev, parent_1, parent_2, c_node_id,
 	                     self->nodelen, sidedata_offset, sidedata_comp_len,
-	                     data_comp_mode, sidedata_comp_mode);
+	                     data_comp_mode, sidedata_comp_mode, rank_unknown);
 }
 /*
  * Pack header information in binary
@@ -453,7 +456,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 {
 	uint64_t offset_flags, sidedata_offset;
 	int rev, comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2,
-	    sidedata_comp_len;
+	    sidedata_comp_len, rank;
 	char data_comp_mode, sidedata_comp_mode;
 	Py_ssize_t c_node_id_len;
 	const char *c_node_id;
@@ -464,8 +467,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	                      &uncomp_len, &base_rev, &link_rev, &parent_1,
 	                      &parent_2, &c_node_id, &c_node_id_len,
 	                      &sidedata_offset, &sidedata_comp_len,
-	                      &data_comp_mode, &sidedata_comp_mode)) {
-		PyErr_SetString(PyExc_TypeError, "11-tuple required");
+	                      &data_comp_mode, &sidedata_comp_mode, &rank)) {
+		PyErr_SetString(PyExc_TypeError, "12-tuple required");
 		return NULL;
 	}
 
@@ -2797,9 +2800,10 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		self->entry_size = v1_entry_size;
 	}
 
-	self->nullentry = Py_BuildValue(
-	    PY23("iiiiiiis#iiBB", "iiiiiiiy#iiBB"), 0, 0, 0, -1, -1, -1, -1,
-	    nullid, self->nodelen, 0, 0, comp_mode_inline, comp_mode_inline);
+	self->nullentry =
+	    Py_BuildValue(PY23("iiiiiiis#iiBBi", "iiiiiiiy#iiBBi"), 0, 0, 0, -1,
+	                  -1, -1, -1, nullid, self->nodelen, 0, 0,
+	                  comp_mode_inline, comp_mode_inline, rank_unknown);
 
 	if (!self->nullentry)
 		return -1;
