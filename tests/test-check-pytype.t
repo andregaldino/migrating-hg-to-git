@@ -10,7 +10,6 @@ endeavor to empty this list out over time, as some of these are
 probably hiding real problems.
 
 mercurial/bundlerepo.py       # no vfs and ui attrs on bundlerepo
-mercurial/chgserver.py        # [attribute-error]
 mercurial/context.py          # many [attribute-error]
 mercurial/crecord.py          # tons of [attribute-error], [module-attr]
 mercurial/debugcommands.py    # [wrong-arg-types]
@@ -46,7 +45,6 @@ development, but may be a hinderance for CI testing.
 
   $ pytype -V 3.6 --keep-going --jobs auto mercurial \
   >    -x mercurial/bundlerepo.py \
-  >    -x mercurial/chgserver.py \
   >    -x mercurial/context.py \
   >    -x mercurial/crecord.py \
   >    -x mercurial/debugcommands.py \
