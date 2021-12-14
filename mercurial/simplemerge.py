@@ -506,7 +506,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
             extrakwargs = {
                 'minimize': True,
             }
-            if name_base is not None:
+            if mode == b'merge3':
                 extrakwargs['base_marker'] = b'|||||||'
                 extrakwargs['name_base'] = name_base
                 extrakwargs['minimize'] = False

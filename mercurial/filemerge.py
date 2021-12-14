@@ -421,14 +421,15 @@ def _premerge(repo, fcd, fco, fca, toolconf, backup, labels=None):
             )
 
     if premerge:
+        if not labels:
+            labels = _defaultconflictlabels
+        if len(labels) < 3:
+            labels.append(b'base')
         mode = b'merge'
-        if premerge in {b'keep-merge3', b'keep-mergediff'}:
-            if not labels:
-                labels = _defaultconflictlabels
-            if len(labels) < 3:
-                labels.append(b'base')
-            if premerge == b'keep-mergediff':
-                mode = b'mergediff'
+        if premerge == b'keep-mergediff':
+            mode = b'mergediff'
+        elif premerge == b'keep-merge3':
+            mode = b'merge3'
         r = simplemerge.simplemerge(
             ui, fcd, fca, fco, quiet=True, label=labels, mode=mode
         )
@@ -532,7 +533,9 @@ def _imerge3(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
         labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
-    return _imerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels)
+    return _merge(
+        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'merge3'
+    )
 
 
 @internaltool(

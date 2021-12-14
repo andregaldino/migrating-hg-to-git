@@ -80,6 +80,8 @@ try:
         sys.exit(0)
     if len(args) != 3:
         raise ParseError(_(b'wrong number of arguments').decode('utf8'))
+    if len(opts[b'label']) > 2:
+        opts[b'mode'] = b'merge3'
     local, base, other = args
     sys.exit(
         simplemerge.simplemerge(
