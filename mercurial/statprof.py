@@ -494,9 +494,9 @@ def display(fp=None, format=3, data=None, **kwargs):
         data = state
 
     if fp is None:
-        import sys
+        from .utils import procutil
 
-        fp = sys.stdout
+        fp = procutil.stdout
     if len(data.samples) == 0:
         fp.write(b'No samples recorded.\n')
         return

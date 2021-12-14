@@ -32,7 +32,6 @@ mercurial/pure/parsers.py     # [attribute-error]
 mercurial/pycompat.py         # bytes vs str issues
 mercurial/repoview.py         # [attribute-error]
 mercurial/sslutil.py          # [attribute-error]
-mercurial/statprof.py         # bytes vs str on TextIO.write() [wrong-arg-types]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
@@ -72,7 +71,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/pycompat.py \
   >    -x mercurial/repoview.py \
   >    -x mercurial/sslutil.py \
-  >    -x mercurial/statprof.py \
   >    -x mercurial/testing/storage.py \
   >    -x mercurial/thirdparty \
   >    -x mercurial/ui.py \
