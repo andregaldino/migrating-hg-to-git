@@ -18,7 +18,6 @@ mercurial/dispatch.py         # initstdio: No attribute ... on TextIO [attribute
 mercurial/exchange.py         # [attribute-error]
 mercurial/hgweb/hgweb_mod.py  # [attribute-error], [name-error], [wrong-arg-types]
 mercurial/hgweb/server.py     # [attribute-error], [name-error], [module-attr]
-mercurial/hgweb/webcommands.py  # [missing-parameter]
 mercurial/hgweb/wsgicgi.py    # confused values in os.environ
 mercurial/httppeer.py         # [attribute-error], [wrong-arg-types]
 mercurial/interfaces          # No attribute 'capabilities' on peer [attribute-error]
@@ -55,7 +54,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/exchange.py \
   >    -x mercurial/hgweb/hgweb_mod.py \
   >    -x mercurial/hgweb/server.py \
-  >    -x mercurial/hgweb/webcommands.py \
   >    -x mercurial/hgweb/wsgicgi.py \
   >    -x mercurial/httppeer.py \
   >    -x mercurial/interfaces \

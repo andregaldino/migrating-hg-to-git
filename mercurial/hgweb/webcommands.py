@@ -519,6 +519,7 @@ rev = webcommand(b'rev')(changeset)
 
 
 def decodepath(path):
+    # type: (bytes) -> bytes
     """Hook for mapping a path in the repository to a path in the
     working copy.
 
@@ -616,7 +617,9 @@ def manifest(web):
             yield {
                 b"parity": next(parity),
                 b"path": path,
+                # pytype: disable=wrong-arg-types
                 b"emptydirs": b"/".join(emptydirs),
+                # pytype: enable=wrong-arg-types
                 b"basename": d,
             }
 
