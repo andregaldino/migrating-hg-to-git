@@ -2,10 +2,6 @@
 Test non-regression on the corruption associated with issue6528
 ===============================================================
 
-TODO: fix rhg bugs that make this test fail when status is enabled
-  $ unset RHG_STATUS
-
-
 Setup
 =====
 
@@ -191,9 +187,14 @@ only since some versions of tar don't have this flag.
 #endif
 
 Check that the issue is present
+(It is currently not present with rhg but will be when optimizations are added
+to resolve ambiguous files at the end of status without reading their content
+if the size differs, and reading the expected size without resolving filelog
+deltas where possible.)
+
   $ hg st
-  M D.txt
-  M b.txt
+  M D.txt (no-rhg !)
+  M b.txt (no-rhg !)
   $ hg debugrevlogindex b.txt
      rev linkrev nodeid       p1           p2
        0       2 05b806ebe5ea 000000000000 000000000000
@@ -211,8 +212,8 @@ Dry-run the fix
   found affected revision 1 for filelog 'data/b.txt.i'
   found affected revision 3 for filelog 'data/b.txt.i'
   $ hg st
-  M D.txt
-  M b.txt
+  M D.txt (no-rhg !)
+  M b.txt (no-rhg !)
   $ hg debugrevlogindex b.txt
      rev linkrev nodeid       p1           p2
        0       2 05b806ebe5ea 000000000000 000000000000
@@ -230,8 +231,8 @@ Test the --paranoid option
   found affected revision 1 for filelog 'data/b.txt.i'
   found affected revision 3 for filelog 'data/b.txt.i'
   $ hg st
-  M D.txt
-  M b.txt
+  M D.txt (no-rhg !)
+  M b.txt (no-rhg !)
   $ hg debugrevlogindex b.txt
      rev linkrev nodeid       p1           p2
        0       2 05b806ebe5ea 000000000000 000000000000
@@ -307,8 +308,8 @@ only since some versions of tar don't have this flag.
   found affected revision 1 for filelog 'b.txt'
   found affected revision 3 for filelog 'b.txt'
   $ hg st
-  M D.txt
-  M b.txt
+  M D.txt (no-rhg !)
+  M b.txt (no-rhg !)
   $ hg debugrevlogindex b.txt
      rev linkrev nodeid       p1           p2
        0       2 05b806ebe5ea 000000000000 000000000000
