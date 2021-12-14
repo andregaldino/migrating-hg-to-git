@@ -32,7 +32,6 @@ mercurial/sslutil.py          # [attribute-error]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
-mercurial/utils/procutil.py   # [attribute-error], [module-attr], [bad-return-type]
 mercurial/utils/memorytop.py  # not 3.6 compatible
 mercurial/win32.py            # [not-callable]
 mercurial/wireprotoframing.py # [unsupported-operands], [attribute-error], [import-error]
@@ -68,7 +67,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/thirdparty \
   >    -x mercurial/ui.py \
   >    -x mercurial/unionrepo.py \
-  >    -x mercurial/utils/procutil.py \
   >    -x mercurial/utils/memorytop.py \
   >    -x mercurial/win32.py \
   >    -x mercurial/wireprotoframing.py \

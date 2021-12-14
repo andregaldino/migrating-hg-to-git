@@ -75,7 +75,9 @@ class LineBufferedWrapper(object):
         return res
 
 
+# pytype: disable=attribute-error
 io.BufferedIOBase.register(LineBufferedWrapper)
+# pytype: enable=attribute-error
 
 
 def make_line_buffered(stream):
@@ -114,7 +116,9 @@ class WriteAllWrapper(object):
         return total_written
 
 
+# pytype: disable=attribute-error
 io.IOBase.register(WriteAllWrapper)
+# pytype: enable=attribute-error
 
 
 def _make_write_all(stream):
@@ -767,6 +771,7 @@ else:
             raise
         finally:
             if stdin_bytes is not None:
+                assert not isinstance(stdin, int)
                 stdin.close()
         if not ensurestart:
             # Even though we're not waiting on the child process,
