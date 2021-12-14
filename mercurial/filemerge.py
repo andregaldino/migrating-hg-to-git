@@ -1028,7 +1028,6 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
 def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory
 
-    premerge = whether this is a premerge
     mynode = parent node before merge
     orig = original local filename before merge
     fco = other file context
