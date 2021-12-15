@@ -183,7 +183,7 @@ assert INDEX_ENTRY_V2.size == 32 * 3, INDEX_ENTRY_V2.size
 #  1 bytes: compression mode (2 lower bit are data_compression_mode)
 #  27 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
 INDEX_ENTRY_CL_V2 = struct.Struct(b">Qiiii20s12xQiB27x")
-assert INDEX_ENTRY_CL_V2.size == 32 * 3, INDEX_ENTRY_V2.size
+assert INDEX_ENTRY_CL_V2.size == 32 * 3, INDEX_ENTRY_CL_V2.size
 INDEX_ENTRY_V2_IDX_OFFSET = 0
 INDEX_ENTRY_V2_IDX_COMPRESSED_LENGTH = 1
 INDEX_ENTRY_V2_IDX_UNCOMPRESSED_LENGTH = 2
