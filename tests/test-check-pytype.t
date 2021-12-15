@@ -27,7 +27,6 @@ mercurial/minirst.py          # [unsupported-operands], [attribute-error]
 mercurial/pure/osutil.py      # [invalid-typevar], [not-callable]
 mercurial/pure/parsers.py     # [attribute-error]
 mercurial/repoview.py         # [attribute-error]
-mercurial/sslutil.py          # [attribute-error]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
@@ -59,7 +58,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/pure/osutil.py \
   >    -x mercurial/pure/parsers.py \
   >    -x mercurial/repoview.py \
-  >    -x mercurial/sslutil.py \
   >    -x mercurial/testing/storage.py \
   >    -x mercurial/thirdparty \
   >    -x mercurial/ui.py \

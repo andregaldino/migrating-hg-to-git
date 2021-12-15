@@ -139,12 +139,18 @@ def _hostsettings(ui, hostname):
 
         alg, fingerprint = fingerprint.split(b':', 1)
         fingerprint = fingerprint.replace(b':', b'').lower()
+        # pytype: disable=attribute-error
+        # `s` is heterogeneous, but this entry is always a list of tuples
         s[b'certfingerprints'].append((alg, fingerprint))
+        # pytype: enable=attribute-error
 
     # Fingerprints from [hostfingerprints] are always SHA-1.
     for fingerprint in ui.configlist(b'hostfingerprints', bhostname):
         fingerprint = fingerprint.replace(b':', b'').lower()
+        # pytype: disable=attribute-error
+        # `s` is heterogeneous, but this entry is always a list of tuples
         s[b'certfingerprints'].append((b'sha1', fingerprint))
+        # pytype: enable=attribute-error
         s[b'legacyfingerprint'] = True
 
     # If a host cert fingerprint is defined, it is the only thing that
