@@ -647,7 +647,7 @@ class BaseIndexObject(object):
         if not isinstance(i, int):
             raise TypeError(b"expecting int indexes")
         if i < 0 or i >= len(self):
-            raise IndexError
+            raise IndexError(i)
 
     def __getitem__(self, i):
         if i == -1:
