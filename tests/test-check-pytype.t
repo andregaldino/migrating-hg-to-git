@@ -34,7 +34,6 @@ mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
 mercurial/utils/memorytop.py  # not 3.6 compatible
 mercurial/win32.py            # [not-callable]
 mercurial/wireprotoframing.py # [unsupported-operands], [attribute-error], [import-error]
-mercurial/wireprotoserver.py  # line 253, in _availableapis: No attribute '__iter__' on Callable[[Any, Any], Any] [attribute-error]
 mercurial/wireprotov1peer.py  # [attribute-error]
 mercurial/wireprotov1server.py  # BUG?: BundleValueError handler accesses subclass's attrs
 
@@ -68,7 +67,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/utils/memorytop.py \
   >    -x mercurial/win32.py \
   >    -x mercurial/wireprotoframing.py \
-  >    -x mercurial/wireprotoserver.py \
   >    -x mercurial/wireprotov1peer.py \
   >    -x mercurial/wireprotov1server.py \
   >  > $TESTTMP/pytype-output.txt || cat $TESTTMP/pytype-output.txt

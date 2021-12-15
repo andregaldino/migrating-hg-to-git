@@ -250,7 +250,7 @@ def _availableapis(repo):
     # Registered APIs are made available via config options of the name of
     # the protocol.
     for k, v in API_HANDLERS.items():
-        section, option = v[b'config']
+        section, option = v[b'config']  # pytype: disable=attribute-error
         if repo.ui.configbool(section, option):
             apis.add(k)
 
