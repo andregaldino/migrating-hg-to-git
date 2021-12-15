@@ -1357,10 +1357,10 @@ coreconfigitem(
 )
 # Experimental TODOs:
 #
-# * Same as for evlogv2 (but for the reduction of the number of files)
+# * Same as for revlogv2 (but for the reduction of the number of files)
+# * Actually computing the rank of changesets
 # * Improvement to investigate
 #   - storing .hgtags fnode
-#   - storing `rank` of changesets
 #   - storing branch related identifier
 
 coreconfigitem(

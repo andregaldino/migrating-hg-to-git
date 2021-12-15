@@ -880,6 +880,12 @@ class IndexObject2(IndexObject):
 class IndexChangelogV2(IndexObject2):
     index_format = revlog_constants.INDEX_ENTRY_CL_V2
 
+    null_item = (
+        IndexObject2.null_item[: revlog_constants.ENTRY_RANK]
+        + (0,)  # rank of null is 0
+        + IndexObject2.null_item[revlog_constants.ENTRY_RANK :]
+    )
+
     def _unpack_entry(self, rev, data, r=True):
         items = self.index_format.unpack(data)
         return (
@@ -898,7 +904,7 @@ class IndexChangelogV2(IndexObject2):
             items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] & 3,
             (items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] >> 2)
             & 3,
-            revlog_constants.RANK_UNKNOWN,
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_RANK],
         )
 
     def _pack_entry(self, rev, entry):
@@ -919,6 +925,7 @@ class IndexChangelogV2(IndexObject2):
             entry[revlog_constants.ENTRY_DATA_COMPRESSION_MODE] & 3
             | (entry[revlog_constants.ENTRY_SIDEDATA_COMPRESSION_MODE] & 3)
             << 2,
+            entry[revlog_constants.ENTRY_RANK],
         )
         return self.index_format.pack(*data)
 
