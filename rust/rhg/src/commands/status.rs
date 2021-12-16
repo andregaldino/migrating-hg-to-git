@@ -473,7 +473,7 @@ fn unsure_is_modified(
     };
 
     let entry = manifest
-        .find_file(hg_path)?
+        .find_by_path(hg_path)?
         .expect("ambgious file not in p1");
     if entry.flags != fs_flags {
         return Ok(true);
