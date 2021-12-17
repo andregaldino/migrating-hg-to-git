@@ -22,10 +22,11 @@ use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
 use hg::repo::Repo;
 use hg::utils::files::get_bytes_from_os_string;
+use hg::utils::files::get_bytes_from_path;
 use hg::utils::files::get_path_from_bytes;
 use hg::utils::hg_path::{hg_path_to_path_buf, HgPath};
 use hg::StatusOptions;
-use log::{info, warn};
+use log::info;
 use std::io;
 use std::path::PathBuf;
 
@@ -233,8 +234,29 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         ignore_files(repo, config),
         options,
     )?;
-    if !pattern_warnings.is_empty() {
-        warn!("Pattern warnings: {:?}", &pattern_warnings);
+    for warning in pattern_warnings {
+        match warning {
+            hg::PatternFileWarning::InvalidSyntax(path, syntax) => ui
+                .write_stderr(&format_bytes!(
+                    b"{}: ignoring invalid syntax '{}'\n",
+                    get_bytes_from_path(path),
+                    &*syntax
+                ))?,
+            hg::PatternFileWarning::NoSuchFile(path) => {
+                let path = if let Ok(relative) =
+                    path.strip_prefix(repo.working_directory_path())
+                {
+                    relative
+                } else {
+                    &*path
+                };
+                ui.write_stderr(&format_bytes!(
+                    b"skipping unreadable pattern file '{}': \
+                      No such file or directory\n",
+                    get_bytes_from_path(path),
+                ))?
+            }
+        }
     }
 
     for (path, error) in ds_status.bad {
