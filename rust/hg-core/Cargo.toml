@@ -33,7 +33,7 @@ micro-timer = "0.3.0"
 log = "0.4.8"
 memmap2 = {version = "0.4", features = ["stable_deref_trait"]}
 zstd = "0.5.3"
-format-bytes = "0.2.2"
+format-bytes = "0.3.0"
 
 # We don't use the `miniz-oxide` backend to not change rhg benchmarks and until
 # we have a clearer view of which backend is the fastest.
