@@ -315,9 +315,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     }
 
     let mut dirstate_write_needed = ds_status.dirty;
-    let filesystem_time_at_status_start = ds_status
-        .filesystem_time_at_status_start
-        .map(TruncatedTimestamp::from);
+    let filesystem_time_at_status_start =
+        ds_status.filesystem_time_at_status_start;
 
     if (fixup.is_empty() || filesystem_time_at_status_start.is_none())
         && !dirstate_write_needed

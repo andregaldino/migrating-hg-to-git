@@ -382,7 +382,7 @@ impl Node {
             && self.flags().contains(Flags::HAS_MTIME)
             && self.flags().contains(Flags::ALL_UNKNOWN_RECORDED)
         {
-            Ok(Some(self.mtime.try_into()?))
+            Ok(Some(self.mtime()?))
         } else {
             Ok(None)
         }
@@ -402,6 +402,14 @@ impl Node {
         file_type | permisions
     }
 
+    fn mtime(&self) -> Result<TruncatedTimestamp, DirstateV2ParseError> {
+        let mut m: TruncatedTimestamp = self.mtime.try_into()?;
+        if self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS) {
+            m.second_ambiguous = true;
+        }
+        Ok(m)
+    }
+
     fn assume_entry(&self) -> Result<DirstateEntry, DirstateV2ParseError> {
         // TODO: convert through raw bits instead?
         let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
@@ -418,11 +426,7 @@ impl Node {
             && !self.flags().contains(Flags::DIRECTORY)
             && !self.flags().contains(Flags::EXPECTED_STATE_IS_MODIFIED)
         {
-            let mut m: TruncatedTimestamp = self.mtime.try_into()?;
-            if self.flags().contains(Flags::MTIME_SECOND_AMBIGUOUS) {
-                m.second_ambiguous = true;
-            }
-            Some(m)
+            Some(self.mtime()?)
         } else {
             None
         };
@@ -681,7 +685,7 @@ impl Writer<'_, '_> {
                         dirstate_map::NodeData::Entry(entry) => {
                             Node::from_dirstate_entry(entry)
                         }
-                        dirstate_map::NodeData::CachedDirectory { mtime } => (
+                        dirstate_map::NodeData::CachedDirectory { mtime } => {
                             // we currently never set a mtime if unknown file
                             // are present.
                             // So if we have a mtime for a directory, we know
@@ -692,12 +696,14 @@ impl Writer<'_, '_> {
                             // We never set ALL_IGNORED_RECORDED since we
                             // don't track that case
                             // currently.
-                            Flags::DIRECTORY
+                            let mut flags = Flags::DIRECTORY
                                 | Flags::HAS_MTIME
-                                | Flags::ALL_UNKNOWN_RECORDED,
-                            0.into(),
-                            (*mtime).into(),
-                        ),
+                                | Flags::ALL_UNKNOWN_RECORDED;
+                            if mtime.second_ambiguous {
+                                flags.insert(Flags::MTIME_SECOND_AMBIGUOUS)
+                            }
+                            (flags, 0.into(), (*mtime).into())
+                        }
                         dirstate_map::NodeData::None => (
                             Flags::DIRECTORY,
                             0.into(),

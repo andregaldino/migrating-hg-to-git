@@ -9,8 +9,8 @@
 //! It is currently missing a lot of functionality compared to the Python one
 //! and will only be triggered in narrow cases.
 
+use crate::dirstate::entry::TruncatedTimestamp;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
-
 use crate::{
     utils::hg_path::{HgPath, HgPathError},
     PatternError,
@@ -77,7 +77,7 @@ pub struct StatusOptions {
 pub struct DirstateStatus<'a> {
     /// The current time at the start of the `status()` algorithm, as measured
     /// and possibly truncated by the filesystem.
-    pub filesystem_time_at_status_start: Option<std::time::SystemTime>,
+    pub filesystem_time_at_status_start: Option<TruncatedTimestamp>,
 
     /// Tracked files whose contents have changed since the parent revision
     pub modified: Vec<StatusPath<'a>>,

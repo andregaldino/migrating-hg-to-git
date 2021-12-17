@@ -63,7 +63,8 @@ pub fn status<'tree, 'on_disk: 'tree>(
             (Box::new(|&_| true), vec![], None)
         };
 
-    let filesystem_time_at_status_start = filesystem_now(&root_dir).ok();
+    let filesystem_time_at_status_start =
+        filesystem_now(&root_dir).ok().map(TruncatedTimestamp::from);
     let outcome = DirstateStatus {
         filesystem_time_at_status_start,
         ..Default::default()
@@ -145,7 +146,7 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
 
     /// The current time at the start of the `status()` algorithm, as measured
     /// and possibly truncated by the filesystem.
-    filesystem_time_at_status_start: Option<SystemTime>,
+    filesystem_time_at_status_start: Option<TruncatedTimestamp>,
 }
 
 enum Outcome {
@@ -472,71 +473,86 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         directory_metadata: &std::fs::Metadata,
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
-        if children_all_have_dirstate_node_or_are_ignored {
-            // All filesystem directory entries from `read_dir` have a
-            // corresponding node in the dirstate, so we can reconstitute the
-            // names of those entries without calling `read_dir` again.
-            if let (Some(status_start), Ok(directory_mtime)) = (
-                &self.filesystem_time_at_status_start,
-                directory_metadata.modified(),
+        if !children_all_have_dirstate_node_or_are_ignored {
+            return Ok(());
+        }
+        // All filesystem directory entries from `read_dir` have a
+        // corresponding node in the dirstate, so we can reconstitute the
+        // names of those entries without calling `read_dir` again.
+
+        // TODO: use let-else here and below when available:
+        // https://github.com/rust-lang/rust/issues/87335
+        let status_start = if let Some(status_start) =
+            &self.filesystem_time_at_status_start
+        {
+            status_start
+        } else {
+            return Ok(());
+        };
+
+        // Although the Rust standard library’s `SystemTime` type
+        // has nanosecond precision, the times reported for a
+        // directory’s (or file’s) modified time may have lower
+        // resolution based on the filesystem (for example ext3
+        // only stores integer seconds), kernel (see
+        // https://stackoverflow.com/a/14393315/1162888), etc.
+        let directory_mtime = if let Ok(option) =
+            TruncatedTimestamp::for_reliable_mtime_of(
+                directory_metadata,
+                status_start,
             ) {
-                // Although the Rust standard library’s `SystemTime` type
-                // has nanosecond precision, the times reported for a
-                // directory’s (or file’s) modified time may have lower
-                // resolution based on the filesystem (for example ext3
-                // only stores integer seconds), kernel (see
-                // https://stackoverflow.com/a/14393315/1162888), etc.
-                if &directory_mtime >= status_start {
-                    // The directory was modified too recently, don’t cache its
-                    // `read_dir` results.
-                    //
-                    // A timeline like this is possible:
-                    //
-                    // 1. A change to this directory (direct child was
-                    //    added or removed) cause its mtime to be set
-                    //    (possibly truncated) to `directory_mtime`
-                    // 2. This `status` algorithm calls `read_dir`
-                    // 3. An other change is made to the same directory is
-                    //    made so that calling `read_dir` agin would give
-                    //    different results, but soon enough after 1. that
-                    //    the mtime stays the same
-                    //
-                    // On a system where the time resolution poor, this
-                    // scenario is not unlikely if all three steps are caused
-                    // by the same script.
-                } else {
-                    // We’ve observed (through `status_start`) that time has
-                    // “progressed” since `directory_mtime`, so any further
-                    // change to this directory is extremely likely to cause a
-                    // different mtime.
-                    //
-                    // Having the same mtime again is not entirely impossible
-                    // since the system clock is not monotonous. It could jump
-                    // backward to some point before `directory_mtime`, then a
-                    // directory change could potentially happen during exactly
-                    // the wrong tick.
-                    //
-                    // We deem this scenario (unlike the previous one) to be
-                    // unlikely enough in practice.
-                    let truncated = TruncatedTimestamp::from(directory_mtime);
-                    let is_up_to_date = if let Some(cached) =
-                        dirstate_node.cached_directory_mtime()?
-                    {
-                        cached.likely_equal(truncated)
-                    } else {
-                        false
-                    };
-                    if !is_up_to_date {
-                        let hg_path = dirstate_node
-                            .full_path_borrowed(self.dmap.on_disk)?
-                            .detach_from_tree();
-                        self.new_cachable_directories
-                            .lock()
-                            .unwrap()
-                            .push((hg_path, truncated))
-                    }
-                }
+            if let Some(directory_mtime) = option {
+                directory_mtime
+            } else {
+                // The directory was modified too recently,
+                // don’t cache its `read_dir` results.
+                //
+                // 1. A change to this directory (direct child was
+                //    added or removed) cause its mtime to be set
+                //    (possibly truncated) to `directory_mtime`
+                // 2. This `status` algorithm calls `read_dir`
+                // 3. An other change is made to the same directory is
+                //    made so that calling `read_dir` agin would give
+                //    different results, but soon enough after 1. that
+                //    the mtime stays the same
+                //
+                // On a system where the time resolution poor, this
+                // scenario is not unlikely if all three steps are caused
+                // by the same script.
+                return Ok(());
             }
+        } else {
+            // OS/libc does not support mtime?
+            return Ok(());
+        };
+        // We’ve observed (through `status_start`) that time has
+        // “progressed” since `directory_mtime`, so any further
+        // change to this directory is extremely likely to cause a
+        // different mtime.
+        //
+        // Having the same mtime again is not entirely impossible
+        // since the system clock is not monotonous. It could jump
+        // backward to some point before `directory_mtime`, then a
+        // directory change could potentially happen during exactly
+        // the wrong tick.
+        //
+        // We deem this scenario (unlike the previous one) to be
+        // unlikely enough in practice.
+
+        let is_up_to_date =
+            if let Some(cached) = dirstate_node.cached_directory_mtime()? {
+                cached.likely_equal(directory_mtime)
+            } else {
+                false
+            };
+        if !is_up_to_date {
+            let hg_path = dirstate_node
+                .full_path_borrowed(self.dmap.on_disk)?
+                .detach_from_tree();
+            self.new_cachable_directories
+                .lock()
+                .unwrap()
+                .push((hg_path, directory_mtime))
         }
         Ok(())
     }
