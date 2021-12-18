@@ -51,7 +51,7 @@ impl Ui {
         stderr.flush().or_else(handle_stderr_error)
     }
 
-    /// is plain mode active
+    /// Return whether plain mode is active.
     ///
     /// Plain mode means that all configuration variables which affect
     /// the behavior and output of Mercurial should be

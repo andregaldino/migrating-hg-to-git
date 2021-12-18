@@ -182,6 +182,17 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let ui = invocation.ui;
     let config = invocation.config;
     let args = invocation.subcommand_args;
+
+    let verbose = !ui.plain()
+        && !args.is_present("print0")
+        && (config.get_bool(b"ui", b"verbose")?
+            || config.get_bool(b"commands", b"status.verbose")?);
+    if verbose {
+        return Err(CommandError::unsupported(
+            "verbose status is not supported yet",
+        ));
+    }
+
     let all = args.is_present("all");
     let display_states = if all {
         // TODO when implementing `--quiet`: it excludes clean files
