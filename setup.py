@@ -209,7 +209,7 @@ from distutils.errors import (
 from distutils.sysconfig import get_python_inc, get_config_var
 from distutils.version import StrictVersion
 
-# Explain to distutils.StrictVersion how our release candidates are versionned
+# Explain to distutils.StrictVersion how our release candidates are versioned
 StrictVersion.version_re = re.compile(r'^(\d+)\.(\d+)(\.(\d+))?-?(rc(\d+))?$')
 
 
@@ -597,8 +597,8 @@ class hgbuildext(build_ext):
                 e for e in self.extensions if e.name != 'mercurial.zstd'
             ]
 
-        # Build Rust standalon extensions if it'll be used
-        # and its build is not explictely disabled (for external build
+        # Build Rust standalone extensions if it'll be used
+        # and its build is not explicitly disabled (for external build
         # as Linux distributions would do)
         if self.distribution.rust and self.rust:
             if not sys.platform.startswith('linux'):
@@ -1502,7 +1502,7 @@ class RustExtension(Extension):
                 raise RustCompilationError("Cargo not found")
             elif exc.errno == errno.EACCES:
                 raise RustCompilationError(
-                    "Cargo found, but permisssion to execute it is denied"
+                    "Cargo found, but permission to execute it is denied"
                 )
             else:
                 raise
