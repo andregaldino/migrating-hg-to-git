@@ -39,9 +39,13 @@ impl From<NodeMapError> for RevlogError {
     }
 }
 
+fn corrupted() -> HgError {
+    HgError::corrupted("corrupted revlog")
+}
+
 impl RevlogError {
     fn corrupted() -> Self {
-        RevlogError::Other(HgError::corrupted("corrupted revlog"))
+        RevlogError::Other(corrupted())
     }
 }
 
@@ -191,7 +195,7 @@ impl Revlog {
         if rev == NULL_REVISION {
             return Ok(Cow::Borrowed(&[]));
         };
-        self.get_entry(rev)?.data()
+        Ok(self.get_entry(rev)?.data()?)
     }
 
     /// Check the hash of some given data against the recorded hash.
@@ -222,13 +226,13 @@ impl Revlog {
     fn build_data_from_deltas(
         snapshot: RevlogEntry,
         deltas: &[RevlogEntry],
-    ) -> Result<Vec<u8>, RevlogError> {
+    ) -> Result<Vec<u8>, HgError> {
         let snapshot = snapshot.data_chunk()?;
         let deltas = deltas
             .iter()
             .rev()
             .map(RevlogEntry::data_chunk)
-            .collect::<Result<Vec<Cow<'_, [u8]>>, RevlogError>>()?;
+            .collect::<Result<Vec<_>, _>>()?;
         let patches: Vec<_> =
             deltas.iter().map(|d| patch::PatchList::new(d)).collect();
         let patch = patch::fold_patch_lists(&patches);
@@ -246,7 +250,10 @@ impl Revlog {
     }
 
     /// Get an entry of the revlog.
-    fn get_entry(&self, rev: Revision) -> Result<RevlogEntry, RevlogError> {
+    pub fn get_entry(
+        &self,
+        rev: Revision,
+    ) -> Result<RevlogEntry, RevlogError> {
         let index_entry = self
             .index
             .get_entry(rev)
@@ -281,8 +288,8 @@ impl Revlog {
     fn get_entry_internal(
         &self,
         rev: Revision,
-    ) -> Result<RevlogEntry, RevlogError> {
-        return self.get_entry(rev).map_err(|_| RevlogError::corrupted());
+    ) -> Result<RevlogEntry, HgError> {
+        return self.get_entry(rev).map_err(|_| corrupted());
     }
 }
 
@@ -304,7 +311,7 @@ impl<'a> RevlogEntry<'a> {
     }
 
     /// The data for this entry, after resolving deltas if any.
-    pub fn data(&self) -> Result<Cow<'a, [u8]>, RevlogError> {
+    pub fn data(&self) -> Result<Cow<'a, [u8]>, HgError> {
         let mut entry = self.clone();
         let mut delta_chain = vec![];
 
@@ -328,7 +335,7 @@ impl<'a> RevlogEntry<'a> {
             .revlog
             .index
             .get_entry(self.rev)
-            .ok_or(RevlogError::InvalidRevision)?;
+            .ok_or_else(corrupted)?;
 
         let data = if delta_chain.is_empty() {
             entry.data_chunk()?
@@ -344,13 +351,13 @@ impl<'a> RevlogEntry<'a> {
         ) {
             Ok(data)
         } else {
-            Err(RevlogError::corrupted())
+            Err(corrupted())
         }
     }
 
     /// Extract the data contained in the entry.
     /// This may be a delta. (See `is_delta`.)
-    fn data_chunk(&self) -> Result<Cow<'a, [u8]>, RevlogError> {
+    fn data_chunk(&self) -> Result<Cow<'a, [u8]>, HgError> {
         if self.bytes.is_empty() {
             return Ok(Cow::Borrowed(&[]));
         }
@@ -365,39 +372,35 @@ impl<'a> RevlogEntry<'a> {
             // zstd data.
             b'\x28' => Ok(Cow::Owned(self.uncompressed_zstd_data()?)),
             // A proper new format should have had a repo/store requirement.
-            _format_type => Err(RevlogError::corrupted()),
+            _format_type => Err(corrupted()),
         }
     }
 
-    fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, RevlogError> {
+    fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, HgError> {
         let mut decoder = ZlibDecoder::new(self.bytes);
         if self.is_delta() {
             let mut buf = Vec::with_capacity(self.compressed_len);
-            decoder
-                .read_to_end(&mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+            decoder.read_to_end(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
-            decoder
-                .read_exact(&mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+            decoder.read_exact(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         }
     }
 
-    fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, RevlogError> {
+    fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, HgError> {
         if self.is_delta() {
             let mut buf = Vec::with_capacity(self.compressed_len);
             zstd::stream::copy_decode(self.bytes, &mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+                .map_err(|_| corrupted())?;
             Ok(buf)
         } else {
             let mut buf = vec![0; self.uncompressed_len];
             let len = zstd::block::decompress_to_buffer(self.bytes, &mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+                .map_err(|_| corrupted())?;
             if len != self.uncompressed_len {
-                Err(RevlogError::corrupted())
+                Err(corrupted())
             } else {
                 Ok(buf)
             }

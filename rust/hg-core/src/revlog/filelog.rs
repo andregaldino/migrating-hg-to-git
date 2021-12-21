@@ -1,6 +1,7 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::path_encode::path_encode;
+use crate::revlog::revlog::RevlogEntry;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::NodePrefix;
 use crate::revlog::Revision;
@@ -23,7 +24,7 @@ impl Filelog {
         Ok(Self { revlog })
     }
 
-    /// The given node ID is that of the file as found in a manifest, not of a
+    /// The given node ID is that of the file as found in a filelog, not of a
     /// changeset.
     pub fn data_for_node(
         &self,
@@ -33,7 +34,7 @@ impl Filelog {
         self.data_for_rev(file_rev)
     }
 
-    /// The given revision is that of the file as found in a manifest, not of a
+    /// The given revision is that of the file as found in a filelog, not of a
     /// changeset.
     pub fn data_for_rev(
         &self,
@@ -42,12 +43,39 @@ impl Filelog {
         let data: Vec<u8> = self.revlog.get_rev_data(file_rev)?.into_owned();
         Ok(FilelogRevisionData(data.into()))
     }
+
+    /// The given node ID is that of the file as found in a filelog, not of a
+    /// changeset.
+    pub fn entry_for_node(
+        &self,
+        file_node: impl Into<NodePrefix>,
+    ) -> Result<FilelogEntry, RevlogError> {
+        let file_rev = self.revlog.rev_from_node(file_node.into())?;
+        self.entry_for_rev(file_rev)
+    }
+
+    /// The given revision is that of the file as found in a filelog, not of a
+    /// changeset.
+    pub fn entry_for_rev(
+        &self,
+        file_rev: Revision,
+    ) -> Result<FilelogEntry, RevlogError> {
+        Ok(FilelogEntry(self.revlog.get_entry(file_rev)?))
+    }
 }
 
 fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
     let encoded_bytes =
         path_encode(&[b"data/", hg_path.as_bytes(), suffix].concat());
     get_path_from_bytes(&encoded_bytes).into()
+}
+
+pub struct FilelogEntry<'a>(RevlogEntry<'a>);
+
+impl FilelogEntry<'_> {
+    pub fn data(&self) -> Result<FilelogRevisionData, HgError> {
+        Ok(FilelogRevisionData(self.0.data()?.into_owned()))
+    }
 }
 
 /// The data for one revision in a filelog, uncompressed and delta-resolved.
