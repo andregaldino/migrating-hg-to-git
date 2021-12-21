@@ -522,7 +522,7 @@ fn unsure_is_modified(
         filelog.data_for_node(entry.node_id()?).map_err(|_| {
             HgError::corrupted("filelog missing node from manifest")
         })?;
-    let contents_in_p1 = filelog_entry.data()?;
+    let contents_in_p1 = filelog_entry.file_data()?;
     if contents_in_p1.len() as u64 != fs_len {
         // No need to read the file contents:
         // it cannot be equal if it has a different length.

@@ -101,7 +101,7 @@ pub fn cat<'a>(
         let file_log = repo.filelog(file_path)?;
         results.push((
             file_path,
-            file_log.data_for_node(file_node)?.into_data()?,
+            file_log.data_for_node(file_node)?.into_file_data()?,
         ));
     }
 

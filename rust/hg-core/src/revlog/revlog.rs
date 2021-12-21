@@ -214,7 +214,7 @@ impl Revlog {
             .ok_or(RevlogError::InvalidRevision)?;
 
         let data: Vec<u8> = if delta_chain.is_empty() {
-            entry.data()?.into()
+            entry.data_chunk()?.into()
         } else {
             Revlog::build_data_from_deltas(entry, &delta_chain)?
         };
@@ -260,11 +260,11 @@ impl Revlog {
         snapshot: RevlogEntry,
         deltas: &[RevlogEntry],
     ) -> Result<Vec<u8>, RevlogError> {
-        let snapshot = snapshot.data()?;
+        let snapshot = snapshot.data_chunk()?;
         let deltas = deltas
             .iter()
             .rev()
-            .map(RevlogEntry::data)
+            .map(RevlogEntry::data_chunk)
             .collect::<Result<Vec<Cow<'_, [u8]>>, RevlogError>>()?;
         let patches: Vec<_> =
             deltas.iter().map(|d| patch::PatchList::new(d)).collect();
@@ -339,7 +339,8 @@ impl<'a> RevlogEntry<'a> {
     }
 
     /// Extract the data contained in the entry.
-    pub fn data(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
+    /// This may be a delta. (See `is_delta`.)
+    fn data_chunk(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
         if self.bytes.is_empty() {
             return Ok(Cow::Borrowed(&[]));
         }

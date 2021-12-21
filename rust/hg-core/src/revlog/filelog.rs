@@ -28,7 +28,7 @@ impl Filelog {
     pub fn data_for_node(
         &self,
         file_node: impl Into<NodePrefix>,
-    ) -> Result<FilelogEntry, RevlogError> {
+    ) -> Result<FilelogRevisionData, RevlogError> {
         let file_rev = self.revlog.rev_from_node(file_node.into())?;
         self.data_for_rev(file_rev)
     }
@@ -38,9 +38,9 @@ impl Filelog {
     pub fn data_for_rev(
         &self,
         file_rev: Revision,
-    ) -> Result<FilelogEntry, RevlogError> {
+    ) -> Result<FilelogRevisionData, RevlogError> {
         let data: Vec<u8> = self.revlog.get_rev_data(file_rev)?;
-        Ok(FilelogEntry(data.into()))
+        Ok(FilelogRevisionData(data.into()))
     }
 }
 
@@ -50,9 +50,10 @@ fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
     get_path_from_bytes(&encoded_bytes).into()
 }
 
-pub struct FilelogEntry(Vec<u8>);
+/// The data for one revision in a filelog, uncompressed and delta-resolved.
+pub struct FilelogRevisionData(Vec<u8>);
 
-impl FilelogEntry {
+impl FilelogRevisionData {
     /// Split into metadata and data
     pub fn split(&self) -> Result<(Option<&[u8]>, &[u8]), HgError> {
         const DELIMITER: &[u8; 2] = &[b'\x01', b'\n'];
@@ -71,14 +72,14 @@ impl FilelogEntry {
     }
 
     /// Returns the file contents at this revision, stripped of any metadata
-    pub fn data(&self) -> Result<&[u8], HgError> {
+    pub fn file_data(&self) -> Result<&[u8], HgError> {
         let (_metadata, data) = self.split()?;
         Ok(data)
     }
 
     /// Consume the entry, and convert it into data, discarding any metadata,
     /// if present.
-    pub fn into_data(self) -> Result<Vec<u8>, HgError> {
+    pub fn into_file_data(self) -> Result<Vec<u8>, HgError> {
         if let (Some(_metadata), data) = self.split()? {
             Ok(data.to_owned())
         } else {
