@@ -184,51 +184,14 @@ impl Revlog {
     /// retrieved as needed, and the deltas will be applied to the inital
     /// snapshot to rebuild the final data.
     #[timed]
-    pub fn get_rev_data(&self, rev: Revision) -> Result<Vec<u8>, RevlogError> {
+    pub fn get_rev_data(
+        &self,
+        rev: Revision,
+    ) -> Result<Cow<[u8]>, RevlogError> {
         if rev == NULL_REVISION {
-            return Ok(vec![]);
+            return Ok(Cow::Borrowed(&[]));
         };
-        // Todo return -> Cow
-        let mut entry = self.get_entry(rev)?;
-        let mut delta_chain = vec![];
-
-        // The meaning of `base_rev_or_base_of_delta_chain` depends on
-        // generaldelta. See the doc on `ENTRY_DELTA_BASE` in
-        // `mercurial/revlogutils/constants.py` and the code in
-        // [_chaininfo] and in [index_deltachain].
-        let uses_generaldelta = self.index.uses_generaldelta();
-        while let Some(base_rev) = entry.base_rev_or_base_of_delta_chain {
-            let base_rev = if uses_generaldelta {
-                base_rev
-            } else {
-                entry.rev - 1
-            };
-            delta_chain.push(entry);
-            entry = self.get_entry_internal(base_rev)?;
-        }
-
-        // TODO do not look twice in the index
-        let index_entry = self
-            .index
-            .get_entry(rev)
-            .ok_or(RevlogError::InvalidRevision)?;
-
-        let data: Vec<u8> = if delta_chain.is_empty() {
-            entry.data_chunk()?.into()
-        } else {
-            Revlog::build_data_from_deltas(entry, &delta_chain)?
-        };
-
-        if self.check_hash(
-            index_entry.p1(),
-            index_entry.p2(),
-            index_entry.hash().as_bytes(),
-            &data,
-        ) {
-            Ok(data)
-        } else {
-            Err(RevlogError::corrupted())
-        }
+        self.get_entry(rev)?.data()
     }
 
     /// Check the hash of some given data against the recorded hash.
@@ -296,6 +259,7 @@ impl Revlog {
             &self.data()[start..end]
         };
         let entry = RevlogEntry {
+            revlog: self,
             rev,
             bytes: data,
             compressed_len: index_entry.compressed_len(),
@@ -324,8 +288,9 @@ impl Revlog {
 
 /// The revlog entry's bytes and the necessary informations to extract
 /// the entry's data.
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct RevlogEntry<'a> {
+    revlog: &'a Revlog,
     rev: Revision,
     bytes: &'a [u8],
     compressed_len: usize,
@@ -338,9 +303,54 @@ impl<'a> RevlogEntry<'a> {
         self.rev
     }
 
+    /// The data for this entry, after resolving deltas if any.
+    pub fn data(&self) -> Result<Cow<'a, [u8]>, RevlogError> {
+        let mut entry = self.clone();
+        let mut delta_chain = vec![];
+
+        // The meaning of `base_rev_or_base_of_delta_chain` depends on
+        // generaldelta. See the doc on `ENTRY_DELTA_BASE` in
+        // `mercurial/revlogutils/constants.py` and the code in
+        // [_chaininfo] and in [index_deltachain].
+        let uses_generaldelta = self.revlog.index.uses_generaldelta();
+        while let Some(base_rev) = entry.base_rev_or_base_of_delta_chain {
+            let base_rev = if uses_generaldelta {
+                base_rev
+            } else {
+                entry.rev - 1
+            };
+            delta_chain.push(entry);
+            entry = self.revlog.get_entry_internal(base_rev)?;
+        }
+
+        // TODO do not look twice in the index
+        let index_entry = self
+            .revlog
+            .index
+            .get_entry(self.rev)
+            .ok_or(RevlogError::InvalidRevision)?;
+
+        let data = if delta_chain.is_empty() {
+            entry.data_chunk()?
+        } else {
+            Revlog::build_data_from_deltas(entry, &delta_chain)?.into()
+        };
+
+        if self.revlog.check_hash(
+            index_entry.p1(),
+            index_entry.p2(),
+            index_entry.hash().as_bytes(),
+            &data,
+        ) {
+            Ok(data)
+        } else {
+            Err(RevlogError::corrupted())
+        }
+    }
+
     /// Extract the data contained in the entry.
     /// This may be a delta. (See `is_delta`.)
-    fn data_chunk(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
+    fn data_chunk(&self) -> Result<Cow<'a, [u8]>, RevlogError> {
         if self.bytes.is_empty() {
             return Ok(Cow::Borrowed(&[]));
         }

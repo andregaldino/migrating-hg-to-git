@@ -32,7 +32,7 @@ impl Changelog {
         &self,
         rev: Revision,
     ) -> Result<ChangelogRevisionData, RevlogError> {
-        let bytes = self.revlog.get_rev_data(rev)?;
+        let bytes = self.revlog.get_rev_data(rev)?.into_owned();
         Ok(ChangelogRevisionData { bytes })
     }
 

@@ -44,7 +44,7 @@ impl Manifestlog {
         &self,
         rev: Revision,
     ) -> Result<Manifest, RevlogError> {
-        let bytes = self.revlog.get_rev_data(rev)?;
+        let bytes = self.revlog.get_rev_data(rev)?.into_owned();
         Ok(Manifest { bytes })
     }
 }

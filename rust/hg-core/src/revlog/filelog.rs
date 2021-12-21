@@ -39,7 +39,7 @@ impl Filelog {
         &self,
         file_rev: Revision,
     ) -> Result<FilelogRevisionData, RevlogError> {
-        let data: Vec<u8> = self.revlog.get_rev_data(file_rev)?;
+        let data: Vec<u8> = self.revlog.get_rev_data(file_rev)?.into_owned();
         Ok(FilelogRevisionData(data.into()))
     }
 }
