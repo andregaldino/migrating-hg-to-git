@@ -280,6 +280,9 @@ impl Revlog {
             } else {
                 Some(index_entry.base_revision_or_base_of_delta_chain())
             },
+            p1: index_entry.p1(),
+            p2: index_entry.p2(),
+            hash: *index_entry.hash(),
         };
         Ok(entry)
     }
@@ -304,6 +307,9 @@ pub struct RevlogEntry<'a> {
     compressed_len: u32,
     uncompressed_len: i32,
     base_rev_or_base_of_delta_chain: Option<Revision>,
+    p1: Revision,
+    p2: Revision,
+    hash: Node,
 }
 
 impl<'a> RevlogEntry<'a> {
@@ -335,13 +341,6 @@ impl<'a> RevlogEntry<'a> {
             entry = self.revlog.get_entry_internal(base_rev)?;
         }
 
-        // TODO do not look twice in the index
-        let index_entry = self
-            .revlog
-            .index
-            .get_entry(self.rev)
-            .ok_or_else(corrupted)?;
-
         let data = if delta_chain.is_empty() {
             entry.data_chunk()?
         } else {
@@ -349,9 +348,9 @@ impl<'a> RevlogEntry<'a> {
         };
 
         if self.revlog.check_hash(
-            index_entry.p1(),
-            index_entry.p2(),
-            index_entry.hash().as_bytes(),
+            self.p1,
+            self.p2,
+            self.hash.as_bytes(),
             &data,
         ) {
             Ok(data)
