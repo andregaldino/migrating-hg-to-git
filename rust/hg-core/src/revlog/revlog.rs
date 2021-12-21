@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
@@ -259,7 +260,7 @@ impl Revlog {
             .get_entry(rev)
             .ok_or(RevlogError::InvalidRevision)?;
         let start = index_entry.offset();
-        let end = start + index_entry.compressed_len();
+        let end = start + index_entry.compressed_len() as usize;
         let data = if self.index.is_inline() {
             self.index.data(start, end)
         } else {
@@ -300,14 +301,18 @@ pub struct RevlogEntry<'a> {
     revlog: &'a Revlog,
     rev: Revision,
     bytes: &'a [u8],
-    compressed_len: usize,
-    uncompressed_len: usize,
+    compressed_len: u32,
+    uncompressed_len: i32,
     base_rev_or_base_of_delta_chain: Option<Revision>,
 }
 
 impl<'a> RevlogEntry<'a> {
     pub fn revision(&self) -> Revision {
         self.rev
+    }
+
+    pub fn uncompressed_len(&self) -> Option<u32> {
+        u32::try_from(self.uncompressed_len).ok()
     }
 
     /// The data for this entry, after resolving deltas if any.
@@ -379,11 +384,12 @@ impl<'a> RevlogEntry<'a> {
     fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, HgError> {
         let mut decoder = ZlibDecoder::new(self.bytes);
         if self.is_delta() {
-            let mut buf = Vec::with_capacity(self.compressed_len);
+            let mut buf = Vec::with_capacity(self.compressed_len as usize);
             decoder.read_to_end(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         } else {
-            let mut buf = vec![0; self.uncompressed_len];
+            let cap = self.uncompressed_len.max(0) as usize;
+            let mut buf = vec![0; cap];
             decoder.read_exact(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         }
@@ -391,15 +397,16 @@ impl<'a> RevlogEntry<'a> {
 
     fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, HgError> {
         if self.is_delta() {
-            let mut buf = Vec::with_capacity(self.compressed_len);
+            let mut buf = Vec::with_capacity(self.compressed_len as usize);
             zstd::stream::copy_decode(self.bytes, &mut buf)
                 .map_err(|_| corrupted())?;
             Ok(buf)
         } else {
-            let mut buf = vec![0; self.uncompressed_len];
+            let cap = self.uncompressed_len.max(0) as usize;
+            let mut buf = vec![0; cap];
             let len = zstd::block::decompress_to_buffer(self.bytes, &mut buf)
                 .map_err(|_| corrupted())?;
-            if len != self.uncompressed_len {
+            if len != self.uncompressed_len as usize {
                 Err(corrupted())
             } else {
                 Ok(buf)

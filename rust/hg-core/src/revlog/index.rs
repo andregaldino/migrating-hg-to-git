@@ -118,7 +118,7 @@ impl Index {
                     offset_override: None,
                 };
 
-                offset += INDEX_ENTRY_SIZE + entry.compressed_len();
+                offset += INDEX_ENTRY_SIZE + entry.compressed_len() as usize;
             }
 
             if offset == bytes.len() {
@@ -261,13 +261,13 @@ impl<'a> IndexEntry<'a> {
     }
 
     /// Return the compressed length of the data.
-    pub fn compressed_len(&self) -> usize {
-        BigEndian::read_u32(&self.bytes[8..=11]) as usize
+    pub fn compressed_len(&self) -> u32 {
+        BigEndian::read_u32(&self.bytes[8..=11])
     }
 
     /// Return the uncompressed length of the data.
-    pub fn uncompressed_len(&self) -> usize {
-        BigEndian::read_u32(&self.bytes[12..=15]) as usize
+    pub fn uncompressed_len(&self) -> i32 {
+        BigEndian::read_i32(&self.bytes[12..=15])
     }
 
     /// Return the revision upon which the data has been derived.
