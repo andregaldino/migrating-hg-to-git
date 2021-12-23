@@ -321,27 +321,6 @@ class dirstate(object):
             return util.pconvert(path)
         return path
 
-    def __getitem__(self, key):
-        """Return the current state of key (a filename) in the dirstate.
-
-        States are:
-          n  normal
-          m  needs merging
-          r  marked for removal
-          a  marked for addition
-          ?  not tracked
-
-        XXX The "state" is a bit obscure to be in the "public" API. we should
-        consider migrating all user of this to going through the dirstate entry
-        instead.
-        """
-        msg = b"don't use dirstate[file], use dirstate.get_entry(file)"
-        util.nouideprecwarn(msg, b'6.1', stacklevel=2)
-        entry = self._map.get(key)
-        if entry is not None:
-            return entry.state
-        return b'?'
-
     def get_entry(self, path):
         """return a DirstateItem for the associated path"""
         entry = self._map.get(path)
