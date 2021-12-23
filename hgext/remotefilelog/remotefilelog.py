@@ -18,7 +18,6 @@ from mercurial import (
     mdiff,
     pycompat,
     revlog,
-    util,
 )
 from mercurial.utils import storageutil
 from mercurial.revlogutils import flagutil
@@ -359,17 +358,6 @@ class remotefilelog(object):
                 b'remotefilelog does not convert integer rev to node'
             )
         return rev
-
-    def _processflags(self, text, flags, operation, raw=False):
-        """deprecated entry point to access flag processors"""
-        msg = b'_processflag(...) use the specialized variant'
-        util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        if raw:
-            return text, flagutil.processflagsraw(self, text, flags)
-        elif operation == b'read':
-            return flagutil.processflagsread(self, text, flags)
-        else:  # write operation
-            return flagutil.processflagswrite(self, text, flags)
 
     def revision(self, node, raw=False):
         """returns the revlog contents at this node.
