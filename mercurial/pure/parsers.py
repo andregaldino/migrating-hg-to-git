@@ -591,12 +591,6 @@ class BaseIndexObject(object):
     def entry_size(self):
         return self.index_format.size
 
-    @property
-    def nodemap(self):
-        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self._nodemap
-
     @util.propertycache
     def _nodemap(self):
         nodemap = nodemaputil.NodeMap({sha1nodeconstants.nullid: nullrev})

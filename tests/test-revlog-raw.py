@@ -325,7 +325,7 @@ def writecases(rlog, tr):
             rawtext = text
         if rlog.rawsize(rev) != len(rawtext):
             abort('rev %d: wrong rawsize' % rev)
-        if rlog.revision(rev, raw=False) != text:
+        if rlog.revision(rev) != text:
             abort('rev %d: wrong text' % rev)
         if rlog.rawdata(rev) != rawtext:
             abort('rev %d: wrong rawtext' % rev)

@@ -741,21 +741,6 @@ class revlog(object):
         """iterate over all rev in this revlog (from start to stop)"""
         return storageutil.iterrevs(len(self), start=start, stop=stop)
 
-    @property
-    def nodemap(self):
-        msg = (
-            b"revlog.nodemap is deprecated, "
-            b"use revlog.index.[has_node|rev|get_rev]"
-        )
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self.index.nodemap
-
-    @property
-    def _nodecache(self):
-        msg = b"revlog._nodecache is deprecated, use revlog.index.nodemap"
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self.index.nodemap
-
     def hasnode(self, node):
         try:
             self.rev(node)
@@ -870,7 +855,7 @@ class revlog(object):
         if flags & (flagutil.REVIDX_KNOWN_FLAGS ^ REVIDX_ELLIPSIS) == 0:
             return self.rawsize(rev)
 
-        return len(self.revision(rev, raw=False))
+        return len(self.revision(rev))
 
     def chainbase(self, rev):
         base = self._chainbasecache.get(rev)
@@ -1776,33 +1761,13 @@ class revlog(object):
 
         return mdiff.textdiff(self.rawdata(rev1), self.rawdata(rev2))
 
-    def _processflags(self, text, flags, operation, raw=False):
-        """deprecated entry point to access flag processors"""
-        msg = b'_processflag(...) use the specialized variant'
-        util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        if raw:
-            return text, flagutil.processflagsraw(self, text, flags)
-        elif operation == b'read':
-            return flagutil.processflagsread(self, text, flags)
-        else:  # write operation
-            return flagutil.processflagswrite(self, text, flags)
-
-    def revision(self, nodeorrev, _df=None, raw=False):
+    def revision(self, nodeorrev, _df=None):
         """return an uncompressed revision of a given node or revision
         number.
 
         _df - an existing file handle to read from. (internal-only)
-        raw - an optional argument specifying if the revision data is to be
-        treated as raw data when applying flag transforms. 'raw' should be set
-        to True when generating changegroups or in debug commands.
         """
-        if raw:
-            msg = (
-                b'revlog.revision(..., raw=True) is deprecated, '
-                b'use revlog.rawdata(...)'
-            )
-            util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        return self._revisiondata(nodeorrev, _df, raw=raw)
+        return self._revisiondata(nodeorrev, _df)
 
     def sidedata(self, nodeorrev, _df=None):
         """a map of extra data related to the changeset but not part of the hash

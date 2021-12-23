@@ -526,7 +526,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
     else:
         # deltabase is rawtext before changed by flag processors, which is
         # equivalent to non-raw text
-        basetext = revlog.revision(baserev, _df=fh, raw=False)
+        basetext = revlog.revision(baserev, _df=fh)
         fulltext = mdiff.patch(basetext, delta)
 
     try:
