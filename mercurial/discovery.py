@@ -141,17 +141,6 @@ class outgoing(object):
             self._computecommonmissing()
         return self._missing
 
-    @property
-    def missingheads(self):
-        util.nouideprecwarn(
-            b'outgoing.missingheads never contained what the name suggests and '
-            b'was renamed to outgoing.ancestorsof. check your code for '
-            b'correctness.',
-            b'5.5',
-            stacklevel=2,
-        )
-        return self.ancestorsof
-
 
 def findcommonoutgoing(
     repo, other, onlyheads=None, force=False, commoninc=None, portable=False
