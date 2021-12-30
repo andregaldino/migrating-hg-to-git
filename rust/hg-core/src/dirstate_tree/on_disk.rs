@@ -353,7 +353,7 @@ impl Node {
         } else {
             0o644
         };
-        file_type | permisions
+        (file_type | permisions).into()
     }
 
     fn assume_entry(&self) -> Result<DirstateEntry, DirstateV2ParseError> {
@@ -454,8 +454,8 @@ impl Node {
         flags.set(Flags::P1_TRACKED, p1_tracked);
         flags.set(Flags::P2_INFO, p2_info);
         let size = if let Some((m, s)) = mode_size_opt {
-            let exec_perm = m & libc::S_IXUSR != 0;
-            let is_symlink = m & libc::S_IFMT == libc::S_IFLNK;
+            let exec_perm = m & (libc::S_IXUSR as u32) != 0;
+            let is_symlink = m & (libc::S_IFMT as u32) == libc::S_IFLNK as u32;
             flags.set(Flags::MODE_EXEC_PERM, exec_perm);
             flags.set(Flags::MODE_IS_SYMLINK, is_symlink);
             flags.insert(Flags::HAS_MODE_AND_SIZE);
