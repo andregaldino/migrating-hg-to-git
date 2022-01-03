@@ -88,7 +88,9 @@ Limitations
 
 4. Tags are not supported in completely shallow repos. If you use tags in your repo you will have to specify `excludepattern=.hgtags` in your client configuration to ensure that file is downloaded. The include/excludepattern settings are experimental at the moment and have yet to be deployed in a production environment.
 
-5. A few commands will be slower. `hg log <filename>` will be much slower since it has to walk the entire commit history instead of just the filelog. Use `hg log -f <filename>` instead, which remains very fast.
+5. Similarly, subrepositories should not be used with completely shallow repos. Use `excludepattern=.hgsub*` in your client configuration to ensure that the files are downloaded.
+
+6. A few commands will be slower. `hg log <filename>` will be much slower since it has to walk the entire commit history instead of just the filelog. Use `hg log -f <filename>` instead, which remains very fast.
 
 Contributing
 ============

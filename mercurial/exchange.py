@@ -521,8 +521,16 @@ def _pushdiscovery(pushop):
 
 def _checksubrepostate(pushop):
     """Ensure all outgoing referenced subrepo revisions are present locally"""
+
+    repo = pushop.repo
+
+    # If the repository does not use subrepos, skip the expensive
+    # manifest checks.
+    if not len(repo.file(b'.hgsub')) or not len(repo.file(b'.hgsubstate')):
+        return
+
     for n in pushop.outgoing.missing:
-        ctx = pushop.repo[n]
+        ctx = repo[n]
 
         if b'.hgsub' in ctx.manifest() and b'.hgsubstate' in ctx.files():
             for subpath in sorted(ctx.substate):
