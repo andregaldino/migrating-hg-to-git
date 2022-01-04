@@ -404,11 +404,13 @@ getbundle requests with stream=1 are uncompressed
 #endif
 #if zstd no-rust
   $ f --size --hex --bytes 256 body
-  body: size=116340
+  body: size=116340 (no-bigendian !)
+  body: size=116335 (bigendian !)
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
   0010: 9a 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
   0020: 06 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 31 30 |....^bytecount10|
-  0030: 31 32 37 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1276filecount109|
+  0030: 31 32 37 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1276filecount109| (no-bigendian !)
+  0030: 31 32 37 31 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1271filecount109| (bigendian !)
   0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |3requirementsdot|
   0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
   0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
@@ -533,7 +535,8 @@ Clone with background file closing enabled
   transferred 102 KB in * seconds (* */sec) (glob) (no-zstd !)
   bundle2-input-part: total payload size 118984 (no-zstd !)
   transferred 98.9 KB in * seconds (* */sec) (glob) (zstd !)
-  bundle2-input-part: total payload size 116145 (zstd !)
+  bundle2-input-part: total payload size 116145 (zstd no-bigendian !)
+  bundle2-input-part: total payload size 116140 (zstd bigendian !)
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks

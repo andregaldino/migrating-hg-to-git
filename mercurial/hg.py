@@ -12,6 +12,7 @@ import errno
 import os
 import shutil
 import stat
+import weakref
 
 from .i18n import _
 from .node import (
@@ -677,7 +678,7 @@ def clone(
         srcpeer = source.peer()  # in case we were called with a localrepo
         branches = (None, branch or [])
         origsource = source = srcpeer.url()
-    srclock = destlock = cleandir = None
+    srclock = destlock = destwlock = cleandir = None
     destpeer = None
     try:
         revs, checkout = addbranchrevs(srcpeer, srcpeer, branches, revs)
@@ -865,6 +866,8 @@ def clone(
                 requirements=dest_reqs,
             )
             destrepo = localrepo.makelocalrepository(ui, destrootpath)
+
+            destwlock = destrepo.wlock()
             destlock = destrepo.lock()
             from . import streamclone  # avoid cycle
 
@@ -873,6 +876,18 @@ def clone(
             # we need to re-init the repo after manually copying the data
             # into it
             destpeer = peer(srcrepo, peeropts, dest)
+
+            # make the peer aware that is it already locked
+            #
+            # important:
+            #
+            #    We still need to release that lock at the end of the function
+            destpeer.local()._lockref = weakref.ref(destlock)
+            destpeer.local()._wlockref = weakref.ref(destwlock)
+            # dirstate also needs to be copied because `_wlockref` has a reference
+            # to it: this dirstate is saved to disk when the wlock is released
+            destpeer.local().dirstate = destrepo.dirstate
+
             srcrepo.hook(
                 b'outgoing', source=b'clone', node=srcrepo.nodeconstants.nullhex
             )
@@ -1040,6 +1055,8 @@ def clone(
                     bookmarks.activate(destrepo, update)
             if destlock is not None:
                 release(destlock)
+            if destwlock is not None:
+                release(destlock)
             # here is a tiny windows were someone could end up writing the
             # repository before the cache are sure to be warm. This is "fine"
             # as the only "bad" outcome would be some slowness. That potential
@@ -1047,7 +1064,7 @@ def clone(
             with destrepo.lock():
                 destrepo.updatecaches(caches=repositorymod.CACHES_POST_CLONE)
     finally:
-        release(srclock, destlock)
+        release(srclock, destlock, destwlock)
         if cleandir is not None:
             shutil.rmtree(cleandir, True)
         if srcpeer is not None:

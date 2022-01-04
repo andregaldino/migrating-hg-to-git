@@ -1023,7 +1023,8 @@ No race condition
   adding [s] 00changelog.n (62 bytes)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
-  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd no-bigendian !)
+  adding [s] 00manifest.d (492 KB) (zstd bigendian !)
   adding [s] 00changelog.d (360 KB) (no-zstd !)
   adding [s] 00changelog.d (368 KB) (zstd !)
   adding [s] 00manifest.i (313 KB)
@@ -1063,7 +1064,8 @@ Check and record file state beforehand
 
   $ f --size test-repo/.hg/store/00changelog*
   test-repo/.hg/store/00changelog-*.nd: size=121088 (glob)
-  test-repo/.hg/store/00changelog.d: size=376891 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=376891 (zstd no-bigendian !)
+  test-repo/.hg/store/00changelog.d: size=376889 (zstd bigendian !)
   test-repo/.hg/store/00changelog.d: size=368890 (no-zstd !)
   test-repo/.hg/store/00changelog.i: size=320384
   test-repo/.hg/store/00changelog.n: size=62
@@ -1093,7 +1095,8 @@ Do a mix of clone and commit at the same time so that the file listed on disk di
   adding [s] 00changelog.n (62 bytes)
   adding [s] 00changelog-*.nd (118 KB) (glob)
   adding [s] 00manifest.d (452 KB) (no-zstd !)
-  adding [s] 00manifest.d (491 KB) (zstd !)
+  adding [s] 00manifest.d (491 KB) (zstd no-bigendian !)
+  adding [s] 00manifest.d (492 KB) (zstd bigendian !)
   adding [s] 00changelog.d (360 KB) (no-zstd !)
   adding [s] 00changelog.d (368 KB) (zstd !)
   adding [s] 00manifest.i (313 KB)
@@ -1104,7 +1107,8 @@ Check the result state
   $ f --size stream-clone-race-1/.hg/store/00changelog*
   stream-clone-race-1/.hg/store/00changelog-*.nd: size=121088 (glob)
   stream-clone-race-1/.hg/store/00changelog.d: size=368890 (no-zstd !)
-  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=376891 (zstd no-bigendian !)
+  stream-clone-race-1/.hg/store/00changelog.d: size=376889 (zstd bigendian !)
   stream-clone-race-1/.hg/store/00changelog.i: size=320384
   stream-clone-race-1/.hg/store/00changelog.n: size=62
 
@@ -1158,7 +1162,8 @@ Check the initial state
   test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
   test-repo/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
   test-repo/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
-  test-repo/.hg/store/00changelog.d: size=376950 (zstd !)
+  test-repo/.hg/store/00changelog.d: size=376950 (zstd no-bigendian !)
+  test-repo/.hg/store/00changelog.d: size=376948 (zstd bigendian !)
   test-repo/.hg/store/00changelog.d: size=368949 (no-zstd !)
   test-repo/.hg/store/00changelog.i: size=320448
   test-repo/.hg/store/00changelog.n: size=62
@@ -1209,7 +1214,8 @@ Check the result.
   stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (rust !)
   stream-clone-race-2/.hg/store/00changelog-*.nd: size=121344 (glob) (pure !)
   stream-clone-race-2/.hg/store/00changelog-*.nd: size=121152 (glob) (no-rust no-pure !)
-  stream-clone-race-2/.hg/store/00changelog.d: size=376950 (zstd !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=376950 (zstd no-bigendian !)
+  stream-clone-race-2/.hg/store/00changelog.d: size=376948 (zstd bigendian !)
   stream-clone-race-2/.hg/store/00changelog.d: size=368949 (no-zstd !)
   stream-clone-race-2/.hg/store/00changelog.i: size=320448
   stream-clone-race-2/.hg/store/00changelog.n: size=62
