@@ -19,6 +19,7 @@ from . import (
     bookmarks,
     branchmap,
     error,
+    obsolete,
     phases,
     pycompat,
     scmutil,
@@ -545,12 +546,16 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     if len(localcandidate) == 1:
         return unknownheads | set(candidate_newhs), set()
 
+    obsrevs = obsolete.getrevs(unfi, b'obsolete')
+    futurenonobsolete = frozenset(futurecommon) - obsrevs
+
     # actually process branch replacement
     while localcandidate:
         nh = localcandidate.pop()
+        r = torev(nh)
         current_branch = unfi[nh].branch()
         # run this check early to skip the evaluation of the whole branch
-        if torev(nh) in futurecommon or ispublic(torev(nh)):
+        if ispublic(r) or r not in obsrevs:
             newhs.add(nh)
             continue
 
@@ -572,7 +577,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
         # * if we have no markers to push to obsolete it.
         if (
             any(ispublic(r) for r in branchrevs)
-            or any(torev(n) in futurecommon for n in branchnodes)
+            or any(torev(n) in futurenonobsolete for n in branchnodes)
             or any(not hasoutmarker(n) for n in branchnodes)
         ):
             newhs.add(nh)
