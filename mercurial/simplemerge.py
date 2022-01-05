@@ -112,38 +112,30 @@ class Merge3Text(object):
             end_marker = end_marker + b' ' + name_b
         if name_base and base_marker:
             base_marker = base_marker + b' ' + name_base
-        merge_regions = self.merge_regions()
+        merge_groups = self.merge_groups()
         if minimize:
-            merge_regions = self.minimize(merge_regions)
-        for t in merge_regions:
-            what = t[0]
-            if what == b'unchanged':
-                for i in range(t[1], t[2]):
-                    yield self.base[i]
-            elif what == b'a' or what == b'same':
-                for i in range(t[1], t[2]):
-                    yield self.a[i]
-            elif what == b'b':
-                for i in range(t[1], t[2]):
-                    yield self.b[i]
-            elif what == b'conflict':
+            merge_groups = self.minimize(merge_groups)
+        for what, lines in merge_groups:
+            if what == b'conflict':
+                base_lines, a_lines, b_lines = lines
                 self.conflicts = True
                 if start_marker is not None:
                     yield start_marker + newline
-                for i in range(t[3], t[4]):
-                    yield self.a[i]
+                for line in a_lines:
+                    yield line
                 if base_marker is not None:
                     yield base_marker + newline
-                    for i in range(t[1], t[2]):
-                        yield self.base[i]
+                    for line in base_lines:
+                        yield line
                 if mid_marker is not None:
                     yield mid_marker + newline
-                for i in range(t[5], t[6]):
-                    yield self.b[i]
+                for line in b_lines:
+                    yield line
                 if end_marker is not None:
                     yield end_marker + newline
             else:
-                raise ValueError(what)
+                for line in lines:
+                    yield line
 
     def merge_groups(self):
         """Yield sequence of line groups.  Each one is a tuple:
@@ -272,66 +264,49 @@ class Merge3Text(object):
                 ia = aend
                 ib = bend
 
-    def minimize(self, merge_regions):
+    def minimize(self, merge_groups):
         """Trim conflict regions of lines where A and B sides match.
 
         Lines where both A and B have made the same changes at the beginning
         or the end of each merge region are eliminated from the conflict
         region and are instead considered the same.
         """
-        for region in merge_regions:
-            if region[0] != b"conflict":
-                yield region
+        for what, lines in merge_groups:
+            if what != b"conflict":
+                yield what, lines
                 continue
-            # pytype thinks this tuple contains only 3 things, but
-            # that's clearly not true because this code successfully
-            # executes. It might be wise to rework merge_regions to be
-            # some kind of attrs type.
-            (
-                issue,
-                z1,
-                z2,
-                a1,
-                a2,
-                b1,
-                b2,
-            ) = region  # pytype: disable=bad-unpacking
-            alen = a2 - a1
-            blen = b2 - b1
+            base_lines, a_lines, b_lines = lines
+            alen = len(a_lines)
+            blen = len(b_lines)
 
             # find matches at the front
             ii = 0
-            while (
-                ii < alen and ii < blen and self.a[a1 + ii] == self.b[b1 + ii]
-            ):
+            while ii < alen and ii < blen and a_lines[ii] == b_lines[ii]:
                 ii += 1
             startmatches = ii
 
             # find matches at the end
             ii = 0
             while (
-                ii < alen
-                and ii < blen
-                and self.a[a2 - ii - 1] == self.b[b2 - ii - 1]
+                ii < alen and ii < blen and a_lines[-ii - 1] == b_lines[-ii - 1]
             ):
                 ii += 1
             endmatches = ii
 
             if startmatches > 0:
-                yield b'same', a1, a1 + startmatches
+                yield b'same', a_lines[:startmatches]
 
             yield (
                 b'conflict',
-                z1,
-                z2,
-                a1 + startmatches,
-                a2 - endmatches,
-                b1 + startmatches,
-                b2 - endmatches,
+                (
+                    base_lines,
+                    a_lines[startmatches : alen - endmatches],
+                    b_lines[startmatches : blen - endmatches],
+                ),
             )
 
             if endmatches > 0:
-                yield b'same', a2 - endmatches, a2
+                yield b'same', a_lines[alen - endmatches :]
 
     def find_sync_regions(self):
         """Return a list of sync regions, where both descendants match the base.
