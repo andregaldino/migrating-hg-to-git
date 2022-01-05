@@ -51,6 +51,7 @@ getversion = gitutil.pygit2_version
 class gitstore(object):  # store.basicstore):
     def __init__(self, path, vfstype):
         self.vfs = vfstype(path)
+        self.opener = self.vfs
         self.path = self.vfs.base
         self.createmode = store._calcmode(self.vfs)
         # above lines should go away in favor of:
