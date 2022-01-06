@@ -160,7 +160,7 @@ class Merge3Text(object):
         'b', lines
              Lines taken from b
 
-        'conflict', base_lines, a_lines, b_lines
+        'conflict', (base_lines, a_lines, b_lines)
              Lines from base were changed to either a or b and conflict.
         """
         for t in self.merge_regions():
@@ -174,9 +174,11 @@ class Merge3Text(object):
             elif what == b'conflict':
                 yield (
                     what,
-                    self.base[t[1] : t[2]],
-                    self.a[t[3] : t[4]],
-                    self.b[t[5] : t[6]],
+                    (
+                        self.base[t[1] : t[2]],
+                        self.a[t[3] : t[4]],
+                        self.b[t[5] : t[6]],
+                    ),
                 )
             else:
                 raise ValueError(what)
@@ -417,9 +419,9 @@ def _picklabels(defaults, overrides):
 def _mergediff(m3, name_a, name_b, name_base):
     lines = []
     conflicts = False
-    for group in m3.merge_groups():
-        if group[0] == b'conflict':
-            base_lines, a_lines, b_lines = group[1:]
+    for what, group_lines in m3.merge_groups():
+        if what == b'conflict':
+            base_lines, a_lines, b_lines = group_lines
             base_text = b''.join(base_lines)
             b_blocks = list(
                 mdiff.allblocks(
@@ -472,18 +474,18 @@ def _mergediff(m3, name_a, name_b, name_base):
             lines.append(b">>>>>>>\n")
             conflicts = True
         else:
-            lines.extend(group[1])
+            lines.extend(group_lines)
     return lines, conflicts
 
 
 def _resolve(m3, sides):
     lines = []
-    for group in m3.merge_groups():
-        if group[0] == b'conflict':
+    for what, group_lines in m3.merge_groups():
+        if what == b'conflict':
             for side in sides:
-                lines.extend(group[side + 1])
+                lines.extend(group_lines[side])
         else:
-            lines.extend(group[1])
+            lines.extend(group_lines)
     return lines
 
 

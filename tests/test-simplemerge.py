@@ -285,7 +285,7 @@ class TestMerge3(TestCase):
             list(m3.merge_groups()),
             [
                 (b'unchanged', [b'aaa\n']),
-                (b'conflict', [], [b'111\n'], [b'222\n']),
+                (b'conflict', ([], [b'111\n'], [b'222\n'])),
                 (b'unchanged', [b'bbb\n']),
             ],
         )
