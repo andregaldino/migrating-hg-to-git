@@ -484,6 +484,15 @@ helptable = sorted(
             TOPIC_CATEGORY_IDS,
         ),
         (
+            [
+                b'rust',
+                b'rustext',
+            ],
+            _(b'Rust in Mercurial'),
+            loaddoc(b'rust'),
+            TOPIC_CATEGORY_CONFIG,
+        ),
+        (
             [b'filesets', b'fileset'],
             _(b"Specifying File Sets"),
             loaddoc(b'filesets'),

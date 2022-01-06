@@ -165,6 +165,7 @@ the extension is unknown.
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   
@@ -295,6 +296,7 @@ the extension is unknown.
    hgweb         Configuring hgweb
    merge-tools   Merge Tools
    pager         Pager Support
+   rust          Rust in Mercurial
   
   Concepts:
   
@@ -1595,6 +1597,8 @@ Separate sections from subsections
   
       "usefncache"
   
+      "exp-rc-dirstate-v2"
+  
       "use-persistent-nodemap"
   
       "use-share-safe"
@@ -2423,6 +2427,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   Specifying Revisions
+  </td></tr>
+  <tr><td>
+  <a href="/help/rust">
+  rust
+  </a>
+  </td><td>
+  Rust in Mercurial
   </td></tr>
   <tr><td>
   <a href="/help/scripting">
