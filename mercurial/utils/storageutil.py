@@ -112,6 +112,13 @@ def filerevisioncopied(store, node):
     2-tuple of the source filename and node.
     """
     if store.parents(node)[0] != sha1nodeconstants.nullid:
+        # When creating a copy or move we set filelog parents to null,
+        # because contents are probably unrelated and making a delta
+        # would not be useful.
+        # Conversely, if filelog p1 is non-null we know
+        # there is no copy metadata.
+        # In the presence of merges, this reasoning becomes invalid
+        # if we reorder parents. See tests/test-issue6528.t.
         return False
 
     meta = parsemeta(store.revision(node))[0]
