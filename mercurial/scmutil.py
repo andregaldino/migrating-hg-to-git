@@ -349,7 +349,7 @@ class casecollisionauditor(object):
         self._newfiles.add(f)
 
 
-def filteredhash(repo, maxrev):
+def filteredhash(repo, maxrev, needobsolete=False):
     """build hash of filtered revisions in the current repoview.
 
     Multiple caches perform up-to-date validation by checking that the
@@ -358,22 +358,33 @@ def filteredhash(repo, maxrev):
     of revisions in the view may change without the repository tiprev and
     tipnode changing.
 
-    This function hashes all the revs filtered from the view and returns
-    that SHA-1 digest.
+    This function hashes all the revs filtered from the view (and, optionally,
+    all obsolete revs) up to maxrev and returns that SHA-1 digest.
     """
     cl = repo.changelog
-    if not cl.filteredrevs:
-        return None
-    key = cl._filteredrevs_hashcache.get(maxrev)
-    if not key:
-        revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
+    if needobsolete:
+        obsrevs = obsolete.getrevs(repo, b'obsolete')
+        if not cl.filteredrevs and not obsrevs:
+            return None
+        # TODO: obsrevs should be a frozenset, but right now obsolete.getrevs()
+        # may return a set, which is not a hashable type.
+        key = (maxrev, hash(cl.filteredrevs), hash(frozenset(obsrevs)))
+    else:
+        if not cl.filteredrevs:
+            return None
+        key = maxrev
+        obsrevs = frozenset()
+
+    result = cl._filteredrevs_hashcache.get(key)
+    if not result:
+        revs = sorted(r for r in cl.filteredrevs | obsrevs if r <= maxrev)
         if revs:
             s = hashutil.sha1()
             for rev in revs:
                 s.update(b'%d;' % rev)
-            key = s.digest()
-            cl._filteredrevs_hashcache[maxrev] = key
-    return key
+            result = s.digest()
+            cl._filteredrevs_hashcache[key] = result
+    return result
 
 
 def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):

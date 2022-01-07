@@ -79,6 +79,9 @@ def _destupdateobs(repo, clean):
             node = repo.revs(b'max(%ln)', successors).first()
             if bookmarks.isactivewdirparent(repo):
                 movemark = repo[b'.'].node()
+        else:
+            # TODO: copy hg prune logic
+            node = repo[b'.'].node()
     return node, movemark, None
 
 

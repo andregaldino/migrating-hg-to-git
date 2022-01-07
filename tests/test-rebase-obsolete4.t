@@ -169,7 +169,7 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
    D
   branch: default
   commit: 1 modified, 1 added, 1 unknown, 1 unresolved
-  update: 1 new changesets, 2 branch heads (merge)
+  update: (current)
   phases: 3 draft
   rebase: 0 rebased, 2 remaining (rebase --continue)
 

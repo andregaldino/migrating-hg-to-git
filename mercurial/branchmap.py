@@ -17,6 +17,7 @@ from .node import (
 from . import (
     encoding,
     error,
+    obsolete,
     pycompat,
     scmutil,
     util,
@@ -184,7 +185,7 @@ class branchcache(object):
 
     The first line is used to check if the cache is still valid. If the
     branch cache is for a filtered repo view, an optional third hash is
-    included that hashes the hashes of all filtered revisions.
+    included that hashes the hashes of all filtered and obsolete revisions.
 
     The open/closed state is represented by a single letter 'o' or 'c'.
     This field can be used to avoid changelog reads when determining if a
@@ -357,7 +358,8 @@ class branchcache(object):
         - True when cache is up to date or a subset of current repo."""
         try:
             return (self.tipnode == repo.changelog.node(self.tiprev)) and (
-                self.filteredhash == scmutil.filteredhash(repo, self.tiprev)
+                self.filteredhash
+                == scmutil.filteredhash(repo, self.tiprev, needobsolete=True)
             )
         except IndexError:
             return False
@@ -478,6 +480,9 @@ class branchcache(object):
         # use the faster unfiltered parent accessor.
         parentrevs = repo.unfiltered().changelog.parentrevs
 
+        # Faster than using ctx.obsolete()
+        obsrevs = obsolete.getrevs(repo, b'obsolete')
+
         for branch, newheadrevs in pycompat.iteritems(newbranches):
             # For every branch, compute the new branchheads.
             # A branchhead is a revision such that no descendant is on
@@ -518,6 +523,11 @@ class branchcache(object):
             bheadset = {cl.rev(node) for node in bheads}
             uncertain = set()
             for newrev in sorted(newheadrevs):
+                if newrev in obsrevs:
+                    # We ignore obsolete changesets as they shouldn't be
+                    # considered heads.
+                    continue
+
                 if not bheadset:
                     bheadset.add(newrev)
                     continue
@@ -525,13 +535,22 @@ class branchcache(object):
                 parents = [p for p in parentrevs(newrev) if p != nullrev]
                 samebranch = set()
                 otherbranch = set()
+                obsparents = set()
                 for p in parents:
-                    if p in bheadset or getbranchinfo(p)[0] == branch:
+                    if p in obsrevs:
+                        # We ignored this obsolete changeset earlier, but now
+                        # that it has non-ignored children, we need to make
+                        # sure their ancestors are not considered heads. To
+                        # achieve that, we will simply treat this obsolete
+                        # changeset as a parent from other branch.
+                        obsparents.add(p)
+                    elif p in bheadset or getbranchinfo(p)[0] == branch:
                         samebranch.add(p)
                     else:
                         otherbranch.add(p)
-                if otherbranch and not (len(bheadset) == len(samebranch) == 1):
+                if not (len(bheadset) == len(samebranch) == 1):
                     uncertain.update(otherbranch)
+                    uncertain.update(obsparents)
                 bheadset.difference_update(samebranch)
                 bheadset.add(newrev)
 
@@ -540,11 +559,12 @@ class branchcache(object):
                     topoheads = set(cl.headrevs())
                 if bheadset - topoheads:
                     floorrev = min(bheadset)
-                    ancestors = set(cl.ancestors(newheadrevs, floorrev))
-                    bheadset -= ancestors
+                    if floorrev <= max(uncertain):
+                        ancestors = set(cl.ancestors(uncertain, floorrev))
+                        bheadset -= ancestors
             bheadrevs = sorted(bheadset)
             self[branch] = [cl.node(rev) for rev in bheadrevs]
-            tiprev = bheadrevs[-1]
+            tiprev = max(newheadrevs)
             if tiprev > ntiprev:
                 ntiprev = tiprev
 
@@ -553,15 +573,24 @@ class branchcache(object):
             self.tipnode = cl.node(ntiprev)
 
         if not self.validfor(repo):
-            # cache key are not valid anymore
+            # old cache key is now invalid for the repo, but we've just updated
+            # the cache and we assume it's valid, so let's make the cache key
+            # valid as well by recomputing it from the cached data
             self.tipnode = repo.nullid
             self.tiprev = nullrev
             for heads in self.iterheads():
+                if not heads:
+                    # all revisions on a branch are obsolete
+                    continue
+                # note: tiprev is not necessarily the tip revision of repo,
+                # because the tip could be obsolete (i.e. not a head)
                 tiprev = max(cl.rev(node) for node in heads)
                 if tiprev > self.tiprev:
                     self.tipnode = cl.node(tiprev)
                     self.tiprev = tiprev
-        self.filteredhash = scmutil.filteredhash(repo, self.tiprev)
+        self.filteredhash = scmutil.filteredhash(
+            repo, self.tiprev, needobsolete=True
+        )
 
         duration = util.timer() - starttime
         repo.ui.log(

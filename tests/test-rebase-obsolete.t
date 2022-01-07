@@ -650,6 +650,7 @@ Test hidden changesets in the rebase set (issue4504)
   $ hg add J
   $ hg commit -m J
   1 new orphan changesets
+  created new head
   $ hg debugobsolete `hg log --rev . -T '{node}'`
   1 new obsolescence markers
   obsoleted 1 changesets

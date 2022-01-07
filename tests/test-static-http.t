@@ -256,6 +256,7 @@ List of files accessed over HTTP:
   /remote-with-names/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /remote-with-names/.hg/store/data/foo.i
   /remote-with-names/.hg/store/data/~2ehgtags.i (py37 !)
+  /remote-with-names/.hg/store/obsstore
   /remote-with-names/.hg/store/requires
   /remote/.hg/bookmarks
   /remote/.hg/bookmarks.current
@@ -276,6 +277,7 @@ List of files accessed over HTTP:
   /remote/.hg/store/data/quux.i
   /remote/.hg/store/data/~2edotfile%20with%20spaces.i (py37 !)
   /remote/.hg/store/data/~2ehgtags.i (py37 !)
+  /remote/.hg/store/obsstore
   /remote/.hg/store/requires
   /remotempty/.hg/bookmarks
   /remotempty/.hg/bookmarks.current
