@@ -267,7 +267,7 @@ sharing a largefile repo automatically enables largefiles on the share
   getting changed largefiles
   1 largefiles updated, 0 removed
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ grep largefiles ../shared_lfrepo/.hg/requires
+  $ hg debugrequires -R ../shared_lfrepo | grep largefiles
   largefiles
 
 verify that large files in subrepos handled properly

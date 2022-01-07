@@ -1189,7 +1189,7 @@ Check upgrading a large file repository
   $ echo '123456789012345' > lfs.bin
   $ hg ci -Am 'lfs.bin'
   adding lfs.bin
-  $ grep lfs .hg/requires
+  $ hg debugrequires | grep lfs
   lfs
   $ find .hg/store/lfs -type f
   .hg/store/lfs/objects/d0/beab232adff5ba365880366ad30b1edb85c4c5372442b5d2fe27adc96d653f
@@ -1197,7 +1197,7 @@ Check upgrading a large file repository
   $ hg debugupgraderepo --run
   nothing to do
 
-  $ grep lfs .hg/requires
+  $ hg debugrequires | grep lfs
   lfs
   $ find .hg/store/lfs -type f
   .hg/store/lfs/objects/d0/beab232adff5ba365880366ad30b1edb85c4c5372442b5d2fe27adc96d653f

@@ -380,7 +380,7 @@ Check that temporary bundle doesn't lose phase when not using generaldelta
 
   $ hg --config format.usegeneraldelta=no init issue5678
   $ cd issue5678
-  $ grep generaldelta .hg/requires
+  $ hg debugrequires | grep generaldelta
   [1]
   $ echo a > a
   $ hg ci -Aqm a

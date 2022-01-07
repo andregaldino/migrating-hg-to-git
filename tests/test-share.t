@@ -173,7 +173,7 @@ test unshare command
   $ test -d .hg/store
   $ test -f .hg/sharedpath
   [1]
-  $ grep shared .hg/requires
+  $ hg debugrequires | grep shared
   [1]
   $ hg unshare
   abort: this is not a shared repo
@@ -208,10 +208,11 @@ test shared clones using relative paths work
   $ hg share -U --relative thisdir/abs thisdir/rel
   $ cat thisdir/rel/.hg/sharedpath
   ../../orig/.hg (no-eol)
-  $ grep shared thisdir/*/.hg/requires
-  thisdir/abs/.hg/requires:shared
-  thisdir/rel/.hg/requires:relshared
-  thisdir/rel/.hg/requires:shared
+  $ hg debugrequires -R thisdir/abs/ | grep shared
+  shared
+  $ hg debugrequires -R thisdir/rel/ | grep shared
+  relshared
+  shared
 
 test that relative shared paths aren't relative to $PWD
 
@@ -241,7 +242,7 @@ test unshare relshared repo
   $ test -d .hg/store
   $ test -f .hg/sharedpath
   [1]
-  $ grep shared .hg/requires
+  $ hg debugrequires | grep shared
   [1]
   $ hg unshare
   abort: this is not a shared repo
