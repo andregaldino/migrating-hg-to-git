@@ -455,11 +455,12 @@ def reposetup(ui, repo):
     repo.prepushoutgoinghooks.add(b"largefiles", prepushoutgoinghook)
 
     def checkrequireslfiles(ui, repo, **kwargs):
-        if b'largefiles' not in repo.requirements and any(
-            lfutil.shortname + b'/' in f[1] for f in repo.store.datafiles()
-        ):
-            repo.requirements.add(b'largefiles')
-            scmutil.writereporequirements(repo)
+        with repo.lock():
+            if b'largefiles' not in repo.requirements and any(
+                lfutil.shortname + b'/' in f[1] for f in repo.store.datafiles()
+            ):
+                repo.requirements.add(b'largefiles')
+                scmutil.writereporequirements(repo)
 
     ui.setconfig(
         b'hooks', b'changegroup.lfiles', checkrequireslfiles, b'largefiles'
