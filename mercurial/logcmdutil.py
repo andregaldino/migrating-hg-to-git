@@ -62,9 +62,9 @@ def getlimit(opts):
         try:
             limit = int(limit)
         except ValueError:
-            raise error.Abort(_(b'limit must be a positive integer'))
+            raise error.InputError(_(b'limit must be a positive integer'))
         if limit <= 0:
-            raise error.Abort(_(b'limit must be positive'))
+            raise error.InputError(_(b'limit must be positive'))
     else:
         limit = None
     return limit
@@ -1108,11 +1108,13 @@ def _parselinerangeopt(repo, opts):
         try:
             pat, linerange = pat.rsplit(b',', 1)
         except ValueError:
-            raise error.Abort(_(b'malformatted line-range pattern %s') % pat)
+            raise error.InputError(
+                _(b'malformatted line-range pattern %s') % pat
+            )
         try:
             fromline, toline = map(int, linerange.split(b':'))
         except ValueError:
-            raise error.Abort(_(b"invalid line range for %s") % pat)
+            raise error.InputError(_(b"invalid line range for %s") % pat)
         msg = _(b"line range pattern '%s' must match exactly one file") % pat
         fname = scmutil.parsefollowlinespattern(repo, None, pat, msg)
         linerangebyfname.append(
@@ -1271,7 +1273,7 @@ def displayrevs(ui, repo, revs, displayer, getcopies):
 def checkunsupportedgraphflags(pats, opts):
     for op in [b"newest_first"]:
         if op in opts and opts[op]:
-            raise error.Abort(
+            raise error.InputError(
                 _(b"-G/--graph option is incompatible with --%s")
                 % op.replace(b"_", b"-")
             )
