@@ -20,6 +20,18 @@ use crate::repo::Repo;
 use crate::revlog::Revision;
 use crate::{Node, NULL_REVISION};
 
+const REVISION_FLAG_CENSORED: u16 = 1 << 15;
+const REVISION_FLAG_ELLIPSIS: u16 = 1 << 14;
+const REVISION_FLAG_EXTSTORED: u16 = 1 << 13;
+const REVISION_FLAG_HASCOPIESINFO: u16 = 1 << 12;
+
+// Keep this in sync with REVIDX_KNOWN_FLAGS in
+// mercurial/revlogutils/flagutil.py
+const REVIDX_KNOWN_FLAGS: u16 = REVISION_FLAG_CENSORED
+    | REVISION_FLAG_ELLIPSIS
+    | REVISION_FLAG_EXTSTORED
+    | REVISION_FLAG_HASCOPIESINFO;
+
 #[derive(derive_more::From)]
 pub enum RevlogError {
     InvalidRevision,
@@ -282,6 +294,7 @@ impl Revlog {
             },
             p1: index_entry.p1(),
             p2: index_entry.p2(),
+            flags: index_entry.flags(),
             hash: *index_entry.hash(),
         };
         Ok(entry)
@@ -309,6 +322,7 @@ pub struct RevlogEntry<'a> {
     base_rev_or_base_of_delta_chain: Option<Revision>,
     p1: Revision,
     p2: Revision,
+    flags: u16,
     hash: Node,
 }
 
@@ -319,6 +333,20 @@ impl<'a> RevlogEntry<'a> {
 
     pub fn uncompressed_len(&self) -> Option<u32> {
         u32::try_from(self.uncompressed_len).ok()
+    }
+
+    pub fn has_p1(&self) -> bool {
+        self.p1 != NULL_REVISION
+    }
+
+    pub fn is_cencored(&self) -> bool {
+        (self.flags & REVISION_FLAG_CENSORED) != 0
+    }
+
+    pub fn has_length_affecting_flag_processor(&self) -> bool {
+        // Relevant Python code: revlog.size()
+        // note: ELLIPSIS is known to not change the content
+        (self.flags & (REVIDX_KNOWN_FLAGS ^ REVISION_FLAG_ELLIPSIS)) != 0
     }
 
     /// The data for this entry, after resolving deltas if any.

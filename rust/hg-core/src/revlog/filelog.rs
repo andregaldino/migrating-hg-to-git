@@ -73,6 +73,89 @@ fn store_path(hg_path: &HgPath, suffix: &[u8]) -> PathBuf {
 pub struct FilelogEntry<'a>(RevlogEntry<'a>);
 
 impl FilelogEntry<'_> {
+    /// `self.data()` can be expensive, with decompression and delta
+    /// resolution.
+    ///
+    /// *Without* paying this cost, based on revlog index information
+    /// including `RevlogEntry::uncompressed_len`:
+    ///
+    /// * Returns `true` if the length that `self.data().file_data().len()`
+    ///   would return is definitely **not equal** to `other_len`.
+    /// * Returns `false` if available information is inconclusive.
+    pub fn file_data_len_not_equal_to(&self, other_len: u64) -> bool {
+        // Relevant code that implement this behavior in Python code:
+        // basefilectx.cmp, filelog.size, storageutil.filerevisioncopied,
+        // revlog.size, revlog.rawsize
+
+        // Let’s call `file_data_len` what would be returned by
+        // `self.data().file_data().len()`.
+
+        if self.0.is_cencored() {
+            let file_data_len = 0;
+            return other_len != file_data_len;
+        }
+
+        if self.0.has_length_affecting_flag_processor() {
+            // We can’t conclude anything about `file_data_len`.
+            return false;
+        }
+
+        // Revlog revisions (usually) have metadata for the size of
+        // their data after decompression and delta resolution
+        // as would be returned by `Revlog::get_rev_data`.
+        //
+        // For filelogs this is the file’s contents preceded by an optional
+        // metadata block.
+        let uncompressed_len = if let Some(l) = self.0.uncompressed_len() {
+            l as u64
+        } else {
+            // The field was set to -1, the actual uncompressed len is unknown.
+            // We need to decompress to say more.
+            return false;
+        };
+        // `uncompressed_len = file_data_len + optional_metadata_len`,
+        // so `file_data_len <= uncompressed_len`.
+        if uncompressed_len < other_len {
+            // Transitively, `file_data_len < other_len`.
+            // So `other_len != file_data_len` definitely.
+            return true;
+        }
+
+        if uncompressed_len == other_len + 4 {
+            // It’s possible that `file_data_len == other_len` with an empty
+            // metadata block (2 start marker bytes + 2 end marker bytes).
+            // This happens when there wouldn’t otherwise be metadata, but
+            // the first 2 bytes of file data happen to match a start marker
+            // and would be ambiguous.
+            return false;
+        }
+
+        if !self.0.has_p1() {
+            // There may or may not be copy metadata, so we can’t deduce more
+            // about `file_data_len` without computing file data.
+            return false;
+        }
+
+        // Filelog ancestry is not meaningful in the way changelog ancestry is.
+        // It only provides hints to delta generation.
+        // p1 and p2 are set to null when making a copy or rename since
+        // contents are likely unrelatedto what might have previously existed
+        // at the destination path.
+        //
+        // Conversely, since here p1 is non-null, there is no copy metadata.
+        // Note that this reasoning may be invalidated in the presence of
+        // merges made by some previous versions of Mercurial that
+        // swapped p1 and p2. See <https://bz.mercurial-scm.org/show_bug.cgi?id=6528>
+        // and `tests/test-issue6528.t`.
+        //
+        // Since copy metadata is currently the only kind of metadata
+        // kept in revlog data of filelogs,
+        // this `FilelogEntry` does not have such metadata:
+        let file_data_len = uncompressed_len;
+
+        return file_data_len != other_len;
+    }
+
     pub fn data(&self) -> Result<FilelogRevisionData, HgError> {
         Ok(FilelogRevisionData(self.0.data()?.into_owned()))
     }

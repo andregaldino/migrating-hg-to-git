@@ -260,6 +260,10 @@ impl<'a> IndexEntry<'a> {
         }
     }
 
+    pub fn flags(&self) -> u16 {
+        BigEndian::read_u16(&self.bytes[6..=7])
+    }
+
     /// Return the compressed length of the data.
     pub fn compressed_len(&self) -> u32 {
         BigEndian::read_u32(&self.bytes[8..=11])

@@ -516,16 +516,16 @@ fn unsure_is_modified(
         filelog.entry_for_node(entry.node_id()?).map_err(|_| {
             HgError::corrupted("filelog missing node from manifest")
         })?;
-    // TODO: check `fs_len` here like below, but based on
-    // `RevlogEntry::uncompressed_len` without decompressing the full filelog
-    // contents where possible. This is only valid if the revlog data does not
-    // contain metadata. See how Python’s `revlog.rawsize` calls
-    // `storageutil.filerevisioncopied`.
-    // (Maybe also check for content-modifying flags? See `revlog.size`.)
-    let filelog_data = filelog_entry.data()?;
-    let contents_in_p1 = filelog_data.file_data()?;
-    if contents_in_p1.len() as u64 != fs_len {
-        // No need to read the file contents:
+    if filelog_entry.file_data_len_not_equal_to(fs_len) {
+        // No need to read file contents:
+        // it cannot be equal if it has a different length.
+        return Ok(true);
+    }
+
+    let p1_filelog_data = filelog_entry.data()?;
+    let p1_contents = p1_filelog_data.file_data()?;
+    if p1_contents.len() as u64 != fs_len {
+        // No need to read file contents:
         // it cannot be equal if it has a different length.
         return Ok(true);
     }
@@ -535,5 +535,5 @@ fn unsure_is_modified(
     } else {
         vfs.read(fs_path)?
     };
-    Ok(contents_in_p1 != &*fs_contents)
+    Ok(p1_contents != &*fs_contents)
 }
