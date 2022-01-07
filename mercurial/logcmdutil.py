@@ -831,7 +831,7 @@ def _makematcher(repo, revs, wopts):
                         # take the slow path.
                         found = slowpath = True
                 if not found:
-                    raise error.Abort(
+                    raise error.StateError(
                         _(
                             b'cannot follow file not in any of the specified '
                             b'revisions: "%s"'
@@ -847,7 +847,7 @@ def _makematcher(repo, revs, wopts):
                         slowpath = True
                         continue
                     else:
-                        raise error.Abort(
+                        raise error.StateError(
                             _(
                                 b'cannot follow file not in parent '
                                 b'revision: "%s"'
@@ -858,7 +858,7 @@ def _makematcher(repo, revs, wopts):
                 if not filelog:
                     # A file exists in wdir but not in history, which means
                     # the file isn't committed yet.
-                    raise error.Abort(
+                    raise error.StateError(
                         _(b'cannot follow nonexistent file: "%s"') % f
                     )
         else:
@@ -1138,7 +1138,7 @@ def getlinerangerevs(repo, userrevs, opts):
     linerangesbyrev = {}
     for fname, (fromline, toline) in _parselinerangeopt(repo, opts):
         if fname not in wctx:
-            raise error.Abort(
+            raise error.StateError(
                 _(b'cannot follow file not in parent revision: "%s"') % fname
             )
         fctx = wctx.filectx(fname)

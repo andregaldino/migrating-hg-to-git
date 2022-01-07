@@ -1200,11 +1200,11 @@ follow file history from wdir parent, copied in wdir:
 
   $ hg log -f add0-cp4
   abort: cannot follow nonexistent file: "add0-cp4"
-  [255]
+  [20]
 
   $ hg grep --diff -f data add0-cp4
   abort: cannot follow nonexistent file: "add0-cp4"
-  [255]
+  [20]
 
  BROKEN: maybe better to abort
   $ hg grep -f data add0-cp4
@@ -1214,11 +1214,11 @@ follow file history from wdir parent, removed:
 
   $ hg log -f add0-cp1-mod1-rm3
   abort: cannot follow file not in parent revision: "add0-cp1-mod1-rm3"
-  [255]
+  [20]
 
   $ hg grep --diff -f data add0-cp1-mod1-rm3
   abort: cannot follow file not in parent revision: "add0-cp1-mod1-rm3"
-  [255]
+  [20]
 
  BROKEN: maybe better to abort
   $ hg grep -f data add0-cp1-mod1-rm3
@@ -1229,11 +1229,11 @@ follow file history from wdir parent (explicit), removed:
 
   $ hg log -fr. add0-cp1-mod1-rm3
   abort: cannot follow file not in any of the specified revisions: "add0-cp1-mod1-rm3"
-  [255]
+  [20]
 
   $ hg grep --diff -fr. data add0-cp1-mod1-rm3
   abort: cannot follow file not in any of the specified revisions: "add0-cp1-mod1-rm3"
-  [255]
+  [20]
 
  BROKEN: should abort
   $ hg grep -fr. data add0-cp1-mod1-rm3
@@ -1244,11 +1244,11 @@ follow file history from wdir parent, removed in wdir:
 
   $ hg log -f add0-rm4
   abort: cannot follow file not in parent revision: "add0-rm4"
-  [255]
+  [20]
 
   $ hg grep --diff -f data add0-rm4
   abort: cannot follow file not in parent revision: "add0-rm4"
-  [255]
+  [20]
 
  BROKEN: should abort
   $ hg grep -f data add0-rm4
@@ -1340,11 +1340,11 @@ follow file history from specified revision, removed:
 
   $ hg log -fr2 add0-rm2
   abort: cannot follow file not in any of the specified revisions: "add0-rm2"
-  [255]
+  [20]
 
   $ hg grep --diff -fr2 data add0-rm2
   abort: cannot follow file not in any of the specified revisions: "add0-rm2"
-  [255]
+  [20]
 
  BROKEN: should abort
   $ hg grep -fr2 data add0-rm2

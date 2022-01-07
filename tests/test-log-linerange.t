@@ -1150,4 +1150,4 @@ We get an error for removed files.
   $ hg ci -m 'remove baz' --quiet
   $ hg log -f -L dir/baz,5:7 -p
   abort: cannot follow file not in parent revision: "dir/baz"
-  [255]
+  [20]
