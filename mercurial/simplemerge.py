@@ -332,10 +332,10 @@ def _verifytext(text, path, ui, opts):
     return text
 
 
-def _picklabels(defaults, overrides):
+def _picklabels(overrides):
     if len(overrides) > 3:
         raise error.Abort(_(b"can only specify three labels."))
-    result = defaults[:]
+    result = [None, None, None]
     for i, override in enumerate(overrides):
         result[i] = override
     return result
@@ -501,9 +501,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     elif mode == b'other':
         lines = _resolve(m3, (2,))
     else:
-        name_a, name_b, name_base = _picklabels(
-            [localctx.path(), otherctx.path(), None], opts.get('label', [])
-        )
+        name_a, name_b, name_base = _picklabels(opts.get('label', []))
         if mode == b'mergediff':
             lines, conflicts = render_mergediff(m3, name_a, name_b, name_base)
         else:

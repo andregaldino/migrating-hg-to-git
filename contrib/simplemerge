@@ -83,6 +83,10 @@ try:
     if len(opts[b'label']) > 2:
         opts[b'mode'] = b'merge3'
     local, base, other = args
+    overrides = opts[b'label']
+    labels = [local, other, base]
+    labels[: len(overrides)] = overrides
+    opts[b'label'] = labels
     sys.exit(
         simplemerge.simplemerge(
             uimod.ui.load(),
