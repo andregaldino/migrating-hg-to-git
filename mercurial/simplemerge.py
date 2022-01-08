@@ -87,54 +87,6 @@ class Merge3Text(object):
         self.a = a
         self.b = b
 
-    def merge_lines(
-        self,
-        name_a=None,
-        name_b=None,
-        name_base=None,
-        start_marker=b'<<<<<<<',
-        mid_marker=b'=======',
-        end_marker=b'>>>>>>>',
-        base_marker=None,
-        minimize=False,
-    ):
-        """Return merge in cvs-like form."""
-        conflicts = False
-        newline = b'\n'
-        if len(self.a) > 0:
-            if self.a[0].endswith(b'\r\n'):
-                newline = b'\r\n'
-            elif self.a[0].endswith(b'\r'):
-                newline = b'\r'
-        if name_a and start_marker:
-            start_marker = start_marker + b' ' + name_a
-        if name_b and end_marker:
-            end_marker = end_marker + b' ' + name_b
-        if name_base and base_marker:
-            base_marker = base_marker + b' ' + name_base
-        merge_groups = self.merge_groups()
-        if minimize:
-            merge_groups = self.minimize(merge_groups)
-        lines = []
-        for what, group_lines in merge_groups:
-            if what == b'conflict':
-                base_lines, a_lines, b_lines = group_lines
-                conflicts = True
-                if start_marker is not None:
-                    lines.append(start_marker + newline)
-                lines.extend(a_lines)
-                if base_marker is not None:
-                    lines.append(base_marker + newline)
-                    lines.extend(base_lines)
-                if mid_marker is not None:
-                    lines.append(mid_marker + newline)
-                lines.extend(b_lines)
-                if end_marker is not None:
-                    lines.append(end_marker + newline)
-            else:
-                lines.extend(group_lines)
-        return lines, conflicts
-
     def merge_groups(self):
         """Yield sequence of line groups.  Each one is a tuple:
 
@@ -389,6 +341,55 @@ def _picklabels(defaults, overrides):
     return result
 
 
+def merge_lines(
+    m3,
+    name_a=None,
+    name_b=None,
+    name_base=None,
+    start_marker=b'<<<<<<<',
+    mid_marker=b'=======',
+    end_marker=b'>>>>>>>',
+    base_marker=None,
+    minimize=False,
+):
+    """Return merge in cvs-like form."""
+    conflicts = False
+    newline = b'\n'
+    if len(m3.a) > 0:
+        if m3.a[0].endswith(b'\r\n'):
+            newline = b'\r\n'
+        elif m3.a[0].endswith(b'\r'):
+            newline = b'\r'
+    if name_a and start_marker:
+        start_marker = start_marker + b' ' + name_a
+    if name_b and end_marker:
+        end_marker = end_marker + b' ' + name_b
+    if name_base and base_marker:
+        base_marker = base_marker + b' ' + name_base
+    merge_groups = m3.merge_groups()
+    if minimize:
+        merge_groups = m3.minimize(merge_groups)
+    lines = []
+    for what, group_lines in merge_groups:
+        if what == b'conflict':
+            base_lines, a_lines, b_lines = group_lines
+            conflicts = True
+            if start_marker is not None:
+                lines.append(start_marker + newline)
+            lines.extend(a_lines)
+            if base_marker is not None:
+                lines.append(base_marker + newline)
+                lines.extend(base_lines)
+            if mid_marker is not None:
+                lines.append(mid_marker + newline)
+            lines.extend(b_lines)
+            if end_marker is not None:
+                lines.append(end_marker + newline)
+        else:
+            lines.extend(group_lines)
+    return lines, conflicts
+
+
 def _mergediff(m3, name_a, name_b, name_base):
     lines = []
     conflicts = False
@@ -508,8 +509,8 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
                 extrakwargs['base_marker'] = b'|||||||'
                 extrakwargs['name_base'] = name_base
                 extrakwargs['minimize'] = False
-            lines, conflicts = m3.merge_lines(
-                name_a=name_a, name_b=name_b, **extrakwargs
+            lines, conflicts = merge_lines(
+                m3, name_a=name_a, name_b=name_b, **extrakwargs
             )
 
     mergedtext = b''.join(lines)
