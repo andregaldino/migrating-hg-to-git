@@ -179,7 +179,7 @@ class TestMerge3(TestCase):
 
         self.assertEqual(list(m3.merge_regions()), [(b'a', 0, 2)])
 
-        self.assertEqual(list(m3.merge_lines()), [b'aaa', b'bbb'])
+        self.assertEqual(m3.merge_lines(), ([b'aaa', b'bbb'], False))
 
     def test_no_conflicts(self):
         """No conflicts because only one side changed"""
@@ -204,7 +204,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'bbb\n'],
         )
 
-        self.assertEqual(b''.join(m3.merge_lines()), b'aaa\nbbb\n222\n')
+        self.assertEqual(b''.join(m3.merge_lines()[0]), b'aaa\nbbb\n222\n')
 
     def test_append_b(self):
         m3 = Merge3(
@@ -213,7 +213,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'bbb\n', b'222\n'],
         )
 
-        self.assertEqual(b''.join(m3.merge_lines()), b'aaa\nbbb\n222\n')
+        self.assertEqual(b''.join(m3.merge_lines()[0]), b'aaa\nbbb\n222\n')
 
     def test_append_agreement(self):
         m3 = Merge3(
@@ -222,7 +222,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'bbb\n', b'222\n'],
         )
 
-        self.assertEqual(b''.join(m3.merge_lines()), b'aaa\nbbb\n222\n')
+        self.assertEqual(b''.join(m3.merge_lines()[0]), b'aaa\nbbb\n222\n')
 
     def test_append_clash(self):
         m3 = Merge3(
@@ -231,7 +231,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'bbb\n', b'333\n'],
         )
 
-        ml = m3.merge_lines(
+        ml, conflicts = m3.merge_lines(
             name_a=b'a',
             name_b=b'b',
             start_marker=b'<<',
@@ -250,7 +250,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'222\n', b'bbb\n'],
         )
 
-        ml = m3.merge_lines(
+        ml, conflicts = m3.merge_lines(
             name_a=b'a',
             name_b=b'b',
             start_marker=b'<<',
@@ -290,7 +290,7 @@ class TestMerge3(TestCase):
             ],
         )
 
-        ml = m3.merge_lines(
+        ml, conflicts = m3.merge_lines(
             name_a=b'a',
             name_b=b'b',
             start_marker=b'<<',
@@ -338,7 +338,7 @@ bbb
     def test_merge_poem(self):
         """Test case from diff3 manual"""
         m3 = Merge3(TZU, LAO, TAO)
-        ml = list(m3.merge_lines(b'LAO', b'TAO'))
+        ml, conflicts = m3.merge_lines(b'LAO', b'TAO')
         self.log(b'merge result:')
         self.log(b''.join(ml))
         self.assertEqual(ml, MERGED_RESULT)
@@ -356,11 +356,11 @@ bbb
             other_text.splitlines(True),
             this_text.splitlines(True),
         )
-        m_lines = m3.merge_lines(b'OTHER', b'THIS')
+        m_lines, conflicts = m3.merge_lines(b'OTHER', b'THIS')
         self.assertEqual(
             b'<<<<<<< OTHER\r\nc\r\n=======\r\nb\r\n'
             b'>>>>>>> THIS\r\n'.splitlines(True),
-            list(m_lines),
+            m_lines,
         )
 
     def test_mac_text(self):
@@ -372,11 +372,11 @@ bbb
             other_text.splitlines(True),
             this_text.splitlines(True),
         )
-        m_lines = m3.merge_lines(b'OTHER', b'THIS')
+        m_lines, conflicts = m3.merge_lines(b'OTHER', b'THIS')
         self.assertEqual(
             b'<<<<<<< OTHER\rc\r=======\rb\r'
             b'>>>>>>> THIS\r'.splitlines(True),
-            list(m_lines),
+            m_lines,
         )
 
 

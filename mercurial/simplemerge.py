@@ -99,7 +99,7 @@ class Merge3Text(object):
         minimize=False,
     ):
         """Return merge in cvs-like form."""
-        self.conflicts = False
+        conflicts = False
         newline = b'\n'
         if len(self.a) > 0:
             if self.a[0].endswith(b'\r\n'):
@@ -115,27 +115,25 @@ class Merge3Text(object):
         merge_groups = self.merge_groups()
         if minimize:
             merge_groups = self.minimize(merge_groups)
-        for what, lines in merge_groups:
+        lines = []
+        for what, group_lines in merge_groups:
             if what == b'conflict':
-                base_lines, a_lines, b_lines = lines
-                self.conflicts = True
+                base_lines, a_lines, b_lines = group_lines
+                conflicts = True
                 if start_marker is not None:
-                    yield start_marker + newline
-                for line in a_lines:
-                    yield line
+                    lines.append(start_marker + newline)
+                lines.extend(a_lines)
                 if base_marker is not None:
-                    yield base_marker + newline
-                    for line in base_lines:
-                        yield line
+                    lines.append(base_marker + newline)
+                    lines.extend(base_lines)
                 if mid_marker is not None:
-                    yield mid_marker + newline
-                for line in b_lines:
-                    yield line
+                    lines.append(mid_marker + newline)
+                lines.extend(b_lines)
                 if end_marker is not None:
-                    yield end_marker + newline
+                    lines.append(end_marker + newline)
             else:
-                for line in lines:
-                    yield line
+                lines.extend(group_lines)
+        return lines, conflicts
 
     def merge_groups(self):
         """Yield sequence of line groups.  Each one is a tuple:
@@ -510,10 +508,9 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
                 extrakwargs['base_marker'] = b'|||||||'
                 extrakwargs['name_base'] = name_base
                 extrakwargs['minimize'] = False
-            lines = list(
-                m3.merge_lines(name_a=name_a, name_b=name_b, **extrakwargs)
+            lines, conflicts = m3.merge_lines(
+                name_a=name_a, name_b=name_b, **extrakwargs
             )
-            conflicts = m3.conflicts
 
     mergedtext = b''.join(lines)
     if opts.get('print'):
