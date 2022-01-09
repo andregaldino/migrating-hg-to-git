@@ -176,14 +176,19 @@ test diff colorisation
   running 1 tests using 1 parallel processes 
   
   \x1b[38;5;124m--- $TESTTMP/test-failure.t\x1b[39m (esc)
-  \x1b[38;5;34m+++ $TESTTMP/test-failure.t.err\x1b[39m (esc)
+  \x1b[38;5;28m+++ $TESTTMP/test-failure.t.err\x1b[39m (esc) (pygments211 !)
+  \x1b[38;5;34m+++ $TESTTMP/test-failure.t.err\x1b[39m (esc) (no-pygments211 !)
   \x1b[38;5;90;01m@@ -1,4 +1,4 @@\x1b[39;00m (esc)
-     $ echo "bar-baz"; echo "bar-bad"; echo foo
-  \x1b[38;5;34m+  bar*baz (glob)\x1b[39m (esc)
-     bar*bad (glob)
+  \x1b[38;5;250m \x1b[39m  $ echo "bar-baz"; echo "bar-bad"; echo foo (esc) (pygments211 !)
+     $ echo "bar-baz"; echo "bar-bad"; echo foo (no-pygments211 !)
+  \x1b[38;5;28m+  bar*baz (glob)\x1b[39m (esc) (pygments211 !)
+  \x1b[38;5;34m+  bar*baz (glob)\x1b[39m (esc) (no-pygments211 !)
+  \x1b[38;5;250m \x1b[39m  bar*bad (glob) (esc) (pygments211 !)
+     bar*bad (glob) (no-pygments211 !)
   \x1b[38;5;124m-  bar*baz (glob)\x1b[39m (esc)
   \x1b[38;5;124m-  | fo (re)\x1b[39m (esc)
-  \x1b[38;5;34m+  foo\x1b[39m (esc)
+  \x1b[38;5;28m+  foo\x1b[39m (esc) (pygments211 !)
+  \x1b[38;5;34m+  foo\x1b[39m (esc) (no-pygments211 !)
   
   \x1b[38;5;88mERROR: \x1b[39m\x1b[38;5;9mtest-failure.t\x1b[39m\x1b[38;5;88m output changed\x1b[39m (esc)
   !
