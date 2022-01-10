@@ -3719,13 +3719,13 @@ def checkrequirementscompat(ui, requirements):
             )
 
         if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
-            ui.warn(
-                _(
+            if ui.hasconfig(b'format', b'use-share-safe'):
+                msg = _(
                     b"ignoring enabled 'format.use-share-safe' config because "
                     b"it is incompatible with disabled 'format.usestore'"
                     b" config\n"
                 )
-            )
+                ui.warn(msg)
             dropped.add(requirementsmod.SHARESAFE_REQUIREMENT)
 
     return dropped
