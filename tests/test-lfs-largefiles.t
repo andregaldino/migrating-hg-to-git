@@ -288,17 +288,8 @@ parameters are available, but not --authormap, --branchmap, etc.
 
 The requirement is added to the destination repo.
 
-  $ hg debugrequires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
+  $ hg debugrequires | grep lfs
   lfs
-  persistent-nodemap (rust !)
-  revlog-compression-zstd (zstd !)
-  revlogv1
-  sparserevlog
-  store
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'
   o  8 large_by_size.bin (remove large_by_size.bin)
