@@ -49,78 +49,22 @@ Check that we can upgrade to sidedata
 -------------------------------------
 
   $ hg init up-no-side-data --config experimental.revlogv2=no
-  $ hg debugformat -v -R up-no-side-data
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
-  copies-sdc:          no     no      no
+  $ hg debugformat -v -R up-no-side-data | egrep 'changelog-v2|revlog-v2'
   revlog-v2:           no     no      no
   changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zstd (zstd !)
-  compression-level:  default default default
-  $ hg debugformat -v -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
-  copies-sdc:          no     no      no
+  $ hg debugformat -v -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data | egrep 'changelog-v2|revlog-v2'
   revlog-v2:           no    yes      no
   changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zstd (zstd !)
-  compression-level:  default default default
   $ hg debugupgraderepo -R up-no-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data > /dev/null
 
 Check that we can downgrade from sidedata
 -----------------------------------------
 
   $ hg init up-side-data --config experimental.revlogv2=enable-unstable-format-and-corrupt-my-data
-  $ hg debugformat -v -R up-side-data
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
-  copies-sdc:          no     no      no
+  $ hg debugformat -v -R up-side-data | egrep 'changelog-v2|revlog-v2'
   revlog-v2:          yes     no      no
   changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zstd (zstd !)
-  compression-level:  default default default
-  $ hg debugformat -v -R up-side-data --config experimental.revlogv2=no
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
-  copies-sdc:          no     no      no
+  $ hg debugformat -v -R up-side-data --config experimental.revlogv2=no | egrep 'changelog-v2|revlog-v2'
   revlog-v2:          yes     no      no
   changelog-v2:        no     no      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        zlib   zlib    zlib (no-zstd !)
-  compression:        zstd   zstd    zstd (zstd !)
-  compression-level:  default default default
   $ hg debugupgraderepo -R up-side-data --config experimental.revlogv2=no > /dev/null
