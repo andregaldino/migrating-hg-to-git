@@ -10,6 +10,7 @@ from __future__ import absolute_import
 
 import errno
 import os
+import posixpath
 import shutil
 import stat
 import weakref
@@ -1292,7 +1293,11 @@ def _incoming(
             source = bytes(subpath)
         else:
             p = urlutil.url(source)
-            p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
+            if p.islocal():
+                normpath = os.path.normpath
+            else:
+                normpath = posixpath.normpath
+            p.path = normpath(b'%s/%s' % (p.path, subpath))
             source = bytes(p)
     other = peer(repo, opts, source)
     cleanupfn = other.close
@@ -1363,7 +1368,11 @@ def _outgoing(ui, repo, dests, opts, subpath=None):
                 dest = bytes(subpath)
             else:
                 p = urlutil.url(dest)
-                p.path = os.path.normpath(b'%s/%s' % (p.path, subpath))
+                if p.islocal():
+                    normpath = os.path.normpath
+                else:
+                    normpath = posixpath.normpath
+                p.path = normpath(b'%s/%s' % (p.path, subpath))
                 dest = bytes(p)
         branches = path.branch, opts.get(b'branch') or []
 
