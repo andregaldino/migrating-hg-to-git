@@ -998,7 +998,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Introduced in Mercurial 5.7.
 
-    Disabled by default.
+    Enabled by default in Mercurial 6.1.
 
 ``usestore``
     Enable or disable the "store" repository format which improves

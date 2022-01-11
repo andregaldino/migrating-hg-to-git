@@ -103,6 +103,7 @@ Test link+rename largefile codepath
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   testonly-simplestore (reposimplestore !)

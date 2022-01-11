@@ -784,7 +784,7 @@ downgrading
   dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:         yes    yes      no
+  share-safe:         yes    yes     yes
   sparserevlog:       yes    yes     yes
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
@@ -828,7 +828,7 @@ upgrading
   dirstate-v2:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:         yes    yes      no
+  share-safe:         yes    yes     yes
   sparserevlog:       yes    yes     yes
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no

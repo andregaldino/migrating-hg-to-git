@@ -65,6 +65,7 @@ XXX: we should have a flag in `hg debugsparse` to list the sparse profile
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   treemanifest (tree !)

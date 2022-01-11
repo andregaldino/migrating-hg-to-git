@@ -21,6 +21,7 @@ New repo should not use SQLite by default
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -38,6 +39,7 @@ storage.new-repo-backend=sqlite is recognized
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -59,6 +61,7 @@ Can force compression to zlib
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -75,6 +78,7 @@ Can force compression to none
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 

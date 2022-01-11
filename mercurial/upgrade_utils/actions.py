@@ -243,7 +243,7 @@ class sharesafe(requirementformatvariant):
     name = b'share-safe'
     _requirement = requirements.SHARESAFE_REQUIREMENT
 
-    default = False
+    default = True
 
     description = _(
         b'old shared repositories do not share source repository '

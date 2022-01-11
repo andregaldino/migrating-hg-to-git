@@ -243,6 +243,7 @@ Requirements
   persistent-nodemap
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 

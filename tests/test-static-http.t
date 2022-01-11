@@ -240,6 +240,7 @@ List of files accessed over HTTP:
   /.hg/store/data/a.i
   /.hg/store/data/~2ehgsub.i (py37 !)
   /.hg/store/data/~2ehgsubstate.i (py37 !)
+  /.hg/store/requires
   /notarepo/.hg/00changelog.i
   /notarepo/.hg/requires
   /remote-with-names/.hg/bookmarks
@@ -255,6 +256,7 @@ List of files accessed over HTTP:
   /remote-with-names/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /remote-with-names/.hg/store/data/foo.i
   /remote-with-names/.hg/store/data/~2ehgtags.i (py37 !)
+  /remote-with-names/.hg/store/requires
   /remote/.hg/bookmarks
   /remote/.hg/bookmarks.current
   /remote/.hg/cache/branch2-base
@@ -274,12 +276,14 @@ List of files accessed over HTTP:
   /remote/.hg/store/data/quux.i
   /remote/.hg/store/data/~2edotfile%20with%20spaces.i (py37 !)
   /remote/.hg/store/data/~2ehgtags.i (py37 !)
+  /remote/.hg/store/requires
   /remotempty/.hg/bookmarks
   /remotempty/.hg/bookmarks.current
   /remotempty/.hg/dirstate
   /remotempty/.hg/requires
   /remotempty/.hg/store/00changelog.i
   /remotempty/.hg/store/00manifest.i
+  /remotempty/.hg/store/requires
   /sub/.hg/bookmarks
   /sub/.hg/bookmarks.current
   /sub/.hg/cache/hgtagsfnodes1
@@ -290,3 +294,4 @@ List of files accessed over HTTP:
   /sub/.hg/store/data/%7E2ehgtags.i (no-py37 !)
   /sub/.hg/store/data/test.i
   /sub/.hg/store/data/~2ehgtags.i (py37 !)
+  /sub/.hg/store/requires

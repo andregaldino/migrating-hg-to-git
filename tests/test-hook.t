@@ -464,6 +464,7 @@ more there after
   fncache (repofncache !)
   journal.phaseroots
   phaseroots
+  requires
   undo
   undo.backup.fncache (repofncache !)
   undo.backupfiles

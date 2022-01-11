@@ -4,7 +4,15 @@
 == Default Format Change ==
 
 These changes affects newly created repositories (or new clone) done with
-Mercurial XXX.
+Mercurial 6.1.
+
+The `share-safe` format variant is now enabled by default. It makes
+configuration and requirements more consistent across repository and their
+shares. This introduces a behavior change as shares from a repository using the
+new format will also use their main repository's configuration.
+
+See `hg help config.format.use-share-safe` for details about the feature and
+the available options for auto-upgrading existing shares.
 
 
 == New Experimental Features ==
@@ -28,6 +36,10 @@ Some of the text in labels passed to merge tools has changed. For example,
 in conflicts while running `hg histedit`, the labels used to be "local",
 "base", and "histedit". They are now "already edited",
 "parent of current change", and "current change", respectively.
+
+The use of `share-safe`, means shares (of new repositories) will also use their
+main repository's configuration see the `Default Format Change` section
+for details.
 
 == Internal API Changes ==
 

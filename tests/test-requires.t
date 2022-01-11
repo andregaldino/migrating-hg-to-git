@@ -57,6 +57,7 @@ another repository of push/pull/clone on localhost:
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   $ hg -R supported status

@@ -1375,7 +1375,7 @@ coreconfigitem(
 coreconfigitem(
     b'format',
     b'use-share-safe',
-    default=False,
+    default=True,
 )
 coreconfigitem(
     b'format',
