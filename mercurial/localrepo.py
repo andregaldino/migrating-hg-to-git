@@ -3543,6 +3543,10 @@ def clone_requirements(ui, createopts, srcrepo):
     depends on the configuration
     """
     target_requirements = set()
+    if not srcrepo.requirements:
+        # this is a legacy revlog "v0" repository, we cannot do anything fancy
+        # with it.
+        return target_requirements
     createopts = defaultcreateopts(ui, createopts=createopts)
     for r in newreporequirements(ui, createopts):
         if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
