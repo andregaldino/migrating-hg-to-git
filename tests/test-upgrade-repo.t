@@ -1158,7 +1158,7 @@ Check upgrading a large file repository
   $ touch foo
   $ hg add --large foo
   $ hg -q commit -m initial
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1170,7 +1170,7 @@ Check upgrading a large file repository
 
   $ hg debugupgraderepo --run
   nothing to do
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1322,7 +1322,7 @@ Check upgrading a sparse-revlog repository
   $ touch foo
   $ hg add foo
   $ hg -q commit -m "foo"
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1344,7 +1344,7 @@ Check that we can add the sparse-revlog format requirement
     - changelog
     - manifest
   
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1367,7 +1367,7 @@ Check that we can remove the sparse-revlog format requirement
     - changelog
     - manifest
   
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1412,7 +1412,7 @@ upgrade
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zlib    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1454,7 +1454,7 @@ downgrade
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zlib   zlib    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1499,7 +1499,7 @@ upgrade from hgrc
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1550,7 +1550,7 @@ upgrade
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   exp-revlogv2.2
   fncache
@@ -1598,7 +1598,7 @@ downgrade
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   fncache
   generaldelta
@@ -1647,7 +1647,7 @@ upgrade from hgrc
   compression:        zlib   zlib    zlib (no-zstd !)
   compression:        zstd   zstd    zstd (zstd !)
   compression-level:  default default default
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   exp-revlogv2.2
   fncache
