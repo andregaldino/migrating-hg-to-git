@@ -600,38 +600,41 @@ def _updateconfigandrefreshwdir(
     repo, includes, excludes, profiles, force=False, removing=False
 ):
     """Update the sparse config and working directory state."""
-    raw = repo.vfs.tryread(b'sparse')
-    oldincludes, oldexcludes, oldprofiles = parseconfig(repo.ui, raw, b'sparse')
+    with repo.lock():
+        raw = repo.vfs.tryread(b'sparse')
+        oldincludes, oldexcludes, oldprofiles = parseconfig(
+            repo.ui, raw, b'sparse'
+        )
 
-    oldstatus = repo.status()
-    oldmatch = matcher(repo)
-    oldrequires = set(repo.requirements)
+        oldstatus = repo.status()
+        oldmatch = matcher(repo)
+        oldrequires = set(repo.requirements)
 
-    # TODO remove this try..except once the matcher integrates better
-    # with dirstate. We currently have to write the updated config
-    # because that will invalidate the matcher cache and force a
-    # re-read. We ideally want to update the cached matcher on the
-    # repo instance then flush the new config to disk once wdir is
-    # updated. But this requires massive rework to matcher() and its
-    # consumers.
+        # TODO remove this try..except once the matcher integrates better
+        # with dirstate. We currently have to write the updated config
+        # because that will invalidate the matcher cache and force a
+        # re-read. We ideally want to update the cached matcher on the
+        # repo instance then flush the new config to disk once wdir is
+        # updated. But this requires massive rework to matcher() and its
+        # consumers.
 
-    if requirements.SPARSE_REQUIREMENT in oldrequires and removing:
-        repo.requirements.discard(requirements.SPARSE_REQUIREMENT)
-        scmutil.writereporequirements(repo)
-    elif requirements.SPARSE_REQUIREMENT not in oldrequires:
-        repo.requirements.add(requirements.SPARSE_REQUIREMENT)
-        scmutil.writereporequirements(repo)
-
-    try:
-        writeconfig(repo, includes, excludes, profiles)
-        return refreshwdir(repo, oldstatus, oldmatch, force=force)
-    except Exception:
-        if repo.requirements != oldrequires:
-            repo.requirements.clear()
-            repo.requirements |= oldrequires
+        if requirements.SPARSE_REQUIREMENT in oldrequires and removing:
+            repo.requirements.discard(requirements.SPARSE_REQUIREMENT)
             scmutil.writereporequirements(repo)
-        writeconfig(repo, oldincludes, oldexcludes, oldprofiles)
-        raise
+        elif requirements.SPARSE_REQUIREMENT not in oldrequires:
+            repo.requirements.add(requirements.SPARSE_REQUIREMENT)
+            scmutil.writereporequirements(repo)
+
+        try:
+            writeconfig(repo, includes, excludes, profiles)
+            return refreshwdir(repo, oldstatus, oldmatch, force=force)
+        except Exception:
+            if repo.requirements != oldrequires:
+                repo.requirements.clear()
+                repo.requirements |= oldrequires
+                scmutil.writereporequirements(repo)
+            writeconfig(repo, oldincludes, oldexcludes, oldprofiles)
+            raise
 
 
 def clearrules(repo, force=False):
