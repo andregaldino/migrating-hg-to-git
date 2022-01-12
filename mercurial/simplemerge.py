@@ -354,11 +354,9 @@ def render_markers(
     m3,
     name_a=None,
     name_b=None,
-    name_base=None,
     start_marker=b'<<<<<<<',
     mid_marker=b'=======',
     end_marker=b'>>>>>>>',
-    base_marker=None,
     minimize=False,
 ):
     """Return merge in cvs-like form."""
@@ -368,8 +366,6 @@ def render_markers(
         start_marker = start_marker + b' ' + name_a
     if name_b and end_marker:
         end_marker = end_marker + b' ' + name_b
-    if name_base and base_marker:
-        base_marker = base_marker + b' ' + name_base
     merge_groups = m3.merge_groups()
     if minimize:
         merge_groups = m3.minimize(merge_groups)
@@ -381,9 +377,6 @@ def render_markers(
             if start_marker is not None:
                 lines.append(start_marker + newline)
             lines.extend(a_lines)
-            if base_marker is not None:
-                lines.append(base_marker + newline)
-                lines.extend(base_lines)
             if mid_marker is not None:
                 lines.append(mid_marker + newline)
             lines.extend(b_lines)
@@ -394,7 +387,29 @@ def render_markers(
     return lines, conflicts
 
 
+def render_merge3(m3, name_a, name_b, name_base):
+    """Render conflicts as 3-way conflict markers."""
+    newline = _detect_newline(m3)
+    conflicts = False
+    lines = []
+    for what, group_lines in m3.merge_groups():
+        if what == b'conflict':
+            base_lines, a_lines, b_lines = group_lines
+            conflicts = True
+            lines.append(b'<<<<<<< ' + name_a + newline)
+            lines.extend(a_lines)
+            lines.append(b'||||||| ' + name_base + newline)
+            lines.extend(base_lines)
+            lines.append(b'=======' + newline)
+            lines.extend(b_lines)
+            lines.append(b'>>>>>>> ' + name_b + newline)
+        else:
+            lines.extend(group_lines)
+    return lines, conflicts
+
+
 def render_mergediff(m3, name_a, name_b, name_base):
+    """Render conflicts as conflict markers with one snapshot and one diff."""
     newline = _detect_newline(m3)
     lines = []
     conflicts = False
@@ -504,14 +519,12 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         name_a, name_b, name_base = _picklabels(opts.get('label', []))
         if mode == b'mergediff':
             lines, conflicts = render_mergediff(m3, name_a, name_b, name_base)
+        elif mode == b'merge3':
+            lines, conflicts = render_merge3(m3, name_a, name_b, name_base)
         else:
             extrakwargs = {
                 'minimize': True,
             }
-            if mode == b'merge3':
-                extrakwargs['base_marker'] = b'|||||||'
-                extrakwargs['name_base'] = name_base
-                extrakwargs['minimize'] = False
             lines, conflicts = render_markers(
                 m3, name_a=name_a, name_b=name_b, **extrakwargs
             )
