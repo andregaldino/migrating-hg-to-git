@@ -341,7 +341,7 @@ def _picklabels(defaults, overrides):
     return result
 
 
-def merge_lines(
+def render_markers(
     m3,
     name_a=None,
     name_b=None,
@@ -390,7 +390,7 @@ def merge_lines(
     return lines, conflicts
 
 
-def _mergediff(m3, name_a, name_b, name_base):
+def render_mergediff(m3, name_a, name_b, name_base):
     lines = []
     conflicts = False
     for what, group_lines in m3.merge_groups():
@@ -500,7 +500,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
             [localctx.path(), otherctx.path(), None], opts.get('label', [])
         )
         if mode == b'mergediff':
-            lines, conflicts = _mergediff(m3, name_a, name_b, name_base)
+            lines, conflicts = render_mergediff(m3, name_a, name_b, name_base)
         else:
             extrakwargs = {
                 'minimize': True,
@@ -509,7 +509,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
                 extrakwargs['base_marker'] = b'|||||||'
                 extrakwargs['name_base'] = name_base
                 extrakwargs['minimize'] = False
-            lines, conflicts = merge_lines(
+            lines, conflicts = render_markers(
                 m3, name_a=name_a, name_b=name_b, **extrakwargs
             )
 

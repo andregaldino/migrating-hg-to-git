@@ -272,7 +272,9 @@ def debugbuilddag(
                             x[fn].data() for x in (pa, p1, p2)
                         ]
                         m3 = simplemerge.Merge3Text(base, local, other)
-                        ml = [l.strip() for l in simplemerge.merge_lines(m3)[0]]
+                        ml = [
+                            l.strip() for l in simplemerge.render_markers(m3)[0]
+                        ]
                         ml.append(b"")
                     elif at > 0:
                         ml = p1[fn].data().split(b"\n")
