@@ -273,7 +273,8 @@ def debugbuilddag(
                         ]
                         m3 = simplemerge.Merge3Text(base, local, other)
                         ml = [
-                            l.strip() for l in simplemerge.render_markers(m3)[0]
+                            l.strip()
+                            for l in simplemerge.render_minimized(m3)[0]
                         ]
                         ml.append(b"")
                     elif at > 0:

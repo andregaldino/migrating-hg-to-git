@@ -350,38 +350,33 @@ def _detect_newline(m3):
     return b'\n'
 
 
-def render_markers(
+def render_minimized(
     m3,
     name_a=None,
     name_b=None,
     start_marker=b'<<<<<<<',
     mid_marker=b'=======',
     end_marker=b'>>>>>>>',
-    minimize=False,
 ):
     """Return merge in cvs-like form."""
     newline = _detect_newline(m3)
     conflicts = False
-    if name_a and start_marker:
+    if name_a:
         start_marker = start_marker + b' ' + name_a
-    if name_b and end_marker:
+    if name_b:
         end_marker = end_marker + b' ' + name_b
     merge_groups = m3.merge_groups()
-    if minimize:
-        merge_groups = m3.minimize(merge_groups)
+    merge_groups = m3.minimize(merge_groups)
     lines = []
     for what, group_lines in merge_groups:
         if what == b'conflict':
             base_lines, a_lines, b_lines = group_lines
             conflicts = True
-            if start_marker is not None:
-                lines.append(start_marker + newline)
+            lines.append(start_marker + newline)
             lines.extend(a_lines)
-            if mid_marker is not None:
-                lines.append(mid_marker + newline)
+            lines.append(mid_marker + newline)
             lines.extend(b_lines)
-            if end_marker is not None:
-                lines.append(end_marker + newline)
+            lines.append(end_marker + newline)
         else:
             lines.extend(group_lines)
     return lines, conflicts
@@ -522,12 +517,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         elif mode == b'merge3':
             lines, conflicts = render_merge3(m3, name_a, name_b, name_base)
         else:
-            extrakwargs = {
-                'minimize': True,
-            }
-            lines, conflicts = render_markers(
-                m3, name_a=name_a, name_b=name_b, **extrakwargs
-            )
+            lines, conflicts = render_minimized(m3, name_a, name_b)
 
     mergedtext = b''.join(lines)
     if opts.get('print'):

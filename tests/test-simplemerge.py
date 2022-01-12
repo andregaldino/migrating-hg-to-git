@@ -180,7 +180,7 @@ class TestMerge3(TestCase):
         self.assertEqual(list(m3.merge_regions()), [(b'a', 0, 2)])
 
         self.assertEqual(
-            simplemerge.render_markers(m3), ([b'aaa', b'bbb'], False)
+            simplemerge.render_minimized(m3), ([b'aaa', b'bbb'], False)
         )
 
     def test_no_conflicts(self):
@@ -207,7 +207,7 @@ class TestMerge3(TestCase):
         )
 
         self.assertEqual(
-            b''.join(simplemerge.render_markers(m3)[0]), b'aaa\nbbb\n222\n'
+            b''.join(simplemerge.render_minimized(m3)[0]), b'aaa\nbbb\n222\n'
         )
 
     def test_append_b(self):
@@ -218,7 +218,7 @@ class TestMerge3(TestCase):
         )
 
         self.assertEqual(
-            b''.join(simplemerge.render_markers(m3)[0]), b'aaa\nbbb\n222\n'
+            b''.join(simplemerge.render_minimized(m3)[0]), b'aaa\nbbb\n222\n'
         )
 
     def test_append_agreement(self):
@@ -229,7 +229,7 @@ class TestMerge3(TestCase):
         )
 
         self.assertEqual(
-            b''.join(simplemerge.render_markers(m3)[0]), b'aaa\nbbb\n222\n'
+            b''.join(simplemerge.render_minimized(m3)[0]), b'aaa\nbbb\n222\n'
         )
 
     def test_append_clash(self):
@@ -239,7 +239,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'bbb\n', b'333\n'],
         )
 
-        ml, conflicts = simplemerge.render_markers(
+        ml, conflicts = simplemerge.render_minimized(
             m3,
             name_a=b'a',
             name_b=b'b',
@@ -259,7 +259,7 @@ class TestMerge3(TestCase):
             [b'aaa\n', b'222\n', b'bbb\n'],
         )
 
-        ml, conflicts = simplemerge.render_markers(
+        ml, conflicts = simplemerge.render_minimized(
             m3,
             name_a=b'a',
             name_b=b'b',
@@ -300,7 +300,7 @@ class TestMerge3(TestCase):
             ],
         )
 
-        ml, conflicts = simplemerge.render_markers(
+        ml, conflicts = simplemerge.render_minimized(
             m3,
             name_a=b'a',
             name_b=b'b',
@@ -349,7 +349,7 @@ bbb
     def test_merge_poem(self):
         """Test case from diff3 manual"""
         m3 = Merge3(TZU, LAO, TAO)
-        ml, conflicts = simplemerge.render_markers(m3, b'LAO', b'TAO')
+        ml, conflicts = simplemerge.render_minimized(m3, b'LAO', b'TAO')
         self.log(b'merge result:')
         self.log(b''.join(ml))
         self.assertEqual(ml, MERGED_RESULT)
@@ -367,7 +367,7 @@ bbb
             other_text.splitlines(True),
             this_text.splitlines(True),
         )
-        m_lines, conflicts = simplemerge.render_markers(m3, b'OTHER', b'THIS')
+        m_lines, conflicts = simplemerge.render_minimized(m3, b'OTHER', b'THIS')
         self.assertEqual(
             b'<<<<<<< OTHER\r\nc\r\n=======\r\nb\r\n'
             b'>>>>>>> THIS\r\n'.splitlines(True),
@@ -383,7 +383,7 @@ bbb
             other_text.splitlines(True),
             this_text.splitlines(True),
         )
-        m_lines, conflicts = simplemerge.render_markers(m3, b'OTHER', b'THIS')
+        m_lines, conflicts = simplemerge.render_minimized(m3, b'OTHER', b'THIS')
         self.assertEqual(
             b'<<<<<<< OTHER\rc\r=======\rb\r'
             b'>>>>>>> THIS\r'.splitlines(True),
