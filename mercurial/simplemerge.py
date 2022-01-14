@@ -532,11 +532,4 @@ def simplemerge(
             lines, conflicts = render_minimized(m3, *labels)
 
     mergedtext = b''.join(lines)
-    if print_result:
-        ui.fout.write(mergedtext)
-    else:
-        # local.fctx.flags() already has the merged flags (done in
-        # mergestate.resolve())
-        local.fctx.write(mergedtext, local.fctx.flags())
-
-    return conflicts
+    return mergedtext, conflicts

@@ -15,6 +15,7 @@ from mercurial import (
     fancyopts,
     simplemerge,
     ui as uimod,
+    util,
 )
 from mercurial.utils import procutil, stringutil
 
@@ -116,18 +117,21 @@ try:
     _verifytext(base_input, ui, quiet=quiet, allow_binary=allow_binary)
     _verifytext(other_input, ui, quiet=quiet, allow_binary=allow_binary)
 
-    sys.exit(
-        simplemerge.simplemerge(
-            ui,
-            local_input,
-            base_input,
-            other_input,
-            mode,
-            quiet=True,
-            allow_binary=allow_binary,
-            print_result=opts.get(b'print'),
-        )
+    merged_text, conflicts = simplemerge.simplemerge(
+        ui,
+        local_input,
+        base_input,
+        other_input,
+        mode,
+        quiet=True,
+        allow_binary=allow_binary,
+        print_result=opts.get(b'print'),
     )
+    if opts.get(b'print'):
+        ui.fout.write(merged_text)
+    else:
+        util.writefile(local, merged_text)
+    sys.exit(1 if conflicts else 0)
 except ParseError as e:
     e = stringutil.forcebytestr(e)
     procutil.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))

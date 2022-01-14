@@ -442,10 +442,13 @@ def _premerge(repo, local, other, base, toolconf, backup):
             stringutil.binary(input.text()) for input in (local, base, other)
         ):
             return 1  # continue merging
-        r = simplemerge.simplemerge(
-            ui, local, base, other, quiet=True, mode=mode
+        merged_text, conflicts = simplemerge.simplemerge(
+            ui, local, base, other, mode=mode
         )
-        if not r:
+        # fcd.flags() already has the merged flags (done in
+        # mergestate.resolve())
+        local.fctx.write(merged_text, local.fctx.flags())
+        if not conflicts:
             ui.debug(b" premerge successful\n")
             return 0
         if premerge not in validkeep:
@@ -489,8 +492,14 @@ def _merge(repo, local, other, base, mode):
         _verifytext(other, ui)
     except error.Abort:
         return True, True, False
-    r = simplemerge.simplemerge(ui, local, base, other, mode=mode)
-    return True, r, False
+    else:
+        merged_text, conflicts = simplemerge.simplemerge(
+            ui, local, base, other, mode=mode
+        )
+        # fcd.flags() already has the merged flags (done in
+        # mergestate.resolve())
+        local.fctx.write(merged_text, local.fctx.flags())
+        return True, conflicts, False
 
 
 @internaltool(
