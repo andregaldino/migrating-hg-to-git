@@ -27,10 +27,6 @@ from . import (
 from .utils import stringutil
 
 
-class CantReprocessAndShowBase(Exception):
-    pass
-
-
 def intersect(ra, rb):
     """Given two ranges return the range where they intersect or None.
 
