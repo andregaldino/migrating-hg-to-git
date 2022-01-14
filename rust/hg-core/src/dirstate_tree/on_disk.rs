@@ -207,7 +207,7 @@ impl<'on_disk> Docket<'on_disk> {
             // One random hexadecimal digit.
             // `unwrap` never panics because `impl Write for String`
             // never returns an error.
-            write!(&mut id, "{:x}", rng.gen_range(0, 16)).unwrap();
+            write!(&mut id, "{:x}", rng.gen_range(0..16)).unwrap();
         }
         id
     }

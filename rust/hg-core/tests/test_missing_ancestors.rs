@@ -32,11 +32,11 @@ fn build_random_graph(
                 if i == 2 || rng.gen_bool(prevprob) {
                     (i - 1) as Revision
                 } else {
-                    rng.gen_range(0, i - 1) as Revision
+                    rng.gen_range(0..i - 1) as Revision
                 }
             };
             // p2 is a random revision lower than i and different from p1
-            let mut p2 = rng.gen_range(0, i - 1) as Revision;
+            let mut p2 = rng.gen_range(0..i - 1) as Revision;
             if p2 >= p1 {
                 p2 = p2 + 1;
             }
@@ -44,7 +44,7 @@ fn build_random_graph(
         } else if rng.gen_bool(prevprob) {
             vg.push([(i - 1) as Revision, NULL_REVISION])
         } else {
-            vg.push([rng.gen_range(0, i - 1) as Revision, NULL_REVISION])
+            vg.push([rng.gen_range(0..i - 1) as Revision, NULL_REVISION])
         }
     }
     vg
