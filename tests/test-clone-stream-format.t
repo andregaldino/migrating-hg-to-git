@@ -13,7 +13,7 @@ This file contains tests case that deal with format change accross stream clone
 
 Initialize repository
 
-  $ hg init server
+  $ hg init server --config format.use-share-safe=yes
   $ cd server
   $ sh $TESTDIR/testlib/stream_clone_setup.sh
   adding 00changelog-ab349180a0405010.nd
@@ -277,7 +277,65 @@ The resulting clone should not use share.
   crosschecking files in changesets and manifests
   checking files
   checked 3 changesets with 1088 changes to 1088 files
-  $ hg debugrequires -R clone-from-share | grep share
+  $ hg debugrequires -R clone-from-share | egrep 'share$'
   [1]
+
+  $ killdaemons.py
+
+Test streaming from/to repository without a share-safe
+======================================================
+
+  $ rm hg-*.pid errors-*.txt
+  $ hg clone --pull --config format.use-share-safe=no server server-no-share-safe
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 1088 changes to 1088 files
+  new changesets 96ee1d7354c4:5223b5e3265f
+  updating to branch default
+  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg verify -R server-no-share-safe
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1088 changes to 1088 files
+  $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
+  $ cat hg-1.pid > $DAEMON_PIDS
+  $ hg -R server-no-share-safe serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
+  $ cat hg-2.pid >> $DAEMON_PIDS
+  $ hg debugrequires -R server | grep share-safe
+  share-safe
+  $ hg debugrequires -R server-no-share-safe | grep share-safe
+  [1]
+
+share-safe → no-share-safe cloning
+
+  $ hg clone --quiet --stream -U http://localhost:$HGPORT clone-remove-share-safe --config format.use-share-safe=no
+  $ cat errors-1.txt
+  $ hg -R clone-remove-share-safe verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1088 changes to 1088 files
+  $ hg debugrequires -R clone-remove-share-safe | grep share-safe
+  [1]
+
+
+no-share-safe → share-safe cloning
+
+  $ hg clone --quiet --stream -U http://localhost:$HGPORT2 clone-add-share-safe --config format.use-share-safe=yes
+  $ cat errors-2.txt
+  $ hg -R clone-add-share-safe verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 3 changesets with 1088 changes to 1088 files
+  $ hg debugrequires -R clone-add-share-safe | grep share-safe
+  share-safe
+
 
   $ killdaemons.py
