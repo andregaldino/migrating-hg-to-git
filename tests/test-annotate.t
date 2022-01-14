@@ -886,7 +886,7 @@ track of possible further descendants in specified range.
   created new head
   $ hg merge --tool :merge-other 24
   merging baz
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'merge forgetting about baz rewrite'
   $ cat > baz << EOF

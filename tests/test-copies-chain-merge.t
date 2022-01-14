@@ -463,14 +463,14 @@ Subcase: new copy information on both side with an actual merge happening
   3 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg merge 'desc("q-2")' --tool ':union'
   merging v
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mPQm-0 $case_desc - one way"
   $ hg up 'desc("q-2")'
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("p-2")' --tool ':union'
   merging v
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mQPm-0 $case_desc - the other way"
   created new head
@@ -626,14 +626,14 @@ consider history and rename on both branch of the merge.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("g-1")' --tool :union
   merging d
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mDGm-0 $case_desc - one way"
   $ hg up 'desc("g-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")' --tool :union
   merging d
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mGDm-0 $case_desc - the other way"
   created new head

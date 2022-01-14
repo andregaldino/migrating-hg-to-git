@@ -483,7 +483,7 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         basetext = readctx(basectx)
         othertext = readctx(otherctx)
     except error.Abort:
-        return 1
+        return True
 
     m3 = Merge3Text(basetext, localtext, othertext)
     conflicts = False
@@ -511,5 +511,4 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         # mergestate.resolve())
         localctx.write(mergedtext, localctx.flags())
 
-    if conflicts:
-        return 1
+    return conflicts
