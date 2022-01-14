@@ -32,6 +32,21 @@ from .utils import (
 )
 
 
+def new_stream_clone_requirements(
+    supported_formats, default_requirements, streamed_requirements
+):
+    """determine the final set of requirement for a new stream clone
+
+    this method combine the "default" requirements that a new repository would
+    use with the constaint we get from the stream clone content. We keep local
+    configuration choice when possible.
+    """
+    requirements = set(default_requirements)
+    requirements -= supported_formats
+    requirements.update(streamed_requirements)
+    return requirements
+
+
 def canperformstreamclone(pullop, bundle2=False):
     """Whether it is possible to perform a streaming clone as part of pull.
 
@@ -184,12 +199,10 @@ def maybeperformlegacystreamclone(pullop):
 
     with repo.lock():
         consumev1(repo, fp, filecount, bytecount)
-
-        # new requirements = old non-format requirements +
-        #                    new format-related remote requirements
-        # requirements from the streamed-in repository
-        repo.requirements = requirements | (
-            repo.requirements - repo.supportedformats
+        repo.requirements = new_stream_clone_requirements(
+            repo.supportedformats,
+            repo.requirements,
+            requirements,
         )
         repo.svfs.options = localrepo.resolvestorevfsoptions(
             repo.ui, repo.requirements, repo.features
@@ -797,11 +810,10 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
 
     consumev2(repo, fp, filecount, filesize)
 
-    # new requirements = old non-format requirements +
-    #                    new format-related remote requirements
-    # requirements from the streamed-in repository
-    repo.requirements = set(requirements) | (
-        repo.requirements - repo.supportedformats
+    repo.requirements = new_stream_clone_requirements(
+        repo.supportedformats,
+        repo.requirements,
+        requirements,
     )
     repo.svfs.options = localrepo.resolvestorevfsoptions(
         repo.ui, repo.requirements, repo.features
