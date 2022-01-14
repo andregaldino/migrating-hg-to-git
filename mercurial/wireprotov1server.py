@@ -300,7 +300,7 @@ def _capabilities(repo, proto):
     if streamclone.allowservergeneration(repo):
         if repo.ui.configbool(b'server', b'preferuncompressed'):
             caps.append(b'stream-preferred')
-        requiredformats = repo.requirements & repo.supportedformats
+        requiredformats = streamclone.streamed_requirements(repo)
         # if our local revlogs are just revlogv1, add 'stream' cap
         if not requiredformats - {requirementsmod.REVLOGV1_REQUIREMENT}:
             caps.append(b'stream')

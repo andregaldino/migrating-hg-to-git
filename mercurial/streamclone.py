@@ -47,6 +47,15 @@ def new_stream_clone_requirements(
     return requirements
 
 
+def streamed_requirements(repo):
+    """the set of requirement the new clone will have to support
+
+    This is used for advertising the stream options and to generate the actual
+    stream content."""
+    requiredformats = repo.requirements & repo.supportedformats
+    return requiredformats
+
+
 def canperformstreamclone(pullop, bundle2=False):
     """Whether it is possible to perform a streaming clone as part of pull.
 
@@ -346,7 +355,7 @@ def generatebundlev1(repo, compression=b'UN'):
     if compression != b'UN':
         raise ValueError(b'we do not support the compression argument yet')
 
-    requirements = repo.requirements & repo.supportedformats
+    requirements = streamed_requirements(repo)
     requires = b','.join(sorted(requirements))
 
     def gen():
