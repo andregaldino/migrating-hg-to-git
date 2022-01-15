@@ -696,9 +696,8 @@ Test that 5 is not detected as a valid destination from 2
   (commit or update --clean to discard changes)
   [255]
 
-Test that we don't crash when updating from a pruned changeset (i.e. has no
-successors). Behavior should probably be that we update to the first
-non-obsolete parent but that will be decided later.
+Test that we update to the closest non-obsolete ancestor when updating from a
+pruned changeset (i.e. that has no successors)
   $ hg id --debug -r 2
   bd10386d478cd5a9faf2e604114c8e6da62d3889
   $ hg up --quiet 0
@@ -706,21 +705,18 @@ non-obsolete parent but that will be decided later.
   $ hg debugobsolete bd10386d478cd5a9faf2e604114c8e6da62d3889
   1 new obsolescence markers
   obsoleted 1 changesets
-  $ hg up
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
-
-Test experimental revset support
-
   $ hg log -r '_destupdate()'
-  2:bd10386d478c 2 (no-eol)
+  1:0786582aa4b1 1 (no-eol)
+  $ hg up
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Test that boolean flags allow --no-flag specification to override [defaults]
   $ cat >> $HGRCPATH <<EOF
   > [defaults]
   > update = --check
   > EOF
-  $ hg co 2
+  $ hg co 1
   abort: uncommitted changes
   [20]
-  $ hg co --no-check 2
+  $ hg co --no-check 1
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
