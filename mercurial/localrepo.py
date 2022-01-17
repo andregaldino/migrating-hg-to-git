@@ -1288,13 +1288,13 @@ class localrepository(object):
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
     }
     _basesupported = supportedformats | {
-        requirementsmod.STORE_REQUIREMENT,
-        requirementsmod.FNCACHE_REQUIREMENT,
-        requirementsmod.SHARED_REQUIREMENT,
-        requirementsmod.RELATIVE_SHARED_REQUIREMENT,
         requirementsmod.DOTENCODE_REQUIREMENT,
-        requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.FNCACHE_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
+        requirementsmod.RELATIVE_SHARED_REQUIREMENT,
+        requirementsmod.SHARED_REQUIREMENT,
+        requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.STORE_REQUIREMENT,
     }
 
     # list of prefix for file which can be written without 'wlock'
