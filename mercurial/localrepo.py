@@ -1274,11 +1274,6 @@ class localrepository(object):
     used.
     """
 
-    # obsolete experimental requirements:
-    #  - manifestv2: An experimental new manifest format that allowed
-    #    for stem compression of long paths. Experiment ended up not
-    #    being successful (repository sizes went up due to worse delta
-    #    chains), and the code was deleted in 4.6.
     supportedformats = {
         requirementsmod.REVLOGV1_REQUIREMENT,
         requirementsmod.GENERALDELTA_REQUIREMENT,

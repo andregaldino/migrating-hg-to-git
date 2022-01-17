@@ -7,6 +7,12 @@
 
 from __future__ import absolute_import
 
+# obsolete experimental requirements:
+#  - manifestv2: An experimental new manifest format that allowed
+#    for stem compression of long paths. Experiment ended up not
+#    being successful (repository sizes went up due to worse delta
+#    chains), and the code was deleted in 4.6.
+
 GENERALDELTA_REQUIREMENT = b'generaldelta'
 DOTENCODE_REQUIREMENT = b'dotencode'
 STORE_REQUIREMENT = b'store'
