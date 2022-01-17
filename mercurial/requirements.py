@@ -89,3 +89,23 @@ WORKING_DIR_REQUIREMENTS = {
     SHARESAFE_REQUIREMENT,
     DIRSTATE_V2_REQUIREMENT,
 }
+
+# List of requirement that impact "stream-clone" (and hardlink clone) and
+# cannot be changed in such cases.
+#
+# requirements not in this list are safe to be altered during stream-clone.
+#
+# note: the list is currently inherited from previous code and miss some relevant requirement while containing some irrelevant ones.
+STREAM_FIXED_REQUIREMENTS = {
+    BOOKMARKS_IN_STORE_REQUIREMENT,
+    CHANGELOGV2_REQUIREMENT,
+    COPIESSDC_REQUIREMENT,
+    DIRSTATE_V2_REQUIREMENT,
+    GENERALDELTA_REQUIREMENT,
+    NODEMAP_REQUIREMENT,
+    REVLOGV1_REQUIREMENT,
+    REVLOGV2_REQUIREMENT,
+    SHARESAFE_REQUIREMENT,
+    SPARSEREVLOG_REQUIREMENT,
+    TREEMANIFEST_REQUIREMENT,
+}

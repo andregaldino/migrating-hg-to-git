@@ -32,9 +32,7 @@ from .utils import (
 )
 
 
-def new_stream_clone_requirements(
-    supported_formats, default_requirements, streamed_requirements
-):
+def new_stream_clone_requirements(default_requirements, streamed_requirements):
     """determine the final set of requirement for a new stream clone
 
     this method combine the "default" requirements that a new repository would
@@ -42,7 +40,7 @@ def new_stream_clone_requirements(
     configuration choice when possible.
     """
     requirements = set(default_requirements)
-    requirements -= supported_formats
+    requirements -= requirementsmod.STREAM_FIXED_REQUIREMENTS
     requirements.update(streamed_requirements)
     return requirements
 
@@ -52,7 +50,9 @@ def streamed_requirements(repo):
 
     This is used for advertising the stream options and to generate the actual
     stream content."""
-    requiredformats = repo.requirements & repo.supportedformats
+    requiredformats = (
+        repo.requirements & requirementsmod.STREAM_FIXED_REQUIREMENTS
+    )
     return requiredformats
 
 
@@ -209,7 +209,6 @@ def maybeperformlegacystreamclone(pullop):
     with repo.lock():
         consumev1(repo, fp, filecount, bytecount)
         repo.requirements = new_stream_clone_requirements(
-            repo.supportedformats,
             repo.requirements,
             requirements,
         )
@@ -820,7 +819,6 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
     consumev2(repo, fp, filecount, filesize)
 
     repo.requirements = new_stream_clone_requirements(
-        repo.supportedformats,
         repo.requirements,
         requirements,
     )

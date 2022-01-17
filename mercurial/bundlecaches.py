@@ -195,7 +195,7 @@ def parsebundlespec(repo, spec, strict=True):
     # repo supports and error if the bundle isn't compatible.
     if version == b'packed1' and b'requirements' in params:
         requirements = set(params[b'requirements'].split(b','))
-        missingreqs = requirements - repo.supportedformats
+        missingreqs = requirements - requirementsmod.STREAM_FIXED_REQUIREMENTS
         if missingreqs:
             raise error.UnsupportedBundleSpecification(
                 _(b'missing support for repository features: %s')
