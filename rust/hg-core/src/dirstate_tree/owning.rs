@@ -21,7 +21,7 @@ pub struct OwningDirstateMap {
     /// language cannot represent a lifetime referencing a sibling field.
     /// This is not quite a self-referencial struct (moving this struct is not
     /// a problem as it doesn’t change the address of the bytes buffer owned
-    /// by `PyBytes`) but touches similar borrow-checker limitations.
+    /// by `on_disk`) but touches similar borrow-checker limitations.
     ptr: *mut (),
 }
 
@@ -50,13 +50,13 @@ impl OwningDirstateMap {
         // SAFETY: We cast the type-erased pointer back to the same type it had
         // in `new`, except with a different lifetime parameter. This time we
         // connect the lifetime to that of `self`. This cast is valid because
-        // `self` owns the same `PyBytes` whose buffer `DirstateMap`
-        // references. That buffer has a stable memory address because the byte
-        // string value of a `PyBytes` is immutable.
+        // `self` owns the same `on_disk` whose buffer `DirstateMap`
+        // references. That buffer has a stable memory address because our
+        // `Self::new_empty` counstructor requires `StableDeref`.
         let ptr: *mut DirstateMap<'a> = self.ptr.cast();
         // SAFETY: we dereference that pointer, connecting the lifetime of the
-        // new   `&mut` to that of `self`. This is valid because the
-        // raw pointer is   to a boxed value, and `self` owns that box.
+        // new `&mut` to that of `self`. This is valid because the
+        // raw pointer is to a boxed value, and `self` owns that box.
         (&self.on_disk, unsafe { &mut *ptr })
     }
 
@@ -65,7 +65,7 @@ impl OwningDirstateMap {
     }
 
     pub fn get_map<'a>(&'a self) -> &'a DirstateMap<'a> {
-        // SAFETY: same reasoning as in `get_mut` above.
+        // SAFETY: same reasoning as in `get_pair_mut` above.
         let ptr: *mut DirstateMap<'a> = self.ptr.cast();
         unsafe { &*ptr }
     }
@@ -79,13 +79,13 @@ impl Drop for OwningDirstateMap {
     fn drop(&mut self) {
         // Silence a "field is never read" warning, and demonstrate that this
         // value is still alive.
-        let _ = &self.on_disk;
+        let _: &Box<dyn Deref<Target = [u8]> + Send> = &self.on_disk;
         // SAFETY: this cast is the same as in `get_mut`, and is valid for the
         // same reason. `self.on_disk` still exists at this point, drop glue
         // will drop it implicitly after this `drop` method returns.
         let ptr: *mut DirstateMap<'_> = self.ptr.cast();
         // SAFETY: `Box::from_raw` takes ownership of the box away from `self`.
-        // This is fine because drop glue does nothig for `*mut ()` and we’re
+        // This is fine because drop glue does nothing for `*mut ()` and we’re
         // in `drop`, so `get` and `get_mut` cannot be called again.
         unsafe { drop(Box::from_raw(ptr)) }
     }
