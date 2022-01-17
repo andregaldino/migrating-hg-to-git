@@ -1495,13 +1495,6 @@ class ilocalrepositorymain(interfaceutil.Interface):
         """null revision for the hash function used by the repository."""
     )
 
-    supportedformats = interfaceutil.Attribute(
-        """Set of requirements that apply to stream clone.
-
-        This is actually a class attribute and is shared among all instances.
-        """
-    )
-
     supported = interfaceutil.Attribute(
         """Set of requirements that this repo is capable of opening."""
     )

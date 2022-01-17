@@ -1274,27 +1274,25 @@ class localrepository(object):
     used.
     """
 
-    supportedformats = {
-        requirementsmod.REVLOGV1_REQUIREMENT,
-        requirementsmod.GENERALDELTA_REQUIREMENT,
-        requirementsmod.TREEMANIFEST_REQUIREMENT,
-        requirementsmod.COPIESSDC_REQUIREMENT,
-        requirementsmod.REVLOGV2_REQUIREMENT,
-        requirementsmod.CHANGELOGV2_REQUIREMENT,
-        requirementsmod.SPARSEREVLOG_REQUIREMENT,
-        requirementsmod.NODEMAP_REQUIREMENT,
+    _basesupported = {
         requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT,
-        requirementsmod.SHARESAFE_REQUIREMENT,
+        requirementsmod.CHANGELOGV2_REQUIREMENT,
+        requirementsmod.COPIESSDC_REQUIREMENT,
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
-    }
-    _basesupported = supportedformats | {
         requirementsmod.DOTENCODE_REQUIREMENT,
         requirementsmod.FNCACHE_REQUIREMENT,
+        requirementsmod.GENERALDELTA_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
+        requirementsmod.NODEMAP_REQUIREMENT,
         requirementsmod.RELATIVE_SHARED_REQUIREMENT,
+        requirementsmod.REVLOGV1_REQUIREMENT,
+        requirementsmod.REVLOGV2_REQUIREMENT,
         requirementsmod.SHARED_REQUIREMENT,
+        requirementsmod.SHARESAFE_REQUIREMENT,
         requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.STORE_REQUIREMENT,
+        requirementsmod.TREEMANIFEST_REQUIREMENT,
     }
 
     # list of prefix for file which can be written without 'wlock'
