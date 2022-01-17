@@ -2,9 +2,7 @@ This file contains tests case that deal with format change accross stream clone
 
 #require serve no-reposimplestore no-chg
 
-#testcases stream-legacy
-
-(the #stream-bundle2 variant is actually buggy for the moment)
+#testcases stream-legacy stream-bundle2
 
 #if stream-legacy
   $ cat << EOF >> $HGRCPATH
