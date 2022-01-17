@@ -66,6 +66,10 @@ RELATIVE_SHARED_REQUIREMENT = b'relshared'
 # `.hg/store/requires` are present.
 SHARESAFE_REQUIREMENT = b'share-safe'
 
+# Bookmarks must be stored in the `store` part of the repository and will be
+# share accross shares
+BOOKMARKS_IN_STORE_REQUIREMENT = b'bookmarksinstore'
+
 # List of requirements which are working directory specific
 # These requirements cannot be shared between repositories if they
 # share the same store

@@ -1288,7 +1288,7 @@ class localrepository(object):
         requirementsmod.CHANGELOGV2_REQUIREMENT,
         requirementsmod.SPARSEREVLOG_REQUIREMENT,
         requirementsmod.NODEMAP_REQUIREMENT,
-        bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
+        requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.SHARESAFE_REQUIREMENT,
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
     }
@@ -3652,7 +3652,7 @@ def newreporequirements(ui, createopts):
         requirements.add(b'lfs')
 
     if ui.configbool(b'format', b'bookmarks-in-store'):
-        requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+        requirements.add(requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     if ui.configbool(b'format', b'use-persistent-nodemap'):
         requirements.add(requirementsmod.NODEMAP_REQUIREMENT)
@@ -3704,7 +3704,7 @@ def checkrequirementscompat(ui, requirements):
     dropped = set()
 
     if requirementsmod.STORE_REQUIREMENT not in requirements:
-        if bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
+        if requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
             ui.warn(
                 _(
                     b'ignoring enabled \'format.bookmarks-in-store\' config '
@@ -3712,7 +3712,7 @@ def checkrequirementscompat(ui, requirements):
                     b'\'format.usestore\' config\n'
                 )
             )
-            dropped.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+            dropped.add(requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT)
 
         if (
             requirementsmod.SHARED_REQUIREMENT in requirements

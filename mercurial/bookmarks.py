@@ -22,6 +22,7 @@ from . import (
     error,
     obsutil,
     pycompat,
+    requirements,
     scmutil,
     txnutil,
     util,
@@ -36,11 +37,9 @@ from .utils import (
 # custom styles
 activebookmarklabel = b'bookmarks.active bookmarks.current'
 
-BOOKMARKS_IN_STORE_REQUIREMENT = b'bookmarksinstore'
-
 
 def bookmarksinstore(repo):
-    return BOOKMARKS_IN_STORE_REQUIREMENT in repo.requirements
+    return requirements.BOOKMARKS_IN_STORE_REQUIREMENT in repo.requirements
 
 
 def bookmarksvfs(repo):
