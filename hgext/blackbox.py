@@ -101,11 +101,7 @@ configitem(
     b'ignore',
     default=lambda: [b'chgserver', b'cmdserver', b'extension'],
 )
-configitem(
-    b'blackbox',
-    b'date-format',
-    default=b'%Y/%m/%d %H:%M:%S',
-)
+configitem(b'blackbox', b'date-format', default=b'')
 
 _lastlogger = loggingutil.proxylogger()
 
@@ -138,7 +134,14 @@ class blackboxlogger(object):
 
     def _log(self, ui, event, msg, opts):
         default = ui.configdate(b'devel', b'default-date')
-        date = dateutil.datestr(default, ui.config(b'blackbox', b'date-format'))
+        dateformat = ui.config(b'blackbox', b'date-format')
+        if dateformat:
+            date = dateutil.datestr(default, dateformat)
+        else:
+            # We want to display milliseconds (more precision seems
+            # unnecessary).  Since %.3f is not supported, use %f and truncate
+            # microseconds.
+            date = dateutil.datestr(default, b'%Y/%m/%d %H:%M:%S.%f')[:-3]
         user = procutil.getuser()
         pid = b'%d' % procutil.getpid()
         changed = b''
@@ -225,7 +228,9 @@ def blackbox(ui, repo, *revs, **opts):
             break
 
         # count the commands by matching lines like: 2013/01/23 19:13:36 root>
-        if re.match(br'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} .*> .*', line):
+        if re.match(
+            br'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}(.\d*)? .*> .*', line
+        ):
             count += 1
         output.append(line)
 
