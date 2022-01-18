@@ -411,7 +411,7 @@ def _verifytext(input, ui):
         raise error.Abort(msg)
 
 
-def _premerge(repo, local, other, base, toolconf, backup):
+def _premerge(repo, local, other, base, toolconf):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink or local.fctx.isabsent() or other.fctx.isabsent():
         return 1
@@ -445,15 +445,13 @@ def _premerge(repo, local, other, base, toolconf, backup):
         merged_text, conflicts = simplemerge.simplemerge(
             ui, local, base, other, mode=mode
         )
-        # fcd.flags() already has the merged flags (done in
-        # mergestate.resolve())
-        local.fctx.write(merged_text, local.fctx.flags())
+        if not conflicts or premerge in validkeep:
+            # fcd.flags() already has the merged flags (done in
+            # mergestate.resolve())
+            local.fctx.write(merged_text, local.fctx.flags())
         if not conflicts:
             ui.debug(b" premerge successful\n")
             return 0
-        if premerge not in validkeep:
-            # restore from backup and try again
-            _restorebackup(local.fctx, backup)
     return 1  # continue merging
 
 
@@ -879,12 +877,6 @@ def partextras(labels):
     }
 
 
-def _restorebackup(fcd, backup):
-    # TODO: Add a workingfilectx.write(otherfilectx) path so we can use
-    # util.copy here instead.
-    fcd.write(backup.data(), fcd.flags())
-
-
 def _makebackup(repo, ui, wctx, fcd):
     """Makes and returns a filectx-like object for ``fcd``'s backup file.
 
@@ -1123,7 +1115,6 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 other,
                 base,
                 toolconf,
-                backup,
             )
             # we're done if premerge was successful (r is 0)
             if not r:
