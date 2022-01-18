@@ -4914,7 +4914,7 @@ def merge(ui, repo, node=None, **opts):
     overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
     with ui.configoverride(overrides, b'merge'):
         force = opts.get(b'force')
-        labels = [b'working copy', b'merge rev']
+        labels = [b'working copy', b'merge rev', b'common ancestor']
         return hg.merge(ctx, force=force, labels=labels)
 
 

@@ -1223,15 +1223,15 @@ premerge=keep-merge3 keeps conflict markers with base content:
   # hg update -C 1
   $ hg merge -r 4 --config merge-tools.true.premerge=keep-merge3
   merging f
-  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  <<<<<<< working copy:    ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base:         ffd2bda21d6e - test: revision 0
+  ||||||| common ancestor: ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
   revision 4
-  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  >>>>>>> merge rev:       81448d39c9a0 - test: revision 4
   revision 0
   space
   revision 4
@@ -1239,15 +1239,15 @@ premerge=keep-merge3 keeps conflict markers with base content:
   (branch merge, don't forget to commit)
   $ aftermerge
   # cat f
-  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  <<<<<<< working copy:    ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base:         ffd2bda21d6e - test: revision 0
+  ||||||| common ancestor: ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
   revision 4
-  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  >>>>>>> merge rev:       81448d39c9a0 - test: revision 4
   # hg stat
   M f
   # hg resolve --list
@@ -1264,12 +1264,12 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ hg merge -r 4 --config merge-tools.true.premerge=keep-mergediff
   merging f
   <<<<<<<
-  ------- base:         ffd2bda21d6e - test: revision 0
-  +++++++ working copy: ef83787e2614 - test: revision 1
+  ------- common ancestor: ffd2bda21d6e - test: revision 0
+  +++++++ working copy:    ef83787e2614 - test: revision 1
   -revision 0
   +revision 1
    space
-  ======= merge rev:    81448d39c9a0 - test: revision 4
+  ======= merge rev:       81448d39c9a0 - test: revision 4
   revision 4
   >>>>>>>
   revision 0
@@ -1280,12 +1280,12 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ aftermerge
   # cat f
   <<<<<<<
-  ------- base:         ffd2bda21d6e - test: revision 0
-  +++++++ working copy: ef83787e2614 - test: revision 1
+  ------- common ancestor: ffd2bda21d6e - test: revision 0
+  +++++++ working copy:    ef83787e2614 - test: revision 1
   -revision 0
   +revision 1
    space
-  ======= merge rev:    81448d39c9a0 - test: revision 4
+  ======= merge rev:       81448d39c9a0 - test: revision 4
   revision 4
   >>>>>>>
   # hg stat
@@ -1592,7 +1592,7 @@ mergemarkertemplate settings:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:base: */f~base.*" (glob)
+  arg: "lb:common ancestor: */f~base.*" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1619,7 +1619,7 @@ Same test with experimental.mergetempdirprefix set:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:base: */hgmerge.*/f~base" (glob)
+  arg: "lb:common ancestor: */hgmerge.*/f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1649,7 +1649,7 @@ mergemarkertemplate:
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
   arg: "merge rev: tooltmpl 0185f4e0cf02"
-  arg: "lb:base: */f~base.*" (glob)
+  arg: "lb:common ancestor: */f~base.*" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -2015,7 +2015,7 @@ Check that the extra information is printed correctly
   Running merge tool for b ("*/bin/echo.exe"): (glob) (windows !)
   Running merge tool for b (*/bin/echo): (glob) (no-windows !)
   - local (working copy): 10:2d1f533d add binary file (#2) tip default
-  -          base (base): -1:00000000  default
+  - base (common ancestor): -1:00000000  default
   -    other (merge rev): 9:1e7ad7d7 add binary file (#1) default
   merge runs here ...
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved

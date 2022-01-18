@@ -211,11 +211,11 @@ Verify rebase temporarily includes excluded files
   hide
 
   $ cat hide
-  <<<<<<< dest:             39278f7c08a9 - test: two
+  <<<<<<< dest:   39278f7c08a9 - test: two
   y
   =======
   z
-  >>>>>>> source:           b91df4f39e75 - test: edit hide
+  >>>>>>> source: b91df4f39e75 - test: edit hide
 
 Verify aborting a rebase cleans up temporary files
 

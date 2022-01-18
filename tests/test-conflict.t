@@ -267,7 +267,7 @@ internal:merge3
   3
   6
   8
-  ||||||| base
+  ||||||| common ancestor
   One
   Two
   Three

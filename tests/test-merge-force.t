@@ -398,13 +398,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content1_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         8ef80617fa20 - test: base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content1_content4-untracked
   content2
@@ -428,13 +428,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content2_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         8ef80617fa20 - test: base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content2_content4-untracked
   content2
@@ -458,25 +458,25 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content3_content3-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content3
-  ||||||| base:         8ef80617fa20 - test: base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content3_content3-untracked
   content2
   
   M content1_content2_content3_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         8ef80617fa20 - test: base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content3_content4-untracked
   content2
@@ -500,13 +500,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_missing_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         8ef80617fa20 - test: base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_missing_content4-untracked
   content2
@@ -584,12 +584,12 @@ the remote side did not touch the file
   content2
   
   M missing_content2_content2_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         000000000000 - : 
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content2_content4-untracked
   content2
@@ -607,23 +607,23 @@ the remote side did not touch the file
   content2
   
   M missing_content2_content3_content3-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content3
-  ||||||| base:         000000000000 - : 
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content3_content3-untracked
   content2
   
   M missing_content2_content3_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         000000000000 - : 
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content3_content4-untracked
   content2
@@ -641,20 +641,20 @@ the remote side did not touch the file
   content2
   
   M missing_content2_missing_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         000000000000 - : 
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_missing_content4-untracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base:         000000000000 - : 
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_missing_missing-tracked
   content2
