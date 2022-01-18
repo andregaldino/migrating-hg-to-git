@@ -1570,6 +1570,37 @@ coreconfigitem(
     default=False,
 )
 coreconfigitem(
+    b'partial-merge-tools',
+    b'.*',
+    default=None,
+    generic=True,
+    experimental=True,
+)
+coreconfigitem(
+    b'partial-merge-tools',
+    br'.*\.patterns',
+    default=dynamicdefault,
+    generic=True,
+    priority=-1,
+    experimental=True,
+)
+coreconfigitem(
+    b'partial-merge-tools',
+    br'.*\.executable$',
+    default=dynamicdefault,
+    generic=True,
+    priority=-1,
+    experimental=True,
+)
+coreconfigitem(
+    b'partial-merge-tools',
+    br'.*\.order',
+    default=0,
+    generic=True,
+    priority=-1,
+    experimental=True,
+)
+coreconfigitem(
     b'merge-tools',
     b'.*',
     default=None,

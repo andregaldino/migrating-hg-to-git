@@ -490,6 +490,9 @@ class MergeInput:
             self._text = self.fctx.decodeddata()
         return self._text
 
+    def set_text(self, text):
+        self._text = text
+
 
 def simplemerge(
     local,
