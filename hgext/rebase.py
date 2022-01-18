@@ -1544,7 +1544,7 @@ def rebasenode(repo, rev, p1, p2, base, collapse, wctx):
         force=True,
         ancestor=base,
         mergeancestor=mergeancestor,
-        labels=[b'dest', b'source'],
+        labels=[b'dest', b'source', b'parent of source'],
         wc=wctx,
     )
     wctx.setparents(p1ctx.node(), repo[p2].node())

@@ -372,13 +372,13 @@ Test minimization of merge conflicts
   +++ b/a	* (glob)
   @@ -1,2 +1,8 @@
    a
-  +<<<<<<< dest:   328e4ab1f7cc ab - test: ab
+  +<<<<<<< dest:             328e4ab1f7cc ab - test: ab
    b
-  +||||||| base:   cb9a9f314b8b - test: a
+  +||||||| parent of source: cb9a9f314b8b - test: a
   +=======
   +b
   +c
-  +>>>>>>> source: 7bc217434fc1 - test: abc
+  +>>>>>>> source:           7bc217434fc1 - test: abc
 
 Test rebase with obsstore turned on and off (issue5606)
 

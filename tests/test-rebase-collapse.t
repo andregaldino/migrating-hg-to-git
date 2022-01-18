@@ -717,13 +717,13 @@ Test aborted editor on final message
   o  0: 4a2df7238c3b 'A'
   
   $ cat A
-  <<<<<<< dest:   82b8abf9c185 D - test: D
+  <<<<<<< dest:             82b8abf9c185 D - test: D
   D
-  ||||||| base:   4a2df7238c3b A - test: A
+  ||||||| parent of source: 4a2df7238c3b A - test: A
   A
   =======
   B
-  >>>>>>> source: f899f3910ce7 B - test: B
+  >>>>>>> source:           f899f3910ce7 B - test: B
   $ echo BC > A
   $ hg resolve -m
   (no more unresolved files)
@@ -745,13 +745,13 @@ Test aborted editor on final message
   o  0: 4a2df7238c3b 'A'
   
   $ cat A
-  <<<<<<< dest:   82b8abf9c185 D - test: D
+  <<<<<<< dest:             82b8abf9c185 D - test: D
   BC
-  ||||||| base:   f899f3910ce7 B - test: B
+  ||||||| parent of source: f899f3910ce7 B - test: B
   B
   =======
   C
-  >>>>>>> source: 63668d570d21 C tip - test: C
+  >>>>>>> source:           63668d570d21 C tip - test: C
   $ echo BD > A
   $ hg resolve -m
   (no more unresolved files)
