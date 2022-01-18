@@ -308,7 +308,7 @@ internal:mergediff
   2
   3
   <<<<<<<
-  ------- base
+  ------- working copy parent
   +++++++ working copy
    4
   +4.5
@@ -346,7 +346,7 @@ copy in full and the diff from base to destination.
   3.5
   4.5
   5.5
-  ------- base
+  ------- working copy parent
   +++++++ destination
    3
   -4

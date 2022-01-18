@@ -2280,7 +2280,7 @@ def update(ctx, updatecheck=None, wc=None):
         ctx.rev(),
         branchmerge=False,
         force=False,
-        labels=[b'working copy', b'destination'],
+        labels=[b'working copy', b'destination', b'working copy parent'],
         updatecheck=updatecheck,
         wc=wc,
     )

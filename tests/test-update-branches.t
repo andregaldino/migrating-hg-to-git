@@ -292,14 +292,14 @@ Cases are run as shown in that table, row by row.
   # To mark files as resolved:  hg resolve --mark FILE
   
   $ cat a
-  <<<<<<< working copy: 6efa171f091b - test: 3
+  <<<<<<< working copy:        6efa171f091b - test: 3
   three
   dirty
-  ||||||| base:         6efa171f091b - test: 3
+  ||||||| working copy parent: 6efa171f091b - test: 3
   three
   =======
   four
-  >>>>>>> destination:  d047485b3896 b1 - test: 4
+  >>>>>>> destination:         d047485b3896 b1 - test: 4
   $ rm a.orig
 
   $ echo 'update.check = noconflict' >> .hg/hgrc
