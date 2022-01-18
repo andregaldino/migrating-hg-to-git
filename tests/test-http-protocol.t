@@ -198,7 +198,7 @@ Test listkeys for listing namespaces
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending listkeys command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
@@ -327,9 +327,9 @@ Verify our HTTP 301 is served properly
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
 
 Test with the HTTP peer
 
@@ -364,10 +364,10 @@ Test with the HTTP peer
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
   real URL is http://$LOCALIP:$HGPORT/redirected (glob)
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending heads command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /redirected?cmd=heads HTTP/1.1\r\n
@@ -635,10 +635,10 @@ Now test a variation where we strip the query string from the redirect URL.
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
   real URL is http://$LOCALIP:$HGPORT/redirected (glob)
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending heads command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /redirected?cmd=heads HTTP/1.1\r\n
