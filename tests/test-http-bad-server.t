@@ -30,7 +30,7 @@ and because debugging partial responses is hard when compression is involved
 
   $ cat > .hg/hgrc << EOF
   > [extensions]
-  > badserver = $TESTDIR/badserverext.py
+  > badserver = $TESTDIR/testlib/badserverext.py
   > [server]
   > compressionengines = none
   > EOF
