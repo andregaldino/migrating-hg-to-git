@@ -15,6 +15,7 @@ Features
 ========
 
 The following operations are sped up when using Rust:
+
     - discovery of differences between repositories (pull/push)
     - nodemap (see :hg:`help config.format.use-persistent-nodemap`)
     - all commands using the dirstate (status, commit, diff, add, update, etc.)
