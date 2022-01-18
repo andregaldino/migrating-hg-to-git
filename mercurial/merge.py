@@ -1833,7 +1833,7 @@ def _update(
       If false, merging with an ancestor (fast-forward) is only allowed
       between different named branches. This flag is used by rebase extension
       as a temporary fix and should be avoided in general.
-    labels = labels to use for base, local and other
+    labels = labels to use for local, other, and base
     mergeforce = whether the merge was run with 'merge --force' (deprecated): if
       this is True, then 'force' should be True as well.
 
