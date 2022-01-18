@@ -141,7 +141,7 @@ class blackboxlogger(object):
             # We want to display milliseconds (more precision seems
             # unnecessary).  Since %.3f is not supported, use %f and truncate
             # microseconds.
-            date = dateutil.datestr(default, b'%Y/%m/%d %H:%M:%S.%f')[:-3]
+            date = dateutil.datestr(default, b'%Y-%m-%d %H:%M:%S.%f')[:-3]
         user = procutil.getuser()
         pid = b'%d' % procutil.getpid()
         changed = b''
@@ -227,9 +227,13 @@ def blackbox(ui, repo, *revs, **opts):
         if count >= limit:
             break
 
-        # count the commands by matching lines like: 2013/01/23 19:13:36 root>
+        # count the commands by matching lines like:
+        # 2013/01/23 19:13:36 root>
+        # 2013/01/23 19:13:36 root (1234)>
+        # 2013/01/23 19:13:36 root @0000000000000000000000000000000000000000 (1234)>
+        # 2013-01-23 19:13:36.000 root @0000000000000000000000000000000000000000 (1234)>
         if re.match(
-            br'^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}(.\d*)? .*> .*', line
+            br'^\d{4}[-/]\d{2}[-/]\d{2} \d{2}:\d{2}:\d{2}(.\d*)? .*> .*', line
         ):
             count += 1
         output.append(line)

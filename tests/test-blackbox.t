@@ -32,10 +32,10 @@ command, exit codes, and duration
   $ echo a > a
   $ hg add a
   $ hg blackbox --config blackbox.dirty=True
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> init blackboxtest exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add a
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add a exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000+ (5000)> blackbox --config *blackbox.dirty=True* (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> init blackboxtest exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add a
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add a exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000+ (5000)> blackbox --config *blackbox.dirty=True* (glob)
 
 failure exit code
   $ rm ./.hg/blackbox.log
@@ -43,17 +43,17 @@ failure exit code
   non-existent: $ENOENT$
   [1]
   $ hg blackbox
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add non-existent
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add non-existent exited 1 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add non-existent
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> add non-existent exited 1 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 abort exit code
   $ rm ./.hg/blackbox.log
   $ hg abortcmd 2> /dev/null
   [255]
   $ hg blackbox -l 2
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> abortcmd exited 255 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> abortcmd exited 255 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 unhandled exception
   $ rm ./.hg/blackbox.log
@@ -67,27 +67,27 @@ unhandled exception
   [1]
 #endif
   $ hg blackbox -l 2
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> crash exited 1 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> crash exited 1 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 alias expansion is logged
   $ rm ./.hg/blackbox.log
   $ hg confuse
   $ hg blackbox
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> confuse
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'confuse' expands to 'log --limit 3'
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> confuse exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> confuse
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'confuse' expands to 'log --limit 3'
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> confuse exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 recursive aliases work correctly
   $ rm ./.hg/blackbox.log
   $ hg so-confusing
   $ hg blackbox
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> so-confusing
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'so-confusing' expands to 'confuse --style compact'
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'confuse' expands to 'log --limit 3'
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> so-confusing exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> so-confusing
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'so-confusing' expands to 'confuse --style compact'
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> alias 'confuse' expands to 'log --limit 3'
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> so-confusing exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 custom date format
   $ rm ./.hg/blackbox.log
@@ -97,7 +97,7 @@ custom date format
   $ hg blackbox
   2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status (glob)
   2012-04-13 @ 20:13:13 bob @0000000000000000000000000000000000000000 (5000)> --config *blackbox.date-format=%Y-%m-%d @ %H:%M:%S* --config *devel.default-date=1334347993 0* --traceback status exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
 
 incoming change tracking
 
@@ -128,12 +128,12 @@ clone, commit, pull
   new changesets d02f48003e62
   (run 'hg update' to get a working copy)
   $ hg blackbox -l 6
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (served) with 1 labels and 2 nodes
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> updated branch cache (served.hidden) in * seconds (glob)
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (served.hidden) with 1 labels and 2 nodes
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> 1 incoming changes - new heads: d02f48003e62
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pull exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> blackbox -l 6
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (served) with 1 labels and 2 nodes
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> updated branch cache (served.hidden) in * seconds (glob)
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (served.hidden) with 1 labels and 2 nodes
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> 1 incoming changes - new heads: d02f48003e62
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pull exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> blackbox -l 6
 
 we must not cause a failure if we cannot write to the log
 
@@ -191,12 +191,12 @@ backup bundles get logged
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/blackboxtest2/.hg/strip-backup/*-backup.hg (glob)
   $ hg blackbox -l 6
-  1970/01/01 00:00:00.000 bob @73f6ee326b27d820b0472f1a825e3a50f3dc489b (5000)> strip tip
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> saved backup bundle to $TESTTMP/blackboxtest2/.hg/strip-backup/73f6ee326b27-7612e004-backup.hg
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> updated branch cache (immutable) in * seconds (glob)
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (immutable) with 1 labels and 2 nodes
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> strip tip exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> blackbox -l 6
+  1970-01-01 00:00:00.000 bob @73f6ee326b27d820b0472f1a825e3a50f3dc489b (5000)> strip tip
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> saved backup bundle to $TESTTMP/blackboxtest2/.hg/strip-backup/73f6ee326b27-7612e004-backup.hg
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> updated branch cache (immutable) in * seconds (glob)
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> wrote branch cache (immutable) with 1 labels and 2 nodes
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> strip tip exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> blackbox -l 6
 
 extension and python hooks - use the eol extension for a pythonhook
 
@@ -217,12 +217,12 @@ extension and python hooks - use the eol extension for a pythonhook
   > eol=!
   > EOF
   $ hg blackbox -l 5
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> update (no-chg !)
-  1970/01/01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pythonhook-preupdate: hgext.eol.preupdate finished in * seconds (glob)
-  1970/01/01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> exthook-update: echo hooked finished in * seconds (glob)
-  1970/01/01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> update exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> serve --no-profile --cmdserver chgunix --address $TESTTMP.chgsock/server.* --daemon-postexec 'chdir:/' (glob) (chg !)
-  1970/01/01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> blackbox -l 5
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> update (no-chg !)
+  1970-01-01 00:00:00.000 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pythonhook-preupdate: hgext.eol.preupdate finished in * seconds (glob)
+  1970-01-01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> exthook-update: echo hooked finished in * seconds (glob)
+  1970-01-01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> update exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> serve --no-profile --cmdserver chgunix --address $TESTTMP.chgsock/server.* --daemon-postexec 'chdir:/' (glob) (chg !)
+  1970-01-01 00:00:00.000 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> blackbox -l 5
 
 log rotation
 
@@ -243,8 +243,8 @@ log rotation
   $ hg init blackboxtest3
   $ cd blackboxtest3
   $ hg blackbox
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> init blackboxtest3 exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> init blackboxtest3 exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> blackbox
   $ mv .hg/blackbox.log .hg/blackbox.log-
   $ mkdir .hg/blackbox.log
   $ sed -e 's/\(.*test1.*\)/#\1/; s#\(.*commit2.*\)#os.rmdir(".hg/blackbox.log")\
@@ -306,16 +306,16 @@ log rotation
   
   result: 0
   $ hg blackbox
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updating the branch cache
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated branch cache (served) in * seconds (glob)
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> wrote branch cache (served) with 1 labels and 1 nodes
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug commit -m commit2 -d 2000-01-02 foo exited 0 after *.?? seconds (glob)
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> writing .hg/cache/tags2-visible with 0 tags
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0 exited 0 after *.?? seconds (glob)
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip exited 0 after *.?? seconds (glob)
-  1970/01/01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> blackbox
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updating the branch cache
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated branch cache (served) in * seconds (glob)
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> wrote branch cache (served) with 1 labels and 1 nodes
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug commit -m commit2 -d 2000-01-02 foo exited 0 after *.?? seconds (glob)
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> writing .hg/cache/tags2-visible with 0 tags
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0 exited 0 after *.?? seconds (glob)
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip exited 0 after *.?? seconds (glob)
+  1970-01-01 00:00:00.000 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> blackbox
 
 Skip rotation if the .hg is read-only
 
@@ -394,8 +394,8 @@ a '*' entry in blackbox.track is interpreted as log everything
 (only look for entries with specific logged sources, otherwise this test is
 pretty brittle)
   $ hg blackbox | egrep '\[command(finish)?\]'
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000) [commandfinish]> --config *blackbox.track=* --config *blackbox.logsource=True* init track_star exited 0 after * seconds (glob)
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000) [command]> blackbox
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000) [commandfinish]> --config *blackbox.track=* --config *blackbox.logsource=True* init track_star exited 0 after * seconds (glob)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000) [command]> blackbox
   $ cd $TESTTMP
 
 #if chg
@@ -493,7 +493,7 @@ blackbox should work if repo.ui.log is not called (issue5518)
 #endif
 
   $ head -1 .hg/blackbox.log
-  1970/01/01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> ** Unknown exception encountered with possibly-broken third-party extension "mock" (version N/A)
+  1970-01-01 00:00:00.000 bob @0000000000000000000000000000000000000000 (5000)> ** Unknown exception encountered with possibly-broken third-party extension "mock" (version N/A)
   $ tail -2 .hg/blackbox.log
   RuntimeError: raise
   
