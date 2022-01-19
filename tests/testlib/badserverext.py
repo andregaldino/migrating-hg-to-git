@@ -69,17 +69,21 @@ class socketproxy(object):
     __slots__ = (
         '_orig',
         '_logfp',
-        '_closeafterrecvbytes',
-        '_closeaftersendbytes',
+        '_close_after_recv_bytes',
+        '_close_after_send_bytes',
     )
 
     def __init__(
-        self, obj, logfp, closeafterrecvbytes=0, closeaftersendbytes=0
+        self, obj, logfp, close_after_recv_bytes=0, close_after_send_bytes=0
     ):
         object.__setattr__(self, '_orig', obj)
         object.__setattr__(self, '_logfp', logfp)
-        object.__setattr__(self, '_closeafterrecvbytes', closeafterrecvbytes)
-        object.__setattr__(self, '_closeaftersendbytes', closeaftersendbytes)
+        object.__setattr__(
+            self, '_close_after_recv_bytes', close_after_recv_bytes
+        )
+        object.__setattr__(
+            self, '_close_after_send_bytes', close_after_send_bytes
+        )
 
     def __getattribute__(self, name):
         if name in ('makefile', 'sendall', '_writelog'):
@@ -104,22 +108,22 @@ class socketproxy(object):
         f = object.__getattribute__(self, '_orig').makefile(mode, bufsize)
 
         logfp = object.__getattribute__(self, '_logfp')
-        closeafterrecvbytes = object.__getattribute__(
-            self, '_closeafterrecvbytes'
+        close_after_recv_bytes = object.__getattribute__(
+            self, '_close_after_recv_bytes'
         )
-        closeaftersendbytes = object.__getattribute__(
-            self, '_closeaftersendbytes'
+        close_after_send_bytes = object.__getattribute__(
+            self, '_close_after_send_bytes'
         )
 
         return fileobjectproxy(
             f,
             logfp,
-            closeafterrecvbytes=closeafterrecvbytes,
-            closeaftersendbytes=closeaftersendbytes,
+            close_after_recv_bytes=close_after_recv_bytes,
+            close_after_send_bytes=close_after_send_bytes,
         )
 
     def sendall(self, data, flags=0):
-        remaining = object.__getattribute__(self, '_closeaftersendbytes')
+        remaining = object.__getattribute__(self, '_close_after_send_bytes')
 
         # No read limit. Call original function.
         if not remaining:
@@ -141,7 +145,7 @@ class socketproxy(object):
             % (len(newdata), len(data), remaining, newdata)
         )
 
-        object.__setattr__(self, '_closeaftersendbytes', remaining)
+        object.__setattr__(self, '_close_after_send_bytes', remaining)
 
         if remaining <= 0:
             self._writelog(b'write limit reached; closing socket')
@@ -157,17 +161,21 @@ class fileobjectproxy(object):
     __slots__ = (
         '_orig',
         '_logfp',
-        '_closeafterrecvbytes',
-        '_closeaftersendbytes',
+        '_close_after_recv_bytes',
+        '_close_after_send_bytes',
     )
 
     def __init__(
-        self, obj, logfp, closeafterrecvbytes=0, closeaftersendbytes=0
+        self, obj, logfp, close_after_recv_bytes=0, close_after_send_bytes=0
     ):
         object.__setattr__(self, '_orig', obj)
         object.__setattr__(self, '_logfp', logfp)
-        object.__setattr__(self, '_closeafterrecvbytes', closeafterrecvbytes)
-        object.__setattr__(self, '_closeaftersendbytes', closeaftersendbytes)
+        object.__setattr__(
+            self, '_close_after_recv_bytes', close_after_recv_bytes
+        )
+        object.__setattr__(
+            self, '_close_after_send_bytes', close_after_send_bytes
+        )
 
     def __getattribute__(self, name):
         if name in ('_close', 'read', 'readline', 'write', '_writelog'):
@@ -202,7 +210,7 @@ class fileobjectproxy(object):
             self._sock.shutdown(socket.SHUT_RDWR)
 
     def read(self, size=-1):
-        remaining = object.__getattribute__(self, '_closeafterrecvbytes')
+        remaining = object.__getattribute__(self, '_close_after_recv_bytes')
 
         # No read limit. Call original function.
         if not remaining:
@@ -227,7 +235,7 @@ class fileobjectproxy(object):
             % (size, origsize, len(result), result)
         )
 
-        object.__setattr__(self, '_closeafterrecvbytes', remaining)
+        object.__setattr__(self, '_close_after_recv_bytes', remaining)
 
         if remaining <= 0:
             self._writelog(b'read limit reached; closing socket')
@@ -239,7 +247,7 @@ class fileobjectproxy(object):
         return result
 
     def readline(self, size=-1):
-        remaining = object.__getattribute__(self, '_closeafterrecvbytes')
+        remaining = object.__getattribute__(self, '_close_after_recv_bytes')
 
         # No read limit. Call original function.
         if not remaining:
@@ -264,7 +272,7 @@ class fileobjectproxy(object):
             % (size, origsize, len(result), result)
         )
 
-        object.__setattr__(self, '_closeafterrecvbytes', remaining)
+        object.__setattr__(self, '_close_after_recv_bytes', remaining)
 
         if remaining <= 0:
             self._writelog(b'read limit reached; closing socket')
@@ -276,7 +284,7 @@ class fileobjectproxy(object):
         return result
 
     def write(self, data):
-        remaining = object.__getattribute__(self, '_closeaftersendbytes')
+        remaining = object.__getattribute__(self, '_close_after_send_bytes')
 
         # No byte limit on this operation. Call original function.
         if not remaining:
@@ -298,7 +306,7 @@ class fileobjectproxy(object):
 
         result = object.__getattribute__(self, '_orig').write(newdata)
 
-        object.__setattr__(self, '_closeaftersendbytes', remaining)
+        object.__setattr__(self, '_close_after_send_bytes', remaining)
 
         if remaining <= 0:
             self._writelog(b'write limit reached; closing socket')
@@ -319,10 +327,10 @@ def extsetup(ui):
 
             recvbytes = self._ui.config(b'badserver', b'close-after-recv-bytes')
             recvbytes = recvbytes.split(b',')
-            self.closeafterrecvbytes = [int(v) for v in recvbytes if v]
+            self.close_after_recv_bytes = [int(v) for v in recvbytes if v]
             sendbytes = self._ui.config(b'badserver', b'close-after-send-bytes')
             sendbytes = sendbytes.split(b',')
-            self.closeaftersendbytes = [int(v) for v in sendbytes if v]
+            self.close_after_send_bytes = [int(v) for v in sendbytes if v]
 
             # Need to inherit object so super() works.
             class badrequesthandler(self.RequestHandlerClass, object):
@@ -362,21 +370,21 @@ def extsetup(ui):
         # is a hgweb.server._httprequesthandler.
         def process_request(self, socket, address):
             # Wrap socket in a proxy if we need to count bytes.
-            if self.closeafterrecvbytes:
-                closeafterrecvbytes = self.closeafterrecvbytes.pop(0)
+            if self.close_after_recv_bytes:
+                close_after_recv_bytes = self.close_after_recv_bytes.pop(0)
             else:
-                closeafterrecvbytes = 0
-            if self.closeaftersendbytes:
-                closeaftersendbytes = self.closeaftersendbytes.pop(0)
+                close_after_recv_bytes = 0
+            if self.close_after_send_bytes:
+                close_after_send_bytes = self.close_after_send_bytes.pop(0)
             else:
-                closeaftersendbytes = 0
+                close_after_send_bytes = 0
 
-            if closeafterrecvbytes or closeaftersendbytes:
+            if close_after_recv_bytes or close_after_send_bytes:
                 socket = socketproxy(
                     socket,
                     self.errorlog,
-                    closeafterrecvbytes=closeafterrecvbytes,
-                    closeaftersendbytes=closeaftersendbytes,
+                    close_after_recv_bytes=close_after_recv_bytes,
+                    close_after_send_bytes=close_after_send_bytes,
                 )
 
             return super(badserver, self).process_request(socket, address)
