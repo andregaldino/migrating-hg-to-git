@@ -36,6 +36,7 @@ and because debugging partial responses is hard when compression is involved
   > EOF
 
 Failure to accept() socket should result in connection related error message
+----------------------------------------------------------------------------
 
   $ hg serve --config badserver.close-before-accept=true -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
@@ -50,6 +51,7 @@ So ensure the process is dead.)
   $ killdaemons.py $DAEMON_PIDS
 
 Failure immediately after accept() should yield connection related error message
+--------------------------------------------------------------------------------
 
   $ hg serve --config badserver.close-after-accept=true -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
@@ -69,6 +71,7 @@ The flakiness in this output was observable easily with
   $ killdaemons.py $DAEMON_PIDS
 
 Failure to read all bytes in initial HTTP request should yield connection related error message
+-----------------------------------------------------------------------------------------------
 
   $ hg serve --config badserver.close-after-recv-bytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -86,6 +89,7 @@ Failure to read all bytes in initial HTTP request should yield connection relate
   $ rm -f error.log
 
 Same failure, but server reads full HTTP request line
+-----------------------------------------------------
 
   $ hg serve --config badserver.close-after-recv-bytes=40 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -103,6 +107,7 @@ Same failure, but server reads full HTTP request line
   $ rm -f error.log
 
 Failure on subsequent HTTP request on the same socket (cmd?batch)
+-----------------------------------------------------------------
 
   $ hg serve --config badserver.close-after-recv-bytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -145,6 +150,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ rm -f error.log
 
 Failure to read getbundle HTTP request
+--------------------------------------
 
   $ hg serve --config badserver.close-after-recv-bytes=308,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -212,6 +218,7 @@ Failure to read getbundle HTTP request
   $ rm -f error.log
 
 Now do a variation using POST to send arguments
+===============================================
 
   $ hg serve --config experimental.httppostargs=true --config badserver.close-after-recv-bytes=329,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -270,8 +277,10 @@ Now do a variation using POST to send arguments
   $ rm -f error.log
 
 Now move on to partial server responses
+=======================================
 
 Server sends a single character from the HTTP response line
+-----------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -303,6 +312,7 @@ Server sends a single character from the HTTP response line
   $ rm -f error.log
 
 Server sends an incomplete capabilities response body
+-----------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=180 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -341,6 +351,7 @@ Server sends an incomplete capabilities response body
   $ rm -f error.log
 
 Server sends incomplete headers for batch request
+-------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=709 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -401,6 +412,7 @@ TODO this output is horrible
   $ rm -f error.log
 
 Server sends an incomplete HTTP response body to batch request
+--------------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=774 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -463,6 +475,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   $ rm -f error.log
 
 Server sends incomplete headers for getbundle response
+------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=921 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -544,6 +557,7 @@ TODO this output is terrible
   $ rm -f error.log
 
 Server stops before it sends transfer encoding
+----------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=954 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -573,6 +587,7 @@ Server stops before it sends transfer encoding
   $ rm -f error.log
 
 Server sends empty HTTP body for getbundle
+------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=959 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -651,6 +666,7 @@ Server sends empty HTTP body for getbundle
   $ rm -f error.log
 
 Server sends partial compression string
+---------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=983 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -733,6 +749,7 @@ Server sends partial compression string
   $ rm -f error.log
 
 Server sends partial bundle2 header magic
+-----------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=980 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -778,6 +795,7 @@ Server sends partial bundle2 header magic
   $ rm -f error.log
 
 Server sends incomplete bundle2 stream params length
+----------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=989 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -825,6 +843,7 @@ Server sends incomplete bundle2 stream params length
   $ rm -f error.log
 
 Servers stops after bundle2 stream params header
+------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=992 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -871,6 +890,7 @@ Servers stops after bundle2 stream params header
   $ rm -f error.log
 
 Server stops sending after bundle2 part header length
+-----------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1001 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -920,6 +940,7 @@ Server stops sending after bundle2 part header length
   $ rm -f error.log
 
 Server stops sending after bundle2 part header
+----------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1048 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -973,6 +994,7 @@ Server stops sending after bundle2 part header
   $ rm -f error.log
 
 Server stops after bundle2 part payload chunk size
+--------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1069 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -1029,6 +1051,7 @@ Server stops after bundle2 part payload chunk size
   $ rm -f error.log
 
 Server stops sending in middle of bundle2 payload chunk
+-------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1530 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -1086,6 +1109,7 @@ Server stops sending in middle of bundle2 payload chunk
   $ rm -f error.log
 
 Server stops sending after 0 length payload chunk size
+------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1561 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
@@ -1147,6 +1171,8 @@ Server stops sending after 0 length payload chunk size
   $ rm -f error.log
 
 Server stops sending after 0 part bundle part header (indicating end of bundle2 payload)
+----------------------------------------------------------------------------------------
+
 This is before the 0 size chunked transfer part that signals end of HTTP response.
 
   $ hg serve --config badserver.close-after-send-bytes=1736 -p $HGPORT -d --pid-file=hg.pid -E error.log
@@ -1216,6 +1242,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   $ rm -rf clone
 
 Server sends a size 0 chunked-transfer size without terminating \r\n
+--------------------------------------------------------------------
 
   $ hg serve --config badserver.close-after-send-bytes=1739 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
