@@ -837,9 +837,7 @@ def _formatlabel(ctx, template, label, pad):
 
     label = (b'%s:' % label).ljust(pad + 1)
     mark = b'%s %s' % (label, templateresult)
-
-    if mark:
-        mark = mark.splitlines()[0]  # split for safety
+    mark = mark.splitlines()[0]  # split for safety
 
     # 8 for the prefix of conflict marker lines (e.g. '<<<<<<< ')
     return stringutil.ellipsis(mark, 80 - 8)
