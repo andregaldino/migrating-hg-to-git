@@ -63,7 +63,7 @@ Reference size:
   [80]
 #endif
   $ cat .hg/store/journal | tr -s '\000' ' ' | grep data/file | tail -1
-  data/file.i 192
+  data/file.i 128
 
 The first file.i entry should match the "Reference size" above.
 The first file.d entry is the temporary record during the split,
@@ -73,14 +73,14 @@ and the second file.i entry should match the first file.i entry.
   $ cat .hg/store/journal | tr -s '\000' ' ' | grep data/file
   data/file.i 1174
   data/file.d 0
-  data/file.d 1067
-  data/file.i 192
+  data/file.d 1046
+  data/file.i 128
   $ hg recover
   rolling back interrupted transaction
   (verify step skipped, run `hg verify` to check your repository content)
   $ f -s .hg/store/data/file*
-  .hg/store/data/file.d: size=1067
-  .hg/store/data/file.i: size=192
+  .hg/store/data/file.d: size=1046
+  .hg/store/data/file.i: size=128
   $ hg tip
   changeset:   1:cfa8d6e60429
   tag:         tip
@@ -90,23 +90,12 @@ and the second file.i entry should match the first file.i entry.
   
   $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!
-   file@?: rev 2 points to nonexistent changeset 2
-   (expected )
-   file@?: fa1120531cc1 not in manifests
-  2 warnings encountered!
+  1 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
-  2 integrity errors encountered!
-  [1]
   $ hg debugrebuildfncache --only-data
   adding data/file.d
   1 items added, 0 removed from fncache
   $ hg verify -q
-   file@?: rev 2 points to nonexistent changeset 2
-   (expected )
-   file@?: fa1120531cc1 not in manifests
-  1 warnings encountered!
-  2 integrity errors encountered!
-  [1]
   $ cd ..
 
 
@@ -134,13 +123,13 @@ where the data file is left as garbage.
   $ cat .hg/store/journal | tr -s '\000' ' ' | grep data/file
   data/file.i 1174
   data/file.d 0
-  data/file.d 1067
+  data/file.d 1046
 
   $ hg recover
   rolling back interrupted transaction
   (verify step skipped, run `hg verify` to check your repository content)
   $ f -s .hg/store/data/file*
-  .hg/store/data/file.d: size=1067
+  .hg/store/data/file.d: size=1046
   .hg/store/data/file.i: size=1174
   $ hg tip
   changeset:   1:cfa8d6e60429
@@ -172,8 +161,8 @@ Repeat the original test but let hg rollback the transaction.
   abort: pretxnchangegroup hook exited with status 1
   [40]
   $ f -s .hg/store/data/file*
-  .hg/store/data/file.d: size=1067
-  .hg/store/data/file.i: size=192
+  .hg/store/data/file.d: size=1046
+  .hg/store/data/file.i: size=128
   $ hg tip
   changeset:   1:cfa8d6e60429
   tag:         tip
@@ -183,12 +172,7 @@ Repeat the original test but let hg rollback the transaction.
   
   $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!
-   file@?: rev 2 points to nonexistent changeset 2
-   (expected )
-   file@?: fa1120531cc1 not in manifests
-  2 warnings encountered!
+  1 warnings encountered!
   hint: run "hg debugrebuildfncache" to recover from corrupt fncache
-  2 integrity errors encountered!
-  [1]
   $ cd ..
 

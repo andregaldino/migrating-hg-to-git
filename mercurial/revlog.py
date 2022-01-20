@@ -2006,7 +2006,7 @@ class revlog(object):
             raise error.RevlogError(
                 _(b"%s not found in the transaction") % self._indexfile
             )
-        trindex = 0
+        trindex = None
         tr.add(self._datafile, 0)
 
         existing_handles = False
@@ -2029,9 +2029,16 @@ class revlog(object):
             with self._indexfp() as read_ifh:
                 for r in self:
                     new_dfh.write(self._getsegmentforrevs(r, r, df=read_ifh)[1])
-                    if troffset <= self.start(r) + r * self.index.entry_size:
+                    if (
+                        trindex is None
+                        and troffset
+                        <= self.start(r) + r * self.index.entry_size
+                    ):
                         trindex = r
                 new_dfh.flush()
+
+            if trindex is None:
+                trindex = 0
 
             with self.__index_new_fp() as fp:
                 self._format_flags &= ~FLAG_INLINE_DATA
