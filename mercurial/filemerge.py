@@ -535,8 +535,6 @@ def _imerge3(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Marker will have three sections, one from each
     side of the merge and one for the base content."""
-    if not labels:
-        labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
     return _merge(repo, fcd, fco, fca, labels, b'merge3')
@@ -577,8 +575,6 @@ def _imerge_diff(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     the partially merged file. The marker will have two sections, one with the
     content from one side of the merge, and one with a diff from the base
     content to the content on the other side. (experimental)"""
-    if not labels:
-        labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
     return _merge(repo, fcd, fco, fca, labels, b'mergediff')
@@ -841,9 +837,6 @@ def _formatlabel(ctx, template, label, pad):
     return stringutil.ellipsis(mark, 80 - 8)
 
 
-_defaultconflictlabels = [b'local', b'other']
-
-
 def _formatlabels(repo, fcd, fco, fca, labels, tool=None):
     """Formats the given labels using the conflict marker template.
 
@@ -1068,6 +1061,8 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
     toolconf = tool, toolpath, binary, symlink, scriptfn
 
+    if not labels:
+        labels = [b'local', b'other']
     if mergetype == nomerge:
         return func(repo, mynode, fcd, fco, fca, toolconf, labels)
 
@@ -1099,8 +1094,6 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         else:
             markerstyle = internalmarkerstyle
 
-        if not labels:
-            labels = _defaultconflictlabels
         formattedlabels = labels
         if markerstyle != b'basic':
             formattedlabels = _formatlabels(
