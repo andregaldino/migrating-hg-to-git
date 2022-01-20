@@ -225,7 +225,7 @@ annotate -nlf b
   b4
   c
   b5
-  ||||||| base
+  ||||||| base:         3086dbafde1c - test: b
   =======
   b4
   b5
@@ -750,7 +750,7 @@ merge
   <<<<<<< working copy: 863de62655ef - test: baz:3+->3-
   3- baz:3
   4 baz:4
-  ||||||| base
+  ||||||| base:         56fc739c091f - test: baz:3->3+
   3+ baz:3
   4 baz:4
   =======
@@ -797,7 +797,7 @@ merge
   <<<<<<< working copy: cb8df70ae185 - test: qux:4->4+
   3+ baz:3
   4+ baz:4
-  ||||||| base
+  ||||||| base:         56fc739c091f - test: baz:3->3+
   3+ baz:3
   4 baz:4
   =======
@@ -1176,7 +1176,7 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   1
   2
   3
-  ||||||| base
+  ||||||| base:         1ed24be7e7a0 - test: 2
   1
   2
   =======

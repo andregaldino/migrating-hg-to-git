@@ -374,7 +374,7 @@ Test minimization of merge conflicts
    a
   +<<<<<<< dest:   328e4ab1f7cc ab - test: ab
    b
-  +||||||| base
+  +||||||| base:   cb9a9f314b8b - test: a
   +=======
   +b
   +c

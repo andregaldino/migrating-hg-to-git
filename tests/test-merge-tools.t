@@ -1226,7 +1226,7 @@ premerge=keep-merge3 keeps conflict markers with base content:
   <<<<<<< working copy: ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base
+  ||||||| base:         ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
@@ -1242,7 +1242,7 @@ premerge=keep-merge3 keeps conflict markers with base content:
   <<<<<<< working copy: ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base
+  ||||||| base:         ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
@@ -1264,7 +1264,7 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ hg merge -r 4 --config merge-tools.true.premerge=keep-mergediff
   merging f
   <<<<<<<
-  ------- base
+  ------- base:         ffd2bda21d6e - test: revision 0
   +++++++ working copy: ef83787e2614 - test: revision 1
   -revision 0
   +revision 1
@@ -1280,7 +1280,7 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ aftermerge
   # cat f
   <<<<<<<
-  ------- base
+  ------- base:         ffd2bda21d6e - test: revision 0
   +++++++ working copy: ef83787e2614 - test: revision 1
   -revision 0
   +revision 1

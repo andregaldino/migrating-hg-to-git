@@ -295,7 +295,7 @@ Cases are run as shown in that table, row by row.
   <<<<<<< working copy: 6efa171f091b - test: 3
   three
   dirty
-  ||||||| base
+  ||||||| base:         6efa171f091b - test: 3
   three
   =======
   four

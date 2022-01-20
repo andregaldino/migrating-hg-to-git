@@ -169,7 +169,7 @@ annotate -nlf b
   b4
   c
   b5
-  ||||||| base
+  ||||||| base:         3086dbafde1c - test: b
   =======
   b4
   b5
@@ -793,7 +793,7 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   1
   2
   3
-  ||||||| base
+  ||||||| base:         1ed24be7e7a0 - test: 2
   1
   2
   =======

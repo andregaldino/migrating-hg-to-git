@@ -421,8 +421,6 @@ def _premerge(repo, fcd, fco, fca, toolconf, backup, labels):
             )
 
     if premerge:
-        if len(labels) < 3:
-            labels.append(b'base')
         mode = b'merge'
         if premerge == b'keep-mergediff':
             mode = b'mergediff'
@@ -473,14 +471,11 @@ def _merge(repo, fcd, fco, fca, labels, mode):
     ui = repo.ui
 
     local = simplemerge.MergeInput(fcd)
-    if len(labels) > 0:
-        local.label = labels[0]
+    local.label = labels[0]
     other = simplemerge.MergeInput(fco)
-    if len(labels) > 1:
-        other.label = labels[1]
+    other.label = labels[1]
     base = simplemerge.MergeInput(fca)
-    if len(labels) > 2:
-        base.label = labels[2]
+    base.label = labels[2]
     r = simplemerge.simplemerge(ui, local, base, other, mode=mode)
     return True, r, False
 
@@ -535,8 +530,6 @@ def _imerge3(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Marker will have three sections, one from each
     side of the merge and one for the base content."""
-    if len(labels) < 3:
-        labels.append(b'base')
     return _merge(repo, fcd, fco, fca, labels, b'merge3')
 
 
@@ -575,8 +568,6 @@ def _imerge_diff(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     the partially merged file. The marker will have two sections, one with the
     content from one side of the merge, and one with a diff from the base
     content to the content on the other side. (experimental)"""
-    if len(labels) < 3:
-        labels.append(b'base')
     return _merge(repo, fcd, fco, fca, labels, b'mergediff')
 
 
@@ -736,10 +727,7 @@ def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
         mylabel, otherlabel = labels[:2]
-        if len(labels) >= 3:
-            baselabel = labels[2]
-        else:
-            baselabel = b'base'
+        baselabel = labels[2]
         env = {
             b'HG_FILE': fcd.path(),
             b'HG_MY_NODE': short(mynode),
@@ -861,9 +849,8 @@ def _formatlabels(repo, fcd, fco, fca, labels, tool=None):
     newlabels = [
         _formatlabel(cd, tmpl, labels[0], pad),
         _formatlabel(co, tmpl, labels[1], pad),
+        _formatlabel(ca, tmpl, labels[2], pad),
     ]
-    if len(labels) > 2:
-        newlabels.append(_formatlabel(ca, tmpl, labels[2], pad))
     return newlabels
 
 
@@ -1063,6 +1050,8 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
     if not labels:
         labels = [b'local', b'other']
+    if len(labels) < 3:
+        labels.append(b'base')
     if mergetype == nomerge:
         return func(repo, mynode, fcd, fco, fca, toolconf, labels)
 

@@ -719,7 +719,7 @@ Test aborted editor on final message
   $ cat A
   <<<<<<< dest:   82b8abf9c185 D - test: D
   D
-  ||||||| base
+  ||||||| base:   4a2df7238c3b A - test: A
   A
   =======
   B
@@ -747,7 +747,7 @@ Test aborted editor on final message
   $ cat A
   <<<<<<< dest:   82b8abf9c185 D - test: D
   BC
-  ||||||| base
+  ||||||| base:   f899f3910ce7 B - test: B
   B
   =======
   C

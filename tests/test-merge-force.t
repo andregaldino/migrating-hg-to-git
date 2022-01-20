@@ -400,7 +400,7 @@ the remote side did not touch the file
   M content1_content2_content1_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         8ef80617fa20 - test: base
   content1
   =======
   content2
@@ -430,7 +430,7 @@ the remote side did not touch the file
   M content1_content2_content2_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         8ef80617fa20 - test: base
   content1
   =======
   content2
@@ -460,7 +460,7 @@ the remote side did not touch the file
   M content1_content2_content3_content3-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content3
-  ||||||| base
+  ||||||| base:         8ef80617fa20 - test: base
   content1
   =======
   content2
@@ -472,7 +472,7 @@ the remote side did not touch the file
   M content1_content2_content3_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         8ef80617fa20 - test: base
   content1
   =======
   content2
@@ -502,7 +502,7 @@ the remote side did not touch the file
   M content1_content2_missing_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         8ef80617fa20 - test: base
   content1
   =======
   content2
@@ -586,7 +586,7 @@ the remote side did not touch the file
   M missing_content2_content2_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         000000000000 - : 
   =======
   content2
   >>>>>>> merge rev:    85100b8c675b - test: remote
@@ -609,7 +609,7 @@ the remote side did not touch the file
   M missing_content2_content3_content3-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content3
-  ||||||| base
+  ||||||| base:         000000000000 - : 
   =======
   content2
   >>>>>>> merge rev:    85100b8c675b - test: remote
@@ -620,7 +620,7 @@ the remote side did not touch the file
   M missing_content2_content3_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         000000000000 - : 
   =======
   content2
   >>>>>>> merge rev:    85100b8c675b - test: remote
@@ -643,7 +643,7 @@ the remote side did not touch the file
   M missing_content2_missing_content4-tracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         000000000000 - : 
   =======
   content2
   >>>>>>> merge rev:    85100b8c675b - test: remote
@@ -651,7 +651,7 @@ the remote side did not touch the file
   M missing_content2_missing_content4-untracked
   <<<<<<< working copy: 0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| base:         000000000000 - : 
   =======
   content2
   >>>>>>> merge rev:    85100b8c675b - test: remote

@@ -682,7 +682,7 @@ Choose to merge all files
   3
   <<<<<<< working copy: 13910f48cf7b - test: changed file1, removed file2, chan...
   changed2
-  ||||||| base
+  ||||||| base:         ab57bf49aa27 - test: added files
   =======
   changed1
   >>>>>>> merge rev:    10f9a0a634e8 - test: removed file1, changed file2, chan...
