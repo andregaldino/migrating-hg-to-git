@@ -18,6 +18,12 @@ The `--no-check` and `--no-merge` now properly overwrite the behavior from `comm
 The remotefilelog extension now requires an appropiate excludepattern
 for subrepositories.
 
+The labels passed to merge tools have changed slightly. Merge tools can get
+labels passed to them if you include `$labellocal`, `$labelbase`, and/or
+`$labelother` in the `merge-tool.<tool name>.args` configuration. These labels
+used to have some space-padding, and truncation to fit within 72 columns. Both
+the padding and the truncation has been removed.
+
 == Internal API Changes ==
 
 The following functions have been removed:

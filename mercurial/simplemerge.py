@@ -286,10 +286,20 @@ def _verifytext(text, path, ui, opts):
 
 
 def _format_labels(*inputs):
+    pad = max(len(input.label) if input.label else 0 for input in inputs)
     labels = []
     for input in inputs:
         if input.label:
-            labels.append(input.label)
+            if input.label_detail:
+                label = (
+                    (input.label + b':').ljust(pad + 1)
+                    + b' '
+                    + input.label_detail
+                )
+            else:
+                label = input.label
+            # 8 for the prefix of conflict marker lines (e.g. '<<<<<<< ')
+            labels.append(stringutil.ellipsis(label, 80 - 8))
         else:
             labels.append(None)
     return labels
@@ -468,6 +478,10 @@ def _resolve(m3, sides):
 class MergeInput(object):
     fctx = attr.ib()
     label = attr.ib(default=None)
+    # If the "detail" part is set, then that is rendered after the label and
+    # separated by a ':'. The label is padded to make the ':' aligned among all
+    # merge inputs.
+    label_detail = attr.ib(default=None)
 
 
 def simplemerge(ui, local, base, other, **opts):

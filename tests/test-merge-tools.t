@@ -1648,7 +1648,7 @@ mergemarkertemplate:
   merging f
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
-  arg: "merge rev:    tooltmpl 0185f4e0cf02"
+  arg: "merge rev: tooltmpl 0185f4e0cf02"
   arg: "lb:base: */f~base.*" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -1718,7 +1718,7 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   >    merge -r 2
   merging f
   labellocal: "working copy: tooltmpl ef83787e2614"
-  labelother: "merge rev:    tooltmpl 0185f4e0cf02"
+  labelother: "merge rev: tooltmpl 0185f4e0cf02"
   output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: tooltmpl ef83787e2614

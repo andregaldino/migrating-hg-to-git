@@ -40,7 +40,6 @@ from . import (
 
 from .utils import (
     procutil,
-    stringutil,
 )
 
 
@@ -724,6 +723,13 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
+
+        def format_label(input):
+            if input.label_detail:
+                return b'%s: %s' % (input.label, input.label_detail)
+            else:
+                return input.label
+
         env = {
             b'HG_FILE': fcd.path(),
             b'HG_MY_NODE': short(mynode),
@@ -732,9 +738,9 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
             b'HG_MY_ISLINK': b'l' in fcd.flags(),
             b'HG_OTHER_ISLINK': b'l' in fco.flags(),
             b'HG_BASE_ISLINK': b'l' in fca.flags(),
-            b'HG_MY_LABEL': local.label,
-            b'HG_OTHER_LABEL': other.label,
-            b'HG_BASE_LABEL': base.label,
+            b'HG_MY_LABEL': format_label(local),
+            b'HG_OTHER_LABEL': format_label(other),
+            b'HG_BASE_LABEL': format_label(base),
         }
         ui = repo.ui
 
@@ -747,9 +753,9 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
             b'base': basepath,
             b'other': otherpath,
             b'output': outpath,
-            b'labellocal': local.label,
-            b'labelother': other.label,
-            b'labelbase': base.label,
+            b'labellocal': format_label(local),
+            b'labelother': format_label(other),
+            b'labelbase': format_label(base),
         }
         args = util.interpolate(
             br'\$',
@@ -801,32 +807,19 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
         return True, r, False
 
 
-def _populate_label_detail(input, template, pad):
-    """Applies the given template to the ctx, prefixed by the label.
-
-    Pad is the minimum width of the label prefix, so that multiple markers
-    can have aligned templated parts.
-    """
+def _populate_label_detail(input, template):
+    """Applies the given template to the ctx and stores it in the input."""
     ctx = input.fctx.changectx()
     if ctx.node() is None:
         ctx = ctx.p1()
 
     props = {b'ctx': ctx}
     templateresult = template.renderdefault(props)
-
-    label = (b'%s:' % input.label).ljust(pad + 1)
-    mark = b'%s %s' % (label, templateresult)
-    mark = mark.splitlines()[0]  # split for safety
-
-    # 8 for the prefix of conflict marker lines (e.g. '<<<<<<< ')
-    input.label = stringutil.ellipsis(mark, 80 - 8)
+    input.label_detail = templateresult.splitlines()[0]  # split for safety
 
 
 def _populate_label_details(repo, inputs, tool=None):
-    """Formats the given labels using the conflict marker template.
-
-    Returns a list of formatted labels.
-    """
+    """Populates the label details using the conflict marker template."""
     ui = repo.ui
     template = ui.config(b'command-templates', b'mergemarker')
     if tool is not None:
@@ -837,10 +830,8 @@ def _populate_label_details(repo, inputs, tool=None):
         ui, template, defaults=templatekw.keywords, resources=tres
     )
 
-    pad = max(len(input.label) for input in inputs)
-
     for input in inputs:
-        _populate_label_detail(input, tmpl, pad)
+        _populate_label_detail(input, tmpl)
 
 
 def partextras(labels):
@@ -1111,9 +1102,9 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 return r, False
 
             # Reset to basic labels
-            local.label = labels[0]
-            other.label = labels[1]
-            base.label = labels[2]
+            local.label_detail = None
+            other.label_detail = None
+            base.label_detail = None
 
         if markerstyle != b'basic':
             _populate_label_details(repo, [local, other, base], tool=tool)
