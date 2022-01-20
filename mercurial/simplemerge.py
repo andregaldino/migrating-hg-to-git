@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from .i18n import _
+from .thirdparty import attr
 from . import (
     error,
     mdiff,
@@ -284,13 +285,14 @@ def _verifytext(text, path, ui, opts):
     return text
 
 
-def _picklabels(overrides):
-    if len(overrides) > 3:
-        raise error.Abort(_(b"can only specify three labels."))
-    result = [None, None, None]
-    for i, override in enumerate(overrides):
-        result[i] = override
-    return result
+def _format_labels(*inputs):
+    labels = []
+    for input in inputs:
+        if input.label:
+            labels.append(input.label)
+        else:
+            labels.append(None)
+    return labels
 
 
 def _detect_newline(m3):
@@ -462,7 +464,13 @@ def _resolve(m3, sides):
     return lines
 
 
-def simplemerge(ui, localctx, basectx, otherctx, **opts):
+@attr.s
+class MergeInput(object):
+    fctx = attr.ib()
+    label = attr.ib(default=None)
+
+
+def simplemerge(ui, local, base, other, **opts):
     """Performs the simplemerge algorithm.
 
     The merged result is written into `localctx`.
@@ -479,9 +487,9 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
         return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
 
     try:
-        localtext = readctx(localctx)
-        basetext = readctx(basectx)
-        othertext = readctx(otherctx)
+        localtext = readctx(local.fctx)
+        basetext = readctx(base.fctx)
+        othertext = readctx(other.fctx)
     except error.Abort:
         return True
 
@@ -495,20 +503,22 @@ def simplemerge(ui, localctx, basectx, otherctx, **opts):
     elif mode == b'other':
         lines = _resolve(m3, (2,))
     else:
-        name_a, name_b, name_base = _picklabels(opts.get('label', []))
         if mode == b'mergediff':
-            lines, conflicts = render_mergediff(m3, name_a, name_b, name_base)
+            labels = _format_labels(local, other, base)
+            lines, conflicts = render_mergediff(m3, *labels)
         elif mode == b'merge3':
-            lines, conflicts = render_merge3(m3, name_a, name_b, name_base)
+            labels = _format_labels(local, other, base)
+            lines, conflicts = render_merge3(m3, *labels)
         else:
-            lines, conflicts = render_minimized(m3, name_a, name_b)
+            labels = _format_labels(local, other)
+            lines, conflicts = render_minimized(m3, *labels)
 
     mergedtext = b''.join(lines)
     if opts.get('print'):
         ui.fout.write(mergedtext)
     else:
-        # localctx.flags() already has the merged flags (done in
+        # local.fctx.flags() already has the merged flags (done in
         # mergestate.resolve())
-        localctx.write(mergedtext, localctx.flags())
+        local.fctx.write(mergedtext, local.fctx.flags())
 
     return conflicts

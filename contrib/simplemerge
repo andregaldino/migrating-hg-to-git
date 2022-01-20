@@ -84,15 +84,25 @@ try:
         opts[b'mode'] = b'merge3'
     local, base, other = args
     overrides = opts[b'label']
+    if len(overrides) > 3:
+        raise error.InputError(b'can only specify three labels.')
     labels = [local, other, base]
     labels[: len(overrides)] = overrides
-    opts[b'label'] = labels
+    local_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(local), labels[0]
+    )
+    other_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(other), labels[1]
+    )
+    base_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(base), labels[2]
+    )
     sys.exit(
         simplemerge.simplemerge(
             uimod.ui.load(),
-            context.arbitraryfilectx(local),
-            context.arbitraryfilectx(base),
-            context.arbitraryfilectx(other),
+            local_input,
+            base_input,
+            other_input,
             **pycompat.strkwargs(opts)
         )
     )

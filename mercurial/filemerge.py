@@ -428,8 +428,11 @@ def _premerge(repo, fcd, fco, fca, toolconf, backup, labels):
             mode = b'mergediff'
         elif premerge == b'keep-merge3':
             mode = b'merge3'
+        local = simplemerge.MergeInput(fcd, labels[0])
+        other = simplemerge.MergeInput(fco, labels[1])
+        base = simplemerge.MergeInput(fca, labels[2])
         r = simplemerge.simplemerge(
-            ui, fcd, fca, fco, quiet=True, label=labels, mode=mode
+            ui, local, base, other, quiet=True, mode=mode
         )
         if not r:
             ui.debug(b" premerge successful\n")
@@ -469,7 +472,16 @@ def _merge(repo, mynode, fcd, fco, fca, toolconf, backup, labels, mode):
     of merge, unless mode equals 'union' which suppresses the markers."""
     ui = repo.ui
 
-    r = simplemerge.simplemerge(ui, fcd, fca, fco, label=labels, mode=mode)
+    local = simplemerge.MergeInput(fcd)
+    if len(labels) > 0:
+        local.label = labels[0]
+    other = simplemerge.MergeInput(fco)
+    if len(labels) > 1:
+        other.label = labels[1]
+    base = simplemerge.MergeInput(fca)
+    if len(labels) > 2:
+        base.label = labels[2]
+    r = simplemerge.simplemerge(ui, local, base, other, mode=mode)
     return True, r, False
 
 
