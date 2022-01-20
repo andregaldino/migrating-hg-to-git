@@ -464,7 +464,7 @@ def _mergecheck(repo, mynode, fcd, fco, fca, toolconf):
     return True
 
 
-def _merge(repo, mynode, fcd, fco, fca, toolconf, backup, labels, mode):
+def _merge(repo, fcd, fco, fca, labels, mode):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
@@ -499,9 +499,7 @@ def _iunion(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will use both left and right sides for conflict regions.
     No markers are inserted."""
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'union'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'union')
 
 
 @internaltool(
@@ -519,9 +517,7 @@ def _imerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Markers will have two sections, one for each side
     of merge."""
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'merge'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'merge')
 
 
 @internaltool(
@@ -543,9 +539,7 @@ def _imerge3(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
         labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'merge3'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'merge3')
 
 
 @internaltool(
@@ -587,9 +581,7 @@ def _imerge_diff(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
         labels = _defaultconflictlabels
     if len(labels) < 3:
         labels.append(b'base')
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'mergediff'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'mergediff')
 
 
 @internaltool(b'merge-local', mergeonly, precheck=_mergecheck)
@@ -597,9 +589,7 @@ def _imergelocal(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Like :merge, but resolve all conflicts non-interactively in favor
     of the local `p1()` changes."""
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'local'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'local')
 
 
 @internaltool(b'merge-other', mergeonly, precheck=_mergecheck)
@@ -607,9 +597,7 @@ def _imergeother(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     """
     Like :merge, but resolve all conflicts non-interactively in favor
     of the other `p2()` changes."""
-    return _merge(
-        repo, mynode, fcd, fco, fca, toolconf, backup, labels, b'other'
-    )
+    return _merge(repo, fcd, fco, fca, labels, b'other')
 
 
 @internaltool(
