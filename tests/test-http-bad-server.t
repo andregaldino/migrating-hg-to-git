@@ -563,7 +563,9 @@ TODO this output is terrible
 Server stops before it sends transfer encoding
 ----------------------------------------------
 
-  $ hg serve --config badserver.close-after-send-bytes=954 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-send-patterns="Transfer-Encoding: chunke" \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -584,7 +586,7 @@ Server stops before it sends transfer encoding
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -7
-  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
+  write(41) -> Content-Type: application/mercurial-0.2\r\n
   write(25 from 28) -> (0) Transfer-Encoding: chunke
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
