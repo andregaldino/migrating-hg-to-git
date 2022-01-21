@@ -1020,7 +1020,9 @@ Server stops sending after bundle2 part header
 Server stops after bundle2 part payload chunk size
 --------------------------------------------------
 
-  $ hg serve --config badserver.close-after-send-bytes=1069 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-send-patterns='1d2\r\n.......' \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1037,14 +1039,14 @@ Server stops after bundle2 part payload chunk size
 
 #if py36
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
-  sendall(167 from 167) -> (110) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
-  sendall(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
-  sendall(9 from 9) -> (95) 4\r\nnone\r\n
-  sendall(9 from 9) -> (86) 4\r\nHG20\r\n
-  sendall(9 from 9) -> (77) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  sendall(9 from 9) -> (68) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  sendall(47 from 47) -> (21) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  sendall(9 from 9) -> (12) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  sendall(167) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6) -> 1\\r\\n\x04\\r\\n (esc)
+  sendall(9) -> 4\r\nnone\r\n
+  sendall(9) -> 4\r\nHG20\r\n
+  sendall(9) -> 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  sendall(9) -> 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  sendall(47) -> 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  sendall(9) -> 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   sendall(12 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1d (esc)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
@@ -1054,16 +1056,16 @@ Server stops after bundle2 part payload chunk size
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -15
-  write(167 from 167) -> (110) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (112) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (110) \r\n
-  write(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
-  write(9 from 9) -> (95) 4\r\nnone\r\n
-  write(9 from 9) -> (86) 4\r\nHG20\r\n
-  write(9 from 9) -> (77) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (68) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  write(47 from 47) -> (21) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  write(9 from 9) -> (12) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  write(167) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(28) -> Transfer-Encoding: chunked\r\n
+  write(2) -> \r\n (no-py3 !)
+  write(6) -> 1\\r\\n\x04\\r\\n (esc)
+  write(9) -> 4\r\nnone\r\n
+  write(9) -> 4\r\nHG20\r\n
+  write(9) -> 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9) -> 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write(47) -> 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write(9) -> 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
   write(12 from 473) -> (0) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1d (esc)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
