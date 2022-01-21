@@ -3309,7 +3309,9 @@ def _dograft(ui, repo, *revs, **opts):
             overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
             base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, b'graft'):
-                stats = mergemod.graft(repo, ctx, base, [b'local', b'graft'])
+                stats = mergemod.graft(
+                    repo, ctx, base, [b'local', b'graft', b'parent of graft']
+                )
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue
