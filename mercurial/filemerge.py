@@ -306,27 +306,27 @@ def _matcheol(file, backup):
 
 
 @internaltool(b'prompt', nomerge)
-def _iprompt(repo, mynode, fcd, fco, fca, toolconf, labels=None):
+def _iprompt(repo, mynode, local, other, base, toolconf):
     """Asks the user which of the local `p1()` or the other `p2()` version to
     keep as the merged version."""
     ui = repo.ui
-    fd = fcd.path()
+    fd = local.fctx.path()
     uipathfn = scmutil.getuipathfn(repo)
 
     # Avoid prompting during an in-memory merge since it doesn't support merge
     # conflicts.
-    if fcd.changectx().isinmemory():
+    if local.fctx.changectx().isinmemory():
         raise error.InMemoryMergeConflictsError(
             b'in-memory merge does not support file conflicts'
         )
 
-    prompts = partextras(labels)
+    prompts = partextras([local.label, other.label])
     prompts[b'fd'] = uipathfn(fd)
     try:
-        if fco.isabsent():
+        if other.fctx.isabsent():
             index = ui.promptchoice(_localchangedotherdeletedmsg % prompts, 2)
             choice = [b'local', b'other', b'unresolved'][index]
-        elif fcd.isabsent():
+        elif local.fctx.isabsent():
             index = ui.promptchoice(_otherchangedlocaldeletedmsg % prompts, 2)
             choice = [b'other', b'local', b'unresolved'][index]
         else:
@@ -347,44 +347,48 @@ def _iprompt(repo, mynode, fcd, fco, fca, toolconf, labels=None):
             choice = [b'local', b'other', b'unresolved'][index]
 
         if choice == b'other':
-            return _iother(repo, mynode, fcd, fco, fca, toolconf, labels)
+            return _iother(repo, mynode, local, other, base, toolconf)
         elif choice == b'local':
-            return _ilocal(repo, mynode, fcd, fco, fca, toolconf, labels)
+            return _ilocal(repo, mynode, local, other, base, toolconf)
         elif choice == b'unresolved':
-            return _ifail(repo, mynode, fcd, fco, fca, toolconf, labels)
+            return _ifail(repo, mynode, local, other, base, toolconf)
     except error.ResponseExpected:
         ui.write(b"\n")
-        return _ifail(repo, mynode, fcd, fco, fca, toolconf, labels)
+        return _ifail(repo, mynode, local, other, base, toolconf)
 
 
 @internaltool(b'local', nomerge)
-def _ilocal(repo, mynode, fcd, fco, fca, toolconf, labels=None):
+def _ilocal(repo, mynode, local, other, base, toolconf):
     """Uses the local `p1()` version of files as the merged version."""
-    return 0, fcd.isabsent()
+    return 0, local.fctx.isabsent()
 
 
 @internaltool(b'other', nomerge)
-def _iother(repo, mynode, fcd, fco, fca, toolconf, labels=None):
+def _iother(repo, mynode, local, other, base, toolconf):
     """Uses the other `p2()` version of files as the merged version."""
-    if fco.isabsent():
+    if other.fctx.isabsent():
         # local changed, remote deleted -- 'deleted' picked
-        _underlyingfctxifabsent(fcd).remove()
+        _underlyingfctxifabsent(local.fctx).remove()
         deleted = True
     else:
-        _underlyingfctxifabsent(fcd).write(fco.data(), fco.flags())
+        _underlyingfctxifabsent(local.fctx).write(
+            other.fctx.data(), other.fctx.flags()
+        )
         deleted = False
     return 0, deleted
 
 
 @internaltool(b'fail', nomerge)
-def _ifail(repo, mynode, fcd, fco, fca, toolconf, labels=None):
+def _ifail(repo, mynode, local, other, base, toolconf):
     """
     Rather than attempting to merge files that were modified on both
     branches, it marks them as unresolved. The resolve command must be
     used to resolve these conflicts."""
     # for change/delete conflicts write out the changed version, then fail
-    if fcd.isabsent():
-        _underlyingfctxifabsent(fcd).write(fco.data(), fco.flags())
+    if local.fctx.isabsent():
+        _underlyingfctxifabsent(local.fctx).write(
+            other.fctx.data(), other.fctx.flags()
+        )
     return 1, False
 
 
@@ -399,9 +403,9 @@ def _underlyingfctxifabsent(filectx):
         return filectx
 
 
-def _premerge(repo, fcd, fco, fca, toolconf, backup, labels):
+def _premerge(repo, local, other, base, toolconf, backup):
     tool, toolpath, binary, symlink, scriptfn = toolconf
-    if symlink or fcd.isabsent() or fco.isabsent():
+    if symlink or local.fctx.isabsent() or other.fctx.isabsent():
         return 1
 
     ui = repo.ui
@@ -426,9 +430,6 @@ def _premerge(repo, fcd, fco, fca, toolconf, backup, labels):
             mode = b'mergediff'
         elif premerge == b'keep-merge3':
             mode = b'merge3'
-        local = simplemerge.MergeInput(fcd, labels[0])
-        other = simplemerge.MergeInput(fco, labels[1])
-        base = simplemerge.MergeInput(fca, labels[2])
         r = simplemerge.simplemerge(
             ui, local, base, other, quiet=True, mode=mode
         )
@@ -437,7 +438,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, backup, labels):
             return 0
         if premerge not in validkeep:
             # restore from backup and try again
-            _restorebackup(fcd, backup)
+            _restorebackup(local.fctx, backup)
     return 1  # continue merging
 
 
@@ -462,7 +463,7 @@ def _mergecheck(repo, mynode, fcd, fco, fca, toolconf):
     return True
 
 
-def _merge(repo, fcd, fco, fca, labels, mode):
+def _merge(repo, local, other, base, mode):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
@@ -470,12 +471,6 @@ def _merge(repo, fcd, fco, fca, labels, mode):
     of merge, unless mode equals 'union' which suppresses the markers."""
     ui = repo.ui
 
-    local = simplemerge.MergeInput(fcd)
-    local.label = labels[0]
-    other = simplemerge.MergeInput(fco)
-    other.label = labels[1]
-    base = simplemerge.MergeInput(fca)
-    base.label = labels[2]
     r = simplemerge.simplemerge(ui, local, base, other, mode=mode)
     return True, r, False
 
@@ -489,12 +484,12 @@ def _merge(repo, fcd, fco, fca, labels, mode):
     ),
     precheck=_mergecheck,
 )
-def _iunion(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _iunion(repo, mynode, local, other, base, toolconf, backup):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will use both left and right sides for conflict regions.
     No markers are inserted."""
-    return _merge(repo, fcd, fco, fca, labels, b'union')
+    return _merge(repo, local, other, base, b'union')
 
 
 @internaltool(
@@ -506,13 +501,13 @@ def _iunion(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     ),
     precheck=_mergecheck,
 )
-def _imerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _imerge(repo, mynode, local, other, base, toolconf, backup):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Markers will have two sections, one for each side
     of merge."""
-    return _merge(repo, fcd, fco, fca, labels, b'merge')
+    return _merge(repo, local, other, base, b'merge')
 
 
 @internaltool(
@@ -524,13 +519,13 @@ def _imerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     ),
     precheck=_mergecheck,
 )
-def _imerge3(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _imerge3(repo, mynode, local, other, base, toolconf, backup):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. Marker will have three sections, one from each
     side of the merge and one for the base content."""
-    return _merge(repo, fcd, fco, fca, labels, b'merge3')
+    return _merge(repo, local, other, base, b'merge3')
 
 
 @internaltool(
@@ -561,30 +556,30 @@ def _imerge3alwaysgood(*args, **kwargs):
     ),
     precheck=_mergecheck,
 )
-def _imerge_diff(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _imerge_diff(repo, mynode, local, other, base, toolconf, backup):
     """
     Uses the internal non-interactive simple merge algorithm for merging
     files. It will fail if there are any conflicts and leave markers in
     the partially merged file. The marker will have two sections, one with the
     content from one side of the merge, and one with a diff from the base
     content to the content on the other side. (experimental)"""
-    return _merge(repo, fcd, fco, fca, labels, b'mergediff')
+    return _merge(repo, local, other, base, b'mergediff')
 
 
 @internaltool(b'merge-local', mergeonly, precheck=_mergecheck)
-def _imergelocal(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _imergelocal(repo, mynode, local, other, base, toolconf, backup):
     """
     Like :merge, but resolve all conflicts non-interactively in favor
     of the local `p1()` changes."""
-    return _merge(repo, fcd, fco, fca, labels, b'local')
+    return _merge(repo, local, other, base, b'local')
 
 
 @internaltool(b'merge-other', mergeonly, precheck=_mergecheck)
-def _imergeother(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _imergeother(repo, mynode, local, other, base, toolconf, backup):
     """
     Like :merge, but resolve all conflicts non-interactively in favor
     of the other `p2()` changes."""
-    return _merge(repo, fcd, fco, fca, labels, b'other')
+    return _merge(repo, local, other, base, b'other')
 
 
 @internaltool(
@@ -596,16 +591,16 @@ def _imergeother(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
         b"tool of your choice)\n"
     ),
 )
-def _itagmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _itagmerge(repo, mynode, local, other, base, toolconf, backup):
     """
     Uses the internal tag merge algorithm (experimental).
     """
-    success, status = tagmerge.merge(repo, fcd, fco, fca)
+    success, status = tagmerge.merge(repo, local.fctx, other.fctx, base.fctx)
     return success, status, False
 
 
 @internaltool(b'dump', fullmerge, binary=True, symlink=True)
-def _idump(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _idump(repo, mynode, local, other, base, toolconf, backup):
     """
     Creates three versions of the files to merge, containing the
     contents of local, other and base. These files can then be used to
@@ -617,31 +612,31 @@ def _idump(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
     This implies premerge. Therefore, files aren't dumped, if premerge
     runs successfully. Use :forcedump to forcibly write files out.
     """
-    a = _workingpath(repo, fcd)
-    fd = fcd.path()
+    a = _workingpath(repo, local.fctx)
+    fd = local.fctx.path()
 
     from . import context
 
-    if isinstance(fcd, context.overlayworkingfilectx):
+    if isinstance(local.fctx, context.overlayworkingfilectx):
         raise error.InMemoryMergeConflictsError(
             b'in-memory merge does not support the :dump tool.'
         )
 
-    util.writefile(a + b".local", fcd.decodeddata())
-    repo.wwrite(fd + b".other", fco.data(), fco.flags())
-    repo.wwrite(fd + b".base", fca.data(), fca.flags())
+    util.writefile(a + b".local", local.fctx.decodeddata())
+    repo.wwrite(fd + b".other", other.fctx.data(), other.fctx.flags())
+    repo.wwrite(fd + b".base", base.fctx.data(), base.fctx.flags())
     return False, 1, False
 
 
 @internaltool(b'forcedump', mergeonly, binary=True, symlink=True)
-def _forcedump(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _forcedump(repo, mynode, local, other, base, toolconf, backup):
     """
     Creates three versions of the files as same as :dump, but omits premerge.
     """
-    return _idump(repo, mynode, fcd, fco, fca, toolconf, backup, labels=labels)
+    return _idump(repo, mynode, local, other, base, toolconf, backup)
 
 
-def _xmergeimm(repo, mynode, fcd, fco, fca, toolconf, backup, labels=None):
+def _xmergeimm(repo, mynode, local, other, base, toolconf, backup):
     # In-memory merge simply raises an exception on all external merge tools,
     # for now.
     #
@@ -709,7 +704,10 @@ def _describemerge(ui, repo, mynode, fcl, fcb, fco, env, toolpath, args):
     ui.status(t.renderdefault(props))
 
 
-def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
+def _xmerge(repo, mynode, local, other, base, toolconf, backup):
+    fcd = local.fctx
+    fco = other.fctx
+    fca = base.fctx
     tool, toolpath, binary, symlink, scriptfn = toolconf
     uipathfn = scmutil.getuipathfn(repo)
     if fcd.isabsent() or fco.isabsent():
@@ -726,8 +724,6 @@ def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
-        mylabel, otherlabel = labels[:2]
-        baselabel = labels[2]
         env = {
             b'HG_FILE': fcd.path(),
             b'HG_MY_NODE': short(mynode),
@@ -736,9 +732,9 @@ def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
             b'HG_MY_ISLINK': b'l' in fcd.flags(),
             b'HG_OTHER_ISLINK': b'l' in fco.flags(),
             b'HG_BASE_ISLINK': b'l' in fca.flags(),
-            b'HG_MY_LABEL': mylabel,
-            b'HG_OTHER_LABEL': otherlabel,
-            b'HG_BASE_LABEL': baselabel,
+            b'HG_MY_LABEL': local.label,
+            b'HG_OTHER_LABEL': other.label,
+            b'HG_BASE_LABEL': base.label,
         }
         ui = repo.ui
 
@@ -751,9 +747,9 @@ def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
             b'base': basepath,
             b'other': otherpath,
             b'output': outpath,
-            b'labellocal': mylabel,
-            b'labelother': otherlabel,
-            b'labelbase': baselabel,
+            b'labellocal': local.label,
+            b'labelother': other.label,
+            b'labelbase': base.label,
         }
         args = util.interpolate(
             br'\$',
@@ -805,7 +801,7 @@ def _xmerge(repo, mynode, fcd, fco, fca, toolconf, backup, labels):
         return True, r, False
 
 
-def _formatlabel(input, template, pad):
+def _populate_label_detail(input, template, pad):
     """Applies the given template to the ctx, prefixed by the label.
 
     Pad is the minimum width of the label prefix, so that multiple markers
@@ -826,7 +822,7 @@ def _formatlabel(input, template, pad):
     input.label = stringutil.ellipsis(mark, 80 - 8)
 
 
-def _formatlabels(repo, inputs, tool=None):
+def _populate_label_details(repo, inputs, tool=None):
     """Formats the given labels using the conflict marker template.
 
     Returns a list of formatted labels.
@@ -843,7 +839,8 @@ def _formatlabels(repo, inputs, tool=None):
 
     pad = max(len(input.label) for input in inputs)
 
-    return [_formatlabel(input, tmpl, pad) for input in inputs]
+    for input in inputs:
+        _populate_label_detail(input, tmpl, pad)
 
 
 def partextras(labels):
@@ -1051,11 +1048,10 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         return func(
             repo,
             mynode,
-            fcd,
-            fco,
-            fca,
+            local,
+            other,
+            base,
             toolconf,
-            [local.label, other.label, base.label],
         )
 
     if orig != fco.path():
@@ -1098,16 +1094,17 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
                 # command-templates.mergemarker)
                 labeltool = tool
             if internalmarkerstyle != b'basic' or markerstyle != b'basic':
-                _formatlabels(repo, [local, other, base], tool=labeltool)
+                _populate_label_details(
+                    repo, [local, other, base], tool=labeltool
+                )
 
             r = _premerge(
                 repo,
-                fcd,
-                fco,
-                fca,
+                local,
+                other,
+                base,
                 toolconf,
                 backup,
-                labels=[local.label, other.label, base.label],
             )
             # we're done if premerge was successful (r is 0)
             if not r:
@@ -1119,17 +1116,16 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             base.label = labels[2]
 
         if markerstyle != b'basic':
-            _formatlabels(repo, [local, other, base], tool=tool)
+            _populate_label_details(repo, [local, other, base], tool=tool)
 
         needcheck, r, deleted = func(
             repo,
             mynode,
-            fcd,
-            fco,
-            fca,
+            local,
+            other,
+            base,
             toolconf,
             backup,
-            labels=[local.label, other.label, base.label],
         )
 
         if needcheck:
