@@ -157,32 +157,30 @@ class ConditionTracker(object):
         bmethod = method.encode('ascii')
         func = getattr(orig, method)
 
-        # No read limit. Call original function.
-        if not remaining:
-            result = func(size)
-            obj._writelog(
-                b'%s(%d) -> (%d) %s' % (bmethod, size, len(result), result)
-            )
-            return result
+        requested_size = size
+        actual_size = size
 
-        origsize = size
+        if remaining:
+            if size < 0:
+                actual_size = remaining
+            else:
+                actual_size = min(remaining, requested_size)
 
-        if size < 0:
-            size = remaining
+        result = func(actual_size)
+
+        if remaining:
+            remaining -= len(result)
+            self.remaining_recv_bytes = remaining
+
+        if requested_size == actual_size:
+            msg = b'%s(%d) -> (%d) %s'
+            msg %= (bmethod, requested_size, len(result), result)
         else:
-            size = min(remaining, size)
+            msg = b'%s(%d from %d) -> (%d) %s'
+            msg %= (bmethod, actual_size, requested_size, len(result), result)
+        obj._writelog(msg)
 
-        result = func(size)
-        remaining -= len(result)
-
-        obj._writelog(
-            b'%s(%d from %d) -> (%d) %s'
-            % (bmethod, size, origsize, len(result), result)
-        )
-
-        self.remaining_recv_bytes = remaining
-
-        if remaining <= 0:
+        if remaining is not None and remaining <= 0:
             obj._writelog(b'read limit reached; closing socket')
             obj._cond_close()
 
