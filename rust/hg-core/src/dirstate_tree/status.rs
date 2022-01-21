@@ -65,6 +65,26 @@ pub fn status<'tree, 'on_disk: 'tree>(
 
     let filesystem_time_at_status_start =
         filesystem_now(&root_dir).ok().map(TruncatedTimestamp::from);
+
+    // If the repository is under the current directory, prefer using a
+    // relative path, so the kernel needs to traverse fewer directory in every
+    // call to `read_dir` or `symlink_metadata`.
+    // This is effective in the common case where the current directory is the
+    // repository root.
+
+    // TODO: Better yet would be to use libc functions like `openat` and
+    // `fstatat` to remove such repeated traversals entirely, but the standard
+    // library does not provide APIs based on those.
+    // Maybe with a crate like https://crates.io/crates/openat instead?
+    let root_dir = if let Some(relative) = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| root_dir.strip_prefix(cwd).ok())
+    {
+        relative
+    } else {
+        &root_dir
+    };
+
     let outcome = DirstateStatus {
         filesystem_time_at_status_start,
         ..Default::default()
@@ -752,13 +772,16 @@ impl DirEntry {
     /// * Elsewhere, we’re listing the content of a sub-repo. Return an empty
     ///   list instead.
     fn read_dir(path: &Path, is_at_repo_root: bool) -> io::Result<Vec<Self>> {
+        // `read_dir` returns a "not found" error for the empty path
+        let at_cwd = path == Path::new("");
+        let read_dir_path = if at_cwd { Path::new(".") } else { path };
         let mut results = Vec::new();
-        for entry in path.read_dir()? {
+        for entry in read_dir_path.read_dir()? {
             let entry = entry?;
             let metadata = entry.metadata()?;
-            let name = get_bytes_from_os_string(entry.file_name());
+            let file_name = entry.file_name();
             // FIXME don't do this when cached
-            if name == b".hg" {
+            if file_name == ".hg" {
                 if is_at_repo_root {
                     // Skip the repo’s own .hg (might be a symlink)
                     continue;
@@ -768,9 +791,15 @@ impl DirEntry {
                     return Ok(Vec::new());
                 }
             }
+            let full_path = if at_cwd {
+                file_name.clone().into()
+            } else {
+                entry.path()
+            };
+            let base_name = get_bytes_from_os_string(file_name).into();
             results.push(DirEntry {
-                base_name: name.into(),
-                full_path: entry.path(),
+                base_name,
+                full_path,
                 metadata,
             })
         }
