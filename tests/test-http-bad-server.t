@@ -83,7 +83,7 @@ Failure to read all bytes in initial HTTP request should yield connection relate
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(1 from 65537) -> (1) G
+  readline(1 from ~) -> (1) G
   read limit reached; closing socket
 
   $ rm -f error.log
@@ -100,7 +100,7 @@ Same failure, but server reads full HTTP request line
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(40 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(40 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(7 from *) -> (7) Accept- (glob)
   read limit reached; closing socket
 
@@ -118,7 +118,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(210 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(210 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(177 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(150 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(115 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
@@ -135,10 +135,10 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(4? from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1? from *) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
-  readline(223 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(223 from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(197 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(170 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(141 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -164,7 +164,7 @@ Failure to read getbundle HTTP request
   $ cat error.log
   readline(1 from -1) -> (1) x (?)
   readline(1 from -1) -> (1) x (?)
-  readline(308 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(308 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(275 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(248 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(213 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
@@ -181,13 +181,13 @@ Failure to read getbundle HTTP request
   write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(13? from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(8? from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(5? from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
   readline(1? from *) -> (1?) x-hgproto-1:* (glob)
   read limit reached; closing socket
-  readline(317 from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(317 from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(291 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(264 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(235 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -207,9 +207,9 @@ Failure to read getbundle HTTP request
   write(20) -> Content-Length: 42\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
-  readline(* from 65537) -> (*) GET /?cmd=getbundle HTTP* (glob)
+  readline(* from ~) -> (*) GET /?cmd=getbundle HTTP* (glob)
   read limit reached; closing socket
-  readline(304 from 65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
+  readline(304 from ~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(274 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(247 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(218 from *) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag (glob)
@@ -230,7 +230,7 @@ Now do a variation using POST to send arguments
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(329 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(329 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(296 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(269 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(234 from *) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -247,14 +247,14 @@ Now do a variation using POST to send arguments
   write(21) -> Content-Length: 444\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(1?? from ~) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(1?? from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
   readline(6? from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
   readline(3? from *) -> (19) x-hgargs-post: 28\r\n (glob)
   readline(1? from *) -> (1?) x-hgproto-1: * (glob)
   read limit reached; closing socket
-  readline(344 from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n
+  readline(344 from ~) -> (27) POST /?cmd=batch HTTP/1.1\r\n
   readline(317 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(290 from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
   readline(249 from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
@@ -291,7 +291,7 @@ Server sends a single character from the HTTP response line
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -323,7 +323,7 @@ Server sends an incomplete capabilities response body
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -367,7 +367,7 @@ TODO this output is horrible
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -384,7 +384,7 @@ TODO this output is horrible
   write(21 from 21) -> (551) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (549) \r\n (no-py3 !)
   write(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -426,7 +426,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -443,7 +443,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   write(21 from 21) -> (616) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (614) \r\n (no-py3 !)
   write(431 from 431) -> (183) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -491,7 +491,7 @@ TODO this output is terrible
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -508,7 +508,7 @@ TODO this output is terrible
   write(21 from 21) -> (763) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (761) \r\n (no-py3 !)
   write(431 from 431) -> (330) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -528,7 +528,7 @@ TODO this output is terrible
   write(20 from 20) -> (173) Content-Length: 42\r\n (no-py3 !)
   write(2 from 2) -> (171) \r\n (no-py3 !)
   write(42 from 42) -> (129) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
-  readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
+  readline(~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
@@ -597,7 +597,7 @@ Server sends empty HTTP body for getbundle
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -614,7 +614,7 @@ Server sends empty HTTP body for getbundle
   write(21 from 21) -> (801) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (799) \r\n (no-py3 !)
   write(431 from 431) -> (368) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -634,7 +634,7 @@ Server sends empty HTTP body for getbundle
   write(20 from 20) -> (211) Content-Length: 42\r\n (no-py3 !)
   write(2 from 2) -> (209) \r\n (no-py3 !)
   write(42 from 42) -> (167) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
-  readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
+  readline(~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
@@ -675,7 +675,7 @@ Server sends partial compression string
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -692,7 +692,7 @@ Server sends partial compression string
   write(21 from 21) -> (825) Content-Length: 431\r\n (no-py3 !)
   write(2 from 2) -> (823) \r\n (no-py3 !)
   write(431 from 431) -> (392) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
@@ -711,7 +711,7 @@ Server sends partial compression string
   write(20 from 20) -> (235) Content-Length: 42\r\n (no-py3 !)
   write(2 from 2) -> (233) \r\n (no-py3 !)
   write(42 from 42) -> (191) 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
-  readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
+  readline(~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(*) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n (glob)
@@ -771,7 +771,7 @@ Server sends partial bundle2 header magic
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -11
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (21) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (51) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n
@@ -818,7 +818,7 @@ Server sends incomplete bundle2 stream params length
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (30) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (60) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n
@@ -865,7 +865,7 @@ Servers stops after bundle2 stream params header
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (63) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n
@@ -914,7 +914,7 @@ Server stops sending after bundle2 part header length
 #else
 
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -13
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (42) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (72) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n
@@ -967,7 +967,7 @@ Server stops sending after bundle2 part header
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (89) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (119) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n
@@ -1080,7 +1080,7 @@ Server stops sending in middle of bundle2 payload chunk
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -16
-  readline(65537) -> (2) \r\n (py3 !)
+  readline(~) -> (2) \r\n (py3 !)
   write(167 from 167) -> (571) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
   write(41 from 41) -> (601) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n

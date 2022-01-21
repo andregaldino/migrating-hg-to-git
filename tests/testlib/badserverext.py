@@ -172,12 +172,16 @@ class ConditionTracker(object):
             remaining -= len(result)
             self.remaining_recv_bytes = remaining
 
-        if requested_size == actual_size:
-            msg = b'%s(%d) -> (%d) %s'
-            msg %= (bmethod, requested_size, len(result), result)
+        if requested_size == 65537:
+            requested_repr = b'~'
         else:
-            msg = b'%s(%d from %d) -> (%d) %s'
-            msg %= (bmethod, actual_size, requested_size, len(result), result)
+            requested_repr = b'%d' % requested_size
+        if requested_size == actual_size:
+            msg = b'%s(%s) -> (%d) %s'
+            msg %= (bmethod, requested_repr, len(result), result)
+        else:
+            msg = b'%s(%d from %s) -> (%d) %s'
+            msg %= (bmethod, actual_size, requested_repr, len(result), result)
         obj._writelog(msg)
 
         if remaining is not None and remaining <= 0:
