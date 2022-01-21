@@ -146,6 +146,51 @@ class ConditionTracker(object):
 
         return result
 
+    def forward_read(self, obj, method, size=-1):
+        """call an underlying read function until condition are met
+
+        When the condition are met the socket is closed
+        """
+        remaining = self.remaining_recv_bytes
+
+        orig = object.__getattribute__(obj, '_orig')
+        bmethod = method.encode('ascii')
+        func = getattr(orig, method)
+
+        # No read limit. Call original function.
+        if not remaining:
+            result = func(size)
+            obj._writelog(
+                b'%s(%d) -> (%d) %s' % (bmethod, size, len(result), result)
+            )
+            return result
+
+        origsize = size
+
+        if size < 0:
+            size = remaining
+        else:
+            size = min(remaining, size)
+
+        result = func(size)
+        remaining -= len(result)
+
+        obj._writelog(
+            b'%s(%d from %d) -> (%d) %s'
+            % (bmethod, size, origsize, len(result), result)
+        )
+
+        self.remaining_recv_bytes = remaining
+
+        if remaining <= 0:
+            obj._writelog(b'read limit reached; closing socket')
+            obj._cond_close()
+
+            # This is the easiest way to abort the current request.
+            raise Exception('connection closed after receiving N bytes')
+
+        return result
+
 
 # We can't adjust __class__ on a socket instance. So we define a proxy type.
 class socketproxy(object):
@@ -240,78 +285,12 @@ class fileobjectproxy(object):
             self._sock.shutdown(socket.SHUT_RDWR)
 
     def read(self, size=-1):
-        remaining = object.__getattribute__(self, '_cond').remaining_recv_bytes
-
-        # No read limit. Call original function.
-        if not remaining:
-            result = object.__getattribute__(self, '_orig').read(size)
-            self._writelog(
-                b'read(%d) -> (%d) (%s) %s' % (size, len(result), result)
-            )
-            return result
-
-        origsize = size
-
-        if size < 0:
-            size = remaining
-        else:
-            size = min(remaining, size)
-
-        result = object.__getattribute__(self, '_orig').read(size)
-        remaining -= len(result)
-
-        self._writelog(
-            b'read(%d from %d) -> (%d) %s'
-            % (size, origsize, len(result), result)
-        )
-
-        object.__getattribute__(self, '_cond').remaining_recv_bytes = remaining
-
-        if remaining <= 0:
-            self._writelog(b'read limit reached; closing socket')
-            self._close()
-
-            # This is the easiest way to abort the current request.
-            raise Exception('connection closed after receiving N bytes')
-
-        return result
+        cond = object.__getattribute__(self, '_cond')
+        return cond.forward_read(self, 'read', size)
 
     def readline(self, size=-1):
-        remaining = object.__getattribute__(self, '_cond').remaining_recv_bytes
-
-        # No read limit. Call original function.
-        if not remaining:
-            result = object.__getattribute__(self, '_orig').readline(size)
-            self._writelog(
-                b'readline(%d) -> (%d) %s' % (size, len(result), result)
-            )
-            return result
-
-        origsize = size
-
-        if size < 0:
-            size = remaining
-        else:
-            size = min(remaining, size)
-
-        result = object.__getattribute__(self, '_orig').readline(size)
-        remaining -= len(result)
-
-        self._writelog(
-            b'readline(%d from %d) -> (%d) %s'
-            % (size, origsize, len(result), result)
-        )
-
-        object.__getattribute__(self, '_cond').remaining_recv_bytes = remaining
-
-        if remaining <= 0:
-            self._writelog(b'read limit reached; closing socket')
-            self._close()
-
-            # This is the easiest way to abort the current request.
-            raise Exception('connection closed after receiving N bytes')
-
-        return result
+        cond = object.__getattribute__(self, '_cond')
+        return cond.forward_read(self, 'readline', size)
 
     def write(self, data):
         cond = object.__getattribute__(self, '_cond')
