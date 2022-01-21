@@ -353,7 +353,9 @@ Server sends an incomplete capabilities response body
 Server sends incomplete headers for batch request
 -------------------------------------------------
 
-  $ hg serve --config badserver.close-after-send-bytes=709 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-send-patterns='(.*Content-Type: applicat){2}' \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is horrible
@@ -375,17 +377,17 @@ TODO this output is horrible
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (549) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
-  sendall(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
-  write(160 from 160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
-  write(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
-  write(36 from 36) -> (673) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (650) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (613) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (572) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (551) Content-Length: 431\r\n (no-py3 !)
-  write(2 from 2) -> (549) \r\n (no-py3 !)
-  write(431 from 431) -> (118) batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
+  write(160) -> (568) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py3 no-py36 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21) -> Content-Length: 431\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
   readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -397,9 +399,9 @@ TODO this output is horrible
   readline(*) -> (2) \r\n (glob)
   sendall(118 from 159) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: applicat (py36 !)
   write(118 from 159) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: applicat (py3 no-py36 !)
-  write(36 from 36) -> (82) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (59) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
   write(22 from 41) -> (0) Content-Type: applicat (no-py3 !)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
