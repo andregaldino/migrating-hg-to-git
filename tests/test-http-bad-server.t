@@ -112,7 +112,10 @@ Same failure, but server reads full HTTP request line
 Failure on subsequent HTTP request on the same socket (cmd?batch)
 -----------------------------------------------------------------
 
-  $ hg serve --config badserver.close-after-recv-bytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-recv-patterns="GET /\?cmd=batch," \
+  > --config badserver.close-after-recv-bytes=15,223 \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
@@ -121,12 +124,12 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(210 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(177 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(150 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
-  readline(115 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from *) -> (2) \r\n (glob)
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
   sendall(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
   write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
@@ -138,8 +141,8 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(4? from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1? from *) -> (1?) Accept-Encoding* (glob)
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(*) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
   readline(223 from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(197 from *) -> (27) Accept-Encoding: identity\r\n (glob)
