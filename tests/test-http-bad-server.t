@@ -113,8 +113,8 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 -----------------------------------------------------------------
 
   $ hg serve \
-  > --config badserver.close-after-recv-patterns="GET /\?cmd=batch," \
-  > --config badserver.close-after-recv-bytes=15,223 \
+  > --config badserver.close-after-recv-patterns="GET /\?cmd=batch,GET /\?cmd=batch" \
+  > --config badserver.close-after-recv-bytes=15,197 \
   > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
@@ -144,12 +144,12 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(*) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
-  readline(223 from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(197 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(170 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(141 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
-  readline(100 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
-  readline(39 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
   readline(4 from *) -> (4) host (glob)
   read limit reached; closing socket
 
