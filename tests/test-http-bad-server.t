@@ -312,7 +312,9 @@ Server sends a single character from the HTTP response line
 Server sends an incomplete capabilities response body
 -----------------------------------------------------
 
-  $ hg serve --config badserver.close-after-send-bytes=180 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-send-patterns='batch branchmap bund' \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -329,16 +331,16 @@ Server sends an incomplete capabilities response body
   readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(*) -> (2) \r\n (glob)
-  sendall(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
+  sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
   sendall(20 from 431) -> (0) batch branchmap bund (py36 !)
-  write(160 from 160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
+  write(160) -> (20) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
   write(20 from 431) -> (0) batch branchmap bund (py3 no-py36 !)
-  write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n (no-py3 !)
-  write(23 from 23) -> (121) Server: badhttpserver\r\n (no-py3 !)
-  write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n (no-py3 !)
-  write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n (no-py3 !)
-  write(21 from 21) -> (22) Content-Length: 431\r\n (no-py3 !)
-  write(2 from 2) -> (20) \r\n (no-py3 !)
+  write(36) -> HTTP/1.1 200 Script output follows\r\n (no-py3 !)
+  write(23) -> Server: badhttpserver\r\n (no-py3 !)
+  write(37) -> Date: $HTTP_DATE$\r\n (no-py3 !)
+  write(41) -> Content-Type: application/mercurial-0.1\r\n (no-py3 !)
+  write(21) -> Content-Length: 431\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
   write(20 from 431) -> (0) batch branchmap bund (no-py3 !)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=capabilities': (glob)
