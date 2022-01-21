@@ -1580,7 +1580,7 @@ mergemarkertemplate settings:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
   > EOF
   $ hg --config merge-tools.true.executable='sh' \
   >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
@@ -1606,7 +1606,7 @@ Same test with experimental.mergetempdirprefix set:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
   > EOF
   $ hg --config experimental.mergetempdirprefix=$TESTTMP/hgmerge. \
   >    --config merge-tools.true.executable='sh' \
@@ -1636,7 +1636,7 @@ mergemarkertemplate:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
   > EOF
   $ hg --config merge-tools.true.executable='sh' \
   >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
@@ -1648,7 +1648,7 @@ mergemarkertemplate:
   merging f
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
-  arg: "merge rev: tooltmpl 0185f4e0cf02"
+  arg: "merge rev:    tooltmpl 0185f4e0cf02"
   arg: "lb:base: */f~base.*" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
@@ -1664,9 +1664,9 @@ premerge=keep is used and has 'detailed' markers:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > mytool
-  > echo labellocal: \"\$1\"
-  > echo labelother: \"\$2\"
-  > echo "output (arg)": \"\$3\"
+  > echo labellocal: \""\$1"\"
+  > echo labelother: \""\$2"\"
+  > echo "output (arg)": \""\$3"\"
   > echo "output (contents)":
   > cat "\$3"
   > EOF
@@ -1702,9 +1702,9 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > mytool
-  > echo labellocal: \"\$1\"
-  > echo labelother: \"\$2\"
-  > echo "output (arg)": \"\$3\"
+  > echo labellocal: \""\$1"\"
+  > echo labelother: \""\$2"\"
+  > echo "output (arg)": \""\$3"\"
   > echo "output (contents)":
   > cat "\$3"
   > EOF
@@ -1718,7 +1718,7 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   >    merge -r 2
   merging f
   labellocal: "working copy: tooltmpl ef83787e2614"
-  labelother: "merge rev: tooltmpl 0185f4e0cf02"
+  labelother: "merge rev:    tooltmpl 0185f4e0cf02"
   output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: tooltmpl ef83787e2614
