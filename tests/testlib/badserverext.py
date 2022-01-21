@@ -14,18 +14,18 @@ events occur.
 
 Various config options in the [badserver] section influence behavior:
 
-closebeforeaccept
+close-before-accept
    If true, close() the server socket when a new connection arrives before
    accept() is called. The server will then exit.
 
-closeafteraccept
+close-after-accept
    If true, the server will close() the client socket immediately after
    accept().
 
-closeafterrecvbytes
+close-after-recv-bytes
    If defined, close the client socket after receiving this many bytes.
 
-closeaftersendbytes
+close-after-send-bytes
    If defined, close the client socket after sending this many bytes.
 """
 
@@ -45,22 +45,22 @@ configitem = registrar.configitem(configtable)
 
 configitem(
     b'badserver',
-    b'closeafteraccept',
+    b'close-after-accept',
     default=False,
 )
 configitem(
     b'badserver',
-    b'closeafterrecvbytes',
+    b'close-after-recv-bytes',
     default=b'0',
 )
 configitem(
     b'badserver',
-    b'closeaftersendbytes',
+    b'close-after-send-bytes',
     default=b'0',
 )
 configitem(
     b'badserver',
-    b'closebeforeaccept',
+    b'close-before-accept',
     default=False,
 )
 
@@ -317,10 +317,10 @@ def extsetup(ui):
             self._ui = ui
             super(badserver, self).__init__(ui, *args, **kwargs)
 
-            recvbytes = self._ui.config(b'badserver', b'closeafterrecvbytes')
+            recvbytes = self._ui.config(b'badserver', b'close-after-recv-bytes')
             recvbytes = recvbytes.split(b',')
             self.closeafterrecvbytes = [int(v) for v in recvbytes if v]
-            sendbytes = self._ui.config(b'badserver', b'closeaftersendbytes')
+            sendbytes = self._ui.config(b'badserver', b'close-after-send-bytes')
             sendbytes = sendbytes.split(b',')
             self.closeaftersendbytes = [int(v) for v in sendbytes if v]
 
@@ -341,7 +341,7 @@ def extsetup(ui):
 
         # Called to accept() a pending socket.
         def get_request(self):
-            if self._ui.configbool(b'badserver', b'closebeforeaccept'):
+            if self._ui.configbool(b'badserver', b'close-before-accept'):
                 self.socket.close()
 
                 # Tells the server to stop processing more requests.
@@ -350,7 +350,7 @@ def extsetup(ui):
                 # Simulate failure to stop processing this request.
                 raise socket.error('close before accept')
 
-            if self._ui.configbool(b'badserver', b'closeafteraccept'):
+            if self._ui.configbool(b'badserver', b'close-after-accept'):
                 request, client_address = super(badserver, self).get_request()
                 request.close()
                 raise socket.error('close after accept')

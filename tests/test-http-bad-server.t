@@ -37,7 +37,7 @@ and because debugging partial responses is hard when compression is involved
 
 Failure to accept() socket should result in connection related error message
 
-  $ hg serve --config badserver.closebeforeaccept=true -p $HGPORT -d --pid-file=hg.pid
+  $ hg serve --config badserver.close-before-accept=true -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -51,7 +51,7 @@ So ensure the process is dead.)
 
 Failure immediately after accept() should yield connection related error message
 
-  $ hg serve --config badserver.closeafteraccept=true -p $HGPORT -d --pid-file=hg.pid
+  $ hg serve --config badserver.close-after-accept=true -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO: this usually outputs good results, but sometimes emits abort:
@@ -70,7 +70,7 @@ The flakiness in this output was observable easily with
 
 Failure to read all bytes in initial HTTP request should yield connection related error message
 
-  $ hg serve --config badserver.closeafterrecvbytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-recv-bytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -87,7 +87,7 @@ Failure to read all bytes in initial HTTP request should yield connection relate
 
 Same failure, but server reads full HTTP request line
 
-  $ hg serve --config badserver.closeafterrecvbytes=40 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-recv-bytes=40 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
@@ -104,7 +104,7 @@ Same failure, but server reads full HTTP request line
 
 Failure on subsequent HTTP request on the same socket (cmd?batch)
 
-  $ hg serve --config badserver.closeafterrecvbytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-recv-bytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
@@ -146,7 +146,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 
 Failure to read getbundle HTTP request
 
-  $ hg serve --config badserver.closeafterrecvbytes=308,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-recv-bytes=308,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
@@ -213,7 +213,7 @@ Failure to read getbundle HTTP request
 
 Now do a variation using POST to send arguments
 
-  $ hg serve --config experimental.httppostargs=true --config badserver.closeafterrecvbytes=329,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config experimental.httppostargs=true --config badserver.close-after-recv-bytes=329,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -273,7 +273,7 @@ Now move on to partial server responses
 
 Server sends a single character from the HTTP response line
 
-  $ hg serve --config badserver.closeaftersendbytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -304,7 +304,7 @@ Server sends a single character from the HTTP response line
 
 Server sends an incomplete capabilities response body
 
-  $ hg serve --config badserver.closeaftersendbytes=180 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=180 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -342,7 +342,7 @@ Server sends an incomplete capabilities response body
 
 Server sends incomplete headers for batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=709 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=709 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is horrible
@@ -402,7 +402,7 @@ TODO this output is horrible
 
 Server sends an incomplete HTTP response body to batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=774 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=774 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO client spews a stack due to uncaught ValueError in batch.results()
@@ -464,7 +464,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
 Server sends incomplete headers for getbundle response
 
-  $ hg serve --config badserver.closeaftersendbytes=921 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=921 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is terrible
@@ -545,7 +545,7 @@ TODO this output is terrible
 
 Server stops before it sends transfer encoding
 
-  $ hg serve --config badserver.closeaftersendbytes=954 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=954 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -574,7 +574,7 @@ Server stops before it sends transfer encoding
 
 Server sends empty HTTP body for getbundle
 
-  $ hg serve --config badserver.closeaftersendbytes=959 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=959 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -652,7 +652,7 @@ Server sends empty HTTP body for getbundle
 
 Server sends partial compression string
 
-  $ hg serve --config badserver.closeaftersendbytes=983 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=983 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -734,7 +734,7 @@ Server sends partial compression string
 
 Server sends partial bundle2 header magic
 
-  $ hg serve --config badserver.closeaftersendbytes=980 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=980 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -779,7 +779,7 @@ Server sends partial bundle2 header magic
 
 Server sends incomplete bundle2 stream params length
 
-  $ hg serve --config badserver.closeaftersendbytes=989 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=989 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -826,7 +826,7 @@ Server sends incomplete bundle2 stream params length
 
 Servers stops after bundle2 stream params header
 
-  $ hg serve --config badserver.closeaftersendbytes=992 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=992 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -872,7 +872,7 @@ Servers stops after bundle2 stream params header
 
 Server stops sending after bundle2 part header length
 
-  $ hg serve --config badserver.closeaftersendbytes=1001 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1001 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -921,7 +921,7 @@ Server stops sending after bundle2 part header length
 
 Server stops sending after bundle2 part header
 
-  $ hg serve --config badserver.closeaftersendbytes=1048 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1048 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -974,7 +974,7 @@ Server stops sending after bundle2 part header
 
 Server stops after bundle2 part payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1069 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1069 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1030,7 +1030,7 @@ Server stops after bundle2 part payload chunk size
 
 Server stops sending in middle of bundle2 payload chunk
 
-  $ hg serve --config badserver.closeaftersendbytes=1530 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1530 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1087,7 +1087,7 @@ Server stops sending in middle of bundle2 payload chunk
 
 Server stops sending after 0 length payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1561 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1561 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1149,7 +1149,7 @@ Server stops sending after 0 length payload chunk size
 Server stops sending after 0 part bundle part header (indicating end of bundle2 payload)
 This is before the 0 size chunked transfer part that signals end of HTTP response.
 
-  $ hg serve --config badserver.closeaftersendbytes=1736 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1736 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -1217,7 +1217,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
 Server sends a size 0 chunked-transfer size without terminating \r\n
 
-  $ hg serve --config badserver.closeaftersendbytes=1739 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.close-after-send-bytes=1739 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
