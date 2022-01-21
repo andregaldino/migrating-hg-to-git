@@ -266,7 +266,7 @@ Now do a variation using POST to send arguments
   readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(* from *) -> (2) \r\n (glob)
   read(* from 28) -> (*) cmds=* (glob)
-  read limit reached, closing socket
+  read limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
   Traceback (most recent call last):
   Exception: connection closed after receiving N bytes

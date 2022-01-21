@@ -230,7 +230,7 @@ class fileobjectproxy(object):
         object.__setattr__(self, '_closeafterrecvbytes', remaining)
 
         if remaining <= 0:
-            self._writelog(b'read limit reached, closing socket')
+            self._writelog(b'read limit reached; closing socket')
             self._close()
 
             # This is the easiest way to abort the current request.
