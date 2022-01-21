@@ -158,7 +158,10 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 Failure to read getbundle HTTP request
 --------------------------------------
 
-  $ hg serve --config badserver.close-after-recv-bytes=308,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-recv-patterns="GET /\?cmd=batch,user-agent: mercurial/proto-1.0,GET /\?cmd=getbundle" \
+  > --config badserver.close-after-recv-bytes=110,26,274 \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
@@ -170,12 +173,12 @@ Failure to read getbundle HTTP request
   $ cat error.log
   readline(1 from -1) -> (1) x (?)
   readline(1 from -1) -> (1) x (?)
-  readline(308 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(275 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(248 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
-  readline(213 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from *) -> (2) \r\n (glob)
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py36 !)
   sendall(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
   write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\n (py3 no-py36 !)
@@ -187,21 +190,21 @@ Failure to read getbundle HTTP request
   write(21) -> Content-Length: 431\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(431) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(13? from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(8? from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(5? from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
-  readline(1? from *) -> (1?) x-hgproto-1:* (glob)
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (1?) x-hgproto-1:* (glob)
   read limit reached; closing socket
-  readline(317 from ~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
-  readline(291 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(264 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
-  readline(235 from *) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
-  readline(194 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
-  readline(133 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
-  readline(98 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from *) -> (2) \r\n (glob)
+  readline(~) -> (26) GET /?cmd=batch HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
+  readline(*) -> (41) x-hgarg-1: cmds=heads+%3Bknown+nodes%3D\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   sendall(159) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py36 !)
   sendall(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (py36 !)
   write(159) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\n (py3 no-py36 !)
@@ -213,9 +216,9 @@ Failure to read getbundle HTTP request
   write(20) -> Content-Length: 42\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(42) -> 96ee1d7354c4ad7372047672c36a1f561e3a6a4c\n; (no-py3 !)
-  readline(* from ~) -> (*) GET /?cmd=getbundle HTTP* (glob)
+  readline(24 from ~) -> (*) GET /?cmd=getbundle HTTP* (glob)
   read limit reached; closing socket
-  readline(304 from ~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
+  readline(~) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(274 from *) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(247 from *) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
   readline(218 from *) -> (218) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtag (glob)
