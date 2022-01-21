@@ -667,7 +667,15 @@ def applychanges(ui, repo, ctx, opts):
             repo.ui.setconfig(
                 b'ui', b'forcemerge', opts.get(b'tool', b''), b'histedit'
             )
-            stats = mergemod.graft(repo, ctx, labels=[b'local', b'histedit'])
+            stats = mergemod.graft(
+                repo,
+                ctx,
+                labels=[
+                    b'already edited',
+                    b'current change',
+                    b'parent of current change',
+                ],
+            )
         finally:
             repo.ui.setconfig(b'ui', b'forcemerge', b'', b'histedit')
     return stats

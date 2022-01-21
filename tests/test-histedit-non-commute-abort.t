@@ -77,8 +77,8 @@ edit the history
 insert unsupported advisory merge record
   $ hg --config extensions.fakemergerecord=$TESTDIR/fakemergerecord.py fakemergerecord -x
   $ hg debugmergestate
-  local (local): 8f7551c7e4a2f2efe0bc8c741baf7f227d65d758
-  other (histedit): e860deea161a2f77de56603b340ebbb4536308ae
+  local (already edited): 8f7551c7e4a2f2efe0bc8c741baf7f227d65d758
+  other (current change): e860deea161a2f77de56603b340ebbb4536308ae
   file: e (state "u")
     local path: e (hash 58e6b3a414a1e090dfc6029add0f3555ccba127f, flags "")
     ancestor path: e (node 0000000000000000000000000000000000000000)
