@@ -229,7 +229,11 @@ Failure to read getbundle HTTP request
 Now do a variation using POST to send arguments
 ===============================================
 
-  $ hg serve --config experimental.httppostargs=true --config badserver.close-after-recv-bytes=329,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-recv-patterns="x-hgargs-post:,user-agent: mercurial/proto-1.0" \
+  > --config badserver.close-after-recv-bytes="14,26" \
+  > --config experimental.httppostargs=true \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -239,12 +243,12 @@ Now do a variation using POST to send arguments
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log | "$PYTHON" $TESTDIR/filtertraceback.py
-  readline(329 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(296 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(269 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
-  readline(234 from *) -> (2?) host: localhost:$HGPORT\r\n (glob)
-  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from *) -> (2) \r\n (glob)
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
   sendall(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 444\r\n\r\n (py36 !)
   sendall(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (py36 !)
   write(160) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 444\r\n\r\n (py3 no-py36 !)
@@ -256,25 +260,25 @@ Now do a variation using POST to send arguments
   write(21) -> Content-Length: 444\r\n (no-py3 !)
   write(2) -> \r\n (no-py3 !)
   write(444) -> batch branchmap $USUAL_BUNDLE2_CAPS_NO_PHASES$ changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-py3 !)
-  readline(1?? from ~) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
-  readline(1?? from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(1?? from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
-  readline(6? from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
-  readline(3? from *) -> (19) x-hgargs-post: 28\r\n (glob)
-  readline(1? from *) -> (1?) x-hgproto-1: * (glob)
+  readline(~) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(*) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(*) -> (1?) x-hgproto-1: * (glob)
   read limit reached; closing socket
-  readline(344 from ~) -> (27) POST /?cmd=batch HTTP/1.1\r\n
-  readline(317 from *) -> (27) Accept-Encoding: identity\r\n (glob)
-  readline(290 from *) -> (41) content-type: application/mercurial-0.1\r\n (glob)
-  readline(249 from *) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
-  readline(216 from *) -> (19) x-hgargs-post: 28\r\n (glob)
-  readline(197 from *) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
-  readline(136 from *) -> (35) accept: application/mercurial-0.1\r\n (glob)
-  readline(101 from *) -> (20) content-length: 28\r\n (glob)
-  readline(81 from *) -> (*) host: localhost:$HGPORT\r\n (glob)
-  readline(* from *) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
-  readline(* from *) -> (2) \r\n (glob)
-  read(* from 28) -> (*) cmds=* (glob)
+  readline(~) -> (27) POST /?cmd=batch HTTP/1.1\r\n
+  readline(*) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(*) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
+  readline(*) -> (19) x-hgargs-post: 28\r\n (glob)
+  readline(*) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n (glob)
+  readline(*) -> (35) accept: application/mercurial-0.1\r\n (glob)
+  readline(*) -> (20) content-length: 28\r\n (glob)
+  readline(*) -> (*) host: localhost:$HGPORT\r\n (glob)
+  readline(*) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
+  readline(*) -> (2) \r\n (glob)
+  read(24 from 28) -> (*) cmds=* (glob)
   read limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=batch': (glob)
   Traceback (most recent call last):
