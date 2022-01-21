@@ -863,7 +863,9 @@ Server sends incomplete bundle2 stream params length
 Servers stops after bundle2 stream params header
 ------------------------------------------------
 
-  $ hg serve --config badserver.close-after-send-bytes=992 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-send-patterns='4\r\n\0\0\0\0\r\n' \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -876,10 +878,10 @@ Servers stops after bundle2 stream params header
 
 #if py36
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -10
-  sendall(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
-  sendall(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
-  sendall(9 from 9) -> (18) 4\r\nnone\r\n
-  sendall(9 from 9) -> (9) 4\r\nHG20\r\n
+  sendall(167) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n
+  sendall(6) -> 1\\r\\n\x04\\r\\n (esc)
+  sendall(9) -> 4\r\nnone\r\n
+  sendall(9) -> 4\r\nHG20\r\n
   sendall(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
@@ -890,13 +892,13 @@ Servers stops after bundle2 stream params header
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
   readline(~) -> (2) \r\n (py3 !)
-  write(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(41 from 41) -> (63) Content-Type: application/mercurial-0.2\r\n
-  write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (33) \r\n
-  write(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
-  write(9 from 9) -> (18) 4\r\nnone\r\n
-  write(9 from 9) -> (9) 4\r\nHG20\r\n
+  write(167) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
+  write(41) -> Content-Type: application/mercurial-0.2\r\n
+  write(28) -> Transfer-Encoding: chunked\r\n (no-py3 !)
+  write(2) -> \r\n (no-py3 !)
+  write(6) -> 1\\r\\n\x04\\r\\n (esc)
+  write(9) -> 4\r\nnone\r\n
+  write(9) -> 4\r\nHG20\r\n
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
