@@ -24,9 +24,13 @@ close-after-accept
 
 close-after-recv-bytes
    If defined, close the client socket after receiving this many bytes.
+   (The value is a list, multiple values can use used to close a series of requests
+   request)
 
 close-after-send-bytes
    If defined, close the client socket after sending this many bytes.
+   (The value is a list, multiple values can use used to close a series of requests
+   request)
 """
 
 from __future__ import absolute_import
