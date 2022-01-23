@@ -91,7 +91,10 @@ Failure to read all bytes in initial HTTP request should yield connection relate
 Same failure, but server reads full HTTP request line
 -----------------------------------------------------
 
-  $ hg serve --config badserver.close-after-recv-bytes=40 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve \
+  > --config badserver.close-after-recv-patterns="GET /\?cmd=capabilities" \
+  > --config badserver.close-after-recv-bytes=7 \
+  > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: * (glob)
@@ -100,7 +103,7 @@ Same failure, but server reads full HTTP request line
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(40 from ~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(~) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(7 from *) -> (7) Accept- (glob)
   read limit reached; closing socket
 
