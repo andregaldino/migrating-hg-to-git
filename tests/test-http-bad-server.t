@@ -272,7 +272,6 @@ Now do a variation using POST to send arguments
   Exception: connection closed after receiving N bytes
   
   write(126) -> HTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -307,7 +306,6 @@ Server sends a single character from the HTTP response line
   Exception: connection closed after sending N bytes
   
   write(286) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 431\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -407,7 +405,6 @@ TODO this output is horrible
   Exception: connection closed after sending N bytes
   
   write(285) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.1\r\nContent-Length: 42\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -552,7 +549,6 @@ TODO this output is terrible
   Exception: connection closed after sending N bytes
   
   write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -577,11 +573,11 @@ Server stops before it sends transfer encoding
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -4
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
-  
   write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
+  
 #endif
 
   $ rm -f error.log
@@ -661,7 +657,6 @@ Server sends empty HTTP body for getbundle
   Exception: connection closed after sending N bytes
   
   write(293) -> HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\nHTTP/1.1 500 Internal Server Error\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nTransfer-Encoding: chunked\r\n\r\n (py3 no-py36 !)
-  write(36) -> HTTP/1.1 500 Internal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -744,7 +739,6 @@ Server sends partial compression string
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n (no-py3 !)
 
   $ rm -f error.log
 
@@ -779,8 +773,9 @@ Server sends partial bundle2 header magic
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -11
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (21) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (21) \r\n (no-py3 !)
+  write(41 from 41) -> (51) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (23) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (21) \r\n
   write(6 from 6) -> (15) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (6) 4\r\nnone\r\n
   write(6 from 9) -> (0) 4\r\nHG2
@@ -789,7 +784,6 @@ Server sends partial bundle2 header magic
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -826,8 +820,9 @@ Server sends incomplete bundle2 stream params length
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (30) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (30) \r\n (no-py3 !)
+  write(41 from 41) -> (60) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (32) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (30) \r\n
   write(6 from 6) -> (24) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (15) 4\r\nnone\r\n
   write(9 from 9) -> (6) 4\r\nHG20\r\n
@@ -837,7 +832,6 @@ Server sends incomplete bundle2 stream params length
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -873,8 +867,9 @@ Servers stops after bundle2 stream params header
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -12
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (33) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (33) \r\n (no-py3 !)
+  write(41 from 41) -> (63) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (35) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (33) \r\n
   write(6 from 6) -> (27) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (18) 4\r\nnone\r\n
   write(9 from 9) -> (9) 4\r\nHG20\r\n
@@ -884,7 +879,6 @@ Servers stops after bundle2 stream params header
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -922,8 +916,9 @@ Server stops sending after bundle2 part header length
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -13
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (42) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (42) \r\n (no-py3 !)
+  write(41 from 41) -> (72) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (44) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (42) \r\n
   write(6 from 6) -> (36) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (27) 4\r\nnone\r\n
   write(9 from 9) -> (18) 4\r\nHG20\r\n
@@ -934,7 +929,6 @@ Server stops sending after bundle2 part header length
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -975,8 +969,9 @@ Server stops sending after bundle2 part header
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -14
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (89) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (89) \r\n (no-py3 !)
+  write(41 from 41) -> (119) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (91) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (89) \r\n
   write(6 from 6) -> (83) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (74) 4\r\nnone\r\n
   write(9 from 9) -> (65) 4\r\nHG20\r\n
@@ -988,7 +983,6 @@ Server stops sending after bundle2 part header
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -1031,7 +1025,8 @@ Server stops after bundle2 part payload chunk size
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -15
   write(167 from 167) -> (110) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(2 from 2) -> (110) \r\n (no-py3 !)
+  write(28 from 28) -> (112) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (110) \r\n
   write(6 from 6) -> (104) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (95) 4\r\nnone\r\n
   write(9 from 9) -> (86) 4\r\nHG20\r\n
@@ -1045,7 +1040,6 @@ Server stops after bundle2 part payload chunk size
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -1088,8 +1082,9 @@ Server stops sending in middle of bundle2 payload chunk
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -16
   readline(65537) -> (2) \r\n (py3 !)
   write(167 from 167) -> (571) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunked\r\n\r\n (py3 !)
-  write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n (no-py3 !)
-  write(2 from 2) -> (571) \r\n (no-py3 !)
+  write(41 from 41) -> (601) Content-Type: application/mercurial-0.2\r\n
+  write(28 from 28) -> (573) Transfer-Encoding: chunked\r\n
+  write(2 from 2) -> (571) \r\n
   write(6 from 6) -> (565) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (556) 4\r\nnone\r\n
   write(9 from 9) -> (547) 4\r\nHG20\r\n
@@ -1103,7 +1098,6 @@ Server stops sending in middle of bundle2 payload chunk
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -1149,6 +1143,7 @@ Server stops sending after 0 length payload chunk size
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -17
+  write(2 from 2) -> (602) \r\n
   write(6 from 6) -> (596) 1\\r\\n\x04\\r\\n (esc)
   write(9 from 9) -> (587) 4\r\nnone\r\n
   write(9 from 9) -> (578) 4\r\nHG20\r\n
@@ -1165,7 +1160,6 @@ Server stops sending after 0 length payload chunk size
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -1215,6 +1209,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -21
+  write(9 from 9) -> (753) 4\r\nHG20\r\n
   write(9 from 9) -> (744) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (735) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (688) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -1235,7 +1230,6 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log
@@ -1285,6 +1279,7 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
 
 #else
   $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -22
+  write(9 from 9) -> (756) 4\r\nHG20\r\n
   write(9 from 9) -> (747) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (738) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
   write(47 from 47) -> (691) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
@@ -1306,7 +1301,6 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
-  write(27) -> 15\r\nInternal Server Error\r\n
 #endif
 
   $ rm -f error.log

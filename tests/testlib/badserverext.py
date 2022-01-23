@@ -284,8 +284,8 @@ class fileobjectproxy(object):
 
         # No byte limit on this operation. Call original function.
         if not remaining:
-            self._writelog(b'write(%d) -> %s' % (len(data), data))
             result = object.__getattribute__(self, '_orig').write(data)
+            self._writelog(b'write(%d) -> %s' % (len(data), data))
             return result
 
         if len(data) > remaining:
@@ -295,12 +295,12 @@ class fileobjectproxy(object):
 
         remaining -= len(newdata)
 
+        result = object.__getattribute__(self, '_orig').write(newdata)
+
         self._writelog(
             b'write(%d from %d) -> (%d) %s'
             % (len(newdata), len(data), remaining, newdata)
         )
-
-        result = object.__getattribute__(self, '_orig').write(newdata)
 
         object.__getattribute__(self, '_cond').remaining_send_bytes = remaining
 
