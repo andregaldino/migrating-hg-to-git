@@ -574,13 +574,19 @@ Server stops before it sends transfer encoding
   $ killdaemons.py $DAEMON_PIDS
 
 #if py36
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -3
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -6
+  sendall(162 from 167) -> (0) HTTP/1.1 200 Script output follows\r\nServer: badhttpserver\r\nDate: $HTTP_DATE$\r\nContent-Type: application/mercurial-0.2\r\nTransfer-Encoding: chunke
+  write limit reached; closing socket
+  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
   
 
 #else
-  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -4
+  $ "$PYTHON" $TESTDIR/filtertraceback.py < error.log | tail -7
+  write(41 from 41) -> (25) Content-Type: application/mercurial-0.2\r\n
+  write(25 from 28) -> (0) Transfer-Encoding: chunke
+  write limit reached; closing socket
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/?cmd=getbundle': (glob)
   Traceback (most recent call last):
   Exception: connection closed after sending N bytes
