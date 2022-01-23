@@ -27,6 +27,12 @@ close-after-recv-bytes
    (The value is a list, multiple values can use used to close a series of requests
    request)
 
+close-after-recv-patterns
+   If defined, the `close-after-recv-bytes` values only start counting after the
+   `read` operation that encountered the defined patterns.
+   (The value is a list, multiple values can use used to close a series of requests
+   request)
+
 close-after-send-bytes
    If defined, close the client socket after sending this many bytes.
    (The value is a list, multiple values can use used to close a series of requests
@@ -65,6 +71,11 @@ configitem(
 )
 configitem(
     b'badserver',
+    b'close-after-recv-patterns',
+    default=b'',
+)
+configitem(
+    b'badserver',
     b'close-after-send-bytes',
     default=b'0',
 )
@@ -84,15 +95,19 @@ class ConditionTracker(object):
     def __init__(
         self,
         close_after_recv_bytes,
+        close_after_recv_patterns,
         close_after_send_bytes,
         close_after_send_patterns,
     ):
         self._all_close_after_recv_bytes = close_after_recv_bytes
+        self._all_close_after_recv_patterns = close_after_recv_patterns
         self._all_close_after_send_bytes = close_after_send_bytes
         self._all_close_after_send_patterns = close_after_send_patterns
 
         self.target_recv_bytes = None
         self.remaining_recv_bytes = None
+        self.recv_patterns = None
+        self.recv_data = b''
         self.target_send_bytes = None
         self.remaining_send_bytes = None
         self.send_pattern = None
@@ -106,6 +121,12 @@ class ConditionTracker(object):
         else:
             self.target_recv_bytes = None
             self.remaining_recv_bytes = None
+
+        self.recv_data = b''
+        if self._all_close_after_recv_patterns:
+            self.recv_pattern = self._all_close_after_recv_patterns.pop(0)
+        else:
+            self.recv_pattern = None
 
         if self._all_close_after_send_bytes:
             self.target_send_bytes = self._all_close_after_send_bytes.pop(0)
@@ -123,6 +144,8 @@ class ConditionTracker(object):
     def might_close(self):
         """True, if any processing will be needed"""
         if self.remaining_recv_bytes is not None:
+            return True
+        if self.recv_pattern is not None:
             return True
         if self.remaining_send_bytes is not None:
             return True
@@ -184,6 +207,7 @@ class ConditionTracker(object):
         When the condition are met the socket is closed
         """
         remaining = self.remaining_recv_bytes
+        pattern = self.recv_pattern
 
         orig = object.__getattribute__(obj, '_orig')
         bmethod = method.encode('ascii')
@@ -192,7 +216,7 @@ class ConditionTracker(object):
         requested_size = size
         actual_size = size
 
-        if remaining:
+        if pattern is None and remaining:
             if size < 0:
                 actual_size = remaining
             else:
@@ -200,7 +224,7 @@ class ConditionTracker(object):
 
         result = func(actual_size)
 
-        if remaining:
+        if pattern is None and remaining:
             remaining -= len(result)
             self.remaining_recv_bytes = remaining
 
@@ -215,6 +239,12 @@ class ConditionTracker(object):
             msg = b'%s(%d from %s) -> (%d) %s'
             msg %= (bmethod, actual_size, requested_repr, len(result), result)
         obj._writelog(msg)
+
+        if pattern is not None:
+            self.recv_data += result
+            if pattern.search(self.recv_data):
+                # start counting bytes starting with the next read
+                self.recv_pattern = None
 
         if remaining is not None and remaining <= 0:
             obj._writelog(b'read limit reached; closing socket')
@@ -363,6 +393,10 @@ def extsetup(ui):
                 b'badserver', b'close-after-recv-bytes'
             )
             all_recv_bytes = process_bytes_config(all_recv_bytes)
+            all_recv_pattern = self._ui.config(
+                b'badserver', b'close-after-recv-patterns'
+            )
+            all_recv_pattern = process_pattern_config(all_recv_pattern)
             all_send_bytes = self._ui.config(
                 b'badserver', b'close-after-send-bytes'
             )
@@ -373,6 +407,7 @@ def extsetup(ui):
             all_send_patterns = process_pattern_config(all_send_patterns)
             self._cond = ConditionTracker(
                 all_recv_bytes,
+                all_recv_pattern,
                 all_send_bytes,
                 all_send_patterns,
             )
