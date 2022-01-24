@@ -36,6 +36,9 @@ TREEMANIFEST_REQUIREMENT = b'treemanifest'
 
 REVLOGV1_REQUIREMENT = b'revlogv1'
 
+# allow using ZSTD as compression engine for revlog content
+REVLOG_COMPRESSION_ZSTD = b'revlog-compression-zstd'
+
 # Increment the sub-version when the revlog v2 format changes to lock out old
 # clients.
 CHANGELOGV2_REQUIREMENT = b'exp-changelog-v2'
@@ -109,6 +112,7 @@ STREAM_FIXED_REQUIREMENTS = {
     DIRSTATE_V2_REQUIREMENT,
     GENERALDELTA_REQUIREMENT,
     NODEMAP_REQUIREMENT,
+    REVLOG_COMPRESSION_ZSTD,
     REVLOGV1_REQUIREMENT,
     REVLOGV2_REQUIREMENT,
     SHARESAFE_REQUIREMENT,

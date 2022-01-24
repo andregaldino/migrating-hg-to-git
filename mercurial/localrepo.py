@@ -932,7 +932,7 @@ def gathersupportedrequirements(ui):
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
             if engine.name() == b'zstd':
-                supported.add(b'revlog-compression-zstd')
+                supported.add(requirementsmod.REVLOG_COMPRESSION_ZSTD)
 
     return supported
 
