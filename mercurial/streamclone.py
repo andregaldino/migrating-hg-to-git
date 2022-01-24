@@ -128,7 +128,7 @@ def canperformstreamclone(pullop, bundle2=False):
 
         streamreqs = set(streamreqs.split(b','))
         # Server requires something we don't support. Bail.
-        missingreqs = streamreqs - repo.supportedformats
+        missingreqs = streamreqs - repo.supported
         if missingreqs:
             pullop.repo.ui.warn(
                 _(
@@ -503,7 +503,7 @@ def applybundlev1(repo, fp):
         )
 
     filecount, bytecount, requirements = readbundle1header(fp)
-    missingreqs = requirements - repo.supportedformats
+    missingreqs = requirements - repo.supported
     if missingreqs:
         raise error.Abort(
             _(b'unable to apply stream clone: unsupported format: %s')

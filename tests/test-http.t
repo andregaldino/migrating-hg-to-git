@@ -59,8 +59,10 @@ try to clone via stream but missing requirements, so should use pull instead
 
   $ cat > $TESTTMP/removesupportedformat.py << EOF
   > from mercurial import localrepo
-  > def extsetup(ui):
-  >     localrepo.localrepository.supportedformats.remove(b'generaldelta')
+  > def reposetup(ui, repo):
+  >     local = repo.local()
+  >     if local is not None:
+  >         local.supported.remove(b'generaldelta')
   > EOF
 
   $ hg clone --config extensions.rsf=$TESTTMP/removesupportedformat.py --stream http://localhost:$HGPORT/ copy3
