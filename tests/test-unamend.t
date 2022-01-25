@@ -443,8 +443,5 @@ Try to unamend a merge
   A left
   $ hg amend
   $ hg unamend
-  $ hg st --rev 1 --rev .
-  A right
-  R left (known-bad-output !)
-  $ hg st --rev 2 --rev .
-  A left (missing-correct-output !)
+  abort: cannot unamend merge changeset
+  [10]
