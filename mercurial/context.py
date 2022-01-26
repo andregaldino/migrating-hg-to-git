@@ -20,7 +20,6 @@ from .node import (
 )
 from .pycompat import (
     getattr,
-    open,
 )
 from . import (
     dagop,
@@ -3129,13 +3128,11 @@ class arbitraryfilectx(object):
         return util.readfile(self._path)
 
     def decodeddata(self):
-        with open(self._path, b"rb") as f:
-            return f.read()
+        return util.readfile(self._path)
 
     def remove(self):
         util.unlink(self._path)
 
     def write(self, data, flags, **kwargs):
         assert not flags
-        with open(self._path, b"wb") as f:
-            f.write(data)
+        util.writefile(self._path, data)
