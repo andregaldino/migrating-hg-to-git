@@ -136,19 +136,29 @@ static const long v2_entry_size = 96;
 static const long format_v1 = 1; /* Internal only, could be any number */
 static const long format_v2 = 2; /* Internal only, could be any number */
 
-static const long entry_offset_high = 0;
-static const long entry_offset_offset_flags = 4;
-static const long entry_offset_comp_len = 8;
-static const long entry_offset_uncomp_len = 12;
-static const long entry_offset_base_rev = 16;
-static const long entry_offset_link_rev = 20;
-static const long entry_offset_parent_1 = 24;
-static const long entry_offset_parent_2 = 28;
-static const long entry_offset_node_id = 32;
-static const long entry_offset_sidedata_offset = 64;
-static const long entry_offset_sidedata_comp_len = 72;
-static const long entry_offset_all_comp_mode = 76;
-static const long entry_offset_padding_start = 77;
+static const long entry_v1_offset_high = 0;
+static const long entry_v1_offset_offset_flags = 4;
+static const long entry_v1_offset_comp_len = 8;
+static const long entry_v1_offset_uncomp_len = 12;
+static const long entry_v1_offset_base_rev = 16;
+static const long entry_v1_offset_link_rev = 20;
+static const long entry_v1_offset_parent_1 = 24;
+static const long entry_v1_offset_parent_2 = 28;
+static const long entry_v1_offset_node_id = 32;
+
+static const long entry_v2_offset_high = 0;
+static const long entry_v2_offset_offset_flags = 4;
+static const long entry_v2_offset_comp_len = 8;
+static const long entry_v2_offset_uncomp_len = 12;
+static const long entry_v2_offset_base_rev = 16;
+static const long entry_v2_offset_link_rev = 20;
+static const long entry_v2_offset_parent_1 = 24;
+static const long entry_v2_offset_parent_2 = 28;
+static const long entry_v2_offset_node_id = 32;
+static const long entry_v2_offset_sidedata_offset = 64;
+static const long entry_v2_offset_sidedata_comp_len = 72;
+static const long entry_v2_offset_all_comp_mode = 76;
+static const long entry_v2_offset_padding_start = 77;
 
 static const char comp_mode_inline = 2;
 static const char rank_unknown = -1;
@@ -220,8 +230,16 @@ static inline int index_get_parents(indexObject *self, Py_ssize_t rev, int *ps,
 {
 	const char *data = index_deref(self, rev);
 
-	ps[0] = getbe32(data + entry_offset_parent_1);
-	ps[1] = getbe32(data + entry_offset_parent_2);
+	if (self->format_version == format_v1) {
+		ps[0] = getbe32(data + entry_v1_offset_parent_1);
+		ps[1] = getbe32(data + entry_v1_offset_parent_2);
+	} else if (self->format_version == format_v2) {
+		ps[0] = getbe32(data + entry_v2_offset_parent_1);
+		ps[1] = getbe32(data + entry_v2_offset_parent_2);
+	} else {
+		raise_revlog_error();
+		return -1;
+	}
 
 	/* If index file is corrupted, ps[] may point to invalid revisions. So
 	 * there is a risk of buffer overflow to trust them unconditionally. */
@@ -268,14 +286,32 @@ static inline int64_t index_get_start(indexObject *self, Py_ssize_t rev)
 		return 0;
 
 	data = index_deref(self, rev);
-	offset = getbe32(data + entry_offset_offset_flags);
-	if (rev == 0) {
-		/* mask out version number for the first entry */
-		offset &= 0xFFFF;
+
+	if (self->format_version == format_v1) {
+		offset = getbe32(data + entry_v1_offset_offset_flags);
+		if (rev == 0) {
+			/* mask out version number for the first entry */
+			offset &= 0xFFFF;
+		} else {
+			uint32_t offset_high =
+			    getbe32(data + entry_v1_offset_high);
+			offset |= ((uint64_t)offset_high) << 32;
+		}
+	} else if (self->format_version == format_v2) {
+		offset = getbe32(data + entry_v2_offset_offset_flags);
+		if (rev == 0) {
+			/* mask out version number for the first entry */
+			offset &= 0xFFFF;
+		} else {
+			uint32_t offset_high =
+			    getbe32(data + entry_v2_offset_high);
+			offset |= ((uint64_t)offset_high) << 32;
+		}
 	} else {
-		uint32_t offset_high = getbe32(data + entry_offset_high);
-		offset |= ((uint64_t)offset_high) << 32;
+		raise_revlog_error();
+		return -1;
 	}
+
 	return (int64_t)(offset >> 16);
 }
 
@@ -289,7 +325,14 @@ static inline int index_get_length(indexObject *self, Py_ssize_t rev)
 
 	data = index_deref(self, rev);
 
-	tmp = (int)getbe32(data + entry_offset_comp_len);
+	if (self->format_version == format_v1) {
+		tmp = (int)getbe32(data + entry_v1_offset_comp_len);
+	} else if (self->format_version == format_v2) {
+		tmp = (int)getbe32(data + entry_v2_offset_comp_len);
+	} else {
+		raise_revlog_error();
+		return -1;
+	}
 	if (tmp < 0) {
 		PyErr_Format(PyExc_OverflowError,
 		             "revlog entry size out of bound (%d)", tmp);
@@ -334,38 +377,66 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	if (data == NULL)
 		return NULL;
 
-	offset_flags = getbe32(data + entry_offset_offset_flags);
-	/*
-	 * The first entry on-disk needs the version number masked out,
-	 * but this doesn't apply if entries are added to an empty index.
-	 */
-	if (self->length && pos == 0)
-		offset_flags &= 0xFFFF;
-	else {
-		uint32_t offset_high = getbe32(data + entry_offset_high);
-		offset_flags |= ((uint64_t)offset_high) << 32;
-	}
-
-	comp_len = getbe32(data + entry_offset_comp_len);
-	uncomp_len = getbe32(data + entry_offset_uncomp_len);
-	base_rev = getbe32(data + entry_offset_base_rev);
-	link_rev = getbe32(data + entry_offset_link_rev);
-	parent_1 = getbe32(data + entry_offset_parent_1);
-	parent_2 = getbe32(data + entry_offset_parent_2);
-	c_node_id = data + entry_offset_node_id;
-
 	if (self->format_version == format_v1) {
+		offset_flags = getbe32(data + entry_v1_offset_offset_flags);
+		/*
+		 * The first entry on-disk needs the version number masked out,
+		 * but this doesn't apply if entries are added to an empty
+		 * index.
+		 */
+		if (self->length && pos == 0)
+			offset_flags &= 0xFFFF;
+		else {
+			uint32_t offset_high =
+			    getbe32(data + entry_v1_offset_high);
+			offset_flags |= ((uint64_t)offset_high) << 32;
+		}
+
+		comp_len = getbe32(data + entry_v1_offset_comp_len);
+		uncomp_len = getbe32(data + entry_v1_offset_uncomp_len);
+		base_rev = getbe32(data + entry_v1_offset_base_rev);
+		link_rev = getbe32(data + entry_v1_offset_link_rev);
+		parent_1 = getbe32(data + entry_v1_offset_parent_1);
+		parent_2 = getbe32(data + entry_v1_offset_parent_2);
+		c_node_id = data + entry_v1_offset_node_id;
+
 		sidedata_offset = 0;
 		sidedata_comp_len = 0;
 		data_comp_mode = comp_mode_inline;
 		sidedata_comp_mode = comp_mode_inline;
-	} else {
-		sidedata_offset = getbe64(data + entry_offset_sidedata_offset);
+	} else if (self->format_version == format_v2) {
+		offset_flags = getbe32(data + entry_v2_offset_offset_flags);
+		/*
+		 * The first entry on-disk needs the version number masked out,
+		 * but this doesn't apply if entries are added to an empty
+		 * index.
+		 */
+		if (self->length && pos == 0)
+			offset_flags &= 0xFFFF;
+		else {
+			uint32_t offset_high =
+			    getbe32(data + entry_v2_offset_high);
+			offset_flags |= ((uint64_t)offset_high) << 32;
+		}
+
+		comp_len = getbe32(data + entry_v2_offset_comp_len);
+		uncomp_len = getbe32(data + entry_v2_offset_uncomp_len);
+		base_rev = getbe32(data + entry_v2_offset_base_rev);
+		link_rev = getbe32(data + entry_v2_offset_link_rev);
+		parent_1 = getbe32(data + entry_v2_offset_parent_1);
+		parent_2 = getbe32(data + entry_v2_offset_parent_2);
+		c_node_id = data + entry_v2_offset_node_id;
+
+		sidedata_offset =
+		    getbe64(data + entry_v2_offset_sidedata_offset);
 		sidedata_comp_len =
-		    getbe32(data + entry_offset_sidedata_comp_len);
-		data_comp_mode = data[entry_offset_all_comp_mode] & 3;
+		    getbe32(data + entry_v2_offset_sidedata_comp_len);
+		data_comp_mode = data[entry_v2_offset_all_comp_mode] & 3;
 		sidedata_comp_mode =
-		    ((data[entry_offset_all_comp_mode] >> 2) & 3);
+		    ((data[entry_v2_offset_all_comp_mode] >> 2) & 3);
+	} else {
+		raise_revlog_error();
+		return NULL;
 	}
 
 	return Py_BuildValue(tuple_format, offset_flags, comp_len, uncomp_len,
@@ -429,6 +500,7 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 {
 	Py_ssize_t length = index_length(self);
 	const char *data;
+	const char *node_id;
 
 	if (pos == nullrev)
 		return nullid;
@@ -437,7 +509,17 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 		return NULL;
 
 	data = index_deref(self, pos);
-	return data ? data + entry_offset_node_id : NULL;
+
+	if (self->format_version == format_v1) {
+		node_id = data + entry_v1_offset_node_id;
+	} else if (self->format_version == format_v2) {
+		node_id = data + entry_v2_offset_node_id;
+	} else {
+		raise_revlog_error();
+		return NULL;
+	}
+
+	return data ? node_id : NULL;
 }
 
 /*
@@ -520,28 +602,50 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	}
 	rev = self->length + self->new_length;
 	data = self->added + self->entry_size * self->new_length++;
-	putbe32(offset_flags >> 32, data + entry_offset_high);
-	putbe32(offset_flags & 0xffffffffU, data + entry_offset_offset_flags);
-	putbe32(comp_len, data + entry_offset_comp_len);
-	putbe32(uncomp_len, data + entry_offset_uncomp_len);
-	putbe32(base_rev, data + entry_offset_base_rev);
-	putbe32(link_rev, data + entry_offset_link_rev);
-	putbe32(parent_1, data + entry_offset_parent_1);
-	putbe32(parent_2, data + entry_offset_parent_2);
-	memcpy(data + entry_offset_node_id, c_node_id, c_node_id_len);
-	/* Padding since SHA-1 is only 20 bytes for now */
-	memset(data + entry_offset_node_id + c_node_id_len, 0,
-	       entry_offset_node_id - c_node_id_len);
-	if (self->format_version == format_v2) {
-		putbe64(sidedata_offset, data + entry_offset_sidedata_offset);
+
+	if (self->format_version == format_v1) {
+		putbe32(offset_flags >> 32, data + entry_v1_offset_high);
+		putbe32(offset_flags & 0xffffffffU,
+		        data + entry_v1_offset_offset_flags);
+		putbe32(comp_len, data + entry_v1_offset_comp_len);
+		putbe32(uncomp_len, data + entry_v1_offset_uncomp_len);
+		putbe32(base_rev, data + entry_v1_offset_base_rev);
+		putbe32(link_rev, data + entry_v1_offset_link_rev);
+		putbe32(parent_1, data + entry_v1_offset_parent_1);
+		putbe32(parent_2, data + entry_v1_offset_parent_2);
+		memcpy(data + entry_v1_offset_node_id, c_node_id,
+		       c_node_id_len);
+		/* Padding since SHA-1 is only 20 bytes for now */
+		memset(data + entry_v1_offset_node_id + c_node_id_len, 0,
+		       entry_v1_offset_node_id - c_node_id_len);
+	} else if (self->format_version == format_v2) {
+		putbe32(offset_flags >> 32, data + entry_v2_offset_high);
+		putbe32(offset_flags & 0xffffffffU,
+		        data + entry_v2_offset_offset_flags);
+		putbe32(comp_len, data + entry_v2_offset_comp_len);
+		putbe32(uncomp_len, data + entry_v2_offset_uncomp_len);
+		putbe32(base_rev, data + entry_v2_offset_base_rev);
+		putbe32(link_rev, data + entry_v2_offset_link_rev);
+		putbe32(parent_1, data + entry_v2_offset_parent_1);
+		putbe32(parent_2, data + entry_v2_offset_parent_2);
+		memcpy(data + entry_v2_offset_node_id, c_node_id,
+		       c_node_id_len);
+		/* Padding since SHA-1 is only 20 bytes for now */
+		memset(data + entry_v2_offset_node_id + c_node_id_len, 0,
+		       entry_v2_offset_node_id - c_node_id_len);
+		putbe64(sidedata_offset,
+		        data + entry_v2_offset_sidedata_offset);
 		putbe32(sidedata_comp_len,
-		        data + entry_offset_sidedata_comp_len);
+		        data + entry_v2_offset_sidedata_comp_len);
 		comp_field = data_comp_mode & 3;
 		comp_field = comp_field | (sidedata_comp_mode & 3) << 2;
-		data[entry_offset_all_comp_mode] = comp_field;
+		data[entry_v2_offset_all_comp_mode] = comp_field;
 		/* Padding for 96 bytes alignment */
-		memset(data + entry_offset_padding_start, 0,
-		       self->entry_size - entry_offset_padding_start);
+		memset(data + entry_v2_offset_padding_start, 0,
+		       self->entry_size - entry_v2_offset_padding_start);
+	} else {
+		raise_revlog_error();
+		return NULL;
 	}
 
 	if (self->ntinitialized)
@@ -596,11 +700,11 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	/* Find the newly added node, offset from the "already on-disk" length
 	 */
 	data = self->added + self->entry_size * (rev - self->length);
-	putbe64(offset_flags, data + entry_offset_high);
-	putbe64(sidedata_offset, data + entry_offset_sidedata_offset);
-	putbe32(sidedata_comp_len, data + entry_offset_sidedata_comp_len);
-	data[entry_offset_all_comp_mode] =
-	    (data[entry_offset_all_comp_mode] & ~(3 << 2)) |
+	putbe64(offset_flags, data + entry_v2_offset_high);
+	putbe64(sidedata_offset, data + entry_v2_offset_sidedata_offset);
+	putbe32(sidedata_comp_len, data + entry_v2_offset_sidedata_comp_len);
+	data[entry_v2_offset_all_comp_mode] =
+	    (data[entry_v2_offset_all_comp_mode] & ~(3 << 2)) |
 	    ((comp_mode & 3) << 2);
 
 	Py_RETURN_NONE;
@@ -1144,7 +1248,15 @@ static inline int index_baserev(indexObject *self, int rev)
 	data = index_deref(self, rev);
 	if (data == NULL)
 		return -2;
-	result = getbe32(data + entry_offset_base_rev);
+
+	if (self->format_version == format_v1) {
+		result = getbe32(data + entry_v1_offset_base_rev);
+	} else if (self->format_version == format_v2) {
+		result = getbe32(data + entry_v2_offset_base_rev);
+	} else {
+		raise_revlog_error();
+		return -1;
+	}
 
 	if (result > rev) {
 		PyErr_Format(
@@ -2756,10 +2868,18 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 	while (pos + self->entry_size <= end && pos >= 0) {
 		uint32_t comp_len, sidedata_comp_len = 0;
 		/* 3rd element of header is length of compressed inline data */
-		comp_len = getbe32(data + pos + entry_offset_comp_len);
-		if (self->entry_size == v2_entry_size) {
+		if (self->format_version == format_v1) {
+			comp_len =
+			    getbe32(data + pos + entry_v1_offset_comp_len);
+			sidedata_comp_len = 0;
+		} else if (self->format_version == format_v2) {
+			comp_len =
+			    getbe32(data + pos + entry_v2_offset_comp_len);
 			sidedata_comp_len = getbe32(
-			    data + pos + entry_offset_sidedata_comp_len);
+			    data + pos + entry_v2_offset_sidedata_comp_len);
+		} else {
+			raise_revlog_error();
+			return -1;
 		}
 		incr = self->entry_size + comp_len + sidedata_comp_len;
 		if (offsets)
