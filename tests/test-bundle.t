@@ -297,16 +297,16 @@ packed1 is produced properly
 
   $ hg -R test debugcreatestreamclonebundle packed.hg
   writing 2665 bytes for 6 files
-  bundle requirements: generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog
+  bundle requirements: generaldelta, revlog-compression-zstd, revlogv1, sparserevlog
 
   $ f -B 64 --size --sha1 --hexdump packed.hg
-  packed.hg: size=2884, sha1=b0c868701f8a9fe44daf094b2f5bf661cf90c789
+  packed.hg: size=2865, sha1=353d10311f4befa195d9a1ca4b8e26518115c702
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 06 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 0a 69 00 4e 67 65 6e 65 72 61 6c 64 |.....i.Ngenerald|
-  0020: 65 6c 74 61 2c 70 65 72 73 69 73 74 65 6e 74 2d |elta,persistent-|
-  0030: 6e 6f 64 65 6d 61 70 2c 72 65 76 6c 6f 67 2d 63 |nodemap,revlog-c|
+  0010: 00 00 00 00 0a 69 00 3b 67 65 6e 65 72 61 6c 64 |.....i.;generald|
+  0020: 65 6c 74 61 2c 72 65 76 6c 6f 67 2d 63 6f 6d 70 |elta,revlog-comp|
+  0030: 72 65 73 73 69 6f 6e 2d 7a 73 74 64 2c 72 65 76 |ression-zstd,rev|
   $ hg debugbundle --spec packed.hg
-  none-packed1;requirements%3Dgeneraldelta%2Cpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog
+  none-packed1;requirements%3Dgeneraldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog
 #endif
 
 #if reporevlogstore no-rust zstd
@@ -357,17 +357,17 @@ generaldelta requirement is not listed in stream clone bundles unless used
 
   $ hg -R testnongd debugcreatestreamclonebundle packednongd.hg
   writing 301 bytes for 3 files
-  bundle requirements: persistent-nodemap, revlog-compression-zstd, revlogv1
+  bundle requirements: revlog-compression-zstd, revlogv1
 
   $ f -B 64 --size --sha1 --hexdump packednongd.hg
-  packednongd.hg: size=426, sha1=79563ccd6ef779bcfe62a4da64f89a1b308e92e0
+  packednongd.hg: size=407, sha1=0b8714422b785ba8eb98c916b41ffd5fb994c9b5
   0000: 48 47 53 31 55 4e 00 00 00 00 00 00 00 03 00 00 |HGS1UN..........|
-  0010: 00 00 00 00 01 2d 00 34 70 65 72 73 69 73 74 65 |.....-.4persiste|
-  0020: 6e 74 2d 6e 6f 64 65 6d 61 70 2c 72 65 76 6c 6f |nt-nodemap,revlo|
-  0030: 67 2d 63 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 |g-compression-zs|
+  0010: 00 00 00 00 01 2d 00 21 72 65 76 6c 6f 67 2d 63 |.....-.!revlog-c|
+  0020: 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 2c |ompression-zstd,|
+  0030: 72 65 76 6c 6f 67 76 31 00 64 61 74 61 2f 66 6f |revlogv1.data/fo|
 
   $ hg debugbundle --spec packednongd.hg
-  none-packed1;requirements%3Dpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1
+  none-packed1;requirements%3Drevlog-compression-zstd%2Crevlogv1
 
 #endif
 
@@ -427,7 +427,7 @@ Warning emitted when packed bundles contain secret changesets
   $ hg -R testsecret debugcreatestreamclonebundle packedsecret.hg
   (warning: stream clone bundle will contain secret revisions)
   writing 301 bytes for 3 files
-  bundle requirements: generaldelta, persistent-nodemap, revlog-compression-zstd, revlogv1, sparserevlog
+  bundle requirements: generaldelta, revlog-compression-zstd, revlogv1, sparserevlog
 
 #endif
 

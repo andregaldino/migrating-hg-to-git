@@ -16,6 +16,7 @@ from ..node import hex
 
 from .. import (
     error,
+    requirements,
     util,
 )
 from . import docket as docket_mod
@@ -32,6 +33,19 @@ def test_race_hook_1():
     This let tests to have things happens between the docket reading and the
     data reading"""
     pass
+
+
+def post_stream_cleanup(repo):
+    """The stream clone might needs to remove some file if persisten nodemap
+    was dropped while stream cloning
+    """
+    if requirements.REVLOGV1_REQUIREMENT not in repo.requirements:
+        return
+    if requirements.NODEMAP_REQUIREMENT in repo.requirements:
+        return
+    unfi = repo.unfiltered()
+    delete_nodemap(None, unfi, unfi.changelog)
+    delete_nodemap(None, repo, unfi.manifestlog._rootstore._revlog)
 
 
 def persisted_data(revlog):

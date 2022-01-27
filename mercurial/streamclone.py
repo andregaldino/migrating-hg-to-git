@@ -27,6 +27,9 @@ from . import (
     store,
     util,
 )
+from .revlogutils import (
+    nodemap,
+)
 from .utils import (
     stringutil,
 )
@@ -216,6 +219,7 @@ def maybeperformlegacystreamclone(pullop):
             repo.ui, repo.requirements, repo.features
         )
         scmutil.writereporequirements(repo)
+        nodemap.post_stream_cleanup(repo)
 
         if rbranchmap:
             repo._branchcaches.replace(repo, rbranchmap)
@@ -510,6 +514,7 @@ def applybundlev1(repo, fp):
         )
 
     consumev1(repo, fp, filecount, bytecount)
+    nodemap.post_stream_cleanup(repo)
 
 
 class streamcloneapplier(object):
@@ -826,6 +831,7 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
         repo.ui, repo.requirements, repo.features
     )
     scmutil.writereporequirements(repo)
+    nodemap.post_stream_cleanup(repo)
 
 
 def _copy_files(src_vfs_map, dst_vfs_map, entries, progress):

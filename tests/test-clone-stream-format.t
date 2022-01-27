@@ -4,6 +4,11 @@ This file contains tests case that deal with format change accross stream clone
 
 #testcases stream-legacy stream-bundle2
 
+  $ cat << EOF >> $HGRCPATH
+  > [storage]
+  > revlog.persistent-nodemap.slow-path=allow
+  > EOF
+
 #if stream-legacy
   $ cat << EOF >> $HGRCPATH
   > [server]
@@ -13,7 +18,7 @@ This file contains tests case that deal with format change accross stream clone
 
 Initialize repository
 
-  $ hg init server --config format.use-share-safe=yes
+  $ hg init server --config format.use-share-safe=yes --config format.use-persistent-nodemap=yes
   $ cd server
   $ sh $TESTDIR/testlib/stream_clone_setup.sh
   adding 00changelog-ab349180a0405010.nd
@@ -342,6 +347,89 @@ no-share-safe → share-safe cloning
   checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-add-share-safe | grep share-safe
   share-safe
+
+
+  $ killdaemons.py
+
+
+Test streaming from/to repository without a persistent-nodemap
+==============================================================
+
+persistent nodemap affects revlog, but they are easy to generate locally, so we allow it to be changed over a stream clone
+
+  $ rm hg-*.pid errors-*.txt
+  $ hg clone --pull --config format.use-persistent-nodemap=no server server-no-persistent-nodemap
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 5004 changesets with 1088 changes to 1088 files (+1 heads)
+  new changesets 96ee1d7354c4:06ddac466af5
+  updating to branch default
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg verify -R server-no-persistent-nodemap
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5004 changesets with 1088 changes to 1088 files
+  $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
+  $ cat hg-1.pid > $DAEMON_PIDS
+  $ hg -R server-no-persistent-nodemap serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
+  $ cat hg-2.pid >> $DAEMON_PIDS
+  $ hg debugrequires -R server | grep persistent-nodemap
+  persistent-nodemap
+  $ hg debugrequires -R server-no-persistent-nodemap | grep persistent-nodemap
+  [1]
+  $ ls -1 server/.hg/store/00changelog*
+  server/.hg/store/00changelog-*.nd (glob)
+  server/.hg/store/00changelog.d
+  server/.hg/store/00changelog.i
+  server/.hg/store/00changelog.n
+  $ ls -1 server-no-persistent-nodemap/.hg/store/00changelog*
+  server-no-persistent-nodemap/.hg/store/00changelog.d
+  server-no-persistent-nodemap/.hg/store/00changelog.i
+
+persistent-nodemap → no-persistent-nodemap cloning
+
+  $ hg clone --quiet --stream -U http://localhost:$HGPORT clone-remove-persistent-nodemap --config format.use-persistent-nodemap=no
+  $ cat errors-1.txt
+  $ hg -R clone-remove-persistent-nodemap verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5004 changesets with 1088 changes to 1088 files
+  $ hg debugrequires -R clone-remove-persistent-nodemap | grep persistent-nodemap
+  [1]
+
+The persistent-nodemap files should no longer exists
+
+  $ ls -1 clone-remove-persistent-nodemap/.hg/store/00changelog*
+  clone-remove-persistent-nodemap/.hg/store/00changelog.d
+  clone-remove-persistent-nodemap/.hg/store/00changelog.i
+
+
+no-persistent-nodemap → persistent-nodemap cloning
+
+  $ hg clone --quiet --stream -U http://localhost:$HGPORT2 clone-add-persistent-nodemap --config format.use-persistent-nodemap=yes
+  $ cat errors-2.txt
+  $ hg -R clone-add-persistent-nodemap verify
+  checking changesets
+  checking manifests
+  crosschecking files in changesets and manifests
+  checking files
+  checked 5004 changesets with 1088 changes to 1088 files
+  $ hg debugrequires -R clone-add-persistent-nodemap | grep persistent-nodemap
+  persistent-nodemap
+
+The persistent-nodemap files should exists
+
+  $ ls -1 clone-add-persistent-nodemap/.hg/store/00changelog*
+  clone-add-persistent-nodemap/.hg/store/00changelog-*.nd (glob)
+  clone-add-persistent-nodemap/.hg/store/00changelog.d
+  clone-add-persistent-nodemap/.hg/store/00changelog.i
+  clone-add-persistent-nodemap/.hg/store/00changelog.n
 
 
   $ killdaemons.py
