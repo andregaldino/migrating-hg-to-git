@@ -1787,7 +1787,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
         DANGEROUS.
         """
 
-    def updatecaches(tr=None, full=False):
+    def updatecaches(tr=None, full=False, caches=None):
         """Warm repo caches."""
 
     def invalidatecaches():
