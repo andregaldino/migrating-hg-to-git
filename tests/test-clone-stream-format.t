@@ -79,6 +79,12 @@ Initialize repository
   adding undo.i
   adding undo.n
   adding undo.py
+  $ hg debugbuilddag .+5000 --from-existing
+  $ ls -1 .hg/store/00changelog*
+  .hg/store/00changelog-*.nd (glob)
+  .hg/store/00changelog.d
+  .hg/store/00changelog.i
+  .hg/store/00changelog.n
   $ cd ..
 
 
@@ -90,16 +96,16 @@ Test streaming from/to repository without a store:
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1088 changes to 1088 files
-  new changesets 96ee1d7354c4:5223b5e3265f
+  added 5004 changesets with 1088 changes to 1088 files (+1 heads)
+  new changesets 96ee1d7354c4:06ddac466af5
   updating to branch default
-  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg verify -R server-no-store
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
   $ cat hg-1.pid > $DAEMON_PIDS
   $ hg -R server-no-store serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
@@ -118,7 +124,7 @@ store → no-store cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-remove-store | grep store
   [1]
 
@@ -132,7 +138,7 @@ no-store → store cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-add-store | grep store
   store
 
@@ -149,16 +155,16 @@ Test streaming from/to repository without a fncache
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1088 changes to 1088 files
-  new changesets 96ee1d7354c4:5223b5e3265f
+  added 5004 changesets with 1088 changes to 1088 files (+1 heads)
+  new changesets 96ee1d7354c4:06ddac466af5
   updating to branch default
-  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg verify -R server-no-fncache
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
   $ cat hg-1.pid > $DAEMON_PIDS
   $ hg -R server-no-fncache serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
@@ -177,7 +183,7 @@ fncache → no-fncache cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-remove-fncache | grep fncache
   [1]
 
@@ -191,7 +197,7 @@ no-fncache → fncache cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-add-fncache | grep fncache
   fncache
 
@@ -209,16 +215,16 @@ Test streaming from/to repository without a dotencode
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1088 changes to 1088 files
-  new changesets 96ee1d7354c4:5223b5e3265f
+  added 5004 changesets with 1088 changes to 1088 files (+1 heads)
+  new changesets 96ee1d7354c4:06ddac466af5
   updating to branch default
-  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg verify -R server-no-dotencode
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
   $ cat hg-1.pid > $DAEMON_PIDS
   $ hg -R server-no-dotencode serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
@@ -237,7 +243,7 @@ dotencode → no-dotencode cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-remove-dotencode | grep dotencode
   [1]
 
@@ -251,7 +257,7 @@ no-dotencode → dotencode cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-add-dotencode | grep dotencode
   dotencode
 
@@ -276,7 +282,7 @@ The resulting clone should not use share.
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-from-share | egrep 'share$'
   [1]
 
@@ -291,16 +297,16 @@ Test streaming from/to repository without a share-safe
   adding changesets
   adding manifests
   adding file changes
-  added 3 changesets with 1088 changes to 1088 files
-  new changesets 96ee1d7354c4:5223b5e3265f
+  added 5004 changesets with 1088 changes to 1088 files (+1 heads)
+  new changesets 96ee1d7354c4:06ddac466af5
   updating to branch default
-  1088 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg verify -R server-no-share-safe
   checking changesets
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg -R server serve -p $HGPORT -d --pid-file=hg-1.pid --error errors-1.txt
   $ cat hg-1.pid > $DAEMON_PIDS
   $ hg -R server-no-share-safe serve -p $HGPORT2 -d --pid-file=hg-2.pid --error errors-2.txt
@@ -319,7 +325,7 @@ share-safe → no-share-safe cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-remove-share-safe | grep share-safe
   [1]
 
@@ -333,7 +339,7 @@ no-share-safe → share-safe cloning
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  checked 3 changesets with 1088 changes to 1088 files
+  checked 5004 changesets with 1088 changes to 1088 files
   $ hg debugrequires -R clone-add-share-safe | grep share-safe
   share-safe
 
