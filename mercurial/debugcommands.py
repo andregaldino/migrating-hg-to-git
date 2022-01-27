@@ -178,6 +178,12 @@ def debugapplystreamclonebundle(ui, repo, fname):
             _(b'add single file all revs overwrite'),
         ),
         (b'n', b'new-file', None, _(b'add new file at each rev')),
+        (
+            b'',
+            b'from-existing',
+            None,
+            _(b'continue from a non-empty repository'),
+        ),
     ],
     _(b'[OPTION]... [TEXT]'),
 )
@@ -188,6 +194,7 @@ def debugbuilddag(
     mergeable_file=False,
     overwritten_file=False,
     new_file=False,
+    from_existing=False,
 ):
     """builds a repo with a given DAG from scratch in the current empty repo
 
@@ -226,7 +233,7 @@ def debugbuilddag(
         text = ui.fin.read()
 
     cl = repo.changelog
-    if len(cl) > 0:
+    if len(cl) > 0 and not from_existing:
         raise error.Abort(_(b'repository is not empty'))
 
     # determine number of revs in DAG
