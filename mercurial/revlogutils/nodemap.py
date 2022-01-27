@@ -144,10 +144,12 @@ def update_persistent_nodemap(revlog):
 
 def delete_nodemap(tr, repo, revlog):
     """Delete nodemap data on disk for a given revlog"""
-    if revlog._nodemap_file is None:
-        msg = "calling persist nodemap on a revlog without the feature enabled"
-        raise error.ProgrammingError(msg)
-    repo.svfs.tryunlink(revlog._nodemap_file)
+    prefix = revlog.radix
+    pattern = re.compile(br"(^|/)%s(-[0-9a-f]+\.nd|\.n(\.a)?)$" % prefix)
+    dirpath = revlog.opener.dirname(revlog._indexfile)
+    for f in revlog.opener.listdir(dirpath):
+        if pattern.match(f):
+            repo.svfs.tryunlink(f)
 
 
 def persist_nodemap(tr, revlog, pending=False, force=False):

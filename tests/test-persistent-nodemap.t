@@ -809,8 +809,6 @@ downgrading
     - manifest
   
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  00changelog-*.nd (glob)
-  00manifest-*.nd (glob)
   undo.backup.00changelog.n
   undo.backup.00manifest.n
   $ hg debugnodemap --metadata
