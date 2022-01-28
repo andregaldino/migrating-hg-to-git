@@ -38,6 +38,7 @@ from mercurial import (
     lock as lockmod,
     logcmdutil,
     merge as mergemod,
+    mergestate,
     phases,
     pycompat,
     util,
@@ -241,7 +242,7 @@ class mercurial_sink(common.converter_sink):
 
             # If the file requires actual merging, abort. We don't have enough
             # context to resolve merges correctly.
-            if action in [b'm', b'dm', b'cd', b'dc']:
+            if action in mergestate.CONVERT_MERGE_ACTIONS:
                 raise error.Abort(
                     _(
                         b"unable to convert merge commit "
@@ -250,7 +251,7 @@ class mercurial_sink(common.converter_sink):
                     )
                     % (file, p1ctx, p2ctx)
                 )
-            elif action == b'k':
+            elif action == mergestate.ACTION_KEEP:
                 # 'keep' means nothing changed from p1
                 continue
             else:

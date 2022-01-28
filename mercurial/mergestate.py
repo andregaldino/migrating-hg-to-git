@@ -129,6 +129,15 @@ NO_OP_ACTIONS = (
     ACTION_KEEP_NEW,
 )
 
+# Used by concert to detect situation it does not like, not sure what the exact
+# criteria is
+CONVERT_MERGE_ACTIONS = (
+    ACTION_MERGE,
+    ACTION_DIR_RENAME_MOVE_LOCAL,
+    ACTION_CHANGED_DELETED,
+    ACTION_DELETED_CHANGED,
+)
+
 
 class _mergestate_base(object):
     """track 3-way merge state of individual files
