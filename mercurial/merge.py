@@ -530,14 +530,12 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
         elif action[0] in mergestatemod.NO_OP_ACTIONS:
             mresult.removefile(f)  # merge does not affect file
         elif action[0] in nonconflicttypes:
-            raise error.Abort(
-                _(
-                    b'merge affects file \'%s\' outside narrow, '
-                    b'which is not yet supported'
-                )
-                % f,
-                hint=_(b'merging in the other direction may work'),
+            msg = _(
+                b'merge affects file \'%s\' outside narrow, '
+                b'which is not yet supported'
             )
+            hint = _(b'merging in the other direction may work')
+            raise error.Abort(msg % f, hint=hint)
         else:
             raise error.StateError(
                 _(b'conflict in file \'%s\' is outside narrow clone') % f
