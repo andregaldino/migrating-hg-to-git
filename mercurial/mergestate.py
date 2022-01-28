@@ -98,29 +98,59 @@ LEGACY_MERGE_DRIVER_STATE = b'm'
 LEGACY_MERGE_DRIVER_MERGE = b'D'
 
 
-ACTION_FORGET = b'f'
-ACTION_REMOVE = b'r'
-ACTION_ADD = b'a'
-ACTION_GET = b'g'
-ACTION_PATH_CONFLICT = b'p'
-ACTION_PATH_CONFLICT_RESOLVE = b'pr'
-ACTION_ADD_MODIFIED = b'am'
-ACTION_CREATED = b'c'
-ACTION_DELETED_CHANGED = b'dc'
-ACTION_CHANGED_DELETED = b'cd'
-ACTION_MERGE = b'm'
-ACTION_LOCAL_DIR_RENAME_GET = b'dg'
-ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
-ACTION_KEEP = b'k'
+class MergeAction(object):
+    """represent an "action" merge need to take for a given file
+
+    Attributes:
+
+    _short: internal representation used to identify each action
+    """
+
+    def __init__(self, short):
+        self._short = short
+
+    def __hash__(self):
+        return hash(self._short)
+
+    def __repr__(self):
+        return 'MergeAction<%s>' % self._short.decode('ascii')
+
+    def __bytes__(self):
+        return self._short
+
+    def __eq__(self, other):
+        if other is None:
+            return False
+        assert isinstance(other, MergeAction)
+        return self._short == other._short
+
+    def __lt__(self, other):
+        return self._short < other._short
+
+
+ACTION_FORGET = MergeAction(b'f')
+ACTION_REMOVE = MergeAction(b'r')
+ACTION_ADD = MergeAction(b'a')
+ACTION_GET = MergeAction(b'g')
+ACTION_PATH_CONFLICT = MergeAction(b'p')
+ACTION_PATH_CONFLICT_RESOLVE = MergeAction('pr')
+ACTION_ADD_MODIFIED = MergeAction(b'am')
+ACTION_CREATED = MergeAction(b'c')
+ACTION_DELETED_CHANGED = MergeAction(b'dc')
+ACTION_CHANGED_DELETED = MergeAction(b'cd')
+ACTION_MERGE = MergeAction(b'm')
+ACTION_LOCAL_DIR_RENAME_GET = MergeAction(b'dg')
+ACTION_DIR_RENAME_MOVE_LOCAL = MergeAction(b'dm')
+ACTION_KEEP = MergeAction(b'k')
 # the file was absent on local side before merge and we should
 # keep it absent (absent means file not present, it can be a result
 # of file deletion, rename etc.)
-ACTION_KEEP_ABSENT = b'ka'
+ACTION_KEEP_ABSENT = MergeAction(b'ka')
 # the file is absent on the ancestor and remote side of the merge
 # hence this file is new and we should keep it
-ACTION_KEEP_NEW = b'kn'
-ACTION_EXEC = b'e'
-ACTION_CREATED_MERGE = b'cm'
+ACTION_KEEP_NEW = MergeAction(b'kn')
+ACTION_EXEC = MergeAction(b'e')
+ACTION_CREATED_MERGE = MergeAction(b'cm')
 
 # actions which are no op
 NO_OP_ACTIONS = (

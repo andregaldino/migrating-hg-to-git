@@ -1201,7 +1201,7 @@ def calculateupdates(
 
             for f, a in mresult1.filemap(sort=True):
                 m, args, msg = a
-                repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
+                repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m.__bytes__()))
                 if f in fbids:
                     d = fbids[f]
                     if m in d:
@@ -1222,13 +1222,15 @@ def calculateupdates(
                 repo.ui.debug(b" list of bids for %s:\n" % f)
                 for m, l in sorted(bids.items()):
                     for _f, args, msg in l:
-                        repo.ui.debug(b'   %s -> %s\n' % (msg, m))
+                        repo.ui.debug(b'   %s -> %s\n' % (msg, m.__bytes__()))
             # bids is a mapping from action method to list af actions
             # Consensus?
             if len(bids) == 1:  # all bids are the same kind of method
                 m, l = list(bids.items())[0]
                 if all(a == l[0] for a in l[1:]):  # len(bids) is > 1
-                    repo.ui.note(_(b" %s: consensus for %s\n") % (f, m))
+                    repo.ui.note(
+                        _(b" %s: consensus for %s\n") % (f, m.__bytes__())
+                    )
                     mresult.addfile(f, *l[0])
                     continue
             # If keep is an option, just do it.
@@ -1286,11 +1288,12 @@ def calculateupdates(
             repo.ui.note(_(b' %s: multiple bids for merge action:\n') % f)
             for m, l in sorted(bids.items()):
                 for _f, args, msg in l:
-                    repo.ui.note(b'  %s -> %s\n' % (msg, m))
+                    repo.ui.note(b'  %s -> %s\n' % (msg, m.__bytes__()))
             # Pick random action. TODO: Instead, prompt user when resolving
             m, l = list(bids.items())[0]
             repo.ui.warn(
-                _(b' %s: ambiguous merge - picked %s action\n') % (f, m)
+                _(b' %s: ambiguous merge - picked %s action\n')
+                % (f, m.__bytes__())
             )
             mresult.addfile(f, *l[0])
             continue
@@ -1623,7 +1626,7 @@ def applyupdates(
     # keep (noop, just log it)
     for a in mergestatemod.NO_OP_ACTIONS:
         for f, args, msg in mresult.getactions((a,), sort=True):
-            repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a))
+            repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a.__bytes__()))
             # no progress
 
     # directory rename, move local
