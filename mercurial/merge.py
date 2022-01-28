@@ -488,7 +488,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
                 mresult.addfile(
                     p,
                     mergestatemod.ACTION_PATH_CONFLICT,
-                    (pnew, mergestatemod.ACTION_REMOVE),
+                    (pnew, b'r'),
                     b'path conflict',
                 )
                 remoteconflicts.remove(p)
