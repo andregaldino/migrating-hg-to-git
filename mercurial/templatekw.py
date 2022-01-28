@@ -304,6 +304,21 @@ def showextras(context, mapping):
     )
 
 
+@templatekeyword(b'_fast_rank', requires={b'ctx'})
+def fast_rank(context, mapping):
+    """the rank of a changeset if cached
+
+    The rank of a revision is the size of the sub-graph it defines as a head.
+    Equivalently, the rank of a revision `r` is the size of the set
+    `ancestors(r)`, `r` included.
+    """
+    ctx = context.resource(mapping, b'ctx')
+    rank = ctx.fast_rank()
+    if rank is None:
+        return None
+    return b"%d" % rank
+
+
 def _getfilestatus(context, mapping, listall=False):
     ctx = context.resource(mapping, b'ctx')
     revcache = context.resource(mapping, b'revcache')

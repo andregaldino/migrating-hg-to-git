@@ -684,6 +684,14 @@ class changectx(basectx):
         """Return a list of byte bookmark names."""
         return self._repo.nodebookmarks(self._node)
 
+    def fast_rank(self):
+        repo = self._repo
+        if self._maybe_filtered:
+            cl = repo.changelog
+        else:
+            cl = repo.unfiltered().changelog
+        return cl.fast_rank(self._rev)
+
     def phase(self):
         return self._repo._phasecache.phase(self._repo, self._rev)
 
