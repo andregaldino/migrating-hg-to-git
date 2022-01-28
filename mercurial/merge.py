@@ -336,10 +336,9 @@ def _checkcollision(repo, wmf, mresult):
     for f in pmmf:
         fold = util.normcase(f)
         if fold in foldmap:
-            raise error.StateError(
-                _(b"case-folding collision between %s and %s")
-                % (f, foldmap[fold])
-            )
+            msg = _(b"case-folding collision between %s and %s")
+            msg %= (f, foldmap[fold])
+            raise error.StateError(msg)
         foldmap[fold] = f
 
     # check case-folding of directories
