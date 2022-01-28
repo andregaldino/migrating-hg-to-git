@@ -1927,10 +1927,9 @@ def _update(
                 raise error.Abort(m_a)
             elif pas == [p1]:
                 if not mergeancestor and wc.branch() == p2.branch():
-                    raise error.Abort(
-                        _(b"nothing to merge"),
-                        hint=_(b"use 'hg update' or check 'hg heads'"),
-                    )
+                    msg = _(b"nothing to merge")
+                    hint = _(b"use 'hg update' or check 'hg heads'")
+                    raise error.Abort(msg, hint=hint)
             if not force and (wc.files() or wc.deleted()):
                 raise error.StateError(
                     _(b"uncommitted changes"),
