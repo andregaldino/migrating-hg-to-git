@@ -1922,13 +1922,9 @@ def _update(
                 hint = _(b"use 'hg resolve' to resolve")
                 raise error.StateError(msg, hint=hint)
         if branchmerge:
+            m_a = _(b"merging with a working directory ancestor has no effect")
             if pas == [p2]:
-                raise error.Abort(
-                    _(
-                        b"merging with a working directory ancestor"
-                        b" has no effect"
-                    )
-                )
+                raise error.Abort(m_a)
             elif pas == [p1]:
                 if not mergeancestor and wc.branch() == p2.branch():
                     raise error.Abort(
