@@ -583,7 +583,7 @@ class obsstore(object):
             try:
                 return self.svfs.stat(b'obsstore').st_size > 1
             except OSError as inst:
-                if inst.errno != errno.ENOENT:
+                if inst.errno not in (errno.ENOENT, errno.EINVAL):
                     raise
                 # just build an empty _all list if no obsstore exists, which
                 # avoids further stat() syscalls
