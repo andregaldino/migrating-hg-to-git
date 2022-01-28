@@ -346,10 +346,9 @@ def _checkcollision(repo, wmf, mresult):
     for fold, f in sorted(foldmap.items()):
         if fold.startswith(foldprefix) and not f.startswith(unfoldprefix):
             # the folded prefix matches but actual casing is different
-            raise error.StateError(
-                _(b"case-folding collision between %s and directory of %s")
-                % (lastfull, f)
-            )
+            msg = _(b"case-folding collision between %s and directory of %s")
+            msg %= (lastfull, f)
+            raise error.StateError(msg)
         foldprefix = fold + b'/'
         unfoldprefix = f + b'/'
         lastfull = f
