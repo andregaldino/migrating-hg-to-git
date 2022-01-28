@@ -2464,7 +2464,16 @@ class revlog(object):
 
         rank = RANK_UNKNOWN
         if self._format_version == CHANGELOGV2:
-            rank = len(list(self.ancestors([p1r, p2r], inclusive=True))) + 1
+            if (p1r, p2r) == (nullrev, nullrev):
+                rank = 1
+            elif p1r != nullrev and p2r == nullrev:
+                rank = 1 + self.fast_rank(p1r)
+            elif p1r == nullrev and p2r != nullrev:
+                rank = 1 + self.fast_rank(p2r)
+            else:  # merge node
+                pmin, pmax = sorted((p1r, p2r))
+                rank = 1 + self.fast_rank(pmax)
+                rank += sum(1 for _ in self.findmissingrevs([pmax], [pmin]))
 
         e = revlogutils.entry(
             flags=flags,
