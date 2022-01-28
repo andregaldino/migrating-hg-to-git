@@ -40,11 +40,13 @@ from .revlogutils.constants import (
     COMP_MODE_DEFAULT,
     COMP_MODE_INLINE,
     COMP_MODE_PLAIN,
+    ENTRY_RANK,
     FEATURES_BY_VERSION,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_HEADER,
     KIND_CHANGELOG,
+    RANK_UNKNOWN,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -856,6 +858,22 @@ class revlog(object):
             return self.rawsize(rev)
 
         return len(self.revision(rev))
+
+    def fast_rank(self, rev):
+        """Return the rank of a revision if already known, or None otherwise.
+
+        The rank of a revision is the size of the sub-graph it defines as a
+        head. Equivalently, the rank of a revision `r` is the size of the set
+        `ancestors(r)`, `r` included.
+
+        This method returns the rank retrieved from the revlog in constant
+        time. It makes no attempt at computing unknown values for versions of
+        the revlog which do not persist the rank.
+        """
+        rank = self.index[rev][ENTRY_RANK]
+        if rank == RANK_UNKNOWN:
+            return None
+        return rank
 
     def chainbase(self, rev):
         base = self._chainbasecache.get(rev)
@@ -2444,6 +2462,10 @@ class revlog(object):
             # than ones we manually add.
             sidedata_offset = 0
 
+        rank = RANK_UNKNOWN
+        if self._format_version == CHANGELOGV2:
+            rank = len(list(self.ancestors([p1r, p2r], inclusive=True))) + 1
+
         e = revlogutils.entry(
             flags=flags,
             data_offset=offset,
@@ -2458,6 +2480,7 @@ class revlog(object):
             sidedata_offset=sidedata_offset,
             sidedata_compressed_length=len(serialized_sidedata),
             sidedata_compression_mode=sidedata_compression_mode,
+            rank=rank,
         )
 
         self.index.append(e)
