@@ -41,10 +41,9 @@ def _getcheckunknownconfig(repo, section, name):
     valid = [b'abort', b'ignore', b'warn']
     if config not in valid:
         validstr = b', '.join([b"'" + v + b"'" for v in valid])
-        raise error.ConfigError(
-            _(b"%s.%s not valid ('%s' is none of %s)")
-            % (section, name, config, validstr)
-        )
+        msg = _(b"%s.%s not valid ('%s' is none of %s)")
+        msg %= (section, name, config, validstr)
+        raise error.ConfigError(msg)
     return config
 
 
