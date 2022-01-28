@@ -105,13 +105,19 @@ class MergeAction(object):
     Attributes:
 
     _short: internal representation used to identify each action
+
+    no_op:  True if the action does affect the file content or tracking status
     """
 
     ALL_ACTIONS = weakref.WeakSet()
+    NO_OP_ACTIONS = weakref.WeakSet()
 
-    def __init__(self, short):
+    def __init__(self, short, no_op=False):
         self._short = short
         self.ALL_ACTIONS.add(self)
+        self.no_op = no_op
+        if self.no_op:
+            self.NO_OP_ACTIONS.add(self)
 
     def __hash__(self):
         return hash(self._short)
@@ -145,23 +151,17 @@ ACTION_CHANGED_DELETED = MergeAction(b'cd')
 ACTION_MERGE = MergeAction(b'm')
 ACTION_LOCAL_DIR_RENAME_GET = MergeAction(b'dg')
 ACTION_DIR_RENAME_MOVE_LOCAL = MergeAction(b'dm')
-ACTION_KEEP = MergeAction(b'k')
+ACTION_KEEP = MergeAction(b'k', no_op=True)
 # the file was absent on local side before merge and we should
 # keep it absent (absent means file not present, it can be a result
 # of file deletion, rename etc.)
-ACTION_KEEP_ABSENT = MergeAction(b'ka')
+ACTION_KEEP_ABSENT = MergeAction(b'ka', no_op=True)
 # the file is absent on the ancestor and remote side of the merge
 # hence this file is new and we should keep it
-ACTION_KEEP_NEW = MergeAction(b'kn')
+ACTION_KEEP_NEW = MergeAction(b'kn', no_op=True)
 ACTION_EXEC = MergeAction(b'e')
 ACTION_CREATED_MERGE = MergeAction(b'cm')
 
-# actions which are no op
-NO_OP_ACTIONS = (
-    ACTION_KEEP,
-    ACTION_KEEP_ABSENT,
-    ACTION_KEEP_NEW,
-)
 
 # Used by concert to detect situation it does not like, not sure what the exact
 # criteria is

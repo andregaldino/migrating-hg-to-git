@@ -396,7 +396,7 @@ def filterupdatesactions(repo, wctx, mctx, branchmerge, mresult):
             temporaryfiles.append(file)
             prunedactions[file] = action
         elif branchmerge:
-            if type not in mergestatemod.NO_OP_ACTIONS:
+            if not type.no_op:
                 temporaryfiles.append(file)
                 prunedactions[file] = action
         elif type == mergestatemod.ACTION_FORGET:

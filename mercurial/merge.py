@@ -527,7 +527,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             pass
         elif not branchmerge:
             mresult.removefile(f)  # just updating, ignore changes outside clone
-        elif action[0] in mergestatemod.NO_OP_ACTIONS:
+        elif action[0].no_op:
             mresult.removefile(f)  # merge does not affect file
         elif action[0] in nonconflicttypes:
             msg = _(
@@ -699,7 +699,7 @@ class mergeresult(object):
                     mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
                 )
                 and self._actionmapping[a]
-                and a not in mergestatemod.NO_OP_ACTIONS
+                and not a.no_op
             ):
                 return True
 
@@ -1520,7 +1520,8 @@ def applyupdates(
         # mergestate so that it can be reused on commit
         ms.addcommitinfo(f, op)
 
-    numupdates = mresult.len() - mresult.len(mergestatemod.NO_OP_ACTIONS)
+    num_no_op = mresult.len(mergestatemod.MergeAction.NO_OP_ACTIONS)
+    numupdates = mresult.len() - num_no_op
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
@@ -1624,7 +1625,7 @@ def applyupdates(
         progress.increment(item=f)
 
     # keep (noop, just log it)
-    for a in mergestatemod.NO_OP_ACTIONS:
+    for a in mergestatemod.MergeAction.NO_OP_ACTIONS:
         for f, args, msg in mresult.getactions((a,), sort=True):
             repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a.__bytes__()))
             # no progress
