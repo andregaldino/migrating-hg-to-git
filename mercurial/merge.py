@@ -1885,22 +1885,11 @@ def _update(
         # updatecheck='abort' to better suppport some of these callers.
         if updatecheck is None:
             updatecheck = UPDATECHECK_LINEAR
-        if updatecheck not in (
-            UPDATECHECK_NONE,
-            UPDATECHECK_LINEAR,
-            UPDATECHECK_NO_CONFLICT,
-        ):
-            raise ValueError(
-                r'Invalid updatecheck %r (can accept %r)'
-                % (
-                    updatecheck,
-                    (
-                        UPDATECHECK_NONE,
-                        UPDATECHECK_LINEAR,
-                        UPDATECHECK_NO_CONFLICT,
-                    ),
-                )
-            )
+        okay = (UPDATECHECK_NONE, UPDATECHECK_LINEAR, UPDATECHECK_NO_CONFLICT)
+        if updatecheck not in okay:
+            msg = r'Invalid updatecheck %r (can accept %r)'
+            msg %= (updatecheck, okay)
+            raise ValueError(msg)
     if wc is not None and wc.isinmemory():
         maybe_wlock = util.nullcontextmanager()
     else:
@@ -1929,10 +1918,9 @@ def _update(
                 raise error.StateError(_(b"outstanding uncommitted merge"))
             ms = wc.mergestate()
             if ms.unresolvedcount():
-                raise error.StateError(
-                    _(b"outstanding merge conflicts"),
-                    hint=_(b"use 'hg resolve' to resolve"),
-                )
+                msg = _(b"outstanding merge conflicts")
+                hint = _(b"use 'hg resolve' to resolve")
+                raise error.StateError(msg, hint=hint)
         if branchmerge:
             if pas == [p2]:
                 raise error.Abort(
