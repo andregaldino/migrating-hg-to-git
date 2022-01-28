@@ -4,6 +4,7 @@ import collections
 import errno
 import shutil
 import struct
+import weakref
 
 from .i18n import _
 from .node import (
@@ -106,8 +107,11 @@ class MergeAction(object):
     _short: internal representation used to identify each action
     """
 
+    ALL_ACTIONS = weakref.WeakSet()
+
     def __init__(self, short):
         self._short = short
+        self.ALL_ACTIONS.add(self)
 
     def __hash__(self):
         return hash(self._short)
