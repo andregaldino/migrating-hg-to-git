@@ -1931,10 +1931,9 @@ def _update(
                     hint = _(b"use 'hg update' or check 'hg heads'")
                     raise error.Abort(msg, hint=hint)
             if not force and (wc.files() or wc.deleted()):
-                raise error.StateError(
-                    _(b"uncommitted changes"),
-                    hint=_(b"use 'hg status' to list changes"),
-                )
+                msg = _(b"uncommitted changes")
+                hint = _(b"use 'hg status' to list changes")
+                raise error.StateError(msg, hint=hint)
             if not wc.isinmemory():
                 for s in sorted(wc.substate):
                     wc.sub(s).bailifchanged()
