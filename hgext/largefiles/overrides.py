@@ -51,6 +51,12 @@ from . import (
     storefactory,
 )
 
+ACTION_ADD = mergestatemod.ACTION_ADD
+ACTION_DELETED_CHANGED = mergestatemod.ACTION_DELETED_CHANGED
+ACTION_GET = mergestatemod.ACTION_GET
+ACTION_KEEP = mergestatemod.ACTION_KEEP
+ACTION_REMOVE = mergestatemod.ACTION_REMOVE
+
 eh = exthelper.exthelper()
 
 lfstatus = lfutil.lfstatus
@@ -563,8 +569,9 @@ def overridecalculateupdates(
         standin = lfutil.standin(lfile)
         (lm, largs, lmsg) = mresult.getfile(lfile, (None, None, None))
         (sm, sargs, smsg) = mresult.getfile(standin, (None, None, None))
-        if sm in (b'g', b'dc') and lm != b'r':
-            if sm == b'dc':
+
+        if sm in (ACTION_GET, ACTION_DELETED_CHANGED) and lm != ACTION_REMOVE:
+            if sm == ACTION_DELETED_CHANGED:
                 f1, f2, fa, move, anc = sargs
                 sargs = (p2[f2].flags(), False)
             # Case 1: normal file in the working copy, largefile in
@@ -578,26 +585,28 @@ def overridecalculateupdates(
                 % lfile
             )
             if repo.ui.promptchoice(usermsg, 0) == 0:  # pick remote largefile
-                mresult.addfile(lfile, b'r', None, b'replaced by standin')
-                mresult.addfile(standin, b'g', sargs, b'replaces standin')
+                mresult.addfile(
+                    lfile, ACTION_REMOVE, None, b'replaced by standin'
+                )
+                mresult.addfile(standin, ACTION_GET, sargs, b'replaces standin')
             else:  # keep local normal file
-                mresult.addfile(lfile, b'k', None, b'replaces standin')
+                mresult.addfile(lfile, ACTION_KEEP, None, b'replaces standin')
                 if branchmerge:
                     mresult.addfile(
                         standin,
-                        b'k',
+                        ACTION_KEEP,
                         None,
                         b'replaced by non-standin',
                     )
                 else:
                     mresult.addfile(
                         standin,
-                        b'r',
+                        ACTION_REMOVE,
                         None,
                         b'replaced by non-standin',
                     )
-        elif lm in (b'g', b'dc') and sm != b'r':
-            if lm == b'dc':
+        if lm in (ACTION_GET, ACTION_DELETED_CHANGED) and sm != ACTION_REMOVE:
+            if lm == ACTION_DELETED_CHANGED:
                 f1, f2, fa, move, anc = largs
                 largs = (p2[f2].flags(), False)
             # Case 2: largefile in the working copy, normal file in
@@ -615,11 +624,13 @@ def overridecalculateupdates(
                     # largefile can be restored from standin safely
                     mresult.addfile(
                         lfile,
-                        b'k',
+                        ACTION_KEEP,
                         None,
                         b'replaced by standin',
                     )
-                    mresult.addfile(standin, b'k', None, b'replaces standin')
+                    mresult.addfile(
+                        standin, ACTION_KEEP, None, b'replaces standin'
+                    )
                 else:
                     # "lfile" should be marked as "removed" without
                     # removal of itself
@@ -631,12 +642,12 @@ def overridecalculateupdates(
                     )
 
                     # linear-merge should treat this largefile as 're-added'
-                    mresult.addfile(standin, b'a', None, b'keep standin')
+                    mresult.addfile(standin, ACTION_ADD, None, b'keep standin')
             else:  # pick remote normal file
-                mresult.addfile(lfile, b'g', largs, b'replaces standin')
+                mresult.addfile(lfile, ACTION_GET, largs, b'replaces standin')
                 mresult.addfile(
                     standin,
-                    b'r',
+                    ACTION_REMOVE,
                     None,
                     b'replaced by non-standin',
                 )
