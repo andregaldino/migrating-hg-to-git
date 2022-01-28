@@ -2368,9 +2368,8 @@ def graft(
 def back_out(ctx, parent=None, wc=None):
     if parent is None:
         if ctx.p2() is not None:
-            raise error.ProgrammingError(
-                b"must specify parent of merge commit to back out"
-            )
+            msg = b"must specify parent of merge commit to back out"
+            raise error.ProgrammingError(msg)
         parent = ctx.p1()
     return _update(
         ctx.repo(),
