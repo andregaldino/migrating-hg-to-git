@@ -107,17 +107,22 @@ class MergeAction(object):
     _short: internal representation used to identify each action
 
     no_op:  True if the action does affect the file content or tracking status
+
+    narrow_safe:
+        True if the action can be safely used for a file outside of the narrow
+        set
     """
 
     ALL_ACTIONS = weakref.WeakSet()
     NO_OP_ACTIONS = weakref.WeakSet()
 
-    def __init__(self, short, no_op=False):
+    def __init__(self, short, no_op=False, narrow_safe=False):
         self._short = short
         self.ALL_ACTIONS.add(self)
         self.no_op = no_op
         if self.no_op:
             self.NO_OP_ACTIONS.add(self)
+        self.narrow_safe = narrow_safe
 
     def __hash__(self):
         return hash(self._short)
@@ -138,14 +143,14 @@ class MergeAction(object):
         return self._short < other._short
 
 
-ACTION_FORGET = MergeAction(b'f')
-ACTION_REMOVE = MergeAction(b'r')
-ACTION_ADD = MergeAction(b'a')
-ACTION_GET = MergeAction(b'g')
+ACTION_FORGET = MergeAction(b'f', narrow_safe=True)
+ACTION_REMOVE = MergeAction(b'r', narrow_safe=True)
+ACTION_ADD = MergeAction(b'a', narrow_safe=True)
+ACTION_GET = MergeAction(b'g', narrow_safe=True)
 ACTION_PATH_CONFLICT = MergeAction(b'p')
 ACTION_PATH_CONFLICT_RESOLVE = MergeAction('pr')
-ACTION_ADD_MODIFIED = MergeAction(b'am')
-ACTION_CREATED = MergeAction(b'c')
+ACTION_ADD_MODIFIED = MergeAction(b'am', narrow_safe=True)
+ACTION_CREATED = MergeAction(b'c', narrow_safe=True)
 ACTION_DELETED_CHANGED = MergeAction(b'dc')
 ACTION_CHANGED_DELETED = MergeAction(b'cd')
 ACTION_MERGE = MergeAction(b'm')
@@ -159,8 +164,8 @@ ACTION_KEEP_ABSENT = MergeAction(b'ka', no_op=True)
 # the file is absent on the ancestor and remote side of the merge
 # hence this file is new and we should keep it
 ACTION_KEEP_NEW = MergeAction(b'kn', no_op=True)
-ACTION_EXEC = MergeAction(b'e')
-ACTION_CREATED_MERGE = MergeAction(b'cm')
+ACTION_EXEC = MergeAction(b'e', narrow_safe=True)
+ACTION_CREATED_MERGE = MergeAction(b'cm', narrow_safe=True)
 
 
 # Used by concert to detect situation it does not like, not sure what the exact

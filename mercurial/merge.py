@@ -509,17 +509,6 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
     Raise an exception if the merge cannot be completed because the repo is
     narrowed.
     """
-    # TODO: handle with nonconflicttypes
-    nonconflicttypes = {
-        mergestatemod.ACTION_ADD,
-        mergestatemod.ACTION_ADD_MODIFIED,
-        mergestatemod.ACTION_CREATED,
-        mergestatemod.ACTION_CREATED_MERGE,
-        mergestatemod.ACTION_FORGET,
-        mergestatemod.ACTION_GET,
-        mergestatemod.ACTION_REMOVE,
-        mergestatemod.ACTION_EXEC,
-    }
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
     for f, action in mresult.filemap():
@@ -529,7 +518,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             mresult.removefile(f)  # just updating, ignore changes outside clone
         elif action[0].no_op:
             mresult.removefile(f)  # merge does not affect file
-        elif action[0] in nonconflicttypes:
+        elif action[0].narrow_safe:  # TODO: handle these cases
             msg = _(
                 b'merge affects file \'%s\' outside narrow, '
                 b'which is not yet supported'
