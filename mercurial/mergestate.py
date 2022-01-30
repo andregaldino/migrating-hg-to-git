@@ -98,6 +98,10 @@ LEGACY_MERGE_DRIVER_STATE = b'm'
 # This record was release in 3.7 and usage was removed in 5.6
 LEGACY_MERGE_DRIVER_MERGE = b'D'
 
+CHANGE_ADDED = b'added'
+CHANGE_REMOVED = b'removed'
+CHANGE_MODIFIED = b'modified'
+
 
 class MergeAction(object):
     """represent an "action" merge need to take for a given file
@@ -111,18 +115,29 @@ class MergeAction(object):
     narrow_safe:
         True if the action can be safely used for a file outside of the narrow
         set
+
+    changes:
+        The types of changes that this actions involves. This is a work in
+        progress and not all actions have one yet. In addition, some requires
+        user changes and cannot be fully decided. The value currently available
+        are:
+
+        - ADDED: the files is new in both parents
+        - REMOVED: the files existed in one parent and is getting removed
+        - MODIFIED: the files existed in at least one parent and is getting changed
     """
 
     ALL_ACTIONS = weakref.WeakSet()
     NO_OP_ACTIONS = weakref.WeakSet()
 
-    def __init__(self, short, no_op=False, narrow_safe=False):
+    def __init__(self, short, no_op=False, narrow_safe=False, changes=None):
         self._short = short
         self.ALL_ACTIONS.add(self)
         self.no_op = no_op
         if self.no_op:
             self.NO_OP_ACTIONS.add(self)
         self.narrow_safe = narrow_safe
+        self.changes = changes
 
     def __hash__(self):
         return hash(self._short)
@@ -143,14 +158,16 @@ class MergeAction(object):
         return self._short < other._short
 
 
-ACTION_FORGET = MergeAction(b'f', narrow_safe=True)
-ACTION_REMOVE = MergeAction(b'r', narrow_safe=True)
-ACTION_ADD = MergeAction(b'a', narrow_safe=True)
-ACTION_GET = MergeAction(b'g', narrow_safe=True)
+ACTION_FORGET = MergeAction(b'f', narrow_safe=True, changes=CHANGE_REMOVED)
+ACTION_REMOVE = MergeAction(b'r', narrow_safe=True, changes=CHANGE_REMOVED)
+ACTION_ADD = MergeAction(b'a', narrow_safe=True, changes=CHANGE_ADDED)
+ACTION_GET = MergeAction(b'g', narrow_safe=True, changes=CHANGE_MODIFIED)
 ACTION_PATH_CONFLICT = MergeAction(b'p')
 ACTION_PATH_CONFLICT_RESOLVE = MergeAction('pr')
-ACTION_ADD_MODIFIED = MergeAction(b'am', narrow_safe=True)
-ACTION_CREATED = MergeAction(b'c', narrow_safe=True)
+ACTION_ADD_MODIFIED = MergeAction(
+    b'am', narrow_safe=True, changes=CHANGE_ADDED
+)  # not 100% about the changes value here
+ACTION_CREATED = MergeAction(b'c', narrow_safe=True, changes=CHANGE_ADDED)
 ACTION_DELETED_CHANGED = MergeAction(b'dc')
 ACTION_CHANGED_DELETED = MergeAction(b'cd')
 ACTION_MERGE = MergeAction(b'm')
@@ -164,8 +181,10 @@ ACTION_KEEP_ABSENT = MergeAction(b'ka', no_op=True)
 # the file is absent on the ancestor and remote side of the merge
 # hence this file is new and we should keep it
 ACTION_KEEP_NEW = MergeAction(b'kn', no_op=True)
-ACTION_EXEC = MergeAction(b'e', narrow_safe=True)
-ACTION_CREATED_MERGE = MergeAction(b'cm', narrow_safe=True)
+ACTION_EXEC = MergeAction(b'e', narrow_safe=True, changes=CHANGE_MODIFIED)
+ACTION_CREATED_MERGE = MergeAction(
+    b'cm', narrow_safe=True, changes=CHANGE_ADDED
+)
 
 
 # Used by concert to detect situation it does not like, not sure what the exact
