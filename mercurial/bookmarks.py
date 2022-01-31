@@ -212,7 +212,11 @@ class bmstore(object):
         The transaction is then responsible for updating the file content."""
         location = b'' if bookmarksinstore(self._repo) else b'plain'
         tr.addfilegenerator(
-            b'bookmarks', (b'bookmarks',), self._write, location=location
+            b'bookmarks',
+            (b'bookmarks',),
+            self._write,
+            location=location,
+            post_finalize=True,
         )
         tr.hookargs[b'bookmark_moved'] = b'1'
 

@@ -730,12 +730,14 @@ class dirstate(object):
                     (self._filename_tk,),
                     lambda f: self._write_tracked_key(tr, f),
                     location=b'plain',
+                    post_finalize=True,
                 )
             tr.addfilegenerator(
                 b'dirstate-1-main',
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
+                post_finalize=True,
             )
             if write_key:
                 tr.addfilegenerator(
@@ -743,6 +745,7 @@ class dirstate(object):
                     (self._filename_tk,),
                     lambda f: self._write_tracked_key(tr, f),
                     location=b'plain',
+                    post_finalize=True,
                 )
             return
 
@@ -1425,6 +1428,7 @@ class dirstate(object):
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
+                post_finalize=True,
             )
 
             # ensure that pending file written above is unlinked at
