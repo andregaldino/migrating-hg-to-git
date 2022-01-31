@@ -713,8 +713,9 @@ class dirstate(object):
             )
             return
 
-        st = self._opener(filename, b"w", atomictemp=True, checkambig=True)
-        self._writedirstate(tr, st)
+        file = lambda f: self._opener(f, b"w", atomictemp=True, checkambig=True)
+        with file(self._filename) as f:
+            self._writedirstate(tr, f)
 
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
