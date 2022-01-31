@@ -229,6 +229,10 @@ class transaction(util.transactional):
         if self._journal:
             self._abort()
 
+    @property
+    def finalized(self):
+        return self._finalizecallback is None
+
     @active
     def startgroup(self):
         """delay registration of file entry
