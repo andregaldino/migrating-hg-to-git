@@ -575,11 +575,17 @@ class obsstore(object):
         return len(self._all)
 
     def __nonzero__(self):
+        from . import statichttprepo
+
+        if isinstance(self.repo, statichttprepo.statichttprepository):
+            # If repo is accessed via static HTTP, then we can't use os.stat()
+            # to just peek at the file size.
+            return len(self._data) > 1
         if not self._cached('_all'):
             try:
                 return self.svfs.stat(b'obsstore').st_size > 1
             except OSError as inst:
-                if inst.errno not in (errno.ENOENT, errno.EINVAL):
+                if inst.errno != errno.ENOENT:
                     raise
                 # just build an empty _all list if no obsstore exists, which
                 # avoids further stat() syscalls
