@@ -73,10 +73,6 @@ import errno
 import struct
 
 from .i18n import _
-from .node import (
-    bin,
-    hex,
-)
 from .pycompat import getattr
 from .node import (
     bin,
