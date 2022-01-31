@@ -706,7 +706,7 @@ class dirstate(object):
         if tr:
             # delay writing in-memory changes out
             tr.addfilegenerator(
-                b'dirstate',
+                b'dirstate-1-main',
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
@@ -1374,7 +1374,7 @@ class dirstate(object):
             # changes written out above, even if dirstate is never
             # changed after this
             tr.addfilegenerator(
-                b'dirstate',
+                b'dirstate-1-main',
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
