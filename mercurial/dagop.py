@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import heapq
 
-from .node import nullrev
 from .thirdparty import attr
 from .node import nullrev
 from . import (
