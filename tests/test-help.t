@@ -1599,6 +1599,8 @@ Separate sections from subsections
   
       "use-dirstate-v2"
   
+      "exp-dirstate-tracked-key-version"
+  
       "use-persistent-nodemap"
   
       "use-share-safe"

@@ -944,6 +944,42 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
+``exp-dirstate-tracked-key-version``
+    Enable or disable the writing of "tracked key" file alongside the dirstate.
+
+    That "tracked-key" can help external automations to detect changes to the
+    set of tracked files.
+
+    Two values are currently supported:
+    - 0: no file is written (the default),
+    - 1: a file in version "1" is written.
+
+    The tracked-key is written in a new `.hg/dirstate-tracked-key`. That file
+    contains two lines:
+    - the first line is the file version (currently: 1),
+    - the second line contains the "tracked-key".
+
+    The tracked-key changes whenever the set of file tracked in the dirstate
+    changes. The general guarantees are:
+    - if the tracked key is identical, the set of tracked file MUST not have changed,
+    - if the tracked key is different, the set of tracked file MIGHT differ.
+
+    They are two "ways" to use this feature:
+
+    1) monitoring changes to the `.hg/dirstate-tracked-key`, if the file changes
+    the tracked set might have changed.
+
+    2) storing the value and comparing it to a later value. Beware that it is
+    impossible to achieve atomic writing or reading of the two files involved
+    files (`.hg/dirstate` and `.hg/dirstate-tracked-key`). So it is needed to
+    read the `tracked-key` files twice: before and after reading the tracked
+    set. The `tracked-key` is only usable as a cache key if it had the same
+    value in both cases and must be discarded otherwise.
+
+    To enforce that the `tracked-key` value can be used race-free (with double
+    reading as explained in (2)), the `.hg/dirstate-tracked-key` is written
+    twice: before and after we change the associated `.hg/dirstate` file.
+
 ``use-persistent-nodemap``
     Enable or disable the "persistent-nodemap" feature which improves
     performance if the Rust extensions are available.

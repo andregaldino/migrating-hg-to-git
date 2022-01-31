@@ -30,7 +30,9 @@ version = 2
 # the changelog having been written).
 postfinalizegenerators = {
     b'bookmarks',
+    b'dirstate-0-key-pre',
     b'dirstate-1-main',
+    b'dirstate-2-key-post',
 }
 
 GEN_GROUP_ALL = b'all'

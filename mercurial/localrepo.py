@@ -1278,6 +1278,7 @@ class localrepository(object):
         requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.CHANGELOGV2_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
+        requirementsmod.DIRSTATE_TRACKED_KEY_V1,
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
         requirementsmod.DOTENCODE_REQUIREMENT,
         requirementsmod.FNCACHE_REQUIREMENT,
@@ -1742,7 +1743,9 @@ class localrepository(object):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
         v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
+        tk = requirementsmod.DIRSTATE_TRACKED_KEY_V1
         use_dirstate_v2 = v2_req in self.requirements
+        use_tracked_key = tk in self.requirements
 
         return dirstate.dirstate(
             self.vfs,
@@ -1752,6 +1755,7 @@ class localrepository(object):
             sparsematchfn,
             self.nodeconstants,
             use_dirstate_v2,
+            use_tracked_key=use_tracked_key,
         )
 
     def _dirstatevalidate(self, node):
@@ -3690,6 +3694,17 @@ def newreporequirements(ui, createopts):
             requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
         else:
             requirements.add(requirementsmod.SHARED_REQUIREMENT)
+
+    tracked_key = ui.configint(b'format', b'exp-dirstate-tracked-key-version')
+    if tracked_key:
+        if tracked_key != 1:
+            msg = _("ignoring unknown tracked key version: %d\n")
+            hint = _(
+                "see `hg help config.format.exp-dirstate-tracked-key-version"
+            )
+            ui.warn(msg % tracked_key, hint=hint)
+        else:
+            requirements.add(requirementsmod.DIRSTATE_TRACKED_KEY_V1)
 
     return requirements
 

@@ -12,6 +12,7 @@ import contextlib
 import errno
 import os
 import stat
+import uuid
 
 from .i18n import _
 from .pycompat import delattr
@@ -23,6 +24,7 @@ from . import (
     encoding,
     error,
     match as matchmod,
+    node,
     pathutil,
     policy,
     pycompat,
@@ -99,6 +101,7 @@ class dirstate(object):
         sparsematchfn,
         nodeconstants,
         use_dirstate_v2,
+        use_tracked_key=False,
     ):
         """Create a new dirstate object.
 
@@ -107,6 +110,7 @@ class dirstate(object):
         the dirstate.
         """
         self._use_dirstate_v2 = use_dirstate_v2
+        self._use_tracked_key = use_tracked_key
         self._nodeconstants = nodeconstants
         self._opener = opener
         self._validate = validate
@@ -115,11 +119,15 @@ class dirstate(object):
         # ntpath.join(root, '') of Python 2.7.9 does not add sep if root is
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
+        # True is any internal state may be different
         self._dirty = False
+        # True if the set of tracked file may be different
+        self._dirty_tracked_set = False
         self._ui = ui
         self._filecache = {}
         self._parentwriters = 0
         self._filename = b'dirstate'
+        self._filename_tk = b'dirstate-tracked-key'
         self._pendingfilename = b'%s.pending' % self._filename
         self._plchangecallbacks = {}
         self._origpl = None
@@ -409,6 +417,7 @@ class dirstate(object):
             if a in self.__dict__:
                 delattr(self, a)
         self._dirty = False
+        self._dirty_tracked_set = False
         self._parentwriters = 0
         self._origpl = None
 
@@ -446,6 +455,8 @@ class dirstate(object):
         pre_tracked = self._map.set_tracked(filename)
         if reset_copy:
             self._map.copymap.pop(filename, None)
+        if pre_tracked:
+            self._dirty_tracked_set = True
         return pre_tracked
 
     @requires_no_parents_change
@@ -460,6 +471,7 @@ class dirstate(object):
         ret = self._map.set_untracked(filename)
         if ret:
             self._dirty = True
+            self._dirty_tracked_set = True
         return ret
 
     @requires_no_parents_change
@@ -544,6 +556,13 @@ class dirstate(object):
         # this. The test agrees
 
         self._dirty = True
+        old_entry = self._map.get(filename)
+        if old_entry is None:
+            prev_tracked = False
+        else:
+            prev_tracked = old_entry.tracked
+        if prev_tracked != wc_tracked:
+            self._dirty_tracked_set = True
 
         self._map.reset_state(
             filename,
@@ -702,20 +721,44 @@ class dirstate(object):
         if not self._dirty:
             return
 
-        filename = self._filename
+        write_key = self._use_tracked_key and self._dirty_tracked_set
         if tr:
             # delay writing in-memory changes out
+            if write_key:
+                tr.addfilegenerator(
+                    b'dirstate-0-key-pre',
+                    (self._filename_tk,),
+                    lambda f: self._write_tracked_key(tr, f),
+                    location=b'plain',
+                )
             tr.addfilegenerator(
                 b'dirstate-1-main',
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
             )
+            if write_key:
+                tr.addfilegenerator(
+                    b'dirstate-2-key-post',
+                    (self._filename_tk,),
+                    lambda f: self._write_tracked_key(tr, f),
+                    location=b'plain',
+                )
             return
 
         file = lambda f: self._opener(f, b"w", atomictemp=True, checkambig=True)
+        if write_key:
+            # we change the key-file before changing the dirstate to make sure
+            # reading invalidate there cache before we start writing
+            with file(self._filename_tk) as f:
+                self._write_tracked_key(tr, f)
         with file(self._filename) as f:
             self._writedirstate(tr, f)
+        if write_key:
+            # we update the key-file after writing to make sure reader have a
+            # key that match the newly written content
+            with file(self._filename_tk) as f:
+                self._write_tracked_key(tr, f)
 
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
@@ -736,9 +779,13 @@ class dirstate(object):
             ):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
-
         self._map.write(tr, st)
         self._dirty = False
+        self._dirty_tracked_set = False
+
+    def _write_tracked_key(self, tr, f):
+        key = node.hex(uuid.uuid4().bytes)
+        f.write(b"1\n%s\n" % key)  # 1 is the format version
 
     def _dirignore(self, f):
         if self._ignore(f):

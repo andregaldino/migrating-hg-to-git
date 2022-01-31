@@ -1284,6 +1284,12 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
+    b'exp-dirstate-tracked-key-version',
+    default=0,
+    experimental=True,
+)
+coreconfigitem(
+    b'format',
     b'dotencode',
     default=True,
 )
