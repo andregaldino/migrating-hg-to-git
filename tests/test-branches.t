@@ -1242,3 +1242,101 @@ Intermediary parents are on different branches.
   C                              3:4a546028fa8f (inactive)
   B                              1:0bc7d348d965 (inactive)
   $ cd ..
+
+Check that the cache are not written too early
+----------------------------------------------
+
+  $ hg log -R branchmap-testing1 -G
+  o    changeset:   3:71ca9a6d524e
+  |\   branch:      A
+  | |  tag:         tip
+  | |  parent:      2:a3b807b3ff0b
+  | |  parent:      1:99ba08759bc7
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:03 1970 +0000
+  | |  summary:     r3
+  | |
+  | o  changeset:   2:a3b807b3ff0b
+  | |  branch:      A
+  | |  parent:      0:2ab8003a1750
+  | |  user:        debugbuilddag
+  | |  date:        Thu Jan 01 00:00:02 1970 +0000
+  | |  summary:     r2
+  | |
+  o |  changeset:   1:99ba08759bc7
+  |/   branch:      A
+  |    tag:         p1
+  |    user:        debugbuilddag
+  |    date:        Thu Jan 01 00:00:01 1970 +0000
+  |    summary:     r1
+  |
+  o  changeset:   0:2ab8003a1750
+     branch:      A
+     tag:         base
+     user:        debugbuilddag
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     r0
+  
+  $ hg bundle -R branchmap-testing1 --base 1 bundle.hg --rev 'head()'
+  2 changesets found
+
+Unbundling revision should warm the served cache
+
+  $ hg clone branchmap-testing1 --rev 1 branchmap-update-01
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  new changesets 2ab8003a1750:99ba08759bc7
+  updating to branch A
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat branchmap-update-01/.hg/cache/branch2-served
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 1
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 o A
+  $ hg -R branchmap-update-01 unbundle bundle.hg
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  new changesets a3b807b3ff0b:71ca9a6d524e (2 drafts)
+  (run 'hg update' to get a working copy)
+  $ cat branchmap-update-01/.hg/cache/branch2-served
+  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 3
+  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 o A
+
+aborted Unbundle should not update the on disk cache
+
+  $ cat >> simplehook.py << EOF
+  > import sys
+  > from mercurial import node
+  > from mercurial import branchmap
+  > def hook(ui, repo, *args, **kwargs):
+  >     s = repo.filtered(b"served")
+  >     s.branchmap()
+  >     return 1
+  > EOF
+  $ hg clone branchmap-testing1 --rev 1 branchmap-update-02
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 0 changes to 0 files
+  new changesets 2ab8003a1750:99ba08759bc7
+  updating to branch A
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ cat branchmap-update-02/.hg/cache/branch2-served
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 1
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 o A
+  $ hg -R branchmap-update-02 unbundle bundle.hg --config "hooks.pretxnclose=python:$TESTTMP/simplehook.py:hook"
+  adding changesets
+  adding manifests
+  adding file changes
+  transaction abort!
+  rollback completed
+  abort: pretxnclose hook failed
+  [40]
+  $ cat branchmap-update-02/.hg/cache/branch2-served
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 1 (missing-correct-output !)
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 o A (missing-correct-output !)
+  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 3 (known-bad-output !)
+  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 o A (known-bad-output !)
