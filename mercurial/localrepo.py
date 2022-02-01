@@ -2830,6 +2830,8 @@ class localrepository(object):
                 self.ui.debug(b'updating the branch cache\n')
                 self.filtered(b'served').branchmap()
                 self.filtered(b'served.hidden').branchmap()
+                # flush all possibly delayed write.
+                self._branchcaches.write_delayed(self)
 
         if repository.CACHE_CHANGELOG_CACHE in caches:
             self.changelog.update_caches(transaction=tr)

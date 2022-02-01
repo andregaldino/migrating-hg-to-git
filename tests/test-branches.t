@@ -1336,7 +1336,5 @@ aborted Unbundle should not update the on disk cache
   abort: pretxnclose hook failed
   [40]
   $ cat branchmap-update-02/.hg/cache/branch2-served
-  99ba08759bc7f6fdbe5304e83d0387f35c082479 1 (missing-correct-output !)
-  99ba08759bc7f6fdbe5304e83d0387f35c082479 o A (missing-correct-output !)
-  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 3 (known-bad-output !)
-  71ca9a6d524ed3c2a215119b2086ac3b8c4c8286 o A (known-bad-output !)
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 1
+  99ba08759bc7f6fdbe5304e83d0387f35c082479 o A
