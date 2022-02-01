@@ -19,7 +19,7 @@ The following operations are sped up when using Rust:
     - discovery of differences between repositories (pull/push)
     - nodemap (see :hg:`help config.format.use-persistent-nodemap`)
     - all commands using the dirstate (status, commit, diff, add, update, etc.)
-    - dirstate-v2 (see :hg:`help config.format.exp-rc-dirstate-v2`)
+    - dirstate-v2 (see :hg:`help config.format.use-dirstate-v2`)
     - iteration over ancestors in a graph
 
 More features are in the works, and improvements on the above listed are still

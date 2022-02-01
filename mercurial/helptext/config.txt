@@ -892,7 +892,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Enabled by default.
 
-``exp-rc-dirstate-v2``
+``use-dirstate-v2``
     Enable or disable the experimental "dirstate-v2" feature. The dirstate
     functionality is shared by all commands interacting with the working copy.
     The new version is more robust, faster and stores more information.
@@ -916,7 +916,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     $ hg debugupgraderepo \
           --run \
-          --config format.exp-rc-dirstate-v2=False \
+          --config format.use-dirstate-v2=False \
           --config storage.dirstate-v2.slow-path=allow
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.

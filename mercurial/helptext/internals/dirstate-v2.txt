@@ -37,12 +37,12 @@ Enabling `dirstate-v2` for new local repositories
 ------------------------------------------------
 
 When creating a new local repository such as with `hg init` or `hg clone`,
-the `exp-rc-dirstate-v2` boolean in the `format` configuration section
+the `use-dirstate-v2` boolean in the `format` configuration section
 controls whether to use this file format.
 This is disabled by default as of this writing.
 To enable it for a single repository, run for example::
 
-    $ hg init my-project --config format.exp-rc-dirstate-v2=1
+    $ hg init my-project --config format.use-dirstate-v2=1
 
 Checking the format of an existing local repository
 --------------------------------------------------
@@ -63,15 +63,15 @@ Upgrading or downgrading an existing local repository
 The `debugupgrade` command does various upgrades or downgrades
 on a local repository
 based on the current Mercurial version and on configuration.
-The same `format.exp-rc-dirstate-v2` configuration is used again.
+The same `format.use-dirstate-v2` configuration is used again.
 
 Example to upgrade::
 
-    $ hg debugupgrade --config format.exp-rc-dirstate-v2=1
+    $ hg debugupgrade --config format.use-dirstate-v2=1
 
 Example to downgrade to `dirstate-v1`::
 
-    $ hg debugupgrade --config format.exp-rc-dirstate-v2=0
+    $ hg debugupgrade --config format.use-dirstate-v2=0
 
 Both of this commands do nothing but print a list of proposed changes,
 which may include changes unrelated to the dirstate.
