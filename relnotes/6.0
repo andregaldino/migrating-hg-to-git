@@ -1,3 +1,25 @@
+= Mercurial 6.0.2 =
+
+  * Fix `hg incoming` and `hg outgoing` with remote subrepos on Windows
+  * Fix Rust build on MacOS
+  * Fix a (15 year old?) bug where some data loss could happen in a very tight race window (f38ae2d7390e + ccd9cb73125c)
+  * Remove support for running `hg unamend` on merge changesets at it was never actually implemented
+  * Fix stream-clone requirements filtering which caused some stream-clones to be unusable from an older version of Mercurial
+  * Rename dirstate-v2 configuration name from `exp-rc-dirstate-v2` to `use-dirstate-v2`. This was overlooked in `6.0`, the old name will be kept as an alias for compatibility.
+  * Fix a bug where the branchmap could point to uncommitted data 
+
+= Mercurial 6.0.1 =
+
+  * Improve documentation around Rust (see hg help rust) and rust-related actions
+  * Improve upgrade/downgrade edge cases for dirstate-v2
+  * Make the test suite nicer to big-endian platforms
+  * Make the test suite nicer to NetBSD
+  * Fix a performance regression on fsmonitor (issue6612)
+  * Add fixes for Python 3.10
+  * Fix a deadlock when using sparse and share-safe together 
+
+= Mercurial 6.0 =
+
 == New Features ==
   * `debugrebuildfncache` now has an option to rebuild only the index files
   * a new `bookmarks.mode` path option have been introduced to control the
