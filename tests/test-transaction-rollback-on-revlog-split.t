@@ -17,22 +17,28 @@ Helper extension to intercept renames.
   >     extensions.wrapfunction(util.atomictempfile, 'close', close)
   > EOF
 
-Test offset computation to correctly factor in the index entries themselve.
+Test offset computation to correctly factor in the index entries themselves.
 Also test that the new data size has the correct size if the transaction is aborted
 after the index has been replaced.
 
-Test repo has one small, one moderate and one big change. The clone has
-the small and moderate change and will transition to non-inline storage when
-adding the big change.
+Test repo has commits a, b, c, D, where D is large (grows the revlog enough that it
+transitions to non-inline storage). The clone initially has changes a, b
+and will transition to non-inline storage when adding c, D.
+
+If the transaction adding c, D is rolled back, then we don't undo the revlog split,
+but truncate the index and the data to remove both c and D.
 
   $ hg init troffset-computation --config format.revlog-compression=none
   $ cd troffset-computation
   $ printf '%20d' '1' > file
-  $ hg commit -Aqm_
+  $ hg commit -Aqma
   $ printf '%1024d' '1' > file
-  $ hg commit -Aqm_
+  $ hg commit -Aqmb
+  $ printf '%20d' '1' > file
+  $ hg commit -Aqmc
   $ dd if=/dev/zero of=file bs=1k count=128 > /dev/null 2>&1
-  $ hg commit -Aqm_
+  $ hg commit -AqmD
+
   $ cd ..
 
   $ hg clone -r 1 troffset-computation troffset-computation-copy --config format.revlog-compression=none -q
@@ -59,7 +65,7 @@ Reference size:
   $ cat .hg/store/journal | tr -s '\000' ' ' | grep data/file | tail -1
   data/file.i 128
 
-The first file.i entry should match the size above.
+The first file.i entry should match the "Reference size" above.
 The first file.d entry is the temporary record during the split,
 the second entry after the split happened. The sum of the second file.d
 and the second file.i entry should match the first file.i entry.
@@ -76,11 +82,11 @@ and the second file.i entry should match the first file.i entry.
   .hg/store/data/file.d: size=1046
   .hg/store/data/file.i: size=128
   $ hg tip
-  changeset:   1:3ce491143aec
+  changeset:   1:cfa8d6e60429
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     _
+  summary:     b
   
   $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!
@@ -126,11 +132,11 @@ where the data file is left as garbage.
   .hg/store/data/file.d: size=1046
   .hg/store/data/file.i: size=1174
   $ hg tip
-  changeset:   1:3ce491143aec
+  changeset:   1:cfa8d6e60429
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     _
+  summary:     b
   
   $ hg verify -q
   $ cd ..
@@ -158,11 +164,11 @@ Repeat the original test but let hg rollback the transaction.
   .hg/store/data/file.d: size=1046
   .hg/store/data/file.i: size=128
   $ hg tip
-  changeset:   1:3ce491143aec
+  changeset:   1:cfa8d6e60429
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     _
+  summary:     b
   
   $ hg verify -q
    warning: revlog 'data/file.d' not in fncache!

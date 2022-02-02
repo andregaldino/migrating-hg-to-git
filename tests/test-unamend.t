@@ -421,3 +421,27 @@ Rename a->b, then amend b->c, and working copy change c->d. After unamend, shoul
   A d
     b
   R b
+
+Try to unamend a merge
+
+  $ cd ..
+  $ hg init merge
+  $ cd merge
+  $ echo initial > initial
+  $ hg ci -Aqm initial
+  $ echo left > left
+  $ hg ci -Aqm left
+  $ hg co -q 0
+  $ echo right > right
+  $ hg ci -Aqm right
+  $ hg merge -q 1
+  $ hg ci -m merge
+  $ echo accidental > initial
+  $ hg st --rev 1 --rev .
+  A right
+  $ hg st --rev 2 --rev .
+  A left
+  $ hg amend
+  $ hg unamend
+  abort: cannot unamend merge changeset
+  [10]

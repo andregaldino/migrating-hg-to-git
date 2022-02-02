@@ -225,7 +225,7 @@ Disable zstd related tests because its not present on pure version
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (dirstate-v2 !)
      added: revlog-compression-zstd
   
   processed revlogs:
@@ -253,8 +253,8 @@ Disable zstd related tests because its not present on pure version
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd no-dirstate-v2 !)
      preserved: dotencode, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, share-safe, sparserevlog, store (no-zstd dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlog-compression-zstd, revlogv1, share-safe, sparserevlog, store (zstd dirstate-v2 !)
      added: persistent-nodemap
   
   processed revlogs:
@@ -360,7 +360,7 @@ Upgrade
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   no revlogs to process
@@ -370,7 +370,7 @@ Upgrade
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   share-safe
@@ -448,7 +448,7 @@ Test that downgrading works too
   $ hg debugupgraderepo -q
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
   no revlogs to process
@@ -458,7 +458,7 @@ Test that downgrading works too
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
   no revlogs to process
@@ -541,7 +541,7 @@ Testing automatic upgrade of shares when config is set
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, sparserevlog, store (no-dirstate-v2 !)
-     preserved: dotencode, exp-rc-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
+     preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
   no revlogs to process

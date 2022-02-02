@@ -1277,9 +1277,10 @@ coreconfigitem(
     # Enable this dirstate format *when creating a new repository*.
     # Which format to use for existing repos is controlled by .hg/requires
     b'format',
-    b'exp-rc-dirstate-v2',
+    b'use-dirstate-v2',
     default=False,
     experimental=True,
+    alias=[(b'format', b'exp-rc-dirstate-v2')],
 )
 coreconfigitem(
     b'format',
@@ -1851,7 +1852,7 @@ coreconfigitem(
     default=b'skip',
     experimental=True,
 )
-# experimental as long as format.exp-rc-dirstate-v2 is.
+# experimental as long as format.use-dirstate-v2 is.
 coreconfigitem(
     b'storage',
     b'dirstate-v2.slow-path',

@@ -1713,9 +1713,9 @@ Demonstrate that nothing to perform upgrade will still run all the way through
 
 Upgrade to dirstate-v2
 
-  $ hg debugformat -v --config format.exp-rc-dirstate-v2=1 | grep dirstate-v2
+  $ hg debugformat -v --config format.use-dirstate-v2=1 | grep dirstate-v2
   dirstate-v2:         no    yes      no
-  $ hg debugupgraderepo --config format.exp-rc-dirstate-v2=1 --run
+  $ hg debugupgraderepo --config format.use-dirstate-v2=1 --run
   upgrade will perform the following actions:
   
   requirements
@@ -1769,14 +1769,14 @@ Downgrade from dirstate-v2
 dirstate-v2: upgrade and downgrade from and empty repository:
 -------------------------------------------------------------
 
-  $ hg init --config format.exp-rc-dirstate-v2=no dirstate-v2-empty
+  $ hg init --config format.use-dirstate-v2=no dirstate-v2-empty
   $ cd dirstate-v2-empty
   $ hg debugformat | grep dirstate-v2
   dirstate-v2:         no
 
 upgrade
 
-  $ hg debugupgraderepo --run --config format.exp-rc-dirstate-v2=yes
+  $ hg debugupgraderepo --run --config format.use-dirstate-v2=yes
   upgrade will perform the following actions:
   
   requirements
@@ -1800,7 +1800,7 @@ upgrade
 
 downgrade
 
-  $ hg debugupgraderepo --run --config format.exp-rc-dirstate-v2=no
+  $ hg debugupgraderepo --run --config format.use-dirstate-v2=no
   upgrade will perform the following actions:
   
   requirements

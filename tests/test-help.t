@@ -1597,7 +1597,7 @@ Separate sections from subsections
   
       "usefncache"
   
-      "exp-rc-dirstate-v2"
+      "use-dirstate-v2"
   
       "use-persistent-nodemap"
   

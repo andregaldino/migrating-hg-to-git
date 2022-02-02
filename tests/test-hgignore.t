@@ -3,7 +3,7 @@
 #if dirstate-v2
   $ cat >> $HGRCPATH << EOF
   > [format]
-  > exp-rc-dirstate-v2=1
+  > use-dirstate-v2=1
   > [storage]
   > dirstate-v2.slow-path=allow
   > EOF

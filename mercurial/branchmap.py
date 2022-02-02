@@ -149,6 +149,13 @@ class BranchMapCache(object):
     def clear(self):
         self._per_filter.clear()
 
+    def write_delayed(self, repo):
+        unfi = repo.unfiltered()
+        for filtername, cache in self._per_filter.items():
+            if cache._delayed:
+                repo = unfi.filtered(filtername)
+                cache.write(repo)
+
 
 def _unknownnode(node):
     """raises ValueError when branchcache found a node which does not exists"""
@@ -199,6 +206,7 @@ class branchcache(object):
         has a given node or not. If it's not provided, we assume that every node
         we have exists in changelog"""
         self._repo = repo
+        self._delayed = False
         if tipnode is None:
             self.tipnode = repo.nullid
         else:
@@ -403,6 +411,13 @@ class branchcache(object):
         )
 
     def write(self, repo):
+        tr = repo.currenttransaction()
+        if not getattr(tr, 'finalized', True):
+            # Avoid premature writing.
+            #
+            # (The cache warming setup by localrepo will update the file later.)
+            self._delayed = True
+            return
         try:
             f = repo.cachevfs(self._filename(repo), b"w", atomictemp=True)
             cachekey = [hex(self.tipnode), b'%d' % self.tiprev]
@@ -427,6 +442,7 @@ class branchcache(object):
                 len(self._entries),
                 nodecount,
             )
+            self._delayed = False
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug(

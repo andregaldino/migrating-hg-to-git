@@ -273,6 +273,8 @@ def unamend(ui, repo, **opts):
         curctx = repo[b'.']
 
         rewriteutil.precheck(repo, [curctx.rev()], b'unamend')
+        if len(curctx.parents()) > 1:
+            raise error.InputError(_(b"cannot unamend merge changeset"))
 
         # identify the commit to which to unamend
         markers = list(predecessormarkers(curctx))
