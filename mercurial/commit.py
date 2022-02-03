@@ -211,7 +211,16 @@ def _process_files(tr, ctx, ms, files, narrow_files=None, error=False):
         repo.ui.note(uipathfn(f) + b"\n")
         if f in narrow_files:
             narrow_action = narrow_files.get(f)
-            if narrow_action == mergestate.CHANGE_MODIFIED:
+            if narrow_action == mergestate.CHANGE_REMOVED:
+                files.mark_removed(f)
+                removed.append(f)
+            elif narrow_action == mergestate.CHANGE_ADDED:
+                files.mark_added(f)
+                added.append(f)
+                m[f] = m2[f]
+                flags = m2ctx.find(f)[1] or b''
+                m.setflag(f, flags)
+            elif narrow_action == mergestate.CHANGE_MODIFIED:
                 files.mark_touched(f)
                 added.append(f)
                 m[f] = m2[f]

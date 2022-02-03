@@ -519,10 +519,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
         elif action[0].no_op:
             mresult.removefile(f)  # merge does not affect file
         elif action[0].narrow_safe:
-            if (
-                not f.endswith(b'/')
-                and action[0].changes == mergestatemod.CHANGE_MODIFIED
-            ):
+            if not f.endswith(b'/'):
                 mresult.removefile(f)  # merge won't affect on-disk files
 
                 mresult.addcommitinfo(
