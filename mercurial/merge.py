@@ -518,13 +518,23 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             mresult.removefile(f)  # just updating, ignore changes outside clone
         elif action[0].no_op:
             mresult.removefile(f)  # merge does not affect file
-        elif action[0].narrow_safe:  # TODO: handle these cases
-            msg = _(
-                b'merge affects file \'%s\' outside narrow, '
-                b'which is not yet supported'
-            )
-            hint = _(b'merging in the other direction may work')
-            raise error.Abort(msg % f, hint=hint)
+        elif action[0].narrow_safe:
+            if (
+                not f.endswith(b'/')
+                and action[0].changes == mergestatemod.CHANGE_MODIFIED
+            ):
+                mresult.removefile(f)  # merge won't affect on-disk files
+
+                mresult.addcommitinfo(
+                    f, b'outside-narrow-merge-action', action[0].changes
+                )
+            else:  # TODO: handle the tree case
+                msg = _(
+                    b'merge affects file \'%s\' outside narrow, '
+                    b'which is not yet supported'
+                )
+                hint = _(b'merging in the other direction may work')
+                raise error.Abort(msg % f, hint=hint)
         else:
             msg = _(b'conflict in file \'%s\' is outside narrow clone')
             raise error.StateError(msg % f)

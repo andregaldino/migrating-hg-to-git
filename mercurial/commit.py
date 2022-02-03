@@ -134,7 +134,13 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
     for s in salvaged:
         files.mark_salvaged(s)
 
-    if ctx.manifestnode():
+    narrow_files = {}
+    if not ctx.repo().narrowmatch().always():
+        for f, e in ms.allextras().items():
+            action = e.get(b'outside-narrow-merge-action')
+            if action is not None:
+                narrow_files[f] = action
+    if ctx.manifestnode() and not narrow_files:
         # reuse an existing manifest revision
         repo.ui.debug(b'reusing known manifest\n')
         mn = ctx.manifestnode()
@@ -142,11 +148,11 @@ def _prepare_files(tr, ctx, error=False, origctx=None):
         if writechangesetcopy:
             files.update_added(ctx.filesadded())
             files.update_removed(ctx.filesremoved())
-    elif not ctx.files():
+    elif not ctx.files() and not narrow_files:
         repo.ui.debug(b'reusing manifest from p1 (no file change)\n')
         mn = p1.manifestnode()
     else:
-        mn = _process_files(tr, ctx, ms, files, error=error)
+        mn = _process_files(tr, ctx, ms, files, narrow_files, error=error)
 
     if origctx and origctx.manifestnode() == mn:
         origfiles = origctx.files()
@@ -177,7 +183,7 @@ def _get_salvaged(repo, ms, ctx):
     return salvaged
 
 
-def _process_files(tr, ctx, ms, files, error=False):
+def _process_files(tr, ctx, ms, files, narrow_files=None, error=False):
     repo = ctx.repo()
     p1 = ctx.p1()
     p2 = ctx.p2()
@@ -198,8 +204,24 @@ def _process_files(tr, ctx, ms, files, error=False):
     linkrev = len(repo)
     repo.ui.note(_(b"committing files:\n"))
     uipathfn = scmutil.getuipathfn(repo)
-    for f in sorted(ctx.modified() + ctx.added()):
+    all_files = ctx.modified() + ctx.added()
+    all_files.extend(narrow_files.keys())
+    all_files.sort()
+    for f in all_files:
         repo.ui.note(uipathfn(f) + b"\n")
+        if f in narrow_files:
+            narrow_action = narrow_files.get(f)
+            if narrow_action == mergestate.CHANGE_MODIFIED:
+                files.mark_touched(f)
+                added.append(f)
+                m[f] = m2[f]
+                flags = m2ctx.find(f)[1] or b''
+                m.setflag(f, flags)
+            else:
+                msg = _(b"corrupted mergestate, unknown narrow action: %b")
+                hint = _(b"restart the merge")
+                raise error.Abort(msg, hint=hint)
+            continue
         try:
             fctx = ctx[f]
             if fctx is None:
@@ -239,7 +261,17 @@ def _process_files(tr, ctx, ms, files, error=False):
             if not rf(f):
                 files.mark_removed(f)
 
-    mn = _commit_manifest(tr, linkrev, ctx, mctx, m, files.touched, added, drop)
+    mn = _commit_manifest(
+        tr,
+        linkrev,
+        ctx,
+        mctx,
+        m,
+        files.touched,
+        added,
+        drop,
+        bool(narrow_files),
+    )
 
     return mn
 
@@ -409,7 +441,17 @@ def _filecommit(
     return fnode, touched
 
 
-def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
+def _commit_manifest(
+    tr,
+    linkrev,
+    ctx,
+    mctx,
+    manifest,
+    files,
+    added,
+    drop,
+    has_some_narrow_action=False,
+):
     """make a new manifest entry (or reuse a new one)
 
     given an initialised manifest context and precomputed list of
@@ -451,6 +493,10 @@ def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
         # at this point is merges, and we already error out in the
         # case where the merge has files outside of the narrowspec,
         # so this is safe.
+        if has_some_narrow_action:
+            match = None
+        else:
+            match = repo.narrowmatch()
         mn = mctx.write(
             tr,
             linkrev,
@@ -458,7 +504,7 @@ def _commit_manifest(tr, linkrev, ctx, mctx, manifest, files, added, drop):
             p2.manifestnode(),
             added,
             drop,
-            match=repo.narrowmatch(),
+            match=match,
         )
     else:
         repo.ui.debug(
