@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .thirdparty import attr
 from . import (
     error,
     mdiff,
@@ -474,14 +473,14 @@ def _resolve(m3, sides):
     return lines
 
 
-@attr.s
 class MergeInput(object):
-    fctx = attr.ib()
-    label = attr.ib(default=None)
-    # If the "detail" part is set, then that is rendered after the label and
-    # separated by a ':'. The label is padded to make the ':' aligned among all
-    # merge inputs.
-    label_detail = attr.ib(default=None)
+    def __init__(self, fctx, label=None, label_detail=None):
+        self.fctx = fctx
+        self.label = label
+        # If the "detail" part is set, then that is rendered after the label and
+        # separated by a ':'. The label is padded to make the ':' aligned among
+        # all merge inputs.
+        self.label_detail = label_detail
 
 
 def simplemerge(
