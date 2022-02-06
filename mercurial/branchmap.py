@@ -519,7 +519,7 @@ class branchcache(object):
             #   checks can be skipped. Otherwise, the ancestors of the
             #   "uncertain" set are removed from branchheads.
             #   This computation is heavy and avoided if at all possible.
-            bheads = self._entries.setdefault(branch, [])
+            bheads = self._entries.get(branch, [])
             bheadset = {cl.rev(node) for node in bheads}
             uncertain = set()
             for newrev in sorted(newheadrevs):
@@ -562,8 +562,8 @@ class branchcache(object):
                     if floorrev <= max(uncertain):
                         ancestors = set(cl.ancestors(uncertain, floorrev))
                         bheadset -= ancestors
-            bheadrevs = sorted(bheadset)
-            self[branch] = [cl.node(rev) for rev in bheadrevs]
+            if bheadset:
+                self[branch] = [cl.node(rev) for rev in sorted(bheadset)]
             tiprev = max(newheadrevs)
             if tiprev > ntiprev:
                 ntiprev = tiprev
