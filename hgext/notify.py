@@ -435,7 +435,10 @@ class notifier(object):
             if spec is None:
                 subs.add(sub)
                 continue
-            revs = self.repo.revs(b'%r and %d:', spec, ctx.rev())
+            try:
+                revs = self.repo.revs(b'%r and %d:', spec, ctx.rev())
+            except error.RepoLookupError:
+                continue
             if len(revs):
                 subs.add(sub)
                 continue
