@@ -940,8 +940,7 @@ def _computeobsoleteset(repo):
     getnode = repo.changelog.node
     notpublic = _mutablerevs(repo)
     isobs = repo.obsstore.successors.__contains__
-    obs = {r for r in notpublic if isobs(getnode(r))}
-    return obs
+    return frozenset(r for r in notpublic if isobs(getnode(r)))
 
 
 @cachefor(b'orphan')
@@ -959,14 +958,14 @@ def _computeorphanset(repo):
             if p in obsolete or p in unstable:
                 unstable.add(r)
                 break
-    return unstable
+    return frozenset(unstable)
 
 
 @cachefor(b'suspended')
 def _computesuspendedset(repo):
     """the set of obsolete parents with non obsolete descendants"""
     suspended = repo.changelog.ancestors(getrevs(repo, b'orphan'))
-    return {r for r in getrevs(repo, b'obsolete') if r in suspended}
+    return frozenset(r for r in getrevs(repo, b'obsolete') if r in suspended)
 
 
 @cachefor(b'extinct')
@@ -998,7 +997,7 @@ def _computephasedivergentset(repo):
                 # we have a public predecessor
                 bumped.add(rev)
                 break  # Next draft!
-    return bumped
+    return frozenset(bumped)
 
 
 @cachefor(b'contentdivergent')
@@ -1025,7 +1024,7 @@ def _computecontentdivergentset(repo):
                 divergent.add(rev)
                 break
             toprocess.update(obsstore.predecessors.get(prec, ()))
-    return divergent
+    return frozenset(divergent)
 
 
 def makefoldid(relation, user):
