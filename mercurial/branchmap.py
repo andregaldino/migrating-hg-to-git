@@ -352,17 +352,25 @@ class branchcache(object):
         return filename
 
     def validfor(self, repo):
-        """Is the cache content valid regarding a repo
+        """check that cache contents are valid for (a subset of) this repo
 
-        - False when cached tipnode is unknown or if we detect a strip.
-        - True when cache is up to date or a subset of current repo."""
+        - False when the order of changesets changed or if we detect a strip.
+        - True when cache is up-to-date for the current repo or its subset."""
         try:
-            return (self.tipnode == repo.changelog.node(self.tiprev)) and (
-                self.filteredhash
-                == scmutil.filteredhash(repo, self.tiprev, needobsolete=True)
-            )
+            node = repo.changelog.node(self.tiprev)
         except IndexError:
+            # changesets were stripped and now we don't even have enough to
+            # find tiprev
             return False
+        if self.tipnode != node:
+            # tiprev doesn't correspond to tipnode: repo was stripped, or this
+            # repo has a different order of changesets
+            return False
+        tiphash = scmutil.filteredhash(repo, self.tiprev, needobsolete=True)
+        # hashes don't match if this repo view has a different set of filtered
+        # revisions (e.g. due to phase changes) or obsolete revisions (e.g.
+        # history was rewritten)
+        return self.filteredhash == tiphash
 
     def _branchtip(self, heads):
         """Return tuple with last open head in heads and false,
