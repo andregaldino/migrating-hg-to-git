@@ -76,6 +76,7 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 from mercurial.pycompat import setattr
 from mercurial import (
+    cmdutil,
     commands,
     dirstate,
     error,
@@ -153,22 +154,11 @@ def _setuplog(ui):
 
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
-    include_pat = opts.get('include')
-    exclude_pat = opts.get('exclude')
-    enableprofile_pat = opts.get('enable_profile')
+    include = opts.get('include')
+    exclude = opts.get('exclude')
+    enableprofile = opts.get('enable_profile')
     narrow_pat = opts.get('narrow')
-    include = exclude = enableprofile = False
-    if include_pat:
-        pat = include_pat
-        include = True
-    if exclude_pat:
-        pat = exclude_pat
-        exclude = True
-    if enableprofile_pat:
-        pat = enableprofile_pat
-        enableprofile = True
-    if sum([include, exclude, enableprofile]) > 1:
-        raise error.Abort(_(b"too many flags specified."))
+
     # if --narrow is passed, it means they are includes and excludes for narrow
     # clone
     if not narrow_pat and (include or exclude or enableprofile):
@@ -176,7 +166,6 @@ def _clonesparsecmd(orig, ui, repo, *args, **opts):
         def clonesparse(orig, ctx, *args, **kwargs):
             sparse.updateconfig(
                 ctx.repo().unfiltered(),
-                pat,
                 {},
                 include=include,
                 exclude=exclude,
@@ -214,7 +203,7 @@ def _setupadd(ui):
             for pat in pats:
                 dirname, basename = util.split(pat)
                 dirs.add(dirname)
-            sparse.updateconfig(repo, list(dirs), opts, include=True)
+            sparse.updateconfig(repo, opts, include=list(dirs))
         return orig(ui, repo, *pats, **opts)
 
     extensions.wrapcommand(commands.table, b'add', _add)
@@ -286,18 +275,54 @@ def _setupdirstate(ui):
 @command(
     b'debugsparse',
     [
-        (b'I', b'include', False, _(b'include files in the sparse checkout')),
-        (b'X', b'exclude', False, _(b'exclude files in the sparse checkout')),
-        (b'd', b'delete', False, _(b'delete an include/exclude rule')),
+        (
+            b'I',
+            b'include',
+            [],
+            _(b'include files in the sparse checkout'),
+            _(b'PATTERN'),
+        ),
+        (
+            b'X',
+            b'exclude',
+            [],
+            _(b'exclude files in the sparse checkout'),
+            _(b'PATTERN'),
+        ),
+        (
+            b'd',
+            b'delete',
+            [],
+            _(b'delete an include/exclude rule'),
+            _(b'PATTERN'),
+        ),
         (
             b'f',
             b'force',
             False,
             _(b'allow changing rules even with pending changes'),
         ),
-        (b'', b'enable-profile', False, _(b'enables the specified profile')),
-        (b'', b'disable-profile', False, _(b'disables the specified profile')),
-        (b'', b'import-rules', False, _(b'imports rules from a file')),
+        (
+            b'',
+            b'enable-profile',
+            [],
+            _(b'enables the specified profile'),
+            _(b'PATTERN'),
+        ),
+        (
+            b'',
+            b'disable-profile',
+            [],
+            _(b'disables the specified profile'),
+            _(b'PATTERN'),
+        ),
+        (
+            b'',
+            b'import-rules',
+            [],
+            _(b'imports rules from a file'),
+            _(b'PATTERN'),
+        ),
         (b'', b'clear-rules', False, _(b'clears local include/exclude rules')),
         (
             b'',
@@ -308,10 +333,10 @@ def _setupdirstate(ui):
         (b'', b'reset', False, _(b'makes the repo full again')),
     ]
     + commands.templateopts,
-    _(b'[--OPTION] PATTERN...'),
+    _(b'[--OPTION]'),
     helpbasic=True,
 )
-def debugsparse(ui, repo, *pats, **opts):
+def debugsparse(ui, repo, **opts):
     """make the current checkout sparse, or edit the existing checkout
 
     The sparse command is used to make the current checkout sparse.
@@ -363,19 +388,13 @@ def debugsparse(ui, repo, *pats, **opts):
     delete = opts.get(b'delete')
     refresh = opts.get(b'refresh')
     reset = opts.get(b'reset')
-    count = sum(
-        [
-            include,
-            exclude,
-            enableprofile,
-            disableprofile,
-            delete,
-            importrules,
-            refresh,
-            clearrules,
-            reset,
-        ]
+    action = cmdutil.check_at_most_one_arg(
+        opts, b'import_rules', b'clear_rules', b'refresh'
     )
+    updateconfig = bool(
+        include or exclude or delete or reset or enableprofile or disableprofile
+    )
+    count = sum([updateconfig, bool(action)])
     if count > 1:
         raise error.Abort(_(b"too many flags specified"))
 
@@ -397,10 +416,9 @@ def debugsparse(ui, repo, *pats, **opts):
                 )
             )
 
-    if include or exclude or delete or reset or enableprofile or disableprofile:
+    if updateconfig:
         sparse.updateconfig(
             repo,
-            pats,
             opts,
             include=include,
             exclude=exclude,
@@ -412,7 +430,7 @@ def debugsparse(ui, repo, *pats, **opts):
         )
 
     if importrules:
-        sparse.importfromfiles(repo, opts, pats, force=force)
+        sparse.importfromfiles(repo, opts, importrules, force=force)
 
     if clearrules:
         sparse.clearrules(repo, force=force)

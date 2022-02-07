@@ -42,7 +42,7 @@ Clear rules when there are includes
 
 Clear rules when there are excludes
 
-  $ hg debugsparse --exclude *.sparse
+  $ hg debugsparse -X base.sparse -X webpage.sparse
   $ ls -A
   .hg
   data.py

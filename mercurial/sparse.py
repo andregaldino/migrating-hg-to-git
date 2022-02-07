@@ -704,20 +704,17 @@ def importfromfiles(repo, opts, paths, force=False):
 
 def updateconfig(
     repo,
-    pats,
     opts,
-    include=False,
-    exclude=False,
+    include=(),
+    exclude=(),
     reset=False,
-    delete=False,
-    enableprofile=False,
-    disableprofile=False,
+    delete=(),
+    enableprofile=(),
+    disableprofile=(),
     force=False,
     usereporootpaths=False,
 ):
     """Perform a sparse config update.
-
-    Only one of the actions may be performed.
 
     The new config is written out and a working directory refresh is performed.
     """
@@ -736,10 +733,13 @@ def updateconfig(
             newexclude = set(oldexclude)
             newprofiles = set(oldprofiles)
 
-        if any(os.path.isabs(pat) for pat in pats):
-            raise error.Abort(_(b'paths cannot be absolute'))
+        def normalize_pats(pats):
+            if any(os.path.isabs(pat) for pat in pats):
+                raise error.Abort(_(b'paths cannot be absolute'))
 
-        if not usereporootpaths:
+            if usereporootpaths:
+                return pats
+
             # let's treat paths as relative to cwd
             root, cwd = repo.root, repo.getcwd()
             abspats = []
@@ -752,19 +752,20 @@ def updateconfig(
                     abspats.append(ap)
                 else:
                     abspats.append(kindpat)
-            pats = abspats
+            return abspats
 
-        if include:
-            newinclude.update(pats)
-        elif exclude:
-            newexclude.update(pats)
-        elif enableprofile:
-            newprofiles.update(pats)
-        elif disableprofile:
-            newprofiles.difference_update(pats)
-        elif delete:
-            newinclude.difference_update(pats)
-            newexclude.difference_update(pats)
+        include = normalize_pats(include)
+        exclude = normalize_pats(exclude)
+        delete = normalize_pats(delete)
+        disableprofile = normalize_pats(disableprofile)
+        enableprofile = normalize_pats(enableprofile)
+
+        newinclude.difference_update(delete)
+        newexclude.difference_update(delete)
+        newprofiles.difference_update(disableprofile)
+        newinclude.update(include)
+        newprofiles.update(enableprofile)
+        newexclude.update(exclude)
 
         profilecount = len(newprofiles - oldprofiles) - len(
             oldprofiles - newprofiles
