@@ -366,9 +366,7 @@ def filteredhash(repo, maxrev, needobsolete=False):
         obsrevs = obsolete.getrevs(repo, b'obsolete')
         if not cl.filteredrevs and not obsrevs:
             return None
-        # TODO: obsrevs should be a frozenset, but right now obsolete.getrevs()
-        # may return a set, which is not a hashable type.
-        key = (maxrev, hash(cl.filteredrevs), hash(frozenset(obsrevs)))
+        key = (maxrev, hash(cl.filteredrevs), hash(obsrevs))
     else:
         if not cl.filteredrevs:
             return None
