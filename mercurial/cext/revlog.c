@@ -103,8 +103,7 @@ struct indexObjectStruct {
 	                  */
 	long rust_ext_compat; /* compatibility with being used in rust
 	                         extensions */
-	char format_version;  /* size of index headers. Differs in v1 v.s. v2
-	                         format */
+	long format_version;  /* format version selector (format_*) */
 };
 
 static Py_ssize_t index_length(const indexObject *self)
@@ -133,9 +132,14 @@ static const long v1_entry_size = 64;
 /* A Revlogv2 index entry is 96 bytes long. */
 static const long v2_entry_size = 96;
 
-static const long format_v1 = 1;  /* Internal only, could be any number */
-static const long format_v2 = 2;  /* Internal only, could be any number */
-static const long format_cl2 = 3; /* Internal only, could be any number */
+/* A Changelogv2 index entry is 96 bytes long. */
+static const long cl2_entry_size = 96;
+
+/* Internal format version.
+ * Must match their counterparts in revlogutils/constants.py */
+static const long format_v1 = 1;       /* constants.py: REVLOGV1 */
+static const long format_v2 = 0xDEAD;  /* constants.py: REVLOGV2 */
+static const long format_cl2 = 0xD34D; /* constants.py: CHANGELOGV2 */
 
 static const long entry_v1_offset_high = 0;
 static const long entry_v1_offset_offset_flags = 4;
@@ -2979,10 +2983,10 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets)
 
 static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 {
-	PyObject *data_obj, *inlined_obj, *revlogv2;
+	PyObject *data_obj, *inlined_obj;
 	Py_ssize_t size;
 
-	static char *kwlist[] = {"data", "inlined", "revlogv2", NULL};
+	static char *kwlist[] = {"data", "inlined", "format", NULL};
 
 	/* Initialize before argument-checking to avoid index_dealloc() crash.
 	 */
@@ -2999,10 +3003,11 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 	self->nodelen = 20;
 	self->nullentry = NULL;
 	self->rust_ext_compat = 1;
+	self->format_version = format_v1;
 
-	revlogv2 = NULL;
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O", kwlist,
-	                                 &data_obj, &inlined_obj, &revlogv2))
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|l", kwlist,
+	                                 &data_obj, &inlined_obj,
+	                                 &(self->format_version)))
 		return -1;
 	if (!PyObject_CheckBuffer(data_obj)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -3014,12 +3019,12 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		return -1;
 	}
 
-	if (revlogv2 && PyObject_IsTrue(revlogv2)) {
-		self->format_version = format_v2;
-		self->entry_size = v2_entry_size;
-	} else {
-		self->format_version = format_v1;
+	if (self->format_version == format_v1) {
 		self->entry_size = v1_entry_size;
+	} else if (self->format_version == format_v2) {
+		self->entry_size = v2_entry_size;
+	} else if (self->format_version == format_cl2) {
+		self->entry_size = cl2_entry_size;
 	}
 
 	self->nullentry =

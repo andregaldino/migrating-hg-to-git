@@ -103,6 +103,7 @@ from .utils import (
 REVLOGV0
 REVLOGV1
 REVLOGV2
+CHANGELOGV2
 FLAG_INLINE_DATA
 FLAG_GENERALDELTA
 REVLOG_DEFAULT_FLAGS
@@ -201,16 +202,13 @@ def parse_index_v1(data, inline):
 
 def parse_index_v2(data, inline):
     # call the C implementation to parse the index data
-    index, cache = parsers.parse_index2(data, inline, revlogv2=True)
+    index, cache = parsers.parse_index2(data, inline, format=REVLOGV2)
     return index, cache
 
 
 def parse_index_cl_v2(data, inline):
     # call the C implementation to parse the index data
-    assert not inline
-    from .pure.parsers import parse_index_cl_v2
-
-    index, cache = parse_index_cl_v2(data)
+    index, cache = parsers.parse_index2(data, inline, format=CHANGELOGV2)
     return index, cache
 
 

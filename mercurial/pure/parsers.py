@@ -799,9 +799,14 @@ class InlinedIndexObject(BaseIndexObject):
         return self._offsets[i]
 
 
-def parse_index2(data, inline, revlogv2=False):
+def parse_index2(data, inline, format=revlog_constants.REVLOGV1):
+    if format == revlog_constants.CHANGELOGV2:
+        return parse_index_cl_v2(data)
     if not inline:
-        cls = IndexObject2 if revlogv2 else IndexObject
+        if format == revlog_constants.REVLOGV2:
+            cls = IndexObject2
+        else:
+            cls = IndexObject
         return cls(data), None
     cls = InlinedIndexObject
     return cls(data, inline), (0, data)
