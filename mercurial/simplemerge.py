@@ -493,14 +493,11 @@ class MergeInput(object):
 
 
 def simplemerge(
-    ui,
     local,
     base,
     other,
     mode=b'merge',
-    quiet=False,
     allow_binary=False,
-    print_result=False,
 ):
     """Performs the simplemerge algorithm.
 

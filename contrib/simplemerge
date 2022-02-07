@@ -118,14 +118,11 @@ try:
     _verifytext(other_input, ui, quiet=quiet, allow_binary=allow_binary)
 
     merged_text, conflicts = simplemerge.simplemerge(
-        ui,
         local_input,
         base_input,
         other_input,
         mode,
-        quiet=True,
         allow_binary=allow_binary,
-        print_result=opts.get(b'print'),
     )
     if opts.get(b'print'):
         ui.fout.write(merged_text)

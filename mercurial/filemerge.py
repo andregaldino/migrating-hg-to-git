@@ -443,7 +443,7 @@ def _premerge(repo, local, other, base, toolconf):
         ):
             return 1  # continue merging
         merged_text, conflicts = simplemerge.simplemerge(
-            ui, local, base, other, mode=mode
+            local, base, other, mode=mode
         )
         if not conflicts or premerge in validkeep:
             # fcd.flags() already has the merged flags (done in
@@ -492,7 +492,7 @@ def _merge(repo, local, other, base, mode):
         return True, True, False
     else:
         merged_text, conflicts = simplemerge.simplemerge(
-            ui, local, base, other, mode=mode
+            local, base, other, mode=mode
         )
         # fcd.flags() already has the merged flags (done in
         # mergestate.resolve())
