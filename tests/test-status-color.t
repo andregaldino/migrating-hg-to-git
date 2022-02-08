@@ -311,9 +311,8 @@ test unknown color
 
   $ hg --config color.status.modified=periwinkle status
   ignoring unknown color/effect 'periwinkle' (configured in color.status.modified)
-  ignoring unknown color/effect 'periwinkle' (configured in color.status.modified)
-  ignoring unknown color/effect 'periwinkle' (configured in color.status.modified)
-  ignoring unknown color/effect 'periwinkle' (configured in color.status.modified) (rhg !)
+  ignoring unknown color/effect 'periwinkle' (configured in color.status.modified) (no-rhg !)
+  ignoring unknown color/effect 'periwinkle' (configured in color.status.modified) (no-rhg !)
   M modified
   \x1b[0;32;1mA \x1b[0m\x1b[0;32;1madded\x1b[0m (esc)
   \x1b[0;32;1mA \x1b[0m\x1b[0;32;1mcopied\x1b[0m (esc)

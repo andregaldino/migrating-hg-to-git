@@ -57,11 +57,6 @@ impl Ui {
 
     /// Write bytes to stdout
     pub fn write_stdout(&self, bytes: &[u8]) -> Result<(), UiError> {
-        // Hack to silence "unused" warnings
-        if false {
-            return self.write_stdout_labelled(bytes, "");
-        }
-
         let mut stdout = self.stdout.lock();
 
         stdout.write_all(bytes).or_else(handle_stdout_error)?;

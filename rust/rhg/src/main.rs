@@ -30,7 +30,7 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
-    check_unsupported(config, repo, ui)?;
+    check_unsupported(config, repo)?;
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
@@ -679,7 +679,6 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
 fn check_unsupported(
     config: &Config,
     repo: Result<&Repo, &NoRepoInCwdError>,
-    ui: &ui::Ui,
 ) -> Result<(), CommandError> {
     check_extensions(config)?;
 
@@ -701,14 +700,6 @@ fn check_unsupported(
 
     if config.has_non_empty_section(b"decode") {
         Err(CommandError::unsupported("[decode] config"))?
-    }
-
-    if let Some(color) = config.get(b"ui", b"color") {
-        if (color == b"always" || color == b"debug")
-            && !ui.plain(Some("color"))
-        {
-            Err(CommandError::unsupported("colored output"))?
-        }
     }
 
     Ok(())

@@ -326,25 +326,25 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         },
     };
     if display_states.modified {
-        output.display(b"M", ds_status.modified)?;
+        output.display(b"M ", "status.modified", ds_status.modified)?;
     }
     if display_states.added {
-        output.display(b"A", ds_status.added)?;
+        output.display(b"A ", "status.added", ds_status.added)?;
     }
     if display_states.removed {
-        output.display(b"R", ds_status.removed)?;
+        output.display(b"R ", "status.removed", ds_status.removed)?;
     }
     if display_states.deleted {
-        output.display(b"!", ds_status.deleted)?;
+        output.display(b"! ", "status.deleted", ds_status.deleted)?;
     }
     if display_states.unknown {
-        output.display(b"?", ds_status.unknown)?;
+        output.display(b"? ", "status.unknown", ds_status.unknown)?;
     }
     if display_states.ignored {
-        output.display(b"I", ds_status.ignored)?;
+        output.display(b"I ", "status.ignored", ds_status.ignored)?;
     }
     if display_states.clean {
-        output.display(b"C", ds_status.clean)?;
+        output.display(b"C ", "status.clean", ds_status.clean)?;
     }
 
     let mut dirstate_write_needed = ds_status.dirty;
@@ -448,9 +448,11 @@ impl DisplayStatusPaths<'_> {
     fn display(
         &self,
         status_prefix: &[u8],
+        label: &'static str,
         mut paths: Vec<StatusPath<'_>>,
     ) -> Result<(), CommandError> {
         paths.sort_unstable();
+        // TODO: get the stdout lock once for the whole loop instead of in each write
         for StatusPath { path, copy_source } in paths {
             let relative;
             let path = if let Some(relativize) = &self.relativize {
@@ -459,22 +461,20 @@ impl DisplayStatusPaths<'_> {
             } else {
                 path.as_bytes()
             };
-            // TODO optim, probably lots of unneeded copies here, especially
-            // if out stream is buffered
-            if self.no_status {
-                self.ui.write_stdout(&format_bytes!(b"{}\n", path))?
-            } else {
-                self.ui.write_stdout(&format_bytes!(
-                    b"{} {}\n",
-                    status_prefix,
-                    path
-                ))?
+            // TODO: Add a way to use `write_bytes!` instead of `format_bytes!`
+            // in order to stream to stdout instead of allocating an
+            // itermediate `Vec<u8>`.
+            if !self.no_status {
+                self.ui.write_stdout_labelled(status_prefix, label)?
             }
+            self.ui
+                .write_stdout_labelled(&format_bytes!(b"{}\n", path), label)?;
             if let Some(source) = copy_source {
-                self.ui.write_stdout(&format_bytes!(
-                    b"  {}\n",
-                    source.as_bytes()
-                ))?
+                let label = "status.copied";
+                self.ui.write_stdout_labelled(
+                    &format_bytes!(b"  {}\n", source.as_bytes()),
+                    label,
+                )?
             }
         }
         Ok(())
