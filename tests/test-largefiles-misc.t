@@ -962,7 +962,7 @@ Merge conflicts:
   what do you want to do? l
   getting changed largefiles
   1 largefiles updated, 0 removed
-  0 files updated, 4 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 3 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ cat f-different
   1

@@ -421,6 +421,14 @@ class _mergestate_base(object):
             self._restore_backup(wctx[dfile], localkey, flags)
         else:
             wctx[dfile].remove(ignoremissing=True)
+
+        if not fco.cmp(fcd):  # files identical?
+            # If return value of merge is None, then there are no real conflict
+            del self._state[dfile]
+            self._results[dfile] = None, None
+            self._dirty = True
+            return None
+
         merge_ret, deleted = filemerge.filemerge(
             self._repo,
             wctx,
@@ -431,12 +439,6 @@ class _mergestate_base(object):
             fca,
             labels=self._labels,
         )
-        if merge_ret is None:
-            # If return value of merge is None, then there are no real conflict
-            del self._state[dfile]
-            self._results[dfile] = None, None
-            self._dirty = True
-            return None
 
         if not merge_ret:
             self.mark(dfile, MERGE_RECORD_RESOLVED)

@@ -989,10 +989,6 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
     Returns whether the merge is complete, the return value of the merge, and
     a boolean indicating whether the file was deleted from disk."""
-
-    if not fco.cmp(fcd):  # files identical?
-        return None, False
-
     ui = repo.ui
     fd = fcd.path()
     uipathfn = scmutil.getuipathfn(repo)
