@@ -22,7 +22,7 @@ use crate::DirstateError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
-use crate::FastHashMap;
+use crate::FastHashbrownMap as FastHashMap;
 use crate::PatternFileWarning;
 use crate::StatusError;
 use crate::StatusOptions;
@@ -585,13 +585,11 @@ impl<'on_disk> DirstateMap<'on_disk> {
             .next()
             .expect("expected at least one inclusive ancestor");
         loop {
-            // TODO: can we avoid allocating an owned key in cases where the
-            // map already contains that key, without introducing double
-            // lookup?
-            let child_node = child_nodes
+            let (_, child_node) = child_nodes
                 .make_mut(on_disk, unreachable_bytes)?
-                .entry(to_cow(ancestor_path))
-                .or_default();
+                .raw_entry_mut()
+                .from_key(ancestor_path.base_name())
+                .or_insert_with(|| (to_cow(ancestor_path), Node::default()));
             if let Some(next) = inclusive_ancestor_paths.next() {
                 each_ancestor(child_node);
                 ancestor_path = next;

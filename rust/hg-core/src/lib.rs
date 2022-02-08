@@ -56,6 +56,11 @@ pub type LineNumber = usize;
 /// write access to your repository, you have other issues.
 pub type FastHashMap<K, V> = HashMap<K, V, RandomXxHashBuilder64>;
 
+// TODO: should this be the default `FastHashMap` for all of hg-core, not just
+// dirstate_tree? How does XxHash compare with AHash, hashbrown’s default?
+pub type FastHashbrownMap<K, V> =
+    hashbrown::HashMap<K, V, RandomXxHashBuilder64>;
+
 #[derive(Debug, PartialEq)]
 pub enum DirstateMapError {
     PathNotFound(HgPathBuf),
