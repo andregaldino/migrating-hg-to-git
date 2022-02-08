@@ -434,8 +434,11 @@ class _mergestate_base(object):
         if merge_ret is None:
             # If return value of merge is None, then there are no real conflict
             del self._state[dfile]
+            self._results[dfile] = None, None
             self._dirty = True
-        elif not merge_ret:
+            return None
+
+        if not merge_ret:
             self.mark(dfile, MERGE_RECORD_RESOLVED)
 
         action = None
