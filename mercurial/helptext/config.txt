@@ -2029,7 +2029,6 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 ---------
 
 ``safe-mismatch.source-safe``
-
     Controls what happens when the shared repository does not use the
     share-safe mechanism but its source repository does.
 
@@ -2055,7 +2054,6 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     (default: True)
 
 ``safe-mismatch.source-not-safe``
-
     Controls what happens when the shared repository uses the share-safe
     mechanism but its source does not.
 
