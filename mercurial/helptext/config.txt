@@ -2034,7 +2034,7 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     share-safe mechanism but its source repository does.
 
     Possible values are `abort` (default), `allow`, `upgrade-abort` and
-    `upgrade-abort`.
+    `upgrade-allow`.
 
     ``abort``
     Disallows running any command and aborts
@@ -2060,7 +2060,7 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     mechanism but its source does not.
 
     Possible values are `abort` (default), `allow`, `downgrade-abort` and
-    `downgrade-abort`.
+    `downgrade-allow`.
 
     ``abort``
     Disallows running any command and aborts
