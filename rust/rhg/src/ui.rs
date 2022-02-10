@@ -1,5 +1,6 @@
 use format_bytes::format_bytes;
 use hg::config::Config;
+use hg::errors::HgError;
 use hg::utils::files::get_bytes_from_os_string;
 use std::borrow::Cow;
 use std::env;
@@ -22,7 +23,17 @@ pub enum UiError {
 
 /// The commandline user interface
 impl Ui {
-    pub fn new(_config: &Config) -> Self {
+    pub fn new(_config: &Config) -> Result<Self, HgError> {
+        Ok(Ui {
+            stdout: std::io::stdout(),
+            stderr: std::io::stderr(),
+        })
+    }
+
+    /// Default to no color if color configuration errors.
+    ///
+    /// Useful when we’re already handling another error.
+    pub fn new_infallible(_config: &Config) -> Self {
         Ui {
             stdout: std::io::stdout(),
             stderr: std::io::stderr(),

@@ -150,7 +150,7 @@ fn main() {
             .unwrap_or_else(|error| {
                 exit(
                     &None,
-                    &Ui::new(&Config::empty()),
+                    &Ui::new_infallible(&Config::empty()),
                     OnUnsupported::Abort,
                     Err(CommandError::abort(format!(
                         "abort: {}: '{}'",
@@ -171,7 +171,7 @@ fn main() {
 
             exit(
                 &initial_current_dir,
-                &Ui::new(&Config::empty()),
+                &Ui::new_infallible(&Config::empty()),
                 on_unsupported,
                 Err(error.into()),
                 false,
@@ -183,7 +183,7 @@ fn main() {
         .unwrap_or_else(|error| {
             exit(
                 &initial_current_dir,
-                &Ui::new(&non_repo_config),
+                &Ui::new_infallible(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
                 Err(error.into()),
                 non_repo_config
@@ -201,7 +201,7 @@ fn main() {
         if SCHEME_RE.is_match(&repo_path_bytes) {
             exit(
                 &initial_current_dir,
-                &Ui::new(&non_repo_config),
+                &Ui::new_infallible(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
                 Err(CommandError::UnsupportedFeature {
                     message: format_bytes!(
@@ -291,7 +291,7 @@ fn main() {
         }
         Err(error) => exit(
             &initial_current_dir,
-            &Ui::new(&non_repo_config),
+            &Ui::new_infallible(&non_repo_config),
             OnUnsupported::from_config(&non_repo_config),
             Err(error.into()),
             // TODO: show a warning or combine with original error if
@@ -307,7 +307,17 @@ fn main() {
     } else {
         &non_repo_config
     };
-    let ui = Ui::new(&config);
+    let ui = Ui::new(&config).unwrap_or_else(|error| {
+        exit(
+            &initial_current_dir,
+            &Ui::new_infallible(&config),
+            OnUnsupported::from_config(&config),
+            Err(error.into()),
+            config
+                .get_bool(b"ui", b"detailed-exit-code")
+                .unwrap_or(false),
+        )
+    });
     let on_unsupported = OnUnsupported::from_config(config);
 
     let result = main_with_result(
