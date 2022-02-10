@@ -273,14 +273,14 @@ class Merge3Text(object):
         return sl
 
 
-def _verifytext(text, path, ui, opts):
+def _verifytext(text, path, ui, quiet=False, allow_binary=False):
     """verifies that text is non-binary (unless opts[text] is passed,
     then we just warn)"""
     if stringutil.binary(text):
         msg = _(b"%s looks like a binary file.") % path
-        if not opts.get('quiet'):
+        if not quiet:
             ui.warn(_(b'warning: %s\n') % msg)
-        if not opts.get('text'):
+        if not allow_binary:
             raise error.Abort(msg)
     return text
 
@@ -484,7 +484,16 @@ class MergeInput(object):
     label_detail = attr.ib(default=None)
 
 
-def simplemerge(ui, local, base, other, **opts):
+def simplemerge(
+    ui,
+    local,
+    base,
+    other,
+    mode=b'merge',
+    quiet=False,
+    allow_binary=False,
+    print_result=False,
+):
     """Performs the simplemerge algorithm.
 
     The merged result is written into `localctx`.
@@ -498,7 +507,13 @@ def simplemerge(ui, local, base, other, **opts):
         # Maintain that behavior today for BC, though perhaps in the future
         # it'd be worth considering whether merging encoded data (what the
         # repository usually sees) might be more useful.
-        return _verifytext(ctx.decodeddata(), ctx.path(), ui, opts)
+        return _verifytext(
+            ctx.decodeddata(),
+            ctx.path(),
+            ui,
+            quiet=quiet,
+            allow_binary=allow_binary,
+        )
 
     try:
         localtext = readctx(local.fctx)
@@ -509,7 +524,6 @@ def simplemerge(ui, local, base, other, **opts):
 
     m3 = Merge3Text(basetext, localtext, othertext)
     conflicts = False
-    mode = opts.get('mode', b'merge')
     if mode == b'union':
         lines = _resolve(m3, (1, 2))
     elif mode == b'local':
@@ -528,7 +542,7 @@ def simplemerge(ui, local, base, other, **opts):
             lines, conflicts = render_minimized(m3, *labels)
 
     mergedtext = b''.join(lines)
-    if opts.get('print'):
+    if print_result:
         ui.fout.write(mergedtext)
     else:
         # local.fctx.flags() already has the merged flags (done in

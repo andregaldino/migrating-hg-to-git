@@ -13,7 +13,6 @@ from mercurial import (
     context,
     error,
     fancyopts,
-    pycompat,
     simplemerge,
     ui as uimod,
 )
@@ -80,8 +79,9 @@ try:
         sys.exit(0)
     if len(args) != 3:
         raise ParseError(_(b'wrong number of arguments').decode('utf8'))
+    mode = b'merge'
     if len(opts[b'label']) > 2:
-        opts[b'mode'] = b'merge3'
+        mode = b'merge3'
     local, base, other = args
     overrides = opts[b'label']
     if len(overrides) > 3:
@@ -103,7 +103,10 @@ try:
             local_input,
             base_input,
             other_input,
-            **pycompat.strkwargs(opts)
+            mode,
+            quiet=opts.get(b'quiet'),
+            allow_binary=opts.get(b'text'),
+            print_result=opts.get(b'print'),
         )
     )
 except ParseError as e:
