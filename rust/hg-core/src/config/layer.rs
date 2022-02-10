@@ -295,7 +295,7 @@ pub struct ConfigValue {
     pub line: Option<usize>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConfigOrigin {
     /// From a configuration file
     File(PathBuf),

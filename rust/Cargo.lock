@@ -876,6 +876,7 @@ dependencies = [
 name = "rhg"
 version = "0.1.0"
 dependencies = [
+ "atty",
  "chrono",
  "clap",
  "derive_more",

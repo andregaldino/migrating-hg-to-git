@@ -398,6 +398,16 @@ impl Config {
             .map(|(_, value)| value.bytes.as_ref())
     }
 
+    /// Returns the raw value bytes of the first one found, or `None`.
+    pub fn get_with_origin(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Option<(&[u8], &ConfigOrigin)> {
+        self.get_inner(section, item)
+            .map(|(layer, value)| (value.bytes.as_ref(), &layer.origin))
+    }
+
     /// Returns the layer and the value of the first one found, or `None`.
     fn get_inner(
         &self,

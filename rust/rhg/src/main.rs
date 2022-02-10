@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 mod blackbox;
+mod color;
 mod error;
 mod ui;
 pub mod utils {

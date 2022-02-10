@@ -8,6 +8,7 @@ authors = [
 edition = "2018"
 
 [dependencies]
+atty = "0.2"
 hg-core = { path = "../hg-core"}
 chrono = "0.4.19"
 clap = "2.33.1"
