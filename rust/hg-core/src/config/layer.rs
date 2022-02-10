@@ -301,10 +301,11 @@ pub enum ConfigOrigin {
     File(PathBuf),
     /// From a `--config` CLI argument
     CommandLine,
+    /// From a `--color` CLI argument
+    CommandLineColor,
     /// From environment variables like `$PAGER` or `$EDITOR`
     Environment(Vec<u8>),
-    /* TODO cli
-     * TODO defaults (configitems.py)
+    /* TODO defaults (configitems.py)
      * TODO extensions
      * TODO Python resources?
      * Others? */
@@ -318,6 +319,7 @@ impl DisplayBytes for ConfigOrigin {
         match self {
             ConfigOrigin::File(p) => out.write_all(&get_bytes_from_path(p)),
             ConfigOrigin::CommandLine => out.write_all(b"--config"),
+            ConfigOrigin::CommandLineColor => out.write_all(b"--color"),
             ConfigOrigin::Environment(e) => write_bytes!(out, b"${}", e),
         }
     }

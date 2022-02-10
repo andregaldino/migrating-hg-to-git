@@ -66,6 +66,14 @@ fn main_with_result(
                 .takes_value(true)
                 .global(true),
         )
+        .arg(
+            Arg::with_name("color")
+                .help("when to colorize (boolean, always, auto, never, or debug)")
+                .long("--color")
+                .value_name("TYPE")
+                .takes_value(true)
+                .global(true),
+        )
         .version("0.0.1");
     let app = add_subcommand_args(app);
 
@@ -179,7 +187,7 @@ fn main() {
         });
 
     non_repo_config
-        .load_cli_args_config(early_args.config)
+        .load_cli_args(early_args.config, early_args.color)
         .unwrap_or_else(|error| {
             exit(
                 &initial_current_dir,
@@ -526,6 +534,8 @@ struct NoRepoInCwdError {
 struct EarlyArgs {
     /// Values of all `--config` arguments. (Possibly none)
     config: Vec<Vec<u8>>,
+    /// Value of all the `--color` argument, if any.
+    color: Option<Vec<u8>>,
     /// Value of the `-R` or `--repository` argument, if any.
     repo: Option<Vec<u8>>,
     /// Value of the `--cwd` argument, if any.
@@ -536,6 +546,7 @@ impl EarlyArgs {
     fn parse(args: impl IntoIterator<Item = OsString>) -> Self {
         let mut args = args.into_iter().map(get_bytes_from_os_str);
         let mut config = Vec::new();
+        let mut color = None;
         let mut repo = None;
         let mut cwd = None;
         // Use `while let` instead of `for` so that we can also call
@@ -547,6 +558,14 @@ impl EarlyArgs {
                 }
             } else if let Some(value) = arg.drop_prefix(b"--config=") {
                 config.push(value.to_owned())
+            }
+
+            if arg == b"--color" {
+                if let Some(value) = args.next() {
+                    color = Some(value)
+                }
+            } else if let Some(value) = arg.drop_prefix(b"--color=") {
+                color = Some(value.to_owned())
             }
 
             if arg == b"--cwd" {
@@ -567,7 +586,12 @@ impl EarlyArgs {
                 repo = Some(value.to_owned())
             }
         }
-        Self { config, repo, cwd }
+        Self {
+            config,
+            color,
+            repo,
+            cwd,
+        }
     }
 }
 

@@ -139,11 +139,17 @@ impl Config {
         Ok(config)
     }
 
-    pub fn load_cli_args_config(
+    pub fn load_cli_args(
         &mut self,
         cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+        color_arg: Option<Vec<u8>>,
     ) -> Result<(), ConfigError> {
         if let Some(layer) = ConfigLayer::parse_cli_args(cli_config_args)? {
+            self.layers.push(layer)
+        }
+        if let Some(arg) = color_arg {
+            let mut layer = ConfigLayer::new(ConfigOrigin::CommandLineColor);
+            layer.add(b"ui"[..].into(), b"color"[..].into(), arg, None);
             self.layers.push(layer)
         }
         Ok(())
