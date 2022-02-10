@@ -272,16 +272,12 @@ class Merge3Text(object):
         return sl
 
 
-def _verifytext(text, path, ui, quiet=False, allow_binary=False):
+def _verifytext(input):
     """verifies that text is non-binary (unless opts[text] is passed,
     then we just warn)"""
-    if stringutil.binary(text):
-        msg = _(b"%s looks like a binary file.") % path
-        if not quiet:
-            ui.warn(_(b'warning: %s\n') % msg)
-        if not allow_binary:
-            raise error.Abort(msg)
-    return text
+    if stringutil.binary(input.text()):
+        msg = _(b"%s looks like a binary file.") % input.fctx.path()
+        raise error.Abort(msg)
 
 
 def _format_labels(*inputs):
@@ -511,23 +507,12 @@ def simplemerge(
     The merged result is written into `localctx`.
     """
 
-    def readctx(input):
-        return _verifytext(
-            input.text(),
-            input.fctx.path(),
-            ui,
-            quiet=quiet,
-            allow_binary=allow_binary,
-        )
+    if not allow_binary:
+        _verifytext(local)
+        _verifytext(base)
+        _verifytext(other)
 
-    try:
-        localtext = readctx(local)
-        basetext = readctx(base)
-        othertext = readctx(other)
-    except error.Abort:
-        return True
-
-    m3 = Merge3Text(basetext, localtext, othertext)
+    m3 = Merge3Text(base.text(), local.text(), other.text())
     conflicts = False
     if mode == b'union':
         lines = _resolve(m3, (1, 2))
