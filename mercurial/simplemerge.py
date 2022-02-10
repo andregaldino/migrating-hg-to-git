@@ -481,6 +481,19 @@ class MergeInput(object):
         # separated by a ':'. The label is padded to make the ':' aligned among
         # all merge inputs.
         self.label_detail = label_detail
+        self._text = None
+
+    def text(self):
+        if self._text is None:
+            # Merges were always run in the working copy before, which means
+            # they used decoded data, if the user defined any repository
+            # filters.
+            #
+            # Maintain that behavior today for BC, though perhaps in the future
+            # it'd be worth considering whether merging encoded data (what the
+            # repository usually sees) might be more useful.
+            self._text = self.fctx.decodeddata()
+        return self._text
 
 
 def simplemerge(
@@ -498,26 +511,19 @@ def simplemerge(
     The merged result is written into `localctx`.
     """
 
-    def readctx(ctx):
-        # Merges were always run in the working copy before, which means
-        # they used decoded data, if the user defined any repository
-        # filters.
-        #
-        # Maintain that behavior today for BC, though perhaps in the future
-        # it'd be worth considering whether merging encoded data (what the
-        # repository usually sees) might be more useful.
+    def readctx(input):
         return _verifytext(
-            ctx.decodeddata(),
-            ctx.path(),
+            input.text(),
+            input.fctx.path(),
             ui,
             quiet=quiet,
             allow_binary=allow_binary,
         )
 
     try:
-        localtext = readctx(local.fctx)
-        basetext = readctx(base.fctx)
-        othertext = readctx(other.fctx)
+        localtext = readctx(local)
+        basetext = readctx(base)
+        othertext = readctx(other)
     except error.Abort:
         return True
 
