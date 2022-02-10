@@ -45,7 +45,6 @@ from __future__ import absolute_import
 
 __docformat__ = 'reStructuredText'
 
-import inspect
 import re
 
 from docutils import (
@@ -177,13 +176,7 @@ class Translator(nodes.NodeVisitor):
         nodes.NodeVisitor.__init__(self, document)
         self.settings = settings = document.settings
         lcode = settings.language_code
-        arglen = len(inspect.getargspec(languages.get_language)[0])
-        if arglen == 2:
-            self.language = languages.get_language(
-                lcode, self.document.reporter
-            )
-        else:
-            self.language = languages.get_language(lcode)
+        self.language = languages.get_language(lcode, self.document.reporter)
         self.head = []
         self.body = []
         self.foot = []

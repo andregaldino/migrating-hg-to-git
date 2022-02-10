@@ -1029,8 +1029,8 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Beware that existing shares will not be upgraded/downgraded, and by
     default, Mercurial will refuse to interact with them until the mismatch
-    is resolved. See :hg:`help config share.safe-mismatch.source-safe` and
-    :hg:`help config share.safe-mismatch.source-not-safe` for details.
+    is resolved. See :hg:`help config.share.safe-mismatch.source-safe` and
+    :hg:`help config.share.safe-mismatch.source-not-safe` for details.
 
     Introduced in Mercurial 5.7.
 
@@ -2088,12 +2088,11 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 ---------
 
 ``safe-mismatch.source-safe``
-
     Controls what happens when the shared repository does not use the
     share-safe mechanism but its source repository does.
 
     Possible values are `abort` (default), `allow`, `upgrade-abort` and
-    `upgrade-abort`.
+    `upgrade-allow`.
 
     ``abort``
     Disallows running any command and aborts
@@ -2105,7 +2104,7 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     tries to upgrade the share; if it fails, continue by
     respecting the share source setting
 
-    Check :hg:`help config format.use-share-safe` for details about the
+    Check :hg:`help config.format.use-share-safe` for details about the
     share-safe feature.
 
 ``safe-mismatch.source-safe.warn``
@@ -2114,12 +2113,11 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     (default: True)
 
 ``safe-mismatch.source-not-safe``
-
     Controls what happens when the shared repository uses the share-safe
     mechanism but its source does not.
 
     Possible values are `abort` (default), `allow`, `downgrade-abort` and
-    `downgrade-abort`.
+    `downgrade-allow`.
 
     ``abort``
     Disallows running any command and aborts
@@ -2131,7 +2129,7 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
     tries to downgrade the share to not use share-safe;
     if it fails, continue by respecting the shared source setting
 
-    Check :hg:`help config format.use-share-safe` for details about the
+    Check :hg:`help config.format.use-share-safe` for details about the
     share-safe feature.
 
 ``safe-mismatch.source-not-safe.warn``
@@ -2176,7 +2174,7 @@ category impact performance and repository size.
     Default to True.
 
     For details on the "persistent-nodemap" feature, see:
-    :hg:`help config format.use-persistent-nodemap`.
+    :hg:`help config.format.use-persistent-nodemap`.
 
 ``revlog.persistent-nodemap.slow-path``
     Control the behavior of Merucrial when using a repository with "persistent"
@@ -2188,7 +2186,7 @@ category impact performance and repository size.
     ``abort``: Prevent access to such repositories. (This is the default)
 
     For details on the "persistent-nodemap" feature, see:
-    :hg:`help config format.use-persistent-nodemap`.
+    :hg:`help config.format.use-persistent-nodemap`.
 
 ``revlog.reuse-external-delta-parent``
     Control the order in which delta parents are considered when adding new
