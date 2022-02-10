@@ -149,15 +149,6 @@ impl DisplayStates {
 }
 
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
-    let status_enabled_default = false;
-    let status_enabled = invocation.config.get_option(b"rhg", b"status")?;
-    if !status_enabled.unwrap_or(status_enabled_default) {
-        return Err(CommandError::unsupported(
-            "status is experimental in rhg (enable it with 'rhg.status = true' \
-            or enable fallback with 'rhg.on-unsupported = fallback')"
-        ));
-    }
-
     // TODO: lift these limitations
     if invocation.config.get_bool(b"ui", b"tweakdefaults")? {
         return Err(CommandError::unsupported(
