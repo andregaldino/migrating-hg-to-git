@@ -84,6 +84,11 @@ impl fmt::Display for ConfigValueParseError {
 }
 
 impl Config {
+    /// The configuration to use when printing configuration-loading errors
+    pub fn empty() -> Self {
+        Self { layers: Vec::new() }
+    }
+
     /// Load system and user configuration from various files.
     ///
     /// This is also affected by some environment variables.

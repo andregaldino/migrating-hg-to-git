@@ -137,7 +137,6 @@ fn main() {
     let process_start_time = blackbox::ProcessStartTime::now();
 
     env_logger::init();
-    let ui = ui::Ui::new();
 
     let early_args = EarlyArgs::parse(std::env::args_os());
 
@@ -151,7 +150,7 @@ fn main() {
             .unwrap_or_else(|error| {
                 exit(
                     &None,
-                    &ui,
+                    &Ui::new(&Config::empty()),
                     OnUnsupported::Abort,
                     Err(CommandError::abort(format!(
                         "abort: {}: '{}'",
@@ -172,7 +171,7 @@ fn main() {
 
             exit(
                 &initial_current_dir,
-                &ui,
+                &Ui::new(&Config::empty()),
                 on_unsupported,
                 Err(error.into()),
                 false,
@@ -184,7 +183,7 @@ fn main() {
         .unwrap_or_else(|error| {
             exit(
                 &initial_current_dir,
-                &ui,
+                &Ui::new(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
                 Err(error.into()),
                 non_repo_config
@@ -202,7 +201,7 @@ fn main() {
         if SCHEME_RE.is_match(&repo_path_bytes) {
             exit(
                 &initial_current_dir,
-                &ui,
+                &Ui::new(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
                 Err(CommandError::UnsupportedFeature {
                     message: format_bytes!(
@@ -292,7 +291,7 @@ fn main() {
         }
         Err(error) => exit(
             &initial_current_dir,
-            &ui,
+            &Ui::new(&non_repo_config),
             OnUnsupported::from_config(&non_repo_config),
             Err(error.into()),
             // TODO: show a warning or combine with original error if
@@ -308,6 +307,7 @@ fn main() {
     } else {
         &non_repo_config
     };
+    let ui = Ui::new(&config);
     let on_unsupported = OnUnsupported::from_config(config);
 
     let result = main_with_result(

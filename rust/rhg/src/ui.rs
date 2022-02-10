@@ -1,4 +1,5 @@
 use format_bytes::format_bytes;
+use hg::config::Config;
 use hg::utils::files::get_bytes_from_os_string;
 use std::borrow::Cow;
 use std::env;
@@ -21,7 +22,7 @@ pub enum UiError {
 
 /// The commandline user interface
 impl Ui {
-    pub fn new() -> Self {
+    pub fn new(_config: &Config) -> Self {
         Ui {
             stdout: std::io::stdout(),
             stderr: std::io::stderr(),
