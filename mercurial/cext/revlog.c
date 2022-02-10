@@ -158,7 +158,7 @@ static const long entry_v2_offset_node_id = 32;
 static const long entry_v2_offset_sidedata_offset = 64;
 static const long entry_v2_offset_sidedata_comp_len = 72;
 static const long entry_v2_offset_all_comp_mode = 76;
-static const long entry_v2_offset_padding_start = 77;
+/* next free offset: 77 */
 
 static const char comp_mode_inline = 2;
 static const char rank_unknown = -1;
@@ -603,6 +603,8 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	rev = self->length + self->new_length;
 	data = self->added + self->entry_size * self->new_length++;
 
+	memset(data, 0, self->entry_size);
+
 	if (self->format_version == format_v1) {
 		putbe32(offset_flags >> 32, data + entry_v1_offset_high);
 		putbe32(offset_flags & 0xffffffffU,
@@ -615,9 +617,6 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		putbe32(parent_2, data + entry_v1_offset_parent_2);
 		memcpy(data + entry_v1_offset_node_id, c_node_id,
 		       c_node_id_len);
-		/* Padding since SHA-1 is only 20 bytes for now */
-		memset(data + entry_v1_offset_node_id + c_node_id_len, 0,
-		       entry_v1_offset_node_id - c_node_id_len);
 	} else if (self->format_version == format_v2) {
 		putbe32(offset_flags >> 32, data + entry_v2_offset_high);
 		putbe32(offset_flags & 0xffffffffU,
@@ -630,9 +629,6 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		putbe32(parent_2, data + entry_v2_offset_parent_2);
 		memcpy(data + entry_v2_offset_node_id, c_node_id,
 		       c_node_id_len);
-		/* Padding since SHA-1 is only 20 bytes for now */
-		memset(data + entry_v2_offset_node_id + c_node_id_len, 0,
-		       entry_v2_offset_node_id - c_node_id_len);
 		putbe64(sidedata_offset,
 		        data + entry_v2_offset_sidedata_offset);
 		putbe32(sidedata_comp_len,
@@ -640,9 +636,6 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 		comp_field = data_comp_mode & 3;
 		comp_field = comp_field | (sidedata_comp_mode & 3) << 2;
 		data[entry_v2_offset_all_comp_mode] = comp_field;
-		/* Padding for 96 bytes alignment */
-		memset(data + entry_v2_offset_padding_start, 0,
-		       self->entry_size - entry_v2_offset_padding_start);
 	} else {
 		raise_revlog_error();
 		return NULL;
