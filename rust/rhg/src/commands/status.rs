@@ -183,7 +183,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
     let config = invocation.config;
     let args = invocation.subcommand_args;
 
-    let verbose = !ui.plain()
+    let verbose = !ui.plain(None)
         && !args.is_present("print0")
         && (config.get_bool(b"ui", b"verbose")?
             || config.get_bool(b"commands", b"status.verbose")?);
@@ -312,7 +312,7 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             }
         }
     }
-    let relative_paths = (!ui.plain())
+    let relative_paths = (!ui.plain(None))
         && config
             .get_option(b"commands", b"status.relative")?
             .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);

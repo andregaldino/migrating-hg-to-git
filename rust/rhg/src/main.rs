@@ -669,7 +669,9 @@ fn check_unsupported(
     }
 
     if let Some(color) = config.get(b"ui", b"color") {
-        if (color == b"always" || color == b"debug") && !ui.plain() {
+        if (color == b"always" || color == b"debug")
+            && !ui.plain(Some("color"))
+        {
             Err(CommandError::unsupported("colored output"))?
         }
     }

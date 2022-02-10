@@ -1,4 +1,5 @@
 use format_bytes::format_bytes;
+use hg::utils::files::get_bytes_from_os_string;
 use std::borrow::Cow;
 use std::env;
 use std::io;
@@ -65,8 +66,19 @@ impl Ui {
     /// - False if HGPLAIN is not set, or feature is in HGPLAINEXCEPT
     /// - False if feature is disabled by default and not included in HGPLAIN
     /// - True otherwise
-    pub fn plain(&self) -> bool {
-        // TODO: add support for HGPLAINEXCEPT
+    pub fn plain(&self, feature: Option<&str>) -> bool {
+        plain(feature)
+    }
+}
+
+fn plain(opt_feature: Option<&str>) -> bool {
+    if let Some(except) = env::var_os("HGPLAINEXCEPT") {
+        opt_feature.map_or(true, |feature| {
+            get_bytes_from_os_string(except)
+                .split(|&byte| byte == b',')
+                .all(|exception| exception != feature.as_bytes())
+        })
+    } else {
         env::var_os("HGPLAIN").is_some()
     }
 }
