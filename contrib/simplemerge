@@ -64,6 +64,17 @@ def showhelp():
         procutil.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
 
 
+def _verifytext(input, ui, quiet=False, allow_binary=False):
+    """verifies that text is non-binary (unless opts[text] is passed,
+    then we just warn)"""
+    if stringutil.binary(input.text()):
+        msg = _(b"%s looks like a binary file.") % input.fctx.path()
+        if not quiet:
+            ui.warn(_(b'warning: %s\n') % msg)
+        if not allow_binary:
+            sys.exit(1)
+
+
 try:
     for fp in (sys.stdin, procutil.stdout, sys.stderr):
         procutil.setbinary(fp)
@@ -97,15 +108,23 @@ try:
     base_input = simplemerge.MergeInput(
         context.arbitraryfilectx(base), labels[2]
     )
+
+    quiet = opts.get(b'quiet')
+    allow_binary = opts.get(b'text')
+    ui = uimod.ui.load()
+    _verifytext(local_input, ui, quiet=quiet, allow_binary=allow_binary)
+    _verifytext(base_input, ui, quiet=quiet, allow_binary=allow_binary)
+    _verifytext(other_input, ui, quiet=quiet, allow_binary=allow_binary)
+
     sys.exit(
         simplemerge.simplemerge(
-            uimod.ui.load(),
+            ui,
             local_input,
             base_input,
             other_input,
             mode,
-            quiet=opts.get(b'quiet'),
-            allow_binary=opts.get(b'text'),
+            quiet=True,
+            allow_binary=allow_binary,
             print_result=opts.get(b'print'),
         )
     )
