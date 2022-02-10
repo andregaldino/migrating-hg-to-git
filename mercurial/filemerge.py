@@ -40,6 +40,7 @@ from . import (
 
 from .utils import (
     procutil,
+    stringutil,
 )
 
 
@@ -402,6 +403,14 @@ def _underlyingfctxifabsent(filectx):
         return filectx
 
 
+def _verifytext(input, ui):
+    """verifies that text is non-binary"""
+    if stringutil.binary(input.text()):
+        msg = _(b"%s looks like a binary file.") % input.fctx.path()
+        ui.warn(_(b'warning: %s\n') % msg)
+        raise error.Abort(msg)
+
+
 def _premerge(repo, local, other, base, toolconf, backup):
     tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink or local.fctx.isabsent() or other.fctx.isabsent():
@@ -429,6 +438,10 @@ def _premerge(repo, local, other, base, toolconf, backup):
             mode = b'mergediff'
         elif premerge == b'keep-merge3':
             mode = b'merge3'
+        if any(
+            stringutil.binary(input.text()) for input in (local, base, other)
+        ):
+            return 1  # continue merging
         r = simplemerge.simplemerge(
             ui, local, base, other, quiet=True, mode=mode
         )
@@ -470,6 +483,12 @@ def _merge(repo, local, other, base, mode):
     of merge, unless mode equals 'union' which suppresses the markers."""
     ui = repo.ui
 
+    try:
+        _verifytext(local, ui)
+        _verifytext(base, ui)
+        _verifytext(other, ui)
+    except error.Abort:
+        return True, True, False
     r = simplemerge.simplemerge(ui, local, base, other, mode=mode)
     return True, r, False
 
