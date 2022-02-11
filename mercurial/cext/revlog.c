@@ -2734,8 +2734,10 @@ static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 	if (i < 0)
 		return;
 
-	for (i = start; i < len; i++)
-		nt_delete_node(&self->nt, index_deref(self, i) + 32);
+	for (i = start; i < len; i++) {
+		const char *node = index_node(self, i);
+		nt_delete_node(&self->nt, node);
+	}
 
 	self->new_length = start - self->length;
 }
