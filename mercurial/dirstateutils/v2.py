@@ -316,17 +316,17 @@ def pack_dirstate(map, copy_map, now):
             # Determine if the next entry is in the same sub-tree, if so don't
             # pack yet
             next_path = sorted_map[index][0]
-            should_pack = not get_folder(next_path).startswith(current_folder)
+            should_pack = not is_ancestor(next_path, current_folder)
         if should_pack:
             pack_directory_children(current_node, copy_map, data, stack)
             while stack and current_node.path != b"":
                 # Go up the tree and write until we reach the folder of the next
                 # entry (if any, otherwise the root)
                 parent = current_node.parent
-                in_parent_folder_of_next_entry = next_path is not None and (
-                    get_folder(next_path).startswith(get_folder(stack[-1].path))
+                in_ancestor_of_next_path = next_path is not None and (
+                    is_ancestor(next_path, get_folder(stack[-1].path))
                 )
-                if parent is None or in_parent_folder_of_next_entry:
+                if parent is None or in_ancestor_of_next_path:
                     break
                 pack_directory_children(parent, copy_map, data, stack)
                 current_node = parent
@@ -357,13 +357,34 @@ def get_folder(path):
     return path.rsplit(b'/', 1)[0] if b'/' in path else b''
 
 
+def is_ancestor(path, maybe_ancestor):
+    """Returns whether `maybe_ancestor` is an ancestor of `path`.
+
+    >>> is_ancestor(b"a", b"")
+    True
+    >>> is_ancestor(b"a/b/c", b"a/b/c")
+    False
+    >>> is_ancestor(b"hgext3rd/__init__.py", b"hgext")
+    False
+    >>> is_ancestor(b"hgext3rd/__init__.py", b"hgext3rd")
+    True
+    """
+    if maybe_ancestor == b"":
+        return True
+    if path <= maybe_ancestor:
+        return False
+    path_components = path.split(b"/")
+    ancestor_components = maybe_ancestor.split(b"/")
+    return all(c == o for c, o in zip(path_components, ancestor_components))
+
+
 def move_to_correct_node_in_tree(target_folder, current_node, stack):
     """
     Move inside the dirstate node tree to the node corresponding to
     `target_folder`, creating the missing nodes along the way if needed.
     """
     while target_folder != current_node.path:
-        if target_folder.startswith(current_node.path):
+        if is_ancestor(target_folder, current_node.path):
             # We need to go down a folder
             prefix = target_folder[len(current_node.path) :].lstrip(b'/')
             subfolder_name = prefix.split(b'/', 1)[0]
