@@ -745,7 +745,7 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
     args = _toolstr(repo.ui, tool, b"args")
 
     with _maketempfiles(
-        fco, fca, repo.wvfs.join(backup.path()), b"$output" in args
+        fco, fca, backup.path(), b"$output" in args
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
