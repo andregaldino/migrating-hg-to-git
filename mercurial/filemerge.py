@@ -877,7 +877,7 @@ def partextras(labels):
     }
 
 
-def _makebackup(repo, ui, wctx, fcd):
+def _makebackup(repo, ui, fcd):
     """Makes and returns a filectx-like object for ``fcd``'s backup file.
 
     In addition to preserving the user's pre-existing modifications to `fcd`
@@ -894,30 +894,17 @@ def _makebackup(repo, ui, wctx, fcd):
     # merge -> filemerge). (I suspect the fileset import is the weakest link)
     from . import context
 
-    backup = scmutil.backuppath(ui, repo, fcd.path())
-    inworkingdir = backup.startswith(repo.wvfs.base) and not backup.startswith(
-        repo.vfs.base
-    )
-    if isinstance(fcd, context.overlayworkingfilectx) and inworkingdir:
-        # If the backup file is to be in the working directory, and we're
-        # merging in-memory, we must redirect the backup to the memory context
-        # so we don't disturb the working directory.
-        relpath = backup[len(repo.wvfs.base) + 1 :]
-        wctx[relpath].write(fcd.data(), fcd.flags())
-        return wctx[relpath]
+    if isinstance(fcd, context.overlayworkingfilectx):
+        # If we're merging in-memory, we're free to put the backup anywhere.
+        fd, backup = pycompat.mkstemp(b'hg-merge-backup')
+        with os.fdopen(fd, 'wb') as f:
+            f.write(fcd.data())
     else:
-        # Otherwise, write to wherever path the user specified the backups
-        # should go. We still need to switch based on whether the source is
-        # in-memory so we can use the fast path of ``util.copy`` if both are
-        # on disk.
-        if isinstance(fcd, context.overlayworkingfilectx):
-            util.writefile(backup, fcd.data())
-        else:
-            a = _workingpath(repo, fcd)
-            util.copyfile(a, backup)
-        # A arbitraryfilectx is returned, so we can run the same functions on
-        # the backup context regardless of where it lives.
-        return context.arbitraryfilectx(backup, repo=repo)
+        backup = scmutil.backuppath(ui, repo, fcd.path())
+        a = _workingpath(repo, fcd)
+        util.copyfile(a, backup)
+
+    return context.arbitraryfilectx(backup, repo=repo)
 
 
 @contextlib.contextmanager
@@ -1065,7 +1052,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
             ui.warn(onfailure % fduipath)
         return 1, False
 
-    backup = _makebackup(repo, ui, wctx, fcd)
+    backup = _makebackup(repo, ui, fcd)
     r = 1
     try:
         internalmarkerstyle = ui.config(b'ui', b'mergemarkers')
