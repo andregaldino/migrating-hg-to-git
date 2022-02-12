@@ -1592,34 +1592,7 @@ mergemarkertemplate settings:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:common ancestor: */f~base.*" (glob)
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-  $ rm -f 'printargs_merge_tool'
-
-Same test with experimental.mergetempdirprefix set:
-
-  $ beforemerge
-  [merge-tools]
-  false.whatever=
-  true.priority=1
-  true.executable=cat
-  # hg update -C 1
-  $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
-  > EOF
-  $ hg --config experimental.mergetempdirprefix=$TESTTMP/hgmerge. \
-  >    --config merge-tools.true.executable='sh' \
-  >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
-  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
-  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
-  >    --config ui.mergemarkers=detailed \
-  >    merge -r 2
-  merging f
-  arg: "ll:working copy"
-  arg: "lo:"
-  arg: "merge rev"
-  arg: "lb:common ancestor: */hgmerge.*/f~base" (glob)
+  arg: "lb:common ancestor: */f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1649,7 +1622,7 @@ mergemarkertemplate:
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
   arg: "merge rev: tooltmpl 0185f4e0cf02"
-  arg: "lb:common ancestor: */f~base.*" (glob)
+  arg: "lb:common ancestor: */f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1895,23 +1868,7 @@ Verify naming of temporary files and that extension is preserved:
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo --config merge-tools.echo.args='$base $local $other $output'
   merging f and f.txt to f.txt
-  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/repo/f.txt (glob)
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-Verify naming of temporary files and that extension is preserved
-(experimental.mergetempdirprefix version):
-
-  $ hg update -q -C 1
-  $ hg mv f f.txt
-  $ hg ci -qm "f.txt"
-  warning: commit already existed in the repository!
-  $ hg update -q -C 2
-  $ hg merge -y -r tip --tool echo \
-  >    --config merge-tools.echo.args='$base $local $other $output' \
-  >    --config experimental.mergetempdirprefix=$TESTTMP/hgmerge.
-  merging f and f.txt to f.txt
-  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/repo/f.txt (glob)
+  */hgmerge-*/f~base */hgmerge-*/f~local.txt */hgmerge-*/f~other.txt */repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 

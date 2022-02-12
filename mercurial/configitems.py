@@ -1042,11 +1042,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'mergetempdirprefix',
-    default=None,
-)
-coreconfigitem(
-    b'experimental',
     b'mmapindexthreshold',
     default=None,
 )

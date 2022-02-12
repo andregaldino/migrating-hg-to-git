@@ -926,22 +926,15 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
     copies `localpath` to another temporary file, so an external merge tool may
     use them.
     """
-    tmproot = None
-    tmprootprefix = repo.ui.config(b'experimental', b'mergetempdirprefix')
-    if tmprootprefix:
-        tmproot = pycompat.mkdtemp(prefix=tmprootprefix)
+    tmproot = pycompat.mkdtemp(prefix=b'hgmerge-')
 
     def maketempfrompath(prefix, path):
         fullbase, ext = os.path.splitext(path)
         pre = b"%s~%s" % (os.path.basename(fullbase), prefix)
-        if tmproot:
-            name = os.path.join(tmproot, pre)
-            if ext:
-                name += ext
-            f = open(name, "wb")
-        else:
-            fd, name = pycompat.mkstemp(prefix=pre + b'.', suffix=ext)
-            f = os.fdopen(fd, "wb")
+        name = os.path.join(tmproot, pre)
+        if ext:
+            name += ext
+        f = open(name, "wb")
         return f, name
 
     def tempfromcontext(prefix, ctx):
@@ -967,15 +960,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
     try:
         yield b, c, d
     finally:
-        if tmproot:
-            shutil.rmtree(tmproot)
-        else:
-            util.unlink(b)
-            util.unlink(c)
-            # if not uselocalpath, d is the 'orig'/backup file which we
-            # shouldn't delete.
-            if d and uselocalpath:
-                util.unlink(d)
+        shutil.rmtree(tmproot)
 
 
 def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
