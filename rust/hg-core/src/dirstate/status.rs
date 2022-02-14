@@ -128,8 +128,6 @@ pub struct StatusPath<'a> {
 
 #[derive(Debug, derive_more::From)]
 pub enum StatusError {
-    /// Generic IO error
-    IO(std::io::Error),
     /// An invalid path that cannot be represented in Mercurial was found
     Path(HgPathError),
     /// An invalid "ignore" pattern was found
@@ -143,7 +141,6 @@ pub type StatusResult<T> = Result<T, StatusError>;
 impl fmt::Display for StatusError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            StatusError::IO(error) => error.fmt(f),
             StatusError::Path(error) => error.fmt(f),
             StatusError::Pattern(error) => error.fmt(f),
             StatusError::DirstateV2ParseError(_) => {

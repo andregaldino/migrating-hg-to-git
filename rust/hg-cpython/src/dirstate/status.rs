@@ -10,7 +10,6 @@
 //! `rustext.dirstate.status`.
 
 use crate::{dirstate::DirstateMap, exceptions::FallbackError};
-use cpython::exc::OSError;
 use cpython::{
     exc::ValueError, ObjectProtocol, PyBytes, PyErr, PyList, PyObject,
     PyResult, PyTuple, Python, PythonObject, ToPyObject,
@@ -95,7 +94,6 @@ fn handle_fallback(py: Python, err: StatusError) -> PyErr {
 
             PyErr::new::<FallbackError, _>(py, &as_string)
         }
-        StatusError::IO(e) => PyErr::new::<OSError, _>(py, e.to_string()),
         e => PyErr::new::<ValueError, _>(py, e.to_string()),
     }
 }
