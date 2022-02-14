@@ -1,4 +1,4 @@
-FROM centos:centos8
+FROM rockylinux/rockylinux:8
 
 RUN groupadd -g %GID% build && \
     useradd -u %UID% -g %GID% -s /bin/bash -d /build -m build
