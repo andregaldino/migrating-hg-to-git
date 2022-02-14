@@ -443,7 +443,8 @@ impl DisplayStatusPaths<'_> {
         mut paths: Vec<StatusPath<'_>>,
     ) -> Result<(), CommandError> {
         paths.sort_unstable();
-        // TODO: get the stdout lock once for the whole loop instead of in each write
+        // TODO: get the stdout lock once for the whole loop
+        // instead of in each write
         for StatusPath { path, copy_source } in paths {
             let relative;
             let path = if let Some(relativize) = &self.relativize {
