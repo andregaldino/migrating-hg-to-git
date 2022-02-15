@@ -944,8 +944,8 @@ def _maketempfiles(fco, fca, localpath):
     d = localpath
     if localpath is not None:
         f, d = maketempfrompath(b"local", d)
-        with open(localpath, b'rb') as src:
-            f.write(src.read())
+        data = util.readfile(localpath)
+        f.write(data)
         f.close()
 
     try:
