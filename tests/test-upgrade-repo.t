@@ -6,6 +6,8 @@
   > [format]
   > # stabilize test accross variant
   > revlog-compression=zlib
+  > [storage]
+  > dirstate-v2.slow-path=allow
   > EOF
 
 store and revlogv1 are required in source
@@ -30,6 +32,9 @@ store and revlogv1 are required in source
 Cannot upgrade shared repositories
 
   $ hg init share-parent
+  $ hg -R share-parent debugbuilddag -n .+9
+  $ hg -R share-parent up tip
+  10 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -q share share-parent share-child
 
   $ hg -R share-child debugupgraderepo --config format.sparse-revlog=no
@@ -37,6 +42,155 @@ Cannot upgrade shared repositories
   (upgrade the main repository directly)
   [255]
 
+Unless the action is compatible with share
+
+  $ hg -R share-child debugupgraderepo --config format.use-dirstate-v2=yes --quiet
+  requirements
+     preserved: * (glob)
+     added: dirstate-v2
+  
+  no revlogs to process
+  
+
+  $ hg -R share-child debugupgraderepo --config format.use-dirstate-v2=yes --quiet --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: dirstate-v2
+  
+  no revlogs to process
+  
+  $ hg debugformat -R share-child | grep dirstate-v2
+  dirstate-v2:        yes
+  $ hg debugformat -R share-parent | grep dirstate-v2
+  dirstate-v2:         no
+  $ hg status --all -R share-child
+  C nf0
+  C nf1
+  C nf2
+  C nf3
+  C nf4
+  C nf5
+  C nf6
+  C nf7
+  C nf8
+  C nf9
+  $ hg log -l 3 -R share-child
+  changeset:   9:0059eb38e4a4
+  tag:         tip
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:09 1970 +0000
+  summary:     r9
+  
+  changeset:   8:4d5be70c8130
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:08 1970 +0000
+  summary:     r8
+  
+  changeset:   7:e60bfe72517e
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:07 1970 +0000
+  summary:     r7
+  
+  $ hg status --all -R share-parent
+  C nf0
+  C nf1
+  C nf2
+  C nf3
+  C nf4
+  C nf5
+  C nf6
+  C nf7
+  C nf8
+  C nf9
+  $ hg log -l 3 -R share-parent
+  changeset:   9:0059eb38e4a4
+  tag:         tip
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:09 1970 +0000
+  summary:     r9
+  
+  changeset:   8:4d5be70c8130
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:08 1970 +0000
+  summary:     r8
+  
+  changeset:   7:e60bfe72517e
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:07 1970 +0000
+  summary:     r7
+  
+
+  $ hg -R share-child debugupgraderepo --config format.use-dirstate-v2=no --quiet --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     removed: dirstate-v2
+  
+  no revlogs to process
+  
+  $ hg debugformat -R share-child | grep dirstate-v2
+  dirstate-v2:         no
+  $ hg debugformat -R share-parent | grep dirstate-v2
+  dirstate-v2:         no
+  $ hg status --all -R share-child
+  C nf0
+  C nf1
+  C nf2
+  C nf3
+  C nf4
+  C nf5
+  C nf6
+  C nf7
+  C nf8
+  C nf9
+  $ hg log -l 3 -R share-child
+  changeset:   9:0059eb38e4a4
+  tag:         tip
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:09 1970 +0000
+  summary:     r9
+  
+  changeset:   8:4d5be70c8130
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:08 1970 +0000
+  summary:     r8
+  
+  changeset:   7:e60bfe72517e
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:07 1970 +0000
+  summary:     r7
+  
+  $ hg status --all -R share-parent
+  C nf0
+  C nf1
+  C nf2
+  C nf3
+  C nf4
+  C nf5
+  C nf6
+  C nf7
+  C nf8
+  C nf9
+  $ hg log -l 3 -R share-parent
+  changeset:   9:0059eb38e4a4
+  tag:         tip
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:09 1970 +0000
+  summary:     r9
+  
+  changeset:   8:4d5be70c8130
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:08 1970 +0000
+  summary:     r8
+  
+  changeset:   7:e60bfe72517e
+  user:        debugbuilddag
+  date:        Thu Jan 01 00:00:07 1970 +0000
+  summary:     r7
+  
 
 Do not yet support upgrading treemanifest repos
 

@@ -196,6 +196,7 @@ class dirstatev2(requirementformatvariant):
     touches_changelog = False
     touches_requirements = True
     touches_dirstate = True
+    compatible_with_share = True
 
 
 @registerformatvariant
