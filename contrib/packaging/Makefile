@@ -13,20 +13,20 @@ UBUNTU_CODENAMES := \
 
 FEDORA_RELEASE := 31
 
-CENTOS_RELEASES := \
+RHEL_RELEASES := \
   7 \
   8
 
-# Build a Python for these CentOS releases.
-CENTOS_WITH_PYTHON_RELEASES :=
-CENTOS_WITH_NONVERSIONED_PYTHON :=
-CENTOS_WITH_36_DOCUTILS := 7
+# Build a Python for these RHEL (and derivatives) releases.
+RHEL_WITH_PYTHON_RELEASES :=
+RHEL_WITH_NONVERSIONED_PYTHON :=
+RHEL_WITH_36_DOCUTILS := 7
 
 help:
 	@echo 'Packaging Make Targets'
 	@echo ''
-	@echo 'docker-centos{$(strip $(CENTOS_RELEASES))}'
-	@echo '   Build an RPM for a specific CentOS version using Docker.'
+	@echo 'docker-rhel{$(strip $(RHEL_RELEASES))}'
+	@echo '   Build an RPM for a specific RHEL/derivative version using Docker.'
 	@echo ''
 	@echo 'docker-debian-{$(strip $(DEBIAN_CODENAMES))}'
 	@echo '   Build Debian packages specific to a Debian distro using Docker.'
@@ -53,8 +53,8 @@ help:
 	@echo 'ppa'
 	@echo '   Build a Debian source package locally targeting the current system'
 	@echo ''
-	@echo 'centos{$(strip $(CENTOS_RELEASES))}'
-	@echo '   Build an RPM for a specific CentOS version locally'
+	@echo 'rhel{$(strip $(RHEL_RELEASES))}'
+	@echo '   Build an RPM for a specific RHEL/derivative version locally'
 	@echo ''
 	@echo 'fedora'
 	@echo '   Build an RPM for Fedora $(FEDORA_RELEASE) locally'
@@ -106,22 +106,22 @@ fedora:
 docker-fedora:
 	./dockerrpm fedora$(FEDORA_RELEASE)
 
-# CentOS targets.
-define centos_targets
-.PHONY: centos$(1)
-centos$(1):
-	mkdir -p $$(HGROOT)/packages/centos$(1)
-	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(CENTOS_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
-	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
-	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
+# RHEL targets.
+define rhel_targets
+.PHONY: rhel$(1)
+rhel$(1):
+	mkdir -p $$(HGROOT)/packages/rhel$(1)
+	./buildrpm $$(if $$(filter $(1),$$(RHEL_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(RHEL_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(RHEL_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/rhel$(1)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/rhel$(1)
 
-.PHONY: docker-centos$(1)
-docker-centos$(1):
-	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(CENTOS_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(CENTOS_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
+.PHONY: docker-rhel$(1)
+docker-rhel$(1):
+	./dockerrpm rhel$(1) $$(if $$(filter $(1),$$(RHEL_WITH_PYTHON_RELEASES)),--withpython,$$(if $$(filter $(1),$$(RHEL_WITH_NONVERSIONED_PYTHON)),--python python,))$$(if $$(filter $(1),$$(RHEL_WITH_36_DOCUTILS)), --docutilspackage python36-docutils,)
 
 endef
 
-$(foreach release,$(CENTOS_RELEASES),$(eval $(call centos_targets,$(release))))
+$(foreach release,$(RHEL_RELEASES),$(eval $(call rhel_targets,$(release))))
 
 .PHONY: linux-wheels
 linux-wheels: linux-wheels-x86_64 linux-wheels-i686
