@@ -743,9 +743,14 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
         return False, 1, None
     localpath = _workingpath(repo, fcd)
     args = _toolstr(repo.ui, tool, b"args")
+    localoutputpath = None
+    if b"$output" in args:
+        localoutputpath = backup.path()
 
     with _maketempfiles(
-        fco, fca, backup.path(), b"$output" in args
+        fco,
+        fca,
+        localoutputpath,
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
@@ -908,10 +913,10 @@ def _makebackup(repo, ui, fcd):
 
 
 @contextlib.contextmanager
-def _maketempfiles(fco, fca, localpath, uselocalpath):
-    """Writes out `fco` and `fca` as temporary files, and (if uselocalpath)
-    copies `localpath` to another temporary file, so an external merge tool may
-    use them.
+def _maketempfiles(fco, fca, localpath):
+    """Writes out `fco` and `fca` as temporary files, and (if localpath is not
+    None) copies `localpath` to another temporary file, so an external merge
+    tool may use them.
     """
     tmproot = pycompat.mkdtemp(prefix=b'hgmerge-')
 
@@ -934,7 +939,7 @@ def _maketempfiles(fco, fca, localpath, uselocalpath):
     b = tempfromcontext(b"base", fca)
     c = tempfromcontext(b"other", fco)
     d = localpath
-    if uselocalpath:
+    if localpath is not None:
         # We start off with this being the backup filename, so remove the .orig
         # to make syntax-highlighting more likely.
         if d.endswith(b'.orig'):
