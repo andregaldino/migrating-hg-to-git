@@ -746,6 +746,9 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
     localoutputpath = None
     if b"$output" in args:
         localoutputpath = backup.path()
+        # Remove the .orig to make syntax-highlighting more likely.
+        if localoutputpath.endswith(b'.orig'):
+            localoutputpath, ext = os.path.splitext(localoutputpath)
 
     with _maketempfiles(
         fco,
@@ -940,10 +943,6 @@ def _maketempfiles(fco, fca, localpath):
     c = tempfromcontext(b"other", fco)
     d = localpath
     if localpath is not None:
-        # We start off with this being the backup filename, so remove the .orig
-        # to make syntax-highlighting more likely.
-        if d.endswith(b'.orig'):
-            d, _ = os.path.splitext(d)
         f, d = maketempfrompath(b"local", d)
         with open(localpath, b'rb') as src:
             f.write(src.read())
