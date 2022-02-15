@@ -19,7 +19,6 @@ from .node import (
 )
 from .pycompat import (
     getattr,
-    open,
 )
 
 from . import (
@@ -923,30 +922,24 @@ def _maketempfiles(fco, fca, localpath):
     """
     tmproot = pycompat.mkdtemp(prefix=b'hgmerge-')
 
-    def maketempfrompath(prefix, path):
+    def maketempfrompath(prefix, path, data):
         fullbase, ext = os.path.splitext(path)
         pre = b"%s~%s" % (os.path.basename(fullbase), prefix)
         name = os.path.join(tmproot, pre)
         if ext:
             name += ext
-        f = open(name, "wb")
-        return f, name
+        util.writefile(name, data)
+        return name
 
     def tempfromcontext(prefix, ctx):
-        f, name = maketempfrompath(prefix, ctx.path())
-        data = ctx.decodeddata()
-        f.write(data)
-        f.close()
-        return name
+        return maketempfrompath(prefix, ctx.path(), ctx.decodeddata())
 
     b = tempfromcontext(b"base", fca)
     c = tempfromcontext(b"other", fco)
     d = localpath
     if localpath is not None:
-        f, d = maketempfrompath(b"local", d)
         data = util.readfile(localpath)
-        f.write(data)
-        f.close()
+        d = maketempfrompath(b"local", localpath, data)
 
     try:
         yield b, c, d
