@@ -742,20 +742,26 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
         return False, 1, None
     localpath = _workingpath(repo, fcd)
     args = _toolstr(repo.ui, tool, b"args")
-    localoutputpath = None
+
+    files = [
+        (b"base", fca.path(), fca.decodeddata()),
+        (b"other", fco.path(), fco.decodeddata()),
+    ]
+    outpath = b""
     if b"$output" in args:
+        # read input from backup, write to original
+        outpath = localpath
         localoutputpath = backup.path()
         # Remove the .orig to make syntax-highlighting more likely.
         if localoutputpath.endswith(b'.orig'):
             localoutputpath, ext = os.path.splitext(localoutputpath)
+        localdata = util.readfile(localpath)
+        files.append((b"local", localoutputpath, localdata))
 
-    with _maketempfiles(
-        fco,
-        fca,
-        localoutputpath,
-    ) as temppaths:
-        basepath, otherpath, localoutputpath = temppaths
-        outpath = b""
+    with _maketempfiles(files) as temppaths:
+        basepath, otherpath = temppaths[:2]
+        if len(temppaths) == 3:
+            localpath = temppaths[2]
 
         def format_label(input):
             if input.label_detail:
@@ -777,10 +783,6 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
         }
         ui = repo.ui
 
-        if b"$output" in args:
-            # read input from backup, write to original
-            outpath = localpath
-            localpath = localoutputpath
         replace = {
             b'local': localpath,
             b'base': basepath,
@@ -915,10 +917,9 @@ def _makebackup(repo, ui, fcd):
 
 
 @contextlib.contextmanager
-def _maketempfiles(fco, fca, localpath):
-    """Writes out `fco` and `fca` as temporary files, and (if localpath is not
-    None) copies `localpath` to another temporary file, so an external merge
-    tool may use them.
+def _maketempfiles(files):
+    """Creates a temporary file for each (prefix, path, data) tuple in `files`,
+    so an external merge tool may use them.
     """
     tmproot = pycompat.mkdtemp(prefix=b'hgmerge-')
 
@@ -931,18 +932,11 @@ def _maketempfiles(fco, fca, localpath):
         util.writefile(name, data)
         return name
 
-    def tempfromcontext(prefix, ctx):
-        return maketempfrompath(prefix, ctx.path(), ctx.decodeddata())
-
-    b = tempfromcontext(b"base", fca)
-    c = tempfromcontext(b"other", fco)
-    d = localpath
-    if localpath is not None:
-        data = util.readfile(localpath)
-        d = maketempfrompath(b"local", localpath, data)
-
+    temp_files = []
+    for prefix, path, data in files:
+        temp_files.append(maketempfrompath(prefix, path, data))
     try:
-        yield b, c, d
+        yield temp_files
     finally:
         shutil.rmtree(tmproot)
 
