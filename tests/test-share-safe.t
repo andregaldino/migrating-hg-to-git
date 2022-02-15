@@ -244,7 +244,8 @@ Disable zstd related tests because its not present on pure version
   $ echo "use-persistent-nodemap=True" >> .hg/hgrc
 
   $ hg debugupgraderepo --run -q -R ../shared1
-  abort: cannot upgrade repository; unsupported source requirement: shared
+  abort: cannot use these actions on a share repository: persistent-nodemap
+  (upgrade the main repository directly)
   [255]
 
   $ hg debugupgraderepo --run -q

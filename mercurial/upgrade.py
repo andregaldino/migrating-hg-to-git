@@ -108,6 +108,22 @@ def upgraderepo(
                 if not enabled:
                     touched_revlogs.discard(rl)
 
+    if repo.shared():
+        unsafe_actions = set()
+        unsafe_actions.update(up_actions)
+        unsafe_actions.update(removed_actions)
+        unsafe_actions.update(optimizations)
+        unsafe_actions = [
+            a for a in unsafe_actions if not a.compatible_with_share
+        ]
+        unsafe_actions.sort(key=lambda a: a.name)
+        if unsafe_actions:
+            m = _(b'cannot use these actions on a share repository: %s')
+            h = _(b'upgrade the main repository directly')
+            actions = b', '.join(a.name for a in unsafe_actions)
+            m %= actions
+            raise error.Abort(m, hint=h)
+
     for action in sorted(up_actions + removed_actions, key=lambda a: a.name):
         # optimisation does not "requires anything, they just needs it.
         if action.type != upgrade_actions.FORMAT_VARIANT:

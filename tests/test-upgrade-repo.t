@@ -32,9 +32,11 @@ Cannot upgrade shared repositories
   $ hg init share-parent
   $ hg -q share share-parent share-child
 
-  $ hg -R share-child debugupgraderepo
-  abort: cannot upgrade repository; unsupported source requirement: shared
+  $ hg -R share-child debugupgraderepo --config format.sparse-revlog=no
+  abort: cannot use these actions on a share repository: sparserevlog
+  (upgrade the main repository directly)
   [255]
+
 
 Do not yet support upgrading treemanifest repos
 
