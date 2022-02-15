@@ -1284,8 +1284,14 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
-    b'exp-dirstate-tracked-key-version',
-    default=0,
+    b'dirstate-tracked-key',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
+    b'format',
+    b'dirstate-tracked-key.version',
+    default=1,
     experimental=True,
 )
 coreconfigitem(

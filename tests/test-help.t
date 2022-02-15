@@ -1599,7 +1599,7 @@ Separate sections from subsections
   
       "use-dirstate-v2"
   
-      "exp-dirstate-tracked-key-version"
+      "dirstate-tracked-key"
   
       "use-persistent-nodemap"
   

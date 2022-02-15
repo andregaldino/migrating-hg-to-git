@@ -9,7 +9,7 @@ basic setup
 
   $ cat << EOF >> $HGRCPATH
   > [format]
-  > exp-dirstate-tracked-key-version=1
+  > dirstate-tracked-key=yes
   > EOF
 
   $ hg init tracked-key-test

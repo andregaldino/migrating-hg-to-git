@@ -944,15 +944,12 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
-``exp-dirstate-tracked-key-version``
+``dirstate-tracked-key``
     Enable or disable the writing of "tracked key" file alongside the dirstate.
+    (default to disabled)
 
     That "tracked-key" can help external automations to detect changes to the
     set of tracked files.
-
-    Two values are currently supported:
-    - 0: no file is written (the default),
-    - 1: a file in version "1" is written.
 
     The tracked-key is written in a new `.hg/dirstate-tracked-key`. That file
     contains two lines:
