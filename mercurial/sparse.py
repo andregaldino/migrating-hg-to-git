@@ -38,63 +38,66 @@ def parseconfig(ui, raw, action):
 
     Returns a tuple of includes, excludes, and profiles.
     """
-    includes = set()
-    excludes = set()
-    profiles = set()
-    current = None
-    havesection = False
+    with util.timedcm(
+        'sparse.parseconfig(ui, %d bytes, action=%s)', len(raw), action
+    ):
+        includes = set()
+        excludes = set()
+        profiles = set()
+        current = None
+        havesection = False
 
-    for line in raw.split(b'\n'):
-        line = line.strip()
-        if not line or line.startswith(b'#'):
-            # empty or comment line, skip
-            continue
-        elif line.startswith(b'%include '):
-            line = line[9:].strip()
-            if line:
-                profiles.add(line)
-        elif line == b'[include]':
-            if havesection and current != includes:
-                # TODO pass filename into this API so we can report it.
-                raise error.Abort(
-                    _(
-                        b'%(action)s config cannot have includes '
-                        b'after excludes'
-                    )
-                    % {b'action': action}
-                )
-            havesection = True
-            current = includes
-            continue
-        elif line == b'[exclude]':
-            havesection = True
-            current = excludes
-        elif line:
-            if current is None:
-                raise error.Abort(
-                    _(
-                        b'%(action)s config entry outside of '
-                        b'section: %(line)s'
-                    )
-                    % {b'action': action, b'line': line},
-                    hint=_(
-                        b'add an [include] or [exclude] line '
-                        b'to declare the entry type'
-                    ),
-                )
-
-            if line.strip().startswith(b'/'):
-                ui.warn(
-                    _(
-                        b'warning: %(action)s profile cannot use'
-                        b' paths starting with /, ignoring %(line)s\n'
-                    )
-                    % {b'action': action, b'line': line}
-                )
+        for line in raw.split(b'\n'):
+            line = line.strip()
+            if not line or line.startswith(b'#'):
+                # empty or comment line, skip
                 continue
-            current.add(line)
+            elif line.startswith(b'%include '):
+                line = line[9:].strip()
+                if line:
+                    profiles.add(line)
+            elif line == b'[include]':
+                if havesection and current != includes:
+                    # TODO pass filename into this API so we can report it.
+                    raise error.Abort(
+                        _(
+                            b'%(action)s config cannot have includes '
+                            b'after excludes'
+                        )
+                        % {b'action': action}
+                    )
+                havesection = True
+                current = includes
+                continue
+            elif line == b'[exclude]':
+                havesection = True
+                current = excludes
+            elif line:
+                if current is None:
+                    raise error.Abort(
+                        _(
+                            b'%(action)s config entry outside of '
+                            b'section: %(line)s'
+                        )
+                        % {b'action': action, b'line': line},
+                        hint=_(
+                            b'add an [include] or [exclude] line '
+                            b'to declare the entry type'
+                        ),
+                    )
 
-    return includes, excludes, profiles
+                if line.strip().startswith(b'/'):
+                    ui.warn(
+                        _(
+                            b'warning: %(action)s profile cannot use'
+                            b' paths starting with /, ignoring %(line)s\n'
+                        )
+                        % {b'action': action, b'line': line}
+                    )
+                    continue
+                current.add(line)
+
+        return includes, excludes, profiles
 
 
 # Exists as separate function to facilitate monkeypatching.
