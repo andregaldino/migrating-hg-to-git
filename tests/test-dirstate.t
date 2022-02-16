@@ -103,3 +103,21 @@ coherent (issue4353)
   1
   $ hg status
   ? a
+
+#if dirstate-v2
+Check that folders that are prefixes of others do not throw the packer into an
+infinite loop.
+
+  $ cd ..
+  $ hg init infinite-loop
+  $ cd infinite-loop
+  $ mkdir hgext3rd hgext
+  $ touch hgext3rd/__init__.py hgext/zeroconf.py
+  $ hg commit -Aqm0
+
+  $ hg st -c
+  C hgext/zeroconf.py
+  C hgext3rd/__init__.py
+
+  $ cd ..
+#endif

@@ -204,11 +204,11 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 # Packaging targets
 
 packaging_targets := \
-  centos7 \
-  centos8 \
+  rhel7 \
+  rhel8 \
   deb \
-  docker-centos7 \
-  docker-centos8 \
+  docker-rhel7 \
+  docker-rhel8 \
   docker-debian-bullseye \
   docker-debian-buster \
   docker-debian-stretch \
