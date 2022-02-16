@@ -745,7 +745,7 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
     args = _toolstr(repo.ui, tool, b"args")
 
     with _maketempfiles(
-        repo, fco, fca, repo.wvfs.join(backup.path()), b"$output" in args
+        fco, fca, repo.wvfs.join(backup.path()), b"$output" in args
     ) as temppaths:
         basepath, otherpath, localoutputpath = temppaths
         outpath = b""
@@ -921,7 +921,7 @@ def _makebackup(repo, ui, wctx, fcd):
 
 
 @contextlib.contextmanager
-def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
+def _maketempfiles(fco, fca, localpath, uselocalpath):
     """Writes out `fco` and `fca` as temporary files, and (if uselocalpath)
     copies `localpath` to another temporary file, so an external merge tool may
     use them.
