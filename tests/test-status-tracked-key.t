@@ -168,7 +168,7 @@ Test upgrade and downgrade
   $ ls .hg/dirstate-tracked-key
   .hg/dirstate-tracked-key
   $ hg debugrequires | grep 'tracked'
-  exp-dirstate-tracked-key-v1
+  dirstate-tracked-key-v1
 
 downgrade
 
@@ -177,7 +177,7 @@ downgrade
   
   requirements
      preserved: * (glob)
-     removed: exp-dirstate-tracked-key-v1
+     removed: dirstate-tracked-key-v1
   
   no revlogs to process
   
@@ -194,11 +194,11 @@ upgrade
   
   requirements
      preserved: * (glob)
-     added: exp-dirstate-tracked-key-v1
+     added: dirstate-tracked-key-v1
   
   no revlogs to process
   
   $ ls -1 .hg/dirstate-tracked-key
   .hg/dirstate-tracked-key
   $ hg debugrequires | grep 'tracked'
-  exp-dirstate-tracked-key-v1
+  dirstate-tracked-key-v1

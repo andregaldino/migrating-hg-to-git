@@ -18,7 +18,7 @@ DOTENCODE_REQUIREMENT = b'dotencode'
 STORE_REQUIREMENT = b'store'
 FNCACHE_REQUIREMENT = b'fncache'
 
-DIRSTATE_TRACKED_KEY_V1 = b'exp-dirstate-tracked-key-v1'
+DIRSTATE_TRACKED_KEY_V1 = b'dirstate-tracked-key-v1'
 DIRSTATE_V2_REQUIREMENT = b'dirstate-v2'
 
 # When narrowing is finalized and no longer subject to format changes,
