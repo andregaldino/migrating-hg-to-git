@@ -1279,13 +1279,13 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
-    b'use-dirstate-tracked-key',
+    b'use-dirstate-tracked-hint',
     default=False,
     experimental=True,
 )
 coreconfigitem(
     b'format',
-    b'use-dirstate-tracked-key.version',
+    b'use-dirstate-tracked-hint.version',
     default=1,
     experimental=True,
 )

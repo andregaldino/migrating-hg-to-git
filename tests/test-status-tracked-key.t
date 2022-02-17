@@ -1,19 +1,19 @@
-==============================
-Test the "tracked key" feature
-==============================
+===============================
+Test the "tracked hint" feature
+===============================
 
-The tracked key feature provide a file that get updated when the set of tracked
+The tracked hint feature provide a file that get updated when the set of tracked
 files get updated.
 
 basic setup
 
   $ cat << EOF >> $HGRCPATH
   > [format]
-  > use-dirstate-tracked-key=yes
+  > use-dirstate-tracked-hint=yes
   > EOF
 
-  $ hg init tracked-key-test
-  $ cd tracked-key-test
+  $ hg init tracked-hint-test
+  $ cd tracked-hint-test
   $ hg debugbuilddag '.+10' -n
   $ hg log -G -T '{rev} {desc} {files}\n'
   o  10 r10 nf10
@@ -56,61 +56,61 @@ basic setup
 key-file exists
 -----------
 
-The tracked key file should exist
+The tracked hint file should exist
 
   $ ls -1 .hg/dirstate*
   .hg/dirstate
-  .hg/dirstate-tracked-key
+  .hg/dirstate-tracked-hint
 
 key-file stay the same if the tracked set is unchanged
 ------------------------------------------------------
 
 (copy its content for later comparison)
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ echo foo >> nf0
   $ sleep 1
   $ hg status
   M nf0
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
   $ hg revert -C nf0
   $ sleep 1
   $ hg status
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
 
 key-file change if the tracked set is changed manually
 ------------------------------------------------------
 
 adding a file to tracking
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ echo x > x
   $ hg add x
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 remove a file from tracking
 (forget)
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg forget x
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 (remove)
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg remove nf1
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 key-file changes on revert (when applicable)
 --------------------------------------------
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg status
   R nf1
   ? x
@@ -118,8 +118,8 @@ key-file changes on revert (when applicable)
   undeleting nf1
   $ hg status
   ? x
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 
@@ -130,24 +130,24 @@ update changing the tracked set
 
 (removing)
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg status --rev . --rev '.#generations[-1]'
   R nf10
   $ hg up '.#generations[-1]'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 (adding)
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg status --rev . --rev '.#generations[1]'
   A nf10
   $ hg up '.#generations[1]'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
-  Files .hg/dirstate-tracked-key and ../key-bck differ
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
+  Files .hg/dirstate-tracked-hint and ../key-bck differ
   [1]
 
 update not affecting the tracked set
@@ -155,24 +155,24 @@ update not affecting the tracked set
   $ echo foo >> nf0
   $ hg commit -m foo
 
-  $ cp .hg/dirstate-tracked-key ../key-bck
+  $ cp .hg/dirstate-tracked-hint ../key-bck
   $ hg status --rev . --rev '.#generations[-1]'
   M nf0
   $ hg up '.#generations[-1]'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ diff --brief .hg/dirstate-tracked-key ../key-bck
+  $ diff --brief .hg/dirstate-tracked-hint ../key-bck
 
 Test upgrade and downgrade
 ==========================
 
-  $ ls .hg/dirstate-tracked-key
-  .hg/dirstate-tracked-key
+  $ ls .hg/dirstate-tracked-hint
+  .hg/dirstate-tracked-hint
   $ hg debugrequires | grep 'tracked'
   dirstate-tracked-key-v1
 
 downgrade
 
-  $ hg debugupgraderepo --config format.use-dirstate-tracked-key=no --run --quiet
+  $ hg debugupgraderepo --config format.use-dirstate-tracked-hint=no --run --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -181,15 +181,15 @@ downgrade
   
   no revlogs to process
   
-  $ ls -1 .hg/dirstate-tracked-key
-  ls: cannot access '.hg/dirstate-tracked-key': $ENOENT$
+  $ ls -1 .hg/dirstate-tracked-hint
+  ls: cannot access '.hg/dirstate-tracked-hint': $ENOENT$
   [2]
   $ hg debugrequires | grep 'tracked'
   [1]
 
 upgrade
 
-  $ hg debugupgraderepo --config format.use-dirstate-tracked-key=yes --run --quiet
+  $ hg debugupgraderepo --config format.use-dirstate-tracked-hint=yes --run --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -198,7 +198,7 @@ upgrade
   
   no revlogs to process
   
-  $ ls -1 .hg/dirstate-tracked-key
-  .hg/dirstate-tracked-key
+  $ ls -1 .hg/dirstate-tracked-hint
+  .hg/dirstate-tracked-hint
   $ hg debugrequires | grep 'tracked'
   dirstate-tracked-key-v1

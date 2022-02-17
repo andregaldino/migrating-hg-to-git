@@ -201,8 +201,8 @@ class dirstatev2(requirementformatvariant):
 
 @registerformatvariant
 class dirstatetrackedkey(requirementformatvariant):
-    name = b'tracked-key'
-    _requirement = requirements.DIRSTATE_TRACKED_KEY_V1
+    name = b'tracked-hint'
+    _requirement = requirements.DIRSTATE_TRACKED_HINT_V1
 
     default = False
 
@@ -990,7 +990,7 @@ def supportremovedrequirements(repo):
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
-        requirements.DIRSTATE_TRACKED_KEY_V1,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
@@ -1013,7 +1013,7 @@ def supporteddestrequirements(repo):
     supported = {
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
-        requirements.DIRSTATE_TRACKED_KEY_V1,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
         requirements.DOTENCODE_REQUIREMENT,
         requirements.FNCACHE_REQUIREMENT,
@@ -1056,7 +1056,7 @@ def allowednewrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
-        requirements.DIRSTATE_TRACKED_KEY_V1,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:

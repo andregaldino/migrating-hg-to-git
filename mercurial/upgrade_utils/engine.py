@@ -487,12 +487,12 @@ def upgrade(ui, srcrepo, dstrepo, upgrade_op):
         upgrade_op.removed_actions.remove(upgrade_actions.dirstatev2)
 
     if upgrade_actions.dirstatetrackedkey in upgrade_op.upgrade_actions:
-        ui.status(_(b'create dirstate-tracked-key file\n'))
-        upgrade_tracked_key(ui, srcrepo, upgrade_op, add=True)
+        ui.status(_(b'create dirstate-tracked-hint file\n'))
+        upgrade_tracked_hint(ui, srcrepo, upgrade_op, add=True)
         upgrade_op.upgrade_actions.remove(upgrade_actions.dirstatetrackedkey)
     elif upgrade_actions.dirstatetrackedkey in upgrade_op.removed_actions:
-        ui.status(_(b'remove dirstate-tracked-key file\n'))
-        upgrade_tracked_key(ui, srcrepo, upgrade_op, add=False)
+        ui.status(_(b'remove dirstate-tracked-hint file\n'))
+        upgrade_tracked_hint(ui, srcrepo, upgrade_op, add=False)
         upgrade_op.removed_actions.remove(upgrade_actions.dirstatetrackedkey)
 
     if not (upgrade_op.upgrade_actions or upgrade_op.removed_actions):
@@ -671,13 +671,13 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
     scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)
 
 
-def upgrade_tracked_key(ui, srcrepo, upgrade_op, add):
+def upgrade_tracked_hint(ui, srcrepo, upgrade_op, add):
     if add:
-        srcrepo.dirstate._use_tracked_key = True
+        srcrepo.dirstate._use_tracked_hint = True
         srcrepo.dirstate._dirty = True
         srcrepo.dirstate._dirty_tracked_set = True
         srcrepo.dirstate.write(None)
     if not add:
-        srcrepo.dirstate.delete_tracked_key()
+        srcrepo.dirstate.delete_tracked_hint()
 
     scmutil.writereporequirements(srcrepo, upgrade_op.new_requirements)

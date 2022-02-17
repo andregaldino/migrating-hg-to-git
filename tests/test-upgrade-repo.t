@@ -214,7 +214,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   format-variant     repo
   fncache:            yes
   dirstate-v2:         no
-  tracked-key:         no
+  tracked-hint:        no
   dotencode:          yes
   generaldelta:       yes
   share-safe:         yes
@@ -231,7 +231,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -249,7 +249,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   format-variant     repo config default
   fncache:            yes     no     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes     no     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -267,7 +267,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   format-variant     repo config default
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|dirstate-v2:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|tracked-key:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|tracked-hint:      ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig| yes][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:      ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|share-safe:        ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
@@ -298,7 +298,7 @@ An upgrade of a repository created with recommended settings only suggests optim
    {
     "config": false,
     "default": false,
-    "name": "tracked-key",
+    "name": "tracked-hint",
     "repo": false
    },
    {
@@ -498,7 +498,7 @@ Various sub-optimal detections work
   format-variant     repo
   fncache:             no
   dirstate-v2:         no
-  tracked-key:         no
+  tracked-hint:        no
   dotencode:           no
   generaldelta:        no
   share-safe:          no
@@ -514,7 +514,7 @@ Various sub-optimal detections work
   format-variant     repo config default
   fncache:             no    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:           no    yes     yes
   generaldelta:        no    yes     yes
   share-safe:          no    yes     yes
@@ -532,7 +532,7 @@ Various sub-optimal detections work
   format-variant     repo config default
   fncache:             no    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:           no    yes     yes
   generaldelta:        no     no     yes
   share-safe:          no    yes     yes
@@ -550,7 +550,7 @@ Various sub-optimal detections work
   format-variant     repo config default
   [formatvariant.name.mismatchconfig|fncache:           ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|dirstate-v2:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
-  [formatvariant.name.uptodate|tracked-key:       ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
+  [formatvariant.name.uptodate|tracked-hint:      ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.mismatchconfig|dotencode:         ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:      ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|share-safe:        ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
@@ -1602,7 +1602,7 @@ upgrade
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -1646,7 +1646,7 @@ downgrade
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -1693,7 +1693,7 @@ upgrade from hgrc
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -1746,7 +1746,7 @@ upgrade
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -1796,7 +1796,7 @@ downgrade
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -1847,7 +1847,7 @@ upgrade from hgrc
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
-  tracked-key:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes

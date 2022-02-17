@@ -944,38 +944,37 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
-``use-dirstate-tracked-key``
+``use-dirstate-tracked-hint``
     Enable or disable the writing of "tracked key" file alongside the dirstate.
     (default to disabled)
 
-    That "tracked-key" can help external automations to detect changes to the
-    set of tracked files.
+    That "tracked-hint" can help external automations to detect changes to the
+    set of tracked files. (i.e the result of `hg files` or `hg status -macd`)
 
-    The tracked-key is written in a new `.hg/dirstate-tracked-key`. That file
+    The tracked-hint is written in a new `.hg/dirstate-tracked-hint`. That file
     contains two lines:
     - the first line is the file version (currently: 1),
-    - the second line contains the "tracked-key".
+    - the second line contains the "tracked-hint".
+    That file is written right after the dirstate is written.
 
-    The tracked-key changes whenever the set of file tracked in the dirstate
-    changes. The general guarantees are:
-    - if the tracked key is identical, the set of tracked file MUST not have changed,
-    - if the tracked key is different, the set of tracked file MIGHT differ.
+    The tracked-hint changes whenever the set of file tracked in the dirstate
+    changes. The general idea is:
+    - if the hint is identical, the set of tracked file SHOULD be identical,
+    - if the hint is different, the set of tracked file MIGHT be different.
+
+    The "hint is identical" case uses `SHOULD` as the dirstate and the hint file
+    are two distinct files and therefore that cannot be read or written to in an
+    atomic way. If the key is identical, nothing garantees that the dirstate is
+    not updated right after the hint file. This is considered a negligible
+    limitation for the intended usecase. It is actually possible to prevent this
+    race by taking the repository lock during read operations.
 
     They are two "ways" to use this feature:
 
-    1) monitoring changes to the `.hg/dirstate-tracked-key`, if the file changes
-    the tracked set might have changed.
+    1) monitoring changes to the `.hg/dirstate-tracked-hint`, if the file
+    changes, the tracked set might have changed.
 
-    2) storing the value and comparing it to a later value. Beware that it is
-    impossible to achieve atomic writing or reading of the two files involved
-    files (`.hg/dirstate` and `.hg/dirstate-tracked-key`). So it is needed to
-    read the `tracked-key` files twice: before and after reading the tracked
-    set. The `tracked-key` is only usable as a cache key if it had the same
-    value in both cases and must be discarded otherwise.
-
-    To enforce that the `tracked-key` value can be used race-free (with double
-    reading as explained in (2)), the `.hg/dirstate-tracked-key` is written
-    twice: before and after we change the associated `.hg/dirstate` file.
+    2) storing the value and comparing it to a later value.
 
 ``use-persistent-nodemap``
     Enable or disable the "persistent-nodemap" feature which improves

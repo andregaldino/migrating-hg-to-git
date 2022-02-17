@@ -1599,7 +1599,7 @@ Separate sections from subsections
   
       "use-dirstate-v2"
   
-      "use-dirstate-tracked-key"
+      "use-dirstate-tracked-hint"
   
       "use-persistent-nodemap"
   

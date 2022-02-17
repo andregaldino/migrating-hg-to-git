@@ -1278,7 +1278,7 @@ class localrepository(object):
         requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.CHANGELOGV2_REQUIREMENT,
         requirementsmod.COPIESSDC_REQUIREMENT,
-        requirementsmod.DIRSTATE_TRACKED_KEY_V1,
+        requirementsmod.DIRSTATE_TRACKED_HINT_V1,
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
         requirementsmod.DOTENCODE_REQUIREMENT,
         requirementsmod.FNCACHE_REQUIREMENT,
@@ -1743,9 +1743,9 @@ class localrepository(object):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
         v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
-        tk = requirementsmod.DIRSTATE_TRACKED_KEY_V1
+        th = requirementsmod.DIRSTATE_TRACKED_HINT_V1
         use_dirstate_v2 = v2_req in self.requirements
-        use_tracked_key = tk in self.requirements
+        use_tracked_hint = th in self.requirements
 
         return dirstate.dirstate(
             self.vfs,
@@ -1755,7 +1755,7 @@ class localrepository(object):
             sparsematchfn,
             self.nodeconstants,
             use_dirstate_v2,
-            use_tracked_key=use_tracked_key,
+            use_tracked_hint=use_tracked_hint,
         )
 
     def _dirstatevalidate(self, node):
@@ -3695,14 +3695,14 @@ def newreporequirements(ui, createopts):
         else:
             requirements.add(requirementsmod.SHARED_REQUIREMENT)
 
-    if ui.configbool(b'format', b'use-dirstate-tracked-key'):
-        version = ui.configint(b'format', b'use-dirstate-tracked-key.version')
+    if ui.configbool(b'format', b'use-dirstate-tracked-hint'):
+        version = ui.configint(b'format', b'use-dirstate-tracked-hint.version')
         msg = _("ignoring unknown tracked key version: %d\n")
-        hint = _("see `hg help config.format.use-dirstate-tracked-key-version")
+        hint = _("see `hg help config.format.use-dirstate-tracked-hint-version")
         if version != 1:
             ui.warn(msg % version, hint=hint)
         else:
-            requirements.add(requirementsmod.DIRSTATE_TRACKED_KEY_V1)
+            requirements.add(requirementsmod.DIRSTATE_TRACKED_HINT_V1)
 
     return requirements
 

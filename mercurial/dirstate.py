@@ -101,7 +101,7 @@ class dirstate(object):
         sparsematchfn,
         nodeconstants,
         use_dirstate_v2,
-        use_tracked_key=False,
+        use_tracked_hint=False,
     ):
         """Create a new dirstate object.
 
@@ -110,7 +110,7 @@ class dirstate(object):
         the dirstate.
         """
         self._use_dirstate_v2 = use_dirstate_v2
-        self._use_tracked_key = use_tracked_key
+        self._use_tracked_hint = use_tracked_hint
         self._nodeconstants = nodeconstants
         self._opener = opener
         self._validate = validate
@@ -127,7 +127,7 @@ class dirstate(object):
         self._filecache = {}
         self._parentwriters = 0
         self._filename = b'dirstate'
-        self._filename_tk = b'dirstate-tracked-key'
+        self._filename_th = b'dirstate-tracked-hint'
         self._pendingfilename = b'%s.pending' % self._filename
         self._plchangecallbacks = {}
         self._origpl = None
@@ -721,17 +721,9 @@ class dirstate(object):
         if not self._dirty:
             return
 
-        write_key = self._use_tracked_key and self._dirty_tracked_set
+        write_key = self._use_tracked_hint and self._dirty_tracked_set
         if tr:
             # delay writing in-memory changes out
-            if write_key:
-                tr.addfilegenerator(
-                    b'dirstate-0-key-pre',
-                    (self._filename_tk,),
-                    lambda f: self._write_tracked_key(tr, f),
-                    location=b'plain',
-                    post_finalize=True,
-                )
             tr.addfilegenerator(
                 b'dirstate-1-main',
                 (self._filename,),
@@ -742,33 +734,28 @@ class dirstate(object):
             if write_key:
                 tr.addfilegenerator(
                     b'dirstate-2-key-post',
-                    (self._filename_tk,),
-                    lambda f: self._write_tracked_key(tr, f),
+                    (self._filename_th,),
+                    lambda f: self._write_tracked_hint(tr, f),
                     location=b'plain',
                     post_finalize=True,
                 )
             return
 
         file = lambda f: self._opener(f, b"w", atomictemp=True, checkambig=True)
-        if write_key:
-            # we change the key-file before changing the dirstate to make sure
-            # reading invalidate there cache before we start writing
-            with file(self._filename_tk) as f:
-                self._write_tracked_key(tr, f)
         with file(self._filename) as f:
             self._writedirstate(tr, f)
         if write_key:
             # we update the key-file after writing to make sure reader have a
             # key that match the newly written content
-            with file(self._filename_tk) as f:
-                self._write_tracked_key(tr, f)
+            with file(self._filename_th) as f:
+                self._write_tracked_hint(tr, f)
 
-    def delete_tracked_key(self):
-        """remove the tracked_key file
+    def delete_tracked_hint(self):
+        """remove the tracked_hint file
 
         To be used by format downgrades operation"""
-        self._opener.unlink(self._filename_tk)
-        self._use_tracked_key = False
+        self._opener.unlink(self._filename_th)
+        self._use_tracked_hint = False
 
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
@@ -793,7 +780,7 @@ class dirstate(object):
         self._dirty = False
         self._dirty_tracked_set = False
 
-    def _write_tracked_key(self, tr, f):
+    def _write_tracked_hint(self, tr, f):
         key = node.hex(uuid.uuid4().bytes)
         f.write(b"1\n%s\n" % key)  # 1 is the format version
 
