@@ -9,7 +9,7 @@ basic setup
 
   $ cat << EOF >> $HGRCPATH
   > [format]
-  > dirstate-tracked-key=yes
+  > use-dirstate-tracked-key=yes
   > EOF
 
   $ hg init tracked-key-test
@@ -172,7 +172,7 @@ Test upgrade and downgrade
 
 downgrade
 
-  $ hg debugupgraderepo --config format.dirstate-tracked-key=no --run --quiet
+  $ hg debugupgraderepo --config format.use-dirstate-tracked-key=no --run --quiet
   upgrade will perform the following actions:
   
   requirements
@@ -189,7 +189,7 @@ downgrade
 
 upgrade
 
-  $ hg debugupgraderepo --config format.dirstate-tracked-key=yes --run --quiet
+  $ hg debugupgraderepo --config format.use-dirstate-tracked-key=yes --run --quiet
   upgrade will perform the following actions:
   
   requirements

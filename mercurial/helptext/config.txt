@@ -944,7 +944,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
-``dirstate-tracked-key``
+``use-dirstate-tracked-key``
     Enable or disable the writing of "tracked key" file alongside the dirstate.
     (default to disabled)
 

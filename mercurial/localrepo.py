@@ -3695,10 +3695,10 @@ def newreporequirements(ui, createopts):
         else:
             requirements.add(requirementsmod.SHARED_REQUIREMENT)
 
-    if ui.configbool(b'format', b'dirstate-tracked-key'):
-        version = ui.configint(b'format', b'dirstate-tracked-key.version')
+    if ui.configbool(b'format', b'use-dirstate-tracked-key'):
+        version = ui.configint(b'format', b'use-dirstate-tracked-key.version')
         msg = _("ignoring unknown tracked key version: %d\n")
-        hint = _("see `hg help config.format.exp-dirstate-tracked-key-version")
+        hint = _("see `hg help config.format.use-dirstate-tracked-key-version")
         if version != 1:
             ui.warn(msg % version, hint=hint)
         else:
