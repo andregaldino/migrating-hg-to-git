@@ -763,6 +763,13 @@ class dirstate(object):
             with file(self._filename_tk) as f:
                 self._write_tracked_key(tr, f)
 
+    def delete_tracked_key(self):
+        """remove the tracked_key file
+
+        To be used by format downgrades operation"""
+        self._opener.unlink(self._filename_tk)
+        self._use_tracked_key = False
+
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
 

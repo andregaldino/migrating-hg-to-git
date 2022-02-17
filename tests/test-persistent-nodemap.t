@@ -65,6 +65,7 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   format-variant     repo
   fncache:            yes
   dirstate-v2:         no
+  tracked-key:         no
   dotencode:          yes
   generaldelta:       yes
   share-safe:         yes
@@ -782,6 +783,7 @@ downgrading
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
+  tracked-key:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes
@@ -824,6 +826,7 @@ upgrading
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
+  tracked-key:         no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
   share-safe:         yes    yes     yes

@@ -161,3 +161,44 @@ update not affecting the tracked set
   $ hg up '.#generations[-1]'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ diff --brief .hg/dirstate-tracked-key ../key-bck
+
+Test upgrade and downgrade
+==========================
+
+  $ ls .hg/dirstate-tracked-key
+  .hg/dirstate-tracked-key
+  $ hg debugrequires | grep 'tracked'
+  exp-dirstate-tracked-key-v1
+
+downgrade
+
+  $ hg debugupgraderepo --config format.dirstate-tracked-key=no --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     removed: exp-dirstate-tracked-key-v1
+  
+  no revlogs to process
+  
+  $ ls -1 .hg/dirstate-tracked-key
+  ls: cannot access '.hg/dirstate-tracked-key': $ENOENT$
+  [2]
+  $ hg debugrequires | grep 'tracked'
+  [1]
+
+upgrade
+
+  $ hg debugupgraderepo --config format.dirstate-tracked-key=yes --run --quiet
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: exp-dirstate-tracked-key-v1
+  
+  no revlogs to process
+  
+  $ ls -1 .hg/dirstate-tracked-key
+  .hg/dirstate-tracked-key
+  $ hg debugrequires | grep 'tracked'
+  exp-dirstate-tracked-key-v1

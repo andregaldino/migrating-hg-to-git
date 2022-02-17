@@ -200,6 +200,29 @@ class dirstatev2(requirementformatvariant):
 
 
 @registerformatvariant
+class dirstatetrackedkey(requirementformatvariant):
+    name = b'tracked-key'
+    _requirement = requirements.DIRSTATE_TRACKED_KEY_V1
+
+    default = False
+
+    description = _(
+        b'Add a small file to help external tooling that watch the tracked set'
+    )
+
+    upgrademessage = _(
+        b'external tools will be informated of potential change in the tracked set'
+    )
+
+    touches_filelogs = False
+    touches_manifests = False
+    touches_changelog = False
+    touches_requirements = True
+    touches_dirstate = True
+    compatible_with_share = True
+
+
+@registerformatvariant
 class dotencode(requirementformatvariant):
     name = b'dotencode'
 
@@ -967,6 +990,7 @@ def supportremovedrequirements(repo):
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_KEY_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
@@ -989,6 +1013,7 @@ def supporteddestrequirements(repo):
     supported = {
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.COPIESSDC_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_KEY_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
         requirements.DOTENCODE_REQUIREMENT,
         requirements.FNCACHE_REQUIREMENT,
@@ -1031,6 +1056,7 @@ def allowednewrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_KEY_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
