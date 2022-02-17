@@ -713,7 +713,17 @@ impl DirEntry {
         let mut results = Vec::new();
         for entry in path.read_dir()? {
             let entry = entry?;
-            let metadata = entry.metadata()?;
+            let metadata = match entry.metadata() {
+                Ok(v) => v,
+                Err(e) => {
+                    // race with file deletion?
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        continue;
+                    } else {
+                        return Err(e);
+                    }
+                }
+            };
             let name = get_bytes_from_os_string(entry.file_name());
             // FIXME don't do this when cached
             if name == b".hg" {
