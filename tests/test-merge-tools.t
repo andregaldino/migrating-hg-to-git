@@ -1592,7 +1592,8 @@ mergemarkertemplate settings:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:common ancestor: */f~base" (glob)
+  arg: "lb:common ancestor*/f~base" (glob) (no-windows !)
+  arg: "lb:common ancestor*\f~base" (glob) (windows !)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1622,7 +1623,8 @@ mergemarkertemplate:
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
   arg: "merge rev: tooltmpl 0185f4e0cf02"
-  arg: "lb:common ancestor: */f~base" (glob)
+  arg: "lb:common ancestor*/f~base" (glob) (no-windows !)
+  arg: "lb:common ancestor*\f~base" (glob) (windows !)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
