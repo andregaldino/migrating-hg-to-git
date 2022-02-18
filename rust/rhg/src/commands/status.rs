@@ -6,20 +6,29 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::error::CommandError;
-use crate::ui::{Ui, UiError};
-use crate::utils::path_utils::relativize_paths;
+use crate::ui::Ui;
+use crate::utils::path_utils::RelativizePaths;
 use clap::{Arg, SubCommand};
+use format_bytes::format_bytes;
 use hg;
 use hg::config::Config;
+use hg::dirstate::has_exec_bit;
+use hg::dirstate::status::StatusPath;
 use hg::dirstate::TruncatedTimestamp;
-use hg::errors::HgError;
+use hg::dirstate::RANGE_MASK_31BIT;
+use hg::errors::{HgError, IoResultExt};
+use hg::lock::LockError;
 use hg::manifest::Manifest;
 use hg::matchers::AlwaysMatcher;
 use hg::repo::Repo;
-use hg::utils::hg_path::{hg_path_to_os_string, HgPath};
-use hg::{HgPathCow, StatusOptions};
-use log::{info, warn};
-use std::borrow::Cow;
+use hg::utils::files::get_bytes_from_os_string;
+use hg::utils::files::get_bytes_from_path;
+use hg::utils::files::get_path_from_bytes;
+use hg::utils::hg_path::{hg_path_to_path_buf, HgPath};
+use hg::StatusOptions;
+use log::info;
+use std::io;
+use std::path::PathBuf;
 
 pub const HELP_TEXT: &str = "
 Show changed files in the working directory
@@ -81,6 +90,18 @@ pub fn args() -> clap::App<'static, 'static> {
                 .short("-i")
                 .long("--ignored"),
         )
+        .arg(
+            Arg::with_name("copies")
+                .help("show source of copied files (DEFAULT: ui.statuscopies)")
+                .short("-C")
+                .long("--copies"),
+        )
+        .arg(
+            Arg::with_name("no-status")
+                .help("hide status prefix")
+                .short("-n")
+                .long("--no-status"),
+        )
 }
 
 /// Pure data type allowing the caller to specify file states to display
@@ -128,31 +149,43 @@ impl DisplayStates {
 }
 
 pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
-    let status_enabled_default = false;
-    let status_enabled = invocation.config.get_option(b"rhg", b"status")?;
-    if !status_enabled.unwrap_or(status_enabled_default) {
-        return Err(CommandError::unsupported(
-            "status is experimental in rhg (enable it with 'rhg.status = true' \
-            or enable fallback with 'rhg.on-unsupported = fallback')"
-        ));
-    }
-
     // TODO: lift these limitations
-    if invocation.config.get_bool(b"ui", b"tweakdefaults").ok() == Some(true) {
+    if invocation.config.get_bool(b"ui", b"tweakdefaults")? {
         return Err(CommandError::unsupported(
             "ui.tweakdefaults is not yet supported with rhg status",
         ));
     }
-    if invocation.config.get_bool(b"ui", b"statuscopies").ok() == Some(true) {
+    if invocation.config.get_bool(b"ui", b"statuscopies")? {
         return Err(CommandError::unsupported(
             "ui.statuscopies is not yet supported with rhg status",
+        ));
+    }
+    if invocation
+        .config
+        .get(b"commands", b"status.terse")
+        .is_some()
+    {
+        return Err(CommandError::unsupported(
+            "status.terse is not yet supported with rhg status",
         ));
     }
 
     let ui = invocation.ui;
     let config = invocation.config;
     let args = invocation.subcommand_args;
-    let display_states = if args.is_present("all") {
+
+    let verbose = !ui.plain(None)
+        && !args.is_present("print0")
+        && (config.get_bool(b"ui", b"verbose")?
+            || config.get_bool(b"commands", b"status.verbose")?);
+    if verbose {
+        return Err(CommandError::unsupported(
+            "verbose status is not supported yet",
+        ));
+    }
+
+    let all = args.is_present("all");
+    let display_states = if all {
         // TODO when implementing `--quiet`: it excludes clean files
         // from `--all`
         ALL_DISPLAY_STATES
@@ -172,44 +205,84 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             requested
         }
     };
+    let no_status = args.is_present("no-status");
+    let list_copies = all
+        || args.is_present("copies")
+        || config.get_bool(b"ui", b"statuscopies")?;
 
     let repo = invocation.repo?;
+
+    if repo.has_sparse() || repo.has_narrow() {
+        return Err(CommandError::unsupported(
+            "rhg status is not supported for sparse checkouts or narrow clones yet"
+        ));
+    }
+
     let mut dmap = repo.dirstate_map_mut()?;
 
     let options = StatusOptions {
-        // TODO should be provided by the dirstate parsing and
-        // hence be stored on dmap. Using a value that assumes we aren't
-        // below the time resolution granularity of the FS and the
-        // dirstate.
-        last_normal_time: TruncatedTimestamp::new_truncate(0, 0),
         // we're currently supporting file systems with exec flags only
         // anyway
         check_exec: true,
         list_clean: display_states.clean,
         list_unknown: display_states.unknown,
         list_ignored: display_states.ignored,
+        list_copies,
         collect_traversed_dirs: false,
     };
-    let ignore_file = repo.working_directory_vfs().join(".hgignore"); // TODO hardcoded
     let (mut ds_status, pattern_warnings) = dmap.status(
         &AlwaysMatcher,
         repo.working_directory_path().to_owned(),
-        vec![ignore_file],
+        ignore_files(repo, config),
         options,
     )?;
-    if !pattern_warnings.is_empty() {
-        warn!("Pattern warnings: {:?}", &pattern_warnings);
+    for warning in pattern_warnings {
+        match warning {
+            hg::PatternFileWarning::InvalidSyntax(path, syntax) => ui
+                .write_stderr(&format_bytes!(
+                    b"{}: ignoring invalid syntax '{}'\n",
+                    get_bytes_from_path(path),
+                    &*syntax
+                ))?,
+            hg::PatternFileWarning::NoSuchFile(path) => {
+                let path = if let Ok(relative) =
+                    path.strip_prefix(repo.working_directory_path())
+                {
+                    relative
+                } else {
+                    &*path
+                };
+                ui.write_stderr(&format_bytes!(
+                    b"skipping unreadable pattern file '{}': \
+                      No such file or directory\n",
+                    get_bytes_from_path(path),
+                ))?
+            }
+        }
     }
 
-    if !ds_status.bad.is_empty() {
-        warn!("Bad matches {:?}", &(ds_status.bad))
+    for (path, error) in ds_status.bad {
+        let error = match error {
+            hg::BadMatch::OsError(code) => {
+                std::io::Error::from_raw_os_error(code).to_string()
+            }
+            hg::BadMatch::BadType(ty) => {
+                format!("unsupported file type (type is {})", ty)
+            }
+        };
+        ui.write_stderr(&format_bytes!(
+            b"{}: {}\n",
+            path.as_bytes(),
+            error.as_bytes()
+        ))?
     }
     if !ds_status.unsure.is_empty() {
         info!(
             "Files to be rechecked by retrieval from filelog: {:?}",
-            &ds_status.unsure
+            ds_status.unsure.iter().map(|s| &s.path).collect::<Vec<_>>()
         );
     }
+    let mut fixup = Vec::new();
     if !ds_status.unsure.is_empty()
         && (display_states.modified || display_states.clean)
     {
@@ -218,99 +291,241 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
             CommandError::from((e, &*format!("{:x}", p1.short())))
         })?;
         for to_check in ds_status.unsure {
-            if cat_file_is_modified(repo, &manifest, &to_check)? {
+            if unsure_is_modified(repo, &manifest, &to_check.path)? {
                 if display_states.modified {
                     ds_status.modified.push(to_check);
                 }
             } else {
                 if display_states.clean {
-                    ds_status.clean.push(to_check);
+                    ds_status.clean.push(to_check.clone());
                 }
+                fixup.push(to_check.path.into_owned())
             }
         }
     }
+    let relative_paths = (!ui.plain(None))
+        && config
+            .get_option(b"commands", b"status.relative")?
+            .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);
+    let output = DisplayStatusPaths {
+        ui,
+        no_status,
+        relativize: if relative_paths {
+            Some(RelativizePaths::new(repo)?)
+        } else {
+            None
+        },
+    };
     if display_states.modified {
-        display_status_paths(ui, repo, config, &mut ds_status.modified, b"M")?;
+        output.display(b"M ", "status.modified", ds_status.modified)?;
     }
     if display_states.added {
-        display_status_paths(ui, repo, config, &mut ds_status.added, b"A")?;
+        output.display(b"A ", "status.added", ds_status.added)?;
     }
     if display_states.removed {
-        display_status_paths(ui, repo, config, &mut ds_status.removed, b"R")?;
+        output.display(b"R ", "status.removed", ds_status.removed)?;
     }
     if display_states.deleted {
-        display_status_paths(ui, repo, config, &mut ds_status.deleted, b"!")?;
+        output.display(b"! ", "status.deleted", ds_status.deleted)?;
     }
     if display_states.unknown {
-        display_status_paths(ui, repo, config, &mut ds_status.unknown, b"?")?;
+        output.display(b"? ", "status.unknown", ds_status.unknown)?;
     }
     if display_states.ignored {
-        display_status_paths(ui, repo, config, &mut ds_status.ignored, b"I")?;
+        output.display(b"I ", "status.ignored", ds_status.ignored)?;
     }
     if display_states.clean {
-        display_status_paths(ui, repo, config, &mut ds_status.clean, b"C")?;
+        output.display(b"C ", "status.clean", ds_status.clean)?;
+    }
+
+    let mut dirstate_write_needed = ds_status.dirty;
+    let filesystem_time_at_status_start =
+        ds_status.filesystem_time_at_status_start;
+
+    if (fixup.is_empty() || filesystem_time_at_status_start.is_none())
+        && !dirstate_write_needed
+    {
+        // Nothing to update
+        return Ok(());
+    }
+
+    // Update the dirstate on disk if we can
+    let with_lock_result =
+        repo.try_with_wlock_no_wait(|| -> Result<(), CommandError> {
+            if let Some(mtime_boundary) = filesystem_time_at_status_start {
+                for hg_path in fixup {
+                    use std::os::unix::fs::MetadataExt;
+                    let fs_path = hg_path_to_path_buf(&hg_path)
+                        .expect("HgPath conversion");
+                    // Specifically do not reuse `fs_metadata` from
+                    // `unsure_is_clean` which was needed before reading
+                    // contents. Here we access metadata again after reading
+                    // content, in case it changed in the meantime.
+                    let fs_metadata = repo
+                        .working_directory_vfs()
+                        .symlink_metadata(&fs_path)?;
+                    if let Some(mtime) =
+                        TruncatedTimestamp::for_reliable_mtime_of(
+                            &fs_metadata,
+                            &mtime_boundary,
+                        )
+                        .when_reading_file(&fs_path)?
+                    {
+                        let mode = fs_metadata.mode();
+                        let size = fs_metadata.len() as u32 & RANGE_MASK_31BIT;
+                        let mut entry = dmap
+                            .get(&hg_path)?
+                            .expect("ambiguous file not in dirstate");
+                        entry.set_clean(mode, size, mtime);
+                        dmap.add_file(&hg_path, entry)?;
+                        dirstate_write_needed = true
+                    }
+                }
+            }
+            drop(dmap); // Avoid "already mutably borrowed" RefCell panics
+            if dirstate_write_needed {
+                repo.write_dirstate()?
+            }
+            Ok(())
+        });
+    match with_lock_result {
+        Ok(closure_result) => closure_result?,
+        Err(LockError::AlreadyHeld) => {
+            // Not updating the dirstate is not ideal but not critical:
+            // don’t keep our caller waiting until some other Mercurial
+            // process releases the lock.
+        }
+        Err(LockError::Other(HgError::IoError { error, .. }))
+            if error.kind() == io::ErrorKind::PermissionDenied =>
+        {
+            // `hg status` on a read-only repository is fine
+        }
+        Err(LockError::Other(error)) => {
+            // Report other I/O errors
+            Err(error)?
+        }
     }
     Ok(())
 }
 
-// Probably more elegant to use a Deref or Borrow trait rather than
-// harcode HgPathBuf, but probably not really useful at this point
-fn display_status_paths(
-    ui: &Ui,
-    repo: &Repo,
-    config: &Config,
-    paths: &mut [HgPathCow],
-    status_prefix: &[u8],
-) -> Result<(), CommandError> {
-    paths.sort_unstable();
-    let mut relative: bool =
-        config.get_bool(b"ui", b"relative-paths").unwrap_or(false);
-    relative = config
-        .get_bool(b"commands", b"status.relative")
-        .unwrap_or(relative);
-    if relative && !ui.plain() {
-        relativize_paths(
-            repo,
-            paths,
-            |path: Cow<[u8]>| -> Result<(), UiError> {
-                ui.write_stdout(
-                    &[status_prefix, b" ", path.as_ref(), b"\n"].concat(),
-                )
-            },
-        )?;
-    } else {
-        for path in paths {
-            // Same TODO as in commands::root
-            let bytes: &[u8] = path.as_bytes();
-            // TODO optim, probably lots of unneeded copies here, especially
-            // if out stream is buffered
-            ui.write_stdout(&[status_prefix, b" ", bytes, b"\n"].concat())?;
+fn ignore_files(repo: &Repo, config: &Config) -> Vec<PathBuf> {
+    let mut ignore_files = Vec::new();
+    let repo_ignore = repo.working_directory_vfs().join(".hgignore");
+    if repo_ignore.exists() {
+        ignore_files.push(repo_ignore)
+    }
+    for (key, value) in config.iter_section(b"ui") {
+        if key == b"ignore" || key.starts_with(b"ignore.") {
+            let path = get_path_from_bytes(value);
+            // TODO: expand "~/" and environment variable here, like Python
+            // does with `os.path.expanduser` and `os.path.expandvars`
+
+            let joined = repo.working_directory_path().join(path);
+            ignore_files.push(joined);
         }
     }
-    Ok(())
+    ignore_files
+}
+
+struct DisplayStatusPaths<'a> {
+    ui: &'a Ui,
+    no_status: bool,
+    relativize: Option<RelativizePaths>,
+}
+
+impl DisplayStatusPaths<'_> {
+    // Probably more elegant to use a Deref or Borrow trait rather than
+    // harcode HgPathBuf, but probably not really useful at this point
+    fn display(
+        &self,
+        status_prefix: &[u8],
+        label: &'static str,
+        mut paths: Vec<StatusPath<'_>>,
+    ) -> Result<(), CommandError> {
+        paths.sort_unstable();
+        // TODO: get the stdout lock once for the whole loop
+        // instead of in each write
+        for StatusPath { path, copy_source } in paths {
+            let relative;
+            let path = if let Some(relativize) = &self.relativize {
+                relative = relativize.relativize(&path);
+                &*relative
+            } else {
+                path.as_bytes()
+            };
+            // TODO: Add a way to use `write_bytes!` instead of `format_bytes!`
+            // in order to stream to stdout instead of allocating an
+            // itermediate `Vec<u8>`.
+            if !self.no_status {
+                self.ui.write_stdout_labelled(status_prefix, label)?
+            }
+            self.ui
+                .write_stdout_labelled(&format_bytes!(b"{}\n", path), label)?;
+            if let Some(source) = copy_source {
+                let label = "status.copied";
+                self.ui.write_stdout_labelled(
+                    &format_bytes!(b"  {}\n", source.as_bytes()),
+                    label,
+                )?
+            }
+        }
+        Ok(())
+    }
 }
 
 /// Check if a file is modified by comparing actual repo store and file system.
 ///
 /// This meant to be used for those that the dirstate cannot resolve, due
 /// to time resolution limits.
-///
-/// TODO: detect permission bits and similar metadata modifications
-fn cat_file_is_modified(
+fn unsure_is_modified(
     repo: &Repo,
     manifest: &Manifest,
     hg_path: &HgPath,
 ) -> Result<bool, HgError> {
-    let file_node = manifest
-        .find_file(hg_path)?
-        .expect("ambgious file not in p1");
-    let filelog = repo.filelog(hg_path)?;
-    let filelog_entry = filelog.data_for_node(file_node).map_err(|_| {
-        HgError::corrupted("filelog missing node from manifest")
-    })?;
-    let contents_in_p1 = filelog_entry.data()?;
+    let vfs = repo.working_directory_vfs();
+    let fs_path = hg_path_to_path_buf(hg_path).expect("HgPath conversion");
+    let fs_metadata = vfs.symlink_metadata(&fs_path)?;
+    let is_symlink = fs_metadata.file_type().is_symlink();
+    // TODO: Also account for `FALLBACK_SYMLINK` and `FALLBACK_EXEC` from the
+    // dirstate
+    let fs_flags = if is_symlink {
+        Some(b'l')
+    } else if has_exec_bit(&fs_metadata) {
+        Some(b'x')
+    } else {
+        None
+    };
 
-    let fs_path = hg_path_to_os_string(hg_path).expect("HgPath conversion");
-    let fs_contents = repo.working_directory_vfs().read(fs_path)?;
-    return Ok(contents_in_p1 != &*fs_contents);
+    let entry = manifest
+        .find_by_path(hg_path)?
+        .expect("ambgious file not in p1");
+    if entry.flags != fs_flags {
+        return Ok(true);
+    }
+    let filelog = repo.filelog(hg_path)?;
+    let fs_len = fs_metadata.len();
+    let filelog_entry =
+        filelog.entry_for_node(entry.node_id()?).map_err(|_| {
+            HgError::corrupted("filelog missing node from manifest")
+        })?;
+    if filelog_entry.file_data_len_not_equal_to(fs_len) {
+        // No need to read file contents:
+        // it cannot be equal if it has a different length.
+        return Ok(true);
+    }
+
+    let p1_filelog_data = filelog_entry.data()?;
+    let p1_contents = p1_filelog_data.file_data()?;
+    if p1_contents.len() as u64 != fs_len {
+        // No need to read file contents:
+        // it cannot be equal if it has a different length.
+        return Ok(true);
+    }
+
+    let fs_contents = if is_symlink {
+        get_bytes_from_os_string(vfs.read_link(fs_path)?.into_os_string())
+    } else {
+        vfs.read(fs_path)?
+    };
+    Ok(p1_contents != &*fs_contents)
 }

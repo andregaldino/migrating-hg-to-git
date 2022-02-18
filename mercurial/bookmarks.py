@@ -22,6 +22,7 @@ from . import (
     error,
     obsutil,
     pycompat,
+    requirements,
     scmutil,
     txnutil,
     util,
@@ -36,11 +37,9 @@ from .utils import (
 # custom styles
 activebookmarklabel = b'bookmarks.active bookmarks.current'
 
-BOOKMARKS_IN_STORE_REQUIREMENT = b'bookmarksinstore'
-
 
 def bookmarksinstore(repo):
-    return BOOKMARKS_IN_STORE_REQUIREMENT in repo.requirements
+    return requirements.BOOKMARKS_IN_STORE_REQUIREMENT in repo.requirements
 
 
 def bookmarksvfs(repo):
@@ -213,7 +212,11 @@ class bmstore(object):
         The transaction is then responsible for updating the file content."""
         location = b'' if bookmarksinstore(self._repo) else b'plain'
         tr.addfilegenerator(
-            b'bookmarks', (b'bookmarks',), self._write, location=location
+            b'bookmarks',
+            (b'bookmarks',),
+            self._write,
+            location=location,
+            post_finalize=True,
         )
         tr.hookargs[b'bookmark_moved'] = b'1'
 

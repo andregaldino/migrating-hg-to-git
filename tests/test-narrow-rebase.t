@@ -96,4 +96,4 @@ Rebase interrupts on conflicting changes outside narrow spec
   $ hg rebase -d 'desc("modify outside/f1")'
   rebasing 4:707c035aadb6 "conflicting outside/f1"
   abort: conflict in file 'outside/f1' is outside narrow clone
-  [255]
+  [20]

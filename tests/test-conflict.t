@@ -267,7 +267,7 @@ internal:merge3
   3
   6
   8
-  ||||||| base
+  ||||||| common ancestor
   One
   Two
   Three
@@ -308,7 +308,7 @@ internal:mergediff
   2
   3
   <<<<<<<
-  ------- base
+  ------- working copy parent
   +++++++ working copy
    4
   +4.5
@@ -346,7 +346,7 @@ copy in full and the diff from base to destination.
   3.5
   4.5
   5.5
-  ------- base
+  ------- working copy parent
   +++++++ destination
    3
   -4
@@ -404,7 +404,7 @@ Now test :merge-other and :merge-local
   1 other heads for branch "default"
   $ hg merge --tool :merge-local
   merging a
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ cat a
   Start of file

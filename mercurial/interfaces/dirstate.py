@@ -66,17 +66,6 @@ class idirstate(interfaceutil.Interface):
     def pathto(f, cwd=None):
         pass
 
-    def __getitem__(key):
-        """Return the current state of key (a filename) in the dirstate.
-
-        States are:
-          n  normal
-          m  needs merging
-          r  marked for removal
-          a  marked for addition
-          ?  not tracked
-        """
-
     def __contains__(key):
         """Check if bytestring `key` is known to the dirstate."""
 

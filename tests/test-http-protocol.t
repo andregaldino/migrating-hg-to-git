@@ -198,7 +198,7 @@ Test listkeys for listing namespaces
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending listkeys command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
@@ -252,121 +252,6 @@ Same thing, but with "httprequest" command
   s>     bookmarks\t\n
   s>     namespaces\t\n
   s>     phases\t
-
-Client with HTTPv2 enabled advertises that and gets old capabilities response from old server
-
-  $ hg --config experimental.httppeer.advertise-v2=true --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
-  > command heads
-  > EOF
-  s> setsockopt(6, 1, 1) -> None (?)
-  s>     GET /?cmd=capabilities HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
-  s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
-  s>     accept: application/mercurial-0.1\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 Script output follows\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: *\r\n (glob)
-  s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  sending heads command
-  s> setsockopt(6, 1, 1) -> None (?)
-  s>     GET /?cmd=heads HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     vary: X-HgProto-1\r\n
-  s>     x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
-  s>     accept: application/mercurial-0.1\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 Script output follows\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 41\r\n
-  s>     \r\n
-  s>     0000000000000000000000000000000000000000\n
-  response: [
-    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-  ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
-
-  $ killdaemons.py
-  $ enablehttpv2 empty
-  $ hg --config server.compressionengines=zlib -R empty serve -p $HGPORT -d --pid-file hg.pid
-  $ cat hg.pid > $DAEMON_PIDS
-
-Client with HTTPv2 enabled automatically upgrades if the server supports it
-
-  $ hg --config experimental.httppeer.advertise-v2=true --config experimental.httppeer.v2-encoder-order=identity --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
-  > command heads
-  > EOF
-  s> setsockopt(6, 1, 1) -> None (?)
-  s>     GET /?cmd=capabilities HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
-  s>     x-hgproto-1: cbor\r\n
-  s>     x-hgupgrade-1: exp-http-v2-0003\r\n
-  s>     accept: application/mercurial-0.1\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: *\r\n (glob)
-  s>     \r\n
-  s>     \xa3GapibaseDapi/Dapis\xa1Pexp-http-v2-0003\xa4Hcommands\xacIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullMchangesetdata\xa2Dargs\xa2Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84IbookmarksGparentsEphaseHrevisionIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullHfiledata\xa2Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x83HlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDpath\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullIfilesdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x84NfirstchangesetHlinknodeGparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDdictIrevisions\xa2Hrequired\xf5DtypeDlistKpermissions\x81DpullTrecommendedbatchsize\x19\xc3PEheads\xa2Dargs\xa1Jpubliconly\xa3Gdefault\xf4Hrequired\xf4DtypeDboolKpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\xa3Gdefault\x80Hrequired\xf4DtypeDlistKpermissions\x81DpullHlistkeys\xa2Dargs\xa1Inamespace\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullFlookup\xa2Dargs\xa1Ckey\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullLmanifestdata\xa3Dargs\xa4Ffields\xa4Gdefault\xd9\x01\x02\x80Hrequired\xf4DtypeCsetKvalidvalues\xd9\x01\x02\x82GparentsHrevisionKhaveparents\xa3Gdefault\xf4Hrequired\xf4DtypeDboolEnodes\xa2Hrequired\xf5DtypeDlistDtree\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpullTrecommendedbatchsize\x1a\x00\x01\x86\xa0Gpushkey\xa2Dargs\xa4Ckey\xa2Hrequired\xf5DtypeEbytesInamespace\xa2Hrequired\xf5DtypeEbytesCnew\xa2Hrequired\xf5DtypeEbytesCold\xa2Hrequired\xf5DtypeEbytesKpermissions\x81DpushPrawstorefiledata\xa2Dargs\xa2Efiles\xa2Hrequired\xf5DtypeDlistJpathfilter\xa3Gdefault\xf6Hrequired\xf4DtypeDlistKpermissions\x81DpullQframingmediatypes\x81X&application/mercurial-exp-framing-0006Rpathfilterprefixes\xd9\x01\x02\x82Epath:Lrootfilesin:Nrawrepoformats\x83LgeneraldeltaHrevlogv1LsparserevlogNv1capabilitiesY\x01\xe4batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  sending heads command
-  s> setsockopt(6, 1, 1) -> None (?)
-  s>     POST /api/exp-http-v2-0003/ro/heads HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0006\r\n
-  s>     content-type: application/mercurial-exp-framing-0006\r\n
-  s>     content-length: 56\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: Mercurial debugwireproto\r\n
-  s>     \r\n
-  s>     \x1c\x00\x00\x01\x00\x01\x01\x82\xa1Pcontentencodings\x81Hidentity\x0c\x00\x00\x01\x00\x01\x00\x11\xa1DnameEheads
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0006\r\n
-  s>     Transfer-Encoding: chunked\r\n
-  s>     \r\n
-  s>     11\r\n
-  s>     \t\x00\x00\x01\x00\x02\x01\x92
-  s>     Hidentity
-  s>     \r\n
-  s>     13\r\n
-  s>     \x0b\x00\x00\x01\x00\x02\x041
-  s>     \xa1FstatusBok
-  s>     \r\n
-  s>     1e\r\n
-  s>     \x16\x00\x00\x01\x00\x02\x041
-  s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
-  s>     \r\n
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x002
-  s>     \r\n
-  s>     0\r\n
-  s>     \r\n
-  response: [
-    b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-  ]
-  (sent 2 HTTP requests and * bytes; received * bytes in responses) (glob)
-
   $ killdaemons.py
 
 HTTP client follows HTTP redirect on handshake to new repo
@@ -442,9 +327,9 @@ Verify our HTTP 301 is served properly
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
 
 Test with the HTTP peer
 
@@ -479,10 +364,10 @@ Test with the HTTP peer
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
   real URL is http://$LOCALIP:$HGPORT/redirected (glob)
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending heads command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /redirected?cmd=heads HTTP/1.1\r\n
@@ -750,10 +635,10 @@ Now test a variation where we strip the query string from the redirect URL.
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 484\r\n
+  s>     Content-Length: \d+\\r\\n (re)
   s>     \r\n
   real URL is http://$LOCALIP:$HGPORT/redirected (glob)
-  s>     batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset compression=\$BUNDLE2_COMPRESSIONS\$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
   sending heads command
   s> setsockopt(6, 1, 1) -> None (?)
   s>     GET /redirected?cmd=heads HTTP/1.1\r\n

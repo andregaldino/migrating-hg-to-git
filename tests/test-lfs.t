@@ -40,7 +40,7 @@
   > EOF
 
   $ hg config extensions
-  \*\*\* failed to import extension lfs from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
+  \*\*\* failed to import extension "lfs" from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
   abort: repository requires features unknown to this Mercurial: lfs
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
@@ -75,10 +75,10 @@
 
 # Commit large file
   $ echo $LONG > largefile
-  $ grep lfs .hg/requires
+  $ hg debugrequires | grep lfs
   [1]
   $ hg commit --traceback -Aqm "add large file"
-  $ grep lfs .hg/requires
+  $ hg debugrequires | grep lfs
   lfs
 
 # Ensure metadata is stored
@@ -114,7 +114,7 @@
 Push to a local non-lfs repo with the extension enabled will add the
 lfs requirement
 
-  $ grep lfs $TESTTMP/server/.hg/requires
+  $ hg debugrequires -R $TESTTMP/server/ | grep lfs
   [1]
   $ hg push -v | egrep -v '^(uncompressed| )'
   pushing to $TESTTMP/server
@@ -126,7 +126,7 @@ lfs requirement
   adding file changes
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
   added 2 changesets with 3 changes to 3 files
-  $ grep lfs $TESTTMP/server/.hg/requires
+  $ hg debugrequires -R $TESTTMP/server/ | grep lfs
   lfs
 
 # Unknown URL scheme
@@ -150,8 +150,9 @@ lfs requirement
 Pulling a local lfs repo into a local non-lfs repo with the extension
 enabled adds the lfs requirement
 
-  $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires | grep lfs || true
+  $ hg debugrequires -R $TESTTMP/server/ | grep lfs
+  lfs
   $ hg pull default
   pulling from $TESTTMP/server
   requesting all changes
@@ -161,9 +162,10 @@ enabled adds the lfs requirement
   added 2 changesets with 3 changes to 3 files
   new changesets 0ead593177f7:b88141481348
   (run 'hg update' to get a working copy)
-  $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
-  .hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires | grep lfs
+  lfs
+  $ hg debugrequires -R $TESTTMP/server/ | grep lfs
+  lfs
 
 # Check the blobstore is not yet populated
   $ [ -d .hg/store/lfs/objects ]
@@ -314,7 +316,7 @@ enabled adds the lfs requirement
   $ hg --config extensions.share= share repo7 sharedrepo
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ grep lfs sharedrepo/.hg/requires
+  $ hg debugrequires -R sharedrepo/ | grep lfs
   lfs
 
 # Test rename and status
@@ -1002,7 +1004,7 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   2 a
   1 b
   0 meta
-  $ grep 'lfs' convert_normal/.hg/requires
+  $ hg debugrequires -R convert_normal | grep 'lfs'
   [1]
   $ hg --cwd convert_normal cat a1 -r 0 -T '{rawdata}'
   THIS-IS-LFS-BECAUSE-10-BYTES
@@ -1044,7 +1046,7 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   1: a2: 5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
   2: a2: 876dadc86a8542f9798048f2c47f51dbf8e4359aed883e8ec80c5db825f0d943
 
-  $ grep 'lfs' convert_lfs/.hg/requires
+  $ hg debugrequires -R convert_lfs | grep 'lfs'
   lfs
 
 The hashes in all stages of the conversion are unchanged.
@@ -1075,7 +1077,7 @@ This convert is trickier, because it contains deleted files (via `hg mv`)
   2 large to small, small to large
   1 random modifications
   0 switch large and small again
-  $ grep 'lfs' convert_normal2/.hg/requires
+  $ hg debugrequires -R convert_normal2 | grep 'lfs'
   [1]
   $ hg --cwd convert_normal2 debugdata large 0
   LONGER-THAN-TEN-BYTES-WILL-TRIGGER-LFS
@@ -1091,7 +1093,7 @@ This convert is trickier, because it contains deleted files (via `hg mv`)
   2 large to small, small to large
   1 random modifications
   0 switch large and small again
-  $ grep 'lfs' convert_lfs2/.hg/requires
+  $ hg debugrequires -R convert_lfs2 | grep 'lfs'
   lfs
   $ hg --cwd convert_lfs2 debugdata large 0
   version https://git-lfs.github.com/spec/v1
@@ -1202,10 +1204,10 @@ Unbundling adds a requirement to a non-lfs repo, if necessary.
   $ hg bundle -R convert_lfs2 -qr tip --base null lfs.hg
   $ hg init unbundle
   $ hg pull -R unbundle -q nolfs.hg
-  $ grep lfs unbundle/.hg/requires
+  $ hg debugrequires -R unbundle | grep lfs
   [1]
   $ hg pull -R unbundle -q lfs.hg
-  $ grep lfs unbundle/.hg/requires
+  $ hg debugrequires -R unbundle | grep lfs
   lfs
 
   $ hg init no_lfs
@@ -1224,7 +1226,7 @@ with lfs disabled, fails.
   pushing to no_lfs
   abort: required features are not supported in the destination: lfs
   [255]
-  $ grep lfs no_lfs/.hg/requires
+  $ hg debugrequires -R no_lfs/ | grep lfs
   [1]
 
 Pulling from a local lfs repo to a local repo without an lfs requirement and
@@ -1234,5 +1236,5 @@ with lfs disabled, fails.
   pulling from convert_lfs2
   abort: required features are not supported in the destination: lfs
   [255]
-  $ grep lfs no_lfs2/.hg/requires
+  $ hg debugrequires -R no_lfs2/ | grep lfs
   [1]

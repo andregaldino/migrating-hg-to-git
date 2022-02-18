@@ -84,6 +84,11 @@ impl fmt::Display for ConfigValueParseError {
 }
 
 impl Config {
+    /// The configuration to use when printing configuration-loading errors
+    pub fn empty() -> Self {
+        Self { layers: Vec::new() }
+    }
+
     /// Load system and user configuration from various files.
     ///
     /// This is also affected by some environment variables.
@@ -133,11 +138,17 @@ impl Config {
         Ok(config)
     }
 
-    pub fn load_cli_args_config(
+    pub fn load_cli_args(
         &mut self,
         cli_config_args: impl IntoIterator<Item = impl AsRef<[u8]>>,
+        color_arg: Option<Vec<u8>>,
     ) -> Result<(), ConfigError> {
         if let Some(layer) = ConfigLayer::parse_cli_args(cli_config_args)? {
+            self.layers.push(layer)
+        }
+        if let Some(arg) = color_arg {
+            let mut layer = ConfigLayer::new(ConfigOrigin::CommandLineColor);
+            layer.add(b"ui"[..].into(), b"color"[..].into(), arg, None);
             self.layers.push(layer)
         }
         Ok(())
@@ -361,6 +372,15 @@ impl Config {
         Ok(self.get_option(section, item)?.unwrap_or(false))
     }
 
+    /// Returns `true` if the extension is enabled, `false` otherwise
+    pub fn is_extension_enabled(&self, extension: &[u8]) -> bool {
+        let value = self.get(b"extensions", extension);
+        match value {
+            Some(c) => !c.starts_with(b"!"),
+            None => false,
+        }
+    }
+
     /// If there is an `item` value in `section`, parse and return a list of
     /// byte strings.
     pub fn get_list(
@@ -375,6 +395,16 @@ impl Config {
     pub fn get(&self, section: &[u8], item: &[u8]) -> Option<&[u8]> {
         self.get_inner(section, item)
             .map(|(_, value)| value.bytes.as_ref())
+    }
+
+    /// Returns the raw value bytes of the first one found, or `None`.
+    pub fn get_with_origin(
+        &self,
+        section: &[u8],
+        item: &[u8],
+    ) -> Option<(&[u8], &ConfigOrigin)> {
+        self.get_inner(section, item)
+            .map(|(layer, value)| (value.bytes.as_ref(), &layer.origin))
     }
 
     /// Returns the layer and the value of the first one found, or `None`.
@@ -400,6 +430,66 @@ impl Config {
             .iter()
             .flat_map(|layer| layer.iter_keys(section))
             .collect()
+    }
+
+    /// Returns whether any key is defined in the given section
+    pub fn has_non_empty_section(&self, section: &[u8]) -> bool {
+        self.layers
+            .iter()
+            .any(|layer| layer.has_non_empty_section(section))
+    }
+
+    /// Yields (key, value) pairs for everything in the given section
+    pub fn iter_section<'a>(
+        &'a self,
+        section: &'a [u8],
+    ) -> impl Iterator<Item = (&[u8], &[u8])> + 'a {
+        // TODO: Use `Iterator`’s `.peekable()` when its `peek_mut` is
+        // available:
+        // https://doc.rust-lang.org/nightly/std/iter/struct.Peekable.html#method.peek_mut
+        struct Peekable<I: Iterator> {
+            iter: I,
+            /// Remember a peeked value, even if it was None.
+            peeked: Option<Option<I::Item>>,
+        }
+
+        impl<I: Iterator> Peekable<I> {
+            fn new(iter: I) -> Self {
+                Self { iter, peeked: None }
+            }
+
+            fn next(&mut self) {
+                self.peeked = None
+            }
+
+            fn peek_mut(&mut self) -> Option<&mut I::Item> {
+                let iter = &mut self.iter;
+                self.peeked.get_or_insert_with(|| iter.next()).as_mut()
+            }
+        }
+
+        // Deduplicate keys redefined in multiple layers
+        let mut keys_already_seen = HashSet::new();
+        let mut key_is_new =
+            move |&(key, _value): &(&'a [u8], &'a [u8])| -> bool {
+                keys_already_seen.insert(key)
+            };
+        // This is similar to `flat_map` + `filter_map`, except with a single
+        // closure that owns `key_is_new` (and therefore the
+        // `keys_already_seen` set):
+        let mut layer_iters = Peekable::new(
+            self.layers
+                .iter()
+                .rev()
+                .map(move |layer| layer.iter_section(section)),
+        );
+        std::iter::from_fn(move || loop {
+            if let Some(pair) = layer_iters.peek_mut()?.find(&mut key_is_new) {
+                return Some(pair);
+            } else {
+                layer_iters.next();
+            }
+        })
     }
 
     /// Get raw values bytes from all layers (even untrusted ones) in order

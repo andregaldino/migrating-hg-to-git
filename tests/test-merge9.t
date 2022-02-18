@@ -27,8 +27,8 @@ a file-level merge failed
 test with the rename on the remote side
   $ HGMERGE=false hg merge
   merging bar
-  merging foo and baz to baz
   merging bar failed!
+  merging foo and baz to baz
   1 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -41,8 +41,8 @@ test with the rename on the local side
   3 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ HGMERGE=false hg merge
   merging bar
-  merging baz and foo to baz
   merging bar failed!
+  merging baz and foo to baz
   1 files updated, 1 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]

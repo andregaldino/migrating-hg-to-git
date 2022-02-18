@@ -29,7 +29,7 @@ Test adding on top of an unknown file
   file added already exists
   1 out of 1 hunks FAILED -- saving rejects to file added.rej
   abort: patch failed to apply
-  [255]
+  [20]
 
 Test modifying an unknown file
 
@@ -41,7 +41,7 @@ Test modifying an unknown file
   $ hg import --no-commit ../unknown.diff
   applying ../unknown.diff
   abort: cannot patch changed: file is not tracked
-  [255]
+  [20]
 
 Test removing an unknown file
 
@@ -54,7 +54,7 @@ Test removing an unknown file
   $ hg import --no-commit ../unknown.diff
   applying ../unknown.diff
   abort: cannot patch removed: file is not tracked
-  [255]
+  [20]
 
 Test copying onto an unknown file
 
@@ -64,6 +64,6 @@ Test copying onto an unknown file
   $ hg import --no-commit ../unknown.diff
   applying ../unknown.diff
   abort: cannot create copied: destination already exists
-  [255]
+  [20]
 
   $ cd ..

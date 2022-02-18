@@ -38,7 +38,7 @@ narrow clone a file, f10
   added 3 changesets with 1 changes to 1 files
   new changesets *:* (glob)
   $ cd narrow
-  $ cat .hg/requires | grep -v generaldelta
+  $ hg debugrequires | grep -v generaldelta
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -46,6 +46,7 @@ narrow clone a file, f10
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   testonly-simplestore (reposimplestore !)

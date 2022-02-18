@@ -350,10 +350,11 @@ class cg1unpacker(object):
 
             def ondupchangelog(cl, rev):
                 if rev < clstart:
-                    duprevs.append(rev)
+                    duprevs.append(rev)  # pytype: disable=attribute-error
 
             def onchangelog(cl, rev):
                 ctx = cl.changelogrevision(rev)
+                assert efilesset is not None  # help pytype
                 efilesset.update(ctx.files)
                 repo.register_changeset(rev, ctx)
 

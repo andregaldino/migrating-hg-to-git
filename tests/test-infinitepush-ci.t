@@ -204,7 +204,7 @@ client side wrapping
   $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
   pulling from $TESTTMP/repo
   abort: unknown revision 'b4e4bce660512ad3e71189e14588a70ac8e31fef'
-  [255]
+  [10]
   $ hg glog
   o  1:6cb0989601f1 added a
   |  public

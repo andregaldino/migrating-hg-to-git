@@ -10,98 +10,10 @@
 #endif
 
 Initialize repository
-the status call is to check for issue5130
 
   $ hg init server
   $ cd server
-  $ touch foo
-  $ hg -q commit -A -m initial
-  >>> for i in range(1024):
-  ...     with open(str(i), 'wb') as fh:
-  ...         fh.write(b"%d" % i) and None
-  $ hg -q commit -A -m 'add a lot of files'
-  $ hg st
-
-add files with "tricky" name:
-
-  $ echo foo > 00changelog.i
-  $ echo foo > 00changelog.d
-  $ echo foo > 00changelog.n
-  $ echo foo > 00changelog-ab349180a0405010.nd
-  $ echo foo > 00manifest.i
-  $ echo foo > 00manifest.d
-  $ echo foo > foo.i
-  $ echo foo > foo.d
-  $ echo foo > foo.n
-  $ echo foo > undo.py
-  $ echo foo > undo.i
-  $ echo foo > undo.d
-  $ echo foo > undo.n
-  $ echo foo > undo.foo.i
-  $ echo foo > undo.foo.d
-  $ echo foo > undo.foo.n
-  $ echo foo > undo.babar
-  $ mkdir savanah
-  $ echo foo > savanah/foo.i
-  $ echo foo > savanah/foo.d
-  $ echo foo > savanah/foo.n
-  $ echo foo > savanah/undo.py
-  $ echo foo > savanah/undo.i
-  $ echo foo > savanah/undo.d
-  $ echo foo > savanah/undo.n
-  $ echo foo > savanah/undo.foo.i
-  $ echo foo > savanah/undo.foo.d
-  $ echo foo > savanah/undo.foo.n
-  $ echo foo > savanah/undo.babar
-  $ mkdir data
-  $ echo foo > data/foo.i
-  $ echo foo > data/foo.d
-  $ echo foo > data/foo.n
-  $ echo foo > data/undo.py
-  $ echo foo > data/undo.i
-  $ echo foo > data/undo.d
-  $ echo foo > data/undo.n
-  $ echo foo > data/undo.foo.i
-  $ echo foo > data/undo.foo.d
-  $ echo foo > data/undo.foo.n
-  $ echo foo > data/undo.babar
-  $ mkdir meta
-  $ echo foo > meta/foo.i
-  $ echo foo > meta/foo.d
-  $ echo foo > meta/foo.n
-  $ echo foo > meta/undo.py
-  $ echo foo > meta/undo.i
-  $ echo foo > meta/undo.d
-  $ echo foo > meta/undo.n
-  $ echo foo > meta/undo.foo.i
-  $ echo foo > meta/undo.foo.d
-  $ echo foo > meta/undo.foo.n
-  $ echo foo > meta/undo.babar
-  $ mkdir store
-  $ echo foo > store/foo.i
-  $ echo foo > store/foo.d
-  $ echo foo > store/foo.n
-  $ echo foo > store/undo.py
-  $ echo foo > store/undo.i
-  $ echo foo > store/undo.d
-  $ echo foo > store/undo.n
-  $ echo foo > store/undo.foo.i
-  $ echo foo > store/undo.foo.d
-  $ echo foo > store/undo.foo.n
-  $ echo foo > store/undo.babar
-
-Name with special characters
-
-  $ echo foo > store/CélesteVille_is_a_Capital_City
-
-name causing issue6581
-
-  $ mkdir -p container/isam-build-centos7/
-  $ touch container/isam-build-centos7/bazel-coverage-generator-sandboxfs-compatibility-0758e3e4f6057904d44399bd666faba9e7f40686.patch
-
-Add all that
-
-  $ hg add .
+  $ sh $TESTDIR/testlib/stream_clone_setup.sh
   adding 00changelog-ab349180a0405010.nd
   adding 00changelog.d
   adding 00changelog.i
@@ -165,7 +77,7 @@ Add all that
   adding undo.i
   adding undo.n
   adding undo.py
-  $ hg ci -m 'add files with "tricky" name'
+
   $ hg --config server.uncompressed=false serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
@@ -384,65 +296,65 @@ getbundle requests with stream=1 are uncompressed
 
 #if no-zstd no-rust
   $ f --size --hex --bytes 256 body
-  body: size=119153
+  body: size=119123
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 80 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
-  0020: 06 09 04 0c 44 62 79 74 65 63 6f 75 6e 74 31 30 |....Dbytecount10|
+  0010: 62 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |b.STREAM2.......|
+  0020: 06 09 04 0c 26 62 79 74 65 63 6f 75 6e 74 31 30 |....&bytecount10|
   0030: 34 31 31 35 66 69 6c 65 63 6f 75 6e 74 31 30 39 |4115filecount109|
-  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |3requirementsdot|
-  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
-  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
-  0070: 32 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 |2Crevlogv1%2Cspa|
-  0080: 72 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 |rserevlog%2Cstor|
-  0090: 65 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 |e....s.Bdata/0.i|
-  00a0: 00 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 |................|
-  00b0: 00 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff |................|
-  00c0: 80 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c |.)c.I.#....Vg.g,|
-  00d0: 69 d1 ec 39 00 00 00 00 00 00 00 00 00 00 00 00 |i..9............|
-  00e0: 75 30 73 26 45 64 61 74 61 2f 30 30 63 68 61 6e |u0s&Edata/00chan|
-  00f0: 67 65 6c 6f 67 2d 61 62 33 34 39 31 38 30 61 30 |gelog-ab349180a0|
+  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 67 65 6e |3requirementsgen|
+  0050: 65 72 61 6c 64 65 6c 74 61 25 32 43 72 65 76 6c |eraldelta%2Crevl|
+  0060: 6f 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 |ogv1%2Csparserev|
+  0070: 6c 6f 67 00 00 80 00 73 08 42 64 61 74 61 2f 30 |log....s.Bdata/0|
+  0080: 2e 69 00 03 00 01 00 00 00 00 00 00 00 02 00 00 |.i..............|
+  0090: 00 01 00 00 00 00 00 00 00 01 ff ff ff ff ff ff |................|
+  00a0: ff ff 80 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 |...)c.I.#....Vg.|
+  00b0: 67 2c 69 d1 ec 39 00 00 00 00 00 00 00 00 00 00 |g,i..9..........|
+  00c0: 00 00 75 30 73 26 45 64 61 74 61 2f 30 30 63 68 |..u0s&Edata/00ch|
+  00d0: 61 6e 67 65 6c 6f 67 2d 61 62 33 34 39 31 38 30 |angelog-ab349180|
+  00e0: 61 30 34 30 35 30 31 30 2e 6e 64 2e 69 00 03 00 |a0405010.nd.i...|
+  00f0: 01 00 00 00 00 00 00 00 05 00 00 00 04 00 00 00 |................|
 #endif
 #if zstd no-rust
   $ f --size --hex --bytes 256 body
-  body: size=116340 (no-bigendian !)
+  body: size=116310
   body: size=116335 (bigendian !)
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 9a 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
-  0020: 06 09 04 0c 5e 62 79 74 65 63 6f 75 6e 74 31 30 |....^bytecount10|
+  0010: 7c 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 ||.STREAM2.......|
+  0020: 06 09 04 0c 40 62 79 74 65 63 6f 75 6e 74 31 30 |....@bytecount10|
   0030: 31 32 37 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1276filecount109| (no-bigendian !)
   0030: 31 32 37 31 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1271filecount109| (bigendian !)
-  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |3requirementsdot|
-  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
-  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
-  0070: 32 43 72 65 76 6c 6f 67 2d 63 6f 6d 70 72 65 73 |2Crevlog-compres|
-  0080: 73 69 6f 6e 2d 7a 73 74 64 25 32 43 72 65 76 6c |sion-zstd%2Crevl|
-  0090: 6f 67 76 31 25 32 43 73 70 61 72 73 65 72 65 76 |ogv1%2Csparserev|
-  00a0: 6c 6f 67 25 32 43 73 74 6f 72 65 00 00 80 00 73 |log%2Cstore....s|
-  00b0: 08 42 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 |.Bdata/0.i......|
-  00c0: 00 00 00 00 00 02 00 00 00 01 00 00 00 00 00 00 |................|
-  00d0: 00 01 ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 |...........)c.I.|
-  00e0: 23 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 |#....Vg.g,i..9..|
-  00f0: 00 00 00 00 00 00 00 00 00 00 75 30 73 26 45 64 |..........u0s&Ed|
+  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 67 65 6e |3requirementsgen|
+  0050: 65 72 61 6c 64 65 6c 74 61 25 32 43 72 65 76 6c |eraldelta%2Crevl|
+  0060: 6f 67 2d 63 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a |og-compression-z|
+  0070: 73 74 64 25 32 43 72 65 76 6c 6f 67 76 31 25 32 |std%2Crevlogv1%2|
+  0080: 43 73 70 61 72 73 65 72 65 76 6c 6f 67 00 00 80 |Csparserevlog...|
+  0090: 00 73 08 42 64 61 74 61 2f 30 2e 69 00 03 00 01 |.s.Bdata/0.i....|
+  00a0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................|
+  00b0: 00 00 00 01 ff ff ff ff ff ff ff ff 80 29 63 a0 |.............)c.|
+  00c0: 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 |I.#....Vg.g,i..9|
+  00d0: 00 00 00 00 00 00 00 00 00 00 00 00 75 30 73 26 |............u0s&|
+  00e0: 45 64 61 74 61 2f 30 30 63 68 61 6e 67 65 6c 6f |Edata/00changelo|
+  00f0: 67 2d 61 62 33 34 39 31 38 30 61 30 34 30 35 30 |g-ab349180a04050|
 #endif
 #if zstd rust no-dirstate-v2
   $ f --size --hex --bytes 256 body
-  body: size=116361
+  body: size=116310
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: af 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |..STREAM2.......|
-  0020: 06 09 04 0c 73 62 79 74 65 63 6f 75 6e 74 31 30 |....sbytecount10|
+  0010: 7c 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 ||.STREAM2.......|
+  0020: 06 09 04 0c 40 62 79 74 65 63 6f 75 6e 74 31 30 |....@bytecount10|
   0030: 31 32 37 36 66 69 6c 65 63 6f 75 6e 74 31 30 39 |1276filecount109|
-  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |3requirementsdot|
-  0050: 65 6e 63 6f 64 65 25 32 43 66 6e 63 61 63 68 65 |encode%2Cfncache|
-  0060: 25 32 43 67 65 6e 65 72 61 6c 64 65 6c 74 61 25 |%2Cgeneraldelta%|
-  0070: 32 43 70 65 72 73 69 73 74 65 6e 74 2d 6e 6f 64 |2Cpersistent-nod|
-  0080: 65 6d 61 70 25 32 43 72 65 76 6c 6f 67 2d 63 6f |emap%2Crevlog-co|
-  0090: 6d 70 72 65 73 73 69 6f 6e 2d 7a 73 74 64 25 32 |mpression-zstd%2|
-  00a0: 43 72 65 76 6c 6f 67 76 31 25 32 43 73 70 61 72 |Crevlogv1%2Cspar|
-  00b0: 73 65 72 65 76 6c 6f 67 25 32 43 73 74 6f 72 65 |serevlog%2Cstore|
-  00c0: 00 00 80 00 73 08 42 64 61 74 61 2f 30 2e 69 00 |....s.Bdata/0.i.|
-  00d0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................|
-  00e0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff 80 |................|
-  00f0: 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 |)c.I.#....Vg.g,i|
+  0040: 33 72 65 71 75 69 72 65 6d 65 6e 74 73 67 65 6e |3requirementsgen|
+  0050: 65 72 61 6c 64 65 6c 74 61 25 32 43 72 65 76 6c |eraldelta%2Crevl|
+  0060: 6f 67 2d 63 6f 6d 70 72 65 73 73 69 6f 6e 2d 7a |og-compression-z|
+  0070: 73 74 64 25 32 43 72 65 76 6c 6f 67 76 31 25 32 |std%2Crevlogv1%2|
+  0080: 43 73 70 61 72 73 65 72 65 76 6c 6f 67 00 00 80 |Csparserevlog...|
+  0090: 00 73 08 42 64 61 74 61 2f 30 2e 69 00 03 00 01 |.s.Bdata/0.i....|
+  00a0: 00 00 00 00 00 00 00 02 00 00 00 01 00 00 00 00 |................|
+  00b0: 00 00 00 01 ff ff ff ff ff ff ff ff 80 29 63 a0 |.............)c.|
+  00c0: 49 d3 23 87 bf ce fe 56 67 92 67 2c 69 d1 ec 39 |I.#....Vg.g,i..9|
+  00d0: 00 00 00 00 00 00 00 00 00 00 00 00 75 30 73 26 |............u0s&|
+  00e0: 45 64 61 74 61 2f 30 30 63 68 61 6e 67 65 6c 6f |Edata/00changelo|
+  00f0: 67 2d 61 62 33 34 39 31 38 30 61 30 34 30 35 30 |g-ab349180a04050|
 #endif
 #if zstd dirstate-v2
   $ f --size --hex --bytes 256 body

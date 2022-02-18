@@ -513,13 +513,18 @@ effect and style see :hg:`help color`.
 ``update.check``
     Determines what level of checking :hg:`update` will perform before moving
     to a destination revision. Valid values are ``abort``, ``none``,
-    ``linear``, and ``noconflict``. ``abort`` always fails if the working
-    directory has uncommitted changes. ``none`` performs no checking, and may
-    result in a merge with uncommitted changes. ``linear`` allows any update
-    as long as it follows a straight line in the revision history, and may
-    trigger a merge with uncommitted changes. ``noconflict`` will allow any
-    update which would not trigger a merge with uncommitted changes, if any
-    are present.
+    ``linear``, and ``noconflict``.
+
+    - ``abort`` always fails if the working directory has uncommitted changes.
+
+    - ``none`` performs no checking, and may result in a merge with uncommitted changes.
+
+    - ``linear`` allows any update as long as it follows a straight line in the
+      revision history, and may trigger a merge with uncommitted changes.
+
+    - ``noconflict`` will allow any update which would not trigger a merge with
+      uncommitted changes, if any are present.
+
     (default: ``linear``)
 
 ``update.requiredest``
@@ -850,6 +855,24 @@ Example for ``~/.hgrc``::
   # (this extension will get loaded from the file specified)
   myfeature = ~/.hgext/myfeature.py
 
+If an extension fails to load, a warning will be issued, and Mercurial will
+proceed. To enforce that an extension must be loaded, one can set the `required`
+suboption in the config::
+
+  [extensions]
+  myfeature = ~/.hgext/myfeature.py
+  myfeature:required = yes
+
+To debug extension loading issue, one can add `--traceback` to their mercurial
+invocation.
+
+A default setting can we set using the special `*` extension key::
+
+  [extensions]
+  *:required = yes
+  myfeature = ~/.hgext/myfeature.py
+  rebase=
+
 
 ``format``
 ----------
@@ -921,6 +944,38 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
+``use-dirstate-tracked-hint``
+    Enable or disable the writing of "tracked key" file alongside the dirstate.
+    (default to disabled)
+
+    That "tracked-hint" can help external automations to detect changes to the
+    set of tracked files. (i.e the result of `hg files` or `hg status -macd`)
+
+    The tracked-hint is written in a new `.hg/dirstate-tracked-hint`. That file
+    contains two lines:
+    - the first line is the file version (currently: 1),
+    - the second line contains the "tracked-hint".
+    That file is written right after the dirstate is written.
+
+    The tracked-hint changes whenever the set of file tracked in the dirstate
+    changes. The general idea is:
+    - if the hint is identical, the set of tracked file SHOULD be identical,
+    - if the hint is different, the set of tracked file MIGHT be different.
+
+    The "hint is identical" case uses `SHOULD` as the dirstate and the hint file
+    are two distinct files and therefore that cannot be read or written to in an
+    atomic way. If the key is identical, nothing garantees that the dirstate is
+    not updated right after the hint file. This is considered a negligible
+    limitation for the intended usecase. It is actually possible to prevent this
+    race by taking the repository lock during read operations.
+
+    They are two "ways" to use this feature:
+
+    1) monitoring changes to the `.hg/dirstate-tracked-hint`, if the file
+    changes, the tracked set might have changed.
+
+    2) storing the value and comparing it to a later value.
+
 ``use-persistent-nodemap``
     Enable or disable the "persistent-nodemap" feature which improves
     performance if the Rust extensions are available.
@@ -975,7 +1030,7 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Introduced in Mercurial 5.7.
 
-    Disabled by default.
+    Enabled by default in Mercurial 6.1.
 
 ``usestore``
     Enable or disable the "store" repository format which improves

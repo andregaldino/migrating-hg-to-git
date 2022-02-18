@@ -187,6 +187,11 @@ only since some versions of tar don't have this flag.
 #endif
 
 Check that the issue is present
+(It is currently not present with rhg but will be when optimizations are added
+to resolve ambiguous files at the end of status without reading their content
+if the size differs, and reading the expected size without resolving filelog
+deltas where possible.)
+
   $ hg st
   M D.txt
   M b.txt

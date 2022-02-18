@@ -18,7 +18,7 @@
 Do we ever miss a sub-second change?:
 
   $ for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
-  >     hg co -qC 0
+  >     hg update -qC 0
   >     echo b > a
   >     hg st
   > done
@@ -66,11 +66,11 @@ confused with a file with the exec bit set
   > )
   > def extsetup(ui):
   >     extensions.wrapfunction(context.workingctx, '_checklookup', overridechecklookup)
-  > def overridechecklookup(orig, self, files):
+  > def overridechecklookup(orig, self, *args, **kwargs):
   >     # make an update that changes the dirstate from underneath
   >     self._repo.ui.system(br"sh '$TESTTMP/dirstaterace.sh'",
   >                          cwd=self._repo.root)
-  >     return orig(self, files)
+  >     return orig(self, *args, **kwargs)
   > EOF
 
   $ hg debugrebuilddirstate
@@ -89,6 +89,7 @@ anyway.
   > rm b && rm -r dir1 && rm d && mkdir d && rm e && mkdir e
   > EOF
 
+  $ sleep 1 # ensure non-ambiguous mtime
   $ hg status --config extensions.dirstaterace=$TESTTMP/dirstaterace.py
   M d
   M e
@@ -147,6 +148,8 @@ condition (see issue5584 for detail).
   > 
   > hg update -q -C 0
   > hg cat -r 1 b > b
+  > # make sure the timestamps is not ambiguous and a write will be issued
+  > touch -t 198606251012 b
   > EOF
 
 "hg status" below should excludes "e", of which exec flag is set, for

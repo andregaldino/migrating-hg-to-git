@@ -40,7 +40,7 @@ Writes to stdio succeed and fail appropriately
   A a
 
   $ hg status >/dev/full
-  abort: No space left on device
+  abort: No space left on device* (glob)
   [255]
 #endif
 

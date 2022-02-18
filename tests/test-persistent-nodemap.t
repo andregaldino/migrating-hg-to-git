@@ -65,6 +65,7 @@ As a result, -1 passed from Rust for the null revision became 4294967295 in C.
   format-variant     repo
   fncache:            yes
   dirstate-v2:         no
+  tracked-hint:        no
   dotencode:          yes
   generaldelta:       yes
   share-safe:         yes
@@ -782,9 +783,10 @@ downgrading
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:         yes    yes      no
+  share-safe:         yes    yes     yes
   sparserevlog:       yes    yes     yes
   persistent-nodemap: yes     no      no
   copies-sdc:          no     no      no
@@ -809,8 +811,6 @@ downgrading
     - manifest
   
   $ ls -1 .hg/store/ | egrep '00(changelog|manifest)(\.n|-.*\.nd)'
-  00changelog-*.nd (glob)
-  00manifest-*.nd (glob)
   undo.backup.00changelog.n
   undo.backup.00manifest.n
   $ hg debugnodemap --metadata
@@ -826,9 +826,10 @@ upgrading
   format-variant     repo config default
   fncache:            yes    yes     yes
   dirstate-v2:         no     no      no
+  tracked-hint:        no     no      no
   dotencode:          yes    yes     yes
   generaldelta:       yes    yes     yes
-  share-safe:         yes    yes      no
+  share-safe:         yes    yes     yes
   sparserevlog:       yes    yes     yes
   persistent-nodemap:  no    yes      no
   copies-sdc:          no     no      no

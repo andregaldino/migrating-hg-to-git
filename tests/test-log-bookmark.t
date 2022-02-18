@@ -189,10 +189,10 @@ Unknown bookmark:
 
   $ hg log -B unknown
   abort: bookmark 'unknown' does not exist
-  [255]
+  [10]
 
 Shouldn't accept string-matcher syntax:
 
   $ hg log -B 're:.*'
   abort: bookmark 're:.*' does not exist
-  [255]
+  [10]

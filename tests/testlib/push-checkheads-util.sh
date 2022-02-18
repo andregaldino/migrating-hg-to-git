@@ -41,4 +41,10 @@ setuprepos() {
     mkcommit A0
     cd ..
     hg clone server client
+
+    if [ "$1" = "single-head" ]; then
+        echo >> "server/.hg/hgrc" "[experimental]"
+        echo >> "server/.hg/hgrc" "# enforce a single name per branch"
+        echo >> "server/.hg/hgrc" "single-head-per-branch = yes"
+    fi
 }

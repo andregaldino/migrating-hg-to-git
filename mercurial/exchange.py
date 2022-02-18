@@ -22,7 +22,6 @@ from . import (
     changegroup,
     discovery,
     error,
-    exchangev2,
     lock as lockmod,
     logexchange,
     narrowspec,
@@ -522,8 +521,16 @@ def _pushdiscovery(pushop):
 
 def _checksubrepostate(pushop):
     """Ensure all outgoing referenced subrepo revisions are present locally"""
+
+    repo = pushop.repo
+
+    # If the repository does not use subrepos, skip the expensive
+    # manifest checks.
+    if not len(repo.file(b'.hgsub')) or not len(repo.file(b'.hgsubstate')):
+        return
+
     for n in pushop.outgoing.missing:
-        ctx = pushop.repo[n]
+        ctx = repo[n]
 
         if b'.hgsub' in ctx.manifest() and b'.hgsubstate' in ctx.files():
             for subpath in sorted(ctx.substate):
@@ -1666,21 +1673,17 @@ def pull(
         ):
             add_confirm_callback(repo, pullop)
 
-        # Use the modern wire protocol, if available.
-        if remote.capable(b'command-changesetdata'):
-            exchangev2.pull(pullop)
-        else:
-            # This should ideally be in _pullbundle2(). However, it needs to run
-            # before discovery to avoid extra work.
-            _maybeapplyclonebundle(pullop)
-            streamclone.maybeperformlegacystreamclone(pullop)
-            _pulldiscovery(pullop)
-            if pullop.canusebundle2:
-                _fullpullbundle2(repo, pullop)
-            _pullchangeset(pullop)
-            _pullphase(pullop)
-            _pullbookmarks(pullop)
-            _pullobsolete(pullop)
+        # This should ideally be in _pullbundle2(). However, it needs to run
+        # before discovery to avoid extra work.
+        _maybeapplyclonebundle(pullop)
+        streamclone.maybeperformlegacystreamclone(pullop)
+        _pulldiscovery(pullop)
+        if pullop.canusebundle2:
+            _fullpullbundle2(repo, pullop)
+        _pullchangeset(pullop)
+        _pullphase(pullop)
+        _pullbookmarks(pullop)
+        _pullobsolete(pullop)
 
     # storing remotenames
     if repo.ui.configbool(b'experimental', b'remotenames'):

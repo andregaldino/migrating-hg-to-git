@@ -147,12 +147,6 @@ def wireprotocommand(name, args=None, permission=b'push'):
         k for k, v in wireprototypes.TRANSPORTS.items() if v[b'version'] == 1
     }
 
-    # Because SSHv2 is a mirror of SSHv1, we allow "batch" commands through to
-    # SSHv2.
-    # TODO undo this hack when SSH is using the unified frame protocol.
-    if name == b'batch':
-        transports.add(wireprototypes.SSHV2)
-
     if permission not in (b'push', b'pull'):
         raise error.ProgrammingError(
             b'invalid wire protocol permission; '
@@ -306,7 +300,7 @@ def _capabilities(repo, proto):
     if streamclone.allowservergeneration(repo):
         if repo.ui.configbool(b'server', b'preferuncompressed'):
             caps.append(b'stream-preferred')
-        requiredformats = repo.requirements & repo.supportedformats
+        requiredformats = streamclone.streamed_requirements(repo)
         # if our local revlogs are just revlogv1, add 'stream' cap
         if not requiredformats - {requirementsmod.REVLOGV1_REQUIREMENT}:
             caps.append(b'stream')

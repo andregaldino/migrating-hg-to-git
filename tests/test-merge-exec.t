@@ -4,7 +4,6 @@ Testing merge involving change to the exec flag
 
 #require execbit
 
-
 Initial setup
 ==============
 

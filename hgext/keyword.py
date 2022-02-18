@@ -116,6 +116,7 @@ from mercurial.utils import (
     dateutil,
     stringutil,
 )
+from mercurial.dirstateutils import timestamp
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -326,6 +327,7 @@ class kwtemplater(object):
             msg = _(b'overwriting %s expanding keywords\n')
         else:
             msg = _(b'overwriting %s shrinking keywords\n')
+        wctx = self.repo[None]
         for f in candidates:
             if self.restrict:
                 data = self.repo.file(f).read(mf[f])
@@ -356,7 +358,12 @@ class kwtemplater(object):
                 fp.write(data)
                 fp.close()
                 if kwcmd:
-                    self.repo.dirstate.set_clean(f)
+                    s = wctx[f].lstat()
+                    mode = s.st_mode
+                    size = s.st_size
+                    mtime = timestamp.mtime_of(s)
+                    cache_data = (mode, size, mtime)
+                    self.repo.dirstate.set_clean(f, cache_data)
                 elif self.postcommit:
                     self.repo.dirstate.update_file_p1(f, p1_tracked=True)
 

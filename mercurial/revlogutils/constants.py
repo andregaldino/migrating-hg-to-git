@@ -103,6 +103,17 @@ ENTRY_DATA_COMPRESSION_MODE = 10
 #            (see "COMP_MODE_*" constants for details)
 ENTRY_SIDEDATA_COMPRESSION_MODE = 11
 
+#    [12] Revision rank:
+#            The number of revision under this one.
+#
+#            Formally this is defined as : rank(X) = len(ancestors(X) + X)
+#
+#            If rank == -1; then we do not have this information available.
+#            Only `null` has a rank of 0.
+ENTRY_RANK = 12
+
+RANK_UNKNOWN = -1
+
 ### main revlog header
 
 # We cannot rely on  Struct.format is inconsistent for python <=3.6 versus above
@@ -181,9 +192,20 @@ assert INDEX_ENTRY_V2.size == 32 * 3, INDEX_ENTRY_V2.size
 #  8 bytes: sidedata offset
 #  4 bytes: sidedata compressed length
 #  1 bytes: compression mode (2 lower bit are data_compression_mode)
-#  27 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
-INDEX_ENTRY_CL_V2 = struct.Struct(b">Qiiii20s12xQiB27x")
-assert INDEX_ENTRY_CL_V2.size == 32 * 3, INDEX_ENTRY_V2.size
+#  4 bytes: changeset rank (i.e. `len(::REV)`)
+#  23 bytes: Padding to align to 96 bytes (see RevlogV2Plan wiki page)
+INDEX_ENTRY_CL_V2 = struct.Struct(b">Qiiii20s12xQiBi23x")
+assert INDEX_ENTRY_CL_V2.size == 32 * 3, INDEX_ENTRY_CL_V2.size
+INDEX_ENTRY_V2_IDX_OFFSET = 0
+INDEX_ENTRY_V2_IDX_COMPRESSED_LENGTH = 1
+INDEX_ENTRY_V2_IDX_UNCOMPRESSED_LENGTH = 2
+INDEX_ENTRY_V2_IDX_PARENT_1 = 3
+INDEX_ENTRY_V2_IDX_PARENT_2 = 4
+INDEX_ENTRY_V2_IDX_NODEID = 5
+INDEX_ENTRY_V2_IDX_SIDEDATA_OFFSET = 6
+INDEX_ENTRY_V2_IDX_SIDEDATA_COMPRESSED_LENGTH = 7
+INDEX_ENTRY_V2_IDX_COMPRESSION_MODE = 8
+INDEX_ENTRY_V2_IDX_RANK = 9
 
 # revlog index flags
 

@@ -20,16 +20,9 @@ Can create and open repo with revlog v2 requirement
 
   $ hg init new-repo
   $ cd new-repo
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
+  $ hg debugrequires | grep revlogv2
   exp-revlogv2.2
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
-  revlog-compression-zstd (zstd !)
-  sparserevlog
-  store
+  dirstate-v2 (dirstate-v2 !)
 
   $ hg log
 

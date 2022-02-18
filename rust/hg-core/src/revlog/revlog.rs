@@ -1,9 +1,9 @@
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
 
-use byteorder::{BigEndian, ByteOrder};
 use flate2::read::ZlibDecoder;
 use micro_timer::timed;
 use sha1::{Digest, Sha1};
@@ -19,6 +19,18 @@ use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
 use crate::{Node, NULL_REVISION};
+
+const REVISION_FLAG_CENSORED: u16 = 1 << 15;
+const REVISION_FLAG_ELLIPSIS: u16 = 1 << 14;
+const REVISION_FLAG_EXTSTORED: u16 = 1 << 13;
+const REVISION_FLAG_HASCOPIESINFO: u16 = 1 << 12;
+
+// Keep this in sync with REVIDX_KNOWN_FLAGS in
+// mercurial/revlogutils/flagutil.py
+const REVIDX_KNOWN_FLAGS: u16 = REVISION_FLAG_CENSORED
+    | REVISION_FLAG_ELLIPSIS
+    | REVISION_FLAG_EXTSTORED
+    | REVISION_FLAG_HASCOPIESINFO;
 
 #[derive(derive_more::From)]
 pub enum RevlogError {
@@ -40,9 +52,13 @@ impl From<NodeMapError> for RevlogError {
     }
 }
 
+fn corrupted() -> HgError {
+    HgError::corrupted("corrupted revlog")
+}
+
 impl RevlogError {
     fn corrupted() -> Self {
-        RevlogError::Other(HgError::corrupted("corrupted revlog"))
+        RevlogError::Other(corrupted())
     }
 }
 
@@ -74,13 +90,6 @@ impl Revlog {
             match repo.store_vfs().mmap_open_opt(&index_path)? {
                 None => Index::new(Box::new(vec![])),
                 Some(index_mmap) => {
-                    let version = get_version(&index_mmap)?;
-                    if version != 1 {
-                        // A proper new version should have had a repo/store
-                        // requirement.
-                        return Err(HgError::corrupted("corrupted revlog"));
-                    }
-
                     let index = Index::new(Box::new(index_mmap))?;
                     Ok(index)
                 }
@@ -192,42 +201,14 @@ impl Revlog {
     /// retrieved as needed, and the deltas will be applied to the inital
     /// snapshot to rebuild the final data.
     #[timed]
-    pub fn get_rev_data(&self, rev: Revision) -> Result<Vec<u8>, RevlogError> {
+    pub fn get_rev_data(
+        &self,
+        rev: Revision,
+    ) -> Result<Cow<[u8]>, RevlogError> {
         if rev == NULL_REVISION {
-            return Ok(vec![]);
+            return Ok(Cow::Borrowed(&[]));
         };
-        // Todo return -> Cow
-        let mut entry = self.get_entry(rev)?;
-        let mut delta_chain = vec![];
-        while let Some(base_rev) = entry.base_rev {
-            delta_chain.push(entry);
-            entry = self
-                .get_entry(base_rev)
-                .map_err(|_| RevlogError::corrupted())?;
-        }
-
-        // TODO do not look twice in the index
-        let index_entry = self
-            .index
-            .get_entry(rev)
-            .ok_or(RevlogError::InvalidRevision)?;
-
-        let data: Vec<u8> = if delta_chain.is_empty() {
-            entry.data()?.into()
-        } else {
-            Revlog::build_data_from_deltas(entry, &delta_chain)?
-        };
-
-        if self.check_hash(
-            index_entry.p1(),
-            index_entry.p2(),
-            index_entry.hash().as_bytes(),
-            &data,
-        ) {
-            Ok(data)
-        } else {
-            Err(RevlogError::corrupted())
-        }
+        Ok(self.get_entry(rev)?.data()?)
     }
 
     /// Check the hash of some given data against the recorded hash.
@@ -258,13 +239,13 @@ impl Revlog {
     fn build_data_from_deltas(
         snapshot: RevlogEntry,
         deltas: &[RevlogEntry],
-    ) -> Result<Vec<u8>, RevlogError> {
-        let snapshot = snapshot.data()?;
+    ) -> Result<Vec<u8>, HgError> {
+        let snapshot = snapshot.data_chunk()?;
         let deltas = deltas
             .iter()
             .rev()
-            .map(RevlogEntry::data)
-            .collect::<Result<Vec<Cow<'_, [u8]>>, RevlogError>>()?;
+            .map(RevlogEntry::data_chunk)
+            .collect::<Result<Vec<_>, _>>()?;
         let patches: Vec<_> =
             deltas.iter().map(|d| patch::PatchList::new(d)).collect();
         let patch = patch::fold_patch_lists(&patches);
@@ -282,42 +263,67 @@ impl Revlog {
     }
 
     /// Get an entry of the revlog.
-    fn get_entry(&self, rev: Revision) -> Result<RevlogEntry, RevlogError> {
+    pub fn get_entry(
+        &self,
+        rev: Revision,
+    ) -> Result<RevlogEntry, RevlogError> {
         let index_entry = self
             .index
             .get_entry(rev)
             .ok_or(RevlogError::InvalidRevision)?;
         let start = index_entry.offset();
-        let end = start + index_entry.compressed_len();
+        let end = start + index_entry.compressed_len() as usize;
         let data = if self.index.is_inline() {
             self.index.data(start, end)
         } else {
             &self.data()[start..end]
         };
         let entry = RevlogEntry {
+            revlog: self,
             rev,
             bytes: data,
             compressed_len: index_entry.compressed_len(),
             uncompressed_len: index_entry.uncompressed_len(),
-            base_rev: if index_entry.base_revision() == rev {
+            base_rev_or_base_of_delta_chain: if index_entry
+                .base_revision_or_base_of_delta_chain()
+                == rev
+            {
                 None
             } else {
-                Some(index_entry.base_revision())
+                Some(index_entry.base_revision_or_base_of_delta_chain())
             },
+            p1: index_entry.p1(),
+            p2: index_entry.p2(),
+            flags: index_entry.flags(),
+            hash: *index_entry.hash(),
         };
         Ok(entry)
+    }
+
+    /// when resolving internal references within revlog, any errors
+    /// should be reported as corruption, instead of e.g. "invalid revision"
+    fn get_entry_internal(
+        &self,
+        rev: Revision,
+    ) -> Result<RevlogEntry, HgError> {
+        return self.get_entry(rev).map_err(|_| corrupted());
     }
 }
 
 /// The revlog entry's bytes and the necessary informations to extract
 /// the entry's data.
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct RevlogEntry<'a> {
+    revlog: &'a Revlog,
     rev: Revision,
     bytes: &'a [u8],
-    compressed_len: usize,
-    uncompressed_len: usize,
-    base_rev: Option<Revision>,
+    compressed_len: u32,
+    uncompressed_len: i32,
+    base_rev_or_base_of_delta_chain: Option<Revision>,
+    p1: Revision,
+    p2: Revision,
+    flags: u16,
+    hash: Node,
 }
 
 impl<'a> RevlogEntry<'a> {
@@ -325,8 +331,65 @@ impl<'a> RevlogEntry<'a> {
         self.rev
     }
 
+    pub fn uncompressed_len(&self) -> Option<u32> {
+        u32::try_from(self.uncompressed_len).ok()
+    }
+
+    pub fn has_p1(&self) -> bool {
+        self.p1 != NULL_REVISION
+    }
+
+    pub fn is_cencored(&self) -> bool {
+        (self.flags & REVISION_FLAG_CENSORED) != 0
+    }
+
+    pub fn has_length_affecting_flag_processor(&self) -> bool {
+        // Relevant Python code: revlog.size()
+        // note: ELLIPSIS is known to not change the content
+        (self.flags & (REVIDX_KNOWN_FLAGS ^ REVISION_FLAG_ELLIPSIS)) != 0
+    }
+
+    /// The data for this entry, after resolving deltas if any.
+    pub fn data(&self) -> Result<Cow<'a, [u8]>, HgError> {
+        let mut entry = self.clone();
+        let mut delta_chain = vec![];
+
+        // The meaning of `base_rev_or_base_of_delta_chain` depends on
+        // generaldelta. See the doc on `ENTRY_DELTA_BASE` in
+        // `mercurial/revlogutils/constants.py` and the code in
+        // [_chaininfo] and in [index_deltachain].
+        let uses_generaldelta = self.revlog.index.uses_generaldelta();
+        while let Some(base_rev) = entry.base_rev_or_base_of_delta_chain {
+            let base_rev = if uses_generaldelta {
+                base_rev
+            } else {
+                entry.rev - 1
+            };
+            delta_chain.push(entry);
+            entry = self.revlog.get_entry_internal(base_rev)?;
+        }
+
+        let data = if delta_chain.is_empty() {
+            entry.data_chunk()?
+        } else {
+            Revlog::build_data_from_deltas(entry, &delta_chain)?.into()
+        };
+
+        if self.revlog.check_hash(
+            self.p1,
+            self.p2,
+            self.hash.as_bytes(),
+            &data,
+        ) {
+            Ok(data)
+        } else {
+            Err(corrupted())
+        }
+    }
+
     /// Extract the data contained in the entry.
-    pub fn data(&self) -> Result<Cow<'_, [u8]>, RevlogError> {
+    /// This may be a delta. (See `is_delta`.)
+    fn data_chunk(&self) -> Result<Cow<'a, [u8]>, HgError> {
         if self.bytes.is_empty() {
             return Ok(Cow::Borrowed(&[]));
         }
@@ -341,39 +404,37 @@ impl<'a> RevlogEntry<'a> {
             // zstd data.
             b'\x28' => Ok(Cow::Owned(self.uncompressed_zstd_data()?)),
             // A proper new format should have had a repo/store requirement.
-            _format_type => Err(RevlogError::corrupted()),
+            _format_type => Err(corrupted()),
         }
     }
 
-    fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, RevlogError> {
+    fn uncompressed_zlib_data(&self) -> Result<Vec<u8>, HgError> {
         let mut decoder = ZlibDecoder::new(self.bytes);
         if self.is_delta() {
-            let mut buf = Vec::with_capacity(self.compressed_len);
-            decoder
-                .read_to_end(&mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+            let mut buf = Vec::with_capacity(self.compressed_len as usize);
+            decoder.read_to_end(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         } else {
-            let mut buf = vec![0; self.uncompressed_len];
-            decoder
-                .read_exact(&mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+            let cap = self.uncompressed_len.max(0) as usize;
+            let mut buf = vec![0; cap];
+            decoder.read_exact(&mut buf).map_err(|_| corrupted())?;
             Ok(buf)
         }
     }
 
-    fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, RevlogError> {
+    fn uncompressed_zstd_data(&self) -> Result<Vec<u8>, HgError> {
         if self.is_delta() {
-            let mut buf = Vec::with_capacity(self.compressed_len);
+            let mut buf = Vec::with_capacity(self.compressed_len as usize);
             zstd::stream::copy_decode(self.bytes, &mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
+                .map_err(|_| corrupted())?;
             Ok(buf)
         } else {
-            let mut buf = vec![0; self.uncompressed_len];
+            let cap = self.uncompressed_len.max(0) as usize;
+            let mut buf = vec![0; cap];
             let len = zstd::block::decompress_to_buffer(self.bytes, &mut buf)
-                .map_err(|_| RevlogError::corrupted())?;
-            if len != self.uncompressed_len {
-                Err(RevlogError::corrupted())
+                .map_err(|_| corrupted())?;
+            if len != self.uncompressed_len as usize {
+                Err(corrupted())
             } else {
                 Ok(buf)
             }
@@ -383,21 +444,8 @@ impl<'a> RevlogEntry<'a> {
     /// Tell if the entry is a snapshot or a delta
     /// (influences on decompression).
     fn is_delta(&self) -> bool {
-        self.base_rev.is_some()
+        self.base_rev_or_base_of_delta_chain.is_some()
     }
-}
-
-/// Format version of the revlog.
-pub fn get_version(index_bytes: &[u8]) -> Result<u16, HgError> {
-    if index_bytes.len() == 0 {
-        return Ok(1);
-    };
-    if index_bytes.len() < 4 {
-        return Err(HgError::corrupted(
-            "corrupted revlog: can't read the index format header",
-        ));
-    };
-    Ok(BigEndian::read_u16(&index_bytes[2..=3]))
 }
 
 /// Calculate the hash of a revision given its data and its parents.
@@ -417,21 +465,4 @@ fn hash(
     }
     hasher.update(data);
     *hasher.finalize().as_ref()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use super::super::index::IndexEntryBuilder;
-
-    #[test]
-    fn version_test() {
-        let bytes = IndexEntryBuilder::new()
-            .is_first(true)
-            .with_version(1)
-            .build();
-
-        assert_eq!(get_version(&bytes).map_err(|_err| ()), Ok(1))
-    }
 }

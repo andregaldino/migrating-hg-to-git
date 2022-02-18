@@ -649,16 +649,16 @@ Test debugpeer
   local: no
   pushable: yes
 
+#if rust
+
   $ hg --debug debugpeer ssh://user@dummy/debugrevlog
   running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R debugrevlog serve --stdio['"] (re)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 444 (no-rust !)
-  remote: 463 (rust !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
+  remote: 468
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlog-compression-zstd,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
@@ -666,3 +666,45 @@ Test debugpeer
   url: ssh://user@dummy/debugrevlog
   local: no
   pushable: yes
+
+#endif
+
+#if no-rust zstd
+
+  $ hg --debug debugpeer ssh://user@dummy/debugrevlog
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R debugrevlog serve --stdio['"] (re)
+  devel-peer-request: hello+between
+  devel-peer-request:   pairs: 81 bytes
+  sending hello command
+  sending between command
+  remote: 468
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlog-compression-zstd,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 1
+  devel-peer-request: protocaps
+  devel-peer-request:   caps: * bytes (glob)
+  sending protocaps command
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes
+
+#endif
+
+#if no-rust no-zstd
+
+  $ hg --debug debugpeer ssh://user@dummy/debugrevlog
+  running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R debugrevlog serve --stdio['"] (re)
+  devel-peer-request: hello+between
+  devel-peer-request:   pairs: 81 bytes
+  sending hello command
+  sending between command
+  remote: 444
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 1
+  devel-peer-request: protocaps
+  devel-peer-request:   caps: * bytes (glob)
+  sending protocaps command
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes
+
+#endif

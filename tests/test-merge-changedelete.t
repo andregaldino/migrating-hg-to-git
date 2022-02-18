@@ -680,12 +680,12 @@ Choose to merge all files
   changed
   --- file3 ---
   3
-  <<<<<<< working copy: 13910f48cf7b - test: changed file1, removed file2, chan...
+  <<<<<<< working copy:    13910f48cf7b - test: changed file1, removed file2, c...
   changed2
-  ||||||| base
+  ||||||| common ancestor: ab57bf49aa27 - test: added files
   =======
   changed1
-  >>>>>>> merge rev:    10f9a0a634e8 - test: removed file1, changed file2, chan...
+  >>>>>>> merge rev:       10f9a0a634e8 - test: removed file1, changed file2, c...
 
 Exercise transitions between local, other, fail and prompt, and make sure the
 dirstate stays consistent. (Compare with each other and to the above

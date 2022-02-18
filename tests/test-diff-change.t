@@ -284,7 +284,7 @@ With diff.merge, it's a diff against the conflicted content.
    7
   -<<<<<<< local: fd1f17c90d7c - test: new file
    z
-  -||||||| base
+  -||||||| base:  ae119d680c82 - test: lots of text
   -8
   -=======
   -y

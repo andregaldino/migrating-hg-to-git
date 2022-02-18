@@ -419,11 +419,11 @@ ensure that we have a merge with unresolved conflicts
   +++ b/a/a
   @@ -1,2 +1,6 @@
    a
-  +<<<<<<< working-copy: 2377350b6337 - shelve: pending changes temporary commit
+  +<<<<<<< working-copy:   2377350b6337 - shelve: pending changes temporary commit
    c
   +=======
   +a
-  +>>>>>>> shelve:       203c9f771d2b - shelve: changes to: [mq]: second.patch
+  +>>>>>>> shelved change: 203c9f771d2b - shelve: changes to: [mq]: second.patch
   diff --git a/b/b b/b.rename/b
   rename from b/b
   rename to b.rename/b
@@ -1385,8 +1385,8 @@ Abort unshelve while merging (issue5123)
   unshelving change 'default-01'
   rebasing shelved changes
   merging bar1
-  merging bar2
   warning: conflicts while merging bar1! (edit, then use 'hg resolve --mark')
+  merging bar2
   warning: conflicts while merging bar2! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [240]

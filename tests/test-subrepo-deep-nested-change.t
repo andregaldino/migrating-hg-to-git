@@ -192,7 +192,7 @@ Clone main
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Largefiles is NOT enabled in the clone if the source repo doesn't require it
-  $ grep largefiles cloned/.hg/hgrc
+  $ hg debugrequires -R cloned | grep largefiles
   [1]
 
 Checking cloned repo ids
@@ -776,7 +776,7 @@ The local repo enables largefiles if a largefiles repo is cloned
   extensions.largefiles=
 
   $ hg --config extensions.largefiles= clone -qU . ../lfclone
-  $ grep largefiles ../lfclone/.hg/requires
+  $ hg debugrequires -R ../lfclone | grep largefiles
   largefiles
 
 Find an exact match to a standin (should archive nothing)

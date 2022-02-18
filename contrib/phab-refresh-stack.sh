@@ -1,6 +1,11 @@
 #!/bin/bash
 set -eu
 
+if [[ "$PHABRICATOR_TOKEN" == "NO-PHAB" ]]; then
+    echo 'Skipping Phabricator Step' >&2
+    exit 0
+fi
+
 revision_in_stack=`hg log \
     --rev '.#stack and ::. and topic()' \
     -T '\nONE-REV\n' \
@@ -27,6 +32,7 @@ fi
 
 if [[ "$PHABRICATOR_TOKEN" == "" ]]; then
     echo 'missing $PHABRICATOR_TOKEN variable' >&2
+    echo '(use PHABRICATOR_TOKEN="NO-PHAB" to disable this step)' >&2
     exit 2
 fi
 

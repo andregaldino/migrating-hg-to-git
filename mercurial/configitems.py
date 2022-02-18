@@ -1042,11 +1042,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'mergetempdirprefix',
-    default=None,
-)
-coreconfigitem(
-    b'experimental',
     b'mmapindexthreshold',
     default=None,
 )
@@ -1099,16 +1094,6 @@ coreconfigitem(
     b'experimental',
     b'hook-track-tags',
     default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'httppeer.advertise-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'httppeer.v2-encoder-order',
-    default=None,
 )
 coreconfigitem(
     b'experimental',
@@ -1211,11 +1196,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'sshserver.support-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
     b'sparse-read',
     default=False,
 )
@@ -1241,26 +1221,6 @@ coreconfigitem(
 )
 coreconfigitem(
     b'experimental',
-    b'sshpeer.advertise-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.apiserver',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.api.http-v2',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
-    b'web.api.debugreflect',
-    default=False,
-)
-coreconfigitem(
-    b'experimental',
     b'web.full-garbage-collection-rate',
     default=1,  # still forcing a full collection on each request
 )
@@ -1281,8 +1241,14 @@ coreconfigitem(
 )
 coreconfigitem(
     b'extensions',
-    b'.*',
+    b'[^:]*',
     default=None,
+    generic=True,
+)
+coreconfigitem(
+    b'extensions',
+    b'[^:]*:required',
+    default=False,
     generic=True,
 )
 coreconfigitem(
@@ -1310,6 +1276,18 @@ coreconfigitem(
     default=False,
     experimental=True,
     alias=[(b'format', b'exp-rc-dirstate-v2')],
+)
+coreconfigitem(
+    b'format',
+    b'use-dirstate-tracked-hint',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
+    b'format',
+    b'use-dirstate-tracked-hint.version',
+    default=1,
+    experimental=True,
 )
 coreconfigitem(
     b'format',
@@ -1352,10 +1330,10 @@ coreconfigitem(
 )
 # Experimental TODOs:
 #
-# * Same as for evlogv2 (but for the reduction of the number of files)
+# * Same as for revlogv2 (but for the reduction of the number of files)
+# * Actually computing the rank of changesets
 # * Improvement to investigate
 #   - storing .hgtags fnode
-#   - storing `rank` of changesets
 #   - storing branch related identifier
 
 coreconfigitem(
@@ -1405,7 +1383,7 @@ coreconfigitem(
 coreconfigitem(
     b'format',
     b'use-share-safe',
-    default=False,
+    default=True,
 )
 coreconfigitem(
     b'format',

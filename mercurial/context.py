@@ -20,7 +20,6 @@ from .node import (
 )
 from .pycompat import (
     getattr,
-    open,
 )
 from . import (
     dagop,
@@ -45,6 +44,9 @@ from . import (
 from .utils import (
     dateutil,
     stringutil,
+)
+from .dirstateutils import (
+    timestamp,
 )
 
 propertycache = util.propertycache
@@ -681,6 +683,14 @@ class changectx(basectx):
     def bookmarks(self):
         """Return a list of byte bookmark names."""
         return self._repo.nodebookmarks(self._node)
+
+    def fast_rank(self):
+        repo = self._repo
+        if self._maybe_filtered:
+            cl = repo.changelog
+        else:
+            cl = repo.unfiltered().changelog
+        return cl.fast_rank(self._rev)
 
     def phase(self):
         return self._repo._phasecache.phase(self._repo, self._rev)
@@ -1793,13 +1803,14 @@ class workingctx(committablectx):
             sane.append(f)
         return sane
 
-    def _checklookup(self, files):
+    def _checklookup(self, files, mtime_boundary):
         # check for any possibly clean files
         if not files:
-            return [], [], []
+            return [], [], [], []
 
         modified = []
         deleted = []
+        clean = []
         fixup = []
         pctx = self._parents[0]
         # do a full compare of any files that might have changed
@@ -1813,8 +1824,18 @@ class workingctx(committablectx):
                     or pctx[f].cmp(self[f])
                 ):
                     modified.append(f)
+                elif mtime_boundary is None:
+                    clean.append(f)
                 else:
-                    fixup.append(f)
+                    s = self[f].lstat()
+                    mode = s.st_mode
+                    size = s.st_size
+                    file_mtime = timestamp.reliable_mtime_of(s, mtime_boundary)
+                    if file_mtime is not None:
+                        cache_info = (mode, size, file_mtime)
+                        fixup.append((f, cache_info))
+                    else:
+                        clean.append(f)
             except (IOError, OSError):
                 # A file become inaccessible in between? Mark it as deleted,
                 # matching dirstate behavior (issue5584).
@@ -1824,7 +1845,7 @@ class workingctx(committablectx):
                 # it's in the dirstate.
                 deleted.append(f)
 
-        return modified, deleted, fixup
+        return modified, deleted, clean, fixup
 
     def _poststatusfixup(self, status, fixup):
         """update dirstate for files that are actually clean"""
@@ -1842,13 +1863,13 @@ class workingctx(committablectx):
                     if dirstate.identity() == oldid:
                         if fixup:
                             if dirstate.pendingparentchange():
-                                normal = lambda f: dirstate.update_file(
+                                normal = lambda f, pfd: dirstate.update_file(
                                     f, p1_tracked=True, wc_tracked=True
                                 )
                             else:
                                 normal = dirstate.set_clean
-                            for f in fixup:
-                                normal(f)
+                            for f, pdf in fixup:
+                                normal(f, pdf)
                             # write changes out explicitly, because nesting
                             # wlock at runtime may prevent 'wlock.release()'
                             # after this block from doing so for subsequent
@@ -1878,19 +1899,23 @@ class workingctx(committablectx):
         subrepos = []
         if b'.hgsub' in self:
             subrepos = sorted(self.substate)
-        cmp, s = self._repo.dirstate.status(
+        cmp, s, mtime_boundary = self._repo.dirstate.status(
             match, subrepos, ignored=ignored, clean=clean, unknown=unknown
         )
 
         # check for any possibly clean files
         fixup = []
         if cmp:
-            modified2, deleted2, fixup = self._checklookup(cmp)
+            modified2, deleted2, clean_set, fixup = self._checklookup(
+                cmp, mtime_boundary
+            )
             s.modified.extend(modified2)
             s.deleted.extend(deleted2)
 
+            if clean_set and clean:
+                s.clean.extend(clean_set)
             if fixup and clean:
-                s.clean.extend(fixup)
+                s.clean.extend((f for f, _ in fixup))
 
         self._poststatusfixup(s, fixup)
 
@@ -3111,13 +3136,11 @@ class arbitraryfilectx(object):
         return util.readfile(self._path)
 
     def decodeddata(self):
-        with open(self._path, b"rb") as f:
-            return f.read()
+        return util.readfile(self._path)
 
     def remove(self):
         util.unlink(self._path)
 
     def write(self, data, flags, **kwargs):
         assert not flags
-        with open(self._path, b"wb") as f:
-            f.write(data)
+        util.writefile(self._path, data)

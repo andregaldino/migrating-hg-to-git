@@ -27,9 +27,36 @@ from . import (
     store,
     util,
 )
+from .revlogutils import (
+    nodemap,
+)
 from .utils import (
     stringutil,
 )
+
+
+def new_stream_clone_requirements(default_requirements, streamed_requirements):
+    """determine the final set of requirement for a new stream clone
+
+    this method combine the "default" requirements that a new repository would
+    use with the constaint we get from the stream clone content. We keep local
+    configuration choice when possible.
+    """
+    requirements = set(default_requirements)
+    requirements -= requirementsmod.STREAM_FIXED_REQUIREMENTS
+    requirements.update(streamed_requirements)
+    return requirements
+
+
+def streamed_requirements(repo):
+    """the set of requirement the new clone will have to support
+
+    This is used for advertising the stream options and to generate the actual
+    stream content."""
+    requiredformats = (
+        repo.requirements & requirementsmod.STREAM_FIXED_REQUIREMENTS
+    )
+    return requiredformats
 
 
 def canperformstreamclone(pullop, bundle2=False):
@@ -184,17 +211,15 @@ def maybeperformlegacystreamclone(pullop):
 
     with repo.lock():
         consumev1(repo, fp, filecount, bytecount)
-
-        # new requirements = old non-format requirements +
-        #                    new format-related remote requirements
-        # requirements from the streamed-in repository
-        repo.requirements = requirements | (
-            repo.requirements - repo.supportedformats
+        repo.requirements = new_stream_clone_requirements(
+            repo.requirements,
+            requirements,
         )
         repo.svfs.options = localrepo.resolvestorevfsoptions(
             repo.ui, repo.requirements, repo.features
         )
         scmutil.writereporequirements(repo)
+        nodemap.post_stream_cleanup(repo)
 
         if rbranchmap:
             repo._branchcaches.replace(repo, rbranchmap)
@@ -333,7 +358,7 @@ def generatebundlev1(repo, compression=b'UN'):
     if compression != b'UN':
         raise ValueError(b'we do not support the compression argument yet')
 
-    requirements = repo.requirements & repo.supportedformats
+    requirements = streamed_requirements(repo)
     requires = b','.join(sorted(requirements))
 
     def gen():
@@ -489,6 +514,7 @@ def applybundlev1(repo, fp):
         )
 
     consumev1(repo, fp, filecount, bytecount)
+    nodemap.post_stream_cleanup(repo)
 
 
 class streamcloneapplier(object):
@@ -797,16 +823,15 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
 
     consumev2(repo, fp, filecount, filesize)
 
-    # new requirements = old non-format requirements +
-    #                    new format-related remote requirements
-    # requirements from the streamed-in repository
-    repo.requirements = set(requirements) | (
-        repo.requirements - repo.supportedformats
+    repo.requirements = new_stream_clone_requirements(
+        repo.requirements,
+        requirements,
     )
     repo.svfs.options = localrepo.resolvestorevfsoptions(
         repo.ui, repo.requirements, repo.features
     )
     scmutil.writereporequirements(repo)
+    nodemap.post_stream_cleanup(repo)
 
 
 def _copy_files(src_vfs_map, dst_vfs_map, entries, progress):

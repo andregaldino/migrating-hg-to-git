@@ -2,10 +2,12 @@ use crate::changelog::Changelog;
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::dirstate::DirstateParents;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
+use crate::dirstate_tree::on_disk::Docket as DirstateDocket;
 use crate::dirstate_tree::owning::OwningDirstateMap;
-use crate::errors::HgError;
 use crate::errors::HgResultExt;
+use crate::errors::{HgError, IoResultExt};
 use crate::exit_codes;
+use crate::lock::{try_with_lock_no_wait, LockError};
 use crate::manifest::{Manifest, Manifestlog};
 use crate::revlog::filelog::Filelog;
 use crate::revlog::revlog::RevlogError;
@@ -15,8 +17,11 @@ use crate::utils::SliceExt;
 use crate::vfs::{is_dir, is_file, Vfs};
 use crate::{requirements, NodePrefix};
 use crate::{DirstateError, Revision};
-use std::cell::{Cell, Ref, RefCell, RefMut};
+use std::cell::{Ref, RefCell, RefMut};
 use std::collections::HashSet;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::io::Write as IoWrite;
 use std::path::{Path, PathBuf};
 
 /// A repository on disk
@@ -26,8 +31,8 @@ pub struct Repo {
     store: PathBuf,
     requirements: HashSet<String>,
     config: Config,
-    // None means not known/initialized yet
-    dirstate_parents: Cell<Option<DirstateParents>>,
+    dirstate_parents: LazyCell<DirstateParents, HgError>,
+    dirstate_data_file_uuid: LazyCell<Option<Vec<u8>>, HgError>,
     dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
     changelog: LazyCell<Changelog, HgError>,
     manifestlog: LazyCell<Manifestlog, HgError>,
@@ -202,7 +207,10 @@ impl Repo {
             store: store_path,
             dot_hg,
             config: repo_config,
-            dirstate_parents: Cell::new(None),
+            dirstate_parents: LazyCell::new(Self::read_dirstate_parents),
+            dirstate_data_file_uuid: LazyCell::new(
+                Self::read_dirstate_data_file_uuid,
+            ),
             dirstate_map: LazyCell::new(Self::new_dirstate_map),
             changelog: LazyCell::new(Changelog::open),
             manifestlog: LazyCell::new(Manifestlog::open),
@@ -243,9 +251,24 @@ impl Repo {
         }
     }
 
+    pub fn try_with_wlock_no_wait<R>(
+        &self,
+        f: impl FnOnce() -> R,
+    ) -> Result<R, LockError> {
+        try_with_lock_no_wait(self.hg_vfs(), "wlock", f)
+    }
+
     pub fn has_dirstate_v2(&self) -> bool {
         self.requirements
             .contains(requirements::DIRSTATE_V2_REQUIREMENT)
+    }
+
+    pub fn has_sparse(&self) -> bool {
+        self.requirements.contains(requirements::SPARSE_REQUIREMENT)
+    }
+
+    pub fn has_narrow(&self) -> bool {
+        self.requirements.contains(requirements::NARROW_REQUIREMENT)
     }
 
     fn dirstate_file_contents(&self) -> Result<Vec<u8>, HgError> {
@@ -257,32 +280,64 @@ impl Repo {
     }
 
     pub fn dirstate_parents(&self) -> Result<DirstateParents, HgError> {
-        if let Some(parents) = self.dirstate_parents.get() {
-            return Ok(parents);
-        }
+        Ok(*self.dirstate_parents.get_or_init(self)?)
+    }
+
+    fn read_dirstate_parents(&self) -> Result<DirstateParents, HgError> {
         let dirstate = self.dirstate_file_contents()?;
         let parents = if dirstate.is_empty() {
+            if self.has_dirstate_v2() {
+                self.dirstate_data_file_uuid.set(None);
+            }
             DirstateParents::NULL
         } else if self.has_dirstate_v2() {
-            crate::dirstate_tree::on_disk::read_docket(&dirstate)?.parents()
+            let docket =
+                crate::dirstate_tree::on_disk::read_docket(&dirstate)?;
+            self.dirstate_data_file_uuid
+                .set(Some(docket.uuid.to_owned()));
+            docket.parents()
         } else {
             crate::dirstate::parsers::parse_dirstate_parents(&dirstate)?
                 .clone()
         };
-        self.dirstate_parents.set(Some(parents));
+        self.dirstate_parents.set(parents);
         Ok(parents)
+    }
+
+    fn read_dirstate_data_file_uuid(
+        &self,
+    ) -> Result<Option<Vec<u8>>, HgError> {
+        assert!(
+            self.has_dirstate_v2(),
+            "accessing dirstate data file ID without dirstate-v2"
+        );
+        let dirstate = self.dirstate_file_contents()?;
+        if dirstate.is_empty() {
+            self.dirstate_parents.set(DirstateParents::NULL);
+            Ok(None)
+        } else {
+            let docket =
+                crate::dirstate_tree::on_disk::read_docket(&dirstate)?;
+            self.dirstate_parents.set(docket.parents());
+            Ok(Some(docket.uuid.to_owned()))
+        }
     }
 
     fn new_dirstate_map(&self) -> Result<OwningDirstateMap, DirstateError> {
         let dirstate_file_contents = self.dirstate_file_contents()?;
         if dirstate_file_contents.is_empty() {
-            self.dirstate_parents.set(Some(DirstateParents::NULL));
+            self.dirstate_parents.set(DirstateParents::NULL);
+            if self.has_dirstate_v2() {
+                self.dirstate_data_file_uuid.set(None);
+            }
             Ok(OwningDirstateMap::new_empty(Vec::new()))
         } else if self.has_dirstate_v2() {
             let docket = crate::dirstate_tree::on_disk::read_docket(
                 &dirstate_file_contents,
             )?;
-            self.dirstate_parents.set(Some(docket.parents()));
+            self.dirstate_parents.set(docket.parents());
+            self.dirstate_data_file_uuid
+                .set(Some(docket.uuid.to_owned()));
             let data_size = docket.data_size();
             let metadata = docket.tree_metadata();
             let mut map = if let Some(data_mmap) = self
@@ -302,7 +357,7 @@ impl Repo {
             let (on_disk, placeholder) = map.get_pair_mut();
             let (inner, parents) = DirstateMap::new_v1(on_disk)?;
             self.dirstate_parents
-                .set(Some(parents.unwrap_or(DirstateParents::NULL)));
+                .set(parents.unwrap_or(DirstateParents::NULL));
             *placeholder = inner;
             Ok(map)
         }
@@ -362,8 +417,80 @@ impl Repo {
         )
     }
 
+    pub fn has_subrepos(&self) -> Result<bool, DirstateError> {
+        if let Some(entry) = self.dirstate_map()?.get(HgPath::new(".hgsub"))? {
+            Ok(entry.state().is_tracked())
+        } else {
+            Ok(false)
+        }
+    }
+
     pub fn filelog(&self, path: &HgPath) -> Result<Filelog, HgError> {
         Filelog::open(self, path)
+    }
+
+    /// Write to disk any updates that were made through `dirstate_map_mut`.
+    ///
+    /// The "wlock" must be held while calling this.
+    /// See for example `try_with_wlock_no_wait`.
+    ///
+    /// TODO: have a `WritableRepo` type only accessible while holding the
+    /// lock?
+    pub fn write_dirstate(&self) -> Result<(), DirstateError> {
+        let map = self.dirstate_map()?;
+        // TODO: Maintain a `DirstateMap::dirty` flag, and return early here if
+        // it’s unset
+        let parents = self.dirstate_parents()?;
+        let packed_dirstate = if self.has_dirstate_v2() {
+            let uuid = self.dirstate_data_file_uuid.get_or_init(self)?;
+            let mut uuid = uuid.as_ref();
+            let can_append = uuid.is_some();
+            let (data, tree_metadata, append) = map.pack_v2(can_append)?;
+            if !append {
+                uuid = None
+            }
+            let uuid = if let Some(uuid) = uuid {
+                std::str::from_utf8(uuid)
+                    .map_err(|_| {
+                        HgError::corrupted("non-UTF-8 dirstate data file ID")
+                    })?
+                    .to_owned()
+            } else {
+                DirstateDocket::new_uid()
+            };
+            let data_filename = format!("dirstate.{}", uuid);
+            let data_filename = self.hg_vfs().join(data_filename);
+            let mut options = std::fs::OpenOptions::new();
+            if append {
+                options.append(true);
+            } else {
+                options.write(true).create_new(true);
+            }
+            let data_size = (|| {
+                // TODO: loop and try another random ID if !append and this
+                // returns `ErrorKind::AlreadyExists`? Collision chance of two
+                // random IDs is one in 2**32
+                let mut file = options.open(&data_filename)?;
+                file.write_all(&data)?;
+                file.flush()?;
+                // TODO: use https://doc.rust-lang.org/std/io/trait.Seek.html#method.stream_position when we require Rust 1.51+
+                file.seek(SeekFrom::Current(0))
+            })()
+            .when_writing_file(&data_filename)?;
+            DirstateDocket::serialize(
+                parents,
+                tree_metadata,
+                data_size,
+                uuid.as_bytes(),
+            )
+            .map_err(|_: std::num::TryFromIntError| {
+                HgError::corrupted("overflow in dirstate docket serialization")
+            })?
+        } else {
+            map.pack_v1(parents)?
+        };
+        self.hg_vfs().atomic_write("dirstate", &packed_dirstate)?;
+        Ok(())
     }
 }
 
@@ -386,6 +513,10 @@ impl<T, E> LazyCell<T, E> {
         }
     }
 
+    fn set(&self, value: T) {
+        *self.value.borrow_mut() = Some(value)
+    }
+
     fn get_or_init(&self, repo: &Repo) -> Result<Ref<T>, E> {
         let mut borrowed = self.value.borrow();
         if borrowed.is_none() {
@@ -399,7 +530,7 @@ impl<T, E> LazyCell<T, E> {
         Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
     }
 
-    pub fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
+    fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
         let mut borrowed = self.value.borrow_mut();
         if borrowed.is_none() {
             *borrowed = Some((self.init)(repo)?);

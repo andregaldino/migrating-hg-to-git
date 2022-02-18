@@ -13,7 +13,7 @@ the instability.
 New repo should not use SQLite by default
 
   $ hg init empty-no-sqlite
-  $ cat empty-no-sqlite/.hg/requires
+  $ hg debugrequires -R empty-no-sqlite
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -21,13 +21,14 @@ New repo should not use SQLite by default
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
 storage.new-repo-backend=sqlite is recognized
 
   $ hg --config storage.new-repo-backend=sqlite init empty-sqlite
-  $ cat empty-sqlite/.hg/requires
+  $ hg debugrequires -R empty-sqlite
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
@@ -38,6 +39,7 @@ storage.new-repo-backend=sqlite is recognized
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -49,7 +51,7 @@ storage.new-repo-backend=sqlite is recognized
 Can force compression to zlib
 
   $ hg --config storage.sqlite.compression=zlib init empty-zlib
-  $ cat empty-zlib/.hg/requires
+  $ hg debugrequires -R empty-zlib
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
@@ -59,13 +61,14 @@ Can force compression to zlib
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
 Can force compression to none
 
   $ hg --config storage.sqlite.compression=none init empty-none
-  $ cat empty-none/.hg/requires
+  $ hg debugrequires -R empty-none
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-sqlite-001
@@ -75,6 +78,7 @@ Can force compression to none
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 

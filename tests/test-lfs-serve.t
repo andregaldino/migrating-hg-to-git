@@ -34,6 +34,7 @@ make command server magic visible
 
   $ hg init server
   $ SERVER_REQUIRES="$TESTTMP/server/.hg/requires"
+  $ SERVER_PATH="$TESTTMP/server/"
 
   $ cat > $TESTTMP/debugprocessors.py <<EOF
   > from mercurial import (
@@ -85,7 +86,9 @@ missing processor for flag '0x2000'!" if the extension is only loaded on one sid
 
   $ cat hg.pid >> $DAEMON_PIDS
   $ hg clone -q http://localhost:$HGPORT client
-  $ grep 'lfs' client/.hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R client | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
 This trivial repo will force commandserver to load the extension, but not call
@@ -129,24 +132,27 @@ non-lfs content, and the extension enabled.
   +non-lfs
   *** runcommand debugupgraderepo -q --run
 
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
 #if lfsremote-on
 
   $ hg push -q
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client1_clone
-  $ grep 'lfs' $TESTTMP/client1_clone/.hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $TESTTMP/client1_clone/ | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
   $ hg init $TESTTMP/client1_pull
   $ hg -R $TESTTMP/client1_pull pull -q http://localhost:$HGPORT
-  $ grep 'lfs' $TESTTMP/client1_pull/.hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $TESTTMP/client1_pull/ | grep 'lfs'
   [1]
-
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
+  [1]
   $ hg identify http://localhost:$HGPORT
   d437e1d24fbd
 
@@ -167,16 +173,22 @@ Since no lfs content has been added yet, the push is allowed, even when the
 extension is not enabled remotely.
 
   $ hg push -q
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
+  $ hg debugrequires | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client2_clone
-  $ grep 'lfs' $TESTTMP/client2_clone/.hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $TESTTMP/client2_clone/ | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
   $ hg init $TESTTMP/client2_pull
   $ hg -R $TESTTMP/client2_pull pull -q http://localhost:$HGPORT
-  $ grep 'lfs' $TESTTMP/client2_pull/.hg/requires $SERVER_REQUIRES
+  $ hg debugrequires -R $TESTTMP/client2_pull/ | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
   [1]
 
   $ hg identify http://localhost:$HGPORT
@@ -189,8 +201,10 @@ should have an 'lfs' requirement after it picks up its first commit with a blob.
 
   $ echo 'this is a big lfs file' > lfs.bin
   $ hg ci -Aqm 'lfs'
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  .hg/requires:lfs
+  $ hg debugrequires | grep 'lfs'
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
+  [1]
 
 #if lfsremote-off
   $ hg push -q
@@ -200,20 +214,24 @@ should have an 'lfs' requirement after it picks up its first commit with a blob.
 #else
   $ hg push -q
 #endif
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  .hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
+  $ hg debugrequires | grep 'lfs'
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs' || true
+  lfs (lfsremote-on !)
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client3_clone
-  $ grep 'lfs' $TESTTMP/client3_clone/.hg/requires $SERVER_REQUIRES || true
-  $TESTTMP/client3_clone/.hg/requires:lfs (lfsremote-on !)
-  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
+
+  $ hg debugrequires -R $TESTTMP/client3_clone/ | grep 'lfs' || true
+  lfs (lfsremote-on !)
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs' || true
+  lfs (lfsremote-on !)
 
   $ hg init $TESTTMP/client3_pull
   $ hg -R $TESTTMP/client3_pull pull -q http://localhost:$HGPORT
-  $ grep 'lfs' $TESTTMP/client3_pull/.hg/requires $SERVER_REQUIRES || true
-  $TESTTMP/client3_pull/.hg/requires:lfs (lfsremote-on !)
-  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
+  $ hg debugrequires -R $TESTTMP/client3_pull/ | grep 'lfs' || true
+  lfs (lfsremote-on !)
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs' || true
+  lfs (lfsremote-on !)
 
 Test that the commit/changegroup requirement check hook can be run multiple
 times.
@@ -267,23 +285,24 @@ lfs content, and the extension enabled.
   > EOF
   $ echo 'non-lfs' > nonlfs2.txt
   $ hg ci -Aqm 'non-lfs'
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $SERVER_PATH --config extensions.lfs= | grep 'lfs'
+  lfs
 
   $ hg push -q --force
   warning: repository is unrelated
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $SERVER_PATH --config extensions.lfs= | grep 'lfs'
+  lfs
 
   $ hg clone http://localhost:$HGPORT $TESTTMP/client4_clone
   (remote is using large file support (lfs), but it is explicitly disabled in the local configuration)
   abort: repository requires features unknown to this Mercurial: lfs
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
-  $ grep 'lfs' $TESTTMP/client4_clone/.hg/requires $SERVER_REQUIRES
-  grep: $TESTTMP/client4_clone/.hg/requires: $ENOENT$
-  $TESTTMP/server/.hg/requires:lfs
-  [2]
+  $ hg debugrequires -R $TESTTMP/client4_clone/ | grep 'lfs'
+  abort: repository $TESTTMP/client4_clone/ not found
+  [1]
+  $ hg debugrequires -R $SERVER_PATH --config extensions.lfs= | grep 'lfs'
+  lfs
 
 TODO: fail more gracefully.
 
@@ -294,8 +313,10 @@ TODO: fail more gracefully.
   remote: abort: no common changegroup version
   abort: pull failed on remote
   [100]
-  $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $TESTTMP/client4_pull/ | grep 'lfs'
+  [1]
+  $ hg debugrequires -R $SERVER_PATH --config extensions.lfs= | grep 'lfs'
+  lfs
 
   $ hg identify http://localhost:$HGPORT
   03b080fa9d93
@@ -312,19 +333,21 @@ lfs content, and the extension enabled.
   $ hg ci -Aqm 'non-lfs file with lfs client'
 
   $ hg push -q
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
+  lfs
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client5_clone
-  $ grep 'lfs' $TESTTMP/client5_clone/.hg/requires $SERVER_REQUIRES
-  $TESTTMP/client5_clone/.hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $TESTTMP/client5_clone/ | grep 'lfs'
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
+  lfs
 
   $ hg init $TESTTMP/client5_pull
   $ hg -R $TESTTMP/client5_pull pull -q http://localhost:$HGPORT
-  $ grep 'lfs' $TESTTMP/client5_pull/.hg/requires $SERVER_REQUIRES
-  $TESTTMP/client5_pull/.hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $TESTTMP/client5_pull/ | grep 'lfs'
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep 'lfs'
+  lfs
 
   $ hg identify http://localhost:$HGPORT
   c729025cc5e3
@@ -463,14 +486,16 @@ lfs content, and the extension enabled.
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   (sent 8 HTTP requests and * bytes; received * bytes in responses) (glob) (?)
-  $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  .hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires | grep lfs
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep lfs
+  lfs
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client6_clone
-  $ grep 'lfs' $TESTTMP/client6_clone/.hg/requires $SERVER_REQUIRES
-  $TESTTMP/client6_clone/.hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $TESTTMP/client6_clone/ | grep lfs
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep lfs
+  lfs
 
   $ hg init $TESTTMP/client6_pull
   $ hg -R $TESTTMP/client6_pull pull -u -v http://localhost:$HGPORT
@@ -495,9 +520,10 @@ lfs content, and the extension enabled.
   updated to "d3b84d50eacb: lfs file with lfs client"
   1 other heads for branch "default"
   (sent 3 HTTP requests and * bytes; received * bytes in responses) (glob)
-  $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
-  $TESTTMP/client6_pull/.hg/requires:lfs
-  $TESTTMP/server/.hg/requires:lfs
+  $ hg debugrequires -R $TESTTMP/client6_pull/ | grep lfs
+  lfs
+  $ hg debugrequires -R $SERVER_PATH | grep lfs
+  lfs
 
   $ hg identify http://localhost:$HGPORT
   d3b84d50eacb

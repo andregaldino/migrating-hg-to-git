@@ -22,6 +22,7 @@ from . import (
     namespaces,
     pathutil,
     pycompat,
+    requirements as requirementsmod,
     url,
     util,
     vfs as vfsmod,
@@ -197,6 +198,9 @@ class statichttprepository(
                 # we do not care about empty old-style repositories here
                 msg = _(b"'%s' does not appear to be an hg repository") % path
                 raise error.RepoError(msg)
+        if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
+            storevfs = vfsclass(self.vfs.join(b'store'))
+            requirements |= set(storevfs.read(b'requires').splitlines())
 
         supportedrequirements = localrepo.gathersupportedrequirements(ui)
         localrepo.ensurerequirementsrecognized(

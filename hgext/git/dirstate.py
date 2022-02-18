@@ -257,7 +257,7 @@ class gitdirstate(object):
             if match(p):
                 yield p
 
-    def set_clean(self, f, parentfiledata=None):
+    def set_clean(self, f, parentfiledata):
         """Mark a file normal and clean."""
         # TODO: for now we just let libgit2 re-stat the file. We can
         # clearly do better.

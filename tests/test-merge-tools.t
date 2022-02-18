@@ -578,7 +578,6 @@ merge-patterns specifies executable not found in PATH and gets warning:
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=nonexistentmergetool
   couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -604,7 +603,6 @@ merge-patterns specifies executable with bogus path and gets warning:
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=/nonexistent/mergetool
   couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -1225,15 +1223,15 @@ premerge=keep-merge3 keeps conflict markers with base content:
   # hg update -C 1
   $ hg merge -r 4 --config merge-tools.true.premerge=keep-merge3
   merging f
-  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  <<<<<<< working copy:    ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base
+  ||||||| common ancestor: ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
   revision 4
-  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  >>>>>>> merge rev:       81448d39c9a0 - test: revision 4
   revision 0
   space
   revision 4
@@ -1241,15 +1239,15 @@ premerge=keep-merge3 keeps conflict markers with base content:
   (branch merge, don't forget to commit)
   $ aftermerge
   # cat f
-  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  <<<<<<< working copy:    ef83787e2614 - test: revision 1
   revision 1
   space
-  ||||||| base
+  ||||||| common ancestor: ffd2bda21d6e - test: revision 0
   revision 0
   space
   =======
   revision 4
-  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  >>>>>>> merge rev:       81448d39c9a0 - test: revision 4
   # hg stat
   M f
   # hg resolve --list
@@ -1266,12 +1264,12 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ hg merge -r 4 --config merge-tools.true.premerge=keep-mergediff
   merging f
   <<<<<<<
-  ------- base
-  +++++++ working copy: ef83787e2614 - test: revision 1
+  ------- common ancestor: ffd2bda21d6e - test: revision 0
+  +++++++ working copy:    ef83787e2614 - test: revision 1
   -revision 0
   +revision 1
    space
-  ======= merge rev:    81448d39c9a0 - test: revision 4
+  ======= merge rev:       81448d39c9a0 - test: revision 4
   revision 4
   >>>>>>>
   revision 0
@@ -1282,12 +1280,12 @@ premerge=keep-mergediff keeps conflict markers with base content:
   $ aftermerge
   # cat f
   <<<<<<<
-  ------- base
-  +++++++ working copy: ef83787e2614 - test: revision 1
+  ------- common ancestor: ffd2bda21d6e - test: revision 0
+  +++++++ working copy:    ef83787e2614 - test: revision 1
   -revision 0
   +revision 1
    space
-  ======= merge rev:    81448d39c9a0 - test: revision 4
+  ======= merge rev:       81448d39c9a0 - test: revision 4
   revision 4
   >>>>>>>
   # hg stat
@@ -1582,7 +1580,7 @@ mergemarkertemplate settings:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
   > EOF
   $ hg --config merge-tools.true.executable='sh' \
   >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
@@ -1594,34 +1592,7 @@ mergemarkertemplate settings:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:base: */f~base.*" (glob)
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-  $ rm -f 'printargs_merge_tool'
-
-Same test with experimental.mergetempdirprefix set:
-
-  $ beforemerge
-  [merge-tools]
-  false.whatever=
-  true.priority=1
-  true.executable=cat
-  # hg update -C 1
-  $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
-  > EOF
-  $ hg --config experimental.mergetempdirprefix=$TESTTMP/hgmerge. \
-  >    --config merge-tools.true.executable='sh' \
-  >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
-  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
-  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
-  >    --config ui.mergemarkers=detailed \
-  >    merge -r 2
-  merging f
-  arg: "ll:working copy"
-  arg: "lo:"
-  arg: "merge rev"
-  arg: "lb:base: */hgmerge.*/f~base" (glob)
+  arg: "lb:common ancestor: */f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1638,7 +1609,7 @@ mergemarkertemplate:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > printargs_merge_tool
-  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > while test \$# -gt 0; do echo arg: \""\$1"\"; shift; done
   > EOF
   $ hg --config merge-tools.true.executable='sh' \
   >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
@@ -1651,7 +1622,7 @@ mergemarkertemplate:
   arg: "ll:working copy: tooltmpl ef83787e2614"
   arg: "lo:"
   arg: "merge rev: tooltmpl 0185f4e0cf02"
-  arg: "lb:base: */f~base.*" (glob)
+  arg: "lb:common ancestor: */f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'
@@ -1666,9 +1637,9 @@ premerge=keep is used and has 'detailed' markers:
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > mytool
-  > echo labellocal: \"\$1\"
-  > echo labelother: \"\$2\"
-  > echo "output (arg)": \"\$3\"
+  > echo labellocal: \""\$1"\"
+  > echo labelother: \""\$2"\"
+  > echo "output (arg)": \""\$3"\"
   > echo "output (contents)":
   > cat "\$3"
   > EOF
@@ -1704,9 +1675,9 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   true.executable=cat
   # hg update -C 1
   $ cat <<EOF > mytool
-  > echo labellocal: \"\$1\"
-  > echo labelother: \"\$2\"
-  > echo "output (arg)": \"\$3\"
+  > echo labellocal: \""\$1"\"
+  > echo labelother: \""\$2"\"
+  > echo "output (arg)": \""\$3"\"
   > echo "output (contents)":
   > cat "\$3"
   > EOF
@@ -1837,7 +1808,6 @@ missingbinary is a merge-tool that doesn't exist:
   $ hg merge -y -r 2 --config ui.merge=missingbinary
   couldn't find merge tool missingbinary (for pattern f)
   merging f
-  couldn't find merge tool missingbinary (for pattern f)
   revision 1
   space
   revision 0
@@ -1898,23 +1868,7 @@ Verify naming of temporary files and that extension is preserved:
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo --config merge-tools.echo.args='$base $local $other $output'
   merging f and f.txt to f.txt
-  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/repo/f.txt (glob)
-  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-Verify naming of temporary files and that extension is preserved
-(experimental.mergetempdirprefix version):
-
-  $ hg update -q -C 1
-  $ hg mv f f.txt
-  $ hg ci -qm "f.txt"
-  warning: commit already existed in the repository!
-  $ hg update -q -C 2
-  $ hg merge -y -r tip --tool echo \
-  >    --config merge-tools.echo.args='$base $local $other $output' \
-  >    --config experimental.mergetempdirprefix=$TESTTMP/hgmerge.
-  merging f and f.txt to f.txt
-  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/repo/f.txt (glob)
+  */hgmerge-*/f~base */hgmerge-*/f~local.txt */hgmerge-*/f~other.txt */repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -2018,7 +1972,7 @@ Check that the extra information is printed correctly
   Running merge tool for b ("*/bin/echo.exe"): (glob) (windows !)
   Running merge tool for b (*/bin/echo): (glob) (no-windows !)
   - local (working copy): 10:2d1f533d add binary file (#2) tip default
-  -          base (base): -1:00000000  default
+  - base (common ancestor): -1:00000000  default
   -    other (merge rev): 9:1e7ad7d7 add binary file (#1) default
   merge runs here ...
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved

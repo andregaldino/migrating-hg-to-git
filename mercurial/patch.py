@@ -55,6 +55,8 @@ wordsplitter = re.compile(
 )
 
 PatchError = error.PatchError
+PatchParseError = error.PatchParseError
+PatchApplicationError = error.PatchApplicationError
 
 # public functions
 
@@ -107,7 +109,9 @@ def split(stream):
     def mimesplit(stream, cur):
         def msgfp(m):
             fp = stringio()
+            # pytype: disable=wrong-arg-types
             g = mail.Generator(fp, mangle_from_=False)
+            # pytype: enable=wrong-arg-types
             g.flatten(m)
             fp.seek(0)
             return fp
@@ -553,7 +557,9 @@ class workingbackend(fsbackend):
         if not self.repo.dirstate.get_entry(fname).any_tracked and self.exists(
             fname
         ):
-            raise PatchError(_(b'cannot patch %s: file is not tracked') % fname)
+            raise PatchApplicationError(
+                _(b'cannot patch %s: file is not tracked') % fname
+            )
 
     def setfile(self, fname, data, mode, copysource):
         self._checkknown(fname)
@@ -637,7 +643,9 @@ class repobackend(abstractbackend):
 
     def _checkknown(self, fname):
         if fname not in self.ctx:
-            raise PatchError(_(b'cannot patch %s: file is not tracked') % fname)
+            raise PatchApplicationError(
+                _(b'cannot patch %s: file is not tracked') % fname
+            )
 
     def getfile(self, fname):
         try:
@@ -793,7 +801,7 @@ class patchfile(object):
 
     def apply(self, h):
         if not h.complete():
-            raise PatchError(
+            raise PatchParseError(
                 _(b"bad hunk #%d %s (%d %d %d %d)")
                 % (h.number, h.desc, len(h.a), h.lena, len(h.b), h.lenb)
             )
@@ -1388,7 +1396,7 @@ class hunk(object):
     def read_unified_hunk(self, lr):
         m = unidesc.match(self.desc)
         if not m:
-            raise PatchError(_(b"bad hunk #%d") % self.number)
+            raise PatchParseError(_(b"bad hunk #%d") % self.number)
         self.starta, self.lena, self.startb, self.lenb = m.groups()
         if self.lena is None:
             self.lena = 1
@@ -1405,7 +1413,7 @@ class hunk(object):
                 lr, self.hunk, self.lena, self.lenb, self.a, self.b
             )
         except error.ParseError as e:
-            raise PatchError(_(b"bad hunk #%d: %s") % (self.number, e))
+            raise PatchParseError(_(b"bad hunk #%d: %s") % (self.number, e))
         # if we hit eof before finishing out the hunk, the last line will
         # be zero length.  Lets try to fix it up.
         while len(self.hunk[-1]) == 0:
@@ -1420,7 +1428,7 @@ class hunk(object):
         self.desc = lr.readline()
         m = contextdesc.match(self.desc)
         if not m:
-            raise PatchError(_(b"bad hunk #%d") % self.number)
+            raise PatchParseError(_(b"bad hunk #%d") % self.number)
         self.starta, aend = m.groups()
         self.starta = int(self.starta)
         if aend is None:
@@ -1440,7 +1448,7 @@ class hunk(object):
             elif l.startswith(b'  '):
                 u = b' ' + s
             else:
-                raise PatchError(
+                raise PatchParseError(
                     _(b"bad hunk #%d old text line %d") % (self.number, x)
                 )
             self.a.append(u)
@@ -1454,7 +1462,7 @@ class hunk(object):
             l = lr.readline()
         m = contextdesc.match(l)
         if not m:
-            raise PatchError(_(b"bad hunk #%d") % self.number)
+            raise PatchParseError(_(b"bad hunk #%d") % self.number)
         self.startb, bend = m.groups()
         self.startb = int(self.startb)
         if bend is None:
@@ -1487,7 +1495,7 @@ class hunk(object):
                 lr.push(l)
                 break
             else:
-                raise PatchError(
+                raise PatchParseError(
                     _(b"bad hunk #%d old text line %d") % (self.number, x)
                 )
             self.b.append(s)
@@ -1601,7 +1609,7 @@ class binhunk(object):
         while True:
             line = getline(lr, self.hunk)
             if not line:
-                raise PatchError(
+                raise PatchParseError(
                     _(b'could not extract "%s" binary data') % self._fname
                 )
             if line.startswith(b'literal '):
@@ -1622,14 +1630,14 @@ class binhunk(object):
             try:
                 dec.append(util.b85decode(line[1:])[:l])
             except ValueError as e:
-                raise PatchError(
+                raise PatchParseError(
                     _(b'could not decode "%s" binary patch: %s')
                     % (self._fname, stringutil.forcebytestr(e))
                 )
             line = getline(lr, self.hunk)
         text = zlib.decompress(b''.join(dec))
         if len(text) != size:
-            raise PatchError(
+            raise PatchParseError(
                 _(b'"%s" length is %d bytes, should be %d')
                 % (self._fname, len(text), size)
             )
@@ -1847,7 +1855,7 @@ def parsepatch(originalchunks, maxcontext=None):
         try:
             p.transitions[state][newstate](p, data)
         except KeyError:
-            raise PatchError(
+            raise PatchParseError(
                 b'unhandled transition: %s -> %s' % (state, newstate)
             )
         state = newstate
@@ -1874,7 +1882,7 @@ def pathtransform(path, strip, prefix):
     ('a//b/', 'd/e/c')
     >>> pathtransform(b'a/b/c', 3, b'')
     Traceback (most recent call last):
-    PatchError: unable to strip away 1 of 3 dirs from a/b/c
+    PatchApplicationError: unable to strip away 1 of 3 dirs from a/b/c
     """
     pathlen = len(path)
     i = 0
@@ -1884,7 +1892,7 @@ def pathtransform(path, strip, prefix):
     while count > 0:
         i = path.find(b'/', i)
         if i == -1:
-            raise PatchError(
+            raise PatchApplicationError(
                 _(b"unable to strip away %d of %d dirs from %s")
                 % (count, strip, path)
             )
@@ -1947,7 +1955,7 @@ def makepatchmeta(backend, afile_orig, bfile_orig, hunk, strip, prefix):
         elif not nulla:
             fname = afile
         else:
-            raise PatchError(_(b"undefined source and destination files"))
+            raise PatchParseError(_(b"undefined source and destination files"))
 
     gp = patchmeta(fname)
     if create:
@@ -2097,7 +2105,7 @@ def iterhunks(fp):
                     gp.copy(),
                 )
             if not gitpatches:
-                raise PatchError(
+                raise PatchParseError(
                     _(b'failed to synchronize metadata for "%s"') % afile[2:]
                 )
             newfile = True
@@ -2193,7 +2201,7 @@ def applybindelta(binchunk, data):
             out += binchunk[i:offset_end]
             i += cmd
         else:
-            raise PatchError(_(b'unexpected delta opcode 0'))
+            raise PatchApplicationError(_(b'unexpected delta opcode 0'))
     return out
 
 
@@ -2270,7 +2278,7 @@ def _applydiff(
                     data, mode = store.getfile(gp.oldpath)[:2]
                     if data is None:
                         # This means that the old path does not exist
-                        raise PatchError(
+                        raise PatchApplicationError(
                             _(b"source file '%s' does not exist") % gp.oldpath
                         )
                 if gp.mode:
@@ -2283,7 +2291,7 @@ def _applydiff(
                     if gp.op in (b'ADD', b'RENAME', b'COPY') and backend.exists(
                         gp.path
                     ):
-                        raise PatchError(
+                        raise PatchApplicationError(
                             _(
                                 b"cannot create %s: destination "
                                 b"already exists"
@@ -2365,7 +2373,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files, similarity):
             scmutil.marktouched(repo, files, similarity)
     code = fp.close()
     if code:
-        raise PatchError(
+        raise PatchApplicationError(
             _(b"patch command failed: %s") % procutil.explainexit(code)
         )
     return fuzz
@@ -2397,7 +2405,7 @@ def patchbackend(
         files.update(backend.close())
         store.close()
     if ret < 0:
-        raise PatchError(_(b'patch failed to apply'))
+        raise PatchApplicationError(_(b'patch failed to apply'))
     return ret > 0
 
 

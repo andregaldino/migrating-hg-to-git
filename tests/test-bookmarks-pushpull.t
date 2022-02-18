@@ -357,7 +357,7 @@ demand that one of the bookmarks is activated
   (leaving bookmark V)
   $ hg push -B . ../a
   abort: no active bookmark
-  [255]
+  [10]
   $ hg update -r V
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   (activating bookmark V)
@@ -715,14 +715,15 @@ Update a bookmark right after the initial lookup -r (issue4700)
   $ cat <<EOF > ../lookuphook.py
   > """small extensions adding a hook after wireprotocol lookup to test race"""
   > import functools
-  > from mercurial import wireprotov1server, wireprotov2server
+  > from mercurial import wireprotov1server
   > 
   > def wrappedlookup(orig, repo, *args, **kwargs):
   >     ret = orig(repo, *args, **kwargs)
   >     repo.hook(b'lookup')
   >     return ret
-  > for table in [wireprotov1server.commands, wireprotov2server.COMMANDS]:
-  >   table[b'lookup'].func = functools.partial(wrappedlookup, table[b'lookup'].func)
+  > 
+  > table = wireprotov1server.commands
+  > table[b'lookup'].func = functools.partial(wrappedlookup, table[b'lookup'].func)
   > EOF
   $ cat <<EOF > ../pull-race/.hg/hgrc
   > [extensions]

@@ -221,16 +221,16 @@ annotate -nlf b
   a
   a
   a
-  <<<<<<< working copy: 5fbdc1152d97 - test: b2.1
+  <<<<<<< working copy:    5fbdc1152d97 - test: b2.1
   b4
   c
   b5
-  ||||||| base
+  ||||||| common ancestor: 3086dbafde1c - test: b
   =======
   b4
   b5
   b6
-  >>>>>>> merge rev:    37ec9f5c3d1f - test: b2
+  >>>>>>> merge rev:       37ec9f5c3d1f - test: b2
   $ cat <<EOF > b
   > a
   > a
@@ -747,16 +747,16 @@ merge
   0
   1 baz:1
   2 baz:2
-  <<<<<<< working copy: 863de62655ef - test: baz:3+->3-
+  <<<<<<< working copy:    863de62655ef - test: baz:3+->3-
   3- baz:3
   4 baz:4
-  ||||||| base
+  ||||||| common ancestor: 56fc739c091f - test: baz:3->3+
   3+ baz:3
   4 baz:4
   =======
   3+ baz:3
   4+ baz:4
-  >>>>>>> merge rev:    cb8df70ae185 - test: qux:4->4+
+  >>>>>>> merge rev:       cb8df70ae185 - test: qux:4->4+
   5
   6
   7
@@ -794,16 +794,16 @@ merge
   0
   1 baz:1
   2 baz:2
-  <<<<<<< working copy: cb8df70ae185 - test: qux:4->4+
+  <<<<<<< working copy:    cb8df70ae185 - test: qux:4->4+
   3+ baz:3
   4+ baz:4
-  ||||||| base
+  ||||||| common ancestor: 56fc739c091f - test: baz:3->3+
   3+ baz:3
   4 baz:4
   =======
   3- baz:3
   4 baz:4
-  >>>>>>> merge rev:    863de62655ef - test: baz:3+->3-
+  >>>>>>> merge rev:       863de62655ef - test: baz:3+->3-
   5
   6
   7
@@ -886,7 +886,7 @@ track of possible further descendants in specified range.
   created new head
   $ hg merge --tool :merge-other 24
   merging baz
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m 'merge forgetting about baz rewrite'
   $ cat > baz << EOF
@@ -1172,16 +1172,16 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   [1]
   $ cat a
-  <<<<<<< working copy: 0a068f0261cf - test: 3
+  <<<<<<< working copy:    0a068f0261cf - test: 3
   1
   2
   3
-  ||||||| base
+  ||||||| common ancestor: 1ed24be7e7a0 - test: 2
   1
   2
   =======
   a
-  >>>>>>> merge rev:    9409851bc20a - test: a
+  >>>>>>> merge rev:       9409851bc20a - test: a
   $ cat > a << EOF
   > b
   > 1

@@ -649,7 +649,7 @@ Python 3's lazy importer verifies modules exist before returning the lazy
 module stub. Our custom lazy importer for Python 2 always returns a stub.
 
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}; hg --config extensions.checkrelativity=$TESTTMP/checkrelativity.py checkrelativity) || true
-  *** failed to import extension checkrelativity from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist' (py3 !)
+  *** failed to import extension "checkrelativity" from $TESTTMP/checkrelativity.py: No module named 'extlibroot.lsub1.lsub2.notexist' (py3 !)
   hg: unknown command 'checkrelativity' (py3 !)
   (use 'hg help' for a list of commands) (py3 !)
 
@@ -1882,7 +1882,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   > EOF
 
   $ hg deprecatedcmd > /dev/null
-  *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
+  *** failed to import extension "deprecatedcmd" from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
   hg: unknown command 'deprecatedcmd'
   (use 'hg help' for a list of commands)
@@ -1891,7 +1891,7 @@ Prohibit registration of commands that don't use @command (issue5137)
  the extension shouldn't be loaded at all so the mq works:
 
   $ hg qseries --config extensions.mq= > /dev/null
-  *** failed to import extension deprecatedcmd from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
+  *** failed to import extension "deprecatedcmd" from $TESTTMP/deprecated/deprecatedcmd.py: missing attributes: norepo, optionalrepo, inferrepo
   *** (use @command decorator to register 'deprecatedcmd')
 
   $ cd ..
@@ -1939,8 +1939,117 @@ Prohibit the use of unicode strings as the default value of options
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode *'value' found in cmdtable.dummy (glob)
+  *** failed to import extension "test_unicode_default_value" from $TESTTMP/test_unicode_default_value.py: unicode 'value' found in cmdtable.dummy (py3 !)
+  *** failed to import extension "test_unicode_default_value" from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy (no-py3 !)
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)
   [10]
+
+Check the mandatory extension feature
+-------------------------------------
+
+  $ hg init mandatory-extensions
+  $ cat > $TESTTMP/mandatory-extensions/.hg/good.py << EOF
+  > pass
+  > EOF
+  $ cat > $TESTTMP/mandatory-extensions/.hg/bad.py << EOF
+  > raise RuntimeError("babar")
+  > EOF
+  $ cat > $TESTTMP/mandatory-extensions/.hg/syntax.py << EOF
+  > def (
+  > EOF
+
+Check that the good one load :
+
+  $ cat > $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > [extensions]
+  > good = $TESTTMP/mandatory-extensions/.hg/good.py
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  000000000000 tip
+
+Make it mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > good:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  000000000000 tip
+
+Check that the bad one does not load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad = $TESTTMP/mandatory-extensions/.hg/bad.py
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  000000000000 tip
+
+Make it mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
+
+Make it not mandatory to load
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad:required = no
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  000000000000 tip
+
+Same check with the syntax error one
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > bad = !
+  > syntax = $TESTTMP/mandatory-extensions/.hg/syntax.py
+  > syntax:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "syntax" from $TESTTMP/mandatory-extensions/.hg/syntax.py: invalid syntax (*syntax.py, line 1) (glob)
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
+
+Same check with a missing one
+
+  $ cat >> $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > syntax = !
+  > syntax:required =
+  > missing = foo/bar/baz/I/do/not/exist/
+  > missing:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  abort: failed to import extension "missing" from foo/bar/baz/I/do/not/exist/: [Errno 2] $ENOENT$: 'foo/bar/baz/I/do/not/exist'
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]
+
+Have a "default" setting for the suboption:
+
+  $ cat > $TESTTMP/mandatory-extensions/.hg/hgrc << EOF
+  > [extensions]
+  > bad = $TESTTMP/mandatory-extensions/.hg/bad.py
+  > bad:required = no
+  > good = $TESTTMP/mandatory-extensions/.hg/good.py
+  > syntax = $TESTTMP/mandatory-extensions/.hg/syntax.py
+  > *:required = yes
+  > EOF
+
+  $ hg -R mandatory-extensions id
+  *** failed to import extension "bad" from $TESTTMP/mandatory-extensions/.hg/bad.py: babar
+  abort: failed to import extension "syntax" from $TESTTMP/mandatory-extensions/.hg/syntax.py: invalid syntax (*syntax.py, line 1) (glob)
+  (loading of this extension was required, see `hg help config.extensions` for details)
+  [255]

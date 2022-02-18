@@ -43,7 +43,7 @@ Test failure without --exact
   unable to find 'a' for patching
   (use '--prefix' to apply patch relative to the current directory)
   abort: patch failed to apply
-  [255]
+  [20]
   $ hg st
   $ shortlog
   o  1:4e322f7ce8e3 test 0 0 - foo - changea
@@ -234,7 +234,7 @@ commit message is explicitly specified, regardless of '--edit')
   patching file a
   Hunk #1 FAILED at 0
   abort: patch failed to apply
-  [255]
+  [20]
   $ hg --config patch.eol=auto import -d '0 0' -m 'test patch.eol' --bypass ../test.diff
   applying ../test.diff
   $ shortlog

@@ -667,7 +667,15 @@ def applychanges(ui, repo, ctx, opts):
             repo.ui.setconfig(
                 b'ui', b'forcemerge', opts.get(b'tool', b''), b'histedit'
             )
-            stats = mergemod.graft(repo, ctx, labels=[b'local', b'histedit'])
+            stats = mergemod.graft(
+                repo,
+                ctx,
+                labels=[
+                    b'already edited',
+                    b'current change',
+                    b'parent of current change',
+                ],
+            )
         finally:
             repo.ui.setconfig(b'ui', b'forcemerge', b'', b'histedit')
     return stats
@@ -1324,6 +1332,10 @@ pgup: prev page, space/pgdn: next page, c: commit, q: abort
 d: drop, e: edit, f: fold, m: mess, p: pick, r: roll
 pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 """
+            if self.later_on_top:
+                help += b"Newer commits are shown above older commits.\n"
+            else:
+                help += b"Older commits are shown above newer commits.\n"
         return help.splitlines()
 
     def render_help(self, win):

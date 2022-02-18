@@ -1278,7 +1278,7 @@ class imanifeststorage(interfaceutil.Interface):
     def linkrev(rev):
         """Obtain the changeset revision number a revision is linked to."""
 
-    def revision(node, _df=None, raw=False):
+    def revision(node, _df=None):
         """Obtain fulltext data for a node."""
 
     def rawdata(node, _df=None):
@@ -1493,13 +1493,6 @@ class ilocalrepositorymain(interfaceutil.Interface):
     )
     nullid = interfaceutil.Attribute(
         """null revision for the hash function used by the repository."""
-    )
-
-    supportedformats = interfaceutil.Attribute(
-        """Set of requirements that apply to stream clone.
-
-        This is actually a class attribute and is shared among all instances.
-        """
     )
 
     supported = interfaceutil.Attribute(
@@ -1794,7 +1787,7 @@ class ilocalrepositorymain(interfaceutil.Interface):
         DANGEROUS.
         """
 
-    def updatecaches(tr=None, full=False):
+    def updatecaches(tr=None, full=False, caches=None):
         """Warm repo caches."""
 
     def invalidatecaches():

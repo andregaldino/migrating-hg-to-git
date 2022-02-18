@@ -282,6 +282,7 @@ def loadall(ui, whitelist=None):
     result = ui.configitems(b"extensions")
     if whitelist is not None:
         result = [(k, v) for (k, v) in result if k in whitelist]
+    result = [(k, v) for (k, v) in result if b':' not in k]
     newindex = len(_order)
     ui.log(
         b'extension',
@@ -290,6 +291,8 @@ def loadall(ui, whitelist=None):
     )
     ui.log(b'extension', b'- processing %d entries\n', len(result))
     with util.timedcm('load all extensions') as stats:
+        default_sub_options = ui.configsuboptions(b"extensions", b"*")[1]
+
         for (name, path) in result:
             if path:
                 if path[0:1] == b'!':
@@ -306,18 +309,32 @@ def loadall(ui, whitelist=None):
             except Exception as inst:
                 msg = stringutil.forcebytestr(inst)
                 if path:
-                    ui.warn(
-                        _(b"*** failed to import extension %s from %s: %s\n")
-                        % (name, path, msg)
+                    error_msg = _(
+                        b'failed to import extension "%s" from %s: %s'
                     )
+                    error_msg %= (name, path, msg)
                 else:
-                    ui.warn(
-                        _(b"*** failed to import extension %s: %s\n")
-                        % (name, msg)
-                    )
-                if isinstance(inst, error.Hint) and inst.hint:
-                    ui.warn(_(b"*** (%s)\n") % inst.hint)
-                ui.traceback()
+                    error_msg = _(b'failed to import extension "%s": %s')
+                    error_msg %= (name, msg)
+
+                options = default_sub_options.copy()
+                ext_options = ui.configsuboptions(b"extensions", name)[1]
+                options.update(ext_options)
+                if stringutil.parsebool(options.get(b"required", b'no')):
+                    hint = None
+                    if isinstance(inst, error.Hint) and inst.hint:
+                        hint = inst.hint
+                    if hint is None:
+                        hint = _(
+                            b"loading of this extension was required, "
+                            b"see `hg help config.extensions` for details"
+                        )
+                    raise error.Abort(error_msg, hint=hint)
+                else:
+                    ui.warn((b"*** %s\n") % error_msg)
+                    if isinstance(inst, error.Hint) and inst.hint:
+                        ui.warn(_(b"*** (%s)\n") % inst.hint)
+                    ui.traceback()
 
     ui.log(
         b'extension',

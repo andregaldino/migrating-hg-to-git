@@ -9,16 +9,8 @@ A new repository uses zlib storage, which doesn't need a requirement
 
   $ hg init default
   $ cd default
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
-  revlogv1
-  sparserevlog
-  store
-  testonly-simplestore (reposimplestore !)
+  $ hg debugrequires | grep compression
+  [1]
 
   $ touch foo
   $ hg -q commit -A -m 'initial commit with a lot of repeated repeated repeated text to trigger compression'
@@ -59,16 +51,8 @@ with that engine or a requirement
   $ touch bar
   $ hg --config format.revlog-compression=none -q commit -A -m 'add bar with a lot of repeated repeated repeated text'
 
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
-  revlogv1
-  sparserevlog
-  store
-  testonly-simplestore (reposimplestore !)
+  $ hg debugrequires | grep compression
+  [1]
 
   $ hg debugrevlog -c | grep 0x78
       0x78 (x)  :   2 (100.00%)
@@ -79,17 +63,8 @@ with that engine or a requirement
 
   $ hg --config format.revlog-compression=zstd init zstd
   $ cd zstd
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
+  $ hg debugrequires | grep compression
   revlog-compression-zstd
-  revlogv1
-  sparserevlog
-  store
-  testonly-simplestore (reposimplestore !)
 
   $ touch foo
   $ hg -q commit -A -m 'initial commit with a lot of repeated repeated repeated text'
@@ -183,17 +158,8 @@ checking details of none compression
   summary:     some-commit
   
 
-  $ cat none-compression/.hg/requires
-  dotencode
+  $ hg debugrequires -R none-compression/ | grep compression
   exp-compression-none
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
-  persistent-nodemap (rust !)
-  revlogv1
-  sparserevlog
-  store
-  testonly-simplestore (reposimplestore !)
 
   $ $RUNTESTDIR/f -s none-compression/.hg/store/data/*
   none-compression/.hg/store/data/a.i: size=4216

@@ -161,7 +161,7 @@ Cloning a shared repo via bundle2 results in a non-shared clone
 
   $ cd ..
   $ hg clone -q --stream ssh://user@dummy/`pwd`/repo2 cloned-via-bundle2
-  $ cat ./cloned-via-bundle2/.hg/requires | grep "shared"
+  $ hg -R cloned-via-bundle2 debugrequires | grep "shared"
   [1]
   $ hg id --cwd cloned-via-bundle2 -r tip
   c2e0ac586386 tip
@@ -173,7 +173,7 @@ test unshare command
   $ test -d .hg/store
   $ test -f .hg/sharedpath
   [1]
-  $ grep shared .hg/requires
+  $ hg debugrequires | grep shared
   [1]
   $ hg unshare
   abort: this is not a shared repo
@@ -208,10 +208,11 @@ test shared clones using relative paths work
   $ hg share -U --relative thisdir/abs thisdir/rel
   $ cat thisdir/rel/.hg/sharedpath
   ../../orig/.hg (no-eol)
-  $ grep shared thisdir/*/.hg/requires
-  thisdir/abs/.hg/requires:shared
-  thisdir/rel/.hg/requires:relshared
-  thisdir/rel/.hg/requires:shared
+  $ hg debugrequires -R thisdir/abs/ | grep shared
+  shared
+  $ hg debugrequires -R thisdir/rel/ | grep shared
+  relshared
+  shared
 
 test that relative shared paths aren't relative to $PWD
 
@@ -241,7 +242,7 @@ test unshare relshared repo
   $ test -d .hg/store
   $ test -f .hg/sharedpath
   [1]
-  $ grep shared .hg/requires
+  $ hg debugrequires | grep shared
   [1]
   $ hg unshare
   abort: this is not a shared repo
@@ -284,3 +285,25 @@ Test sharing a repository which was created with store requirement disable
   $ hg share nostore sharednostore
   abort: cannot create shared repository as source was created with 'format.usestore' config disabled
   [255]
+
+Check that (safe) share can control wc-specific format variant at creation time
+-------------------------------------------------------------------------------
+
+#if no-rust
+
+  $ cat << EOF >> $HGRCPATH
+  > [storage]
+  > dirstate-v2.slow-path = allow
+  > EOF
+
+#endif
+
+  $ hg init repo-safe-d1 --config format.use-share-safe=yes --config format.exp-rc-dirstate-v2=no
+  $ hg debugformat -R repo-safe-d1 | grep dirstate-v2
+  dirstate-v2:         no
+
+  $ hg share repo-safe-d1 share-safe-d2 --config format.use-share-safe=yes --config format.exp-rc-dirstate-v2=yes
+  updating working directory
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugformat  -R share-safe-d2 | grep dirstate-v2
+  dirstate-v2:        yes

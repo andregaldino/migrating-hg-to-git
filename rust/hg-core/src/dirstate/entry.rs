@@ -43,6 +43,10 @@ pub struct TruncatedTimestamp {
     truncated_seconds: u32,
     /// Always in the `0 .. 1_000_000_000` range.
     nanoseconds: u32,
+    /// TODO this should be in DirstateEntry, but the current code needs
+    /// refactoring to use DirstateEntry instead of TruncatedTimestamp for
+    /// comparison.
+    pub second_ambiguous: bool,
 }
 
 impl TruncatedTimestamp {
@@ -50,11 +54,16 @@ impl TruncatedTimestamp {
     /// and truncate the seconds components to its lower 31 bits.
     ///
     /// Panics if the nanoseconds components is not in the expected range.
-    pub fn new_truncate(seconds: i64, nanoseconds: u32) -> Self {
+    pub fn new_truncate(
+        seconds: i64,
+        nanoseconds: u32,
+        second_ambiguous: bool,
+    ) -> Self {
         assert!(nanoseconds < NSEC_PER_SEC);
         Self {
             truncated_seconds: seconds as u32 & RANGE_MASK_31BIT,
             nanoseconds,
+            second_ambiguous,
         }
     }
 
@@ -63,6 +72,7 @@ impl TruncatedTimestamp {
     pub fn from_already_truncated(
         truncated_seconds: u32,
         nanoseconds: u32,
+        second_ambiguous: bool,
     ) -> Result<Self, DirstateV2ParseError> {
         if truncated_seconds & !RANGE_MASK_31BIT == 0
             && nanoseconds < NSEC_PER_SEC
@@ -70,12 +80,17 @@ impl TruncatedTimestamp {
             Ok(Self {
                 truncated_seconds,
                 nanoseconds,
+                second_ambiguous,
             })
         } else {
             Err(DirstateV2ParseError)
         }
     }
 
+    /// Returns a `TruncatedTimestamp` for the modification time of `metadata`.
+    ///
+    /// Propagates errors from `std` on platforms where modification time
+    /// is not available at all.
     pub fn for_mtime_of(metadata: &fs::Metadata) -> io::Result<Self> {
         #[cfg(unix)]
         {
@@ -83,11 +98,52 @@ impl TruncatedTimestamp {
             let seconds = metadata.mtime();
             // i64 -> u32 with value always in the `0 .. NSEC_PER_SEC` range
             let nanoseconds = metadata.mtime_nsec().try_into().unwrap();
-            Ok(Self::new_truncate(seconds, nanoseconds))
+            Ok(Self::new_truncate(seconds, nanoseconds, false))
         }
         #[cfg(not(unix))]
         {
             metadata.modified().map(Self::from)
+        }
+    }
+
+    /// Like `for_mtime_of`, but may return `None` or a value with
+    /// `second_ambiguous` set if the mtime is not "reliable".
+    ///
+    /// A modification time is reliable if it is older than `boundary` (or
+    /// sufficiently in the future).
+    ///
+    /// Otherwise a concurrent modification might happens with the same mtime.
+    pub fn for_reliable_mtime_of(
+        metadata: &fs::Metadata,
+        boundary: &Self,
+    ) -> io::Result<Option<Self>> {
+        let mut mtime = Self::for_mtime_of(metadata)?;
+        // If the mtime of the ambiguous file is younger (or equal) to the
+        // starting point of the `status` walk, we cannot garantee that
+        // another, racy, write will not happen right after with the same mtime
+        // and we cannot cache the information.
+        //
+        // However if the mtime is far away in the future, this is likely some
+        // mismatch between the current clock and previous file system
+        // operation. So mtime more than one days in the future are considered
+        // fine.
+        let reliable = if mtime.truncated_seconds == boundary.truncated_seconds
+        {
+            mtime.second_ambiguous = true;
+            mtime.nanoseconds != 0
+                && boundary.nanoseconds != 0
+                && mtime.nanoseconds < boundary.nanoseconds
+        } else {
+            // `truncated_seconds` is less than 2**31,
+            // so this does not overflow `u32`:
+            let one_day_later = boundary.truncated_seconds + 24 * 3600;
+            mtime.truncated_seconds < boundary.truncated_seconds
+                || mtime.truncated_seconds > one_day_later
+        };
+        if reliable {
+            Ok(Some(mtime))
+        } else {
+            Ok(None)
         }
     }
 
@@ -122,10 +178,17 @@ impl TruncatedTimestamp {
     /// in that way, doing a simple comparison would cause many false
     /// negatives.
     pub fn likely_equal(self, other: Self) -> bool {
-        self.truncated_seconds == other.truncated_seconds
-            && (self.nanoseconds == other.nanoseconds
-                || self.nanoseconds == 0
-                || other.nanoseconds == 0)
+        if self.truncated_seconds != other.truncated_seconds {
+            false
+        } else if self.nanoseconds == 0 || other.nanoseconds == 0 {
+            if self.second_ambiguous {
+                false
+            } else {
+                true
+            }
+        } else {
+            self.nanoseconds == other.nanoseconds
+        }
     }
 
     pub fn likely_equal_to_mtime_of(
@@ -168,12 +231,12 @@ impl From<SystemTime> for TruncatedTimestamp {
                 }
             }
         };
-        Self::new_truncate(seconds, nanoseconds)
+        Self::new_truncate(seconds, nanoseconds, false)
     }
 }
 
 const NSEC_PER_SEC: u32 = 1_000_000_000;
-const RANGE_MASK_31BIT: u32 = 0x7FFF_FFFF;
+pub const RANGE_MASK_31BIT: u32 = 0x7FFF_FFFF;
 
 pub const MTIME_UNSET: i32 = -1;
 
@@ -258,9 +321,10 @@ impl DirstateEntry {
                     let mode = u32::try_from(mode).unwrap();
                     let size = u32::try_from(size).unwrap();
                     let mtime = u32::try_from(mtime).unwrap();
-                    let mtime =
-                        TruncatedTimestamp::from_already_truncated(mtime, 0)
-                            .unwrap();
+                    let mtime = TruncatedTimestamp::from_already_truncated(
+                        mtime, 0, false,
+                    )
+                    .unwrap();
                     Self {
                         flags: Flags::WDIR_TRACKED | Flags::P1_TRACKED,
                         mode_size: Some((mode, size)),
@@ -438,7 +502,11 @@ impl DirstateEntry {
         } else if !self.flags.contains(Flags::P1_TRACKED) {
             MTIME_UNSET
         } else if let Some(mtime) = self.mtime {
-            i32::try_from(mtime.truncated_seconds()).unwrap()
+            if mtime.second_ambiguous {
+                MTIME_UNSET
+            } else {
+                i32::try_from(mtime.truncated_seconds()).unwrap()
+            }
         } else {
             MTIME_UNSET
         }
@@ -580,10 +648,8 @@ impl DirstateEntry {
         &self,
         filesystem_metadata: &std::fs::Metadata,
     ) -> bool {
-        use std::os::unix::fs::MetadataExt;
-        const EXEC_BIT_MASK: u32 = 0o100;
-        let dirstate_exec_bit = (self.mode() as u32) & EXEC_BIT_MASK;
-        let fs_exec_bit = filesystem_metadata.mode() & EXEC_BIT_MASK;
+        let dirstate_exec_bit = (self.mode() as u32 & EXEC_BIT_MASK) != 0;
+        let fs_exec_bit = has_exec_bit(filesystem_metadata);
         dirstate_exec_bit != fs_exec_bit
     }
 
@@ -591,16 +657,6 @@ impl DirstateEntry {
     /// `DirstateMapMethods::debug_iter`.
     pub fn debug_tuple(&self) -> (u8, i32, i32, i32) {
         (self.state().into(), self.mode(), self.size(), self.mtime())
-    }
-
-    /// True if the stored mtime would be ambiguous with the current time
-    pub fn need_delay(&self, now: TruncatedTimestamp) -> bool {
-        if let Some(mtime) = self.mtime {
-            self.state() == EntryState::Normal
-                && mtime.truncated_seconds() == now.truncated_seconds()
-        } else {
-            false
-        }
     }
 }
 
@@ -640,4 +696,12 @@ impl Into<u8> for EntryState {
             EntryState::Merged => b'm',
         }
     }
+}
+
+const EXEC_BIT_MASK: u32 = 0o100;
+
+pub fn has_exec_bit(metadata: &std::fs::Metadata) -> bool {
+    // TODO: How to handle executable permissions on Windows?
+    use std::os::unix::fs::MetadataExt;
+    (metadata.mode() & EXEC_BIT_MASK) != 0
 }

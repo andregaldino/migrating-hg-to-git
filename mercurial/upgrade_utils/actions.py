@@ -36,7 +36,10 @@ RECLONES_REQUIREMENTS = {
 
 
 def preservedrequirements(repo):
-    return set()
+    preserved = {
+        requirements.SHARED_REQUIREMENT,
+    }
+    return preserved & repo.requirements
 
 
 FORMAT_VARIANT = b'deficiency'
@@ -96,6 +99,9 @@ class improvement(object):
 
     # Whether this improvement touches the dirstate
     touches_dirstate = False
+
+    # Can this action be run on a share instead of its mains repository
+    compatible_with_share = False
 
 
 allformatvariant = []  # type: List[Type['formatvariant']]
@@ -190,6 +196,30 @@ class dirstatev2(requirementformatvariant):
     touches_changelog = False
     touches_requirements = True
     touches_dirstate = True
+    compatible_with_share = True
+
+
+@registerformatvariant
+class dirstatetrackedkey(requirementformatvariant):
+    name = b'tracked-hint'
+    _requirement = requirements.DIRSTATE_TRACKED_HINT_V1
+
+    default = False
+
+    description = _(
+        b'Add a small file to help external tooling that watch the tracked set'
+    )
+
+    upgrademessage = _(
+        b'external tools will be informated of potential change in the tracked set'
+    )
+
+    touches_filelogs = False
+    touches_manifests = False
+    touches_changelog = False
+    touches_requirements = True
+    touches_dirstate = True
+    compatible_with_share = True
 
 
 @registerformatvariant
@@ -243,7 +273,7 @@ class sharesafe(requirementformatvariant):
     name = b'share-safe'
     _requirement = requirements.SHARESAFE_REQUIREMENT
 
-    default = False
+    default = True
 
     description = _(
         b'old shared repositories do not share source repository '
@@ -899,8 +929,6 @@ def blocksourcerequirements(repo):
         # This was a precursor to generaldelta and was never enabled by default.
         # It should (hopefully) not exist in the wild.
         b'parentdelta',
-        # Upgrade should operate on the actual store, not the shared link.
-        requirements.SHARED_REQUIREMENT,
     }
 
 
@@ -932,6 +960,16 @@ def check_source_requirements(repo):
         m = _(b'cannot upgrade repository; unsupported source requirement: %s')
         blockingreqs = b', '.join(sorted(blockingreqs))
         raise error.Abort(m % blockingreqs)
+    # Upgrade should operate on the actual store, not the shared link.
+
+    bad_share = (
+        requirements.SHARED_REQUIREMENT in repo.requirements
+        and requirements.SHARESAFE_REQUIREMENT not in repo.requirements
+    )
+    if bad_share:
+        m = _(b'cannot upgrade repository; share repository without share-safe')
+        h = _(b'check :hg:`help config.format.use-share-safe`')
+        raise error.Abort(m, hint=h)
 
 
 ### Verify the validity of the planned requirement changes ####################
@@ -952,6 +990,7 @@ def supportremovedrequirements(repo):
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
         requirements.REVLOGV1_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:
@@ -972,18 +1011,20 @@ def supporteddestrequirements(repo):
     Extensions should monkeypatch this to add their custom requirements.
     """
     supported = {
+        requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.COPIESSDC_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
+        requirements.DIRSTATE_V2_REQUIREMENT,
         requirements.DOTENCODE_REQUIREMENT,
         requirements.FNCACHE_REQUIREMENT,
         requirements.GENERALDELTA_REQUIREMENT,
-        requirements.REVLOGV1_REQUIREMENT,  # allowed in case of downgrade
-        requirements.STORE_REQUIREMENT,
-        requirements.SPARSEREVLOG_REQUIREMENT,
-        requirements.COPIESSDC_REQUIREMENT,
         requirements.NODEMAP_REQUIREMENT,
-        requirements.SHARESAFE_REQUIREMENT,
+        requirements.REVLOGV1_REQUIREMENT,  # allowed in case of downgrade
         requirements.REVLOGV2_REQUIREMENT,
-        requirements.CHANGELOGV2_REQUIREMENT,
-        requirements.DIRSTATE_V2_REQUIREMENT,
+        requirements.SHARED_REQUIREMENT,
+        requirements.SHARESAFE_REQUIREMENT,
+        requirements.SPARSEREVLOG_REQUIREMENT,
+        requirements.STORE_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
@@ -1015,6 +1056,7 @@ def allowednewrequirements(repo):
         requirements.REVLOGV1_REQUIREMENT,
         requirements.REVLOGV2_REQUIREMENT,
         requirements.CHANGELOGV2_REQUIREMENT,
+        requirements.DIRSTATE_TRACKED_HINT_V1,
         requirements.DIRSTATE_V2_REQUIREMENT,
     }
     for name in compression.compengines:

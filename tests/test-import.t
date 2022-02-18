@@ -234,7 +234,8 @@ import of malformed plain diff should fail
   $ hg --cwd b import -mpatch ../broken.patch
   applying ../broken.patch
   abort: bad hunk #1
-  [255]
+  (check that whitespace in the patch has not been mangled)
+  [10]
   $ rm -r b
 
 hg -R repo import
@@ -834,7 +835,7 @@ Test fuzziness (ambiguous patch location, fuzz=2)
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file a.rej
   abort: patch failed to apply
-  [255]
+  [20]
   $ hg import --no-commit -v fuzzy-tip.patch
   applying fuzzy-tip.patch
   patching file a
@@ -853,7 +854,7 @@ Test --exact failure
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file a.rej
   abort: patch failed to apply
-  [255]
+  [20]
   $ hg up -qC
   $ hg import --config patch.fuzz=2 --exact fuzzy-reparent.patch
   applying fuzzy-reparent.patch
@@ -1084,7 +1085,7 @@ test paths outside repo root
   > EOF
   applying patch from stdin
   abort: path contains illegal component: ../outside/foo
-  [255]
+  [10]
   $ cd ..
 
 
@@ -2054,7 +2055,7 @@ repository when file not found for patching
   (use '--prefix' to apply patch relative to the current directory)
   1 out of 1 hunks FAILED -- saving rejects to file file1.rej
   abort: patch failed to apply
-  [255]
+  [20]
 
 test import crash (issue5375)
   $ cd ..
@@ -2064,7 +2065,7 @@ test import crash (issue5375)
   applying patch from stdin
   a not tracked!
   abort: source file 'a' does not exist
-  [255]
+  [20]
 
 test immature end of hunk
 
@@ -2076,7 +2077,8 @@ test immature end of hunk
   > EOF
   applying patch from stdin
   abort: bad hunk #1: incomplete hunk
-  [255]
+  (check that whitespace in the patch has not been mangled)
+  [10]
 
   $ hg import - <<'EOF'
   > diff --git a/foo b/foo
@@ -2087,4 +2089,5 @@ test immature end of hunk
   > EOF
   applying patch from stdin
   abort: bad hunk #1: incomplete hunk
-  [255]
+  (check that whitespace in the patch has not been mangled)
+  [10]

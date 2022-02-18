@@ -40,11 +40,13 @@ from .revlogutils.constants import (
     COMP_MODE_DEFAULT,
     COMP_MODE_INLINE,
     COMP_MODE_PLAIN,
+    ENTRY_RANK,
     FEATURES_BY_VERSION,
     FLAG_GENERALDELTA,
     FLAG_INLINE_DATA,
     INDEX_HEADER,
     KIND_CHANGELOG,
+    RANK_UNKNOWN,
     REVLOGV0,
     REVLOGV1,
     REVLOGV1_FLAGS,
@@ -101,6 +103,7 @@ from .utils import (
 REVLOGV0
 REVLOGV1
 REVLOGV2
+CHANGELOGV2
 FLAG_INLINE_DATA
 FLAG_GENERALDELTA
 REVLOG_DEFAULT_FLAGS
@@ -199,16 +202,13 @@ def parse_index_v1(data, inline):
 
 def parse_index_v2(data, inline):
     # call the C implementation to parse the index data
-    index, cache = parsers.parse_index2(data, inline, revlogv2=True)
+    index, cache = parsers.parse_index2(data, inline, format=REVLOGV2)
     return index, cache
 
 
 def parse_index_cl_v2(data, inline):
     # call the C implementation to parse the index data
-    assert not inline
-    from .pure.parsers import parse_index_cl_v2
-
-    index, cache = parse_index_cl_v2(data)
+    index, cache = parsers.parse_index2(data, inline, format=CHANGELOGV2)
     return index, cache
 
 
@@ -741,21 +741,6 @@ class revlog(object):
         """iterate over all rev in this revlog (from start to stop)"""
         return storageutil.iterrevs(len(self), start=start, stop=stop)
 
-    @property
-    def nodemap(self):
-        msg = (
-            b"revlog.nodemap is deprecated, "
-            b"use revlog.index.[has_node|rev|get_rev]"
-        )
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self.index.nodemap
-
-    @property
-    def _nodecache(self):
-        msg = b"revlog._nodecache is deprecated, use revlog.index.nodemap"
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self.index.nodemap
-
     def hasnode(self, node):
         try:
             self.rev(node)
@@ -870,7 +855,23 @@ class revlog(object):
         if flags & (flagutil.REVIDX_KNOWN_FLAGS ^ REVIDX_ELLIPSIS) == 0:
             return self.rawsize(rev)
 
-        return len(self.revision(rev, raw=False))
+        return len(self.revision(rev))
+
+    def fast_rank(self, rev):
+        """Return the rank of a revision if already known, or None otherwise.
+
+        The rank of a revision is the size of the sub-graph it defines as a
+        head. Equivalently, the rank of a revision `r` is the size of the set
+        `ancestors(r)`, `r` included.
+
+        This method returns the rank retrieved from the revlog in constant
+        time. It makes no attempt at computing unknown values for versions of
+        the revlog which do not persist the rank.
+        """
+        rank = self.index[rev][ENTRY_RANK]
+        if rank == RANK_UNKNOWN:
+            return None
+        return rank
 
     def chainbase(self, rev):
         base = self._chainbasecache.get(rev)
@@ -1776,33 +1777,13 @@ class revlog(object):
 
         return mdiff.textdiff(self.rawdata(rev1), self.rawdata(rev2))
 
-    def _processflags(self, text, flags, operation, raw=False):
-        """deprecated entry point to access flag processors"""
-        msg = b'_processflag(...) use the specialized variant'
-        util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        if raw:
-            return text, flagutil.processflagsraw(self, text, flags)
-        elif operation == b'read':
-            return flagutil.processflagsread(self, text, flags)
-        else:  # write operation
-            return flagutil.processflagswrite(self, text, flags)
-
-    def revision(self, nodeorrev, _df=None, raw=False):
+    def revision(self, nodeorrev, _df=None):
         """return an uncompressed revision of a given node or revision
         number.
 
         _df - an existing file handle to read from. (internal-only)
-        raw - an optional argument specifying if the revision data is to be
-        treated as raw data when applying flag transforms. 'raw' should be set
-        to True when generating changegroups or in debug commands.
         """
-        if raw:
-            msg = (
-                b'revlog.revision(..., raw=True) is deprecated, '
-                b'use revlog.rawdata(...)'
-            )
-            util.nouideprecwarn(msg, b'5.2', stacklevel=2)
-        return self._revisiondata(nodeorrev, _df, raw=raw)
+        return self._revisiondata(nodeorrev, _df)
 
     def sidedata(self, nodeorrev, _df=None):
         """a map of extra data related to the changeset but not part of the hash
@@ -2479,6 +2460,19 @@ class revlog(object):
             # than ones we manually add.
             sidedata_offset = 0
 
+        rank = RANK_UNKNOWN
+        if self._format_version == CHANGELOGV2:
+            if (p1r, p2r) == (nullrev, nullrev):
+                rank = 1
+            elif p1r != nullrev and p2r == nullrev:
+                rank = 1 + self.fast_rank(p1r)
+            elif p1r == nullrev and p2r != nullrev:
+                rank = 1 + self.fast_rank(p2r)
+            else:  # merge node
+                pmin, pmax = sorted((p1r, p2r))
+                rank = 1 + self.fast_rank(pmax)
+                rank += sum(1 for _ in self.findmissingrevs([pmax], [pmin]))
+
         e = revlogutils.entry(
             flags=flags,
             data_offset=offset,
@@ -2493,6 +2487,7 @@ class revlog(object):
             sidedata_offset=sidedata_offset,
             sidedata_compressed_length=len(serialized_sidedata),
             sidedata_compression_mode=sidedata_compression_mode,
+            rank=rank,
         )
 
         self.index.append(e)

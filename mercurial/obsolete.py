@@ -73,10 +73,6 @@ import errno
 import struct
 
 from .i18n import _
-from .node import (
-    bin,
-    hex,
-)
 from .pycompat import getattr
 from .node import (
     bin,
@@ -579,6 +575,12 @@ class obsstore(object):
         return len(self._all)
 
     def __nonzero__(self):
+        from . import statichttprepo
+
+        if isinstance(self.repo, statichttprepo.statichttprepository):
+            # If repo is accessed via static HTTP, then we can't use os.stat()
+            # to just peek at the file size.
+            return len(self._data) > 1
         if not self._cached('_all'):
             try:
                 return self.svfs.stat(b'obsstore').st_size > 1
@@ -944,8 +946,7 @@ def _computeobsoleteset(repo):
     getnode = repo.changelog.node
     notpublic = _mutablerevs(repo)
     isobs = repo.obsstore.successors.__contains__
-    obs = {r for r in notpublic if isobs(getnode(r))}
-    return obs
+    return frozenset(r for r in notpublic if isobs(getnode(r)))
 
 
 @cachefor(b'orphan')
@@ -963,14 +964,14 @@ def _computeorphanset(repo):
             if p in obsolete or p in unstable:
                 unstable.add(r)
                 break
-    return unstable
+    return frozenset(unstable)
 
 
 @cachefor(b'suspended')
 def _computesuspendedset(repo):
     """the set of obsolete parents with non obsolete descendants"""
     suspended = repo.changelog.ancestors(getrevs(repo, b'orphan'))
-    return {r for r in getrevs(repo, b'obsolete') if r in suspended}
+    return frozenset(r for r in getrevs(repo, b'obsolete') if r in suspended)
 
 
 @cachefor(b'extinct')
@@ -1002,7 +1003,7 @@ def _computephasedivergentset(repo):
                 # we have a public predecessor
                 bumped.add(rev)
                 break  # Next draft!
-    return bumped
+    return frozenset(bumped)
 
 
 @cachefor(b'contentdivergent')
@@ -1029,7 +1030,7 @@ def _computecontentdivergentset(repo):
                 divergent.add(rev)
                 break
             toprocess.update(obsstore.predecessors.get(prec, ()))
-    return divergent
+    return frozenset(divergent)
 
 
 def makefoldid(relation, user):

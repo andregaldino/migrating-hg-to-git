@@ -44,7 +44,7 @@
   getting b2
    preserving a for resolve of b
   removing a
-   b: remote moved from a -> m (premerge)
+   b: remote moved from a -> m
   picked tool ':merge' for b (binary False symlink False changedelete False)
   merging a and b to b
   my b@044f8520aeeb+ other b@85c198ef2f6c ancestor a@af1939970a1c
@@ -218,7 +218,7 @@ modify x and rename y to z on the other side.
    ancestor: 5151c134577e, local: 07fcbc9a74ed+, remote: f21419739508
   starting 4 threads for background file closing (?)
    preserving z for resolve of z
-   z: both renamed from y -> m (premerge)
+   z: both renamed from y -> m
   picked tool ':merge3' for z (binary False symlink False changedelete False)
   merging z
   my z@07fcbc9a74ed+ other z@f21419739508 ancestor y@5151c134577e

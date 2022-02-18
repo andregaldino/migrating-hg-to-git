@@ -127,6 +127,24 @@ impl ConfigLayer {
             .flat_map(|section| section.keys().map(|vec| &**vec))
     }
 
+    /// Returns the (key, value) pairs defined in the given section
+    pub fn iter_section<'layer>(
+        &'layer self,
+        section: &[u8],
+    ) -> impl Iterator<Item = (&'layer [u8], &'layer [u8])> {
+        self.sections
+            .get(section)
+            .into_iter()
+            .flat_map(|section| section.iter().map(|(k, v)| (&**k, &*v.bytes)))
+    }
+
+    /// Returns whether any key is defined in the given section
+    pub fn has_non_empty_section(&self, section: &[u8]) -> bool {
+        self.sections
+            .get(section)
+            .map_or(false, |section| !section.is_empty())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.sections.is_empty()
     }
@@ -277,16 +295,17 @@ pub struct ConfigValue {
     pub line: Option<usize>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ConfigOrigin {
     /// From a configuration file
     File(PathBuf),
     /// From a `--config` CLI argument
     CommandLine,
+    /// From a `--color` CLI argument
+    CommandLineColor,
     /// From environment variables like `$PAGER` or `$EDITOR`
     Environment(Vec<u8>),
-    /* TODO cli
-     * TODO defaults (configitems.py)
+    /* TODO defaults (configitems.py)
      * TODO extensions
      * TODO Python resources?
      * Others? */
@@ -300,6 +319,7 @@ impl DisplayBytes for ConfigOrigin {
         match self {
             ConfigOrigin::File(p) => out.write_all(&get_bytes_from_path(p)),
             ConfigOrigin::CommandLine => out.write_all(b"--config"),
+            ConfigOrigin::CommandLineColor => out.write_all(b"--color"),
             ConfigOrigin::Environment(e) => write_bytes!(out, b"${}", e),
         }
     }

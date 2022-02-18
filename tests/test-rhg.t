@@ -168,13 +168,12 @@ Fallback to Python
   $ rhg cat original --exclude="*.rs"
   original content
 
-  $ FALLBACK_EXE="$RHG_FALLBACK_EXECUTABLE"
-  $ unset RHG_FALLBACK_EXECUTABLE
-  $ rhg cat original --exclude="*.rs"
+  $ (unset RHG_FALLBACK_EXECUTABLE; rhg cat original --exclude="*.rs")
   abort: 'rhg.on-unsupported=fallback' without 'rhg.fallback-executable' set.
   [255]
-  $ RHG_FALLBACK_EXECUTABLE="$FALLBACK_EXE"
-  $ export RHG_FALLBACK_EXECUTABLE
+
+  $ (unset RHG_FALLBACK_EXECUTABLE; rhg cat original)
+  original content
 
   $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=false
   [1]
@@ -244,6 +243,7 @@ Requirements
   persistent-nodemap
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -368,9 +368,9 @@ The blackbox extension is supported
   $ echo "maxsize = 1" >> $HGRCPATH
   $ $NO_FALLBACK rhg files > /dev/null
   $ cat .hg/blackbox.log
-  ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files exited 0 after 0.??? seconds (glob)
+  ????-??-?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files exited 0 after 0.??? seconds (glob)
   $ cat .hg/blackbox.log.1
-  ????/??/?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files (glob)
+  ????-??-?? ??:??:??.??? * @d3873e73d99ef67873dac33fbcc66268d5d2b6f4 (*)> (rust) files (glob)
 
 Subrepos are not supported
 
@@ -381,3 +381,13 @@ Subrepos are not supported
   $ rhg files
   a
   $ rm .hgsub
+
+The `:required` extension suboptions are correctly ignored
+
+  $ echo "[extensions]" >> $HGRCPATH
+  $ echo "blackbox:required = yes" >> $HGRCPATH
+  $ rhg files
+  a
+  $ echo "*:required = yes" >> $HGRCPATH
+  $ rhg files
+  a

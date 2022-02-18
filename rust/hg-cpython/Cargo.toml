@@ -28,3 +28,5 @@ libc = "0.2"
 log = "0.4.8"
 env_logger = "0.7.1"
 stable_deref_trait = "1.2.0"
+vcsgraph = "0.2.0"
+

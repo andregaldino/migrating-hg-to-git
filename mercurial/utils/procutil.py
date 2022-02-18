@@ -75,7 +75,9 @@ class LineBufferedWrapper(object):
         return res
 
 
+# pytype: disable=attribute-error
 io.BufferedIOBase.register(LineBufferedWrapper)
+# pytype: enable=attribute-error
 
 
 def make_line_buffered(stream):
@@ -114,7 +116,9 @@ class WriteAllWrapper(object):
         return total_written
 
 
+# pytype: disable=attribute-error
 io.IOBase.register(WriteAllWrapper)
+# pytype: enable=attribute-error
 
 
 def _make_write_all(stream):
@@ -738,6 +742,8 @@ else:
             start_new_session = False
             ensurestart = True
 
+        stdin = None
+
         try:
             if stdin_bytes is None:
                 stdin = subprocess.DEVNULL
@@ -766,7 +772,8 @@ else:
                 record_wait(255)
             raise
         finally:
-            if stdin_bytes is not None:
+            if stdin_bytes is not None and stdin is not None:
+                assert not isinstance(stdin, int)
                 stdin.close()
         if not ensurestart:
             # Even though we're not waiting on the child process,
@@ -847,6 +854,8 @@ else:
                 return
 
         returncode = 255
+        stdin = None
+
         try:
             if record_wait is None:
                 # Start a new session
@@ -889,7 +898,8 @@ else:
         finally:
             # mission accomplished, this child needs to exit and not
             # continue the hg process here.
-            stdin.close()
+            if stdin is not None:
+                stdin.close()
             if record_wait is None:
                 os._exit(returncode)
 

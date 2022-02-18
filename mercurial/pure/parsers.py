@@ -104,6 +104,7 @@ class DirstateItem(object):
     _mtime_ns = attr.ib()
     _fallback_exec = attr.ib()
     _fallback_symlink = attr.ib()
+    _mtime_second_ambiguous = attr.ib()
 
     def __init__(
         self,
@@ -127,24 +128,27 @@ class DirstateItem(object):
         self._size = None
         self._mtime_s = None
         self._mtime_ns = None
+        self._mtime_second_ambiguous = False
         if parentfiledata is None:
             has_meaningful_mtime = False
             has_meaningful_data = False
+        elif parentfiledata[2] is None:
+            has_meaningful_mtime = False
         if has_meaningful_data:
             self._mode = parentfiledata[0]
             self._size = parentfiledata[1]
         if has_meaningful_mtime:
-            self._mtime_s, self._mtime_ns = parentfiledata[2]
+            (
+                self._mtime_s,
+                self._mtime_ns,
+                self._mtime_second_ambiguous,
+            ) = parentfiledata[2]
 
     @classmethod
     def from_v2_data(cls, flags, size, mtime_s, mtime_ns):
         """Build a new DirstateItem object from V2 data"""
         has_mode_size = bool(flags & DIRSTATE_V2_HAS_MODE_AND_SIZE)
         has_meaningful_mtime = bool(flags & DIRSTATE_V2_HAS_MTIME)
-        if flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS:
-            # The current code is not able to do the more subtle comparison that the
-            # MTIME_SECOND_AMBIGUOUS requires. So we ignore the mtime
-            has_meaningful_mtime = False
         mode = None
 
         if flags & +DIRSTATE_V2_EXPECTED_STATE_IS_MODIFIED:
@@ -171,13 +175,15 @@ class DirstateItem(object):
                 mode |= stat.S_IFLNK
             else:
                 mode |= stat.S_IFREG
+
+        second_ambiguous = flags & DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS
         return cls(
             wc_tracked=bool(flags & DIRSTATE_V2_WDIR_TRACKED),
             p1_tracked=bool(flags & DIRSTATE_V2_P1_TRACKED),
             p2_info=bool(flags & DIRSTATE_V2_P2_INFO),
             has_meaningful_data=has_mode_size,
             has_meaningful_mtime=has_meaningful_mtime,
-            parentfiledata=(mode, size, (mtime_s, mtime_ns)),
+            parentfiledata=(mode, size, (mtime_s, mtime_ns, second_ambiguous)),
             fallback_exec=fallback_exec,
             fallback_symlink=fallback_symlink,
         )
@@ -214,13 +220,13 @@ class DirstateItem(object):
                     wc_tracked=True,
                     p1_tracked=True,
                     has_meaningful_mtime=False,
-                    parentfiledata=(mode, size, (42, 0)),
+                    parentfiledata=(mode, size, (42, 0, False)),
                 )
             else:
                 return cls(
                     wc_tracked=True,
                     p1_tracked=True,
-                    parentfiledata=(mode, size, (mtime, 0)),
+                    parentfiledata=(mode, size, (mtime, 0, False)),
                 )
         else:
             raise RuntimeError(b'unknown state: %s' % state)
@@ -246,7 +252,7 @@ class DirstateItem(object):
         self._p1_tracked = True
         self._mode = mode
         self._size = size
-        self._mtime_s, self._mtime_ns = mtime
+        self._mtime_s, self._mtime_ns, self._mtime_second_ambiguous = mtime
 
     def set_tracked(self):
         """mark a file as tracked in the working copy
@@ -301,10 +307,22 @@ class DirstateItem(object):
         if self_sec is None:
             return False
         self_ns = self._mtime_ns
-        other_sec, other_ns = other_mtime
-        return self_sec == other_sec and (
-            self_ns == other_ns or self_ns == 0 or other_ns == 0
-        )
+        other_sec, other_ns, second_ambiguous = other_mtime
+        if self_sec != other_sec:
+            # seconds are different theses mtime are definitly not equal
+            return False
+        elif other_ns == 0 or self_ns == 0:
+            # at least one side as no nano-seconds information
+
+            if self._mtime_second_ambiguous:
+                # We cannot trust the mtime in this case
+                return False
+            else:
+                # the "seconds" value was reliable on its own. We are good to go.
+                return True
+        else:
+            # We have nano second information, let us use them !
+            return self_ns == other_ns
 
     @property
     def state(self):
@@ -463,6 +481,8 @@ class DirstateItem(object):
                 flags |= DIRSTATE_V2_MODE_IS_SYMLINK
         if self._mtime_s is not None:
             flags |= DIRSTATE_V2_HAS_MTIME
+        if self._mtime_second_ambiguous:
+            flags |= DIRSTATE_V2_MTIME_SECOND_AMBIGUOUS
 
         if self._fallback_exec is not None:
             flags |= DIRSTATE_V2_HAS_FALLBACK_EXEC
@@ -531,12 +551,10 @@ class DirstateItem(object):
             return AMBIGUOUS_TIME
         elif not self._p1_tracked:
             return AMBIGUOUS_TIME
+        elif self._mtime_second_ambiguous:
+            return AMBIGUOUS_TIME
         else:
             return self._mtime_s
-
-    def need_delay(self, now):
-        """True if the stored mtime would be ambiguous with the current time"""
-        return self.v1_state() == b'n' and self._mtime_s == now[0]
 
 
 def gettype(q):
@@ -566,17 +584,12 @@ class BaseIndexObject(object):
         0,
         revlog_constants.COMP_MODE_INLINE,
         revlog_constants.COMP_MODE_INLINE,
+        revlog_constants.RANK_UNKNOWN,
     )
 
     @util.propertycache
     def entry_size(self):
         return self.index_format.size
-
-    @property
-    def nodemap(self):
-        msg = b"index.nodemap is deprecated, use index.[has_node|rev|get_rev]"
-        util.nouideprecwarn(msg, b'5.3', stacklevel=2)
-        return self._nodemap
 
     @util.propertycache
     def _nodemap(self):
@@ -629,7 +642,7 @@ class BaseIndexObject(object):
         if not isinstance(i, int):
             raise TypeError(b"expecting int indexes")
         if i < 0 or i >= len(self):
-            raise IndexError
+            raise IndexError(i)
 
     def __getitem__(self, i):
         if i == -1:
@@ -653,6 +666,7 @@ class BaseIndexObject(object):
             0,
             revlog_constants.COMP_MODE_INLINE,
             revlog_constants.COMP_MODE_INLINE,
+            revlog_constants.RANK_UNKNOWN,
         )
         return r
 
@@ -785,9 +799,14 @@ class InlinedIndexObject(BaseIndexObject):
         return self._offsets[i]
 
 
-def parse_index2(data, inline, revlogv2=False):
+def parse_index2(data, inline, format=revlog_constants.REVLOGV1):
+    if format == revlog_constants.CHANGELOGV2:
+        return parse_index_cl_v2(data)
     if not inline:
-        cls = IndexObject2 if revlogv2 else IndexObject
+        if format == revlog_constants.REVLOGV2:
+            cls = IndexObject2
+        else:
+            cls = IndexObject
         return cls(data), None
     cls = InlinedIndexObject
     return cls(data, inline), (0, data)
@@ -835,7 +854,7 @@ class IndexObject2(IndexObject):
         entry = data[:10]
         data_comp = data[10] & 3
         sidedata_comp = (data[10] & (3 << 2)) >> 2
-        return entry + (data_comp, sidedata_comp)
+        return entry + (data_comp, sidedata_comp, revlog_constants.RANK_UNKNOWN)
 
     def _pack_entry(self, rev, entry):
         data = entry[:10]
@@ -860,20 +879,53 @@ class IndexObject2(IndexObject):
 class IndexChangelogV2(IndexObject2):
     index_format = revlog_constants.INDEX_ENTRY_CL_V2
 
+    null_item = (
+        IndexObject2.null_item[: revlog_constants.ENTRY_RANK]
+        + (0,)  # rank of null is 0
+        + IndexObject2.null_item[revlog_constants.ENTRY_RANK :]
+    )
+
     def _unpack_entry(self, rev, data, r=True):
         items = self.index_format.unpack(data)
-        entry = items[:3] + (rev, rev) + items[3:8]
-        data_comp = items[8] & 3
-        sidedata_comp = (items[8] >> 2) & 3
-        return entry + (data_comp, sidedata_comp)
+        return (
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_OFFSET],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSED_LENGTH],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_UNCOMPRESSED_LENGTH],
+            rev,
+            rev,
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_PARENT_1],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_PARENT_2],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_NODEID],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_SIDEDATA_OFFSET],
+            items[
+                revlog_constants.INDEX_ENTRY_V2_IDX_SIDEDATA_COMPRESSED_LENGTH
+            ],
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] & 3,
+            (items[revlog_constants.INDEX_ENTRY_V2_IDX_COMPRESSION_MODE] >> 2)
+            & 3,
+            items[revlog_constants.INDEX_ENTRY_V2_IDX_RANK],
+        )
 
     def _pack_entry(self, rev, entry):
-        assert entry[3] == rev, entry[3]
-        assert entry[4] == rev, entry[4]
-        data = entry[:3] + entry[5:10]
-        data_comp = entry[10] & 3
-        sidedata_comp = (entry[11] & 3) << 2
-        data += (data_comp | sidedata_comp,)
+
+        base = entry[revlog_constants.ENTRY_DELTA_BASE]
+        link_rev = entry[revlog_constants.ENTRY_LINK_REV]
+        assert base == rev, (base, rev)
+        assert link_rev == rev, (link_rev, rev)
+        data = (
+            entry[revlog_constants.ENTRY_DATA_OFFSET],
+            entry[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_DATA_UNCOMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_PARENT_1],
+            entry[revlog_constants.ENTRY_PARENT_2],
+            entry[revlog_constants.ENTRY_NODE_ID],
+            entry[revlog_constants.ENTRY_SIDEDATA_OFFSET],
+            entry[revlog_constants.ENTRY_SIDEDATA_COMPRESSED_LENGTH],
+            entry[revlog_constants.ENTRY_DATA_COMPRESSION_MODE] & 3
+            | (entry[revlog_constants.ENTRY_SIDEDATA_COMPRESSION_MODE] & 3)
+            << 2,
+            entry[revlog_constants.ENTRY_RANK],
+        )
         return self.index_format.pack(*data)
 
 
@@ -903,23 +955,11 @@ def parse_dirstate(dmap, copymap, st):
     return parents
 
 
-def pack_dirstate(dmap, copymap, pl, now):
+def pack_dirstate(dmap, copymap, pl):
     cs = stringio()
     write = cs.write
     write(b"".join(pl))
     for f, e in pycompat.iteritems(dmap):
-        if e.need_delay(now):
-            # The file was last modified "simultaneously" with the current
-            # write to dirstate (i.e. within the same second for file-
-            # systems with a granularity of 1 sec). This commonly happens
-            # for at least a couple of files on 'update'.
-            # The user could change the file without changing its size
-            # within the same second. Invalidate the file's mtime in
-            # dirstate, forcing future 'status' calls to compare the
-            # contents of the file if the size is the same. This prevents
-            # mistakenly treating such files as clean.
-            e.set_possibly_dirty()
-
         if f in copymap:
             f = b"%s\0%s" % (f, copymap[f])
         e = _pack(

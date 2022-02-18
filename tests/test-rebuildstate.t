@@ -79,6 +79,7 @@ but in the dirstate
   $ touch foo bar qux
   $ hg add qux
   $ hg remove bar
+  $ sleep 1 # remove potential ambiguity in mtime
   $ hg status -A
   A qux
   R bar
@@ -106,6 +107,7 @@ dirstate
   $ hg manifest
   bar
   foo
+  $ sleep 1 # remove potential ambiguity in mtime
   $ hg status -A
   A qux
   R bar

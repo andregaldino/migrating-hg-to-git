@@ -511,17 +511,21 @@ def trim(s, width, ellipsis=b'', leftside=False):
     if width <= 0:  # no enough room even for ellipsis
         return ellipsis[: width + len(ellipsis)]
 
+    chars = list(u)
     if leftside:
-        uslice = lambda i: u[i:]
-        concat = lambda s: ellipsis + s
-    else:
-        uslice = lambda i: u[:-i]
-        concat = lambda s: s + ellipsis
-    for i in pycompat.xrange(1, len(u)):
-        usub = uslice(i)
-        if ucolwidth(usub) <= width:
-            return concat(usub.encode(_sysstr(encoding)))
-    return ellipsis  # no enough room for multi-column characters
+        chars.reverse()
+    width_so_far = 0
+    for i, c in enumerate(chars):
+        width_so_far += ucolwidth(c)
+        if width_so_far > width:
+            break
+    chars = chars[:i]
+    if leftside:
+        chars.reverse()
+    u = u''.join(chars).encode(_sysstr(encoding))
+    if leftside:
+        return ellipsis + u
+    return u + ellipsis
 
 
 class normcasespecs(object):

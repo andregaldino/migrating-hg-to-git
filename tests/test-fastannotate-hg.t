@@ -165,16 +165,16 @@ annotate -nlf b
   a
   a
   a
-  <<<<<<< working copy: 5fbdc1152d97 - test: b2.1
+  <<<<<<< working copy:    5fbdc1152d97 - test: b2.1
   b4
   c
   b5
-  ||||||| base
+  ||||||| common ancestor: 3086dbafde1c - test: b
   =======
   b4
   b5
   b6
-  >>>>>>> merge rev:    37ec9f5c3d1f - test: b2
+  >>>>>>> merge rev:       37ec9f5c3d1f - test: b2
   $ cat <<EOF > b
   > a
   > a
@@ -789,16 +789,16 @@ Issue5360: Deleted chunk in p1 of a merge changeset
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   [1]
   $ cat a
-  <<<<<<< working copy: 0a068f0261cf - test: 3
+  <<<<<<< working copy:    0a068f0261cf - test: 3
   1
   2
   3
-  ||||||| base
+  ||||||| common ancestor: 1ed24be7e7a0 - test: 2
   1
   2
   =======
   a
-  >>>>>>> merge rev:    9409851bc20a - test: a
+  >>>>>>> merge rev:       9409851bc20a - test: a
   $ cat > a << EOF
   > b
   > 1

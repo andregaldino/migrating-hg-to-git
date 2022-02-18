@@ -307,7 +307,7 @@ Single pack - repack does nothing
   1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over * (glob)
   $ hg prefetch -r 38
   abort: unknown revision '38'
-  [255]
+  [10]
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep datapack
   -r--r--r--      70 052643fdcdebbd42d7c180a651a30d46098e6fe1.datapack
   $ ls_l $TESTTMP/hgcache/master/packs/ | grep histpack

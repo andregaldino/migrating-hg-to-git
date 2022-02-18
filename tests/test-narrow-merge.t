@@ -83,11 +83,66 @@ Can merge conflicting changes inside narrow spec
 TODO: Can merge non-conflicting changes outside narrow spec
 
   $ hg update -q 'desc("modify inside/f1")'
+
+#if flat
+
   $ hg merge 'desc("modify outside/f1")'
-  abort: merge affects file 'outside/f1' outside narrow, which is not yet supported (flat !)
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
+status should be clean
+
+  $ hg status
+  ? inside/f1.orig
+
+file out of the spec should still not be in the dirstate at all
+
+  $ hg debugdirstate | grep outside/f1
+  [1]
+
+Commit that merge
+
+  $ hg ci -m 'merge from outside to inside'
+
+status should be clean
+
+  $ hg status
+  ? inside/f1.orig
+
+file out of the spec should not be in the mergestate anymore
+
+  $ hg debugmergestate | grep outside/f1
+  [1]
+
+file out of the spec should still not be in the dirstate at all
+
+  $ hg debugdirstate | grep outside/f1
+  [1]
+
+The filenode used should come from p2
+
+  $ hg manifest --debug --rev . | grep outside/f1
+  83cd11431a3b2aff8a3995e5f27bcf33cdb5be98 644   outside/f1
+  $ hg manifest --debug --rev 'p1(.)' | grep outside/f1
+  c6b956c48be2cd4fa94be16002aba311143806fa 644   outside/f1
+  $ hg manifest --debug --rev 'p2(.)' | grep outside/f1
+  83cd11431a3b2aff8a3995e5f27bcf33cdb5be98 644   outside/f1
+
+
+remove the commit to get in the previous situation again
+
+  $ hg debugstrip -r .
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/48eb25338b19-a1bb8350-backup.hg
+
+#else
+
+  $ hg merge 'desc("modify outside/f1")'
   abort: merge affects file 'outside/' outside narrow, which is not yet supported (tree !)
   (merging in the other direction may work)
   [255]
+
+#endif
 
   $ hg update -q 'desc("modify outside/f1")'
   $ hg merge 'desc("modify inside/f1")'
@@ -101,4 +156,4 @@ Refuses merge of conflicting outside changes
   $ hg merge 'desc("conflicting outside/f1")'
   abort: conflict in file 'outside/f1' is outside narrow clone (flat !)
   abort: conflict in file 'outside/' is outside narrow clone (tree !)
-  [255]
+  [20]

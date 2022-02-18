@@ -22,6 +22,7 @@ use crate::{
     PatternSyntax,
 };
 
+use crate::dirstate::status::IgnoreFnType;
 use crate::filepatterns::normalize_path_bytes;
 use std::borrow::ToOwned;
 use std::collections::HashSet;
@@ -246,7 +247,7 @@ impl<'a> Matcher for FileMatcher<'a> {
 /// ```
 pub struct IncludeMatcher<'a> {
     patterns: Vec<u8>,
-    match_fn: Box<dyn for<'r> Fn(&'r HgPath) -> bool + 'a + Sync>,
+    match_fn: IgnoreFnType<'a>,
     /// Whether all the patterns match a prefix (i.e. recursively)
     prefix: bool,
     roots: HashSet<HgPathBuf>,
@@ -341,9 +342,9 @@ fn re_matcher(
 
 /// Returns the regex pattern and a function that matches an `HgPath` against
 /// said regex formed by the given ignore patterns.
-fn build_regex_match(
-    ignore_patterns: &[IgnorePattern],
-) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + Sync>)> {
+fn build_regex_match<'a, 'b>(
+    ignore_patterns: &'a [IgnorePattern],
+) -> PatternResult<(Vec<u8>, IgnoreFnType<'b>)> {
     let mut regexps = vec![];
     let mut exact_set = HashSet::new();
 
@@ -365,10 +366,10 @@ fn build_regex_match(
         let func = move |filename: &HgPath| {
             exact_set.contains(filename) || matcher(filename)
         };
-        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+        Box::new(func) as IgnoreFnType
     } else {
         let func = move |filename: &HgPath| exact_set.contains(filename);
-        Box::new(func) as Box<dyn Fn(&HgPath) -> bool + Sync>
+        Box::new(func) as IgnoreFnType
     };
 
     Ok((full_regex, func))
@@ -476,8 +477,8 @@ fn roots_dirs_and_parents(
 /// should be matched.
 fn build_match<'a, 'b>(
     ignore_patterns: Vec<IgnorePattern>,
-) -> PatternResult<(Vec<u8>, Box<dyn Fn(&HgPath) -> bool + 'b + Sync>)> {
-    let mut match_funcs: Vec<Box<dyn Fn(&HgPath) -> bool + Sync>> = vec![];
+) -> PatternResult<(Vec<u8>, IgnoreFnType<'b>)> {
+    let mut match_funcs: Vec<IgnoreFnType<'b>> = vec![];
     // For debugging and printing
     let mut patterns = vec![];
 
@@ -560,14 +561,11 @@ fn build_match<'a, 'b>(
 /// Parses all "ignore" files with their recursive includes and returns a
 /// function that checks whether a given file (in the general sense) should be
 /// ignored.
-pub fn get_ignore_function<'a>(
+pub fn get_ignore_matcher<'a>(
     mut all_pattern_files: Vec<PathBuf>,
     root_dir: &Path,
     inspect_pattern_bytes: &mut impl FnMut(&[u8]),
-) -> PatternResult<(
-    Box<dyn for<'r> Fn(&'r HgPath) -> bool + Sync + 'a>,
-    Vec<PatternFileWarning>,
-)> {
+) -> PatternResult<(IncludeMatcher<'a>, Vec<PatternFileWarning>)> {
     let mut all_patterns = vec![];
     let mut all_warnings = vec![];
 
@@ -590,10 +588,25 @@ pub fn get_ignore_function<'a>(
         all_warnings.extend(warnings);
     }
     let matcher = IncludeMatcher::new(all_patterns)?;
-    Ok((
-        Box::new(move |path: &HgPath| matcher.matches(path)),
-        all_warnings,
-    ))
+    Ok((matcher, all_warnings))
+}
+
+/// Parses all "ignore" files with their recursive includes and returns a
+/// function that checks whether a given file (in the general sense) should be
+/// ignored.
+pub fn get_ignore_function<'a>(
+    all_pattern_files: Vec<PathBuf>,
+    root_dir: &Path,
+    inspect_pattern_bytes: &mut impl FnMut(&[u8]),
+) -> PatternResult<(IgnoreFnType<'a>, Vec<PatternFileWarning>)> {
+    let res =
+        get_ignore_matcher(all_pattern_files, root_dir, inspect_pattern_bytes);
+    res.map(|(matcher, all_warnings)| {
+        let res: IgnoreFnType<'a> =
+            Box::new(move |path: &HgPath| matcher.matches(path));
+
+        (res, all_warnings)
+    })
 }
 
 impl<'a> IncludeMatcher<'a> {
@@ -627,6 +640,10 @@ impl<'a> IncludeMatcher<'a> {
             .chain(self.roots.iter())
             .chain(self.parents.iter());
         DirsChildrenMultiset::new(thing, Some(&self.parents))
+    }
+
+    pub fn debug_get_patterns(&self) -> &[u8] {
+        self.patterns.as_ref()
     }
 }
 

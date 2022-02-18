@@ -643,6 +643,13 @@ class chgunixservicehandler(object):
 
     def __init__(self, ui):
         self.ui = ui
+
+        # TODO: use PEP 526 syntax (`_hashstate: hashstate` at the class level)
+        #  when 3.5 support is dropped.
+        self._hashstate = None  # type: hashstate
+        self._baseaddress = None  # type: bytes
+        self._realaddress = None  # type: bytes
+
         self._idletimeout = ui.configint(b'chgserver', b'idletimeout')
         self._lastactive = time.time()
 

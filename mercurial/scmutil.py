@@ -180,6 +180,8 @@ def callcatch(ui, func):
             )
         )
     except error.RepoError as inst:
+        if isinstance(inst, error.RepoLookupError):
+            detailed_exit_code = 10
         ui.error(_(b"abort: %s\n") % inst)
         if inst.hint:
             ui.error(_(b"(%s)\n") % inst.hint)
@@ -341,13 +343,13 @@ class casecollisionauditor(object):
         if fl in self._loweredfiles and f not in self._dirstate:
             msg = _(b'possible case-folding collision for %s') % f
             if self._abort:
-                raise error.Abort(msg)
+                raise error.StateError(msg)
             self._ui.warn(_(b"warning: %s\n") % msg)
         self._loweredfiles.add(fl)
         self._newfiles.add(f)
 
 
-def filteredhash(repo, maxrev):
+def filteredhash(repo, maxrev, needobsolete=False):
     """build hash of filtered revisions in the current repoview.
 
     Multiple caches perform up-to-date validation by checking that the
@@ -356,22 +358,31 @@ def filteredhash(repo, maxrev):
     of revisions in the view may change without the repository tiprev and
     tipnode changing.
 
-    This function hashes all the revs filtered from the view and returns
-    that SHA-1 digest.
+    This function hashes all the revs filtered from the view (and, optionally,
+    all obsolete revs) up to maxrev and returns that SHA-1 digest.
     """
     cl = repo.changelog
-    if not cl.filteredrevs:
-        return None
-    key = cl._filteredrevs_hashcache.get(maxrev)
-    if not key:
-        revs = sorted(r for r in cl.filteredrevs if r <= maxrev)
+    if needobsolete:
+        obsrevs = obsolete.getrevs(repo, b'obsolete')
+        if not cl.filteredrevs and not obsrevs:
+            return None
+        key = (maxrev, hash(cl.filteredrevs), hash(obsrevs))
+    else:
+        if not cl.filteredrevs:
+            return None
+        key = maxrev
+        obsrevs = frozenset()
+
+    result = cl._filteredrevs_hashcache.get(key)
+    if not result:
+        revs = sorted(r for r in cl.filteredrevs | obsrevs if r <= maxrev)
         if revs:
             s = hashutil.sha1()
             for rev in revs:
                 s.update(b'%d;' % rev)
-            key = s.digest()
-            cl._filteredrevs_hashcache[maxrev] = key
-    return key
+            result = s.digest()
+            cl._filteredrevs_hashcache[key] = result
+    return result
 
 
 def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
@@ -2195,6 +2206,9 @@ def unhidehashlikerevs(repo, specs, hiddentype):
 
     returns a repo object with the required changesets unhidden
     """
+    if not specs:
+        return repo
+
     if not repo.filtername or not repo.ui.configbool(
         b'experimental', b'directaccess'
     ):

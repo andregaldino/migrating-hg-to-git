@@ -71,6 +71,7 @@ class unionrevlog(revlog.revlog):
                 _sds,
                 _dcm,
                 _sdcm,
+                rank,
             ) = rev
             flags = _start & 0xFFFF
 
@@ -107,6 +108,7 @@ class unionrevlog(revlog.revlog):
                 0,  # sidedata size
                 revlog_constants.COMP_MODE_INLINE,
                 revlog_constants.COMP_MODE_INLINE,
+                rank,
             )
             self.index.append(e)
             self.bundlerevs.add(n)

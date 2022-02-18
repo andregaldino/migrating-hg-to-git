@@ -153,6 +153,7 @@ Non fncache repo:
   .hg/store/data/tst.d.hg
   .hg/store/data/tst.d.hg/_foo.i
   .hg/store/phaseroots
+  .hg/store/requires
   .hg/store/undo
   .hg/store/undo.backupfiles
   .hg/store/undo.phaseroots

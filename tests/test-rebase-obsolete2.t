@@ -47,6 +47,7 @@ setup
   $ hg add C
   $ hg commit -m C
   1 new orphan changesets
+  created new head
   $ hg log -G
   @  4:212cb178bcbb C
   |
@@ -73,6 +74,7 @@ Even when the chain include missing node
   $ hg add D
   $ hg commit -m D
   1 new orphan changesets
+  created new head
   $ hg --hidden strip -r 'desc(B1)'
   saved backup bundle to $TESTTMP/obsskip/.hg/strip-backup/86f6414ccda7-b1c452ee-backup.hg
   1 new orphan changesets
@@ -194,6 +196,7 @@ If a rebase is going to create divergence, it should abort
   $ hg add foo
   $ hg commit -m "bar foo"
   1 new orphan changesets
+  created new head
   $ hg log -G
   @  14:73568ab6879d bar foo
   |

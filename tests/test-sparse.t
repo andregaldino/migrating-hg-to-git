@@ -147,7 +147,7 @@ Verify deleting sparseness while a file has changes fails
 
 Verify deleting sparseness with --force brings back files
 
-  $ hg debugsparse --delete -f 'show*'
+  $ hg debugsparse -f --delete 'show*'
   pending changes to 'hide'
   $ ls -A
   .hg
@@ -170,7 +170,7 @@ Verify editing sparseness fails if pending changes
 
 Verify adding sparseness hides files
 
-  $ hg debugsparse --exclude -f 'hide*'
+  $ hg debugsparse -f --exclude 'hide*'
   pending changes to 'hide'
   $ ls -A
   .hg
@@ -253,6 +253,15 @@ Verify merge fails if merging excluded files
   [exclude]
   hide*
   
+
+Multiple -I and -X can be passed at once
+
+  $ hg debugsparse --reset -I '*2' -X 'hide2'
+  $ ls -A
+  .hg
+  hide.orig
+  show2
+  $ hg debugsparse --reset -X 'hide*'
 
 Verify strip -k resets dirstate correctly
 

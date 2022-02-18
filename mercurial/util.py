@@ -57,7 +57,6 @@ from .utils import (
     hashutil,
     procutil,
     stringutil,
-    urlutil,
 )
 
 if pycompat.TYPE_CHECKING:
@@ -2989,54 +2988,6 @@ def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
         mapping[prefix_char] = prefix_char
     r = remod.compile(br'%s(%s)' % (prefix, patterns))
     return r.sub(lambda x: fn(mapping[x.group()[1:]]), s)
-
-
-def getport(*args, **kwargs):
-    msg = b'getport(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.getport(*args, **kwargs)
-
-
-def url(*args, **kwargs):
-    msg = b'url(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.url(*args, **kwargs)
-
-
-def hasscheme(*args, **kwargs):
-    msg = b'hasscheme(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.hasscheme(*args, **kwargs)
-
-
-def hasdriveletter(*args, **kwargs):
-    msg = b'hasdriveletter(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.hasdriveletter(*args, **kwargs)
-
-
-def urllocalpath(*args, **kwargs):
-    msg = b'urllocalpath(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.urllocalpath(*args, **kwargs)
-
-
-def checksafessh(*args, **kwargs):
-    msg = b'checksafessh(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.checksafessh(*args, **kwargs)
-
-
-def hidepassword(*args, **kwargs):
-    msg = b'hidepassword(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.hidepassword(*args, **kwargs)
-
-
-def removeauth(*args, **kwargs):
-    msg = b'removeauth(...) moved to mercurial.utils.urlutil'
-    nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.removeauth(*args, **kwargs)
 
 
 timecount = unitcountfn(

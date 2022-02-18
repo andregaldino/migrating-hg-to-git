@@ -306,7 +306,7 @@ names that should be caught by fallback mechanism
     (negate
       (symbol 'a')))
   abort: unknown revision '-a'
-  [255]
+  [10]
   $ try é
   (symbol '\xc3\xa9')
   * set:

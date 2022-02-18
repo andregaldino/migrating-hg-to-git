@@ -22,7 +22,7 @@
   searching for changes
   no changes found
   $ cd shallow
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
@@ -31,6 +31,7 @@
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
 
@@ -59,7 +60,7 @@
   searching for changes
   no changes found
   $ cd shallow2
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
@@ -68,6 +69,7 @@
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   $ ls .hg/store/data
@@ -111,7 +113,7 @@ check its contents separately.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ ls shallow3/.hg/store/data
-  $ cat shallow3/.hg/requires
+  $ hg debugrequires -R shallow3/
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-remotefilelog-repo-req-1
@@ -120,5 +122,6 @@ check its contents separately.
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store

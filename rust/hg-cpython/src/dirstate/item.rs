@@ -23,7 +23,7 @@ py_class!(pub class DirstateItem |py| {
         p2_info: bool = false,
         has_meaningful_data: bool = true,
         has_meaningful_mtime: bool = true,
-        parentfiledata: Option<(u32, u32, (u32, u32))> = None,
+        parentfiledata: Option<(u32, u32, Option<(u32, u32, bool)>)> = None,
         fallback_exec: Option<bool> = None,
         fallback_symlink: Option<bool> = None,
 
@@ -35,7 +35,9 @@ py_class!(pub class DirstateItem |py| {
                 mode_size_opt = Some((mode, size))
             }
             if has_meaningful_mtime {
-                mtime_opt = Some(timestamp(py, mtime)?)
+                if let Some(m) = mtime {
+                    mtime_opt = Some(timestamp(py, m)?);
+                }
             }
         }
         let entry = DirstateEntry::from_v2_data(
@@ -192,12 +194,8 @@ py_class!(pub class DirstateItem |py| {
         Ok(mtime)
     }
 
-    def need_delay(&self, now: (u32, u32)) -> PyResult<bool> {
-        let now = timestamp(py, now)?;
-        Ok(self.entry(py).get().need_delay(now))
-    }
-
-    def mtime_likely_equal_to(&self, other: (u32, u32)) -> PyResult<bool> {
+    def mtime_likely_equal_to(&self, other: (u32, u32, bool))
+        -> PyResult<bool> {
         if let Some(mtime) = self.entry(py).get().truncated_mtime() {
             Ok(mtime.likely_equal(timestamp(py, other)?))
         } else {
@@ -230,7 +228,7 @@ py_class!(pub class DirstateItem |py| {
         &self,
         mode: u32,
         size: u32,
-        mtime: (u32, u32),
+        mtime: (u32, u32, bool),
     ) -> PyResult<PyNone> {
         let mtime = timestamp(py, mtime)?;
         self.update(py, |entry| entry.set_clean(mode, size, mtime));
@@ -275,12 +273,13 @@ impl DirstateItem {
 
 pub(crate) fn timestamp(
     py: Python<'_>,
-    (s, ns): (u32, u32),
+    (s, ns, second_ambiguous): (u32, u32, bool),
 ) -> PyResult<TruncatedTimestamp> {
-    TruncatedTimestamp::from_already_truncated(s, ns).map_err(|_| {
-        PyErr::new::<exc::ValueError, _>(
-            py,
-            "expected mtime truncated to 31 bits",
-        )
-    })
+    TruncatedTimestamp::from_already_truncated(s, ns, second_ambiguous)
+        .map_err(|_| {
+            PyErr::new::<exc::ValueError, _>(
+                py,
+                "expected mtime truncated to 31 bits",
+            )
+        })
 }

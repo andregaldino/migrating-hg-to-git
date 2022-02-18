@@ -366,17 +366,6 @@ class hgweb(object):
             # replace it.
             res.headers[b'Content-Security-Policy'] = rctx.csp
 
-        # /api/* is reserved for various API implementations. Dispatch
-        # accordingly. But URL paths can conflict with subrepos and virtual
-        # repos in hgwebdir. So until we have a workaround for this, only
-        # expose the URLs if the feature is enabled.
-        apienabled = rctx.repo.ui.configbool(b'experimental', b'web.apiserver')
-        if apienabled and req.dispatchparts and req.dispatchparts[0] == b'api':
-            wireprotoserver.handlewsgiapirequest(
-                rctx, req, res, self.check_perm
-            )
-            return res.sendresponse()
-
         handled = wireprotoserver.handlewsgirequest(
             rctx, req, res, self.check_perm
         )

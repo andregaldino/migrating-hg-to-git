@@ -88,6 +88,10 @@ const SUPPORTED: &[&str] = &[
     // When it starts writing to the repository, it’ll need to either keep the
     // persistent nodemap up to date or remove this entry:
     NODEMAP_REQUIREMENT,
+    // Not all commands support `sparse` and `narrow`. The commands that do
+    // not should opt out by checking `has_sparse` and `has_narrow`.
+    SPARSE_REQUIREMENT,
+    NARROW_REQUIREMENT,
 ];
 
 // Copied from mercurial/requirements.py:

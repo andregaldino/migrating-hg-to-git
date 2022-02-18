@@ -132,13 +132,6 @@ def addbranchrevs(lrepo, other, branches, revs):
     return revs, revs[0]
 
 
-def parseurl(path, branches=None):
-    '''parse url#branch, returning (url, (branch, branches))'''
-    msg = b'parseurl(...) moved to mercurial.utils.urlutil'
-    util.nouideprecwarn(msg, b'6.0', stacklevel=2)
-    return urlutil.parseurl(path, branches=branches)
-
-
 schemes = {
     b'bundle': bundlerepo,
     b'union': unionrepo,

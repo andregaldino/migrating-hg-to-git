@@ -129,6 +129,8 @@ WHEEL_FILENAME_PYTHON38_X86 = 'mercurial-{version}-cp38-cp38-win32.whl'
 WHEEL_FILENAME_PYTHON38_X64 = 'mercurial-{version}-cp38-cp38-win_amd64.whl'
 WHEEL_FILENAME_PYTHON39_X86 = 'mercurial-{version}-cp39-cp39-win32.whl'
 WHEEL_FILENAME_PYTHON39_X64 = 'mercurial-{version}-cp39-cp39-win_amd64.whl'
+WHEEL_FILENAME_PYTHON310_X86 = 'mercurial-{version}-cp310-cp310-win32.whl'
+WHEEL_FILENAME_PYTHON310_X64 = 'mercurial-{version}-cp310-cp310-win_amd64.whl'
 
 EXE_FILENAME_PYTHON2_X86 = 'Mercurial-{version}-x86-python2.exe'
 EXE_FILENAME_PYTHON2_X64 = 'Mercurial-{version}-x64-python2.exe'
@@ -480,6 +482,8 @@ def resolve_wheel_artifacts(dist_path: pathlib.Path, version: str):
         dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
         dist_path / WHEEL_FILENAME_PYTHON39_X86.format(version=version),
         dist_path / WHEEL_FILENAME_PYTHON39_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON310_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON310_X64.format(version=version),
     )
 
 
@@ -493,6 +497,8 @@ def resolve_all_artifacts(dist_path: pathlib.Path, version: str):
         dist_path / WHEEL_FILENAME_PYTHON38_X64.format(version=version),
         dist_path / WHEEL_FILENAME_PYTHON39_X86.format(version=version),
         dist_path / WHEEL_FILENAME_PYTHON39_X64.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON310_X86.format(version=version),
+        dist_path / WHEEL_FILENAME_PYTHON310_X64.format(version=version),
         dist_path / EXE_FILENAME_PYTHON2_X86.format(version=version),
         dist_path / EXE_FILENAME_PYTHON2_X64.format(version=version),
         dist_path / EXE_FILENAME_PYTHON3_X86.format(version=version),

@@ -1886,7 +1886,8 @@ def addpartbundlestream2(bundler, repo, **kwargs):
     filecount, bytecount, it = streamclone.generatev2(
         repo, includepats, excludepats, includeobsmarkers
     )
-    requirements = _formatrequirementsspec(repo.requirements)
+    requirements = streamclone.streamed_requirements(repo)
+    requirements = _formatrequirementsspec(requirements)
     part = bundler.newpart(b'stream2', data=it)
     part.addparam(b'bytecount', b'%d' % bytecount, mandatory=True)
     part.addparam(b'filecount', b'%d' % filecount, mandatory=True)
@@ -2419,7 +2420,7 @@ def handlebookmark(op, inpart):
             op.records.add(b'bookmarks', record)
     else:
         raise error.ProgrammingError(
-            b'unkown bookmark mode: %s' % bookmarksmode
+            b'unknown bookmark mode: %s' % bookmarksmode
         )
 
 

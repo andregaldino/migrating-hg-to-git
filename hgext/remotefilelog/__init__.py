@@ -520,7 +520,7 @@ def checkunknownfiles(orig, repo, wctx, mctx, force, mresult, *args, **kwargs):
 
 
 # Prefetch files before status attempts to look at their size and contents
-def checklookup(orig, self, files):
+def checklookup(orig, self, files, mtime_boundary):
     repo = self._repo
     if isenabled(repo):
         prefetchfiles = []
@@ -530,7 +530,7 @@ def checklookup(orig, self, files):
                     prefetchfiles.append((f, hex(parent.filenode(f))))
         # batch fetch the needed files from the server
         repo.fileservice.prefetch(prefetchfiles)
-    return orig(self, files)
+    return orig(self, files, mtime_boundary)
 
 
 # Prefetch the logic that compares added and removed files for renames

@@ -32,6 +32,7 @@ REVIDX_DEFAULT_FLAGS
 REVIDX_FLAGS_ORDER
 REVIDX_RAWTEXT_CHANGING_FLAGS
 
+# Keep this in sync with REVIDX_KNOWN_FLAGS in rust/hg-core/src/revlog/revlog.rs
 REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
 
 # Store flag processors (cf. 'addflagprocessor()' to register)

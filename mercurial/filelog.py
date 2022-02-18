@@ -97,8 +97,8 @@ class filelog(object):
     def iscensored(self, rev):
         return self._revlog.iscensored(rev)
 
-    def revision(self, node, _df=None, raw=False):
-        return self._revlog.revision(node, _df=_df, raw=raw)
+    def revision(self, node, _df=None):
+        return self._revlog.revision(node, _df=_df)
 
     def rawdata(self, node, _df=None):
         return self._revlog.rawdata(node, _df=_df)

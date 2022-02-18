@@ -9,13 +9,12 @@
 //! `hg-core` crate. From Python, this will be seen as
 //! `rustext.dirstate.status`.
 
-use crate::dirstate::item::timestamp;
 use crate::{dirstate::DirstateMap, exceptions::FallbackError};
-use cpython::exc::OSError;
 use cpython::{
     exc::ValueError, ObjectProtocol, PyBytes, PyErr, PyList, PyObject,
     PyResult, PyTuple, Python, PythonObject, ToPyObject,
 };
+use hg::dirstate::status::StatusPath;
 use hg::{
     matchers::{AlwaysMatcher, FileMatcher, IncludeMatcher},
     parse_pattern_syntax,
@@ -28,15 +27,19 @@ use hg::{
 };
 use std::borrow::Borrow;
 
+fn collect_status_path_list(py: Python, paths: &[StatusPath<'_>]) -> PyList {
+    collect_pybytes_list(py, paths.iter().map(|item| &*item.path))
+}
+
 /// This will be useless once trait impls for collection are added to `PyBytes`
 /// upstream.
 fn collect_pybytes_list(
     py: Python,
-    collection: &[impl AsRef<HgPath>],
+    iter: impl Iterator<Item = impl AsRef<HgPath>>,
 ) -> PyList {
     let list = PyList::new(py, &[]);
 
-    for path in collection.iter() {
+    for path in iter {
         list.append(
             py,
             PyBytes::new(py, path.as_ref().as_bytes()).into_object(),
@@ -91,7 +94,6 @@ fn handle_fallback(py: Python, err: StatusError) -> PyErr {
 
             PyErr::new::<FallbackError, _>(py, &as_string)
         }
-        StatusError::IO(e) => PyErr::new::<OSError, _>(py, e.to_string()),
         e => PyErr::new::<ValueError, _>(py, e.to_string()),
     }
 }
@@ -103,13 +105,11 @@ pub fn status_wrapper(
     root_dir: PyObject,
     ignore_files: PyList,
     check_exec: bool,
-    last_normal_time: (u32, u32),
     list_clean: bool,
     list_ignored: bool,
     list_unknown: bool,
     collect_traversed_dirs: bool,
 ) -> PyResult<PyTuple> {
-    let last_normal_time = timestamp(py, last_normal_time)?;
     let bytes = root_dir.extract::<PyBytes>(py)?;
     let root_dir = get_path_from_bytes(bytes.data(py));
 
@@ -124,6 +124,8 @@ pub fn status_wrapper(
         })
         .collect();
     let ignore_files = ignore_files?;
+    // The caller may call `copymap.items()` separately
+    let list_copies = false;
 
     match matcher.get_type(py).name(py).borrow() {
         "alwaysmatcher" => {
@@ -135,10 +137,10 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,
+                        list_copies,
                         collect_traversed_dirs,
                     },
                 )
@@ -172,10 +174,10 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,
+                        list_copies,
                         collect_traversed_dirs,
                     },
                 )
@@ -224,10 +226,10 @@ pub fn status_wrapper(
                     ignore_files,
                     StatusOptions {
                         check_exec,
-                        last_normal_time,
                         list_clean,
                         list_ignored,
                         list_unknown,
+                        list_copies,
                         collect_traversed_dirs,
                     },
                 )
@@ -247,16 +249,16 @@ fn build_response(
     status_res: DirstateStatus,
     warnings: Vec<PatternFileWarning>,
 ) -> PyResult<PyTuple> {
-    let modified = collect_pybytes_list(py, status_res.modified.as_ref());
-    let added = collect_pybytes_list(py, status_res.added.as_ref());
-    let removed = collect_pybytes_list(py, status_res.removed.as_ref());
-    let deleted = collect_pybytes_list(py, status_res.deleted.as_ref());
-    let clean = collect_pybytes_list(py, status_res.clean.as_ref());
-    let ignored = collect_pybytes_list(py, status_res.ignored.as_ref());
-    let unknown = collect_pybytes_list(py, status_res.unknown.as_ref());
-    let unsure = collect_pybytes_list(py, status_res.unsure.as_ref());
-    let bad = collect_bad_matches(py, status_res.bad.as_ref())?;
-    let traversed = collect_pybytes_list(py, status_res.traversed.as_ref());
+    let modified = collect_status_path_list(py, &status_res.modified);
+    let added = collect_status_path_list(py, &status_res.added);
+    let removed = collect_status_path_list(py, &status_res.removed);
+    let deleted = collect_status_path_list(py, &status_res.deleted);
+    let clean = collect_status_path_list(py, &status_res.clean);
+    let ignored = collect_status_path_list(py, &status_res.ignored);
+    let unknown = collect_status_path_list(py, &status_res.unknown);
+    let unsure = collect_status_path_list(py, &status_res.unsure);
+    let bad = collect_bad_matches(py, &status_res.bad)?;
+    let traversed = collect_pybytes_list(py, status_res.traversed.iter());
     let dirty = status_res.dirty.to_py_object(py);
     let py_warnings = PyList::new(py, &[]);
     for warning in warnings.iter() {

@@ -34,7 +34,7 @@ Symlink is local parent, executable is other:
    branchmerge: True, force: False, partial: False
    ancestor: c334dc3be0da, local: 521a1e40188f+, remote: 3574f3e69b1c
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   tool internal:merge (for pattern a) can't handle symlinks
   couldn't find merge tool hgmerge
   no tool found to merge a
@@ -68,7 +68,7 @@ Symlink is other parent, executable is local:
    branchmerge: True, force: False, partial: False
    ancestor: c334dc3be0da, local: 3574f3e69b1c+, remote: 521a1e40188f
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   picked tool ':union' for a (binary False symlink True changedelete False)
   merging a
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
@@ -90,7 +90,7 @@ Symlink is other parent, executable is local:
    branchmerge: True, force: False, partial: False
    ancestor: c334dc3be0da, local: 3574f3e69b1c+, remote: 521a1e40188f
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   picked tool ':merge3' for a (binary False symlink True changedelete False)
   merging a
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
@@ -112,7 +112,7 @@ Symlink is other parent, executable is local:
    branchmerge: True, force: False, partial: False
    ancestor: c334dc3be0da, local: 3574f3e69b1c+, remote: 521a1e40188f
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   picked tool ':merge-local' for a (binary False symlink True changedelete False)
   merging a
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
@@ -133,7 +133,7 @@ Symlink is other parent, executable is local:
    branchmerge: True, force: False, partial: False
    ancestor: c334dc3be0da, local: 3574f3e69b1c+, remote: 521a1e40188f
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   picked tool ':merge-other' for a (binary False symlink True changedelete False)
   merging a
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
@@ -166,7 +166,7 @@ Update to link with local change should cause a merge prompt (issue3200):
    branchmerge: False, force: False, partial: False
    ancestor: c334dc3be0da, local: c334dc3be0da+, remote: 521a1e40188f
    preserving a for resolve of a
-   a: versions differ -> m (premerge)
+   a: versions differ -> m
   (couldn't find merge tool hgmerge|tool hgmerge can't handle symlinks) (re)
   no tool found to merge a
   picked tool ':prompt' for a (binary False symlink True changedelete False)
@@ -343,9 +343,12 @@ h: l vs l, different
 
   $ hg merge
   merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   warning: cannot merge flags for b without common ancestor - keeping local flags
   merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   merging bx
+  warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   warning: cannot merge flags for c without common ancestor - keeping local flags
   tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
@@ -362,9 +365,6 @@ h: l vs l, different
   file 'h' needs to be resolved.
   You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
   What do you want to do? u
-  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   3 files updated, 0 files merged, 0 files removed, 6 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
@@ -411,9 +411,12 @@ h: l vs l, different
   $ hg up -Cqr1
   $ hg merge
   merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   warning: cannot merge flags for b without common ancestor - keeping local flags
   merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   merging bx
+  warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   warning: cannot merge flags for c without common ancestor - keeping local flags
   tool internal:merge (for pattern d) can't handle symlinks
   no tool found to merge d
@@ -430,9 +433,6 @@ h: l vs l, different
   file 'h' needs to be resolved.
   You can keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved.
   What do you want to do? u
-  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   3 files updated, 0 files merged, 0 files removed, 6 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]

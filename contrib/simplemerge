@@ -13,9 +13,9 @@ from mercurial import (
     context,
     error,
     fancyopts,
-    pycompat,
     simplemerge,
     ui as uimod,
+    util,
 )
 from mercurial.utils import procutil, stringutil
 
@@ -65,6 +65,17 @@ def showhelp():
         procutil.stdout.write(b' %-*s  %s\n' % (opts_len, first, second))
 
 
+def _verifytext(input, ui, quiet=False, allow_binary=False):
+    """verifies that text is non-binary (unless opts[text] is passed,
+    then we just warn)"""
+    if stringutil.binary(input.text()):
+        msg = _(b"%s looks like a binary file.") % input.fctx.path()
+        if not quiet:
+            ui.warn(_(b'warning: %s\n') % msg)
+        if not allow_binary:
+            sys.exit(1)
+
+
 try:
     for fp in (sys.stdin, procutil.stdout, sys.stderr):
         procutil.setbinary(fp)
@@ -80,16 +91,44 @@ try:
         sys.exit(0)
     if len(args) != 3:
         raise ParseError(_(b'wrong number of arguments').decode('utf8'))
+    mode = b'merge'
+    if len(opts[b'label']) > 2:
+        mode = b'merge3'
     local, base, other = args
-    sys.exit(
-        simplemerge.simplemerge(
-            uimod.ui.load(),
-            context.arbitraryfilectx(local),
-            context.arbitraryfilectx(base),
-            context.arbitraryfilectx(other),
-            **pycompat.strkwargs(opts)
-        )
+    overrides = opts[b'label']
+    if len(overrides) > 3:
+        raise error.InputError(b'can only specify three labels.')
+    labels = [local, other, base]
+    labels[: len(overrides)] = overrides
+    local_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(local), labels[0]
     )
+    other_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(other), labels[1]
+    )
+    base_input = simplemerge.MergeInput(
+        context.arbitraryfilectx(base), labels[2]
+    )
+
+    quiet = opts.get(b'quiet')
+    allow_binary = opts.get(b'text')
+    ui = uimod.ui.load()
+    _verifytext(local_input, ui, quiet=quiet, allow_binary=allow_binary)
+    _verifytext(base_input, ui, quiet=quiet, allow_binary=allow_binary)
+    _verifytext(other_input, ui, quiet=quiet, allow_binary=allow_binary)
+
+    merged_text, conflicts = simplemerge.simplemerge(
+        local_input,
+        base_input,
+        other_input,
+        mode,
+        allow_binary=allow_binary,
+    )
+    if opts.get(b'print'):
+        ui.fout.write(merged_text)
+    else:
+        util.writefile(local, merged_text)
+    sys.exit(1 if conflicts else 0)
 except ParseError as e:
     e = stringutil.forcebytestr(e)
     procutil.stdout.write(b"%s: %s\n" % (sys.argv[0].encode('utf8'), e))

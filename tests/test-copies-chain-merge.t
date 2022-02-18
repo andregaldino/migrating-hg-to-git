@@ -463,14 +463,14 @@ Subcase: new copy information on both side with an actual merge happening
   3 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg merge 'desc("q-2")' --tool ':union'
   merging v
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mPQm-0 $case_desc - one way"
   $ hg up 'desc("q-2")'
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("p-2")' --tool ':union'
   merging v
-  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 1 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mQPm-0 $case_desc - the other way"
   created new head
@@ -626,14 +626,14 @@ consider history and rename on both branch of the merge.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("g-1")' --tool :union
   merging d
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mDGm-0 $case_desc - one way"
   $ hg up 'desc("g-1")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg merge 'desc("d-2")' --tool :union
   merging d
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m "mGDm-0 $case_desc - the other way"
   created new head
@@ -1649,22 +1649,10 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > [format]
   > exp-use-copies-side-data-changeset = yes
   > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
+  $ hg debugformat -v | egrep 'changelog-v2|revlog-v2|copies-sdc'
   copies-sdc:          no    yes      no
   revlog-v2:           no     no      no
   changelog-v2:        no    yes      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
   $ hg debugupgraderepo --run --quiet
   upgrade will perform the following actions:
   
@@ -1689,22 +1677,10 @@ We upgrade a repository that is not using sidedata (the filelog case) and
   > enabled=yes
   > numcpus=8
   > EOF
-  $ hg debugformat -v
-  format-variant     repo config default
-  fncache:            yes    yes     yes
-  dirstate-v2:         no     no      no
-  dotencode:          yes    yes     yes
-  generaldelta:       yes    yes     yes
-  share-safe:          no     no      no
-  sparserevlog:       yes    yes     yes
-  persistent-nodemap:  no     no      no (no-rust !)
-  persistent-nodemap: yes    yes      no (rust !)
+  $ hg debugformat -v  | egrep 'changelog-v2|revlog-v2|copies-sdc'
   copies-sdc:          no    yes      no
   revlog-v2:           no     no      no
   changelog-v2:        no    yes      no
-  plain-cl-delta:     yes    yes     yes
-  compression:        * (glob)
-  compression-level:  default default default
   $ hg debugupgraderepo --run --quiet
   upgrade will perform the following actions:
   

@@ -41,7 +41,7 @@ common commands affecting largefile.
   > EOF
 
   $ hg config extensions
-  \*\*\* failed to import extension largefiles from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
+  \*\*\* failed to import extension "largefiles" from missing.py: [Errno *] $ENOENT$: 'missing.py' (glob)
   abort: repository requires features unknown to this Mercurial: largefiles
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
@@ -267,7 +267,7 @@ sharing a largefile repo automatically enables largefiles on the share
   getting changed largefiles
   1 largefiles updated, 0 removed
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ grep largefiles ../shared_lfrepo/.hg/requires
+  $ hg debugrequires -R ../shared_lfrepo | grep largefiles
   largefiles
 
 verify that large files in subrepos handled properly
@@ -962,7 +962,7 @@ Merge conflicts:
   what do you want to do? l
   getting changed largefiles
   1 largefiles updated, 0 removed
-  0 files updated, 4 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 3 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ cat f-different
   1

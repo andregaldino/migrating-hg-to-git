@@ -1,5 +1,6 @@
 use crate::dirstate::entry::TruncatedTimestamp;
 use crate::dirstate::status::IgnoreFnType;
+use crate::dirstate::status::StatusPath;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
@@ -15,6 +16,7 @@ use crate::BadMatch;
 use crate::DirstateStatus;
 use crate::EntryState;
 use crate::HgPathBuf;
+use crate::HgPathCow;
 use crate::PatternFileWarning;
 use crate::StatusError;
 use crate::StatusOptions;
@@ -61,16 +63,42 @@ pub fn status<'tree, 'on_disk: 'tree>(
             (Box::new(|&_| true), vec![], None)
         };
 
+    let filesystem_time_at_status_start =
+        filesystem_now(&root_dir).ok().map(TruncatedTimestamp::from);
+
+    // If the repository is under the current directory, prefer using a
+    // relative path, so the kernel needs to traverse fewer directory in every
+    // call to `read_dir` or `symlink_metadata`.
+    // This is effective in the common case where the current directory is the
+    // repository root.
+
+    // TODO: Better yet would be to use libc functions like `openat` and
+    // `fstatat` to remove such repeated traversals entirely, but the standard
+    // library does not provide APIs based on those.
+    // Maybe with a crate like https://crates.io/crates/openat instead?
+    let root_dir = if let Some(relative) = std::env::current_dir()
+        .ok()
+        .and_then(|cwd| root_dir.strip_prefix(cwd).ok())
+    {
+        relative
+    } else {
+        &root_dir
+    };
+
+    let outcome = DirstateStatus {
+        filesystem_time_at_status_start,
+        ..Default::default()
+    };
     let common = StatusCommon {
         dmap,
         options,
         matcher,
         ignore_fn,
-        outcome: Default::default(),
+        outcome: Mutex::new(outcome),
         ignore_patterns_have_changed: patterns_changed,
         new_cachable_directories: Default::default(),
         outated_cached_directories: Default::default(),
-        filesystem_time_at_status_start: filesystem_now(&root_dir).ok(),
+        filesystem_time_at_status_start,
     };
     let is_at_repo_root = true;
     let hg_path = &BorrowedPath::OnDisk(HgPath::new(""));
@@ -138,10 +166,68 @@ struct StatusCommon<'a, 'tree, 'on_disk: 'tree> {
 
     /// The current time at the start of the `status()` algorithm, as measured
     /// and possibly truncated by the filesystem.
-    filesystem_time_at_status_start: Option<SystemTime>,
+    filesystem_time_at_status_start: Option<TruncatedTimestamp>,
+}
+
+enum Outcome {
+    Modified,
+    Added,
+    Removed,
+    Deleted,
+    Clean,
+    Ignored,
+    Unknown,
+    Unsure,
 }
 
 impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
+    fn push_outcome(
+        &self,
+        which: Outcome,
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        let path = dirstate_node
+            .full_path_borrowed(self.dmap.on_disk)?
+            .detach_from_tree();
+        let copy_source = if self.options.list_copies {
+            dirstate_node
+                .copy_source_borrowed(self.dmap.on_disk)?
+                .map(|source| source.detach_from_tree())
+        } else {
+            None
+        };
+        self.push_outcome_common(which, path, copy_source);
+        Ok(())
+    }
+
+    fn push_outcome_without_copy_source(
+        &self,
+        which: Outcome,
+        path: &BorrowedPath<'_, 'on_disk>,
+    ) {
+        self.push_outcome_common(which, path.detach_from_tree(), None)
+    }
+
+    fn push_outcome_common(
+        &self,
+        which: Outcome,
+        path: HgPathCow<'on_disk>,
+        copy_source: Option<HgPathCow<'on_disk>>,
+    ) {
+        let mut outcome = self.outcome.lock().unwrap();
+        let vec = match which {
+            Outcome::Modified => &mut outcome.modified,
+            Outcome::Added => &mut outcome.added,
+            Outcome::Removed => &mut outcome.removed,
+            Outcome::Deleted => &mut outcome.deleted,
+            Outcome::Clean => &mut outcome.clean,
+            Outcome::Ignored => &mut outcome.ignored,
+            Outcome::Unknown => &mut outcome.unknown,
+            Outcome::Unsure => &mut outcome.unsure,
+        };
+        vec.push(StatusPath { path, copy_source });
+    }
+
     fn read_dir(
         &self,
         hg_path: &HgPath,
@@ -342,10 +428,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             // If we previously had a file here, it was removed (with
             // `hg rm` or similar) or deleted before it could be
             // replaced by a directory or something else.
-            self.mark_removed_or_deleted_if_file(
-                &hg_path,
-                dirstate_node.state()?,
-            );
+            self.mark_removed_or_deleted_if_file(&dirstate_node)?;
         }
         if file_type.is_dir() {
             if self.options.collect_traversed_dirs {
@@ -376,24 +459,13 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             if file_or_symlink && self.matcher.matches(hg_path) {
                 if let Some(state) = dirstate_node.state()? {
                     match state {
-                        EntryState::Added => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .added
-                            .push(hg_path.detach_from_tree()),
+                        EntryState::Added => {
+                            self.push_outcome(Outcome::Added, &dirstate_node)?
+                        }
                         EntryState::Removed => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .removed
-                            .push(hg_path.detach_from_tree()),
+                            .push_outcome(Outcome::Removed, &dirstate_node)?,
                         EntryState::Merged => self
-                            .outcome
-                            .lock()
-                            .unwrap()
-                            .modified
-                            .push(hg_path.detach_from_tree()),
+                            .push_outcome(Outcome::Modified, &dirstate_node)?,
                         EntryState::Normal => self
                             .handle_normal_file(&dirstate_node, fs_metadata)?,
                     }
@@ -421,71 +493,86 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         directory_metadata: &std::fs::Metadata,
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
-        if children_all_have_dirstate_node_or_are_ignored {
-            // All filesystem directory entries from `read_dir` have a
-            // corresponding node in the dirstate, so we can reconstitute the
-            // names of those entries without calling `read_dir` again.
-            if let (Some(status_start), Ok(directory_mtime)) = (
-                &self.filesystem_time_at_status_start,
-                directory_metadata.modified(),
+        if !children_all_have_dirstate_node_or_are_ignored {
+            return Ok(());
+        }
+        // All filesystem directory entries from `read_dir` have a
+        // corresponding node in the dirstate, so we can reconstitute the
+        // names of those entries without calling `read_dir` again.
+
+        // TODO: use let-else here and below when available:
+        // https://github.com/rust-lang/rust/issues/87335
+        let status_start = if let Some(status_start) =
+            &self.filesystem_time_at_status_start
+        {
+            status_start
+        } else {
+            return Ok(());
+        };
+
+        // Although the Rust standard library’s `SystemTime` type
+        // has nanosecond precision, the times reported for a
+        // directory’s (or file’s) modified time may have lower
+        // resolution based on the filesystem (for example ext3
+        // only stores integer seconds), kernel (see
+        // https://stackoverflow.com/a/14393315/1162888), etc.
+        let directory_mtime = if let Ok(option) =
+            TruncatedTimestamp::for_reliable_mtime_of(
+                directory_metadata,
+                status_start,
             ) {
-                // Although the Rust standard library’s `SystemTime` type
-                // has nanosecond precision, the times reported for a
-                // directory’s (or file’s) modified time may have lower
-                // resolution based on the filesystem (for example ext3
-                // only stores integer seconds), kernel (see
-                // https://stackoverflow.com/a/14393315/1162888), etc.
-                if &directory_mtime >= status_start {
-                    // The directory was modified too recently, don’t cache its
-                    // `read_dir` results.
-                    //
-                    // A timeline like this is possible:
-                    //
-                    // 1. A change to this directory (direct child was
-                    //    added or removed) cause its mtime to be set
-                    //    (possibly truncated) to `directory_mtime`
-                    // 2. This `status` algorithm calls `read_dir`
-                    // 3. An other change is made to the same directory is
-                    //    made so that calling `read_dir` agin would give
-                    //    different results, but soon enough after 1. that
-                    //    the mtime stays the same
-                    //
-                    // On a system where the time resolution poor, this
-                    // scenario is not unlikely if all three steps are caused
-                    // by the same script.
-                } else {
-                    // We’ve observed (through `status_start`) that time has
-                    // “progressed” since `directory_mtime`, so any further
-                    // change to this directory is extremely likely to cause a
-                    // different mtime.
-                    //
-                    // Having the same mtime again is not entirely impossible
-                    // since the system clock is not monotonous. It could jump
-                    // backward to some point before `directory_mtime`, then a
-                    // directory change could potentially happen during exactly
-                    // the wrong tick.
-                    //
-                    // We deem this scenario (unlike the previous one) to be
-                    // unlikely enough in practice.
-                    let truncated = TruncatedTimestamp::from(directory_mtime);
-                    let is_up_to_date = if let Some(cached) =
-                        dirstate_node.cached_directory_mtime()?
-                    {
-                        cached.likely_equal(truncated)
-                    } else {
-                        false
-                    };
-                    if !is_up_to_date {
-                        let hg_path = dirstate_node
-                            .full_path_borrowed(self.dmap.on_disk)?
-                            .detach_from_tree();
-                        self.new_cachable_directories
-                            .lock()
-                            .unwrap()
-                            .push((hg_path, truncated))
-                    }
-                }
+            if let Some(directory_mtime) = option {
+                directory_mtime
+            } else {
+                // The directory was modified too recently,
+                // don’t cache its `read_dir` results.
+                //
+                // 1. A change to this directory (direct child was
+                //    added or removed) cause its mtime to be set
+                //    (possibly truncated) to `directory_mtime`
+                // 2. This `status` algorithm calls `read_dir`
+                // 3. An other change is made to the same directory is
+                //    made so that calling `read_dir` agin would give
+                //    different results, but soon enough after 1. that
+                //    the mtime stays the same
+                //
+                // On a system where the time resolution poor, this
+                // scenario is not unlikely if all three steps are caused
+                // by the same script.
+                return Ok(());
             }
+        } else {
+            // OS/libc does not support mtime?
+            return Ok(());
+        };
+        // We’ve observed (through `status_start`) that time has
+        // “progressed” since `directory_mtime`, so any further
+        // change to this directory is extremely likely to cause a
+        // different mtime.
+        //
+        // Having the same mtime again is not entirely impossible
+        // since the system clock is not monotonous. It could jump
+        // backward to some point before `directory_mtime`, then a
+        // directory change could potentially happen during exactly
+        // the wrong tick.
+        //
+        // We deem this scenario (unlike the previous one) to be
+        // unlikely enough in practice.
+
+        let is_up_to_date =
+            if let Some(cached) = dirstate_node.cached_directory_mtime()? {
+                cached.likely_equal(directory_mtime)
+            } else {
+                false
+            };
+        if !is_up_to_date {
+            let hg_path = dirstate_node
+                .full_path_borrowed(self.dmap.on_disk)?
+                .detach_from_tree();
+            self.new_cachable_directories
+                .lock()
+                .unwrap()
+                .push((hg_path, directory_mtime))
         }
         Ok(())
     }
@@ -505,7 +592,6 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let entry = dirstate_node
             .entry()?
             .expect("handle_normal_file called with entry-less node");
-        let hg_path = &dirstate_node.full_path_borrowed(self.dmap.on_disk)?;
         let mode_changed =
             || self.options.check_exec && entry.mode_changed(fs_metadata);
         let size = entry.size();
@@ -513,43 +599,31 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         if size >= 0 && size_changed && fs_metadata.file_type().is_symlink() {
             // issue6456: Size returned may be longer due to encryption
             // on EXT-4 fscrypt. TODO maybe only do it on EXT4?
-            self.outcome
-                .lock()
-                .unwrap()
-                .unsure
-                .push(hg_path.detach_from_tree())
+            self.push_outcome(Outcome::Unsure, dirstate_node)?
         } else if dirstate_node.has_copy_source()
             || entry.is_from_other_parent()
             || (size >= 0 && (size_changed || mode_changed()))
         {
-            self.outcome
-                .lock()
-                .unwrap()
-                .modified
-                .push(hg_path.detach_from_tree())
+            self.push_outcome(Outcome::Modified, dirstate_node)?
         } else {
             let mtime_looks_clean;
             if let Some(dirstate_mtime) = entry.truncated_mtime() {
                 let fs_mtime = TruncatedTimestamp::for_mtime_of(fs_metadata)
                     .expect("OS/libc does not support mtime?");
+                // There might be a change in the future if for example the
+                // internal clock become off while process run, but this is a
+                // case where the issues the user would face
+                // would be a lot worse and there is nothing we
+                // can really do.
                 mtime_looks_clean = fs_mtime.likely_equal(dirstate_mtime)
-                    && !fs_mtime.likely_equal(self.options.last_normal_time)
             } else {
                 // No mtime in the dirstate entry
                 mtime_looks_clean = false
             };
             if !mtime_looks_clean {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .unsure
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome(Outcome::Unsure, dirstate_node)?
             } else if self.options.list_clean {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .clean
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome(Outcome::Clean, dirstate_node)?
             }
         }
         Ok(())
@@ -561,10 +635,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         dirstate_node: NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
         self.check_for_outdated_directory_cache(&dirstate_node)?;
-        self.mark_removed_or_deleted_if_file(
-            &dirstate_node.full_path_borrowed(self.dmap.on_disk)?,
-            dirstate_node.state()?,
-        );
+        self.mark_removed_or_deleted_if_file(&dirstate_node)?;
         dirstate_node
             .children(self.dmap.on_disk)?
             .par_iter()
@@ -578,26 +649,19 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
     /// Does nothing on a "directory" node
     fn mark_removed_or_deleted_if_file(
         &self,
-        hg_path: &BorrowedPath<'tree, 'on_disk>,
-        dirstate_node_state: Option<EntryState>,
-    ) {
-        if let Some(state) = dirstate_node_state {
-            if self.matcher.matches(hg_path) {
+        dirstate_node: &NodeRef<'tree, 'on_disk>,
+    ) -> Result<(), DirstateV2ParseError> {
+        if let Some(state) = dirstate_node.state()? {
+            let path = dirstate_node.full_path(self.dmap.on_disk)?;
+            if self.matcher.matches(path) {
                 if let EntryState::Removed = state {
-                    self.outcome
-                        .lock()
-                        .unwrap()
-                        .removed
-                        .push(hg_path.detach_from_tree())
+                    self.push_outcome(Outcome::Removed, dirstate_node)?
                 } else {
-                    self.outcome
-                        .lock()
-                        .unwrap()
-                        .deleted
-                        .push(hg_path.detach_from_tree())
+                    self.push_outcome(Outcome::Deleted, &dirstate_node)?
                 }
             }
         }
+        Ok(())
     }
 
     /// Something in the filesystem has no corresponding dirstate node
@@ -675,19 +739,17 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         let is_ignored = has_ignored_ancestor || (self.ignore_fn)(&hg_path);
         if is_ignored {
             if self.options.list_ignored {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .ignored
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome_without_copy_source(
+                    Outcome::Ignored,
+                    hg_path,
+                )
             }
         } else {
             if self.options.list_unknown {
-                self.outcome
-                    .lock()
-                    .unwrap()
-                    .unknown
-                    .push(hg_path.detach_from_tree())
+                self.push_outcome_without_copy_source(
+                    Outcome::Unknown,
+                    hg_path,
+                )
             }
         }
         is_ignored
@@ -710,8 +772,11 @@ impl DirEntry {
     /// * Elsewhere, we’re listing the content of a sub-repo. Return an empty
     ///   list instead.
     fn read_dir(path: &Path, is_at_repo_root: bool) -> io::Result<Vec<Self>> {
+        // `read_dir` returns a "not found" error for the empty path
+        let at_cwd = path == Path::new("");
+        let read_dir_path = if at_cwd { Path::new(".") } else { path };
         let mut results = Vec::new();
-        for entry in path.read_dir()? {
+        for entry in read_dir_path.read_dir()? {
             let entry = entry?;
             let metadata = match entry.metadata() {
                 Ok(v) => v,
@@ -724,9 +789,9 @@ impl DirEntry {
                     }
                 }
             };
-            let name = get_bytes_from_os_string(entry.file_name());
+            let file_name = entry.file_name();
             // FIXME don't do this when cached
-            if name == b".hg" {
+            if file_name == ".hg" {
                 if is_at_repo_root {
                     // Skip the repo’s own .hg (might be a symlink)
                     continue;
@@ -736,9 +801,15 @@ impl DirEntry {
                     return Ok(Vec::new());
                 }
             }
+            let full_path = if at_cwd {
+                file_name.clone().into()
+            } else {
+                entry.path()
+            };
+            let base_name = get_bytes_from_os_string(file_name).into();
             results.push(DirEntry {
-                base_name: name.into(),
-                full_path: entry.path(),
+                base_name,
+                full_path,
                 metadata,
             })
         }

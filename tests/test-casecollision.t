@@ -12,7 +12,7 @@ test file addition with colliding case
   ? A
   $ hg add --config ui.portablefilenames=abort A
   abort: possible case-folding collision for A
-  [255]
+  [20]
   $ hg st
   A a
   ? A

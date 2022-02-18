@@ -12,6 +12,7 @@ import contextlib
 import errno
 import os
 import stat
+import uuid
 
 from .i18n import _
 from .pycompat import delattr
@@ -23,6 +24,7 @@ from . import (
     encoding,
     error,
     match as matchmod,
+    node,
     pathutil,
     policy,
     pycompat,
@@ -66,16 +68,6 @@ class rootcache(filecache):
         return obj._join(fname)
 
 
-def _getfsnow(vfs):
-    '''Get "now" timestamp on filesystem'''
-    tmpfd, tmpname = vfs.mkstemp()
-    try:
-        return timestamp.mtime_of(os.fstat(tmpfd))
-    finally:
-        os.close(tmpfd)
-        vfs.unlink(tmpname)
-
-
 def requires_parents_change(func):
     def wrap(self, *args, **kwargs):
         if not self.pendingparentchange():
@@ -109,6 +101,7 @@ class dirstate(object):
         sparsematchfn,
         nodeconstants,
         use_dirstate_v2,
+        use_tracked_hint=False,
     ):
         """Create a new dirstate object.
 
@@ -117,6 +110,7 @@ class dirstate(object):
         the dirstate.
         """
         self._use_dirstate_v2 = use_dirstate_v2
+        self._use_tracked_hint = use_tracked_hint
         self._nodeconstants = nodeconstants
         self._opener = opener
         self._validate = validate
@@ -125,12 +119,15 @@ class dirstate(object):
         # ntpath.join(root, '') of Python 2.7.9 does not add sep if root is
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
+        # True is any internal state may be different
         self._dirty = False
-        self._lastnormaltime = timestamp.zero()
+        # True if the set of tracked file may be different
+        self._dirty_tracked_set = False
         self._ui = ui
         self._filecache = {}
         self._parentwriters = 0
         self._filename = b'dirstate'
+        self._filename_th = b'dirstate-tracked-hint'
         self._pendingfilename = b'%s.pending' % self._filename
         self._plchangecallbacks = {}
         self._origpl = None
@@ -332,27 +329,6 @@ class dirstate(object):
             return util.pconvert(path)
         return path
 
-    def __getitem__(self, key):
-        """Return the current state of key (a filename) in the dirstate.
-
-        States are:
-          n  normal
-          m  needs merging
-          r  marked for removal
-          a  marked for addition
-          ?  not tracked
-
-        XXX The "state" is a bit obscure to be in the "public" API. we should
-        consider migrating all user of this to going through the dirstate entry
-        instead.
-        """
-        msg = b"don't use dirstate[file], use dirstate.get_entry(file)"
-        util.nouideprecwarn(msg, b'6.1', stacklevel=2)
-        entry = self._map.get(key)
-        if entry is not None:
-            return entry.state
-        return b'?'
-
     def get_entry(self, path):
         """return a DirstateItem for the associated path"""
         entry = self._map.get(path)
@@ -440,8 +416,8 @@ class dirstate(object):
         for a in ("_map", "_branch", "_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
-        self._lastnormaltime = timestamp.zero()
         self._dirty = False
+        self._dirty_tracked_set = False
         self._parentwriters = 0
         self._origpl = None
 
@@ -462,11 +438,13 @@ class dirstate(object):
         return self._map.copymap
 
     @requires_no_parents_change
-    def set_tracked(self, filename):
+    def set_tracked(self, filename, reset_copy=False):
         """a "public" method for generic code to mark a file as tracked
 
         This function is to be called outside of "update/merge" case. For
         example by a command like `hg add X`.
+
+        if reset_copy is set, any existing copy information will be dropped.
 
         return True the file was previously untracked, False otherwise.
         """
@@ -474,7 +452,12 @@ class dirstate(object):
         entry = self._map.get(filename)
         if entry is None or not entry.tracked:
             self._check_new_tracked_filename(filename)
-        return self._map.set_tracked(filename)
+        pre_tracked = self._map.set_tracked(filename)
+        if reset_copy:
+            self._map.copymap.pop(filename, None)
+        if pre_tracked:
+            self._dirty_tracked_set = True
+        return pre_tracked
 
     @requires_no_parents_change
     def set_untracked(self, filename):
@@ -488,24 +471,17 @@ class dirstate(object):
         ret = self._map.set_untracked(filename)
         if ret:
             self._dirty = True
+            self._dirty_tracked_set = True
         return ret
 
     @requires_no_parents_change
-    def set_clean(self, filename, parentfiledata=None):
+    def set_clean(self, filename, parentfiledata):
         """record that the current state of the file on disk is known to be clean"""
         self._dirty = True
-        if parentfiledata:
-            (mode, size, mtime) = parentfiledata
-        else:
-            (mode, size, mtime) = self._get_filedata(filename)
         if not self._map[filename].tracked:
             self._check_new_tracked_filename(filename)
+        (mode, size, mtime) = parentfiledata
         self._map.set_clean(filename, mode, size, mtime)
-        if mtime > self._lastnormaltime:
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = mtime
 
     @requires_no_parents_change
     def set_possibly_dirty(self, filename):
@@ -544,10 +520,6 @@ class dirstate(object):
             if entry is not None and entry.added:
                 return  # avoid dropping copy information (maybe?)
 
-        parentfiledata = None
-        if wc_tracked and p1_tracked:
-            parentfiledata = self._get_filedata(filename)
-
         self._map.reset_state(
             filename,
             wc_tracked,
@@ -555,16 +527,7 @@ class dirstate(object):
             # the underlying reference might have changed, we will have to
             # check it.
             has_meaningful_mtime=False,
-            parentfiledata=parentfiledata,
         )
-        if (
-            parentfiledata is not None
-            and parentfiledata[2] > self._lastnormaltime
-        ):
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = parentfiledata[2]
 
     @requires_parents_change
     def update_file(
@@ -593,13 +556,13 @@ class dirstate(object):
         # this. The test agrees
 
         self._dirty = True
-
-        need_parent_file_data = (
-            not possibly_dirty and not p2_info and wc_tracked and p1_tracked
-        )
-
-        if need_parent_file_data and parentfiledata is None:
-            parentfiledata = self._get_filedata(filename)
+        old_entry = self._map.get(filename)
+        if old_entry is None:
+            prev_tracked = False
+        else:
+            prev_tracked = old_entry.tracked
+        if prev_tracked != wc_tracked:
+            self._dirty_tracked_set = True
 
         self._map.reset_state(
             filename,
@@ -609,14 +572,6 @@ class dirstate(object):
             has_meaningful_mtime=not possibly_dirty,
             parentfiledata=parentfiledata,
         )
-        if (
-            parentfiledata is not None
-            and parentfiledata[2] > self._lastnormaltime
-        ):
-            # Remember the most recent modification timeslot for status(),
-            # to make sure we won't miss future size-preserving file content
-            # modifications that happen within the same timeslot.
-            self._lastnormaltime = parentfiledata[2]
 
     def _check_new_tracked_filename(self, filename):
         scmutil.checkfilename(filename)
@@ -633,14 +588,6 @@ class dirstate(object):
                 msg = _(b'file %r in dirstate clashes with %r')
                 msg %= (pycompat.bytestr(d), pycompat.bytestr(filename))
                 raise error.Abort(msg)
-
-    def _get_filedata(self, filename):
-        """returns"""
-        s = os.lstat(self._join(filename))
-        mode = s.st_mode
-        size = s.st_size
-        mtime = timestamp.mtime_of(s)
-        return (mode, size, mtime)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
         if exists is None:
@@ -720,7 +667,6 @@ class dirstate(object):
 
     def clear(self):
         self._map.clear()
-        self._lastnormaltime = timestamp.zero()
         self._dirty = True
 
     def rebuild(self, parent, allfiles, changedfiles=None):
@@ -728,9 +674,7 @@ class dirstate(object):
             # Rebuild entire dirstate
             to_lookup = allfiles
             to_drop = []
-            lastnormaltime = self._lastnormaltime
             self.clear()
-            self._lastnormaltime = lastnormaltime
         elif len(changedfiles) < 10:
             # Avoid turning allfiles into a set, which can be expensive if it's
             # large.
@@ -777,28 +721,41 @@ class dirstate(object):
         if not self._dirty:
             return
 
-        filename = self._filename
+        write_key = self._use_tracked_hint and self._dirty_tracked_set
         if tr:
-            # 'dirstate.write()' is not only for writing in-memory
-            # changes out, but also for dropping ambiguous timestamp.
-            # delayed writing re-raise "ambiguous timestamp issue".
-            # See also the wiki page below for detail:
-            # https://www.mercurial-scm.org/wiki/DirstateTransactionPlan
-
-            # record when mtime start to be ambiguous
-            now = _getfsnow(self._opener)
-
             # delay writing in-memory changes out
             tr.addfilegenerator(
-                b'dirstate',
+                b'dirstate-1-main',
                 (self._filename,),
-                lambda f: self._writedirstate(tr, f, now=now),
+                lambda f: self._writedirstate(tr, f),
                 location=b'plain',
+                post_finalize=True,
             )
+            if write_key:
+                tr.addfilegenerator(
+                    b'dirstate-2-key-post',
+                    (self._filename_th,),
+                    lambda f: self._write_tracked_hint(tr, f),
+                    location=b'plain',
+                    post_finalize=True,
+                )
             return
 
-        st = self._opener(filename, b"w", atomictemp=True, checkambig=True)
-        self._writedirstate(tr, st)
+        file = lambda f: self._opener(f, b"w", atomictemp=True, checkambig=True)
+        with file(self._filename) as f:
+            self._writedirstate(tr, f)
+        if write_key:
+            # we update the key-file after writing to make sure reader have a
+            # key that match the newly written content
+            with file(self._filename_th) as f:
+                self._write_tracked_hint(tr, f)
+
+    def delete_tracked_hint(self):
+        """remove the tracked_hint file
+
+        To be used by format downgrades operation"""
+        self._opener.unlink(self._filename_th)
+        self._use_tracked_hint = False
 
     def addparentchangecallback(self, category, callback):
         """add a callback to be called when the wd parents are changed
@@ -811,7 +768,7 @@ class dirstate(object):
         """
         self._plchangecallbacks[category] = callback
 
-    def _writedirstate(self, tr, st, now=None):
+    def _writedirstate(self, tr, st):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
             for c, callback in sorted(
@@ -819,34 +776,13 @@ class dirstate(object):
             ):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
-
-        if now is None:
-            # use the modification time of the newly created temporary file as the
-            # filesystem's notion of 'now'
-            now = timestamp.mtime_of(util.fstat(st))
-
-        # enough 'delaywrite' prevents 'pack_dirstate' from dropping
-        # timestamp of each entries in dirstate, because of 'now > mtime'
-        delaywrite = self._ui.configint(b'debug', b'dirstate.delaywrite')
-        if delaywrite > 0:
-            # do we have any files to delay for?
-            for f, e in pycompat.iteritems(self._map):
-                if e.need_delay(now):
-                    import time  # to avoid useless import
-
-                    # rather than sleep n seconds, sleep until the next
-                    # multiple of n seconds
-                    clock = time.time()
-                    start = int(clock) - (int(clock) % delaywrite)
-                    end = start + delaywrite
-                    time.sleep(end - clock)
-                    # trust our estimate that the end is near now
-                    now = timestamp.timestamp((end, 0))
-                    break
-
-        self._map.write(tr, st, now)
-        self._lastnormaltime = timestamp.zero()
+        self._map.write(tr, st)
         self._dirty = False
+        self._dirty_tracked_set = False
+
+    def _write_tracked_hint(self, tr, f):
+        key = node.hex(uuid.uuid4().bytes)
+        f.write(b"1\n%s\n" % key)  # 1 is the format version
 
     def _dirignore(self, f):
         if self._ignore(f):
@@ -1243,7 +1179,6 @@ class dirstate(object):
             self._rootdir,
             self._ignorefiles(),
             self._checkexec,
-            self._lastnormaltime,
             bool(list_clean),
             bool(list_ignored),
             bool(list_unknown),
@@ -1335,11 +1270,20 @@ class dirstate(object):
             # Some matchers have yet to be implemented
             use_rust = False
 
+        # Get the time from the filesystem so we can disambiguate files that
+        # appear modified in the present or future.
+        try:
+            mtime_boundary = timestamp.get_fs_now(self._opener)
+        except OSError:
+            # In largefiles or readonly context
+            mtime_boundary = None
+
         if use_rust:
             try:
-                return self._rust_status(
+                res = self._rust_status(
                     match, listclean, listignored, listunknown
                 )
+                return res + (mtime_boundary,)
             except rustmod.FallbackError:
                 pass
 
@@ -1361,7 +1305,6 @@ class dirstate(object):
         checkexec = self._checkexec
         checklink = self._checklink
         copymap = self._map.copymap
-        lastnormaltime = self._lastnormaltime
 
         # We need to do full walks when either
         # - we're listing all clean files, or
@@ -1417,19 +1360,17 @@ class dirstate(object):
                     else:
                         madd(fn)
                 elif not t.mtime_likely_equal_to(timestamp.mtime_of(st)):
-                    ladd(fn)
-                elif timestamp.mtime_of(st) == lastnormaltime:
-                    # fn may have just been marked as normal and it may have
-                    # changed in the same second without changing its size.
-                    # This can happen if we quickly do multiple commits.
-                    # Force lookup, so we don't miss such a racy file change.
+                    # There might be a change in the future if for example the
+                    # internal clock is off, but this is a case where the issues
+                    # the user would face would be a lot worse and there is
+                    # nothing we can really do.
                     ladd(fn)
                 elif listclean:
                     cadd(fn)
         status = scmutil.status(
             modified, added, removed, deleted, unknown, ignored, clean
         )
-        return (lookup, status)
+        return (lookup, status, mtime_boundary)
 
     def matches(self, match):
         """
@@ -1477,10 +1418,11 @@ class dirstate(object):
             # changes written out above, even if dirstate is never
             # changed after this
             tr.addfilegenerator(
-                b'dirstate',
+                b'dirstate-1-main',
                 (self._filename,),
                 lambda f: self._writedirstate(tr, f),
                 location=b'plain',
+                post_finalize=True,
             )
 
             # ensure that pending file written above is unlinked at

@@ -388,6 +388,14 @@ class PatchError(Exception):
     __bytes__ = _tobytes
 
 
+class PatchParseError(PatchError):
+    __bytes__ = _tobytes
+
+
+class PatchApplicationError(PatchError):
+    __bytes__ = _tobytes
+
+
 def getsimilar(symbols, value):
     # type: (Iterable[bytes], bytes) -> List[bytes]
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()

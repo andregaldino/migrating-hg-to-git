@@ -12,6 +12,7 @@ from ..interfaces import repository
 
 # See mercurial.revlogutils.constants for doc
 COMP_MODE_INLINE = 2
+RANK_UNKNOWN = -1
 
 
 def offset_type(offset, type):
@@ -34,6 +35,7 @@ def entry(
     sidedata_offset=0,
     sidedata_compressed_length=0,
     sidedata_compression_mode=COMP_MODE_INLINE,
+    rank=RANK_UNKNOWN,
 ):
     """Build one entry from symbolic name
 
@@ -56,6 +58,7 @@ def entry(
         sidedata_compressed_length,
         data_compression_mode,
         sidedata_compression_mode,
+        rank,
     )
 
 

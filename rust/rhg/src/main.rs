@@ -1,5 +1,6 @@
 extern crate log;
-use crate::ui::Ui;
+use crate::error::CommandError;
+use crate::ui::{local_to_utf8, Ui};
 use clap::App;
 use clap::AppSettings;
 use clap::Arg;
@@ -10,17 +11,18 @@ use hg::exit_codes;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
+use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
 
 mod blackbox;
+mod color;
 mod error;
 mod ui;
 pub mod utils {
     pub mod path_utils;
 }
-use error::CommandError;
 
 fn main_with_result(
     process_start_time: &blackbox::ProcessStartTime,
@@ -28,7 +30,7 @@ fn main_with_result(
     repo: Result<&Repo, &NoRepoInCwdError>,
     config: &Config,
 ) -> Result<(), CommandError> {
-    check_extensions(config)?;
+    check_unsupported(config, repo)?;
 
     let app = App::new("rhg")
         .global_setting(AppSettings::AllowInvalidUtf8)
@@ -62,6 +64,14 @@ fn main_with_result(
                 .help("change working directory")
                 .long("--cwd")
                 .value_name("DIR")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
+            Arg::with_name("color")
+                .help("when to colorize (boolean, always, auto, never, or debug)")
+                .long("--color")
+                .value_name("TYPE")
                 .takes_value(true)
                 .global(true),
         )
@@ -110,18 +120,23 @@ fn main_with_result(
         }
     }
 
-    let blackbox = blackbox::Blackbox::new(&invocation, process_start_time)?;
-    blackbox.log_command_start();
-    let result = run(&invocation);
-    blackbox.log_command_end(exit_code(
-        &result,
-        // TODO: show a warning or combine with original error if `get_bool`
-        // returns an error
-        config
-            .get_bool(b"ui", b"detailed-exit-code")
-            .unwrap_or(false),
-    ));
-    result
+    if config.is_extension_enabled(b"blackbox") {
+        let blackbox =
+            blackbox::Blackbox::new(&invocation, process_start_time)?;
+        blackbox.log_command_start();
+        let result = run(&invocation);
+        blackbox.log_command_end(exit_code(
+            &result,
+            // TODO: show a warning or combine with original error if
+            // `get_bool` returns an error
+            config
+                .get_bool(b"ui", b"detailed-exit-code")
+                .unwrap_or(false),
+        ));
+        result
+    } else {
+        run(&invocation)
+    }
 }
 
 fn main() {
@@ -131,7 +146,6 @@ fn main() {
     let process_start_time = blackbox::ProcessStartTime::now();
 
     env_logger::init();
-    let ui = ui::Ui::new();
 
     let early_args = EarlyArgs::parse(std::env::args_os());
 
@@ -145,7 +159,7 @@ fn main() {
             .unwrap_or_else(|error| {
                 exit(
                     &None,
-                    &ui,
+                    &Ui::new_infallible(&Config::empty()),
                     OnUnsupported::Abort,
                     Err(CommandError::abort(format!(
                         "abort: {}: '{}'",
@@ -166,7 +180,7 @@ fn main() {
 
             exit(
                 &initial_current_dir,
-                &ui,
+                &Ui::new_infallible(&Config::empty()),
                 on_unsupported,
                 Err(error.into()),
                 false,
@@ -174,12 +188,12 @@ fn main() {
         });
 
     non_repo_config
-        .load_cli_args_config(early_args.config)
+        .load_cli_args(early_args.config, early_args.color)
         .unwrap_or_else(|error| {
             exit(
                 &initial_current_dir,
-                &ui,
-                OnUnsupported::from_config(&ui, &non_repo_config),
+                &Ui::new_infallible(&non_repo_config),
+                OnUnsupported::from_config(&non_repo_config),
                 Err(error.into()),
                 non_repo_config
                     .get_bool(b"ui", b"detailed-exit-code")
@@ -196,8 +210,8 @@ fn main() {
         if SCHEME_RE.is_match(&repo_path_bytes) {
             exit(
                 &initial_current_dir,
-                &ui,
-                OnUnsupported::from_config(&ui, &non_repo_config),
+                &Ui::new_infallible(&non_repo_config),
+                OnUnsupported::from_config(&non_repo_config),
                 Err(CommandError::UnsupportedFeature {
                     message: format_bytes!(
                         b"URL-like --repository {}",
@@ -286,8 +300,8 @@ fn main() {
         }
         Err(error) => exit(
             &initial_current_dir,
-            &ui,
-            OnUnsupported::from_config(&ui, &non_repo_config),
+            &Ui::new_infallible(&non_repo_config),
+            OnUnsupported::from_config(&non_repo_config),
             Err(error.into()),
             // TODO: show a warning or combine with original error if
             // `get_bool` returns an error
@@ -302,7 +316,18 @@ fn main() {
     } else {
         &non_repo_config
     };
-    let on_unsupported = OnUnsupported::from_config(&ui, config);
+    let ui = Ui::new(&config).unwrap_or_else(|error| {
+        exit(
+            &initial_current_dir,
+            &Ui::new_infallible(&config),
+            OnUnsupported::from_config(&config),
+            Err(error.into()),
+            config
+                .get_bool(b"ui", b"detailed-exit-code")
+                .unwrap_or(false),
+        )
+    });
+    let on_unsupported = OnUnsupported::from_config(config);
 
     let result = main_with_result(
         &process_start_time,
@@ -358,10 +383,24 @@ fn exit(
 ) -> ! {
     if let (
         OnUnsupported::Fallback { executable },
-        Err(CommandError::UnsupportedFeature { .. }),
+        Err(CommandError::UnsupportedFeature { message }),
     ) = (&on_unsupported, &result)
     {
         let mut args = std::env::args_os();
+        let executable = match executable {
+            None => {
+                exit_no_fallback(
+                    ui,
+                    OnUnsupported::Abort,
+                    Err(CommandError::abort(
+                        "abort: 'rhg.on-unsupported=fallback' without \
+                                'rhg.fallback-executable' set.",
+                    )),
+                    false,
+                );
+            }
+            Some(executable) => executable,
+        };
         let executable_path = get_path_from_bytes(&executable);
         let this_executable = args.next().expect("exepcted argv[0] to exist");
         if executable_path == &PathBuf::from(this_executable) {
@@ -374,7 +413,10 @@ fn exit(
             ));
             on_unsupported = OnUnsupported::Abort
         } else {
-            // `args` is now `argv[1..]` since we’ve already consumed `argv[0]`
+            log::debug!("falling back (see trace-level log)");
+            log::trace!("{}", local_to_utf8(message));
+            // `args` is now `argv[1..]` since we’ve already consumed
+            // `argv[0]`
             let mut command = Command::new(executable_path);
             command.args(args);
             if let Some(initial) = initial_current_dir {
@@ -465,6 +507,7 @@ subcommands! {
     cat
     debugdata
     debugrequirements
+    debugignorerhg
     files
     root
     config
@@ -494,6 +537,8 @@ struct NoRepoInCwdError {
 struct EarlyArgs {
     /// Values of all `--config` arguments. (Possibly none)
     config: Vec<Vec<u8>>,
+    /// Value of all the `--color` argument, if any.
+    color: Option<Vec<u8>>,
     /// Value of the `-R` or `--repository` argument, if any.
     repo: Option<Vec<u8>>,
     /// Value of the `--cwd` argument, if any.
@@ -504,6 +549,7 @@ impl EarlyArgs {
     fn parse(args: impl IntoIterator<Item = OsString>) -> Self {
         let mut args = args.into_iter().map(get_bytes_from_os_str);
         let mut config = Vec::new();
+        let mut color = None;
         let mut repo = None;
         let mut cwd = None;
         // Use `while let` instead of `for` so that we can also call
@@ -515,6 +561,14 @@ impl EarlyArgs {
                 }
             } else if let Some(value) = arg.drop_prefix(b"--config=") {
                 config.push(value.to_owned())
+            }
+
+            if arg == b"--color" {
+                if let Some(value) = args.next() {
+                    color = Some(value)
+                }
+            } else if let Some(value) = arg.drop_prefix(b"--color=") {
+                color = Some(value.to_owned())
             }
 
             if arg == b"--cwd" {
@@ -535,7 +589,12 @@ impl EarlyArgs {
                 repo = Some(value.to_owned())
             }
         }
-        Self { config, repo, cwd }
+        Self {
+            config,
+            color,
+            repo,
+            cwd,
+        }
     }
 }
 
@@ -549,13 +608,13 @@ enum OnUnsupported {
     /// Silently exit with code 252.
     AbortSilent,
     /// Try running a Python implementation
-    Fallback { executable: Vec<u8> },
+    Fallback { executable: Option<Vec<u8>> },
 }
 
 impl OnUnsupported {
     const DEFAULT: Self = OnUnsupported::Abort;
 
-    fn from_config(ui: &Ui, config: &Config) -> Self {
+    fn from_config(config: &Config) -> Self {
         match config
             .get(b"rhg", b"on-unsupported")
             .map(|value| value.to_ascii_lowercase())
@@ -566,18 +625,7 @@ impl OnUnsupported {
             Some(b"fallback") => OnUnsupported::Fallback {
                 executable: config
                     .get(b"rhg", b"fallback-executable")
-                    .unwrap_or_else(|| {
-                        exit_no_fallback(
-                            ui,
-                            Self::Abort,
-                            Err(CommandError::abort(
-                                "abort: 'rhg.on-unsupported=fallback' without \
-                                'rhg.fallback-executable' set."
-                            )),
-                            false,
-                        )
-                    })
-                    .to_owned(),
+                    .map(|x| x.to_owned()),
             },
             None => Self::DEFAULT,
             Some(_) => {
@@ -588,10 +636,23 @@ impl OnUnsupported {
     }
 }
 
-const SUPPORTED_EXTENSIONS: &[&[u8]] = &[b"blackbox", b"share"];
+/// The `*` extension is an edge-case for config sub-options that apply to all
+/// extensions. For now, only `:required` exists, but that may change in the
+/// future.
+const SUPPORTED_EXTENSIONS: &[&[u8]] =
+    &[b"blackbox", b"share", b"sparse", b"narrow", b"*"];
 
 fn check_extensions(config: &Config) -> Result<(), CommandError> {
-    let enabled = config.get_section_keys(b"extensions");
+    let enabled: HashSet<&[u8]> = config
+        .get_section_keys(b"extensions")
+        .into_iter()
+        .map(|extension| {
+            // Ignore extension suboptions. Only `required` exists for now.
+            // `rhg` either supports an extension or doesn't, so it doesn't
+            // make sense to consider the loading of an extension.
+            extension.split_2(b':').unwrap_or((extension, b"")).0
+        })
+        .collect();
 
     let mut unsupported = enabled;
     for supported in SUPPORTED_EXTENSIONS {
@@ -615,4 +676,33 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
             ),
         })
     }
+}
+
+fn check_unsupported(
+    config: &Config,
+    repo: Result<&Repo, &NoRepoInCwdError>,
+) -> Result<(), CommandError> {
+    check_extensions(config)?;
+
+    if std::env::var_os("HG_PENDING").is_some() {
+        // TODO: only if the value is `== repo.working_directory`?
+        // What about relative v.s. absolute paths?
+        Err(CommandError::unsupported("$HG_PENDING"))?
+    }
+
+    if let Ok(repo) = repo {
+        if repo.has_subrepos()? {
+            Err(CommandError::unsupported("sub-repositories"))?
+        }
+    }
+
+    if config.has_non_empty_section(b"encode") {
+        Err(CommandError::unsupported("[encode] config"))?
+    }
+
+    if config.has_non_empty_section(b"decode") {
+        Err(CommandError::unsupported("[decode] config"))?
+    }
+
+    Ok(())
 }

@@ -22,7 +22,7 @@ impl Changelog {
     pub fn data_for_node(
         &self,
         node: NodePrefix,
-    ) -> Result<ChangelogEntry, RevlogError> {
+    ) -> Result<ChangelogRevisionData, RevlogError> {
         let rev = self.revlog.rev_from_node(node)?;
         self.data_for_rev(rev)
     }
@@ -31,9 +31,9 @@ impl Changelog {
     pub fn data_for_rev(
         &self,
         rev: Revision,
-    ) -> Result<ChangelogEntry, RevlogError> {
-        let bytes = self.revlog.get_rev_data(rev)?;
-        Ok(ChangelogEntry { bytes })
+    ) -> Result<ChangelogRevisionData, RevlogError> {
+        let bytes = self.revlog.get_rev_data(rev)?.into_owned();
+        Ok(ChangelogRevisionData { bytes })
     }
 
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
@@ -43,12 +43,12 @@ impl Changelog {
 
 /// `Changelog` entry which knows how to interpret the `changelog` data bytes.
 #[derive(Debug)]
-pub struct ChangelogEntry {
+pub struct ChangelogRevisionData {
     /// The data bytes of the `changelog` entry.
     bytes: Vec<u8>,
 }
 
-impl ChangelogEntry {
+impl ChangelogRevisionData {
     /// Return an iterator over the lines of the entry.
     pub fn lines(&self) -> impl Iterator<Item = &[u8]> {
         self.bytes

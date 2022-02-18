@@ -54,6 +54,7 @@ store is setgid
   00770 ./.hg/cache/
   00600 ./.hg/requires
   00770 ./.hg/store/
+  00600 ./.hg/store/requires
   00770 ./.hg/wcache/
 
   $ mkdir dir
@@ -92,6 +93,7 @@ new directories are setgid
   00660 ./.hg/store/data/foo/index (reposimplestore !)
   00660 ./.hg/store/fncache (repofncache !)
   00660 ./.hg/store/phaseroots
+  00600 ./.hg/store/requires
   00660 ./.hg/store/undo
   00660 ./.hg/store/undo.backupfiles
   00660 ./.hg/store/undo.phaseroots
@@ -121,6 +123,7 @@ group can write everything
   00770 ../push/.hg/cache/
   00660 ../push/.hg/requires
   00770 ../push/.hg/store/
+  00660 ../push/.hg/store/requires
   00770 ../push/.hg/wcache/
 
   $ umask 077
@@ -152,6 +155,7 @@ group can still write everything
   00660 ../push/.hg/store/data/foo/b80de5d138758541c5f05265ad144ab9fa86d1db (reposimplestore !)
   00660 ../push/.hg/store/data/foo/index (reposimplestore !)
   00660 ../push/.hg/store/fncache (repofncache !)
+  00660 ../push/.hg/store/requires
   00660 ../push/.hg/store/undo
   00660 ../push/.hg/store/undo.backupfiles
   00660 ../push/.hg/store/undo.phaseroots

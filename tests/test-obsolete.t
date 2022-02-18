@@ -169,10 +169,6 @@ check that heads does not report them
   5:5601fb93a350 (draft) [tip ] add new_3_c
   $ hg heads --hidden
   5:5601fb93a350 (draft) [tip ] add new_3_c
-  4:ca819180edb9 (draft *obsolete*) [ ] add new_2_c [rewritten as 5:5601fb93a350]
-  3:cdbce2fbb163 (draft *obsolete*) [ ] add new_c [rewritten as 4:ca819180edb9]
-  2:245bde4270cd (draft *obsolete*) [ ] add original_c [rewritten as 3:cdbce2fbb163]
-
 
 check that summary does not report them
 
@@ -193,7 +189,7 @@ check that summary does not report them
    add new_3_c
   branch: default
   commit: (clean)
-  update: 3 new changesets, 4 branch heads (merge)
+  update: (current)
   phases: 6 draft
   remote: 3 outgoing
 

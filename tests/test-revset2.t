@@ -870,7 +870,7 @@ aliases:
   $ try m
   (symbol 'm')
   abort: unknown revision 'm'
-  [255]
+  [10]
 
   $ HGPLAINEXCEPT=revsetalias
   $ export HGPLAINEXCEPT
@@ -1061,7 +1061,7 @@ far away.
       (symbol 'max')
       (string '$1')))
   abort: unknown revision '$1'
-  [255]
+  [10]
 
 test scope of alias expansion: 'universe' is expanded prior to 'shadowall(0)',
 but 'all()' should never be substituted to '0()'.
@@ -1601,7 +1601,7 @@ loading it
   > EOF
 
   $ hg debugrevspec "custom1()"
-  *** failed to import extension custompredicate from $TESTTMP/custompredicate.py: intentional failure of loading extension
+  *** failed to import extension "custompredicate" from $TESTTMP/custompredicate.py: intentional failure of loading extension
   hg: parse error: unknown identifier: custom1
   [10]
 

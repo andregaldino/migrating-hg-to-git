@@ -1,13 +1,3 @@
-#testcases sshv1 sshv2
-
-#if sshv2
-  $ cat >> $HGRCPATH << EOF
-  > [experimental]
-  > sshpeer.advertise-v2 = true
-  > sshserver.support-v2 = true
-  > EOF
-#endif
-
 This test tries to exercise the ssh functionality with a dummy script
 
 creating 'remote' repo
@@ -537,17 +527,13 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*[/\\]dummyssh" ['"]user@dummy['"] ['"]hg -R remote serve --stdio['"] (re)
-  sending upgrade request: * proto=exp-ssh-v2-0003 (glob) (sshv2 !)
   devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
   sending hello command
   sending between command
-  remote: 444 (sshv1 no-rust !)
-  remote: 463 (sshv1 rust !)
-  protocol upgraded to exp-ssh-v2-0003 (sshv2 !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (no-rust !)
-  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,persistent-nodemap,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (rust !)
-  remote: 1 (sshv1 !)
+  remote: \d+ (re)
+  remote: capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash (re)
+  remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)
   sending protocaps command

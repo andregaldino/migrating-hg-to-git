@@ -1494,7 +1494,7 @@ Invalid patch
   Hunk #1 FAILED at 0
   1 out of 1 hunks FAILED -- saving rejects to file editedfile.rej
   abort: patch failed to apply
-  [10]
+  [20]
   $ cat editedfile
   This change will not be committed
   This is the second line

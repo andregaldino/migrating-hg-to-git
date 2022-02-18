@@ -264,7 +264,11 @@ def prettyrepr(o):
         q1 = rs.find(b'<', p1 + 1)
         if q1 < 0:
             q1 = len(rs)
+            # pytype: disable=wrong-arg-count
+            # TODO: figure out why pytype doesn't recognize the optional start
+            #  arg
         elif q1 > p1 + 1 and rs.startswith(b'=', q1 - 1):
+            # pytype: enable=wrong-arg-count
             # backtrack for ' field=<'
             q0 = rs.rfind(b' ', p1 + 1, q1 - 1)
         if q0 < 0:
@@ -692,11 +696,11 @@ def escapestr(s):
         s = bytes(s)
     # call underlying function of s.encode('string_escape') directly for
     # Python 3 compatibility
-    return codecs.escape_encode(s)[0]
+    return codecs.escape_encode(s)[0]  # pytype: disable=module-attr
 
 
 def unescapestr(s):
-    return codecs.escape_decode(s)[0]
+    return codecs.escape_decode(s)[0]  # pytype: disable=module-attr
 
 
 def forcebytestr(obj):

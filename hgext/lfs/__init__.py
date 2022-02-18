@@ -257,25 +257,28 @@ def _reposetup(ui, repo):
     if b'lfs' not in repo.requirements:
 
         def checkrequireslfs(ui, repo, **kwargs):
-            if b'lfs' in repo.requirements:
-                return 0
+            with repo.lock():
+                if b'lfs' in repo.requirements:
+                    return 0
 
-            last = kwargs.get('node_last')
-            if last:
-                s = repo.set(b'%n:%n', bin(kwargs['node']), bin(last))
-            else:
-                s = repo.set(b'%n', bin(kwargs['node']))
-            match = repo._storenarrowmatch
-            for ctx in s:
-                # TODO: is there a way to just walk the files in the commit?
-                if any(
-                    ctx[f].islfs() for f in ctx.files() if f in ctx and match(f)
-                ):
-                    repo.requirements.add(b'lfs')
-                    repo.features.add(repository.REPO_FEATURE_LFS)
-                    scmutil.writereporequirements(repo)
-                    repo.prepushoutgoinghooks.add(b'lfs', wrapper.prepush)
-                    break
+                last = kwargs.get('node_last')
+                if last:
+                    s = repo.set(b'%n:%n', bin(kwargs['node']), bin(last))
+                else:
+                    s = repo.set(b'%n', bin(kwargs['node']))
+                match = repo._storenarrowmatch
+                for ctx in s:
+                    # TODO: is there a way to just walk the files in the commit?
+                    if any(
+                        ctx[f].islfs()
+                        for f in ctx.files()
+                        if f in ctx and match(f)
+                    ):
+                        repo.requirements.add(b'lfs')
+                        repo.features.add(repository.REPO_FEATURE_LFS)
+                        scmutil.writereporequirements(repo)
+                        repo.prepushoutgoinghooks.add(b'lfs', wrapper.prepush)
+                        break
 
         ui.setconfig(b'hooks', b'commit.lfs', checkrequireslfs, b'lfs')
         ui.setconfig(

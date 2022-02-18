@@ -218,27 +218,27 @@ Merge with remote
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content1_content4-tracked
+  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content2_content1-tracked
   merging content1_content2_content2_content4-tracked
+  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content3_content1-tracked
   merging content1_content2_content3_content3-tracked
+  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_content3_content4-tracked
+  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   merging content1_content2_missing_content1-tracked
   merging content1_content2_missing_content4-tracked
-  merging missing_content2_content2_content4-tracked
-  merging missing_content2_content3_content3-tracked
-  merging missing_content2_content3_content4-tracked
-  merging missing_content2_missing_content4-tracked
-  merging missing_content2_missing_content4-untracked
-  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content2_content4-tracked
   warning: conflicts while merging missing_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content3-tracked
   warning: conflicts while merging missing_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content4-tracked
   warning: conflicts while merging missing_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-tracked
   warning: conflicts while merging missing_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-untracked
   warning: conflicts while merging missing_content2_missing_content4-untracked! (edit, then use 'hg resolve --mark')
   18 files updated, 3 files merged, 8 files removed, 35 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
@@ -398,13 +398,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content1_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content1_content4-untracked
   content2
@@ -428,13 +428,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content2_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content2_content4-untracked
   content2
@@ -458,25 +458,25 @@ the remote side did not touch the file
   content2
   
   M content1_content2_content3_content3-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content3
-  ||||||| base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content3_content3-untracked
   content2
   
   M content1_content2_content3_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_content3_content4-untracked
   content2
@@ -500,13 +500,13 @@ the remote side did not touch the file
   content2
   
   M content1_content2_missing_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 8ef80617fa20 - test: base
   content1
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M content1_content2_missing_content4-untracked
   content2
@@ -584,12 +584,12 @@ the remote side did not touch the file
   content2
   
   M missing_content2_content2_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content2_content4-untracked
   content2
@@ -607,23 +607,23 @@ the remote side did not touch the file
   content2
   
   M missing_content2_content3_content3-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content3
-  ||||||| base
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content3_content3-untracked
   content2
   
   M missing_content2_content3_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_content3_content4-untracked
   content2
@@ -641,20 +641,20 @@ the remote side did not touch the file
   content2
   
   M missing_content2_missing_content4-tracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_missing_content4-untracked
-  <<<<<<< working copy: 0447570f1af6 - test: local
+  <<<<<<< working copy:    0447570f1af6 - test: local
   content4
-  ||||||| base
+  ||||||| common ancestor: 000000000000 - : 
   =======
   content2
-  >>>>>>> merge rev:    85100b8c675b - test: remote
+  >>>>>>> merge rev:       85100b8c675b - test: remote
   
   M missing_content2_missing_missing-tracked
   content2
@@ -735,6 +735,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content1_content4-tracked
+  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content1_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -752,6 +753,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content2_content4-tracked
+  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content2_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -769,10 +771,12 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content3_content3-tracked
+  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content3_content3-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_content3_content4-tracked
+  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_content3_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -790,6 +794,7 @@ Re-resolve and check status
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
   merging content1_content2_missing_content4-tracked
+  warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
   file 'content1_content2_missing_content4-untracked' was deleted in local [working copy] but was modified in other [merge rev].
   You can use (c)hanged version, leave (d)eleted, or leave (u)nresolved.
   What do you want to do? u
@@ -812,19 +817,14 @@ Re-resolve and check status
   You can use (c)hanged version, (d)elete, or leave (u)nresolved.
   What do you want to do? u
   merging missing_content2_content2_content4-tracked
-  merging missing_content2_content3_content3-tracked
-  merging missing_content2_content3_content4-tracked
-  merging missing_content2_missing_content4-tracked
-  merging missing_content2_missing_content4-untracked
-  warning: conflicts while merging content1_content2_content1_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
-  warning: conflicts while merging content1_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging missing_content2_content2_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content3-tracked
   warning: conflicts while merging missing_content2_content3_content3-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_content3_content4-tracked
   warning: conflicts while merging missing_content2_content3_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-tracked
   warning: conflicts while merging missing_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
+  merging missing_content2_missing_content4-untracked
   warning: conflicts while merging missing_content2_missing_content4-untracked! (edit, then use 'hg resolve --mark')
   [1]
   $ checkstatus > $TESTTMP/status2 2>&1

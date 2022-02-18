@@ -1519,26 +1519,38 @@ Test section name with dot
       "commands.update.check"
           Determines what level of checking 'hg update' will perform before
           moving to a destination revision. Valid values are "abort", "none",
-          "linear", and "noconflict". "abort" always fails if the working
-          directory has uncommitted changes. "none" performs no checking, and
-          may result in a merge with uncommitted changes. "linear" allows any
-          update as long as it follows a straight line in the revision history,
-          and may trigger a merge with uncommitted changes. "noconflict" will
-          allow any update which would not trigger a merge with uncommitted
-          changes, if any are present. (default: "linear")
+          "linear", and "noconflict".
+  
+          - "abort" always fails if the working directory has uncommitted
+            changes.
+          - "none" performs no checking, and may result in a merge with
+            uncommitted changes.
+          - "linear" allows any update as long as it follows a straight line in
+            the revision history, and may trigger a merge with uncommitted
+            changes.
+          - "noconflict" will allow any update which would not trigger a merge
+            with uncommitted changes, if any are present.
+  
+          (default: "linear")
   
 
   $ hg help config.commands.update.check
       "commands.update.check"
           Determines what level of checking 'hg update' will perform before
           moving to a destination revision. Valid values are "abort", "none",
-          "linear", and "noconflict". "abort" always fails if the working
-          directory has uncommitted changes. "none" performs no checking, and
-          may result in a merge with uncommitted changes. "linear" allows any
-          update as long as it follows a straight line in the revision history,
-          and may trigger a merge with uncommitted changes. "noconflict" will
-          allow any update which would not trigger a merge with uncommitted
-          changes, if any are present. (default: "linear")
+          "linear", and "noconflict".
+  
+          - "abort" always fails if the working directory has uncommitted
+            changes.
+          - "none" performs no checking, and may result in a merge with
+            uncommitted changes.
+          - "linear" allows any update as long as it follows a straight line in
+            the revision history, and may trigger a merge with uncommitted
+            changes.
+          - "noconflict" will allow any update which would not trigger a merge
+            with uncommitted changes, if any are present.
+  
+          (default: "linear")
   
 
   $ hg help config.ommands.update.check
@@ -1586,6 +1598,8 @@ Separate sections from subsections
       "usefncache"
   
       "use-dirstate-v2"
+  
+      "use-dirstate-tracked-hint"
   
       "use-persistent-nodemap"
   

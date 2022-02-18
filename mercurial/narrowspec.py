@@ -109,23 +109,24 @@ def validatepatterns(pats):
     and patterns that are loaded from sources that use the internal,
     prefixed pattern representation (but can't necessarily be fully trusted).
     """
-    if not isinstance(pats, set):
-        raise error.ProgrammingError(
-            b'narrow patterns should be a set; got %r' % pats
-        )
-
-    for pat in pats:
-        if not pat.startswith(VALID_PREFIXES):
-            # Use a Mercurial exception because this can happen due to user
-            # bugs (e.g. manually updating spec file).
-            raise error.Abort(
-                _(b'invalid prefix on narrow pattern: %s') % pat,
-                hint=_(
-                    b'narrow patterns must begin with one of '
-                    b'the following: %s'
-                )
-                % b', '.join(VALID_PREFIXES),
+    with util.timedcm('narrowspec.validatepatterns(pats size=%d)', len(pats)):
+        if not isinstance(pats, set):
+            raise error.ProgrammingError(
+                b'narrow patterns should be a set; got %r' % pats
             )
+
+        for pat in pats:
+            if not pat.startswith(VALID_PREFIXES):
+                # Use a Mercurial exception because this can happen due to user
+                # bugs (e.g. manually updating spec file).
+                raise error.Abort(
+                    _(b'invalid prefix on narrow pattern: %s') % pat,
+                    hint=_(
+                        b'narrow patterns must begin with one of '
+                        b'the following: %s'
+                    )
+                    % b', '.join(VALID_PREFIXES),
+                )
 
 
 def format(includes, excludes):
@@ -323,7 +324,7 @@ def updateworkingcopy(repo, assumeclean=False):
     removedmatch = matchmod.differencematcher(oldmatch, newmatch)
 
     ds = repo.dirstate
-    lookup, status = ds.status(
+    lookup, status, _mtime_boundary = ds.status(
         removedmatch, subrepos=[], ignored=True, clean=True, unknown=True
     )
     trackeddirty = status.modified + status.added

@@ -40,7 +40,7 @@ without changegroup2 support
   > EOF
 
   $ hg init master
-  $ grep generaldelta master/.hg/requires
+  $ hg debugrequires -R master | grep generaldelta
   generaldelta
   $ cd master
 preferuncompressed = False so that we can make both generaldelta and non-generaldelta clones

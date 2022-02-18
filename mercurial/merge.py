@@ -41,10 +41,9 @@ def _getcheckunknownconfig(repo, section, name):
     valid = [b'abort', b'ignore', b'warn']
     if config not in valid:
         validstr = b', '.join([b"'" + v + b"'" for v in valid])
-        raise error.ConfigError(
-            _(b"%s.%s not valid ('%s' is none of %s)")
-            % (section, name, config, validstr)
-        )
+        msg = _(b"%s.%s not valid ('%s' is none of %s)")
+        msg %= (section, name, config, validstr)
+        raise error.ConfigError(msg)
     return config
 
 
@@ -337,10 +336,9 @@ def _checkcollision(repo, wmf, mresult):
     for f in pmmf:
         fold = util.normcase(f)
         if fold in foldmap:
-            raise error.StateError(
-                _(b"case-folding collision between %s and %s")
-                % (f, foldmap[fold])
-            )
+            msg = _(b"case-folding collision between %s and %s")
+            msg %= (f, foldmap[fold])
+            raise error.StateError(msg)
         foldmap[fold] = f
 
     # check case-folding of directories
@@ -348,10 +346,9 @@ def _checkcollision(repo, wmf, mresult):
     for fold, f in sorted(foldmap.items()):
         if fold.startswith(foldprefix) and not f.startswith(unfoldprefix):
             # the folded prefix matches but actual casing is different
-            raise error.StateError(
-                _(b"case-folding collision between %s and directory of %s")
-                % (lastfull, f)
-            )
+            msg = _(b"case-folding collision between %s and directory of %s")
+            msg %= (lastfull, f)
+            raise error.StateError(msg)
         foldprefix = fold + b'/'
         unfoldprefix = f + b'/'
         lastfull = f
@@ -491,7 +488,7 @@ def checkpathconflicts(repo, wctx, mctx, mresult):
                 mresult.addfile(
                     p,
                     mergestatemod.ACTION_PATH_CONFLICT,
-                    (pnew, mergestatemod.ACTION_REMOVE),
+                    (pnew, b'r'),
                     b'path conflict',
                 )
                 remoteconflicts.remove(p)
@@ -512,17 +509,6 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
     Raise an exception if the merge cannot be completed because the repo is
     narrowed.
     """
-    # TODO: handle with nonconflicttypes
-    nonconflicttypes = {
-        mergestatemod.ACTION_ADD,
-        mergestatemod.ACTION_ADD_MODIFIED,
-        mergestatemod.ACTION_CREATED,
-        mergestatemod.ACTION_CREATED_MERGE,
-        mergestatemod.ACTION_FORGET,
-        mergestatemod.ACTION_GET,
-        mergestatemod.ACTION_REMOVE,
-        mergestatemod.ACTION_EXEC,
-    }
     # We mutate the items in the dict during iteration, so iterate
     # over a copy.
     for f, action in mresult.filemap():
@@ -530,21 +516,25 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             pass
         elif not branchmerge:
             mresult.removefile(f)  # just updating, ignore changes outside clone
-        elif action[0] in mergestatemod.NO_OP_ACTIONS:
+        elif action[0].no_op:
             mresult.removefile(f)  # merge does not affect file
-        elif action[0] in nonconflicttypes:
-            raise error.Abort(
-                _(
+        elif action[0].narrow_safe:
+            if not f.endswith(b'/'):
+                mresult.removefile(f)  # merge won't affect on-disk files
+
+                mresult.addcommitinfo(
+                    f, b'outside-narrow-merge-action', action[0].changes
+                )
+            else:  # TODO: handle the tree case
+                msg = _(
                     b'merge affects file \'%s\' outside narrow, '
                     b'which is not yet supported'
                 )
-                % f,
-                hint=_(b'merging in the other direction may work'),
-            )
+                hint = _(b'merging in the other direction may work')
+                raise error.Abort(msg % f, hint=hint)
         else:
-            raise error.Abort(
-                _(b'conflict in file \'%s\' is outside narrow clone') % f
-            )
+            msg = _(b'conflict in file \'%s\' is outside narrow clone')
+            raise error.StateError(msg % f)
 
 
 class mergeresult(object):
@@ -705,7 +695,7 @@ class mergeresult(object):
                     mergestatemod.ACTION_PATH_CONFLICT_RESOLVE,
                 )
                 and self._actionmapping[a]
-                and a not in mergestatemod.NO_OP_ACTIONS
+                and not a.no_op
             ):
                 return True
 
@@ -1207,7 +1197,7 @@ def calculateupdates(
 
             for f, a in mresult1.filemap(sort=True):
                 m, args, msg = a
-                repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m))
+                repo.ui.debug(b' %s: %s -> %s\n' % (f, msg, m.__bytes__()))
                 if f in fbids:
                     d = fbids[f]
                     if m in d:
@@ -1228,13 +1218,15 @@ def calculateupdates(
                 repo.ui.debug(b" list of bids for %s:\n" % f)
                 for m, l in sorted(bids.items()):
                     for _f, args, msg in l:
-                        repo.ui.debug(b'   %s -> %s\n' % (msg, m))
+                        repo.ui.debug(b'   %s -> %s\n' % (msg, m.__bytes__()))
             # bids is a mapping from action method to list af actions
             # Consensus?
             if len(bids) == 1:  # all bids are the same kind of method
                 m, l = list(bids.items())[0]
                 if all(a == l[0] for a in l[1:]):  # len(bids) is > 1
-                    repo.ui.note(_(b" %s: consensus for %s\n") % (f, m))
+                    repo.ui.note(
+                        _(b" %s: consensus for %s\n") % (f, m.__bytes__())
+                    )
                     mresult.addfile(f, *l[0])
                     continue
             # If keep is an option, just do it.
@@ -1292,11 +1284,12 @@ def calculateupdates(
             repo.ui.note(_(b' %s: multiple bids for merge action:\n') % f)
             for m, l in sorted(bids.items()):
                 for _f, args, msg in l:
-                    repo.ui.note(b'  %s -> %s\n' % (msg, m))
+                    repo.ui.note(b'  %s -> %s\n' % (msg, m.__bytes__()))
             # Pick random action. TODO: Instead, prompt user when resolving
             m, l = list(bids.items())[0]
             repo.ui.warn(
-                _(b' %s: ambiguous merge - picked %s action\n') % (f, m)
+                _(b' %s: ambiguous merge - picked %s action\n')
+                % (f, m.__bytes__())
             )
             mresult.addfile(f, *l[0])
             continue
@@ -1404,6 +1397,34 @@ def batchget(repo, mctx, wctx, wantfiledata, actions):
                 atomictemp=atomictemp,
             )
             if wantfiledata:
+                # XXX note that there is a race window between the time we
+                # write the clean data into the file and we stats it. So another
+                # writing process meddling with the file content right after we
+                # wrote it could cause bad stat data to be gathered.
+                #
+                # They are 2 data we gather here
+                # - the mode:
+                #       That we actually just wrote, we should not need to read
+                #       it from disk, (except not all mode might have survived
+                #       the disk round-trip, which is another issue: we should
+                #       not depends on this)
+                # - the mtime,
+                #       On system that support nanosecond precision, the mtime
+                #       could be accurate enough to tell the two writes appart.
+                #       However gathering it in a racy way make the mtime we
+                #       gather "unreliable".
+                #
+                # (note: we get the size from the data we write, which is sane)
+                #
+                # So in theory the data returned here are fully racy, but in
+                # practice "it works mostly fine".
+                #
+                # Do not be surprised if you end up reading this while looking
+                # for the causes of some buggy status. Feel free to improve
+                # this in the future, but we cannot simply stop gathering
+                # information. Otherwise `hg status` call made after a large `hg
+                # update` runs would have to redo a similar amount of work to
+                # restore and compare all files content.
                 s = wfctx.lstat()
                 mode = s.st_mode
                 mtime = timestamp.mtime_of(s)
@@ -1495,7 +1516,8 @@ def applyupdates(
         # mergestate so that it can be reused on commit
         ms.addcommitinfo(f, op)
 
-    numupdates = mresult.len() - mresult.len(mergestatemod.NO_OP_ACTIONS)
+    num_no_op = mresult.len(mergestatemod.MergeAction.NO_OP_ACTIONS)
+    numupdates = mresult.len() - num_no_op
     progress = repo.ui.makeprogress(
         _(b'updating'), unit=_(b'files'), total=numupdates
     )
@@ -1599,9 +1621,9 @@ def applyupdates(
         progress.increment(item=f)
 
     # keep (noop, just log it)
-    for a in mergestatemod.NO_OP_ACTIONS:
+    for a in mergestatemod.MergeAction.NO_OP_ACTIONS:
         for f, args, msg in mresult.getactions((a,), sort=True):
-            repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a))
+            repo.ui.debug(b" %s: %s -> %s\n" % (f, msg, a.__bytes__()))
             # no progress
 
     # directory rename, move local
@@ -1690,10 +1712,8 @@ def applyupdates(
     )
 
     try:
-        # premerge
-        tocomplete = []
         for f, args, msg in mergeactions:
-            repo.ui.debug(b" %s: %s -> m (premerge)\n" % (f, msg))
+            repo.ui.debug(b" %s: %s -> m\n" % (f, msg))
             ms.addcommitinfo(f, {b'merged': b'yes'})
             progress.increment(item=f)
             if f == b'.hgsubstate':  # subrepo states need updating
@@ -1702,16 +1722,6 @@ def applyupdates(
                 )
                 continue
             wctx[f].audit()
-            complete, r = ms.preresolve(f, wctx)
-            if not complete:
-                numupdates += 1
-                tocomplete.append((f, args, msg))
-
-        # merge
-        for f, args, msg in tocomplete:
-            repo.ui.debug(b" %s: %s -> m (merge)\n" % (f, msg))
-            ms.addcommitinfo(f, {b'merged': b'yes'})
-            progress.increment(item=f, total=numupdates)
             ms.resolve(f, wctx)
 
     except error.InterventionRequired:
@@ -1823,7 +1833,7 @@ def _update(
       If false, merging with an ancestor (fast-forward) is only allowed
       between different named branches. This flag is used by rebase extension
       as a temporary fix and should be avoided in general.
-    labels = labels to use for base, local and other
+    labels = labels to use for local, other, and base
     mergeforce = whether the merge was run with 'merge --force' (deprecated): if
       this is True, then 'force' should be True as well.
 
@@ -1875,22 +1885,11 @@ def _update(
         # updatecheck='abort' to better suppport some of these callers.
         if updatecheck is None:
             updatecheck = UPDATECHECK_LINEAR
-        if updatecheck not in (
-            UPDATECHECK_NONE,
-            UPDATECHECK_LINEAR,
-            UPDATECHECK_NO_CONFLICT,
-        ):
-            raise ValueError(
-                r'Invalid updatecheck %r (can accept %r)'
-                % (
-                    updatecheck,
-                    (
-                        UPDATECHECK_NONE,
-                        UPDATECHECK_LINEAR,
-                        UPDATECHECK_NO_CONFLICT,
-                    ),
-                )
-            )
+        okay = (UPDATECHECK_NONE, UPDATECHECK_LINEAR, UPDATECHECK_NO_CONFLICT)
+        if updatecheck not in okay:
+            msg = r'Invalid updatecheck %r (can accept %r)'
+            msg %= (updatecheck, okay)
+            raise ValueError(msg)
     if wc is not None and wc.isinmemory():
         maybe_wlock = util.nullcontextmanager()
     else:
@@ -1919,29 +1918,22 @@ def _update(
                 raise error.StateError(_(b"outstanding uncommitted merge"))
             ms = wc.mergestate()
             if ms.unresolvedcount():
-                raise error.StateError(
-                    _(b"outstanding merge conflicts"),
-                    hint=_(b"use 'hg resolve' to resolve"),
-                )
+                msg = _(b"outstanding merge conflicts")
+                hint = _(b"use 'hg resolve' to resolve")
+                raise error.StateError(msg, hint=hint)
         if branchmerge:
+            m_a = _(b"merging with a working directory ancestor has no effect")
             if pas == [p2]:
-                raise error.Abort(
-                    _(
-                        b"merging with a working directory ancestor"
-                        b" has no effect"
-                    )
-                )
+                raise error.Abort(m_a)
             elif pas == [p1]:
                 if not mergeancestor and wc.branch() == p2.branch():
-                    raise error.Abort(
-                        _(b"nothing to merge"),
-                        hint=_(b"use 'hg update' or check 'hg heads'"),
-                    )
+                    msg = _(b"nothing to merge")
+                    hint = _(b"use 'hg update' or check 'hg heads'")
+                    raise error.Abort(msg, hint=hint)
             if not force and (wc.files() or wc.deleted()):
-                raise error.StateError(
-                    _(b"uncommitted changes"),
-                    hint=_(b"use 'hg status' to list changes"),
-                )
+                msg = _(b"uncommitted changes")
+                hint = _(b"use 'hg status' to list changes")
+                raise error.StateError(msg, hint=hint)
             if not wc.isinmemory():
                 for s in sorted(wc.substate):
                     wc.sub(s).bailifchanged()
@@ -2144,6 +2136,71 @@ def _update(
                 mresult.len((mergestatemod.ACTION_GET,)) if wantfiledata else 0
             )
             with repo.dirstate.parentchange():
+                ### Filter Filedata
+                #
+                # We gathered "cache" information for the clean file while
+                # updating them: mtime, size and mode.
+                #
+                # At the time this comment is written, they are various issues
+                # with how we gather the `mode` and `mtime` information (see
+                # the comment in `batchget`).
+                #
+                # We are going to smooth one of this issue here : mtime ambiguity.
+                #
+                # i.e. even if the mtime gathered during `batchget` was
+                # correct[1] a change happening right after it could change the
+                # content while keeping the same mtime[2].
+                #
+                # When we reach the current code, the "on disk" part of the
+                # update operation is finished. We still assume that no other
+                # process raced that "on disk" part, but we want to at least
+                # prevent later file change to alter the content of the file
+                # right after the update operation. So quickly that the same
+                # mtime is record for the operation.
+                # To prevent such ambiguity to happens, we will only keep the
+                # "file data" for files with mtime that are stricly in the past,
+                # i.e. whose mtime is strictly lower than the current time.
+                #
+                # This protect us from race conditions from operation that could
+                # run right after this one, especially other Mercurial
+                # operation that could be waiting for the wlock to touch files
+                # content and the dirstate.
+                #
+                # In an ideal world, we could only get reliable information in
+                # `getfiledata` (from `getbatch`), however the current approach
+                # have been a successful compromise since many years.
+                #
+                # At the time this comment is written, not using any "cache"
+                # file data at all here would not be viable. As it would result is
+                # a very large amount of work (equivalent to the previous `hg
+                # update` during the next status after an update).
+                #
+                # [1] the current code cannot grantee that the `mtime` and
+                # `mode` are correct, but the result is "okay in practice".
+                # (see the comment in `batchget`).                #
+                #
+                # [2] using nano-second precision can greatly help here because
+                # it makes the "different write with same mtime" issue
+                # virtually vanish. However, dirstate v1 cannot store such
+                # precision and a bunch of python-runtime, operating-system and
+                # filesystem does not provide use with such precision, so we
+                # have to operate as if it wasn't available.
+                if getfiledata:
+                    ambiguous_mtime = {}
+                    now = timestamp.get_fs_now(repo.vfs)
+                    if now is None:
+                        # we can't write to the FS, so we won't actually update
+                        # the dirstate content anyway, no need to put cache
+                        # information.
+                        getfiledata = None
+                    else:
+                        now_sec = now[0]
+                        for f, m in pycompat.iteritems(getfiledata):
+                            if m is not None and m[2][0] >= now_sec:
+                                ambiguous_mtime[f] = (m[0], m[1], None)
+                        for f, m in pycompat.iteritems(ambiguous_mtime):
+                            getfiledata[f] = m
+
                 repo.setparents(fp1, fp2)
                 mergestatemod.recordupdates(
                     repo, mresult.actionsdict, branchmerge, getfiledata
@@ -2199,7 +2256,7 @@ def update(ctx, updatecheck=None, wc=None):
         ctx.rev(),
         branchmerge=False,
         force=False,
-        labels=[b'working copy', b'destination'],
+        labels=[b'working copy', b'destination', b'working copy parent'],
         updatecheck=updatecheck,
         wc=wc,
     )
@@ -2311,9 +2368,8 @@ def graft(
 def back_out(ctx, parent=None, wc=None):
     if parent is None:
         if ctx.p2() is not None:
-            raise error.ProgrammingError(
-                b"must specify parent of merge commit to back out"
-            )
+            msg = b"must specify parent of merge commit to back out"
+            raise error.ProgrammingError(msg)
         parent = ctx.p1()
     return _update(
         ctx.repo(),
@@ -2386,13 +2442,13 @@ def purge(
 
         if confirm:
             nb_ignored = len(status.ignored)
-            nb_unkown = len(status.unknown)
-            if nb_unkown and nb_ignored:
-                msg = _(b"permanently delete %d unkown and %d ignored files?")
-                msg %= (nb_unkown, nb_ignored)
-            elif nb_unkown:
-                msg = _(b"permanently delete %d unkown files?")
-                msg %= nb_unkown
+            nb_unknown = len(status.unknown)
+            if nb_unknown and nb_ignored:
+                msg = _(b"permanently delete %d unknown and %d ignored files?")
+                msg %= (nb_unknown, nb_ignored)
+            elif nb_unknown:
+                msg = _(b"permanently delete %d unknown files?")
+                msg %= nb_unknown
             elif nb_ignored:
                 msg = _(b"permanently delete %d ignored files?")
                 msg %= nb_ignored

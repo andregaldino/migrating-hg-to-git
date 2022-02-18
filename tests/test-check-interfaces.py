@@ -39,7 +39,6 @@ from mercurial import (
     wireprotoserver,
     wireprototypes,
     wireprotov1peer,
-    wireprotov2server,
 )
 
 testdir = os.path.dirname(__file__)
@@ -129,9 +128,6 @@ def main():
     ziverify.verifyClass(repository.ipeerbase, httppeer.httppeer)
     checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None, None))
 
-    ziverify.verifyClass(repository.ipeerv2, httppeer.httpv2peer)
-    checkzobject(httppeer.httpv2peer(None, b'', b'', None, None, None))
-
     ziverify.verifyClass(repository.ipeerbase, localrepo.localpeer)
     checkzobject(localrepo.localpeer(dummyrepo()))
 
@@ -148,19 +144,6 @@ def main():
     ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv1peer)
     checkzobject(
         sshpeer.sshv1peer(
-            ui,
-            b'ssh://localhost/foo',
-            b'',
-            dummypipe(),
-            dummypipe(),
-            None,
-            None,
-        )
-    )
-
-    ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv2peer)
-    checkzobject(
-        sshpeer.sshv2peer(
             ui,
             b'ssh://localhost/foo',
             b'',
@@ -193,26 +176,15 @@ def main():
         wireprototypes.baseprotocolhandler, wireprotoserver.sshv1protocolhandler
     )
     ziverify.verifyClass(
-        wireprototypes.baseprotocolhandler, wireprotoserver.sshv2protocolhandler
-    )
-    ziverify.verifyClass(
         wireprototypes.baseprotocolhandler,
         wireprotoserver.httpv1protocolhandler,
-    )
-    ziverify.verifyClass(
-        wireprototypes.baseprotocolhandler,
-        wireprotov2server.httpv2protocolhandler,
     )
 
     sshv1 = wireprotoserver.sshv1protocolhandler(None, None, None)
     checkzobject(sshv1)
-    sshv2 = wireprotoserver.sshv2protocolhandler(None, None, None)
-    checkzobject(sshv2)
 
     httpv1 = wireprotoserver.httpv1protocolhandler(None, None, None)
     checkzobject(httpv1)
-    httpv2 = wireprotov2server.httpv2protocolhandler(None, None)
-    checkzobject(httpv2)
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
     ziverify.verifyClass(repository.imanifestdict, manifest.manifestdict)

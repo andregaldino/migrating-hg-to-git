@@ -84,7 +84,7 @@ class diffopts(object):
         try:
             self.context = int(self.context)
         except ValueError:
-            raise error.Abort(
+            raise error.InputError(
                 _(b'diff context lines count must be an integer, not %r')
                 % pycompat.bytestr(self.context)
             )

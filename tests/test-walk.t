@@ -299,10 +299,10 @@
   f  mammals/skunk                   skunk
   $ hg debugwalk -v .hg
   abort: path 'mammals/.hg' is inside nested repo 'mammals'
-  [255]
+  [10]
   $ hg debugwalk -v ../.hg
   abort: path contains illegal component: .hg
-  [255]
+  [10]
   $ cd ..
 
   $ hg debugwalk -v -Ibeans
@@ -410,16 +410,16 @@
   [255]
   $ hg debugwalk -v .hg
   abort: path contains illegal component: .hg
-  [255]
+  [10]
   $ hg debugwalk -v beans/../.hg
   abort: path contains illegal component: .hg
-  [255]
+  [10]
   $ hg debugwalk -v beans/../.hg/data
   abort: path contains illegal component: .hg/data
-  [255]
+  [10]
   $ hg debugwalk -v beans/.hg
   abort: path 'beans/.hg' is inside nested repo 'beans'
-  [255]
+  [10]
 
 Test explicit paths and excludes:
 

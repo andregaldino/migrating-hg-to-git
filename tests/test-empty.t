@@ -25,9 +25,10 @@ Check the basic files created:
   store
   wcache
 
-Should be empty:
+Should be empty (except for the "basic" requires):
 
   $ ls .hg/store
+  requires
 
 Poke at a clone:
 
@@ -51,8 +52,9 @@ Poke at a clone:
   store
   wcache
 
-Should be empty:
+Should be empty (except for the "basic" requires):
 
   $ ls .hg/store
+  requires
 
   $ cd ..

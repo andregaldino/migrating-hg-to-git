@@ -159,7 +159,7 @@ check strict parsing of early options:
   ...                         b'default'])
   *** runcommand log -b --config=alias.log=!echo pwned default
   abort: unknown revision '--config=alias.log=!echo pwned'
-   [255]
+   [10]
 
 check that "histedit --commands=-" can read rules from the input channel:
 

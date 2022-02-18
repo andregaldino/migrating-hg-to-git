@@ -9,12 +9,82 @@ use crate::revlog::{Revision, NULL_REVISION};
 
 pub const INDEX_ENTRY_SIZE: usize = 64;
 
+pub struct IndexHeader {
+    header_bytes: [u8; 4],
+}
+
+#[derive(Copy, Clone)]
+pub struct IndexHeaderFlags {
+    flags: u16,
+}
+
+/// Corresponds to the high bits of `_format_flags` in python
+impl IndexHeaderFlags {
+    /// Corresponds to FLAG_INLINE_DATA in python
+    pub fn is_inline(self) -> bool {
+        return self.flags & 1 != 0;
+    }
+    /// Corresponds to FLAG_GENERALDELTA in python
+    pub fn uses_generaldelta(self) -> bool {
+        return self.flags & 2 != 0;
+    }
+}
+
+/// Corresponds to the INDEX_HEADER structure,
+/// which is parsed as a `header` variable in `_loadindex` in `revlog.py`
+impl IndexHeader {
+    fn format_flags(&self) -> IndexHeaderFlags {
+        // No "unknown flags" check here, unlike in python. Maybe there should
+        // be.
+        return IndexHeaderFlags {
+            flags: BigEndian::read_u16(&self.header_bytes[0..2]),
+        };
+    }
+
+    /// The only revlog version currently supported by rhg.
+    const REVLOGV1: u16 = 1;
+
+    /// Corresponds to `_format_version` in Python.
+    fn format_version(&self) -> u16 {
+        return BigEndian::read_u16(&self.header_bytes[2..4]);
+    }
+
+    const EMPTY_INDEX_HEADER: IndexHeader = IndexHeader {
+        // We treat an empty file as a valid index with no entries.
+        // Here we make an arbitrary choice of what we assume the format of the
+        // index to be (V1, using generaldelta).
+        // This doesn't matter too much, since we're only doing read-only
+        // access. but the value corresponds to the `new_header` variable in
+        // `revlog.py`, `_loadindex`
+        header_bytes: [0, 3, 0, 1],
+    };
+
+    fn parse(index_bytes: &[u8]) -> Result<IndexHeader, HgError> {
+        if index_bytes.len() == 0 {
+            return Ok(IndexHeader::EMPTY_INDEX_HEADER);
+        }
+        if index_bytes.len() < 4 {
+            return Err(HgError::corrupted(
+                "corrupted revlog: can't read the index format header",
+            ));
+        }
+        return Ok(IndexHeader {
+            header_bytes: {
+                let bytes: [u8; 4] =
+                    index_bytes[0..4].try_into().expect("impossible");
+                bytes
+            },
+        });
+    }
+}
+
 /// A Revlog index
 pub struct Index {
     bytes: Box<dyn Deref<Target = [u8]> + Send>,
     /// Offsets of starts of index blocks.
     /// Only needed when the index is interleaved with data.
     offsets: Option<Vec<usize>>,
+    uses_generaldelta: bool,
 }
 
 impl Index {
@@ -23,7 +93,20 @@ impl Index {
     pub fn new(
         bytes: Box<dyn Deref<Target = [u8]> + Send>,
     ) -> Result<Self, HgError> {
-        if is_inline(&bytes) {
+        let header = IndexHeader::parse(bytes.as_ref())?;
+
+        if header.format_version() != IndexHeader::REVLOGV1 {
+            // A proper new version should have had a repo/store
+            // requirement.
+            return Err(HgError::corrupted("unsupported revlog version"));
+        }
+
+        // This is only correct because we know version is REVLOGV1.
+        // In v2 we always use generaldelta, while in v0 we never use
+        // generaldelta. Similar for [is_inline] (it's only used in v1).
+        let uses_generaldelta = header.format_flags().uses_generaldelta();
+
+        if header.format_flags().is_inline() {
             let mut offset: usize = 0;
             let mut offsets = Vec::new();
 
@@ -35,13 +118,14 @@ impl Index {
                     offset_override: None,
                 };
 
-                offset += INDEX_ENTRY_SIZE + entry.compressed_len();
+                offset += INDEX_ENTRY_SIZE + entry.compressed_len() as usize;
             }
 
             if offset == bytes.len() {
                 Ok(Self {
                     bytes,
                     offsets: Some(offsets),
+                    uses_generaldelta,
                 })
             } else {
                 Err(HgError::corrupted("unexpected inline revlog length")
@@ -51,8 +135,13 @@ impl Index {
             Ok(Self {
                 bytes,
                 offsets: None,
+                uses_generaldelta,
             })
         }
+    }
+
+    pub fn uses_generaldelta(&self) -> bool {
+        self.uses_generaldelta
     }
 
     /// Value of the inline flag.
@@ -171,18 +260,22 @@ impl<'a> IndexEntry<'a> {
         }
     }
 
+    pub fn flags(&self) -> u16 {
+        BigEndian::read_u16(&self.bytes[6..=7])
+    }
+
     /// Return the compressed length of the data.
-    pub fn compressed_len(&self) -> usize {
-        BigEndian::read_u32(&self.bytes[8..=11]) as usize
+    pub fn compressed_len(&self) -> u32 {
+        BigEndian::read_u32(&self.bytes[8..=11])
     }
 
     /// Return the uncompressed length of the data.
-    pub fn uncompressed_len(&self) -> usize {
-        BigEndian::read_u32(&self.bytes[12..=15]) as usize
+    pub fn uncompressed_len(&self) -> i32 {
+        BigEndian::read_i32(&self.bytes[12..=15])
     }
 
     /// Return the revision upon which the data has been derived.
-    pub fn base_revision(&self) -> Revision {
+    pub fn base_revision_or_base_of_delta_chain(&self) -> Revision {
         // TODO Maybe return an Option when base_revision == rev?
         //      Requires to add rev to IndexEntry
 
@@ -206,17 +299,6 @@ impl<'a> IndexEntry<'a> {
     }
 }
 
-/// Value of the inline flag.
-pub fn is_inline(index_bytes: &[u8]) -> bool {
-    if index_bytes.len() < 4 {
-        return true;
-    }
-    match &index_bytes[0..=1] {
-        [0, 0] | [0, 2] => false,
-        _ => true,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,7 +313,7 @@ mod tests {
         offset: usize,
         compressed_len: usize,
         uncompressed_len: usize,
-        base_revision: Revision,
+        base_revision_or_base_of_delta_chain: Revision,
     }
 
     #[cfg(test)]
@@ -245,7 +327,7 @@ mod tests {
                 offset: 0,
                 compressed_len: 0,
                 uncompressed_len: 0,
-                base_revision: 0,
+                base_revision_or_base_of_delta_chain: 0,
             }
         }
 
@@ -284,8 +366,11 @@ mod tests {
             self
         }
 
-        pub fn with_base_revision(&mut self, value: Revision) -> &mut Self {
-            self.base_revision = value;
+        pub fn with_base_revision_or_base_of_delta_chain(
+            &mut self,
+            value: Revision,
+        ) -> &mut Self {
+            self.base_revision_or_base_of_delta_chain = value;
             self
         }
 
@@ -308,42 +393,67 @@ mod tests {
             bytes.extend(&[0u8; 2]); // Revision flags.
             bytes.extend(&(self.compressed_len as u32).to_be_bytes());
             bytes.extend(&(self.uncompressed_len as u32).to_be_bytes());
-            bytes.extend(&self.base_revision.to_be_bytes());
+            bytes.extend(
+                &self.base_revision_or_base_of_delta_chain.to_be_bytes(),
+            );
             bytes
         }
     }
 
+    pub fn is_inline(index_bytes: &[u8]) -> bool {
+        IndexHeader::parse(index_bytes)
+            .expect("too short")
+            .format_flags()
+            .is_inline()
+    }
+
+    pub fn uses_generaldelta(index_bytes: &[u8]) -> bool {
+        IndexHeader::parse(index_bytes)
+            .expect("too short")
+            .format_flags()
+            .uses_generaldelta()
+    }
+
+    pub fn get_version(index_bytes: &[u8]) -> u16 {
+        IndexHeader::parse(index_bytes)
+            .expect("too short")
+            .format_version()
+    }
+
     #[test]
-    fn is_not_inline_when_no_inline_flag_test() {
+    fn flags_when_no_inline_flag_test() {
         let bytes = IndexEntryBuilder::new()
             .is_first(true)
             .with_general_delta(false)
             .with_inline(false)
             .build();
 
-        assert_eq!(is_inline(&bytes), false)
+        assert_eq!(is_inline(&bytes), false);
+        assert_eq!(uses_generaldelta(&bytes), false);
     }
 
     #[test]
-    fn is_inline_when_inline_flag_test() {
+    fn flags_when_inline_flag_test() {
         let bytes = IndexEntryBuilder::new()
             .is_first(true)
             .with_general_delta(false)
             .with_inline(true)
             .build();
 
-        assert_eq!(is_inline(&bytes), true)
+        assert_eq!(is_inline(&bytes), true);
+        assert_eq!(uses_generaldelta(&bytes), false);
     }
 
     #[test]
-    fn is_inline_when_inline_and_generaldelta_flags_test() {
+    fn flags_when_inline_and_generaldelta_flags_test() {
         let bytes = IndexEntryBuilder::new()
             .is_first(true)
             .with_general_delta(true)
             .with_inline(true)
             .build();
 
-        assert_eq!(is_inline(&bytes), true)
+        assert_eq!(is_inline(&bytes), true);
+        assert_eq!(uses_generaldelta(&bytes), true);
     }
 
     #[test]
@@ -391,14 +501,26 @@ mod tests {
     }
 
     #[test]
-    fn test_base_revision() {
-        let bytes = IndexEntryBuilder::new().with_base_revision(1).build();
+    fn test_base_revision_or_base_of_delta_chain() {
+        let bytes = IndexEntryBuilder::new()
+            .with_base_revision_or_base_of_delta_chain(1)
+            .build();
         let entry = IndexEntry {
             bytes: &bytes,
             offset_override: None,
         };
 
-        assert_eq!(entry.base_revision(), 1)
+        assert_eq!(entry.base_revision_or_base_of_delta_chain(), 1)
+    }
+
+    #[test]
+    fn version_test() {
+        let bytes = IndexEntryBuilder::new()
+            .is_first(true)
+            .with_version(1)
+            .build();
+
+        assert_eq!(get_version(&bytes), 1)
     }
 }
 

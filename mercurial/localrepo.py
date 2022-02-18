@@ -1,4 +1,5 @@
 # localrepo.py - read/write repository class for mercurial
+# coding: utf-8
 #
 # Copyright 2005-2007 Olivia Mackall <olivia@selenic.com>
 #
@@ -931,7 +932,7 @@ def gathersupportedrequirements(ui):
         if engine.available() and engine.revlogheader():
             supported.add(b'exp-compression-%s' % name)
             if engine.name() == b'zstd':
-                supported.add(b'revlog-compression-zstd')
+                supported.add(requirementsmod.REVLOG_COMPRESSION_ZSTD)
 
     return supported
 
@@ -1273,32 +1274,26 @@ class localrepository(object):
     used.
     """
 
-    # obsolete experimental requirements:
-    #  - manifestv2: An experimental new manifest format that allowed
-    #    for stem compression of long paths. Experiment ended up not
-    #    being successful (repository sizes went up due to worse delta
-    #    chains), and the code was deleted in 4.6.
-    supportedformats = {
-        requirementsmod.REVLOGV1_REQUIREMENT,
-        requirementsmod.GENERALDELTA_REQUIREMENT,
-        requirementsmod.TREEMANIFEST_REQUIREMENT,
-        requirementsmod.COPIESSDC_REQUIREMENT,
-        requirementsmod.REVLOGV2_REQUIREMENT,
+    _basesupported = {
+        requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT,
         requirementsmod.CHANGELOGV2_REQUIREMENT,
-        requirementsmod.SPARSEREVLOG_REQUIREMENT,
-        requirementsmod.NODEMAP_REQUIREMENT,
-        bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT,
-        requirementsmod.SHARESAFE_REQUIREMENT,
+        requirementsmod.COPIESSDC_REQUIREMENT,
+        requirementsmod.DIRSTATE_TRACKED_HINT_V1,
         requirementsmod.DIRSTATE_V2_REQUIREMENT,
-    }
-    _basesupported = supportedformats | {
-        requirementsmod.STORE_REQUIREMENT,
-        requirementsmod.FNCACHE_REQUIREMENT,
-        requirementsmod.SHARED_REQUIREMENT,
-        requirementsmod.RELATIVE_SHARED_REQUIREMENT,
         requirementsmod.DOTENCODE_REQUIREMENT,
-        requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.FNCACHE_REQUIREMENT,
+        requirementsmod.GENERALDELTA_REQUIREMENT,
         requirementsmod.INTERNAL_PHASE_REQUIREMENT,
+        requirementsmod.NODEMAP_REQUIREMENT,
+        requirementsmod.RELATIVE_SHARED_REQUIREMENT,
+        requirementsmod.REVLOGV1_REQUIREMENT,
+        requirementsmod.REVLOGV2_REQUIREMENT,
+        requirementsmod.SHARED_REQUIREMENT,
+        requirementsmod.SHARESAFE_REQUIREMENT,
+        requirementsmod.SPARSE_REQUIREMENT,
+        requirementsmod.SPARSEREVLOG_REQUIREMENT,
+        requirementsmod.STORE_REQUIREMENT,
+        requirementsmod.TREEMANIFEST_REQUIREMENT,
     }
 
     # list of prefix for file which can be written without 'wlock'
@@ -1748,7 +1743,9 @@ class localrepository(object):
         """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
         v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
+        th = requirementsmod.DIRSTATE_TRACKED_HINT_V1
         use_dirstate_v2 = v2_req in self.requirements
+        use_tracked_hint = th in self.requirements
 
         return dirstate.dirstate(
             self.vfs,
@@ -1758,6 +1755,7 @@ class localrepository(object):
             sparsematchfn,
             self.nodeconstants,
             use_dirstate_v2,
+            use_tracked_hint=use_tracked_hint,
         )
 
     def _dirstatevalidate(self, node):
@@ -3551,6 +3549,10 @@ def clone_requirements(ui, createopts, srcrepo):
     depends on the configuration
     """
     target_requirements = set()
+    if not srcrepo.requirements:
+        # this is a legacy revlog "v0" repository, we cannot do anything fancy
+        # with it.
+        return target_requirements
     createopts = defaultcreateopts(ui, createopts=createopts)
     for r in newreporequirements(ui, createopts):
         if r in requirementsmod.WORKING_DIR_REQUIREMENTS:
@@ -3568,16 +3570,6 @@ def newreporequirements(ui, createopts):
     Extensions can wrap this function to specify custom requirements for
     new repositories.
     """
-    # If the repo is being created from a shared repository, we copy
-    # its requirements.
-    if b'sharedrepo' in createopts:
-        requirements = set(createopts[b'sharedrepo'].requirements)
-        if createopts.get(b'sharedrelative'):
-            requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
-        else:
-            requirements.add(requirementsmod.SHARED_REQUIREMENT)
-
-        return requirements
 
     if b'backend' not in createopts:
         raise error.ProgrammingError(
@@ -3663,7 +3655,7 @@ def newreporequirements(ui, createopts):
         requirements.add(b'lfs')
 
     if ui.configbool(b'format', b'bookmarks-in-store'):
-        requirements.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+        requirements.add(requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT)
 
     if ui.configbool(b'format', b'use-persistent-nodemap'):
         requirements.add(requirementsmod.NODEMAP_REQUIREMENT)
@@ -3672,6 +3664,45 @@ def newreporequirements(ui, createopts):
     # requirement
     if ui.configbool(b'format', b'use-share-safe'):
         requirements.add(requirementsmod.SHARESAFE_REQUIREMENT)
+
+    # if we are creating a share-repo¹  we have to handle requirement
+    # differently.
+    #
+    # [1] (i.e. reusing the store from another repository, just having a
+    # working copy)
+    if b'sharedrepo' in createopts:
+        source_requirements = set(createopts[b'sharedrepo'].requirements)
+
+        if requirementsmod.SHARESAFE_REQUIREMENT not in source_requirements:
+            # share to an old school repository, we have to copy the
+            # requirements and hope for the best.
+            requirements = source_requirements
+        else:
+            # We have control on the working copy only, so "copy" the non
+            # working copy part over, ignoring previous logic.
+            to_drop = set()
+            for req in requirements:
+                if req in requirementsmod.WORKING_DIR_REQUIREMENTS:
+                    continue
+                if req in source_requirements:
+                    continue
+                to_drop.add(req)
+            requirements -= to_drop
+            requirements |= source_requirements
+
+        if createopts.get(b'sharedrelative'):
+            requirements.add(requirementsmod.RELATIVE_SHARED_REQUIREMENT)
+        else:
+            requirements.add(requirementsmod.SHARED_REQUIREMENT)
+
+    if ui.configbool(b'format', b'use-dirstate-tracked-hint'):
+        version = ui.configint(b'format', b'use-dirstate-tracked-hint.version')
+        msg = _("ignoring unknown tracked key version: %d\n")
+        hint = _("see `hg help config.format.use-dirstate-tracked-hint-version")
+        if version != 1:
+            ui.warn(msg % version, hint=hint)
+        else:
+            requirements.add(requirementsmod.DIRSTATE_TRACKED_HINT_V1)
 
     return requirements
 
@@ -3685,7 +3716,7 @@ def checkrequirementscompat(ui, requirements):
     dropped = set()
 
     if requirementsmod.STORE_REQUIREMENT not in requirements:
-        if bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
+        if requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT in requirements:
             ui.warn(
                 _(
                     b'ignoring enabled \'format.bookmarks-in-store\' config '
@@ -3693,7 +3724,7 @@ def checkrequirementscompat(ui, requirements):
                     b'\'format.usestore\' config\n'
                 )
             )
-            dropped.add(bookmarks.BOOKMARKS_IN_STORE_REQUIREMENT)
+            dropped.add(requirementsmod.BOOKMARKS_IN_STORE_REQUIREMENT)
 
         if (
             requirementsmod.SHARED_REQUIREMENT in requirements
@@ -3707,13 +3738,13 @@ def checkrequirementscompat(ui, requirements):
             )
 
         if requirementsmod.SHARESAFE_REQUIREMENT in requirements:
-            ui.warn(
-                _(
+            if ui.hasconfig(b'format', b'use-share-safe'):
+                msg = _(
                     b"ignoring enabled 'format.use-share-safe' config because "
                     b"it is incompatible with disabled 'format.usestore'"
                     b" config\n"
                 )
-            )
+                ui.warn(msg)
             dropped.add(requirementsmod.SHARESAFE_REQUIREMENT)
 
     return dropped

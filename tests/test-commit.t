@@ -134,13 +134,13 @@ Using the advanced --extra flag
   $ hg add quux
   $ hg commit -m "adding internal used extras" --extra amend_source=hash
   abort: key 'amend_source' is used internally, can't be set manually
-  [255]
+  [10]
   $ hg commit -m "special chars in extra" --extra id@phab=214
   abort: keys can only contain ascii letters, digits, '_' and '-'
-  [255]
+  [10]
   $ hg commit -m "empty key" --extra =value
   abort: unable to parse '=value', keys can't be empty
-  [255]
+  [10]
   $ hg commit -m "adding extras" --extra sourcehash=foo --extra oldhash=bar
   $ hg log -r . -T '{extras % "{extra}\n"}'
   branch=default
@@ -661,11 +661,11 @@ verify pathauditor blocks evil filepaths
 #if windows
   $ hg co --clean tip
   abort: path contains illegal component: .h\xe2\x80\x8cg\\hgrc (esc)
-  [255]
+  [10]
 #else
   $ hg co --clean tip
   abort: path contains illegal component: .h\xe2\x80\x8cg/hgrc (esc)
-  [255]
+  [10]
 #endif
 
   $ hg rollback -f
@@ -686,7 +686,7 @@ verify pathauditor blocks evil filepaths
   $ "$PYTHON" evil-commit.py
   $ hg co --clean tip
   abort: path contains illegal component: HG~1/hgrc
-  [255]
+  [10]
 
   $ hg rollback -f
   repository tip rolled back to revision 2 (undo commit)
@@ -706,7 +706,7 @@ verify pathauditor blocks evil filepaths
   $ "$PYTHON" evil-commit.py
   $ hg co --clean tip
   abort: path contains illegal component: HG8B6C~2/hgrc
-  [255]
+  [10]
 
   $ cd ..
 

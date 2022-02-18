@@ -272,7 +272,7 @@ Show all commands + options
   debugantivirusrunning: 
   debugapplystreamclonebundle: 
   debugbackupbundle: recover, patch, git, limit, no-merges, stat, graph, style, template
-  debugbuilddag: mergeable-file, overwritten-file, new-file
+  debugbuilddag: mergeable-file, overwritten-file, new-file, from-existing
   debugbundle: all, part-type, spec
   debugcapabilities: 
   debugchangedfiles: compute

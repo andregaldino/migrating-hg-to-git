@@ -25,11 +25,6 @@ from .utils import stringutil
 
 version = 2
 
-# These are the file generators that should only be executed after the
-# finalizers are done, since they rely on the output of the finalizers (like
-# the changelog having been written).
-postfinalizegenerators = {b'bookmarks', b'dirstate'}
-
 GEN_GROUP_ALL = b'all'
 GEN_GROUP_PRE_FINALIZE = b'prefinalize'
 GEN_GROUP_POST_FINALIZE = b'postfinalize'
@@ -334,7 +329,13 @@ class transaction(util.transactional):
 
     @active
     def addfilegenerator(
-        self, genid, filenames, genfunc, order=0, location=b''
+        self,
+        genid,
+        filenames,
+        genfunc,
+        order=0,
+        location=b'',
+        post_finalize=False,
     ):
         """add a function to generates some files at transaction commit
 
@@ -357,10 +358,14 @@ class transaction(util.transactional):
         The `location` arguments may be used to indicate the files are located
         outside of the the standard directory for transaction. It should match
         one of the key of the `transaction.vfsmap` dictionary.
+
+        The `post_finalize` argument can be set to `True` for file generation
+        that must be run after the transaction has been finalized.
         """
         # For now, we are unable to do proper backup and restore of custom vfs
         # but for bookmarks that are handled outside this mechanism.
-        self._filegenerators[genid] = (order, filenames, genfunc, location)
+        entry = (order, filenames, genfunc, location, post_finalize)
+        self._filegenerators[genid] = entry
 
     @active
     def removefilegenerator(self, genid):
@@ -380,13 +385,12 @@ class transaction(util.transactional):
 
         for id, entry in sorted(pycompat.iteritems(self._filegenerators)):
             any = True
-            order, filenames, genfunc, location = entry
+            order, filenames, genfunc, location, post_finalize = entry
 
             # for generation at closing, check if it's before or after finalize
-            is_post = id in postfinalizegenerators
-            if skip_post and is_post:
+            if skip_post and post_finalize:
                 continue
-            elif skip_pre and not is_post:
+            elif skip_pre and not post_finalize:
                 continue
 
             vfs = self._vfsmap[location]

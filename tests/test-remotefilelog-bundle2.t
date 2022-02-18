@@ -3,7 +3,7 @@
   $ . "$TESTDIR/remotefilelog-library.sh"
 
   $ hg init master
-  $ grep generaldelta master/.hg/requires
+  $ hg debugrequires -R master | grep generaldelta
   generaldelta
   $ cd master
 preferuncompressed = False so that we can make both generaldelta and non-generaldelta clones
@@ -22,10 +22,10 @@ preferuncompressed = False so that we can make both generaldelta and non-general
 
   $ hgcloneshallow ssh://user@dummy/master shallow-generaldelta -q --pull --config experimental.bundle2-exp=True
   1 files fetched over 1 fetches - (1 misses, 0.00% hit ratio) over *s (glob)
-  $ grep generaldelta shallow-generaldelta/.hg/requires
+  $ hg debugrequires -R shallow-generaldelta/ | grep generaldelta
   generaldelta
   $ hgcloneshallow ssh://user@dummy/master shallow-plain -q --pull --config format.usegeneraldelta=False --config format.generaldelta=False --config experimental.bundle2-exp=True
-  $ grep generaldelta shallow-plain/.hg/requires
+  $ hg debugrequires -R shallow-plain/ | grep generaldelta
   [1]
 
   $ cd master

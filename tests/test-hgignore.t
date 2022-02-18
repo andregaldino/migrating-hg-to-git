@@ -59,9 +59,19 @@ Should display baz only:
   ? syntax
 
   $ echo "*.o" > .hgignore
+#if no-rhg
   $ hg status
   abort: $TESTTMP/ignorerepo/.hgignore: invalid pattern (relre): *.o (glob)
   [255]
+#endif
+#if rhg
+  $ hg status
+  Unsupported syntax regex parse error:
+      ^(?:*.o)
+          ^
+  error: repetition operator missing expression
+  [255]
+#endif
 
 Ensure given files are relative to cwd
 

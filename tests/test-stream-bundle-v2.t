@@ -45,15 +45,13 @@ The extension requires a repo (currently unused)
   $ hg bundle -a --type="none-v2;stream=v2" bundle.hg
   $ hg debugbundle bundle.hg
   Stream params: {}
-  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Csparserevlog%2Cstore} (mandatory: True) (no-zstd !)
-  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore} (mandatory: True) (zstd no-rust !)
-  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Cpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore} (mandatory: True) (rust no-dirstate-v2 !)
-  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cuse-dirstate-v2%2Cfncache%2Cgeneraldelta%2Cpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore} (mandatory: True) (dirstate-v2 !)
+  stream2 -- {bytecount: 1693, filecount: 11, requirements: generaldelta%2Crevlogv1%2Csparserevlog} (mandatory: True) (no-zstd !)
+  stream2 -- {bytecount: 1693, filecount: 11, requirements: generaldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog} (mandatory: True) (zstd no-rust !)
+  stream2 -- {bytecount: 1693, filecount: 11, requirements: generaldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog} (mandatory: True) (rust !)
   $ hg debugbundle --spec bundle.hg
-  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Csparserevlog%2Cstore (no-zstd !)
-  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore (zstd no-rust !)
-  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Cpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore (rust no-dirstate-v2 !)
-  none-v2;stream=v2;requirements%3Ddotencode%2Cuse-dirstate-v2%2Cfncache%2Cgeneraldelta%2Cpersistent-nodemap%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog%2Cstore (dirstate-v2 !)
+  none-v2;stream=v2;requirements%3Dgeneraldelta%2Crevlogv1%2Csparserevlog (no-zstd !)
+  none-v2;stream=v2;requirements%3Dgeneraldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog (zstd no-rust !)
+  none-v2;stream=v2;requirements%3Dgeneraldelta%2Crevlog-compression-zstd%2Crevlogv1%2Csparserevlog (rust !)
 
 Test that we can apply the bundle as a stream clone bundle
 

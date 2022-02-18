@@ -3309,7 +3309,9 @@ def _dograft(ui, repo, *revs, **opts):
             overrides = {(b'ui', b'forcemerge'): opts.get('tool', b'')}
             base = ctx.p1() if basectx is None else basectx
             with ui.configoverride(overrides, b'graft'):
-                stats = mergemod.graft(repo, ctx, base, [b'local', b'graft'])
+                stats = mergemod.graft(
+                    repo, ctx, base, [b'local', b'graft', b'parent of graft']
+                )
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue
@@ -4914,7 +4916,7 @@ def merge(ui, repo, node=None, **opts):
     overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
     with ui.configoverride(overrides, b'merge'):
         force = opts.get(b'force')
-        labels = [b'working copy', b'merge rev']
+        labels = [b'working copy', b'merge rev', b'common ancestor']
         return hg.merge(ctx, force=force, labels=labels)
 
 
@@ -6130,7 +6132,6 @@ def resolve(ui, repo, *pats, **opts):
         ret = 0
         didwork = False
 
-        tocomplete = []
         hasconflictmarkers = []
         if mark:
             markcheck = ui.config(b'commands', b'resolve.mark-check')
@@ -6183,24 +6184,20 @@ def resolve(ui, repo, *pats, **opts):
                     # preresolve file
                     overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
                     with ui.configoverride(overrides, b'resolve'):
-                        complete, r = ms.preresolve(f, wctx)
-                    if not complete:
-                        tocomplete.append(f)
-                    elif r:
+                        r = ms.resolve(f, wctx)
+                    if r:
                         ret = 1
                 finally:
                     ms.commit()
 
-                # replace filemerge's .orig file with our resolve file, but only
-                # for merges that are complete
-                if complete:
-                    try:
-                        util.rename(
-                            a + b".resolve", scmutil.backuppath(ui, repo, f)
-                        )
-                    except OSError as inst:
-                        if inst.errno != errno.ENOENT:
-                            raise
+                # replace filemerge's .orig file with our resolve file
+                try:
+                    util.rename(
+                        a + b".resolve", scmutil.backuppath(ui, repo, f)
+                    )
+                except OSError as inst:
+                    if inst.errno != errno.ENOENT:
+                        raise
 
         if hasconflictmarkers:
             ui.warn(
@@ -6217,25 +6214,6 @@ def resolve(ui, repo, *pats, **opts):
                     _(b'conflict markers detected'),
                     hint=_(b'use --all to mark anyway'),
                 )
-
-        for f in tocomplete:
-            try:
-                # resolve file
-                overrides = {(b'ui', b'forcemerge'): opts.get(b'tool', b'')}
-                with ui.configoverride(overrides, b'resolve'):
-                    r = ms.resolve(f, wctx)
-                if r:
-                    ret = 1
-            finally:
-                ms.commit()
-
-            # replace filemerge's .orig file with our resolve file
-            a = repo.wjoin(f)
-            try:
-                util.rename(a + b".resolve", scmutil.backuppath(ui, repo, f))
-            except OSError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
 
         ms.commit()
         branchmerge = repo.dirstate.p2() != repo.nullid
@@ -6897,9 +6875,9 @@ def status(ui, repo, *pats, **opts):
 
     cmdutil.check_at_most_one_arg(opts, 'rev', 'change')
     opts = pycompat.byteskwargs(opts)
-    revs = opts.get(b'rev')
-    change = opts.get(b'change')
-    terse = opts.get(b'terse')
+    revs = opts.get(b'rev', [])
+    change = opts.get(b'change', b'')
+    terse = opts.get(b'terse', _NOTTERSE)
     if terse is _NOTTERSE:
         if revs:
             terse = b''
@@ -7832,9 +7810,9 @@ def update(ui, repo, node=None, **opts):
         raise error.InputError(_(b"you can't specify a revision and a date"))
 
     updatecheck = None
-    if check:
+    if check or merge is not None and not merge:
         updatecheck = b'abort'
-    elif merge:
+    elif merge or check is not None and not check:
         updatecheck = b'none'
 
     with repo.wlock():

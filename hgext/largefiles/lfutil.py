@@ -32,6 +32,7 @@ from mercurial import (
     vfs as vfsmod,
 )
 from mercurial.utils import hashutil
+from mercurial.dirstateutils import timestamp
 
 shortname = b'.hglf'
 shortnameslash = shortname + b'/'
@@ -243,10 +244,11 @@ def openlfdirstate(ui, repo, create=True):
 def lfdirstatestatus(lfdirstate, repo):
     pctx = repo[b'.']
     match = matchmod.always()
-    unsure, s = lfdirstate.status(
+    unsure, s, mtime_boundary = lfdirstate.status(
         match, subrepos=[], ignored=False, clean=False, unknown=False
     )
     modified, clean = s.modified, s.clean
+    wctx = repo[None]
     for lfile in unsure:
         try:
             fctx = pctx[standin(lfile)]
@@ -256,7 +258,13 @@ def lfdirstatestatus(lfdirstate, repo):
             modified.append(lfile)
         else:
             clean.append(lfile)
-            lfdirstate.set_clean(lfile)
+            st = wctx[lfile].lstat()
+            mode = st.st_mode
+            size = st.st_size
+            mtime = timestamp.reliable_mtime_of(st, mtime_boundary)
+            if mtime is not None:
+                cache_data = (mode, size, mtime)
+                lfdirstate.set_clean(lfile, cache_data)
     return s
 
 
@@ -663,7 +671,7 @@ def updatestandinsbymatch(repo, match):
         # large.
         lfdirstate = openlfdirstate(ui, repo)
         dirtymatch = matchmod.always()
-        unsure, s = lfdirstate.status(
+        unsure, s, mtime_boundary = lfdirstate.status(
             dirtymatch, subrepos=[], ignored=False, clean=False, unknown=False
         )
         modifiedfiles = unsure + s.modified + s.added + s.removed

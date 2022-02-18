@@ -9,12 +9,9 @@ from mercurial import (
 )
 
 
-def failfilemerge(
-    filemergefn, premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None
-):
+def failfilemerge(*args, **kwargs):
     raise error.Abort(b"^C")
-    return filemergefn(premerge, repo, mynode, orig, fcd, fco, fca, labels)
 
 
 def extsetup(ui):
-    extensions.wrapfunction(filemerge, '_filemerge', failfilemerge)
+    extensions.wrapfunction(filemerge, 'filemerge', failfilemerge)

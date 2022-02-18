@@ -278,7 +278,7 @@ merge tests
    branchmerge: True, force: False, partial: False
    ancestor: 1f14a2e2d3ec, local: f0d2028bf86d+, remote: 1831e14459c4
   starting 4 threads for background file closing (?)
-   .hgsubstate: versions differ -> m (premerge)
+   .hgsubstate: versions differ -> m
   subrepo merge f0d2028bf86d+ 1831e14459c4 1f14a2e2d3ec
     subrepo t: other changed, get t:6747d179aa9a688023c4b0cad32e4c92bb7f34ad:hg
   getting subrepo t
@@ -304,7 +304,7 @@ merge tests
    branchmerge: True, force: False, partial: False
    ancestor: 1831e14459c4, local: e45c8b14af55+, remote: f94576341bcf
   starting 4 threads for background file closing (?)
-   .hgsubstate: versions differ -> m (premerge)
+   .hgsubstate: versions differ -> m
   subrepo merge e45c8b14af55+ f94576341bcf 1831e14459c4
     subrepo t: both sides changed 
    subrepository t diverged (local revision: 20a0db6fbf6c, remote revision: 7af322bc1198)
@@ -317,12 +317,9 @@ merge tests
    ancestor: 6747d179aa9a, local: 20a0db6fbf6c+, remote: 7af322bc1198
   starting 4 threads for background file closing (?)
    preserving t for resolve of t
-   t: versions differ -> m (premerge)
+   t: versions differ -> m
   picked tool ':merge' for t (binary False symlink False changedelete False)
   merging t
-  my t@20a0db6fbf6c+ other t@7af322bc1198 ancestor t@6747d179aa9a
-   t: versions differ -> m (merge)
-  picked tool ':merge' for t (binary False symlink False changedelete False)
   my t@20a0db6fbf6c+ other t@7af322bc1198 ancestor t@6747d179aa9a
   warning: conflicts while merging t! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
@@ -1021,37 +1018,21 @@ Issue1977: multirepo push should fail if subrepo push fails
 
 test if untracked file is not overwritten
 
-(this also tests that updated .hgsubstate is treated as "modified",
-when 'merge.update()' is aborted before 'merge.recordupdates()', even
-if none of mode, size and timestamp of it isn't changed on the
-filesystem (see also issue4583))
+(this tests also has a change to update .hgsubstate and merge it within the
+same second. It should mark is are modified , even if none of mode, size and
+timestamp of it isn't changed on the filesystem (see also issue4583))
 
   $ echo issue3276_ok > repo/s/b
   $ hg -R repo2 push -f -q
-  $ touch -t 200001010000 repo/.hgsubstate
 
-  $ cat >> repo/.hg/hgrc <<EOF
-  > [fakedirstatewritetime]
-  > # emulate invoking dirstate.write() via repo.status()
-  > # at 2000-01-01 00:00
-  > fakenow = 200001010000
-  > 
-  > [extensions]
-  > fakedirstatewritetime = $TESTDIR/fakedirstatewritetime.py
-  > EOF
   $ hg -R repo update
   b: untracked file differs
   abort: untracked files in working directory differ from files in requested revision (in subrepository "s")
   [255]
-  $ cat >> repo/.hg/hgrc <<EOF
-  > [extensions]
-  > fakedirstatewritetime = !
-  > EOF
 
   $ cat repo/s/b
   issue3276_ok
   $ rm repo/s/b
-  $ touch -t 200001010000 repo/.hgsubstate
   $ hg -R repo revert --all
   reverting repo/.hgsubstate
   reverting subrepo s

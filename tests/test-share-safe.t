@@ -244,7 +244,8 @@ Disable zstd related tests because its not present on pure version
   $ echo "use-persistent-nodemap=True" >> .hg/hgrc
 
   $ hg debugupgraderepo --run -q -R ../shared1
-  abort: cannot upgrade repository; unsupported source requirement: shared
+  abort: cannot use these actions on a share repository: persistent-nodemap
+  (upgrade the main repository directly)
   [255]
 
   $ hg debugupgraderepo --run -q
@@ -363,10 +364,7 @@ Upgrade
      preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   $ hg debugupgraderepo --run
   upgrade will perform the following actions:
@@ -379,10 +377,7 @@ Upgrade
   share-safe
      Upgrades a repository to share-safe format so that future shares of this repository share its requirements and configs.
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
@@ -457,10 +452,7 @@ Test that downgrading works too
      preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   $ hg debugupgraderepo --run
   upgrade will perform the following actions:
@@ -470,10 +462,7 @@ Test that downgrading works too
      preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      removed: share-safe
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   beginning upgrade...
   repository locked and read-only
@@ -556,10 +545,7 @@ Testing automatic upgrade of shares when config is set
      preserved: dotencode, use-dirstate-v2, fncache, generaldelta, revlogv1, sparserevlog, store (dirstate-v2 !)
      added: share-safe
   
-  processed revlogs:
-    - all-filelogs
-    - changelog
-    - manifest
+  no revlogs to process
   
   repository upgraded to share safe mode, existing shares will still work in old non-safe mode. Re-share existing shares to use them in safe mode New shares will be created in safe mode.
   $ hg debugrequirements

@@ -196,8 +196,8 @@ resolve without arguments should suggest --all
 resolve --all should re-merge all unresolved files
   $ hg resolve --all
   merging file1
-  merging file2
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  merging file2
   warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
   [1]
   $ cat file1.orig
@@ -211,8 +211,8 @@ resolve --all should re-merge all unresolved files
   $ hg resolve --all --verbose --config 'ui.origbackuppath=.hg/origbackups'
   merging file1
   creating directory: $TESTTMP/repo/.hg/origbackups
-  merging file2
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
+  merging file2
   warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
   [1]
   $ ls .hg/origbackups
@@ -478,10 +478,10 @@ Test 'hg resolve' confirm config option functionality |
   $ hg rebase -s 1 -d 2
   rebasing 1:f30f98a8181f "added emp1 emp2 emp3"
   merging emp1
-  merging emp2
-  merging emp3
   warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  merging emp2
   warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  merging emp3
   warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see 'hg resolve', then 'hg rebase --continue')
   [240]
@@ -490,10 +490,10 @@ Test when commands.resolve.confirm config option is not set:
 ===========================================================
   $ hg resolve --all
   merging emp1
-  merging emp2
-  merging emp3
   warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  merging emp2
   warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  merging emp3
   warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
   [1]
 
@@ -522,10 +522,10 @@ Test when config option is set:
   > EOF
   re-merge all unresolved files (yn)? y
   merging emp1
-  merging emp2
-  merging emp3
   warning: conflicts while merging emp1! (edit, then use 'hg resolve --mark')
+  merging emp2
   warning: conflicts while merging emp2! (edit, then use 'hg resolve --mark')
+  merging emp3
   warning: conflicts while merging emp3! (edit, then use 'hg resolve --mark')
   [1]
 

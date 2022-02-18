@@ -13,7 +13,7 @@ const DEFAULT_MAX_SIZE: u64 = ONE_MEBIBYTE;
 const DEFAULT_MAX_FILES: u32 = 7;
 
 // Python does not support %.3f, only %f
-const DEFAULT_DATE_FORMAT: &str = "%Y/%m/%d %H:%M:%S%.3f";
+const DEFAULT_DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S%.3f";
 
 type DateTime = chrono::DateTime<chrono::Local>;
 

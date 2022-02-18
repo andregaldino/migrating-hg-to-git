@@ -5,24 +5,11 @@ persistent-nodemap is not enabled by default. It is not relevant for this test s
   > use-persistent-nodemap = no
   > EOF
 
-  $ cat > hgrc-sshv2 << EOF
-  > %include $HGRCPATH
-  > [experimental]
-  > sshpeer.advertise-v2 = true
-  > sshserver.support-v2 = true
-  > EOF
-
   $ debugwireproto() {
   >   commands=`cat -`
   >   echo 'testing ssh1'
   >   tip=`hg log -r tip -T '{node}'`
   >   echo "${commands}" | hg --verbose debugwireproto --localssh --noreadstderr
-  >   if [ -n "$1" ]; then
-  >       hg --config extensions.strip= strip --no-backup -r "all() - ::${tip}"
-  >   fi
-  >   echo ""
-  >   echo 'testing ssh2'
-  >   echo "${commands}" | HGRCPATH=$TESTTMP/hgrc-sshv2 hg --verbose debugwireproto --localssh --noreadstderr
   >   if [ -n "$1" ]; then
   >       hg --config extensions.strip= strip --no-backup -r "all() - ::${tip}"
   >   fi
@@ -63,62 +50,12 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 115:
-  e>     abort: incompatible Mercurial client; bundle2 required\n
-  e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -242,67 +179,12 @@ ui.write() in hook is redirected to stderr
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 151:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 1 line\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -365,69 +247,13 @@ And a variation that writes multiple lines using ui.write
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
-  o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o> readline\(\) -> \d+: (re)
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 173:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 2 lines 1\n
-  e>     ui.write 2 lines 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -492,67 +318,12 @@ And a variation that does a ui.flush() after writing output
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 157:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 1 line flush\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -616,68 +387,12 @@ Multiple writes + flush
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 161:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 1st\n
-  e>     ui.write 2nd\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -742,9 +457,9 @@ ui.write() + ui.write_err() output is captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -790,64 +505,7 @@ ui.write() + ui.write_err() output is captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 187:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 1\n
-  e>     ui.write_err 1\n
-  e>     ui.write 2\n
-  e>     ui.write_err 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
+
 
 print() output is captured
 
@@ -872,67 +530,12 @@ print() output is captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 148:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     printed line\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -996,70 +599,12 @@ Mixed print() and ui.write() are both captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 173:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     print 1\n
-  e>     ui.write 1\n
-  e>     print 2\n
-  e>     ui.write 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -1126,70 +671,12 @@ print() to stdout and stderr both get captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 171:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     stdout 1\n
-  e>     stderr 1\n
-  e>     stdout 2\n
-  e>     stderr 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:
@@ -1262,9 +749,9 @@ Shell hook writing to stdout has output captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1308,63 +795,6 @@ Shell hook writing to stdout has output captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 167:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     stdout 1\n
-  e>     stdout 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-
 Shell hook writing to stderr has output captured
 
   $ cat > $TESTTMP/hook.sh << EOF
@@ -1389,9 +819,9 @@ Shell hook writing to stderr has output captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1435,63 +865,6 @@ Shell hook writing to stderr has output captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 167:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     stderr 1\n
-  e>     stderr 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-
 Shell hook writing to stdout and stderr has output captured
 
   $ cat > $TESTTMP/hook.sh << EOF
@@ -1518,9 +891,9 @@ Shell hook writing to stdout and stderr has output captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1566,65 +939,6 @@ Shell hook writing to stdout and stderr has output captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 185:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     stdout 1\n
-  e>     stderr 1\n
-  e>     stdout 2\n
-  e>     stderr 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.fail hook exited with status 1\n
-
 Shell and Python hooks writing to stdout and stderr have output captured
 
   $ cat > $TESTTMP/hook.sh << EOF
@@ -1657,9 +971,9 @@ Shell and Python hooks writing to stdout and stderr have output captured
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1709,69 +1023,6 @@ Shell and Python hooks writing to stdout and stderr have output captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.b hook failed\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
-  e> read(-1) -> 228:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     shell stdout 1\n
-  e>     shell stderr 1\n
-  e>     shell stdout 2\n
-  e>     shell stderr 2\n
-  e>     stdout 1\n
-  e>     stderr 1\n
-  e>     stdout 2\n
-  e>     stderr 2\n
-  e>     transaction abort!\n
-  e>     rollback completed\n
-  e>     abort: pretxnchangegroup.b hook failed\n
-
   $ cd ..
 
 Pushing a bundle1 with no output
@@ -1795,9 +1046,9 @@ Pushing a bundle1 with no output
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1837,59 +1088,6 @@ Pushing a bundle1 with no output
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 1
-  result: 1
-  remote output: 
-  e> read(-1) -> 100:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
-
   $ cd ..
 
 Pushing a bundle1 with ui.write() and ui.write_err()
@@ -1925,68 +1123,12 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   i> flush() -> None
   o> readline() -> 4:
-  o>     444\n
-  o> readline() -> 444:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     \d+\\n (re)
+  o> readline\(\) -> \d+: (re)
+  o>     capabilities: batch branchmap \$USUAL_BUNDLE2_CAPS\$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=[^ ,]+(,[^ ,]+)* unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\\n (re)
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
-  o>     \n
-  sending unbundle command
-  i> write(9) -> 9:
-  i>     unbundle\n
-  i> write(9) -> 9:
-  i>     heads 10\n
-  i> write(10) -> 10: 666f726365
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  i> write(4) -> 4:
-  i>     426\n
-  i> write(426) -> 426:
-  i>     HG10UN\x00\x00\x00\x9eh\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>cba485ca3678256e044428f70f58291196f6e9de\n
-  i>     test\n
-  i>     0 0\n
-  i>     foo\n
-  i>     \n
-  i>     initial\x00\x00\x00\x00\x00\x00\x00\x8d\xcb\xa4\x85\xca6x%n\x04D(\xf7\x0fX)\x11\x96\xf6\xe9\xde\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00362fef284ce2ca02aecc8de6d5e8a1c3af0556fe\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00b6/\xef(L\xe2\xca\x02\xae\xcc\x8d\xe6\xd5\xe8\xa1\xc3\xaf\x05V\xfe\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00h\x98b\x13\xbdD\x85\xeaQS55\xe3\xfc\x9ex\x00zq\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x020\n
-  i>     \x00\x00\x00\x00\x00\x00\x00\x00
-  i> write(2) -> 2:
-  i>     0\n
-  i> flush() -> None
-  o> readline() -> 2:
-  o>     0\n
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 1
-  result: 1
-  remote output: 
-  e> read(-1) -> 152:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     ui.write 1\n
-  e>     ui.write_err 1\n
-  e>     ui.write 2\n
-  e>     ui.write_err 2\n
-  e>     added 1 changesets with 1 changes to 1 files\n
-  
-  testing ssh2
-  creating ssh peer from handshake results
-  i> write(171) -> 171:
-  i>     upgrade * proto=exp-ssh-v2-0003\n (glob)
-  i>     hello\n
-  i>     between\n
-  i>     pairs 81\n
-  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  i> flush() -> None
-  o> readline() -> 62:
-  o>     upgraded * exp-ssh-v2-0003\n (glob)
-  o> readline() -> 4:
-  o>     443\n
-  o> read(443) -> 443: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1,sparserevlog unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  o> read(1) -> 1:
   o>     \n
   sending unbundle command
   i> write(9) -> 9:

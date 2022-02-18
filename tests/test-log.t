@@ -122,13 +122,13 @@ log -f empty path (or repo root) shouldn't crash
 
   $ hg log -qfl1 '' inexistent
   abort: cannot follow file not in parent revision: "inexistent"
-  [255]
+  [20]
   $ hg log -qfl1 . inexistent
   abort: cannot follow file not in parent revision: "inexistent"
-  [255]
+  [20]
   $ hg log -qfl1 "`pwd`" inexistent
   abort: cannot follow file not in parent revision: "inexistent"
-  [255]
+  [20]
 
   $ hg log -qfl1 '' e
   4:7e4639b4691b
@@ -145,7 +145,7 @@ log -f empty path (or repo root) shouldn't crash
 
   $ hg log -f dir
   abort: cannot follow file not in parent revision: "dir"
-  [255]
+  [20]
 
 -f, directory
 
@@ -552,7 +552,7 @@ follow files from the specified revisions with missing patterns
 
   $ hg log -T '{rev}\n' -fr4 e x
   abort: cannot follow file not in any of the specified revisions: "x"
-  [255]
+  [20]
 
 follow files from the specified revisions with directory patterns
 (BROKEN: should follow copies from dir/b@2)
@@ -1417,7 +1417,7 @@ are specified (issue5100):
 
   $ hg log -b 're:.*'
   abort: unknown revision 're:.*'
-  [255]
+  [10]
   $ hg log -k 're:.*'
   $ hg log -u 're:.*'
 
@@ -1544,7 +1544,7 @@ log -b dummy
 
   $ hg log -b dummy
   abort: unknown revision 'dummy'
-  [255]
+  [10]
 
 
 log -b .
@@ -2422,7 +2422,7 @@ follow files from wdir
 
   $ hg log -T '== {rev} ==\n' -fr'wdir()' --git --stat notfound
   abort: cannot follow file not in any of the specified revisions: "notfound"
-  [255]
+  [20]
 
 follow files from wdir and non-wdir revision:
 
@@ -2435,15 +2435,15 @@ follow added/removed files from wdir parent
 
   $ hg log -T '{rev}\n' -f d1/f2
   abort: cannot follow nonexistent file: "d1/f2"
-  [255]
+  [20]
 
   $ hg log -T '{rev}\n' -f f1-copy
   abort: cannot follow nonexistent file: "f1-copy"
-  [255]
+  [20]
 
   $ hg log -T '{rev}\n' -f .d6/f1
   abort: cannot follow file not in parent revision: ".d6/f1"
-  [255]
+  [20]
 
   $ hg revert -aqC
 

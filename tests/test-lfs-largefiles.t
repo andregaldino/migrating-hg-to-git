@@ -288,17 +288,8 @@ parameters are available, but not --authormap, --branchmap, etc.
 
 The requirement is added to the destination repo.
 
-  $ cat .hg/requires
-  dotencode
-  dirstate-v2 (dirstate-v2 !)
-  fncache
-  generaldelta
+  $ hg debugrequires | grep lfs
   lfs
-  persistent-nodemap (rust !)
-  revlog-compression-zstd (zstd !)
-  revlogv1
-  sparserevlog
-  store
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'
   o  8 large_by_size.bin (remove large_by_size.bin)
@@ -345,7 +336,7 @@ This `head -n 20` looks dumb (since we expect no output), but if something
 breaks you can get 1048576 lines of +y in the output, which takes a looooooong
 time to print.
   $ hg diff -r 2:3 | head -n 20
-  $ hg diff -r 2:6
+  $ hg diff -r 2:6 | head -n 20
   diff -r e989d0fa3764 -r 752e3a0d8488 large.bin
   --- a/large.bin	Thu Jan 01 00:00:00 1970 +0000
   +++ b/large.bin	Thu Jan 01 00:00:00 1970 +0000

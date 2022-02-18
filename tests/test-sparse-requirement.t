@@ -16,7 +16,7 @@
 
 Enable sparse profile
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -24,6 +24,7 @@ Enable sparse profile
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   testonly-simplestore (reposimplestore !)
@@ -36,7 +37,7 @@ Enable sparse profile
 
 Requirement for sparse added when sparse is enabled
 
-  $ cat .hg/requires
+  $ hg debugrequires --config extensions.sparse=
   dotencode
   dirstate-v2 (dirstate-v2 !)
   exp-sparse
@@ -45,6 +46,7 @@ Requirement for sparse added when sparse is enabled
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   testonly-simplestore (reposimplestore !)
@@ -59,7 +61,7 @@ Requirement for sparse is removed when sparse is disabled
 
   $ hg debugsparse --reset --config extensions.sparse=
 
-  $ cat .hg/requires
+  $ hg debugrequires
   dotencode
   dirstate-v2 (dirstate-v2 !)
   fncache
@@ -67,6 +69,7 @@ Requirement for sparse is removed when sparse is disabled
   persistent-nodemap (rust !)
   revlog-compression-zstd (zstd !)
   revlogv1
+  share-safe
   sparserevlog
   store
   testonly-simplestore (reposimplestore !)
