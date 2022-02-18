@@ -182,7 +182,7 @@ downgrade
   no revlogs to process
   
   $ ls -1 .hg/dirstate-tracked-hint
-  ls: cannot access '.hg/dirstate-tracked-hint': $ENOENT$
+  ls: *.hg/dirstate-tracked-hint*: $ENOENT$ (glob)
   [2]
   $ hg debugrequires | grep 'tracked'
   [1]
