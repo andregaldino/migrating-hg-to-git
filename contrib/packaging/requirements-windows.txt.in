@@ -1,13 +1,11 @@
 docutils
-# Pinned to an old version because 0.20 drops Python 3 compatibility.
-dulwich < 0.20 ; python_version <= '2.7'
-dulwich ; python_version >= '3'
+dulwich
 
 # Needed by the release note tooling
 fuzzywuzzy
 
 keyring
-pygit2 ; python_version >= '3'
+pygit2
 pygments
 
 # Needed by the phabricator tests
