@@ -45,6 +45,7 @@
 
 from __future__ import absolute_import, print_function
 
+
 import argparse
 import collections
 import contextlib
@@ -154,81 +155,70 @@ if pygmentspresent:
 
 origenviron = os.environ.copy()
 
-
-if sys.version_info > (3, 5, 0):
-    PYTHON3 = True
-    xrange = range  # we use xrange in one place, and we'd rather not use range
-
-    def _sys2bytes(p):
-        if p is None:
-            return p
-        return p.encode('utf-8')
-
-    def _bytes2sys(p):
-        if p is None:
-            return p
-        return p.decode('utf-8')
-
-    osenvironb = getattr(os, 'environb', None)
-    if osenvironb is None:
-        # Windows lacks os.environb, for instance.  A proxy over the real thing
-        # instead of a copy allows the environment to be updated via bytes on
-        # all platforms.
-        class environbytes(object):
-            def __init__(self, strenv):
-                self.__len__ = strenv.__len__
-                self.clear = strenv.clear
-                self._strenv = strenv
-
-            def __getitem__(self, k):
-                v = self._strenv.__getitem__(_bytes2sys(k))
-                return _sys2bytes(v)
-
-            def __setitem__(self, k, v):
-                self._strenv.__setitem__(_bytes2sys(k), _bytes2sys(v))
-
-            def __delitem__(self, k):
-                self._strenv.__delitem__(_bytes2sys(k))
-
-            def __contains__(self, k):
-                return self._strenv.__contains__(_bytes2sys(k))
-
-            def __iter__(self):
-                return iter([_sys2bytes(k) for k in iter(self._strenv)])
-
-            def get(self, k, default=None):
-                v = self._strenv.get(_bytes2sys(k), _bytes2sys(default))
-                return _sys2bytes(v)
-
-            def pop(self, k, default=None):
-                v = self._strenv.pop(_bytes2sys(k), _bytes2sys(default))
-                return _sys2bytes(v)
-
-        osenvironb = environbytes(os.environ)
-
-    getcwdb = getattr(os, 'getcwdb')
-    if not getcwdb or WINDOWS:
-        getcwdb = lambda: _sys2bytes(os.getcwd())
-
-elif sys.version_info >= (3, 0, 0):
+if sys.version_info < (3, 5, 0):
     print(
-        '%s is only supported on Python 3.5+ and 2.7, not %s'
+        '%s is only supported on Python 3.5+, not %s'
         % (sys.argv[0], '.'.join(str(v) for v in sys.version_info[:3]))
     )
     sys.exit(70)  # EX_SOFTWARE from `man 3 sysexit`
-else:
-    PYTHON3 = False
 
-    # In python 2.x, path operations are generally done using
-    # bytestrings by default, so we don't have to do any extra
-    # fiddling there. We define the wrapper functions anyway just to
-    # help keep code consistent between platforms.
-    def _sys2bytes(p):
+PYTHON3 = True
+xrange = range  # we use xrange in one place, and we'd rather not use range
+
+
+def _sys2bytes(p):
+    if p is None:
         return p
+    return p.encode('utf-8')
 
-    _bytes2sys = _sys2bytes
-    osenvironb = os.environ
-    getcwdb = os.getcwd
+
+def _bytes2sys(p):
+    if p is None:
+        return p
+    return p.decode('utf-8')
+
+
+osenvironb = getattr(os, 'environb', None)
+if osenvironb is None:
+    # Windows lacks os.environb, for instance.  A proxy over the real thing
+    # instead of a copy allows the environment to be updated via bytes on
+    # all platforms.
+    class environbytes(object):
+        def __init__(self, strenv):
+            self.__len__ = strenv.__len__
+            self.clear = strenv.clear
+            self._strenv = strenv
+
+        def __getitem__(self, k):
+            v = self._strenv.__getitem__(_bytes2sys(k))
+            return _sys2bytes(v)
+
+        def __setitem__(self, k, v):
+            self._strenv.__setitem__(_bytes2sys(k), _bytes2sys(v))
+
+        def __delitem__(self, k):
+            self._strenv.__delitem__(_bytes2sys(k))
+
+        def __contains__(self, k):
+            return self._strenv.__contains__(_bytes2sys(k))
+
+        def __iter__(self):
+            return iter([_sys2bytes(k) for k in iter(self._strenv)])
+
+        def get(self, k, default=None):
+            v = self._strenv.get(_bytes2sys(k), _bytes2sys(default))
+            return _sys2bytes(v)
+
+        def pop(self, k, default=None):
+            v = self._strenv.pop(_bytes2sys(k), _bytes2sys(default))
+            return _sys2bytes(v)
+
+    osenvironb = environbytes(os.environ)
+
+getcwdb = getattr(os, 'getcwdb')
+if not getcwdb or WINDOWS:
+    getcwdb = lambda: _sys2bytes(os.getcwd())
+
 
 if WINDOWS:
     _getcwdb = getcwdb
