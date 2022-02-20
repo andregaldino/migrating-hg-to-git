@@ -3562,10 +3562,8 @@ class TestRunner(object):
     def _usecorrectpython(self):
         """Configure the environment to use the appropriate Python in tests."""
         # Tests must use the same interpreter as us or bad things will happen.
-        if WINDOWS and PYTHON3:
+        if WINDOWS:
             pyexe_names = [b'python', b'python3', b'python.exe']
-        elif WINDOWS:
-            pyexe_names = [b'python', b'python.exe']
         else:
             pyexe_names = [b'python', b'python3']
 
