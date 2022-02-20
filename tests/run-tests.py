@@ -3790,9 +3790,7 @@ class TestRunner(object):
             return self._hgpath
 
         cmd = b'"%s" -c "import mercurial; print (mercurial.__path__[0])"'
-        cmd = cmd % PYTHON
-        if PYTHON3:
-            cmd = _bytes2sys(cmd)
+        cmd = _bytes2sys(cmd % PYTHON)
 
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         out, err = p.communicate()
