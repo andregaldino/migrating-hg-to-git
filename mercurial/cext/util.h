@@ -14,13 +14,6 @@
 #define IS_PY3K
 #endif
 
-/* helper to switch things like string literal depending on Python version */
-#ifdef IS_PY3K
-#define PY23(py2, py3) py3
-#else
-#define PY23(py2, py3) py2
-#endif
-
 /* clang-format off */
 typedef struct {
 	PyObject_HEAD

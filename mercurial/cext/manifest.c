@@ -780,7 +780,7 @@ static lazymanifest *lazymanifest_filtercopy(
 	Py_INCREF(copy->pydata);
 	for (i = 0; i < self->numlines; i++) {
 		PyObject *arglist = NULL, *result = NULL;
-		arglist = Py_BuildValue(PY23("(s)", "(y)"),
+		arglist = Py_BuildValue("(y)",
 					self->lines[i].start);
 		if (!arglist) {
 			goto bail;

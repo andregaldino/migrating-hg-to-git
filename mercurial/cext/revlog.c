@@ -109,11 +109,9 @@ static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 static int index_find_node(indexObject *self, const char *node);
 
 #if LONG_MAX == 0x7fffffffL
-static const char *const tuple_format =
-    PY23("Kiiiiiis#KiBBi", "Kiiiiiiy#KiBBi");
+static const char *const tuple_format = "Kiiiiiiy#KiBBi";
 #else
-static const char *const tuple_format =
-    PY23("kiiiiiis#kiBBi", "kiiiiiiy#kiBBi");
+static const char *const tuple_format = "kiiiiiiy#kiBBi";
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -720,9 +718,9 @@ static PyObject *index_replace_sidedata_info(indexObject *self, PyObject *args)
 	char comp_mode;
 	char *data;
 #if LONG_MAX == 0x7fffffffL
-	const char *const sidedata_format = PY23("nKiKB", "nKiKB");
+	const char *const sidedata_format = "nKiKB";
 #else
-	const char *const sidedata_format = PY23("nkikB", "nkikB");
+	const char *const sidedata_format = "nkikB";
 #endif
 
 	if (self->entry_size == v1_entry_size || self->inlined) {
@@ -2301,7 +2299,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	char *node;
 	int rev, i;
 
-	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &node, &nodelen))
+	if (!PyArg_ParseTuple(args, "y#", &node, &nodelen))
 		return NULL;
 
 	if (nodelen < 1) {
@@ -3012,10 +3010,9 @@ static int index_init(indexObject *self, PyObject *args, PyObject *kwargs)
 		self->entry_size = cl2_entry_size;
 	}
 
-	self->nullentry =
-	    Py_BuildValue(PY23("iiiiiiis#iiBBi", "iiiiiiiy#iiBBi"), 0, 0, 0, -1,
-	                  -1, -1, -1, nullid, self->nodelen, 0, 0,
-	                  comp_mode_inline, comp_mode_inline, rank_unknown);
+	self->nullentry = Py_BuildValue(
+	    "iiiiiiiy#iiBBi", 0, 0, 0, -1, -1, -1, -1, nullid, self->nodelen, 0,
+	    0, comp_mode_inline, comp_mode_inline, rank_unknown);
 
 	if (!self->nullentry)
 		return -1;

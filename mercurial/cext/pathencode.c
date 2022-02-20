@@ -535,8 +535,7 @@ PyObject *lowerencode(PyObject *self, PyObject *args)
 	Py_ssize_t len, newlen;
 	PyObject *ret;
 
-	if (!PyArg_ParseTuple(args, PY23("s#:lowerencode", "y#:lowerencode"),
-	                      &path, &len)) {
+	if (!PyArg_ParseTuple(args, "y#:lowerencode", &path, &len)) {
 		return NULL;
 	}
 
@@ -711,7 +710,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		}
 	}
 
-	shaobj = PyObject_CallFunction(shafunc, PY23("s#", "y#"), str, len);
+	shaobj = PyObject_CallFunction(shafunc, "y#", str, len);
 
 	if (shaobj == NULL) {
 		return -1;

@@ -813,9 +813,8 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 	Py_ssize_t len = 40;
 	Py_ssize_t readlen;
 
-	if (!PyArg_ParseTuple(
-	        args, PY23("O!O!s#:parse_dirstate", "O!O!y#:parse_dirstate"),
-	        &PyDict_Type, &dmap, &PyDict_Type, &cmap, &str, &readlen)) {
+	if (!PyArg_ParseTuple(args, "O!O!y#:parse_dirstate", &PyDict_Type,
+	                      &dmap, &PyDict_Type, &cmap, &str, &readlen)) {
 		goto quit;
 	}
 
@@ -828,8 +827,8 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 		goto quit;
 	}
 
-	parents = Py_BuildValue(PY23("s#s#", "y#y#"), str, (Py_ssize_t)20,
-	                        str + 20, (Py_ssize_t)20);
+	parents = Py_BuildValue("y#y#", str, (Py_ssize_t)20, str + 20,
+	                        (Py_ssize_t)20);
 	if (!parents) {
 		goto quit;
 	}
@@ -1158,8 +1157,7 @@ static PyObject *fm1readmarkers(PyObject *self, PyObject *args)
 	Py_ssize_t datalen, offset, stop;
 	PyObject *markers = NULL;
 
-	if (!PyArg_ParseTuple(args, PY23("s#nn", "y#nn"), &data, &datalen,
-	                      &offset, &stop)) {
+	if (!PyArg_ParseTuple(args, "y#nn", &data, &datalen, &offset, &stop)) {
 		return NULL;
 	}
 	if (offset < 0) {
