@@ -919,17 +919,12 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         'SecurityGroupIds': [c.security_groups['linux-dev-1'].id],
     }
 
-    requirements2_path = (
-        pathlib.Path(__file__).parent.parent / 'linux-requirements-py2.txt'
-    )
     requirements3_path = (
         pathlib.Path(__file__).parent.parent / 'linux-requirements-py3.txt'
     )
     requirements35_path = (
         pathlib.Path(__file__).parent.parent / 'linux-requirements-py3.5.txt'
     )
-    with requirements2_path.open('r', encoding='utf-8') as fh:
-        requirements2 = fh.read()
     with requirements3_path.open('r', encoding='utf-8') as fh:
         requirements3 = fh.read()
     with requirements35_path.open('r', encoding='utf-8') as fh:
@@ -941,7 +936,6 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
         {
             'instance_config': config,
             'bootstrap_script': BOOTSTRAP_DEBIAN,
-            'requirements_py2': requirements2,
             'requirements_py3': requirements3,
             'requirements_py35': requirements35,
         }
@@ -975,10 +969,6 @@ def ensure_linux_dev_ami(c: AWSConnection, distro='debian10', prefix='hg-'):
             print('uploading bootstrap files')
             with sftp.open('%s/bootstrap' % home, 'wb') as fh:
                 fh.write(BOOTSTRAP_DEBIAN)
-                fh.chmod(0o0700)
-
-            with sftp.open('%s/requirements-py2.txt' % home, 'wb') as fh:
-                fh.write(requirements2)
                 fh.chmod(0o0700)
 
             with sftp.open('%s/requirements-py3.txt' % home, 'wb') as fh:

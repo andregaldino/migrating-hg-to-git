@@ -469,9 +469,7 @@ def get_parser():
         '--python-version',
         help='Python version to use',
         choices={
-            'system2',
             'system3',
-            '2.7',
             '3.5',
             '3.6',
             '3.7',

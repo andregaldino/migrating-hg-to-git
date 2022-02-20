@@ -25,7 +25,6 @@ DISTROS = {
 }
 
 INSTALL_PYTHONS = r'''
-PYENV2_VERSIONS="2.7.17 pypy2.7-7.2.0"
 PYENV3_VERSIONS="3.5.10 3.6.13 3.7.10 3.8.10 3.9.5 pypy3.5-7.0.0 pypy3.6-7.3.3 pypy3.7-7.3.3"
 
 git clone https://github.com/pyenv/pyenv.git /hgdev/pyenv
@@ -46,13 +45,6 @@ VIRTUALENV_TARBALL=virtualenv-16.7.5.tar.gz
 wget -O ${VIRTUALENV_TARBALL} --progress dot:mega https://files.pythonhosted.org/packages/66/f0/6867af06d2e2f511e4e1d7094ff663acdebc4f15d4a0cb0fed1007395124/${VIRTUALENV_TARBALL}
 echo "${VIRTUALENV_SHA256} ${VIRTUALENV_TARBALL}" | sha256sum --check -
 
-for v in ${PYENV2_VERSIONS}; do
-    pyenv install -v ${v}
-    ${PYENV_ROOT}/versions/${v}/bin/python get-pip.py
-    ${PYENV_ROOT}/versions/${v}/bin/pip install ${VIRTUALENV_TARBALL}
-    ${PYENV_ROOT}/versions/${v}/bin/pip install -r /hgdev/requirements-py2.txt
-done
-
 for v in ${PYENV3_VERSIONS}; do
     pyenv install -v ${v}
     ${PYENV_ROOT}/versions/${v}/bin/python get-pip.py
@@ -72,7 +64,7 @@ for v in ${PYENV3_VERSIONS}; do
     ${PYENV_ROOT}/versions/${v}/bin/pip install -r /hgdev/${REQUIREMENTS}
 done
 
-pyenv global ${PYENV2_VERSIONS} ${PYENV3_VERSIONS} system
+pyenv global ${PYENV3_VERSIONS} system
 '''.lstrip().replace(
     '\r\n', '\n'
 )
@@ -274,17 +266,8 @@ PACKAGES="\
     netbase \
     ntfs-3g \
     nvme-cli \
-    pyflakes \
     pyflakes3 \
-    pylint \
     pylint3 \
-    python-all-dev \
-    python-dev \
-    python-docutils \
-    python-fuzzywuzzy \
-    python-pygments \
-    python-subversion \
-    python-vcr \
     python3-boto3 \
     python3-dev \
     python3-docutils \
@@ -595,9 +578,7 @@ def run_tests(ssh_client, python_version, test_flags=None):
 
     print('running tests')
 
-    if python_version == 'system2':
-        python = '/usr/bin/python2'
-    elif python_version == 'system3':
+    if python_version == 'system3':
         python = '/usr/bin/python3'
     elif python_version.startswith('pypy'):
         python = '/hgdev/pyenv/shims/%s' % python_version
