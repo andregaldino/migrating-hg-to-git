@@ -1794,9 +1794,7 @@ class TTest(Test):
                 script.append(b'echo %s %d $?\n' % (salt, line))
 
         activetrace = []
-        session = str(uuid.uuid4())
-        if PYTHON3:
-            session = session.encode('ascii')
+        session = str(uuid.uuid4()).encode('ascii')
         hgcatapult = os.getenv('HGTESTCATAPULTSERVERPIPE') or os.getenv(
             'HGCATAPULTSERVERPIPE'
         )
