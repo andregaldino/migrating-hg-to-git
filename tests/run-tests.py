@@ -3610,14 +3610,6 @@ class TestRunner(object):
                     f.write(b'%s "$@"\n' % esc_executable)
 
             if WINDOWS:
-                if not PYTHON3:
-                    # lets try to build a valid python3 executable for the
-                    # scrip that requires it.
-                    py3exe_name = os.path.join(self._custom_bin_dir, b'python3')
-                    with open(py3exe_name, 'wb') as f:
-                        f.write(b'#!/bin/sh\n')
-                        f.write(b'py -3 "$@"\n')
-
                 # adjust the path to make sur the main python finds it own dll
                 path = os.environ['PATH'].split(os.pathsep)
                 main_exec_dir = os.path.dirname(sysexecutable)
@@ -3630,8 +3622,6 @@ class TestRunner(object):
                 if appdata is not None:
                     python_dir = 'Python%d%d' % (vi[0], vi[1])
                     scripts_path = [appdata, 'Python', python_dir, 'Scripts']
-                    if not PYTHON3:
-                        scripts_path = [appdata, 'Python', 'Scripts']
                     scripts_dir = os.path.join(*scripts_path)
                     extra_paths.append(scripts_dir)
 
