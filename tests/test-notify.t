@@ -469,7 +469,6 @@ non-ascii content and truncation of multi-byte subject
   Content-Transfer-Encoding: 8bit
   X-Test: foo
   Date: * (glob)
-  Subject: \xc3\xa0... (esc) (no-py3 !)
   Subject: =?utf-8?b?w6AuLi4=?= (py3 !)
   From: test@test.com
   X-Hg-Notification: changeset 0f25f9c22b4c

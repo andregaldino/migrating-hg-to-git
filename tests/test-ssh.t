@@ -326,7 +326,6 @@ try again with remote chg, which should succeed as well
   remote: added 1 changesets with 1 changes to 1 files (py3 !)
   remote: KABOOM
   remote: KABOOM IN PROCESS
-  remote: added 1 changesets with 1 changes to 1 files (no-py3 !)
 
 #endif
 

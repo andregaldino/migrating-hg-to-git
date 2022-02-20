@@ -2086,5 +2086,4 @@ Test that a proper "python" has been set up
   $ ./test-py3.py
   3.* (glob)
   $ ./test-py.py
-  2.* (glob) (no-py3 !)
   3.* (glob) (py3 !)

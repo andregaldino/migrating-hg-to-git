@@ -212,7 +212,6 @@ debugdelta chain basic output
    {
     "chainid": 1,
     "chainlen": 1,
-    "chainratio": 1.02325581395, (no-py3 !)
     "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
@@ -249,7 +248,6 @@ debugdelta chain basic output
    {
     "chainid": 3,
     "chainlen": 1,
-    "chainratio": 1.02325581395, (no-py3 !)
     "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
@@ -289,7 +287,6 @@ debugdelta chain with sparse read enabled
    {
     "chainid": 1,
     "chainlen": 1,
-    "chainratio": 1.02325581395, (no-py3 !)
     "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,
@@ -326,7 +323,6 @@ debugdelta chain with sparse read enabled
    {
     "chainid": 3,
     "chainlen": 1,
-    "chainratio": 1.02325581395, (no-py3 !)
     "chainratio": 1.0232558139534884, (py3 !)
     "chainsize": 44,
     "compsize": 44,

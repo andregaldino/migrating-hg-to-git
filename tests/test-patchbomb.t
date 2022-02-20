@@ -514,7 +514,6 @@ mime encoded mbox (base64):
   X-Mercurial-Series-Id: <f81ef97829467e868fc4.240@test-hostname>
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Thu, 01 Jan 1970 00:04:00 +0000
-  From: Q <quux> (no-py3 !)
   From: =?iso-8859-1?q?Q?= <quux> (py3 !)
   To: foo
   Cc: bar
@@ -2400,9 +2399,6 @@ test multi-address parsing:
   User-Agent: Mercurial-patchbomb/* (glob)
   Date: Tue, 01 Jan 1980 00:01:00 +0000
   From: quux
-  To: spam <spam>, eggs, toast (no-py3 !)
-  Cc: foo, bar@example.com, "A, B <>" <a@example.com> (no-py3 !)
-  Bcc: "Quux, A." <quux> (no-py3 !)
   To: =?iso-8859-1?q?spam?= <spam>, eggs, toast (py3 !)
   Cc: foo, bar@example.com, =?iso-8859-1?q?A=2C_B_=3C=3E?= <a@example.com> (py3 !)
   Bcc: =?iso-8859-1?q?Quux=2C_A=2E?= <quux> (py3 !)
@@ -2722,7 +2718,6 @@ Test without revisions specified
   MIME-Version: 1.0
   Content-Type: text/plain; charset="iso-8859-1"
   Content-Transfer-Encoding: quoted-printable
-  Subject: [PATCH 2 of 6] \xe7a (esc) (no-py3 !)
   Subject: =?utf-8?b?W1BBVENIIDIgb2YgNl0gw6dh?= (py3 !)
   X-Mercurial-Node: f81ef97829467e868fc405fccbcfa66217e4d3e6
   X-Mercurial-Series-Index: 2

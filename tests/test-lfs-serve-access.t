@@ -355,7 +355,6 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src, contentlength)
   $LOCALIP - - [$ERRDATE$] HG error:      raise LfsCorruptionError( (glob) (py38 !)
   $LOCALIP - - [$ERRDATE$] HG error:      _(b'corrupt remote lfs object: %s') % oid (glob) (no-py38 !)
-  $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (no-py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:  hgext.lfs.blobstore.LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
@@ -367,7 +366,6 @@ Test a checksum failure during the processing of the GET request
       handled = wireprotoserver.handlewsgirequest( (py38 !)
       return _processbasictransfer( (py38 !)
       rctx, req, res, self.check_perm (no-py38 !)
-      return func(*(args + a), **kw) (no-py3 !)
       rctx.repo, req, res, lambda perm: checkperm(rctx, req, perm) (no-py38 !)
       res.setbodybytes(localstore.read(oid))
       blob = self._read(self.vfs, oid, verify)
@@ -381,7 +379,6 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, b'dummy content') (glob)
   $LOCALIP - - [$ERRDATE$] HG error:      raise LfsCorruptionError( (glob) (py38 !)
   $LOCALIP - - [$ERRDATE$] HG error:      hint=_(b'run hg verify'), (glob) (no-py38 !)
-  $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (no-py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:  hgext.lfs.blobstore.LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (py3 !)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
 

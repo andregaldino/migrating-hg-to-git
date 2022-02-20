@@ -3,7 +3,6 @@ hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
   checking Python implementation (*) (glob)
-  checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re) (no-pyoxidizer !)
   checking Python lib (.*pyoxidizer.*)... (re) (pyoxidizer !)
@@ -67,7 +66,6 @@ hg debuginstall with no username
   checking encoding (ascii)...
   checking Python executable (*) (glob)
   checking Python implementation (*) (glob)
-  checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re) (no-pyoxidizer !)
   checking Python lib (.*pyoxidizer.*)... (re) (pyoxidizer !)
@@ -117,7 +115,6 @@ path variables are expanded (~ is the same as $TESTTMP)
   checking encoding (ascii)...
   checking Python executable (*) (glob)
   checking Python implementation (*) (glob)
-  checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re) (no-pyoxidizer !)
   checking Python lib (.*pyoxidizer.*)... (re) (pyoxidizer !)
@@ -147,7 +144,6 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   checking encoding (ascii)...
   checking Python executable (*) (glob)
   checking Python implementation (*) (glob)
-  checking Python version (2.*) (glob) (no-py3 !)
   checking Python version (3.*) (glob) (py3 !)
   checking Python lib (.*[Ll]ib.*)... (re) (no-pyoxidizer !)
   checking Python lib (.*pyoxidizer.*)... (re) (pyoxidizer !)

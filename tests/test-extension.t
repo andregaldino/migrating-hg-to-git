@@ -1940,7 +1940,6 @@ Prohibit the use of unicode strings as the default value of options
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
   *** failed to import extension "test_unicode_default_value" from $TESTTMP/test_unicode_default_value.py: unicode 'value' found in cmdtable.dummy (py3 !)
-  *** failed to import extension "test_unicode_default_value" from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy (no-py3 !)
   *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)
