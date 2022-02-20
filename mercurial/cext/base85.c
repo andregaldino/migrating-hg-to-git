@@ -177,7 +177,6 @@ static PyMethodDef methods[] = {
 
 static const int version = 1;
 
-#ifdef IS_PY3K
 static struct PyModuleDef base85_module = {
     PyModuleDef_HEAD_INIT, "base85", base85_doc, -1, methods,
 };
@@ -191,13 +190,3 @@ PyMODINIT_FUNC PyInit_base85(void)
 	PyModule_AddIntConstant(m, "version", version);
 	return m;
 }
-#else
-PyMODINIT_FUNC initbase85(void)
-{
-	PyObject *m;
-	m = Py_InitModule3("base85", methods, base85_doc);
-
-	b85prep();
-	PyModule_AddIntConstant(m, "version", version);
-}
-#endif

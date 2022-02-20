@@ -1307,7 +1307,6 @@ static int check_python_version(void)
 	return 0;
 }
 
-#ifdef IS_PY3K
 static struct PyModuleDef parsers_module = {PyModuleDef_HEAD_INIT, "parsers",
                                             parsers_doc, -1, methods};
 
@@ -1321,15 +1320,3 @@ PyMODINIT_FUNC PyInit_parsers(void)
 	module_init(mod);
 	return mod;
 }
-#else
-PyMODINIT_FUNC initparsers(void)
-{
-	PyObject *mod;
-
-	if (check_python_version() == -1) {
-		return;
-	}
-	mod = Py_InitModule3("parsers", methods, parsers_doc);
-	module_init(mod);
-}
-#endif
