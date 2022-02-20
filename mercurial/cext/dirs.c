@@ -100,11 +100,7 @@ static int _addpath(PyObject *dirs, PyObject *path)
 		}
 
 		/* Force Python to not reuse a small shared int. */
-#ifdef IS_PY3K
 		val = PyLong_FromLong(0x1eadbeef);
-#else
-		val = PyInt_FromLong(0x1eadbeef);
-#endif
 
 		if (val == NULL)
 			goto bail;
