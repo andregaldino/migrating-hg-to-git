@@ -1,20 +1,5 @@
 #require git
 
-# XXX-CHG When running with python2 + chg this test tend to get stuck and end up
-# as a time-out error. My effort to reproduce this outside of the CI failed. The
-# test itself seems to pass fine, but never "complete". Debugging it is slow and
-# tedious. This as a bad impact on the development process as most CI run end up
-# wasting abotu 1h until that one fails.
-#
-# Pierre-Yves David, Augie Fackler and Raphaël Gomès all agreed to disable this
-# case in that specific case until we figure this out (or we drop python2 o:-) )
-
-#if no-py3 chg
-  $ echo 'skipped: this test get stuck on the CI with python2 + chg. investigation needed'
-  $ exit 80
-#endif
-
-
 make git commits repeatable
 
   $ cat >> $HGRCPATH <<EOF

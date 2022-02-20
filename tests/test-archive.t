@@ -580,14 +580,9 @@ test xz support only available in Python 3.4
   Strms  Blocks   Compressed Uncompressed  Ratio  Check   Filename (xz !)
   $ rm -f ../archive.txz
 #endif
-#if py3 no-lzma
+#if no-lzma
   $ hg archive ../archive.txz
   abort: lzma module is not available
-  [255]
-#endif
-#if no-py3
-  $ hg archive ../archive.txz
-  abort: xz compression is only available in Python 3
   [255]
 #endif
 

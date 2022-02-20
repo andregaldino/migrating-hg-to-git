@@ -307,22 +307,6 @@ limit mark, regardless of importing module or not.)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
 
-#if no-py3
-  $ cat > $TESTTMP/libroot/mod/ambigrel.py <<NO_CHECK_EOF
-  > import ambig # should load "libroot/mod/ambig.py"
-  > s = ambig.s
-  > NO_CHECK_EOF
-  $ cat > loadrel.py <<NO_CHECK_EOF
-  > import mod.ambigrel as ambigrel
-  > def extsetup(ui):
-  >     print('ambigrel.s=%s' % ambigrel.s, flush=True)
-  > NO_CHECK_EOF
-  $ "$PYTHON" $TESTTMP/unflush.py loadrel.py
-  $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadrel=loadrel.py root)
-  ambigrel.s=libroot/mod/ambig.py
-  $TESTTMP/a
-#endif
-
 Check absolute/relative import of extension specific modules
 
   $ mkdir $TESTTMP/extroot
@@ -372,39 +356,6 @@ Check absolute/relative import of extension specific modules
   (extroot) from extroot.bar import s: this is extroot.bar
   (extroot) import extroot.bar in func(): this is extroot.bar
   $TESTTMP/a
-
-#if no-py3
-  $ rm "$TESTTMP"/extroot/foo.*
-  $ rm -Rf "$TESTTMP/extroot/__pycache__"
-  $ cat > $TESTTMP/extroot/foo.py <<NO_CHECK_EOF
-  > # test relative import
-  > buf = []
-  > def func():
-  >     # "not locals" case
-  >     import bar
-  >     buf.append('import bar in func(): %s' % bar.s)
-  >     return '\n(extroot) '.join(buf)
-  > # "fromlist == ('*',)" case
-  > from bar import *
-  > buf.append('from bar import *: %s' % s)
-  > # "not fromlist" and "if '.' in name" case
-  > import sub1.baz
-  > buf.append('import sub1.baz: %s' % sub1.baz.s)
-  > # "not fromlist" and NOT "if '.' in name" case
-  > import sub1
-  > buf.append('import sub1: %s' % sub1.s)
-  > # NOT "not fromlist" and NOT "level != -1" case
-  > from bar import s
-  > buf.append('from bar import s: %s' % s)
-  > NO_CHECK_EOF
-  $ hg --config extensions.extroot=$TESTTMP/extroot root
-  (extroot) from bar import *: this is extroot.bar
-  (extroot) import sub1.baz: this is extroot.sub1.baz
-  (extroot) import sub1: this is extroot.sub1.__init__
-  (extroot) from bar import s: this is extroot.bar
-  (extroot) import bar in func(): this is extroot.bar
-  $TESTTMP/a
-#endif
 
 #if demandimport
 
