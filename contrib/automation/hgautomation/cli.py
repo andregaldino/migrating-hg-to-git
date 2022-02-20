@@ -158,7 +158,7 @@ def build_all_windows_packages(
 
         windows.synchronize_hg(SOURCE_ROOT, revision, instance)
 
-        for py_version in ("2.7", "3.7", "3.8", "3.9", "3.10"):
+        for py_version in ("3.7", "3.8", "3.9", "3.10"):
             for arch in ("x86", "x64"):
                 windows.purge_hg(winrm_client)
                 windows.build_wheel(
@@ -342,7 +342,7 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Which version of Python to target',
-        choices={2, 3},
+        choices={3},
         type=int,
         nargs='*',
         default=[3],
@@ -377,7 +377,7 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Python version to build for',
-        choices={'2.7', '3.7', '3.8', '3.9', '3.10'},
+        choices={'3.7', '3.8', '3.9', '3.10'},
         nargs='*',
         default=['3.8'],
     )
@@ -404,7 +404,7 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Which version of Python to target',
-        choices={2, 3},
+        choices={3},
         type=int,
         nargs='*',
         default=[3],
@@ -499,8 +499,8 @@ def get_parser():
     sp.add_argument(
         '--python-version',
         help='Python version to use',
-        choices={'2.7', '3.5', '3.6', '3.7', '3.8', '3.9', '3.10'},
-        default='2.7',
+        choices={'3.5', '3.6', '3.7', '3.8', '3.9', '3.10'},
+        default='3.9',
     )
     sp.add_argument(
         '--arch',
