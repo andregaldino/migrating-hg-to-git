@@ -17,14 +17,6 @@
 #include "charencode.h"
 #include "util.h"
 
-/* The mapping of Python types is meant to be temporary to get Python
- * 3 to compile. We should remove this once Python 3 support is fully
- * supported and proper types are used in the extensions themselves. */
-#define PyInt_Check PyLong_Check
-#define PyInt_FromLong PyLong_FromLong
-#define PyInt_FromSsize_t PyLong_FromSsize_t
-#define PyInt_AsLong PyLong_AsLong
-
 static const char *const versionerrortext = "Python minor version mismatch";
 
 static const int dirstate_v1_from_p2 = -2;
@@ -305,17 +297,17 @@ static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
 
 static PyObject *dirstate_item_v1_mode(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_mode(self));
+	return PyLong_FromLong(dirstate_item_c_v1_mode(self));
 };
 
 static PyObject *dirstate_item_v1_size(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_size(self));
+	return PyLong_FromLong(dirstate_item_c_v1_size(self));
 };
 
 static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_mtime(self));
+	return PyLong_FromLong(dirstate_item_c_v1_mtime(self));
 };
 
 static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
@@ -561,17 +553,17 @@ static PyMethodDef dirstate_item_methods[] = {
 
 static PyObject *dirstate_item_get_mode(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_mode(self));
+	return PyLong_FromLong(dirstate_item_c_v1_mode(self));
 };
 
 static PyObject *dirstate_item_get_size(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_size(self));
+	return PyLong_FromLong(dirstate_item_c_v1_size(self));
 };
 
 static PyObject *dirstate_item_get_mtime(dirstateItemObject *self)
 {
-	return PyInt_FromLong(dirstate_item_c_v1_mtime(self));
+	return PyLong_FromLong(dirstate_item_c_v1_mtime(self));
 };
 
 static PyObject *dirstate_item_get_state(dirstateItemObject *self)
@@ -1279,7 +1271,7 @@ static int check_python_version(void)
 	if (!ver) {
 		return -1;
 	}
-	hexversion = PyInt_AsLong(ver);
+	hexversion = PyLong_AsLong(ver);
 	Py_DECREF(ver);
 	/* sys.hexversion is a 32-bit number by default, so the -1 case
 	 * should only occur in unusual circumstances (e.g. if sys.hexversion
