@@ -52,6 +52,7 @@ import contextlib
 import difflib
 import distutils.version as version
 import errno
+import functools
 import json
 import multiprocessing
 import os
@@ -879,11 +880,7 @@ def makecleanable(path):
                 pass
 
 
-_unified_diff = difflib.unified_diff
-if PYTHON3:
-    import functools
-
-    _unified_diff = functools.partial(difflib.diff_bytes, difflib.unified_diff)
+_unified_diff = functools.partial(difflib.diff_bytes, difflib.unified_diff)
 
 
 def getdiff(expected, output, ref, err):
