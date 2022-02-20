@@ -163,7 +163,6 @@ if sys.version_info < (3, 5, 0):
     )
     sys.exit(70)  # EX_SOFTWARE from `man 3 sysexit`
 
-PYTHON3 = True
 xrange = range  # we use xrange in one place, and we'd rather not use range
 
 
@@ -1464,7 +1463,7 @@ class Test(unittest.TestCase):
         # This has the same effect as Py_LegacyWindowsStdioFlag in exewrapper.c,
         # but this is needed for testing python instances like dummyssh,
         # dummysmtpd.py, and dumbhttp.py.
-        if PYTHON3 and WINDOWS:
+        if WINDOWS:
             env['PYTHONLEGACYWINDOWSSTDIO'] = '1'
 
         # Modified HOME in test environment can confuse Rust tools. So set
@@ -3414,7 +3413,7 @@ class TestRunner(object):
 
             failed = False
             kws = self.options.keywords
-            if kws is not None and PYTHON3:
+            if kws is not None:
                 kws = kws.encode('utf-8')
 
             suite = TestSuite(
