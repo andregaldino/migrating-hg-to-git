@@ -14,29 +14,13 @@ import subprocess
 
 import jinja2
 
-from .py2exe import (
-    build_py2exe,
-    stage_install,
-)
 from .pyoxidizer import create_pyoxidizer_install_layout
 from .util import (
-    find_legacy_vc_runtime_files,
     normalize_windows_version,
     process_install_rules,
     read_version_py,
 )
 
-EXTRA_PACKAGES = {
-    'dulwich',
-    'keyring',
-    'pygments',
-    'win32ctypes',
-}
-
-EXTRA_INCLUDES = {
-    '_curses',
-    '_curses_panel',
-}
 
 EXTRA_INSTALL_RULES = [
     ('contrib/win32/mercurial.ini', 'defaultrc/mercurial.rc'),
@@ -45,80 +29,6 @@ EXTRA_INSTALL_RULES = [
 PACKAGE_FILES_METADATA = {
     'ReadMe.html': 'Flags: isreadme',
 }
-
-
-def build_with_py2exe(
-    source_dir: pathlib.Path,
-    build_dir: pathlib.Path,
-    python_exe: pathlib.Path,
-    iscc_exe: pathlib.Path,
-    version=None,
-):
-    """Build the Inno installer using py2exe.
-
-    Build files will be placed in ``build_dir``.
-
-    py2exe's setup.py doesn't use setuptools. It doesn't have modern logic
-    for finding the Python 2.7 toolchain. So, we require the environment
-    to already be configured with an active toolchain.
-    """
-    if not iscc_exe.exists():
-        raise Exception('%s does not exist' % iscc_exe)
-
-    vc_x64 = r'\x64' in os.environ.get('LIB', '')
-    arch = 'x64' if vc_x64 else 'x86'
-    inno_build_dir = build_dir / ('inno-py2exe-%s' % arch)
-    staging_dir = inno_build_dir / 'stage'
-
-    requirements_txt = (
-        source_dir / 'contrib' / 'packaging' / 'requirements-windows-py2.txt'
-    )
-
-    inno_build_dir.mkdir(parents=True, exist_ok=True)
-
-    build_py2exe(
-        source_dir,
-        build_dir,
-        python_exe,
-        'inno',
-        requirements_txt,
-        extra_packages=EXTRA_PACKAGES,
-        extra_includes=EXTRA_INCLUDES,
-    )
-
-    # Purge the staging directory for every build so packaging is
-    # pristine.
-    if staging_dir.exists():
-        print('purging %s' % staging_dir)
-        shutil.rmtree(staging_dir)
-
-    # Now assemble all the packaged files into the staging directory.
-    stage_install(source_dir, staging_dir)
-
-    # We also install some extra files.
-    process_install_rules(EXTRA_INSTALL_RULES, source_dir, staging_dir)
-
-    # hg.exe depends on VC9 runtime DLLs. Copy those into place.
-    for f in find_legacy_vc_runtime_files(vc_x64):
-        if f.name.endswith('.manifest'):
-            basename = 'Microsoft.VC90.CRT.manifest'
-        else:
-            basename = f.name
-
-        dest_path = staging_dir / basename
-
-        print('copying %s to %s' % (f, dest_path))
-        shutil.copyfile(f, dest_path)
-
-    build_installer(
-        source_dir,
-        inno_build_dir,
-        staging_dir,
-        iscc_exe,
-        version,
-        arch="x64" if vc_x64 else None,
-        suffix="-python2",
-    )
 
 
 def build_with_pyoxidizer(
