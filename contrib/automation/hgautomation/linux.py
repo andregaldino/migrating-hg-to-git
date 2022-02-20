@@ -532,7 +532,7 @@ def synchronize_hg(
         hg_bin = source_path / 'hg'
 
         res = subprocess.run(
-            ['python2.7', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
+            ['python3', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
             cwd=str(source_path),
             env=env,
             check=True,
@@ -542,7 +542,7 @@ def synchronize_hg(
         full_revision = res.stdout.decode('ascii')
 
         args = [
-            'python2.7',
+            'python3',
             str(hg_bin),
             '--config',
             'ui.ssh=ssh -F %s' % ssh_config,

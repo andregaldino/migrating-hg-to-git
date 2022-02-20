@@ -261,7 +261,7 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
         hg_bin = hg_repo / 'hg'
 
         res = subprocess.run(
-            ['python2.7', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
+            ['python3', str(hg_bin), 'log', '-r', revision, '-T', '{node}'],
             cwd=str(hg_repo),
             env=env,
             check=True,
@@ -271,7 +271,7 @@ def synchronize_hg(hg_repo: pathlib.Path, revision: str, ec2_instance):
         full_revision = res.stdout.decode('ascii')
 
         args = [
-            'python2.7',
+            'python3',
             hg_bin,
             '--config',
             'ui.ssh=ssh -F %s' % ssh_config,
