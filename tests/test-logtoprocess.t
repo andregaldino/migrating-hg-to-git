@@ -8,7 +8,6 @@ Test if logtoprocess correctly captures command-related log calls.
 
   $ hg init
   $ cat > $TESTTMP/foocommand.py << EOF
-  > from __future__ import absolute_import
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)

@@ -2451,7 +2451,6 @@ Check that adding an arbitrary name shows up in log automatically
 
   $ cat > ../names.py <<EOF
   > """A small extension to test adding arbitrary names to a repo"""
-  > from __future__ import absolute_import
   > from mercurial import namespaces
   > 
   > def reposetup(ui, repo):

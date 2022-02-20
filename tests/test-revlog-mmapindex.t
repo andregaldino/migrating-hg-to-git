@@ -2,7 +2,6 @@ create verbosemmap.py
   $ cat << EOF > verbosemmap.py
   > # extension to make util.mmapread verbose
   > 
-  > from __future__ import absolute_import
   > 
   > from mercurial import (
   >     extensions,

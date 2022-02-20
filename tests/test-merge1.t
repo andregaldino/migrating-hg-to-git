@@ -1,5 +1,4 @@
   $ cat <<EOF > merge
-  > from __future__ import print_function
   > import sys, os
   > 
   > try:
@@ -354,7 +353,6 @@ getting better, it get more complicated to test a specific scenario that would
 trigger it. If you see flakyness here, there is a race.
 
   $ cat > $TESTTMP/abort.py <<EOF
-  > from __future__ import absolute_import
   > # emulate aborting before "recordupdates()". in this case, files
   > # are changed without updating dirstate
   > from mercurial import (

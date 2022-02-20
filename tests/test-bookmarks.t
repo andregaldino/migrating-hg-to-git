@@ -1069,7 +1069,6 @@ ensure changelog is written before bookmarks
   $ echo a > a
 
   $ cat > $TESTTMP/pausefinalize.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > import time
   > from mercurial import extensions, localrepo

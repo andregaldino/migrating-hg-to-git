@@ -1,7 +1,6 @@
 Test how largefiles abort in case the disk runs full
 
   $ cat > criple.py <<EOF
-  > from __future__ import absolute_import
   > import errno
   > import os
   > import shutil

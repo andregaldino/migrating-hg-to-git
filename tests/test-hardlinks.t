@@ -1,7 +1,6 @@
 #require hardlink reporevlogstore
 
   $ cat > nlinks.py <<EOF
-  > from __future__ import print_function
   > import sys
   > from mercurial import pycompat, util
   > for f in sorted(sys.stdin.readlines()):
@@ -17,7 +16,6 @@
 Some implementations of cp can't create hardlinks (replaces 'cp -al' on Linux):
 
   $ cat > linkcp.py <<EOF
-  > from __future__ import absolute_import
   > import sys
   > from mercurial import pycompat, util
   > util.copyfiles(pycompat.fsencode(sys.argv[1]),

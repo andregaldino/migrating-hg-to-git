@@ -411,7 +411,6 @@ During pushbuffer, pager should not start:
 
 Environment variables like LESS and LV are set automatically:
   $ cat > $TESTTMP/printlesslv.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > import sys
   > sys.stdin.read()

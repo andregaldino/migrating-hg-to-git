@@ -320,7 +320,6 @@ invalid arch type should give 404
   $ TIP=`hg id -v | cut -f1 -d' '`
   $ QTIP=`hg id -q`
   $ cat > getarchive.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > import sys
   > from mercurial import (
@@ -455,7 +454,6 @@ The '-t' should override autodetection
   > done
 
   $ cat > md5comp.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import hashlib
   > import sys
   > f1, f2 = sys.argv[1:3]
@@ -617,7 +615,6 @@ configured as GMT.
   $ hg -R repo add repo/a
   $ hg -R repo commit -m '#0' -d '456789012 21600'
   $ cat > show_mtime.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import os
   > import sys
   > print(int(os.stat(sys.argv[1]).st_mtime))

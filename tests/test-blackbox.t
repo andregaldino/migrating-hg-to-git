@@ -403,7 +403,6 @@ pretty brittle)
 when using chg, blackbox.log should get rotated correctly
 
   $ cat > $TESTTMP/noop.py << EOF
-  > from __future__ import absolute_import
   > import time
   > from mercurial import registrar, scmutil
   > cmdtable = {}
@@ -463,7 +462,6 @@ With chg, blackbox should not create the log file if the repo is gone
 blackbox should work if repo.ui.log is not called (issue5518)
 
   $ cat > $TESTTMP/raise.py << EOF
-  > from __future__ import absolute_import
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)

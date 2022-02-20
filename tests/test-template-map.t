@@ -722,7 +722,6 @@ Test xml styles:
 test CBOR style:
 
   $ cat <<'EOF' > "$TESTTMP/decodecborarray.py"
-  > from __future__ import absolute_import
   > from mercurial import (
   >     dispatch,
   > )

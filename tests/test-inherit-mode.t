@@ -10,7 +10,6 @@ just in case somebody has a strange $TMPDIR
   $ cd dir
 
   $ cat >printmodes.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import os
   > import sys
   > 
@@ -31,7 +30,6 @@ just in case somebody has a strange $TMPDIR
   > EOF
 
   $ cat >mode.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import os
   > import sys
   > print('%05o' % os.lstat(sys.argv[1]).st_mode)

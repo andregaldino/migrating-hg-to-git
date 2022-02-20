@@ -3,7 +3,6 @@
 Checking that experimental.atomic-file works.
 
   $ cat > $TESTTMP/show_mode.py <<EOF
-  > from __future__ import print_function
   > import os
   > import stat
   > import sys
@@ -20,7 +19,6 @@ Checking that experimental.atomic-file works.
   $ cd repo
 
   $ cat > .hg/showwrites.py <<EOF
-  > from __future__ import print_function
   > from mercurial import pycompat
   > from mercurial.utils import stringutil
   > def uisetup(ui):

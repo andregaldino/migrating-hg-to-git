@@ -77,7 +77,6 @@ Verify that exceptions during a dirstate change leave the dirstate
 coherent (issue4353)
 
   $ cat > ../dirstateexception.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import (
   >   error,
   >   extensions,

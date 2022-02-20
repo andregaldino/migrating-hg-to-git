@@ -1290,7 +1290,6 @@ Use delayedstrip to strip inside a transaction
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo 3 >> I
   $ cat > $TESTTMP/delayedstrip.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import commands, registrar, repair
   > cmdtable = {}
   > command = registrar.command(cmdtable)

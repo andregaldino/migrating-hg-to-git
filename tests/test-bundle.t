@@ -466,7 +466,6 @@ packed1 can be consumed from debug command
 transaction)
 
   $ cat > $TESTTMP/showtip.py <<EOF
-  > from __future__ import absolute_import
   > 
   > def showtip(ui, repo, hooktype, **kwargs):
   >     ui.warn(b'%s: %s\n' % (hooktype, repo[b'tip'].hex()[:12]))

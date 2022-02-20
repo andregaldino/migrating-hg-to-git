@@ -99,7 +99,6 @@ output so we can test I/O capture and behavior.
 Test pushing to a server that has a pretxnchangegroup Python hook that fails
 
   $ cat > $TESTTMP/failhook << EOF
-  > from __future__ import print_function
   > import sys
   > def hook1line(ui, repo, **kwargs):
   >     ui.write(b'ui.write 1 line\n')

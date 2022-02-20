@@ -132,7 +132,6 @@ statprof can be used as a standalone module
 profiler extension could be loaded before other extensions
 
   $ cat > fooprof.py <<EOF
-  > from __future__ import absolute_import
   > import contextlib
   > import sys
   > @contextlib.contextmanager
@@ -147,7 +146,6 @@ profiler extension could be loaded before other extensions
   > EOF
 
   $ cat > otherextension.py <<EOF
-  > from __future__ import absolute_import
   > def extsetup(ui):
   >     ui.write(b'otherextension: loaded\n')
   > EOF

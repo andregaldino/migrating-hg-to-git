@@ -71,7 +71,6 @@ import exported patch with external patcher
 regardless of the commit message in the patch)
 
   $ cat > dummypatch.py <<EOF
-  > from __future__ import print_function
   > print('patching file a')
   > open('a', 'wb').write(b'line2\n')
   > EOF

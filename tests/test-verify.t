@@ -338,7 +338,6 @@ test flag processor and skipflags
   checked 1 changesets with 1 changes to 1 files
 
   $ cat >> $TESTTMP/break-base64.py <<EOF
-  > from __future__ import absolute_import
   > import base64
   > base64.b64decode=lambda x: x
   > EOF

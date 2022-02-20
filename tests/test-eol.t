@@ -8,7 +8,6 @@ Test EOL extension
 Set up helpers
 
   $ cat > switch-eol.py <<'EOF'
-  > from __future__ import absolute_import
   > import os
   > import sys
   > try:

@@ -12,7 +12,6 @@ Tests about metadataonlyctx
   $ hg commit -m 'Remove A'
 
   $ cat > metaedit.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import context, pycompat, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)

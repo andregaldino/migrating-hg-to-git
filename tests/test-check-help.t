@@ -3,7 +3,6 @@
   $ . "$TESTDIR/helpers-testrepo.sh"
 
   $ cat <<'EOF' > scanhelptopics.py
-  > from __future__ import absolute_import, print_function
   > import re
   > import sys
   > if sys.platform == "win32":

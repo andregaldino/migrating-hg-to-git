@@ -1465,7 +1465,6 @@ Test issue 4506
 Test heads computation on pending index changes with obsolescence markers
   $ cd ..
   $ cat >$TESTTMP/test_extension.py  << EOF
-  > from __future__ import absolute_import
   > from mercurial.i18n import _
   > from mercurial import cmdutil, pycompat, registrar
   > from mercurial.utils import stringutil
@@ -1499,7 +1498,6 @@ Test cache consistency for the visible filter
 bookmarks change
   $ cd ..
   $ cat >$TESTTMP/test_extension.py  << EOF
-  > from __future__ import absolute_import, print_function
   > import weakref
   > from mercurial import (
   >   bookmarks,

@@ -481,7 +481,6 @@ and (2) the extension to allow filelog merging between the revision
 and its ancestor by overriding "repo._filecommit".
 
   $ cat > ../legacyrepo.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import commit, error, extensions
   > def _filecommit(orig, repo, fctx, manifest1, manifest2,
   >                 linkrev, tr, includecopymeta, ms):

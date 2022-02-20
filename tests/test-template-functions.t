@@ -1572,7 +1572,6 @@ Test with non-strings like dates
 Test cbor filter:
 
   $ cat <<'EOF' > "$TESTTMP/decodecbor.py"
-  > from __future__ import absolute_import
   > from mercurial import (
   >     dispatch,
   > )

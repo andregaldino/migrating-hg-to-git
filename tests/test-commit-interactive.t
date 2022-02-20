@@ -938,7 +938,6 @@ This tests that translated help message is lower()-ed correctly.
   $ export LANGUAGE
 
   $ cat > $TESTTMP/escape.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import (
   >     pycompat,
   > )

@@ -640,7 +640,6 @@ Test split patterns on overflow
   $ cd t
   $ echo fennel > overflow.list
   $ cat >> printnum.py <<EOF
-  > from __future__ import print_function
   > for i in range(20000 // 100):
   >   print('x' * 100)
   > EOF

@@ -1,6 +1,5 @@
 
   $ cat > loop.py <<EOF
-  > from __future__ import absolute_import
   > import time
   > from mercurial import commands, registrar
   > 

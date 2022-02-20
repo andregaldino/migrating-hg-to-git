@@ -550,7 +550,6 @@ Script to make a simple text version of the content
 
   $ cat << EOF >> dircontent.py
   > # generate a simple text view of the directory for easy comparison
-  > from __future__ import print_function
   > import os
   > files = os.listdir('.')
   > files.sort()

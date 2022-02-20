@@ -1792,7 +1792,6 @@ Test omit indicating for help
   > 
   > This paragraph is never omitted, too (for extension)
   > '''
-  > from __future__ import absolute_import
   > from mercurial import commands, help
   > testtopic = br"""This paragraph is never omitted (for topic).
   > 

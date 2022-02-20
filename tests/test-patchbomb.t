@@ -8,7 +8,6 @@ Mercurial-patchbomb/.* -> Mercurial-patchbomb/* (glob)
 --===+[0-9]+=+$ -> --===*= (glob)
 
   $ cat > prune-blank-after-boundary.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import sys
   > skipblank = False
   > trim = lambda x: x.strip(' \r\n')

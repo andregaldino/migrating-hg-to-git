@@ -7,7 +7,6 @@ by the WSGI standard and strictly implemented by mod_wsgi.
   $ hg add bar
   $ hg commit -m "test"
   $ cat > request.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > import sys
   > from mercurial import (

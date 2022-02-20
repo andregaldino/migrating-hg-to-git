@@ -949,7 +949,6 @@ Testing rebase being called inside another transaction
   $ hg init tr-state
   $ cd tr-state
   $ cat > $TESTTMP/wraprebase.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import extensions
   > def _rebase(orig, ui, repo, *args, **kwargs):
   >     with repo.wlock():

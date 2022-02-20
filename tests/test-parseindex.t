@@ -26,7 +26,6 @@ We approximate that by reducing the read buffer to 1 byte.
   summary:     change foo
   
   $ cat >> test.py << EOF
-  > from __future__ import print_function
   > from mercurial import changelog, node, pycompat, vfs
   > 
   > class singlebyteread(object):
@@ -75,7 +74,6 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   $ cd a
 
   $ "$PYTHON" <<EOF
-  > from __future__ import print_function
   > from mercurial import changelog, vfs
   > cl = changelog.changelog(vfs.vfs(b'.hg/store'))
   > print('good heads:')
@@ -177,7 +175,6 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
         1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
 
   $ cat <<EOF > test.py
-  > from __future__ import print_function
   > import sys
   > from mercurial import changelog, pycompat, vfs
   > cl = changelog.changelog(vfs.vfs(pycompat.fsencode(sys.argv[1])))

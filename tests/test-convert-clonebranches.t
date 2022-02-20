@@ -31,7 +31,6 @@ Add a merge with one parent in the same branch
 Miss perl... sometimes
 
   $ cat > filter.py <<EOF
-  > from __future__ import absolute_import
   > import re
   > import sys
   > 

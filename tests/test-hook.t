@@ -831,7 +831,6 @@ preoutgoing hook can prevent outgoing changes for local clones
   $ cd "$TESTTMP/b"
 
   $ cat > hooktests.py <<EOF
-  > from __future__ import print_function
   > from mercurial import (
   >     error,
   >     pycompat,

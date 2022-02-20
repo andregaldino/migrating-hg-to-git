@@ -1,7 +1,6 @@
 Test UI worker interaction
 
   $ cat > t.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import sys
   > import time
   > from mercurial import (
@@ -100,7 +99,6 @@ Traceback must be printed for unknown exceptions
 Workers should not do cleanups in all cases
 
   $ cat > $TESTTMP/detectcleanup.py <<EOF
-  > from __future__ import absolute_import
   > import atexit
   > import os
   > import sys
@@ -134,7 +132,6 @@ Workers should not do cleanups in all cases
 Do not crash on partially read result
 
   $ cat > $TESTTMP/detecttruncated.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > import sys
   > import time

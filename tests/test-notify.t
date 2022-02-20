@@ -1,5 +1,4 @@
   $ cat > $TESTTMP/filter.py <<EOF
-  > from __future__ import absolute_import, print_function
   > import io
   > import re
   > import sys

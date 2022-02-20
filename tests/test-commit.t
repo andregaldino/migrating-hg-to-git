@@ -645,7 +645,6 @@ Test making empty commits
   
 verify pathauditor blocks evil filepaths
   $ cat > evil-commit.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import context, hg, ui as uimod
   > notrc = u".h\u200cg".encode('utf-8') + b'/hgrc'
   > u = uimod.ui.load()
@@ -671,7 +670,6 @@ verify pathauditor blocks evil filepaths
   $ hg rollback -f
   repository tip rolled back to revision 2 (undo commit)
   $ cat > evil-commit.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import context, hg, ui as uimod
   > notrc = b"HG~1/hgrc"
   > u = uimod.ui.load()
@@ -691,7 +689,6 @@ verify pathauditor blocks evil filepaths
   $ hg rollback -f
   repository tip rolled back to revision 2 (undo commit)
   $ cat > evil-commit.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import context, hg, ui as uimod
   > notrc = b"HG8B6C~2/hgrc"
   > u = uimod.ui.load()

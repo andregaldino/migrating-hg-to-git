@@ -1,6 +1,5 @@
 Setup:
   $ cat > eval.py <<EOF
-  > from __future__ import absolute_import
   > import filecmp
   > from mercurial import commands, context, pycompat, registrar
   > cmdtable = {}

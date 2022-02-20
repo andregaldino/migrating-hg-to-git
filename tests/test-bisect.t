@@ -462,7 +462,6 @@ test bisecting command
 
   $ cat > script.py <<EOF
   > #!$PYTHON
-  > from __future__ import absolute_import
   > import sys
   > from mercurial import hg, ui as uimod
   > repo = hg.repository(uimod.ui.load(), b'.')

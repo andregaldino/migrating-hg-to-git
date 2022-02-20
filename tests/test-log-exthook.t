@@ -2,7 +2,6 @@ Test hg log changeset printer external hook
 -------------------------------------------
 
   $ cat > $TESTTMP/logexthook.py <<EOF
-  > from __future__ import absolute_import
   > import codecs
   > from mercurial import (
   >   commands,

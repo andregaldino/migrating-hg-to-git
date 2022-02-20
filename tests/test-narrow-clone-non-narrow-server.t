@@ -20,7 +20,6 @@ Test attempting a narrow clone against a server that doesn't support narrowhg.
 Verify that narrow is advertised in the bundle2 capabilities:
 
   $ cat >> unquote.py <<EOF
-  > from __future__ import print_function
   > import sys
   > if sys.version[0] == '3':
   >     import urllib.parse as up

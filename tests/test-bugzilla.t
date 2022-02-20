@@ -1,7 +1,6 @@
 mock bugzilla driver for testing template output:
 
   $ cat <<EOF > bzmock.py
-  > from __future__ import absolute_import
   > from mercurial import extensions
   > from mercurial import pycompat
   > from mercurial import registrar

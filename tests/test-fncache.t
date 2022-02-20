@@ -4,7 +4,6 @@ An extension which will set fncache chunksize to 1 byte to make sure that logic
 does not break
 
   $ cat > chunksize.py <<EOF
-  > from __future__ import absolute_import
   > from mercurial import store
   > store.fncache_chunksize = 1
   > EOF
@@ -232,7 +231,6 @@ Encoding of reserved / long paths in the store
 Aborting lock does not prevent fncache writes
 
   $ cat > exceptionext.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > from mercurial import commands, error, extensions
   > 
@@ -279,7 +277,6 @@ Aborting lock does not prevent fncache writes
 Aborting transaction prevents fncache change
 
   $ cat > ../exceptionext.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > from mercurial import commands, error, extensions, localrepo
   > 
@@ -315,7 +312,6 @@ Clean cached version
 Aborted transactions can be recovered later
 
   $ cat > ../exceptionext.py <<EOF
-  > from __future__ import absolute_import
   > import os
   > from mercurial import (
   >   commands,
@@ -483,7 +479,6 @@ The cache should not loaded when committing changes to existing files, or when u
 changesets that only contain changes to existing files:
 
   $ cat > fncacheloadwarn.py << EOF
-  > from __future__ import absolute_import
   > from mercurial import extensions, localrepo
   > 
   > def extsetup(ui):

@@ -150,7 +150,6 @@ module/__init__.py-style
 Check that extensions are loaded in phases:
 
   $ cat > foo.py <<EOF
-  > from __future__ import print_function
   > import os
   > from mercurial import exthelper
   > from mercurial.utils import procutil
@@ -295,7 +294,6 @@ limit mark, regardless of importing module or not.)
   $ echo "s = 'libroot/mod/ambig.py'" > $TESTTMP/libroot/mod/ambig.py
 
   $ cat > $TESTTMP/libroot/mod/ambigabs.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import, print_function
   > import ambig # should load "libroot/ambig.py"
   > s = ambig.s
   > NO_CHECK_EOF
@@ -311,7 +309,6 @@ limit mark, regardless of importing module or not.)
 
 #if no-py3
   $ cat > $TESTTMP/libroot/mod/ambigrel.py <<NO_CHECK_EOF
-  > from __future__ import print_function
   > import ambig # should load "libroot/mod/ambig.py"
   > s = ambig.s
   > NO_CHECK_EOF
@@ -340,7 +337,6 @@ Check absolute/relative import of extension specific modules
   > s = b'this is extroot.sub1.baz'
   > NO_CHECK_EOF
   $ cat > $TESTTMP/extroot/__init__.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > s = b'this is extroot.__init__'
   > from . import foo
   > def extsetup(ui):
@@ -453,7 +449,6 @@ importing with "absolute_import" feature isn't tested, because "level
   > detail = b"this is extlibroot.recursedown.abs.used"
   > NO_CHECK_EOF
   $ cat > $TESTTMP/extlibroot/recursedown/abs/__init__.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from extlibroot.recursedown.abs.used import detail
   > NO_CHECK_EOF
 
@@ -467,7 +462,6 @@ importing with "absolute_import" feature isn't tested, because "level
   > NO_CHECK_EOF
 
   $ cat > $TESTTMP/extlibroot/recursedown/__init__.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from extlibroot.recursedown.abs import detail as absdetail
   > from .legacy import detail as legacydetail
   > NO_CHECK_EOF
@@ -481,11 +475,9 @@ the submodule 'used' should be somehow accessible. (issue5617)
   > detail = b"this is extlibroot.shadowing.used"
   > NO_CHECK_EOF
   $ cat > $TESTTMP/extlibroot/shadowing/proxied.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from extlibroot.shadowing.used import detail
   > NO_CHECK_EOF
   $ cat > $TESTTMP/extlibroot/shadowing/__init__.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from .used import detail as used
   > NO_CHECK_EOF
 
@@ -514,7 +506,6 @@ works as expected in "level > 1" case.
   > detail = b"this is absextroot.relimportee"
   > NO_CHECK_EOF
   $ cat > $TESTTMP/absextroot/xsub1/xsub2/relimporter.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from mercurial import pycompat
   > from ... import relimportee
   > detail = b"this relimporter imports %r" % (
@@ -525,7 +516,6 @@ Setup modules, which actually import extension local modules at
 runtime.
 
   $ cat > $TESTTMP/absextroot/absolute.py << NO_CHECK_EOF
-  > from __future__ import absolute_import
   > 
   > # import extension local modules absolutely (level = 0)
   > from absextroot.xsub1.xsub2 import used, unused
@@ -539,7 +529,6 @@ runtime.
   > NO_CHECK_EOF
 
   $ cat > $TESTTMP/absextroot/relative.py << NO_CHECK_EOF
-  > from __future__ import absolute_import
   > 
   > # import extension local modules relatively (level == 1)
   > from .xsub1.xsub2 import used, unused
@@ -559,7 +548,6 @@ runtime.
 Setup main procedure of extension.
 
   $ cat > $TESTTMP/absextroot/__init__.py <<NO_CHECK_EOF
-  > from __future__ import absolute_import
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
@@ -1925,7 +1913,6 @@ Prohibit the use of unicode strings as the default value of options
   $ hg init $TESTTMP/opt-unicode-default
 
   $ cat > $TESTTMP/test_unicode_default_value.py << EOF
-  > from __future__ import print_function
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)

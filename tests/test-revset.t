@@ -36,7 +36,6 @@ extension to build '_intlist()' and '_hexlist()', which is necessary because
 these predicates use '\0' as a separator:
 
   $ cat <<EOF > debugrevlistspec.py
-  > from __future__ import absolute_import
   > from mercurial import (
   >     node as nodemod,
   >     registrar,

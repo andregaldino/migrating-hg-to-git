@@ -2,7 +2,6 @@
   $ echo 'strip =' >> $HGRCPATH
 
   $ cat >findbranch.py <<EOF
-  > from __future__ import absolute_import
   > import re
   > import sys
   > 

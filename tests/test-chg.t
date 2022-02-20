@@ -132,7 +132,6 @@ chg waits for pager if runcommand raises
   > EOF
 
   $ cat > $TESTTMP/fakepager.py <<EOF
-  > from __future__ import absolute_import
   > import sys
   > import time
   > for line in iter(sys.stdin.readline, ''):
