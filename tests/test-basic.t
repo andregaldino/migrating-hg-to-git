@@ -240,15 +240,16 @@ Invalid ui.message-output option:
 Underlying message streams should be updated when ui.fout/ferr are set:
 
   $ cat <<'EOF' > capui.py
-  > from mercurial import pycompat, registrar
+  > import io
+  > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'capui', norepo=True)
   > def capui(ui):
   >     out = ui.fout
-  >     ui.fout = pycompat.bytesio()
+  >     ui.fout = io.BytesIO()
   >     ui.status(b'status\n')
-  >     ui.ferr = pycompat.bytesio()
+  >     ui.ferr = io.BytesIO()
   >     ui.warn(b'warn\n')
   >     out.write(b'stdout: %s' % ui.fout.getvalue())
   >     out.write(b'stderr: %s' % ui.ferr.getvalue())

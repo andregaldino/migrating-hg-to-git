@@ -111,9 +111,6 @@ sysplatform = sys.platform.encode('ascii')
 sysexecutable = sys.executable
 if sysexecutable:
     sysexecutable = os.fsencode(sysexecutable)
-bytesio = io.BytesIO
-# TODO deprecate stringio name, as it is a lie on Python 3.
-stringio = bytesio
 
 
 def maplist(*args):

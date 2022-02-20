@@ -62,6 +62,7 @@ from __future__ import absolute_import
 import base64
 import contextlib
 import hashlib
+import io
 import itertools
 import json
 import mimetypes
@@ -2200,7 +2201,7 @@ def phabimport(ui, repo, *specs, **opts):
             for drev, contents in patches:
                 ui.status(_(b'applying patch from D%s\n') % drev)
 
-                with patch.extract(ui, pycompat.bytesio(contents)) as patchdata:
+                with patch.extract(ui, io.BytesIO(contents)) as patchdata:
                     msg, node, rej = cmdutil.tryimportone(
                         ui,
                         repo,

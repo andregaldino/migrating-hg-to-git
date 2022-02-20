@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import io
 import stat
 import struct
 import zlib
@@ -26,7 +27,7 @@ from .. import (
 from ..revlogutils import nodemap as nodemaputil
 from ..revlogutils import constants as revlog_constants
 
-stringio = pycompat.bytesio
+stringio = io.BytesIO
 
 
 _pack = struct.pack

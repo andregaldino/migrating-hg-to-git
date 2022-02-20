@@ -21,6 +21,7 @@ import contextlib
 import errno
 import gc
 import hashlib
+import io
 import itertools
 import locale
 import mmap
@@ -78,7 +79,7 @@ cookielib = pycompat.cookielib
 httplib = pycompat.httplib
 safehasattr = pycompat.safehasattr
 socketserver = pycompat.socketserver
-bytesio = pycompat.bytesio
+bytesio = io.BytesIO
 # TODO deprecate stringio name, as it is a lie on Python 3.
 stringio = bytesio
 xmlrpclib = pycompat.xmlrpclib
