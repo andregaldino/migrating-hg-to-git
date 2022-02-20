@@ -570,7 +570,6 @@ Test debugcolor
 Test internal debugstacktrace command
 
   $ cat > debugstacktrace.py << EOF
-  > from __future__ import absolute_import
   > from mercurial import (
   >     util,
   > )
@@ -589,15 +588,15 @@ Test internal debugstacktrace command
   > EOF
   $ "$PYTHON" debugstacktrace.py
   stacktrace at:
-   *debugstacktrace.py:16 in * (glob)
-   *debugstacktrace.py:9  in f (glob)
+   *debugstacktrace.py:15 in * (glob)
+   *debugstacktrace.py:8  in f (glob)
   hello from g at:
-   *debugstacktrace.py:16 in * (glob)
-   *debugstacktrace.py:10 in f (glob)
+   *debugstacktrace.py:15 in * (glob)
+   *debugstacktrace.py:9  in f (glob)
   hi ...
   from h hidden in g at:
-   *debugstacktrace.py:10 in f (glob)
-   *debugstacktrace.py:13 in g (glob)
+   *debugstacktrace.py:9  in f (glob)
+   *debugstacktrace.py:12 in g (glob)
 
 Test debugcapabilities command:
 
