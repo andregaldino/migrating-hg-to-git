@@ -264,7 +264,6 @@ def copy_latest_dist(winrm_client, pattern, dest_path):
 
 def build_inno_installer(
     winrm_client,
-    python_version: int,
     arch: str,
     dest_path: pathlib.Path,
     version=None,
@@ -274,10 +273,7 @@ def build_inno_installer(
     Using a WinRM client, remote commands are executed to build
     a Mercurial Inno Setup installer.
     """
-    print(
-        'building Inno Setup installer for Python %d %s'
-        % (python_version, arch)
-    )
+    print('building Inno Setup installer for %s' % arch)
 
     # TODO fix this limitation in packaging code
     if not version:
@@ -319,7 +315,6 @@ def build_wheel(
 
 def build_wix_installer(
     winrm_client,
-    python_version: int,
     arch: str,
     dest_path: pathlib.Path,
     version=None,
@@ -328,7 +323,7 @@ def build_wix_installer(
 
     Using a WinRM client, remote commands are executed to build a WiX installer.
     """
-    print('Building WiX installer for Python %d %s' % (python_version, arch))
+    print('Building WiX installer for %s' % arch)
 
     # TODO fix this limitation in packaging code
     if not version:
