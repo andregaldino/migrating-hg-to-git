@@ -759,10 +759,6 @@ bail:
 #if defined(HAVE_SETPROCTITLE)
 /* setproctitle is the first choice - available in FreeBSD */
 #define SETPROCNAME_USE_SETPROCTITLE
-#elif (defined(__linux__) || defined(__APPLE__)) && PY_MAJOR_VERSION == 2
-/* rewrite the argv buffer in place - works in Linux and OS X. Py_GetArgcArgv
- * in Python 3 returns the copied wchar_t **argv, thus unsupported. */
-#define SETPROCNAME_USE_ARGVREWRITE
 #else
 #define SETPROCNAME_USE_NONE
 #endif
@@ -777,44 +773,6 @@ static PyObject *setprocname(PyObject *self, PyObject *args)
 
 #if defined(SETPROCNAME_USE_SETPROCTITLE)
 	setproctitle("%s", name);
-#elif defined(SETPROCNAME_USE_ARGVREWRITE)
-	{
-		static char *argvstart = NULL;
-		static size_t argvsize = 0;
-		if (argvstart == NULL) {
-			int argc = 0, i;
-			char **argv = NULL;
-			char *argvend;
-			extern void Py_GetArgcArgv(int *argc, char ***argv);
-			Py_GetArgcArgv(&argc, &argv);
-			/* Py_GetArgcArgv may not do much if a custom python
-			 * launcher is used that doesn't record the information
-			 * it needs. Let's handle this gracefully instead of
-			 * segfaulting. */
-			if (argv != NULL)
-				argvend = argvstart = argv[0];
-			else
-				argvend = argvstart = NULL;
-
-			/* Check the memory we can use. Typically, argv[i] and
-			 * argv[i + 1] are continuous. */
-			for (i = 0; i < argc; ++i) {
-				size_t len;
-				if (argv[i] > argvend || argv[i] < argvstart)
-					break; /* not continuous */
-				len = strlen(argv[i]);
-				argvend = argv[i] + len + 1 /* '\0' */;
-			}
-			if (argvend > argvstart) /* sanity check */
-				argvsize = argvend - argvstart;
-		}
-
-		if (argvstart && argvsize > 1) {
-			int n = snprintf(argvstart, argvsize, "%s", name);
-			if (n >= 0 && (size_t)n < argvsize)
-				memset(argvstart + n, 0, argvsize - n);
-		}
-	}
 #endif
 
 	Py_RETURN_NONE;

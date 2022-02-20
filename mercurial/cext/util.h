@@ -10,10 +10,6 @@
 
 #include "compat.h"
 
-#if PY_MAJOR_VERSION >= 3
-#define IS_PY3K
-#endif
-
 /* clang-format off */
 typedef struct {
 	PyObject_HEAD
