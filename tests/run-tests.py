@@ -3675,12 +3675,9 @@ class TestRunner(object):
             setup_opts = b"--no-rust"
 
         # Run installer in hg root
-        script = os.path.realpath(sys.argv[0])
-        exe = sysexecutable
-        if PYTHON3:
-            compiler = _sys2bytes(compiler)
-            script = _sys2bytes(script)
-            exe = _sys2bytes(exe)
+        compiler = _sys2bytes(compiler)
+        script = _sys2bytes(os.path.realpath(sys.argv[0]))
+        exe = _sys2bytes(sysexecutable)
         hgroot = os.path.dirname(os.path.dirname(script))
         self._hgroot = hgroot
         os.chdir(hgroot)
