@@ -57,8 +57,10 @@ import json
 import multiprocessing
 import os
 import platform
+import queue
 import random
 import re
+import shlex
 import shutil
 import signal
 import socket
@@ -73,20 +75,7 @@ import uuid
 import xml.dom.minidom as minidom
 
 WINDOWS = os.name == r'nt'
-
-try:
-    import Queue as queue
-except ImportError:
-    import queue
-
-try:
-    import shlex
-
-    shellquote = shlex.quote
-except (ImportError, AttributeError):
-    import pipes
-
-    shellquote = pipes.quote
+shellquote = shlex.quote
 
 
 processlock = threading.Lock()
