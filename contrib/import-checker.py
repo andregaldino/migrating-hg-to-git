@@ -59,21 +59,6 @@ requirealias = {
 }
 
 
-def usingabsolute(root):
-    """Whether absolute imports are being used."""
-    if sys.version_info[0] >= 3:
-        return True
-
-    for node in ast.walk(root):
-        if isinstance(node, ast.ImportFrom):
-            if node.module == '__future__':
-                for n in node.names:
-                    if n.name == 'absolute_import':
-                        return True
-
-    return False
-
-
 def walklocal(root):
     """Recursively yield all descendant nodes but not in a different scope"""
     todo = collections.deque(ast.iter_child_nodes(root))
@@ -403,21 +388,10 @@ def imported_modules(source, modulename, f, localmods, ignore_nested=False):
 
 
 def verify_import_convention(module, source, localmods):
-    """Verify imports match our established coding convention.
-
-    We have 2 conventions: legacy and modern. The modern convention is in
-    effect when using absolute imports.
-
-    The legacy convention only looks for mixed imports. The modern convention
-    is much more thorough.
-    """
+    """Verify imports match our established coding convention."""
     root = ast.parse(source)
-    absolute = usingabsolute(root)
 
-    if absolute:
-        return verify_modern_convention(module, root, localmods)
-    else:
-        return verify_stdlib_on_own_line(root)
+    return verify_modern_convention(module, root, localmods)
 
 
 def verify_modern_convention(module, root, localmods, root_col_offset=0):
@@ -616,33 +590,6 @@ def verify_modern_convention(module, root, localmods, root_col_offset=0):
                         fullname,
                         requirealias[n.name],
                     )
-
-
-def verify_stdlib_on_own_line(root):
-    """Given some python source, verify that stdlib imports are done
-    in separate statements from relative local module imports.
-
-    >>> list(verify_stdlib_on_own_line(ast.parse('import sys, foo')))
-    [('mixed imports\\n   stdlib:    sys\\n   relative:  foo', 1)]
-    >>> list(verify_stdlib_on_own_line(ast.parse('import sys, os')))
-    []
-    >>> list(verify_stdlib_on_own_line(ast.parse('import foo, bar')))
-    []
-    """
-    for node in ast.walk(root):
-        if isinstance(node, ast.Import):
-            from_stdlib = {False: [], True: []}
-            for n in node.names:
-                from_stdlib[n.name in stdlib_modules].append(n.name)
-            if from_stdlib[True] and from_stdlib[False]:
-                yield (
-                    'mixed imports\n   stdlib:    %s\n   relative:  %s'
-                    % (
-                        ', '.join(sorted(from_stdlib[True])),
-                        ', '.join(sorted(from_stdlib[False])),
-                    ),
-                    node.lineno,
-                )
 
 
 class CircularImport(Exception):
