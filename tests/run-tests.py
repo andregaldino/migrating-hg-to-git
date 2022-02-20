@@ -362,18 +362,10 @@ def canonpath(path):
 
 
 def which(exe):
-    if PYTHON3:
-        # shutil.which only accept bytes from 3.8
-        cmd = _bytes2sys(exe)
-        real_exec = shutil.which(cmd)
-        return _sys2bytes(real_exec)
-    else:
-        # let us do the os work
-        for p in osenvironb[b'PATH'].split(os.pathsep):
-            f = os.path.join(p, exe)
-            if os.path.isfile(f):
-                return f
-        return None
+    # shutil.which only accept bytes from 3.8
+    cmd = _bytes2sys(exe)
+    real_exec = shutil.which(cmd)
+    return _sys2bytes(real_exec)
 
 
 def parselistfiles(files, listtype, warn=True):
@@ -1864,11 +1856,8 @@ class TTest(Test):
             script.append(b'alias pwd="pwd -W"\n')
 
         if hgcatapult and hgcatapult != os.devnull:
-            if PYTHON3:
-                hgcatapult = hgcatapult.encode('utf8')
-                cataname = self.name.encode('utf8')
-            else:
-                cataname = self.name
+            hgcatapult = hgcatapult.encode('utf8')
+            cataname = self.name.encode('utf8')
 
             # Kludge: use a while loop to keep the pipe from getting
             # closed by our echo commands. The still-running file gets
@@ -2173,11 +2162,8 @@ class TTest(Test):
                     return "retry", False
 
         if el.endswith(b" (esc)\n"):
-            if PYTHON3:
-                el = el[:-7].decode('unicode_escape') + '\n'
-                el = el.encode('latin-1')
-            else:
-                el = el[:-7].decode('string-escape') + '\n'
+            el = el[:-7].decode('unicode_escape') + '\n'
+            el = el.encode('latin-1')
         if el == l or WINDOWS and el[:-1] + b'\r\n' == l:
             return True, True
         if el.endswith(b" (re)\n"):
@@ -2225,10 +2211,7 @@ iolock = threading.RLock()
 firstlock = threading.RLock()
 firsterror = False
 
-if PYTHON3:
-    base_class = unittest.TextTestResult
-else:
-    base_class = unittest._TextTestResult
+base_class = unittest.TextTestResult
 
 
 class TestResult(base_class):
@@ -2352,13 +2335,9 @@ class TestResult(base_class):
                 self.stream.write('\n')
                 for line in lines:
                     line = highlightdiff(line, self.color)
-                    if PYTHON3:
-                        self.stream.flush()
-                        self.stream.buffer.write(line)
-                        self.stream.buffer.flush()
-                    else:
-                        self.stream.write(line)
-                        self.stream.flush()
+                    self.stream.flush()
+                    self.stream.buffer.write(line)
+                    self.stream.buffer.flush()
 
                 if servefail:
                     raise test.failureException(
@@ -3247,10 +3226,7 @@ class TestRunner(object):
         fileb = _sys2bytes(__file__)
         runtestdir = os.path.abspath(os.path.dirname(fileb))
         osenvironb[b'RUNTESTDIR'] = runtestdir
-        if PYTHON3:
-            sepb = _sys2bytes(os.pathsep)
-        else:
-            sepb = os.pathsep
+        sepb = _sys2bytes(os.pathsep)
         path = [self._bindir, runtestdir] + osenvironb[b"PATH"].split(sepb)
         if os.path.islink(__file__):
             # test helper will likely be at the end of the symlink
@@ -3598,10 +3574,8 @@ class TestRunner(object):
             pyexe_names = [b'python', b'python3', b'python.exe']
         elif WINDOWS:
             pyexe_names = [b'python', b'python.exe']
-        elif PYTHON3:
-            pyexe_names = [b'python', b'python3']
         else:
-            pyexe_names = [b'python', b'python2']
+            pyexe_names = [b'python', b'python3']
 
         # os.symlink() is a thing with py3 on Windows, but it requires
         # Administrator rights.
@@ -3766,10 +3740,7 @@ class TestRunner(object):
         else:
             with open(installerrs, 'rb') as f:
                 for line in f:
-                    if PYTHON3:
-                        sys.stdout.buffer.write(line)
-                    else:
-                        sys.stdout.write(line)
+                    sys.stdout.buffer.write(line)
             sys.exit(1)
         os.chdir(self._testdir)
 
@@ -3862,10 +3833,7 @@ class TestRunner(object):
         )
         out, _err = proc.communicate()
         if proc.returncode != 0:
-            if PYTHON3:
-                sys.stdout.buffer.write(out)
-            else:
-                sys.stdout.write(out)
+            sys.stdout.buffer.write(out)
             sys.exit(1)
 
     def _installrhg(self):
@@ -3889,10 +3857,7 @@ class TestRunner(object):
         )
         out, _err = proc.communicate()
         if proc.returncode != 0:
-            if PYTHON3:
-                sys.stdout.buffer.write(out)
-            else:
-                sys.stdout.write(out)
+            sys.stdout.buffer.write(out)
             sys.exit(1)
 
     def _build_pyoxidized(self):
@@ -3920,10 +3885,7 @@ class TestRunner(object):
         )
         out, _err = proc.communicate()
         if proc.returncode != 0:
-            if PYTHON3:
-                sys.stdout.buffer.write(out)
-            else:
-                sys.stdout.write(out)
+            sys.stdout.buffer.write(out)
             sys.exit(1)
 
     def _outputcoverage(self):
