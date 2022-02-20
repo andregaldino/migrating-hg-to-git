@@ -13,11 +13,7 @@
 
 #include "util.h"
 
-#ifdef IS_PY3K
 #define PYLONG_VALUE(o) ((PyLongObject *)o)->ob_digit[0]
-#else
-#define PYLONG_VALUE(o) PyInt_AS_LONG(o)
-#endif
 
 /*
  * This is a multiset of directory names, built from the files that
