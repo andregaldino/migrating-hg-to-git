@@ -1655,9 +1655,7 @@ checkcodeglobpats = [
     re.compile(br'.*\$LOCALIP.*$'),
 ]
 
-bchr = chr
-if PYTHON3:
-    bchr = lambda x: bytes([x])
+bchr = lambda x: bytes([x])
 
 WARN_UNDEFINED = 1
 WARN_YES = 2
