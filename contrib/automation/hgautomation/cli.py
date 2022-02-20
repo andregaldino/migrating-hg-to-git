@@ -480,7 +480,7 @@ def get_parser():
             'pypy3.5',
             'pypy3.6',
         },
-        default='system2',
+        default='system3',
     )
     sp.add_argument(
         'test_flags',
