@@ -1412,7 +1412,6 @@ suppress expanding keywords at subsequent commands
   $ grep -v '^promptecho ' < $HGRCPATH >> $HGRCPATH.new
   $ mv $HGRCPATH.new $HGRCPATH
 
-  >>> from __future__ import print_function
   >>> from hgclient import check, readchannel, runcommand
   >>> @check
   ... def check(server):

@@ -682,7 +682,6 @@ Create the file (as empty), then update its mtime and atime to be 1234567890.
 "hg cp" does not preserve the mtime, so it should be newer than the 2009
 timestamp.
   $ hg cp -q mtime mtime_cp
-  >>> from __future__ import print_function
   >>> import os
   >>> filename = "mtime_cp/f"
   >>> print(os.stat(filename).st_mtime < 1234567999)
@@ -691,7 +690,6 @@ timestamp.
 (modulo some fudge factor due to not every system supporting 1s-level
 precision).
   $ hg mv -q mtime mtime_mv
-  >>> from __future__ import print_function
   >>> import os
   >>> filename = "mtime_mv/f"
   >>> print(os.stat(filename).st_mtime < 1234567999)

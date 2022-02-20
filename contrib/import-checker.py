@@ -626,7 +626,6 @@ def find_cycles(imports):
 
     All module names recorded in `imports` should be absolute one.
 
-    >>> from __future__ import print_function
     >>> imports = {'top.foo': ['top.bar', 'os.path', 'top.qux'],
     ...            'top.bar': ['top.baz', 'sys'],
     ...            'top.baz': ['top.foo'],

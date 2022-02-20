@@ -23,7 +23,6 @@ typical client does not want echo-back messages, so test without it:
   $ hg init repo
   $ cd repo
 
-  >>> from __future__ import absolute_import
   >>> import os
   >>> import sys
   >>> from hgclient import bprint, check, readchannel, runcommand

@@ -107,7 +107,6 @@ non-lfs content, and the extension enabled.
 
   $ cd client
   $ echo 'non-lfs' > nonlfs.txt
-  >>> from __future__ import absolute_import
   >>> from hgclient import check, readchannel, runcommand
   >>> @check
   ... def diff(server):
@@ -240,7 +239,6 @@ times.
 
   $ cd ../cmdserve_client3
 
-  >>> from __future__ import absolute_import
   >>> from hgclient import check, readchannel, runcommand
   >>> @check
   ... def addrequirement(server):
@@ -355,7 +353,6 @@ lfs content, and the extension enabled.
   $ mv $HGRCPATH $HGRCPATH.tmp
   $ cp $HGRCPATH.orig $HGRCPATH
 
-  >>> from __future__ import absolute_import
   >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags(server):
@@ -404,7 +401,6 @@ lfs content, and the extension enabled.
   > lfs = !
   > EOF
 
-  >>> from __future__ import absolute_import, print_function
   >>> from hgclient import bprint, check, readchannel, runcommand, stdout
   >>> @check
   ... def checkflags2(server):

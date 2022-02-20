@@ -192,7 +192,6 @@ Age filter:
   $ cd unstable-hash
   $ hg log --template '{date|age}\n' > /dev/null || exit 1
 
-  >>> from __future__ import absolute_import
   >>> import datetime
   >>> fp = open('a', 'wb')
   >>> n = datetime.datetime.now() + datetime.timedelta(366 * 7)

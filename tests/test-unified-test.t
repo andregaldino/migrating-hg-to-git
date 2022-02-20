@@ -26,7 +26,6 @@ Return codes before inline python:
 
 Doctest commands:
 
-  >>> from __future__ import print_function
   >>> print('foo')
   foo
   $ echo interleaved

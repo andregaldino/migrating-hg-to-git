@@ -71,7 +71,7 @@ issue1829: wrong indentation
   config error at $TESTTMP/hgrc:2: unexpected leading whitespace:   x = y
   [255]
 
-  $ "$PYTHON" -c "from __future__ import print_function; print('[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n')" \
+  $ "$PYTHON" -c "print('[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n')" \
   > > $HGRC
   $ hg showconfig foo
   foo.bar=a\nb\nc\nde\nfg

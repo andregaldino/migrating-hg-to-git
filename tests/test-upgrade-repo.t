@@ -734,7 +734,6 @@ Upgrading a repository to generaldelta works
   $ touch FooBarDirectory.d/f1
   $ hg -q commit -A -m 'add f1'
   $ hg -q up -r 0
-  >>> from __future__ import absolute_import, print_function
   >>> import random
   >>> random.seed(0) # have a reproducible content
   >>> with open("f2", "wb") as f:
