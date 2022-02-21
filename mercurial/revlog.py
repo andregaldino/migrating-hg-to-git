@@ -869,8 +869,10 @@ class revlog(object):
         the revlog which do not persist the rank.
         """
         rank = self.index[rev][ENTRY_RANK]
-        if rank == RANK_UNKNOWN:
+        if self._format_version != CHANGELOGV2 or rank == RANK_UNKNOWN:
             return None
+        if rev == nullrev:
+            return 0  # convention
         return rank
 
     def chainbase(self, rev):
