@@ -3910,9 +3910,7 @@ def identify(
                     hexremoterev = hex(remoterev)
                     bms = [
                         bm
-                        for bm, bmr in pycompat.iteritems(
-                            peer.listkeys(b'bookmarks')
-                        )
+                        for bm, bmr in peer.listkeys(b'bookmarks').items()
                         if bmr == hexremoterev
                     ]
 
