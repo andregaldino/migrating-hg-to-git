@@ -2127,7 +2127,7 @@ class localrepository(object):
         '''return a list of tags ordered by revision'''
         if not self._tagscache.tagslist:
             l = []
-            for t, n in pycompat.iteritems(self.tags()):
+            for t, n in self.tags().items():
                 l.append((self.changelog.rev(n), t, n))
             self._tagscache.tagslist = [(t, n) for r, t, n in sorted(l)]
 
