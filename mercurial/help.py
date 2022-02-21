@@ -297,8 +297,8 @@ def topicmatch(ui, commands, kw):
                 continue
             results[b'commands'].append((cmdname, summary))
     for name, docs in itertools.chain(
-        pycompat.iteritems(extensions.enabled(False)),
-        pycompat.iteritems(extensions.disabled()),
+        extensions.enabled(False).items(),
+        extensions.disabled().items(),
     ):
         if not docs:
             continue
@@ -311,7 +311,7 @@ def topicmatch(ui, commands, kw):
         except ImportError:
             # debug message would be printed in extensions.load()
             continue
-        for cmd, entry in pycompat.iteritems(getattr(mod, 'cmdtable', {})):
+        for cmd, entry in getattr(mod, 'cmdtable', {}).items():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmdutil.parsealiases(cmd)[0]
                 func = entry[0]
