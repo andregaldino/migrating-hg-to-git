@@ -227,7 +227,7 @@ def callcatch(ui, func):
         except (AttributeError, IndexError):
             # it might be anything, for example a string
             reason = inst.reason
-        if isinstance(reason, pycompat.unicode):
+        if isinstance(reason, str):
             # SSLError of Python 2.7.9 contains a unicode
             reason = encoding.unitolocal(reason)
         ui.error(_(b"abort: error: %s\n") % stringutil.forcebytestr(reason))

@@ -372,9 +372,7 @@ def obfuscate(text):
     """Any text. Returns the input text rendered as a sequence of
     XML entities.
     """
-    text = pycompat.unicode(
-        text, pycompat.sysstr(encoding.encoding), r'replace'
-    )
+    text = str(text, pycompat.sysstr(encoding.encoding), r'replace')
     return b''.join([b'&#%d;' % ord(c) for c in text])
 
 

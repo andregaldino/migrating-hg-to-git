@@ -273,7 +273,7 @@ def _urlerrorreason(urlerror):
         except (AttributeError, IndexError):
             # it might be anything, for example a string
             reason = inst.reason
-        if isinstance(reason, pycompat.unicode):
+        if isinstance(reason, str):
             # SSLError of Python 2.7.9 contains a unicode
             reason = encoding.unitolocal(reason)
         return reason
@@ -406,7 +406,7 @@ class _gitlfsremote(object):
             )
 
         def encodestr(x):
-            if isinstance(x, pycompat.unicode):
+            if isinstance(x, str):
                 return x.encode('utf-8')
             return x
 

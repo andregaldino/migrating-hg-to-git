@@ -86,7 +86,7 @@ def readauthormap(ui, authorfile, authors=None):
 
 
 def recode(s):
-    if isinstance(s, pycompat.unicode):
+    if isinstance(s, str):
         return s.encode(pycompat.sysstr(orig_encoding), 'replace')
     else:
         return s.decode('utf-8').encode(

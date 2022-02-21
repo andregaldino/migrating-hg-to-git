@@ -219,9 +219,7 @@ def _loadhgrc(orig, ui, wdirvfs, hgvfs, requirements, *args, **opts):
         rawparams = encoding.unifromlocal(wdirvfs.read(b".arcconfig"))
         # json.loads only returns unicode strings
         arcconfig = pycompat.rapply(
-            lambda x: encoding.unitolocal(x)
-            if isinstance(x, pycompat.unicode)
-            else x,
+            lambda x: encoding.unitolocal(x) if isinstance(x, str) else x,
             pycompat.json_loads(rawparams),
         )
 
@@ -447,9 +445,7 @@ def callconduit(ui, name, params):
                 time.sleep(retry_interval)
     ui.debug(b'Conduit Response: %s\n' % body)
     parsed = pycompat.rapply(
-        lambda x: encoding.unitolocal(x)
-        if isinstance(x, pycompat.unicode)
-        else x,
+        lambda x: encoding.unitolocal(x) if isinstance(x, str) else x,
         # json.loads only accepts bytes from py3.6+
         pycompat.json_loads(encoding.unifromlocal(body)),
     )
@@ -473,9 +469,7 @@ def debugcallconduit(ui, repo, name):
     rawparams = encoding.unifromlocal(ui.fin.read())
     # json.loads only returns unicode strings
     params = pycompat.rapply(
-        lambda x: encoding.unitolocal(x)
-        if isinstance(x, pycompat.unicode)
-        else x,
+        lambda x: encoding.unitolocal(x) if isinstance(x, str) else x,
         pycompat.json_loads(rawparams),
     )
     # json.dumps only accepts unicode strings

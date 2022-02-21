@@ -85,9 +85,9 @@ def gettext(message):
 
     cache = _msgcache.setdefault(encoding.encoding, {})
     if message not in cache:
-        if type(message) is pycompat.unicode:
+        if type(message) is str:
             # goofy unicode docstrings in test
-            paragraphs = message.split(u'\n\n')  # type: List[pycompat.unicode]
+            paragraphs = message.split(u'\n\n')  # type: List[str]
         else:
             # should be ascii, but we have unicode docstrings in test, which
             # are converted to utf-8 bytes on Python 3.

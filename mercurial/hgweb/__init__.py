@@ -36,7 +36,7 @@ def hgweb(config, name=None, baseui=None):
     - list of virtual:real tuples (multi-repo view)
     """
 
-    if isinstance(config, pycompat.unicode):
+    if isinstance(config, str):
         raise error.ProgrammingError(
             b'Mercurial only supports encoded strings: %r' % config
         )
