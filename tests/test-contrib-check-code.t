@@ -51,12 +51,6 @@
   ./quote.py:5:
    > '"""', 42+1, """and
    missing whitespace in expression
-  ./classstyle.py:4:
-   > class oldstyle_class:
-   old-style class, use class foo(object)
-  ./classstyle.py:7:
-   > class empty():
-   class foo() creates old style object, use class foo(object)
   [1]
   $ cat > python3-compat.py << NO_CHECK_EOF
   > foo <> bar
