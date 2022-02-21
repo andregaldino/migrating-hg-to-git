@@ -2471,9 +2471,12 @@ class revlog(object):
             elif p1r == nullrev and p2r != nullrev:
                 rank = 1 + self.fast_rank(p2r)
             else:  # merge node
-                pmin, pmax = sorted((p1r, p2r))
-                rank = 1 + self.fast_rank(pmax)
-                rank += sum(1 for _ in self.findmissingrevs([pmax], [pmin]))
+                if rustdagop is not None and self.index.rust_ext_compat:
+                    rank = rustdagop.rank(self.index, p1r, p2r)
+                else:
+                    pmin, pmax = sorted((p1r, p2r))
+                    rank = 1 + self.fast_rank(pmax)
+                    rank += sum(1 for _ in self.findmissingrevs([pmax], [pmin]))
 
         e = revlogutils.entry(
             flags=flags,
