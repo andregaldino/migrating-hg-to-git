@@ -583,10 +583,7 @@ def path_or_parents_in_set(path, prefix_set):
     if b'' in prefix_set:
         return True
 
-    if pycompat.ispy3:
-        sl = ord(b'/')
-    else:
-        sl = '/'
+    sl = ord(b'/')
 
     # We already checked that path isn't in prefix_set exactly, so
     # `path[len(pf)] should never raise IndexError.
