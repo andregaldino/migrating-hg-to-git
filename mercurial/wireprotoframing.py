@@ -761,11 +761,6 @@ class zlibdecoder(object):
         self._decompressor = zlib.decompressobj()
 
     def decode(self, data):
-        # Python 2's zlib module doesn't use the buffer protocol and can't
-        # handle all bytes-like types.
-        if not pycompat.ispy3 and isinstance(data, bytearray):
-            data = bytes(data)
-
         return self._decompressor.decompress(data)
 
 
