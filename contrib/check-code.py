@@ -430,24 +430,6 @@ commonpypats = [
             "module-level @cachefunc is risky, please avoid",
         ),
         (
-            r'^import Queue',
-            "don't use Queue, use pycompat.queue.Queue + "
-            "pycompat.queue.Empty",
-        ),
-        (
-            r'^import cStringIO',
-            "don't use cStringIO.StringIO, use util.stringio",
-        ),
-        (r'^import urllib', "don't use urllib, use util.urlreq/util.urlerr"),
-        (
-            r'^import SocketServer',
-            "don't use SockerServer, use util.socketserver",
-        ),
-        (r'^import urlparse', "don't use urlparse, use util.urlreq"),
-        (r'^import xmlrpclib', "don't use xmlrpclib, use util.xmlrpclib"),
-        (r'^import httplib', "don't use httplib, use util.httplib"),
-        (r'^import BaseHTTPServer', "use util.httpserver instead"),
-        (
             r'^(from|import) mercurial\.(cext|pure|cffi)',
             "use mercurial.policy.importmod instead",
         ),
