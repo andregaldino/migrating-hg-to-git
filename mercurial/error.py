@@ -68,14 +68,12 @@ class Error(Hint, Exception):
     def __bytes__(self):
         return self.message
 
-    if pycompat.ispy3:
-
-        def __str__(self):
-            # type: () -> str
-            # the output would be unreadable if the message was translated,
-            # but do not replace it with encoding.strfromlocal(), which
-            # may raise another exception.
-            return pycompat.sysstr(self.__bytes__())
+    def __str__(self):
+        # type: () -> str
+        # the output would be unreadable if the message was translated,
+        # but do not replace it with encoding.strfromlocal(), which
+        # may raise another exception.
+        return pycompat.sysstr(self.__bytes__())
 
     def format(self):
         # type: () -> bytes
