@@ -437,9 +437,7 @@ class revlog(object):
             self._flagprocessors[REVIDX_ELLIPSIS] = ellipsisprocessor
 
         # revlog v0 doesn't have flag processors
-        for flag, processor in pycompat.iteritems(
-            opts.get(b'flagprocessors', {})
-        ):
+        for flag, processor in opts.get(b'flagprocessors', {}).items():
             flagutil.insertflagprocessor(flag, processor, self._flagprocessors)
 
         if self._chunkcachesize <= 0:
