@@ -149,93 +149,76 @@ def run():
     sys.exit(status & 255)
 
 
-if pycompat.ispy3:
+def initstdio():
+    # stdio streams on Python 3 are io.TextIOWrapper instances proxying another
+    # buffer. These streams will normalize \n to \r\n by default. Mercurial's
+    # preferred mechanism for writing output (ui.write()) uses io.BufferedWriter
+    # instances, which write to the underlying stdio file descriptor in binary
+    # mode. ui.write() uses \n for line endings and no line ending normalization
+    # is attempted through this interface. This "just works," even if the system
+    # preferred line ending is not \n.
+    #
+    # But some parts of Mercurial (e.g. hooks) can still send data to sys.stdout
+    # and sys.stderr. They will inherit the line ending normalization settings,
+    # potentially causing e.g. \r\n to be emitted. Since emitting \n should
+    # "just work," here we change the sys.* streams to disable line ending
+    # normalization, ensuring compatibility with our ui type.
 
-    def initstdio():
-        # stdio streams on Python 3 are io.TextIOWrapper instances proxying another
-        # buffer. These streams will normalize \n to \r\n by default. Mercurial's
-        # preferred mechanism for writing output (ui.write()) uses io.BufferedWriter
-        # instances, which write to the underlying stdio file descriptor in binary
-        # mode. ui.write() uses \n for line endings and no line ending normalization
-        # is attempted through this interface. This "just works," even if the system
-        # preferred line ending is not \n.
-        #
-        # But some parts of Mercurial (e.g. hooks) can still send data to sys.stdout
-        # and sys.stderr. They will inherit the line ending normalization settings,
-        # potentially causing e.g. \r\n to be emitted. Since emitting \n should
-        # "just work," here we change the sys.* streams to disable line ending
-        # normalization, ensuring compatibility with our ui type.
+    if sys.stdout is not None:
+        # write_through is new in Python 3.7.
+        kwargs = {
+            "newline": "\n",
+            "line_buffering": sys.stdout.line_buffering,
+        }
+        if util.safehasattr(sys.stdout, "write_through"):
+            # pytype: disable=attribute-error
+            kwargs["write_through"] = sys.stdout.write_through
+            # pytype: enable=attribute-error
+        sys.stdout = io.TextIOWrapper(
+            sys.stdout.buffer, sys.stdout.encoding, sys.stdout.errors, **kwargs
+        )
 
-        if sys.stdout is not None:
-            # write_through is new in Python 3.7.
-            kwargs = {
-                "newline": "\n",
-                "line_buffering": sys.stdout.line_buffering,
-            }
-            if util.safehasattr(sys.stdout, "write_through"):
-                # pytype: disable=attribute-error
-                kwargs["write_through"] = sys.stdout.write_through
-                # pytype: enable=attribute-error
-            sys.stdout = io.TextIOWrapper(
-                sys.stdout.buffer,
-                sys.stdout.encoding,
-                sys.stdout.errors,
-                **kwargs
-            )
+    if sys.stderr is not None:
+        kwargs = {
+            "newline": "\n",
+            "line_buffering": sys.stderr.line_buffering,
+        }
+        if util.safehasattr(sys.stderr, "write_through"):
+            # pytype: disable=attribute-error
+            kwargs["write_through"] = sys.stderr.write_through
+            # pytype: enable=attribute-error
+        sys.stderr = io.TextIOWrapper(
+            sys.stderr.buffer, sys.stderr.encoding, sys.stderr.errors, **kwargs
+        )
 
-        if sys.stderr is not None:
-            kwargs = {
-                "newline": "\n",
-                "line_buffering": sys.stderr.line_buffering,
-            }
-            if util.safehasattr(sys.stderr, "write_through"):
-                # pytype: disable=attribute-error
-                kwargs["write_through"] = sys.stderr.write_through
-                # pytype: enable=attribute-error
-            sys.stderr = io.TextIOWrapper(
-                sys.stderr.buffer,
-                sys.stderr.encoding,
-                sys.stderr.errors,
-                **kwargs
-            )
-
-        if sys.stdin is not None:
-            # No write_through on read-only stream.
-            sys.stdin = io.TextIOWrapper(
-                sys.stdin.buffer,
-                sys.stdin.encoding,
-                sys.stdin.errors,
-                # None is universal newlines mode.
-                newline=None,
-                line_buffering=sys.stdin.line_buffering,
-            )
-
-    def _silencestdio():
-        for fp in (sys.stdout, sys.stderr):
-            if fp is None:
-                continue
-            # Check if the file is okay
-            try:
-                fp.flush()
-                continue
-            except IOError:
-                pass
-            # Otherwise mark it as closed to silence "Exception ignored in"
-            # message emitted by the interpreter finalizer.
-            try:
-                fp.close()
-            except IOError:
-                pass
+    if sys.stdin is not None:
+        # No write_through on read-only stream.
+        sys.stdin = io.TextIOWrapper(
+            sys.stdin.buffer,
+            sys.stdin.encoding,
+            sys.stdin.errors,
+            # None is universal newlines mode.
+            newline=None,
+            line_buffering=sys.stdin.line_buffering,
+        )
 
 
-else:
-
-    def initstdio():
-        for fp in (sys.stdin, sys.stdout, sys.stderr):
-            procutil.setbinary(fp)
-
-    def _silencestdio():
-        pass
+def _silencestdio():
+    for fp in (sys.stdout, sys.stderr):
+        if fp is None:
+            continue
+        # Check if the file is okay
+        try:
+            fp.flush()
+            continue
+        except IOError:
+            pass
+        # Otherwise mark it as closed to silence "Exception ignored in"
+        # message emitted by the interpreter finalizer.
+        try:
+            fp.close()
+        except IOError:
+            pass
 
 
 def _formatargs(args):
