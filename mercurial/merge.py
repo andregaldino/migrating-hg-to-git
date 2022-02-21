@@ -625,9 +625,7 @@ class mergeresult(object):
                     args, msg = self._actionmapping[a][f]
                     yield f, args, msg
             else:
-                for f, (args, msg) in pycompat.iteritems(
-                    self._actionmapping[a]
-                ):
+                for f, (args, msg) in self._actionmapping[a].items():
                     yield f, args, msg
 
     def len(self, actions=None):
