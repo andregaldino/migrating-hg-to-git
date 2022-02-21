@@ -64,51 +64,39 @@ def _numworkers(ui):
     return min(max(countcpus(), 4), 32)
 
 
-if pycompat.ispy3:
-
-    def ismainthread():
-        return threading.current_thread() == threading.main_thread()
-
-    class _blockingreader(object):
-        def __init__(self, wrapped):
-            self._wrapped = wrapped
-
-        # Do NOT implement readinto() by making it delegate to
-        # _wrapped.readinto(), since that is unbuffered. The unpickler is fine
-        # with just read() and readline(), so we don't need to implement it.
-
-        def readline(self):
-            return self._wrapped.readline()
-
-        # issue multiple reads until size is fulfilled
-        def read(self, size=-1):
-            if size < 0:
-                return self._wrapped.readall()
-
-            buf = bytearray(size)
-            view = memoryview(buf)
-            pos = 0
-
-            while pos < size:
-                ret = self._wrapped.readinto(view[pos:])
-                if not ret:
-                    break
-                pos += ret
-
-            del view
-            del buf[pos:]
-            return bytes(buf)
+def ismainthread():
+    return threading.current_thread() == threading.main_thread()
 
 
-else:
+class _blockingreader(object):
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
 
-    def ismainthread():
-        # pytype: disable=module-attr
-        return isinstance(threading.current_thread(), threading._MainThread)
-        # pytype: enable=module-attr
+    # Do NOT implement readinto() by making it delegate to
+    # _wrapped.readinto(), since that is unbuffered. The unpickler is fine
+    # with just read() and readline(), so we don't need to implement it.
 
-    def _blockingreader(wrapped):
-        return wrapped
+    def readline(self):
+        return self._wrapped.readline()
+
+    # issue multiple reads until size is fulfilled
+    def read(self, size=-1):
+        if size < 0:
+            return self._wrapped.readall()
+
+        buf = bytearray(size)
+        view = memoryview(buf)
+        pos = 0
+
+        while pos < size:
+            ret = self._wrapped.readinto(view[pos:])
+            if not ret:
+                break
+            pos += ret
+
+        del view
+        del buf[pos:]
+        return bytes(buf)
 
 
 if pycompat.isposix or pycompat.iswindows:
