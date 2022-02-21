@@ -117,9 +117,7 @@ _fn2mod = {}
 
 def label(code):
     if isinstance(code, str):
-        if sys.version_info.major >= 3:
-            code = code.encode('latin-1')
-        return code
+        return code.encode('latin-1')
     try:
         mname = _fn2mod[code.co_filename]
     except KeyError:
@@ -136,7 +134,4 @@ def label(code):
 
     res = '%s:%d(%s)' % (mname, code.co_firstlineno, code.co_name)
 
-    if sys.version_info.major >= 3:
-        res = res.encode('latin-1')
-
-    return res
+    return res.encode('latin-1')
