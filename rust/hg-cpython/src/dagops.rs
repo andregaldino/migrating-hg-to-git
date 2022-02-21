@@ -14,6 +14,8 @@ use cpython::{PyDict, PyModule, PyObject, PyResult, Python};
 use hg::dagops;
 use hg::Revision;
 use std::collections::HashSet;
+use vcsgraph::ancestors::node_rank;
+use vcsgraph::graph::{Parents, Rank};
 
 use crate::revlog::pyindex_to_graph;
 
@@ -31,6 +33,18 @@ pub fn headrevs(
     Ok(as_set)
 }
 
+/// Computes the rank, i.e. the number of ancestors including itself,
+/// of a node represented by its parents.
+pub fn rank(
+    py: Python,
+    index: PyObject,
+    p1r: Revision,
+    p2r: Revision,
+) -> PyResult<Rank> {
+    node_rank(&pyindex_to_graph(py, index)?, &Parents([p1r, p2r]))
+        .map_err(|e| GraphError::pynew_from_vcsgraph(py, e))
+}
+
 /// Create the module, with `__package__` given from parent
 pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
     let dotted_name = &format!("{}.dagop", package);
@@ -41,6 +55,11 @@ pub fn init_module(py: Python, package: &str) -> PyResult<PyModule> {
         py,
         "headrevs",
         py_fn!(py, headrevs(index: PyObject, revs: PyObject)),
+    )?;
+    m.add(
+        py,
+        "rank",
+        py_fn!(py, rank(index: PyObject, p1r: Revision, p2r: Revision)),
     )?;
 
     let sys = PyModule::import(py, "sys")?;
