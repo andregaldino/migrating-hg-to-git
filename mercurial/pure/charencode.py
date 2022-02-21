@@ -67,10 +67,7 @@ def jsonescapeu8fast(u8chars, paranoid):
         raise ValueError
 
 
-if pycompat.ispy3:
-    _utf8strict = r'surrogatepass'
-else:
-    _utf8strict = r'strict'
+_utf8strict = r'surrogatepass'
 
 
 def jsonescapeu8fallback(u8chars, paranoid):
