@@ -875,7 +875,7 @@ def _disabledcmdtable(path):
         a = node.args[0]
         if isinstance(a, ast.Str):
             name = pycompat.sysbytes(a.s)
-        elif pycompat.ispy3 and isinstance(a, ast.Bytes):
+        elif isinstance(a, ast.Bytes):
             name = a.s
         else:
             continue
