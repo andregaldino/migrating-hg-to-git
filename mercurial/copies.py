@@ -887,7 +887,7 @@ def _checksinglesidecopies(
             copy[dst] = src
 
 
-class branch_copies(object):
+class branch_copies:
     """Information about copies made on one side of a merge/graft.
 
     "copy" is a mapping from destination name -> source name,

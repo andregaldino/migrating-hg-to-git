@@ -139,7 +139,7 @@ def peersetup(ui, peer):
     peer.__class__ = remotefilepeer
 
 
-class cacheconnection(object):
+class cacheconnection:
     """The connection for communicating with the remote cache. Performs
     gets and sets by communicating with an external process that has the
     cache-specific implementation.
@@ -302,7 +302,7 @@ def _getfiles_threaded(
     pipeo.flush()
 
 
-class fileserverclient(object):
+class fileserverclient:
     """A client for requesting files from the remote file server."""
 
     def __init__(self, repo):
@@ -517,7 +517,7 @@ class fileserverclient(object):
             # returns cache misses.  This enables tests to run easily
             # and may eventually allow us to be a drop in replacement
             # for the largefiles extension.
-            class simplecache(object):
+            class simplecache:
                 def __init__(self):
                     self.missingids = []
                     self.connected = True

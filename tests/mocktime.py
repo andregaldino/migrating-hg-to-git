@@ -2,7 +2,7 @@ import os
 import time
 
 
-class mocktime(object):
+class mocktime:
     def __init__(self, increment):
         self.time = 0
         self.increment = [float(s) for s in increment.split()]

@@ -62,7 +62,7 @@ def encodevalueinheaders(value, header, limit):
     return result
 
 
-class _multifile(object):
+class _multifile:
     def __init__(self, *fileobjs):
         for f in fileobjs:
             if not util.safehasattr(f, b'length'):

@@ -62,7 +62,7 @@ pack_into = struct.pack_into
 unpack_from = struct.unpack_from
 
 
-class BranchMapCache(object):
+class BranchMapCache:
     """mapping of filtered views of repo with their branchcache"""
 
     def __init__(self):
@@ -169,7 +169,7 @@ def _branchcachedesc(repo):
         return b'branch cache'
 
 
-class branchcache(object):
+class branchcache:
     """A dict like object that hold branches heads cache.
 
     This cache is used to avoid costly computations to determine all the
@@ -631,7 +631,7 @@ _rbcbranchidxmask = 0x7FFFFFFF
 _rbccloseflag = 0x80000000
 
 
-class revbranchcache(object):
+class revbranchcache:
     """Persistent cache, mapping from revision number to branch name and close.
     This is a low level cache, independent of filtering.
 

@@ -47,7 +47,7 @@ def _forwardoutput(ui, pipe, warn=False):
                 display(_(b"remote: "), l, b'\n')
 
 
-class doublepipe(object):
+class doublepipe:
     """Operate a side-channel pipe in addition of a main one
 
     The side-channel pipe contains server output to be forwarded to the user

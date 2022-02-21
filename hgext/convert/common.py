@@ -34,7 +34,7 @@ def _encodeornone(d):
     return d.encode('latin1')
 
 
-class _shlexpy3proxy(object):
+class _shlexpy3proxy:
     def __init__(self, l):
         self._l = l
 
@@ -127,7 +127,7 @@ class NoRepo(Exception):
 SKIPREV = b'SKIP'
 
 
-class commit(object):
+class commit:
     def __init__(
         self,
         author,
@@ -157,7 +157,7 @@ class commit(object):
         self.ctx = ctx  # for hg to hg conversions
 
 
-class converter_source(object):
+class converter_source:
     """Conversion source interface"""
 
     def __init__(self, ui, repotype, path=None, revs=None):
@@ -307,7 +307,7 @@ class converter_source(object):
         return True
 
 
-class converter_sink(object):
+class converter_sink:
     """Conversion sink (target) interface"""
 
     def __init__(self, ui, repotype, path):
@@ -403,7 +403,7 @@ class converter_sink(object):
         raise NotImplementedError
 
 
-class commandline(object):
+class commandline:
     def __init__(self, ui, command):
         self.ui = ui
         self.command = command

@@ -22,7 +22,7 @@ from . import (
 )
 
 
-class _lazyfctx(object):
+class _lazyfctx:
     """delegates to fctx but do not construct fctx when unnecessary"""
 
     def __init__(self, repo, node, path):

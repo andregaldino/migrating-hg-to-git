@@ -19,7 +19,7 @@ from mercurial.revlogutils import (
 )
 
 
-class _NoTransaction(object):
+class _NoTransaction:
     """transaction like object to update the nodemap outside a transaction"""
 
     def __init__(self):
@@ -150,7 +150,7 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog', optimaldelta=True):
     code path, which is not covered by "appendrev" alone.
     """
 
-    class dummychangegroup(object):
+    class dummychangegroup:
         @staticmethod
         def deltachunk(pnode):
             pnode = pnode or rlog.nullid

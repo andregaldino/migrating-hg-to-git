@@ -90,7 +90,7 @@ def requires_no_parents_change(func):
 
 
 @interfaceutil.implementer(intdirstate.idirstate)
-class dirstate(object):
+class dirstate:
     def __init__(
         self,
         opener,

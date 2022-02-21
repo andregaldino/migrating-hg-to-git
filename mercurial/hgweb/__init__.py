@@ -54,7 +54,7 @@ def hgwebdir(config, baseui=None):
     return hgwebdir_mod.hgwebdir(config, baseui=baseui)
 
 
-class httpservice(object):
+class httpservice:
     def __init__(self, ui, app, opts):
         self.ui = ui
         self.app = app

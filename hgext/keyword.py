@@ -235,7 +235,7 @@ def _preselect(wstatus, changed):
     return modified, added
 
 
-class kwtemplater(object):
+class kwtemplater:
     """
     Sets up keyword templates, corresponding keyword regex, and
     provides keyword substitution functions.

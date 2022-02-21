@@ -82,7 +82,7 @@ def checkcurses(ui):
     return curses and ui.interface(b"chunkselector") == b"curses"
 
 
-class patchnode(object):
+class patchnode:
     """abstract class for patch graph nodes
     (i.e. patchroot, header, hunk, hunkline)
     """
@@ -601,7 +601,7 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
     """
     chunkselector = curseschunkselector(headerlist, ui, operation)
 
-    class dummystdscr(object):
+    class dummystdscr:
         def clear(self):
             pass
 
@@ -628,7 +628,7 @@ _headermessages = {  # {operation: text}
 }
 
 
-class curseschunkselector(object):
+class curseschunkselector:
     def __init__(self, headerlist, ui, operation=None):
         # put the headers into a patch object
         self.headerlist = patch(headerlist)

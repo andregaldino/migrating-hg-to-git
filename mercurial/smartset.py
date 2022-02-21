@@ -20,7 +20,7 @@ def _typename(o):
     return pycompat.sysbytes(type(o).__name__).lstrip(b'_')
 
 
-class abstractsmartset(object):
+class abstractsmartset:
     def __nonzero__(self):
         """True if the smartset is not empty"""
         raise NotImplementedError()

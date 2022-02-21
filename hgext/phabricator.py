@@ -668,7 +668,7 @@ def getdiff(basectx, ctx, diffopts):
     return output.getvalue()
 
 
-class DiffChangeType(object):
+class DiffChangeType:
     ADD = 1
     CHANGE = 2
     DELETE = 3
@@ -679,7 +679,7 @@ class DiffChangeType(object):
     MULTICOPY = 8
 
 
-class DiffFileType(object):
+class DiffFileType:
     TEXT = 1
     IMAGE = 2
     BINARY = 3
@@ -700,7 +700,7 @@ class phabhunk(dict):
 
 
 @attr.s
-class phabchange(object):
+class phabchange:
     """Represents a Differential change, owns Differential hunks and owned by a
     Differential diff.  Each one represents one file in a diff.
     """
@@ -741,7 +741,7 @@ class phabchange(object):
 
 
 @attr.s
-class phabdiff(object):
+class phabdiff:
     """Represents a Differential diff, owns Differential changes.  Corresponds
     to a commit.
     """

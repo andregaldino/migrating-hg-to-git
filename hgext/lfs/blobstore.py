@@ -108,7 +108,7 @@ class lfsuploadfile(httpconnectionmod.httpsendfile):
         return None  # progress is handled by the worker client
 
 
-class local(object):
+class local:
     """Local blobstore for large file contents.
 
     This blobstore is used both as a cache and as a staging area for large blobs
@@ -306,7 +306,7 @@ class lfsauthhandler(util.urlreq.basehandler):
         return None
 
 
-class _gitlfsremote(object):
+class _gitlfsremote:
     def __init__(self, repo, url):
         ui = repo.ui
         self.ui = ui
@@ -642,7 +642,7 @@ class _gitlfsremote(object):
                 getattr(h, "close_all", lambda: None)()
 
 
-class _dummyremote(object):
+class _dummyremote:
     """Dummy store storing blobs to temp directory."""
 
     def __init__(self, repo, url):
@@ -661,7 +661,7 @@ class _dummyremote(object):
                 tostore.download(p.oid(), fp, None)
 
 
-class _nullremote(object):
+class _nullremote:
     """Null store storing blobs to /dev/null."""
 
     def __init__(self, repo, url):
@@ -674,7 +674,7 @@ class _nullremote(object):
         pass
 
 
-class _promptremote(object):
+class _promptremote:
     """Prompt user to set lfs.url when accessed."""
 
     def __init__(self, repo, url):

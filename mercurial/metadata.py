@@ -22,7 +22,7 @@ from .revlogutils import (
 )
 
 
-class ChangingFiles(object):
+class ChangingFiles:
     """A class recording the changes made to files by a changeset
 
     Actions performed on files are gathered into 3 sets:

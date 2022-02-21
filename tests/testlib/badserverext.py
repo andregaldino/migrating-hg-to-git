@@ -90,7 +90,7 @@ configitem(
 )
 
 
-class ConditionTracker(object):
+class ConditionTracker:
     def __init__(
         self,
         close_after_recv_bytes,
@@ -256,7 +256,7 @@ class ConditionTracker(object):
 
 
 # We can't adjust __class__ on a socket instance. So we define a proxy type.
-class socketproxy(object):
+class socketproxy:
     __slots__ = ('_orig', '_logfp', '_cond')
 
     def __init__(self, obj, logfp, condition_tracked):
@@ -300,7 +300,7 @@ class socketproxy(object):
 
 
 # We can't adjust __class__ on socket._fileobject, so define a proxy.
-class fileobjectproxy(object):
+class fileobjectproxy:
     __slots__ = ('_orig', '_logfp', '_cond')
 
     def __init__(self, obj, logfp, condition_tracked):

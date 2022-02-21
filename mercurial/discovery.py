@@ -73,7 +73,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
     return (list(common), anyinc, heads or list(srvheads))
 
 
-class outgoing(object):
+class outgoing:
     """Represents the result of a findcommonoutgoing() call.
 
     Members:

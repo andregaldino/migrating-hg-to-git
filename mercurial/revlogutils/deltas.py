@@ -38,7 +38,7 @@ from . import flagutil
 LIMIT_DELTA2TEXT = 2
 
 
-class _testrevlog(object):
+class _testrevlog:
     """minimalist fake revlog to use in doctests"""
 
     def __init__(self, data, density=0.5, mingap=0, snapshot=()):
@@ -544,7 +544,7 @@ def _textfromdelta(fh, revlog, baserev, delta, p1, p2, flags, expectednode):
 
 
 @attr.s(slots=True, frozen=True)
-class _deltainfo(object):
+class _deltainfo:
     distance = attr.ib()
     deltalen = attr.ib()
     data = attr.ib()
@@ -927,7 +927,7 @@ def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
         yield (prev,)
 
 
-class deltacomputer(object):
+class deltacomputer:
     def __init__(self, revlog):
         self.revlog = revlog
 

@@ -105,7 +105,7 @@ def writechunks(ui, chunks, filename, vfs=None):
                 os.unlink(cleanup)
 
 
-class cg1unpacker(object):
+class cg1unpacker:
     """Unpacker for cg1 changegroup streams.
 
     A changegroup unpacker handles the framing of the revision data in
@@ -691,7 +691,7 @@ class cg4unpacker(cg3unpacker):
         )
 
 
-class headerlessfixup(object):
+class headerlessfixup:
     def __init__(self, fh, h):
         self._h = h
         self._fh = fh
@@ -1003,7 +1003,7 @@ def deltagroup(
         progress.complete()
 
 
-class cgpacker(object):
+class cgpacker:
     def __init__(
         self,
         repo,

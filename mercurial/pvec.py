@@ -180,7 +180,7 @@ def ctxpvec(ctx):
     return pvec(util.b85encode(bs))
 
 
-class pvec(object):
+class pvec:
     def __init__(self, hashorctx):
         if isinstance(hashorctx, bytes):
             self._bs = hashorctx

@@ -144,7 +144,7 @@ def isprintable(obj):
     return isinstance(obj, (type(None), bool, int, int, float, bytes))
 
 
-class _nullconverter(object):
+class _nullconverter:
     '''convert non-primitive data types to be processed by formatter'''
 
     # set to True if context object should be stored as item
@@ -175,7 +175,7 @@ class _nullconverter(object):
         return list(data)
 
 
-class baseformatter(object):
+class baseformatter:
 
     # set to True if the formater output a strict format that does not support
     # arbitrary output in the stream.
@@ -297,7 +297,7 @@ def _iteritems(data):
     return data
 
 
-class _plainconverter(object):
+class _plainconverter:
     '''convert non-primitive data types to text'''
 
     storecontext = False
@@ -452,7 +452,7 @@ class jsonformatter(baseformatter):
         self._out.write(b"\n]\n")
 
 
-class _templateconverter(object):
+class _templateconverter:
     '''convert non-primitive data types to be processed by templater'''
 
     storecontext = True
@@ -541,7 +541,7 @@ class templateformatter(baseformatter):
 
 
 @attr.s(frozen=True)
-class templatespec(object):
+class templatespec:
     ref = attr.ib()
     tmpl = attr.ib()
     mapfile = attr.ib()

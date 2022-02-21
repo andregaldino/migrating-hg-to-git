@@ -39,14 +39,14 @@ TRANSPORTS = {
 }
 
 
-class bytesresponse(object):
+class bytesresponse:
     """A wire protocol response consisting of raw bytes."""
 
     def __init__(self, data):
         self.data = data
 
 
-class ooberror(object):
+class ooberror:
     """wireproto reply: failure of a batch of operation
 
     Something failed during a batch call. The error message is stored in
@@ -57,7 +57,7 @@ class ooberror(object):
         self.message = message
 
 
-class pushres(object):
+class pushres:
     """wireproto reply: success with simple integer return
 
     The call was successful and returned an integer contained in `self.res`.
@@ -68,7 +68,7 @@ class pushres(object):
         self.output = output
 
 
-class pusherr(object):
+class pusherr:
     """wireproto reply: failure
 
     The call failed. The `self.res` attribute contains the error message.
@@ -79,7 +79,7 @@ class pusherr(object):
         self.output = output
 
 
-class streamres(object):
+class streamres:
     """wireproto reply: binary stream
 
     The call was successful and the result is a stream.
@@ -96,7 +96,7 @@ class streamres(object):
         self.prefer_uncompressed = prefer_uncompressed
 
 
-class streamreslegacy(object):
+class streamreslegacy:
     """wireproto reply: uncompressed binary stream
 
     The call was successful and the result is a stream.
@@ -243,7 +243,7 @@ class baseprotocolhandler(interfaceutil.Interface):
         """
 
 
-class commandentry(object):
+class commandentry:
     """Represents a declared wire protocol command."""
 
     def __init__(
@@ -406,7 +406,7 @@ def supportedcompengines(ui, role):
 
 
 @attr.s
-class encodedresponse(object):
+class encodedresponse:
     """Represents response data that is already content encoded.
 
     Wire protocol version 2 only.
@@ -420,7 +420,7 @@ class encodedresponse(object):
 
 
 @attr.s
-class alternatelocationresponse(object):
+class alternatelocationresponse:
     """Represents a response available at an alternate location.
 
     Instances are sent in place of actual response objects when the server
@@ -439,7 +439,7 @@ class alternatelocationresponse(object):
 
 
 @attr.s
-class indefinitebytestringresponse(object):
+class indefinitebytestringresponse:
     """Represents an object to be encoded to an indefinite length bytestring.
 
     Instances are initialized from an iterable of chunks, with each chunk being

@@ -264,7 +264,7 @@ class SQLiteStoreError(error.StorageError):
 
 
 @attr.s
-class revisionentry(object):
+class revisionentry:
     rid = attr.ib()
     rev = attr.ib()
     node = attr.ib()
@@ -278,7 +278,7 @@ class revisionentry(object):
 
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True)
-class sqliterevisiondelta(object):
+class sqliterevisiondelta:
     node = attr.ib()
     p1node = attr.ib()
     p2node = attr.ib()
@@ -294,14 +294,14 @@ class sqliterevisiondelta(object):
 
 @interfaceutil.implementer(repository.iverifyproblem)
 @attr.s(frozen=True)
-class sqliteproblem(object):
+class sqliteproblem:
     warning = attr.ib(default=None)
     error = attr.ib(default=None)
     node = attr.ib(default=None)
 
 
 @interfaceutil.implementer(repository.ifilestorage)
-class sqlitefilestore(object):
+class sqlitefilestore:
     """Implements storage for an individual tracked path."""
 
     def __init__(self, db, path, compression):
@@ -1249,7 +1249,7 @@ def newreporequirements(orig, ui, createopts):
 
 
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
-class sqlitefilestorage(object):
+class sqlitefilestorage:
     """Repository file storage backed by SQLite."""
 
     def file(self, path):

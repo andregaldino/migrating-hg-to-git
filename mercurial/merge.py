@@ -66,7 +66,7 @@ def _checkunknownfile(repo, wctx, mctx, f, f2=None):
     )
 
 
-class _unknowndirschecker(object):
+class _unknowndirschecker:
     """
     Look for any unknown files or directories that may have a path conflict
     with a file.  If any path prefix of the file exists as a file or link,
@@ -537,7 +537,7 @@ def _filternarrowactions(narrowmatch, branchmerge, mresult):
             raise error.StateError(msg % f)
 
 
-class mergeresult(object):
+class mergeresult:
     """An object representing result of merging manifests.
 
     It has information about what actions need to be performed on dirstate
@@ -1467,7 +1467,7 @@ def _prefetchfiles(repo, ctx, mresult):
 
 
 @attr.s(frozen=True)
-class updateresult(object):
+class updateresult:
     updatedcount = attr.ib()
     mergedcount = attr.ib()
     removedcount = attr.ib()

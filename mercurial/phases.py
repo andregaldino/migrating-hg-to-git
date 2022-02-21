@@ -343,7 +343,7 @@ def _trackphasechange(data, rev, old, new):
         data.insert(low + 1, (pycompat.xrange(rev, rev + 1), t))
 
 
-class phasecache(object):
+class phasecache:
     def __init__(self, repo, phasedefaults, _load=True):
         # type: (localrepo.localrepository, Optional[Phasedefaults], bool) -> None
         if _load:
@@ -879,7 +879,7 @@ def analyzeremotephases(repo, subset, roots):
     return publicheads, draftroots
 
 
-class remotephasessummary(object):
+class remotephasessummary:
     """summarize phase information on the remote side
 
     :publishing: True is the remote is publishing

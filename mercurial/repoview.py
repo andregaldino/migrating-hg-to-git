@@ -261,7 +261,7 @@ def wrapchangelog(unfichangelog, filteredrevs):
     return cl
 
 
-class filteredchangelogmixin(object):
+class filteredchangelogmixin:
     def tiprev(self):
         """filtered version of revlog.tiprev"""
         for i in pycompat.xrange(len(self) - 1, -2, -1):
@@ -361,7 +361,7 @@ class filteredchangelogmixin(object):
         return super(filteredchangelogmixin, self).flags(rev)
 
 
-class repoview(object):
+class repoview:
     """Provide a read/write view of a repo through a filtered changelog
 
     This object is used to access a filtered version of a repository without

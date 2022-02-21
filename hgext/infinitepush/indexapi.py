@@ -6,7 +6,7 @@
 # GNU General Public License version 2 or any later version.
 
 
-class indexapi(object):
+class indexapi:
     """Class that manages access to infinitepush index.
 
     This class is a context manager and all write operations (like

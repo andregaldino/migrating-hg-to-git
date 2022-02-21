@@ -62,7 +62,7 @@ def compare_range(a, astart, aend, b, bstart, bend):
         return True
 
 
-class Merge3Text(object):
+class Merge3Text:
     """3-way merge of texts.
 
     Given strings BASE, OTHER, THIS, tries to produce a combined text
@@ -468,7 +468,7 @@ def _resolve(m3, sides):
     return lines
 
 
-class MergeInput(object):
+class MergeInput:
     def __init__(self, fctx, label=None, label_detail=None):
         self.fctx = fctx
         self.label = label

@@ -684,7 +684,7 @@ _fnodesrecsize = 4 + 20  # changeset fragment + filenode
 _fnodesmissingrec = b'\xff' * 24
 
 
-class hgtagsfnodescache(object):
+class hgtagsfnodescache:
     """Persistent cache mapping revisions to .hgtags filenodes.
 
     The cache is an array of records. Each item in the array corresponds to

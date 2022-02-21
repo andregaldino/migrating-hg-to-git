@@ -132,7 +132,7 @@ def buildmetadata(ctx):
     return out.getvalue()
 
 
-class tarit(object):
+class tarit:
     """write archive to tar file or stream.  can write uncompressed,
     or compress with gzip or bzip2."""
 
@@ -193,7 +193,7 @@ class tarit(object):
             self.fileobj.close()
 
 
-class zipit(object):
+class zipit:
     """write archive to zip file or stream.  can write uncompressed,
     or compressed with deflate."""
 
@@ -240,7 +240,7 @@ class zipit(object):
         self.z.close()
 
 
-class fileit(object):
+class fileit:
     '''write archive as files in directory.'''
 
     def __init__(self, name, mtime):

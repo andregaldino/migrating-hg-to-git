@@ -756,7 +756,7 @@ def updatestandinsbymatch(repo, match):
     return match
 
 
-class automatedcommithook(object):
+class automatedcommithook:
     """Stateful hook to update standins at the 1st commit of resuming
 
     For efficiency, updating standins in the working directory should

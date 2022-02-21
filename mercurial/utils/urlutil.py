@@ -54,7 +54,7 @@ def getport(port):
         )
 
 
-class url(object):
+class url:
     r"""Reliable URL parser.
 
     This parses URLs and provides attributes for the following
@@ -832,7 +832,7 @@ def _chain_path(base_path, ui, paths):
     return new_paths
 
 
-class path(object):
+class path:
     """Represents an individual path and its configuration."""
 
     def __init__(

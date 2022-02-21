@@ -33,7 +33,7 @@ class LineLogError(Exception):
 
 
 @attr.s
-class lineinfo(object):
+class lineinfo:
     # Introducing revision of this line.
     rev = attr.ib()
     # Line number for this line in its introducing revision.
@@ -43,7 +43,7 @@ class lineinfo(object):
 
 
 @attr.s
-class annotateresult(object):
+class annotateresult:
     rev = attr.ib()
     lines = attr.ib()
     _eof = attr.ib()
@@ -52,7 +52,7 @@ class annotateresult(object):
         return iter(self.lines)
 
 
-class _llinstruction(object):  # pytype: disable=ignored-metaclass
+class _llinstruction:  # pytype: disable=ignored-metaclass
 
     __metaclass__ = abc.ABCMeta
 
@@ -233,7 +233,7 @@ def _decodeone(data, offset):
     raise NotImplementedError(b'Unimplemented opcode %r' % opcode)
 
 
-class linelog(object):
+class linelog:
     """Efficient cache for per-line history information."""
 
     def __init__(self, program=None, maxrev=0):

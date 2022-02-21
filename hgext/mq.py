@@ -150,7 +150,7 @@ try:
 except KeyError:
     # note: load is lazy so we could avoid the try-except,
     # but I (marmoute) prefer this explicit code.
-    class dummyui(object):
+    class dummyui:
         def debug(self, msg):
             pass
 
@@ -183,7 +183,7 @@ def checksubstate(repo, baserev=None):
 normname = util.normpath
 
 
-class statusentry(object):
+class statusentry:
     def __init__(self, node, name):
         self.node, self.name = node, name
 
@@ -293,7 +293,7 @@ def insertplainheader(lines, header, value):
     return lines
 
 
-class patchheader(object):
+class patchheader:
     def __init__(self, pf, plainmode=False):
         def eatdiff(lines):
             while lines:
@@ -495,7 +495,7 @@ class AbortNoCleanup(error.Abort):
     pass
 
 
-class queue(object):
+class queue:
     def __init__(self, ui, baseui, path, patchdir=None):
         self.basepath = path
         try:

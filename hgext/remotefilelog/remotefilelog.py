@@ -27,7 +27,7 @@ from . import (
 )
 
 
-class remotefilelognodemap(object):
+class remotefilelognodemap:
     def __init__(self, filename, store):
         self._filename = filename
         self._store = store
@@ -42,7 +42,7 @@ class remotefilelognodemap(object):
         return node
 
 
-class remotefilelog(object):
+class remotefilelog:
 
     _generaldelta = True
     _flagserrorclass = error.RevlogError

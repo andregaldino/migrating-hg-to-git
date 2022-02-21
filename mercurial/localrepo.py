@@ -251,7 +251,7 @@ legacycaps = moderncaps.union({b'changegroupsubset'})
 
 
 @interfaceutil.implementer(repository.ipeercommandexecutor)
-class localcommandexecutor(object):
+class localcommandexecutor:
     def __init__(self, peer):
         self._peer = peer
         self._sent = False
@@ -1215,7 +1215,7 @@ def makemain(**kwargs):
 
 
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
-class revlogfilestorage(object):
+class revlogfilestorage:
     """File storage when using revlogs."""
 
     def file(self, path):
@@ -1226,7 +1226,7 @@ class revlogfilestorage(object):
 
 
 @interfaceutil.implementer(repository.ilocalrepositoryfilestorage)
-class revlognarrowfilestorage(object):
+class revlognarrowfilestorage:
     """File storage when using revlogs and narrow files."""
 
     def file(self, path):
@@ -1259,7 +1259,7 @@ REPO_INTERFACES = [
 
 
 @interfaceutil.implementer(repository.ilocalrepositorymain)
-class localrepository(object):
+class localrepository:
     """Main class for representing local repositories.
 
     All local repositories are instances of this class.
@@ -2044,7 +2044,7 @@ class localrepository(object):
 
         # This simplifies its cache management by having one decorated
         # function (this one) and the rest simply fetch things from it.
-        class tagscache(object):
+        class tagscache:
             def __init__(self):
                 # These two define the set of tags for this repository. tags
                 # maps tag name to node; tagtypes maps tag name to 'global' or
@@ -3912,7 +3912,7 @@ def poisonrepository(repo):
     #
     # But we have to allow the close() method because some constructors
     # of repos call close() on repo references.
-    class poisonedrepository(object):
+    class poisonedrepository:
         def __getattribute__(self, item):
             if item == 'close':
                 return object.__getattribute__(self, item)

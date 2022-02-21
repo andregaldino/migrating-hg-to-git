@@ -171,7 +171,7 @@ if osenvironb is None:
     # Windows lacks os.environb, for instance.  A proxy over the real thing
     # instead of a copy allows the environment to be updated via bytes on
     # all platforms.
-    class environbytes(object):
+    class environbytes:
         def __init__(self, strenv):
             self.__len__ = strenv.__len__
             self.clear = strenv.clear
@@ -2983,7 +2983,7 @@ def sorttests(testdescs, previoustimes, shuffle=False):
     testdescs.sort(key=sortkey)
 
 
-class TestRunner(object):
+class TestRunner:
     """Holds context for executing tests.
 
     Tests rely on a lot of state. This object holds it for them.

@@ -106,7 +106,7 @@ def _limitsample(sample, desiredlen, randomize=True):
     return set(sample[:desiredlen])
 
 
-class partialdiscovery(object):
+class partialdiscovery:
     """an object representing ongoing discovery
 
     Feed with data from the remote repository, this object keep track of the

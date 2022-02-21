@@ -46,7 +46,7 @@ def _avoidambig(path, oldstat):
         checkandavoid()
 
 
-class abstractvfs(object):
+class abstractvfs:
     """Abstract base class; cannot be instantiated"""
 
     # default directory separator for vfs
@@ -606,7 +606,7 @@ class readonlyvfs(proxyvfs):
         return self.vfs.join(path, *insidef)
 
 
-class closewrapbase(object):
+class closewrapbase:
     """Base class of wrapper, which hooks closing
 
     Do not instantiate outside of the vfs layer.
@@ -652,7 +652,7 @@ class delayclosedfile(closewrapbase):
         self._closer.close(self._origfh)
 
 
-class backgroundfilecloser(object):
+class backgroundfilecloser:
     """Coordinates background closing of file handles on multiple threads."""
 
     def __init__(self, ui, expectedcount=-1):

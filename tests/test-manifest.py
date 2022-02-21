@@ -74,7 +74,7 @@ A_HUGE_MANIFEST = b''.join(
 )
 
 
-class basemanifesttests(object):
+class basemanifesttests:
     def parsemanifest(self, text):
         raise NotImplementedError('parsemanifest not implemented by test case')
 

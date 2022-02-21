@@ -31,12 +31,12 @@ data_non_inlined = (
 )
 
 
-class fakechangelog(object):
+class fakechangelog:
     def __init__(self, idx):
         self.index = idx
 
 
-class fakerepo(object):
+class fakerepo:
     def __init__(self, idx):
         """Just make so that self.changelog.index is the given idx."""
         self.changelog = fakechangelog(idx)

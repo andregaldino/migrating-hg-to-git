@@ -664,7 +664,7 @@ def hidewindow():
     pass
 
 
-class cachestat(object):
+class cachestat:
     def __init__(self, path):
         self.stat = os.stat(path)
 

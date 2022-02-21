@@ -176,7 +176,7 @@ def convertsink(ui, path, type):
     raise error.Abort(_(b'%s: unknown repository type') % path)
 
 
-class progresssource(object):
+class progresssource:
     def __init__(self, ui, source, filecount):
         self.ui = ui
         self.source = source
@@ -198,7 +198,7 @@ class progresssource(object):
         self.progress.complete()
 
 
-class converter(object):
+class converter:
     def __init__(self, ui, source, dest, revmapfile, opts):
 
         self.source = source

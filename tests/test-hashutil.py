@@ -12,7 +12,7 @@ except ImportError:
     sha1dc = None
 
 
-class hashertestsbase(object):
+class hashertestsbase:
     def test_basic_hash(self):
         h = self.hasher()
         h.update(b'foo')

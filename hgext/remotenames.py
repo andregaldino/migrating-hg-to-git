@@ -176,7 +176,7 @@ class lazyremotenamedict(mutablemapping):
     items = iteritems
 
 
-class remotenames(object):
+class remotenames:
     """
     This class encapsulates all the remotenames state. It also contains
     methods to access that state in convenient ways. Remotenames are lazy

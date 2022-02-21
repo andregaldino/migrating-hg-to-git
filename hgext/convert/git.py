@@ -19,7 +19,7 @@ from mercurial import (
 from . import common
 
 
-class submodule(object):
+class submodule:
     def __init__(self, path, node, url):
         self.path = path
         self.node = node

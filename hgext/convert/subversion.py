@@ -180,7 +180,7 @@ def optrev(number):
     return optrev
 
 
-class changedpath(object):
+class changedpath:
     def __init__(self, p):
         self.copyfrom_path = p.copyfrom_path
         self.copyfrom_rev = p.copyfrom_rev
@@ -248,7 +248,7 @@ def debugsvnlog(ui, **opts):
         get_log_child(ui.fout, *args)
 
 
-class logstream(object):
+class logstream:
     """Interruptible revision log iterator."""
 
     def __init__(self, stdout):

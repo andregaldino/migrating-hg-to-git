@@ -63,7 +63,7 @@ DIRSTATE_V2_ALL_IGNORED_RECORDED = 1 << 15
 
 
 @attr.s(slots=True, init=False)
-class DirstateItem(object):
+class DirstateItem:
     """represent a dirstate entry
 
     It hold multiple attributes
@@ -560,7 +560,7 @@ def gettype(q):
     return int(q & 0xFFFF)
 
 
-class BaseIndexObject(object):
+class BaseIndexObject:
     # Can I be passed to an algorithme implemented in Rust ?
     rust_ext_compat = 0
     # Format of an index entry according to Python's `struct` language

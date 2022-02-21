@@ -59,7 +59,7 @@ class BadFile(io.RawIOBase):
         raise IOError(errno.EBADF, 'Bad file descriptor')
 
 
-class LineBufferedWrapper(object):
+class LineBufferedWrapper:
     def __init__(self, orig):
         self.orig = orig
 
@@ -98,7 +98,7 @@ def unwrap_line_buffered(stream):
     return stream
 
 
-class WriteAllWrapper(object):
+class WriteAllWrapper:
     def __init__(self, orig):
         self.orig = orig
 
@@ -193,7 +193,7 @@ def explainexit(code):
     return _(b"killed by signal %d") % -code
 
 
-class _pfile(object):
+class _pfile:
     """File-like wrapper for a stream opened by subprocess.Popen()"""
 
     def __init__(self, proc, fp):

@@ -185,7 +185,7 @@ filters = {
 }
 
 
-class eolfile(object):
+class eolfile:
     def __init__(self, ui, root, data):
         self._decode = {
             b'LF': b'to-lf',

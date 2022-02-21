@@ -227,7 +227,7 @@ def diffordiffstat(
             )
 
 
-class changesetdiffer(object):
+class changesetdiffer:
     """Generate diff of changeset with pre-configured filtering functions"""
 
     def _makefilematcher(self, ctx):
@@ -261,7 +261,7 @@ def changesetlabels(ctx):
     return b' '.join(labels)
 
 
-class changesetprinter(object):
+class changesetprinter:
     '''show changeset information when templating not requested.'''
 
     def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
@@ -706,7 +706,7 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
 
 
 @attr.s
-class walkopts(object):
+class walkopts:
     """Options to configure a set of revisions and file matcher factory
     to scan revision/file history
     """

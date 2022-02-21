@@ -27,7 +27,7 @@ from . import common
 
 
 class gnuarch_source(common.converter_source, common.commandline):
-    class gnuarch_rev(object):
+    class gnuarch_rev:
         def __init__(self, rev):
             self.rev = rev
             self.summary = b''

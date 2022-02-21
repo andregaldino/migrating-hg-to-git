@@ -18,7 +18,7 @@ from . import (
 )
 
 
-class config(object):
+class config:
     def __init__(self, data=None):
         self._current_source_level = 0
         self._data = {}

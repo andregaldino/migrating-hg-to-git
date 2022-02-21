@@ -516,7 +516,7 @@ def applybundlev1(repo, fp):
     nodemap.post_stream_cleanup(repo)
 
 
-class streamcloneapplier(object):
+class streamcloneapplier:
     """Class to manage applying streaming clone bundles.
 
     We need to wrap ``applybundlev1()`` in a dedicated type to enable bundle

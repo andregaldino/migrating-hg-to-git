@@ -21,7 +21,7 @@ CB_MANIFEST_FILE = b'clonebundles.manifest'
 
 
 @attr.s
-class bundlespec(object):
+class bundlespec:
     compression = attr.ib()
     wirecompression = attr.ib()
     version = attr.ib()
@@ -343,7 +343,7 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
     return newentries
 
 
-class clonebundleentry(object):
+class clonebundleentry:
     """Represents an item in a clone bundles manifest.
 
     This rich class is needed to support sorting since sorted() in Python 3

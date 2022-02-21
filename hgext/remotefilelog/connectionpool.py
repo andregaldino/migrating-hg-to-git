@@ -15,7 +15,7 @@ from mercurial import (
 _sshv1peer = sshpeer.sshv1peer
 
 
-class connectionpool(object):
+class connectionpool:
     def __init__(self, repo):
         self._repo = repo
         self._pool = dict()
@@ -65,7 +65,7 @@ class connectionpool(object):
             del pathpool[:]
 
 
-class connection(object):
+class connection:
     def __init__(self, pool, peer):
         self._pool = pool
         self.peer = peer

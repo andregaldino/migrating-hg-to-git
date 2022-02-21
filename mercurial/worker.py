@@ -68,7 +68,7 @@ def ismainthread():
     return threading.current_thread() == threading.main_thread()
 
 
-class _blockingreader(object):
+class _blockingreader:
     def __init__(self, wrapped):
         self._wrapped = wrapped
 

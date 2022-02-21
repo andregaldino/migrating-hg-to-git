@@ -23,7 +23,7 @@ def _is_power_of_two(n):
     return (n & (n - 1) == 0) and n != 0
 
 
-class randomaccessfile(object):
+class randomaccessfile:
     """Accessing arbitrary chuncks of data within a file, with some caching"""
 
     def __init__(

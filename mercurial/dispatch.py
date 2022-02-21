@@ -53,7 +53,7 @@ from .utils import (
 )
 
 
-class request(object):
+class request:
     def __init__(
         self,
         args,
@@ -557,7 +557,7 @@ def aliasinterpolate(name, args, cmd):
     return r.sub(lambda x: replacemap[x.group()], cmd)
 
 
-class cmdalias(object):
+class cmdalias:
     def __init__(self, ui, name, definition, cmdtable, source):
         self.name = self.cmd = name
         self.cmdname = b''
@@ -740,7 +740,7 @@ class cmdalias(object):
                 raise
 
 
-class lazyaliasentry(object):
+class lazyaliasentry:
     """like a typical command entry (func, opts, help), but is lazy"""
 
     def __init__(self, ui, name, definition, cmdtable, source):

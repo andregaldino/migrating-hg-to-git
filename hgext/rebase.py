@@ -159,7 +159,7 @@ def _ctxdesc(ctx):
     )
 
 
-class rebaseruntime(object):
+class rebaseruntime:
     """This class is a container for rebase runtime state"""
 
     def __init__(self, repo, ui, inmemory=False, dryrun=False, opts=None):

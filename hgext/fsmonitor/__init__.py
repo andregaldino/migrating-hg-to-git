@@ -681,7 +681,7 @@ def overridestatus(
     )
 
 
-class poststatus(object):
+class poststatus:
     def __init__(self, startclock):
         self._startclock = pycompat.sysbytes(startclock)
 
@@ -756,7 +756,7 @@ def wrapsymlink(orig, source, link_name):
             pass
 
 
-class state_update(object):
+class state_update:
     """This context manager is responsible for dispatching the state-enter
     and state-leave signals to the watchman service. The enter and leave
     methods can be invoked manually (for scenarios where context manager

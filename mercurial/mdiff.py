@@ -37,7 +37,7 @@ splitnewlines = bdiff.splitnewlines
 
 
 # TODO: this looks like it could be an attrs, which might help pytype
-class diffopts(object):
+class diffopts:
     """context is the number of context lines
     text treats all files as text
     showfunc enables diff -p output

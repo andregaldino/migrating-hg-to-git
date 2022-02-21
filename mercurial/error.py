@@ -39,7 +39,7 @@ def _tobytes(exc):
     return b'(%s)' % b', '.join(b"'%s'" % pycompat.bytestr(a) for a in exc.args)
 
 
-class Hint(object):
+class Hint:
     """Mix-in to provide a hint of an error
 
     This should come first in the inheritance list to consume a hint and

@@ -903,7 +903,7 @@ def fixernames(ui):
     return names
 
 
-class Fixer(object):
+class Fixer:
     """Wraps the raw config values for a fixer with methods"""
 
     def __init__(

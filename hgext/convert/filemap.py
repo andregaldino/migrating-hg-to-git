@@ -41,7 +41,7 @@ def normalize(path):
     return posixpath.normpath(path)
 
 
-class filemapper(object):
+class filemapper:
     """Map and filter filenames when importing.
     A name can be mapped to itself, a new name, or None (omit from new
     repository)."""

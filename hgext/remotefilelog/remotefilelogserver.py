@@ -93,7 +93,7 @@ def onetimesetup(ui):
         b'x_rfl_getfile', b'file node', permission=b'pull'
     )(getfile)
 
-    class streamstate(object):
+    class streamstate:
         match = None
         shallowremote = False
         noflatmf = False

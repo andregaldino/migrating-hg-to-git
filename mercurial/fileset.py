@@ -503,7 +503,7 @@ methods = {
 }
 
 
-class matchctx(object):
+class matchctx:
     def __init__(self, basectx, ctx, cwd, badfn=None):
         self._basectx = basectx
         self.ctx = ctx

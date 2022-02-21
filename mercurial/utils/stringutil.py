@@ -496,7 +496,7 @@ def person(author):
 
 
 @attr.s(hash=True)
-class mailmapping(object):
+class mailmapping:
     """Represents a username/email key or value in
     a mailmap file"""
 

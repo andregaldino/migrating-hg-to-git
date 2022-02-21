@@ -270,7 +270,7 @@ def _getfilestarts(cgunpacker):
     return filespos
 
 
-class bundlerepository(object):
+class bundlerepository:
     """A repository instance that is a union of a local repo and a bundle.
 
     Instances represent a read-only repository composed of a local repository
@@ -550,7 +550,7 @@ def makebundlerepository(ui, repopath, bundlepath):
     return repo
 
 
-class bundletransactionmanager(object):
+class bundletransactionmanager:
     def transaction(self):
         return None
 

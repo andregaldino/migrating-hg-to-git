@@ -268,7 +268,7 @@ def indexentries(
     return templateutil.mappinggenerator(_indexentriesgen, args=args)
 
 
-class hgwebdir(object):
+class hgwebdir:
     """HTTP server for multiple repositories.
 
     Given a configuration, different repositories will be served depending

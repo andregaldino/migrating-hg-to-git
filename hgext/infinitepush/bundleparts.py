@@ -101,7 +101,7 @@ def _handlelfs(repo, missing):
         return
 
 
-class copiedpart(object):
+class copiedpart:
     """a copy of unbundlepart content that can be consumed later"""
 
     def __init__(self, part):

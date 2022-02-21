@@ -67,7 +67,7 @@ testedwith = b'ships-with-hg-core'
 _partre = re.compile(br'{(\d+)\}')
 
 
-class ShortRepository(object):
+class ShortRepository:
     def __init__(self, url, scheme, templater):
         self.scheme = scheme
         self.templater = templater

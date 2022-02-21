@@ -220,7 +220,7 @@ def nullsubrepo(ctx, path, pctx):
 # subrepo classes need to implement the following abstract class:
 
 
-class abstractsubrepo(object):
+class abstractsubrepo:
     def __init__(self, ctx, path):
         """Initialize abstractsubrepo part
 

@@ -29,7 +29,7 @@ from . import (
 pygit2 = gitutil.get_pygit2()
 
 
-class baselog(object):  # revlog.revlog):
+class baselog:  # revlog.revlog):
     """Common implementations between changelog and manifestlog."""
 
     def __init__(self, gr, db):
@@ -69,7 +69,7 @@ class baselog(object):  # revlog.revlog):
         return t is not None
 
 
-class baselogindex(object):
+class baselogindex:
     def __init__(self, log):
         self._log = log
 

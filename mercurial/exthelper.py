@@ -20,7 +20,7 @@ from . import (
 from hgdemandimport import tracing
 
 
-class exthelper(object):
+class exthelper:
     """Helper for modular extension setup
 
     A single helper should be instantiated for each module of an

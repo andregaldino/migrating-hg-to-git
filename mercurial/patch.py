@@ -149,7 +149,7 @@ def split(stream):
     def remainder(cur):
         yield chunk(cur)
 
-    class fiter(object):
+    class fiter:
         def __init__(self, fp):
             self.fp = fp
 
@@ -342,7 +342,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
     return data
 
 
-class patchmeta(object):
+class patchmeta:
     """Patched file metadata
 
     'op' is the performed operation within ADD, DELETE, RENAME, MODIFY
@@ -435,7 +435,7 @@ def readgitpatch(lr):
     return gitpatches
 
 
-class linereader(object):
+class linereader:
     # simple class to allow pushing lines back into the input stream
     def __init__(self, fp):
         self.fp = fp
@@ -456,7 +456,7 @@ class linereader(object):
         return iter(self.readline, b'')
 
 
-class abstractbackend(object):
+class abstractbackend:
     def __init__(self, ui):
         self.ui = ui
 
@@ -592,7 +592,7 @@ class workingbackend(fsbackend):
         return sorted(self.changed)
 
 
-class filestore(object):
+class filestore:
     def __init__(self, maxsize=None):
         self.opener = None
         self.files = {}
@@ -681,7 +681,7 @@ contextdesc = re.compile(br'(?:---|\*\*\*) (\d+)(?:,(\d+))? (?:---|\*\*\*)')
 eolmodes = [b'strict', b'crlf', b'lf', b'auto']
 
 
-class patchfile(object):
+class patchfile:
     def __init__(self, ui, gp, backend, store, eolmode=b'strict'):
         self.fname = gp.path
         self.eolmode = eolmode
@@ -914,7 +914,7 @@ class patchfile(object):
         return len(self.rej)
 
 
-class header(object):
+class header:
     """patch header"""
 
     diffgit_re = re.compile(b'diff --git a/(.*) b/(.*)$')
@@ -994,7 +994,7 @@ class header(object):
         )
 
 
-class recordhunk(object):
+class recordhunk:
     """patch hunk
 
     XXX shouldn't we merge this with the other hunk class?
@@ -1349,7 +1349,7 @@ the hunk is left unchanged.
     )
 
 
-class hunk(object):
+class hunk:
     def __init__(self, desc, num, lr, context):
         self.number = num
         self.desc = desc
@@ -1577,7 +1577,7 @@ class hunk(object):
         return old, oldstart, new, newstart
 
 
-class binhunk(object):
+class binhunk:
     """A binary patch file."""
 
     def __init__(self, lr, fname):
@@ -1758,7 +1758,7 @@ def parsepatch(originalchunks, maxcontext=None):
     +9
     """
 
-    class parser(object):
+    class parser:
         """patch parsing state machine"""
 
         def __init__(self):

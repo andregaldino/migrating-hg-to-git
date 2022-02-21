@@ -63,7 +63,7 @@ else:
     PACKOPENMODE = b'rb'
 
 
-class _cachebackedpacks(object):
+class _cachebackedpacks:
     def __init__(self, packs, cachesize):
         self._packs = set(packs)
         self._lrucache = util.lrucachedict(cachesize)
@@ -109,7 +109,7 @@ class _cachebackedpacks(object):
         self._lastpack = None
 
 
-class basepackstore(object):
+class basepackstore:
     # Default cache size limit for the pack files.
     DEFAULTCACHESIZE = 100
 
@@ -267,7 +267,7 @@ class basepackstore(object):
         return newpacks
 
 
-class versionmixin(object):
+class versionmixin:
     # Mix-in for classes with multiple supported versions
     VERSION = None
     SUPPORTED_VERSIONS = [2]
@@ -526,7 +526,7 @@ class mutablebasepack(versionmixin):
         self.idxfp.write(struct.pack(b'!BB', self.VERSION, config))
 
 
-class indexparams(object):
+class indexparams:
     __slots__ = (
         'fanoutprefix',
         'fanoutstruct',

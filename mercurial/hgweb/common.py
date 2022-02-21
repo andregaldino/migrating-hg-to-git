@@ -115,7 +115,7 @@ class ErrorResponse(Exception):
         self.message = message
 
 
-class continuereader(object):
+class continuereader:
     """File object wrapper to handle HTTP 100-continue.
 
     This is used by servers so they automatically handle Expect: 100-continue

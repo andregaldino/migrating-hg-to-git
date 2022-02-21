@@ -19,7 +19,7 @@ from . import (
 )
 
 
-class repoloader(object):
+class repoloader:
     """Load repositories in background thread
 
     This is designed for a forking server. A cached repo cannot be obtained

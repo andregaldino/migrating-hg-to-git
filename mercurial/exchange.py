@@ -222,7 +222,7 @@ def _forcebundle1(op):
     return forcebundle1 or not op.remote.capable(b'bundle2')
 
 
-class pushoperation(object):
+class pushoperation:
     """A object that represent a single push operation
 
     Its purpose is to carry push related state and very common operations.
@@ -1371,7 +1371,7 @@ def _pushbookmark(pushop):
                 pushop.bkresult = 1
 
 
-class pulloperation(object):
+class pulloperation:
     """A object that represent a single pull operation
 
     It purpose is to carry pull related state and very common operation.

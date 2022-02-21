@@ -109,7 +109,7 @@ class unsentfuture(futures.Future):
 
 
 @interfaceutil.implementer(repository.ipeercommandexecutor)
-class peerexecutor(object):
+class peerexecutor:
     def __init__(self, peer):
         self._peer = peer
         self._sent = False

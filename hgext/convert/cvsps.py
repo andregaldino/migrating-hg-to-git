@@ -26,7 +26,7 @@ from mercurial.utils import (
 )
 
 
-class logentry(object):
+class logentry:
     """Class logentry has the following attributes:
     .author    - author name as CVS knows it
     .branch    - name of branch this revision is on
@@ -577,7 +577,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
     return log
 
 
-class changeset(object):
+class changeset:
     """Class changeset has the following attributes:
     .id        - integer identifying this changeset (list index)
     .author    - author name as CVS knows it

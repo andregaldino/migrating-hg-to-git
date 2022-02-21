@@ -56,7 +56,7 @@ bumpedfix = 1
 usingsha256 = 2
 
 
-class marker(object):
+class marker:
     """Wrap obsolete marker raw data"""
 
     def __init__(self, repo, data):

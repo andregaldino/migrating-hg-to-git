@@ -173,7 +173,7 @@ def statprofile(ui, fp):
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 
 
-class profile(object):
+class profile:
     """Start profiling.
 
     Profiling is active when the context manager is active. When the context
@@ -231,7 +231,7 @@ class profile(object):
                 self._fp = open(path, b'wb')
             elif pycompat.iswindows:
                 # parse escape sequence by win32print()
-                class uifp(object):
+                class uifp:
                     def __init__(self, ui):
                         self._ui = ui
 

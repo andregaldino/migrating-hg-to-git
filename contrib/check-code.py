@@ -758,7 +758,7 @@ def _preparepats():
             preparefilters(filters)
 
 
-class norepeatlogger(object):
+class norepeatlogger:
     def __init__(self):
         self._lastseen = None
 

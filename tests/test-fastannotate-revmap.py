@@ -169,7 +169,7 @@ def testcopyfrom():
     os.unlink(path2)
 
 
-class fakefctx(object):
+class fakefctx:
     def __init__(self, node, path=None):
         self._node = node
         self._path = path

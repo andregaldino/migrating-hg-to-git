@@ -33,7 +33,7 @@ if pycompat.isdarwin:
     attrkinds[lib.VFIFO] = statmod.S_IFIFO
     attrkinds[lib.VSOCK] = statmod.S_IFSOCK
 
-    class stat_res(object):
+    class stat_res:
         def __init__(self, st_mode, st_mtime, st_size):
             self.st_mode = st_mode
             self.st_mtime = st_mtime

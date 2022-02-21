@@ -105,7 +105,7 @@ configitem(b'blackbox', b'date-format', default=b'')
 _lastlogger = loggingutil.proxylogger()
 
 
-class blackboxlogger(object):
+class blackboxlogger:
     def __init__(self, ui, repo):
         self._repo = repo
         self._trackedevents = set(ui.configlist(b'blackbox', b'track'))

@@ -125,7 +125,7 @@ def slice_with_len(data, start, len):
 
 
 @attr.s
-class Node(object):
+class Node:
     path = attr.ib()
     entry = attr.ib()
     parent = attr.ib(default=None)

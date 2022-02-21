@@ -14,7 +14,7 @@ from mercurial.utils import stringutil
 stringio = util.stringio
 
 
-class proto(object):
+class proto:
     def __init__(self, args):
         self.args = args
         self.name = 'dummyproto'
@@ -76,7 +76,7 @@ class clientpeer(wireprotov1peer.wirepeer):
         return {b'name': mangle(name)}, unmangle
 
 
-class serverrepo(object):
+class serverrepo:
     def __init__(self, ui):
         self.ui = ui
 

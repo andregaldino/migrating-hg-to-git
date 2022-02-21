@@ -286,7 +286,7 @@ def _tryhoist(ui, remotebookmark):
     return remotebookmark
 
 
-class bundlestore(object):
+class bundlestore:
     def __init__(self, repo):
         self._repo = repo
         storetype = self._repo.ui.config(b'infinitepush', b'storetype')

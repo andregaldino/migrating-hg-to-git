@@ -20,7 +20,7 @@ def bprint(*bs):
 
 
 # equivalent of repo.repository
-class thing(object):
+class thing:
     def hello(self):
         return b"Ready."
 
@@ -107,7 +107,7 @@ def unescapearg(escaped):
 # server side
 
 # equivalent of wireproto's global functions
-class server(object):
+class server:
     def __init__(self, local):
         self.local = local
 

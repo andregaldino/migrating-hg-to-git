@@ -52,7 +52,7 @@ def _splitURI(uri):
     return urlreq.unquote(path), query
 
 
-class _error_logger(object):
+class _error_logger:
     def __init__(self, handler):
         self.handler = handler
 
@@ -343,7 +343,7 @@ except ImportError:
         _mixin = socketserver.ForkingMixIn
     else:
 
-        class _mixin(object):
+        class _mixin:
             pass
 
 

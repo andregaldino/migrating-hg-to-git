@@ -84,7 +84,7 @@ def _eintrretry(func, *args):
             raise
 
 
-class progbar(object):
+class progbar:
     def __init__(self, ui):
         self.ui = ui
         self._refreshlock = threading.Lock()

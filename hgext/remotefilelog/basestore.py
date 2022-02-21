@@ -19,7 +19,7 @@ from . import (
 )
 
 
-class basestore(object):
+class basestore:
     def __init__(self, repo, path, reponame, shared=False):
         """Creates a remotefilelog store object for the given repo name.
 
@@ -412,7 +412,7 @@ class basestore(object):
         )
 
 
-class baseunionstore(object):
+class baseunionstore:
     def __init__(self, *args, **kwargs):
         # If one of the functions that iterates all of the stores is about to
         # throw a KeyError, try this many times with a full refresh between

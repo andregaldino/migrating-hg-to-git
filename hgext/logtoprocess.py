@@ -44,7 +44,7 @@ from mercurial.utils import procutil
 testedwith = b'ships-with-hg-core'
 
 
-class processlogger(object):
+class processlogger:
     """Map log events to external commands
 
     Arguments are passed on as environment variables.

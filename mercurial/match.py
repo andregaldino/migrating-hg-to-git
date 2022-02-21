@@ -382,7 +382,7 @@ def _donormalize(patterns, default, root, cwd, auditor=None, warn=None):
     return kindpats
 
 
-class basematcher(object):
+class basematcher:
     def __init__(self, badfn=None):
         if badfn is not None:
             self.bad = badfn
@@ -659,7 +659,7 @@ class patternmatcher(basematcher):
 # This is basically a reimplementation of pathutil.dirs that stores the
 # children instead of just a count of them, plus a small optional optimization
 # to avoid some directories we don't need.
-class _dirchildren(object):
+class _dirchildren:
     def __init__(self, paths, onlyinclude=None):
         self._dirs = {}
         self._onlyinclude = onlyinclude or []

@@ -35,7 +35,7 @@ def matchlines(body, regexp):
         yield linenum, mstart - lstart, mend - lstart, body[lstart:lend]
 
 
-class linestate(object):
+class linestate:
     def __init__(self, line, linenum, colstart, colend):
         self.line = line
         self.linenum = linenum
@@ -79,7 +79,7 @@ def difflinestates(a, b):
                 yield (b'+', b[i])
 
 
-class grepsearcher(object):
+class grepsearcher:
     """Search files and revisions for lines matching the given pattern
 
     Options:

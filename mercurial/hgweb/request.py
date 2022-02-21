@@ -21,7 +21,7 @@ from ..utils import (
 )
 
 
-class multidict(object):
+class multidict:
     """A dict like object that can store multiple values for a key.
 
     Used to store parsed request parameters.
@@ -81,7 +81,7 @@ class multidict(object):
 
 
 @attr.s(frozen=True)
-class parsedrequest(object):
+class parsedrequest:
     """Represents a parsed WSGI request.
 
     Contains both parsed parameters as well as a handle on the input stream.
@@ -355,7 +355,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     )
 
 
-class offsettrackingwriter(object):
+class offsettrackingwriter:
     """A file object like object that is append only and tracks write count.
 
     Instances are bound to a callable. This callable is called with data
@@ -388,7 +388,7 @@ class offsettrackingwriter(object):
         return self._offset
 
 
-class wsgiresponse(object):
+class wsgiresponse:
     """Represents a response to a WSGI request.
 
     A response consists of a status line, headers, and a body.

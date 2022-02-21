@@ -19,7 +19,7 @@ from mercurial.utils import dateutil
 
 # imitating mercurial.commands.annotate, not using the vanilla formatter since
 # the data structures are a bit different, and we have some fast paths.
-class defaultformatter(object):
+class defaultformatter:
     """the default formatter that does leftpad and support some common flags"""
 
     def __init__(self, ui, repo, opts):

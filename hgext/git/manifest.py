@@ -15,7 +15,7 @@ pygit2 = gitutil.get_pygit2()
 
 
 @interfaceutil.implementer(repository.imanifestdict)
-class gittreemanifest(object):
+class gittreemanifest:
     """Expose git trees (and optionally a builder's overlay) as a manifestdict.
 
     Very similar to mercurial.manifest.treemanifest.
@@ -258,7 +258,7 @@ class gittreemanifest(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
-class gittreemanifestctx(object):
+class gittreemanifestctx:
     def __init__(self, repo, gittree):
         self._repo = repo
         self._tree = gittree
@@ -279,7 +279,7 @@ class gittreemanifestctx(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
-class memgittreemanifestctx(object):
+class memgittreemanifestctx:
     def __init__(self, repo, tree):
         self._repo = repo
         self._tree = tree

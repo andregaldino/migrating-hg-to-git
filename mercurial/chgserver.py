@@ -196,7 +196,7 @@ def _mtimehash(paths):
     return _hashlist(pycompat.maplist(trystat, paths))[:12]
 
 
-class hashstate(object):
+class hashstate:
     """a structure storing confighash, mtimehash, paths used for mtimehash"""
 
     def __init__(self, confighash, mtimehash, mtimepaths):
@@ -292,7 +292,7 @@ def _loadnewui(srcui, args, cdebug):
     return (newui, newlui)
 
 
-class channeledsystem(object):
+class channeledsystem:
     """Propagate ui.system() request in the following format:
 
     payload length (unsigned int),
@@ -623,7 +623,7 @@ def _hashaddress(address, hashstr):
     return b'%s-%s' % (os.path.join(dirname, basename), hashstr)
 
 
-class chgunixservicehandler(object):
+class chgunixservicehandler:
     """Set of operations for chg services"""
 
     pollinterval = 1  # [sec]

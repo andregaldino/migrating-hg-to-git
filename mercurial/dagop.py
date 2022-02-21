@@ -271,7 +271,7 @@ def descendantrevs(revs, revsfn, parentrevsfn):
                 break
 
 
-class subsetparentswalker(object):
+class subsetparentswalker:
     r"""Scan adjacent ancestors in the graph given by the subset
 
     This computes parent-child relations in the sub graph filtered by
@@ -647,7 +647,7 @@ def blockdescendants(fctx, fromline, toline):
 
 
 @attr.s(slots=True, frozen=True)
-class annotateline(object):
+class annotateline:
     fctx = attr.ib()
     lineno = attr.ib()
     # Whether this annotation was the result of a skip-annotate.
@@ -656,7 +656,7 @@ class annotateline(object):
 
 
 @attr.s(slots=True, frozen=True)
-class _annotatedfile(object):
+class _annotatedfile:
     # list indexed by lineno - 1
     fctxs = attr.ib()
     linenos = attr.ib()

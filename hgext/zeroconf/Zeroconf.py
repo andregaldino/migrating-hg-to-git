@@ -231,7 +231,7 @@ class BadDomainNameCircular(BadDomainName):
 # implementation classes
 
 
-class DNSEntry(object):
+class DNSEntry:
     """A DNS entry"""
 
     def __init__(self, name, type, clazz):
@@ -506,7 +506,7 @@ class DNSService(DNSRecord):
         return self.toString(b"%s:%s" % (self.server, self.port))
 
 
-class DNSIncoming(object):
+class DNSIncoming:
     """Object representation of an incoming DNS packet"""
 
     def __init__(self, data):
@@ -702,7 +702,7 @@ class DNSIncoming(object):
         return result
 
 
-class DNSOutgoing(object):
+class DNSOutgoing:
     """Object representation of an outgoing packet"""
 
     def __init__(self, flags, multicast=1):
@@ -864,7 +864,7 @@ class DNSOutgoing(object):
         return b''.join(self.data)
 
 
-class DNSCache(object):
+class DNSCache:
     """A cache of DNS entries"""
 
     def __init__(self):
@@ -982,7 +982,7 @@ class Engine(threading.Thread):
         self.condition.release()
 
 
-class Listener(object):
+class Listener:
     """A Listener is used by this module to listen on the multicast
     group to which DNS messages are sent, allowing the implementation
     to cache information as it arrives.
@@ -1127,7 +1127,7 @@ class ServiceBrowser(threading.Thread):
                 event(self.zeroconf)
 
 
-class ServiceInfo(object):
+class ServiceInfo:
     """Service information"""
 
     def __init__(
@@ -1386,7 +1386,7 @@ class ServiceInfo(object):
         return result
 
 
-class Zeroconf(object):
+class Zeroconf:
     """Implementation of Zeroconf Multicast DNS Service Discovery
 
     Supports registration, unregistration, queries and browsing.

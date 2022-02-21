@@ -75,13 +75,13 @@ configitem(
 )
 
 
-class transplantentry(object):
+class transplantentry:
     def __init__(self, lnode, rnode):
         self.lnode = lnode
         self.rnode = rnode
 
 
-class transplants(object):
+class transplants:
     def __init__(self, path=None, transplantfile=None, opener=None):
         self.path = path
         self.transplantfile = transplantfile
@@ -128,7 +128,7 @@ class transplants(object):
             self.dirty = True
 
 
-class transplanter(object):
+class transplanter:
     def __init__(self, ui, repo, opts):
         self.ui = ui
         self.repo = repo

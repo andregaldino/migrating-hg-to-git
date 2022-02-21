@@ -22,7 +22,7 @@ _version = 4
 _versionformat = b">I"
 
 
-class state(object):
+class state:
     def __init__(self, repo):
         self._vfs = repo.vfs
         self._ui = repo.ui

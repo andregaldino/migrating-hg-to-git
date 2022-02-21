@@ -351,7 +351,7 @@ Commands:
     return b''.join([b'# %s\n' % l if l else b'#\n' for l in lines])
 
 
-class histeditstate(object):
+class histeditstate:
     def __init__(self, repo):
         self.repo = repo
         self.actions = None
@@ -490,7 +490,7 @@ class histeditstate(object):
         return self.repo.vfs.exists(b'histedit-state')
 
 
-class histeditaction(object):
+class histeditaction:
     def __init__(self, state, node):
         self.state = state
         self.repo = state.repo
@@ -1142,7 +1142,7 @@ def screen_size():
     return struct.unpack(b'hh', fcntl.ioctl(1, termios.TIOCGWINSZ, b'    '))
 
 
-class histeditrule(object):
+class histeditrule:
     def __init__(self, ui, ctx, pos, action=b'pick'):
         self.ui = ui
         self.ctx = ctx
@@ -1242,7 +1242,7 @@ def _trunc_tail(line, n):
     return line[: n - 2] + b' >'
 
 
-class _chistedit_state(object):
+class _chistedit_state:
     def __init__(
         self,
         repo,

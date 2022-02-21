@@ -17,7 +17,7 @@ from . import pycompat
 _sysstr = pycompat.sysstr
 
 
-class _pycompatstub(object):
+class _pycompatstub:
     def __init__(self):
         self._aliases = {}
 

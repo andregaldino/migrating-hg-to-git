@@ -45,7 +45,7 @@ FORMAT_VARIANT = b'deficiency'
 OPTIMISATION = b'optimization'
 
 
-class improvement(object):
+class improvement:
     """Represents an improvement that can be made as part of an upgrade."""
 
     ### The following attributes should be defined for each subclass:
@@ -684,7 +684,7 @@ def determine_upgrade_actions(
     return newactions
 
 
-class UpgradeOperation(object):
+class UpgradeOperation:
     """represent the work to be done during an upgrade"""
 
     def __init__(

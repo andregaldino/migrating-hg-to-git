@@ -171,7 +171,7 @@ HAS_FAST_PERSISTENT_NODEMAP = rustrevlog is not None or util.safehasattr(
 
 @interfaceutil.implementer(repository.irevisiondelta)
 @attr.s(slots=True)
-class revlogrevisiondelta(object):
+class revlogrevisiondelta:
     node = attr.ib()
     p1node = attr.ib()
     p2node = attr.ib()
@@ -187,7 +187,7 @@ class revlogrevisiondelta(object):
 
 @interfaceutil.implementer(repository.iverifyproblem)
 @attr.s(frozen=True)
-class revlogproblem(object):
+class revlogproblem:
     warning = attr.ib(default=None)
     error = attr.ib(default=None)
     node = attr.ib(default=None)
@@ -237,7 +237,7 @@ FILE_TOO_SHORT_MSG = _(
 )
 
 
-class revlog(object):
+class revlog:
     """
     the underlying revision storage object
 
@@ -1042,7 +1042,7 @@ class revlog(object):
         heads = [self.rev(n) for n in heads]
 
         # we want the ancestors, but inclusive
-        class lazyset(object):
+        class lazyset:
             def __init__(self, lazyvalues):
                 self.addedvalues = set()
                 self.lazyvalues = lazyvalues

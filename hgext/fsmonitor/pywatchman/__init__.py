@@ -301,7 +301,7 @@ class CommandError(WatchmanError):
         )
 
 
-class Transport(object):
+class Transport:
     """communication transport to the watchman server"""
 
     buf = None
@@ -346,7 +346,7 @@ class Transport(object):
             self.buf.append(b)
 
 
-class Codec(object):
+class Codec:
     """communication encoding for the watchman server"""
 
     transport = None
@@ -859,7 +859,7 @@ class JsonCodec(Codec):
         self.transport.write(cmd + b"\n")
 
 
-class client(object):
+class client:
     """Handles the communication with the watchman service"""
 
     sockpath = None

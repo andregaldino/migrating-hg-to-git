@@ -73,7 +73,7 @@ def _matchevent(event, tracked):
     return b'*' in tracked or event in tracked
 
 
-class filelogger(object):
+class filelogger:
     """Basic logger backed by physical file with optional rotation"""
 
     def __init__(self, vfs, name, tracked, maxfiles=0, maxsize=0):
@@ -104,7 +104,7 @@ class filelogger(object):
             )
 
 
-class fileobjectlogger(object):
+class fileobjectlogger:
     """Basic logger backed by file-like object"""
 
     def __init__(self, fp, tracked):
@@ -129,7 +129,7 @@ class fileobjectlogger(object):
             )
 
 
-class proxylogger(object):
+class proxylogger:
     """Forward log events to another logger to be set later"""
 
     def __init__(self):

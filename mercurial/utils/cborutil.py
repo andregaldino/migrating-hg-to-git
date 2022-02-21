@@ -483,7 +483,7 @@ class bytestringchunk(bytes):
         return self
 
 
-class sansiodecoder(object):
+class sansiodecoder:
     """A CBOR decoder that doesn't perform its own I/O.
 
     To use, construct an instance and feed it segments containing
@@ -976,7 +976,7 @@ class sansiodecoder(object):
         return l
 
 
-class bufferingdecoder(object):
+class bufferingdecoder:
     """A CBOR decoder that buffers undecoded input.
 
     This is a glorified wrapper around ``sansiodecoder`` that adds a buffering

@@ -314,7 +314,7 @@ deftemplates = {
 }
 
 
-class notifier(object):
+class notifier:
     '''email notification class.'''
 
     def __init__(self, ui, repo, hooktype):

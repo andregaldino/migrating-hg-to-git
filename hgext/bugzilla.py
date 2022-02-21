@@ -434,7 +434,7 @@ configitem(
 )
 
 
-class bzaccess(object):
+class bzaccess:
     '''Base class for access to Bugzilla.'''
 
     def __init__(self, ui):
@@ -690,7 +690,7 @@ class bzmysql_3_0(bzmysql_2_18):
 # Bugzilla via XMLRPC interface.
 
 
-class cookietransportrequest(object):
+class cookietransportrequest:
     """A Transport request method that retains cookies over its lifetime.
 
     The regular xmlrpclib transports ignore cookies. Which causes
@@ -1095,7 +1095,7 @@ class bzrestapi(bzaccess):
         pass
 
 
-class bugzilla(object):
+class bugzilla:
     # supported versions of bugzilla. different versions have
     # different schemas.
     _versions = {

@@ -58,7 +58,7 @@ def _getbkfile(repo):
     return fp
 
 
-class bmstore(object):
+class bmstore:
     r"""Storage for bookmarks.
 
     This object should do all bookmark-related reads and writes, so

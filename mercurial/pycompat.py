@@ -163,7 +163,7 @@ class bytestr(bytes):
 
     __bytes__() should be called if provided:
 
-    >>> class bytesable(object):
+    >>> class bytesable:
     ...     def __bytes__(self):
     ...         return b'bytes'
     >>> bytestr(bytesable())

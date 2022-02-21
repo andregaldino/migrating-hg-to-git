@@ -29,7 +29,7 @@ def _formatparam(param, value=None, quote=1):
         return param
 
 
-class Headers(object):
+class Headers:
     """Manage a collection of HTTP response headers"""
 
     def __init__(self, headers=None):

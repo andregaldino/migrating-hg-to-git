@@ -358,7 +358,7 @@ def _drawendinglines(lines, extra, edgemap, seen, state):
 
 
 @attr.s
-class asciistate(object):
+class asciistate:
     """State of ascii() graph rendering"""
 
     seen = attr.ib(init=False, default=attr.Factory(list))

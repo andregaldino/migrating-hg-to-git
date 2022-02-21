@@ -110,7 +110,7 @@ def makebreadcrumb(url, prefix=b''):
     return templateutil.mappinglist(reversed(breadcrumb))
 
 
-class requestcontext(object):
+class requestcontext:
     """Holds state/context for an individual request.
 
     Servers can be multi-threaded. Holding state on the WSGI application
@@ -235,7 +235,7 @@ class requestcontext(object):
         return self.res.sendresponse()
 
 
-class hgweb(object):
+class hgweb:
     """HTTP server for individual repositories.
 
     Instances of this class serve HTTP responses for a particular

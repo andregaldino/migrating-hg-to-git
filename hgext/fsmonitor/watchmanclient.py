@@ -43,7 +43,7 @@ class WatchmanNoRoot(Unavailable):
         super(WatchmanNoRoot, self).__init__(msg)
 
 
-class client(object):
+class client:
     def __init__(self, ui, root, timeout=1.0):
         err = None
         if not self._user:

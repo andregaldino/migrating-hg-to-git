@@ -159,7 +159,7 @@ def hashdiffopts(diffopts):
 _defaultdiffopthash = hashdiffopts(mdiff.defaultopts)
 
 
-class annotateopts(object):
+class annotateopts:
     """like mercurial.mdiff.diffopts, but is for annotate
 
     followrename: follow renames, like "hg annotate -f"
@@ -196,7 +196,7 @@ class annotateopts(object):
 defaultopts = annotateopts()
 
 
-class _annotatecontext(object):
+class _annotatecontext:
     """do not use this class directly as it does not use lock to protect
     writes. use "with annotatecontext(...)" instead.
     """
@@ -783,7 +783,7 @@ def _unlinkpaths(paths):
             pass
 
 
-class pathhelper(object):
+class pathhelper:
     """helper for getting paths for lockfile, linelog and revmap"""
 
     def __init__(self, repo, path, opts=defaultopts):

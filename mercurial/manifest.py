@@ -84,7 +84,7 @@ def _text(it):
     return b''.join(lines)
 
 
-class lazymanifestiter(object):
+class lazymanifestiter:
     def __init__(self, lm):
         self.pos = 0
         self.lm = lm
@@ -107,7 +107,7 @@ class lazymanifestiter(object):
     __next__ = next
 
 
-class lazymanifestiterentries(object):
+class lazymanifestiterentries:
     def __init__(self, lm):
         self.lm = lm
         self.pos = 0
@@ -158,7 +158,7 @@ def _cmp(a, b):
 _manifestflags = {b'', b'l', b't', b'x'}
 
 
-class _lazymanifest(object):
+class _lazymanifest:
     """A pure python manifest backed by a byte string.  It is supplimented with
     internal lists as it is modified, until it is compacted back to a pure byte
     string.
@@ -473,7 +473,7 @@ except AttributeError:
 
 
 @interfaceutil.implementer(repository.imanifestdict)
-class manifestdict(object):
+class manifestdict:
     def __init__(self, nodelen, data=b''):
         self._nodelen = nodelen
         self._lm = _lazymanifest(nodelen, data)
@@ -796,7 +796,7 @@ _noop = lambda s: None
 
 
 @interfaceutil.implementer(repository.imanifestdict)
-class treemanifest(object):
+class treemanifest:
     def __init__(self, nodeconstants, dir=b'', text=b''):
         self._dir = dir
         self.nodeconstants = nodeconstants
@@ -1550,7 +1550,7 @@ class FastdeltaUnavailable(Exception):
 
 
 @interfaceutil.implementer(repository.imanifeststorage)
-class manifestrevlog(object):
+class manifestrevlog:
     """A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
     """
@@ -1908,7 +1908,7 @@ class manifestrevlog(object):
 
 
 @interfaceutil.implementer(repository.imanifestlog)
-class manifestlog(object):
+class manifestlog:
     """A collection class representing the collection of manifest snapshots
     referenced by commits in the repository.
 
@@ -2007,7 +2007,7 @@ class manifestlog(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
-class memmanifestctx(object):
+class memmanifestctx:
     def __init__(self, manifestlog):
         self._manifestlog = manifestlog
         self._manifestdict = manifestdict(manifestlog.nodeconstants.nodelen)
@@ -2037,7 +2037,7 @@ class memmanifestctx(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
-class manifestctx(object):
+class manifestctx:
     """A class representing a single revision of a manifest, including its
     contents, its parent revs, and its linkrev.
     """
@@ -2117,7 +2117,7 @@ class manifestctx(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
-class memtreemanifestctx(object):
+class memtreemanifestctx:
     def __init__(self, manifestlog, dir=b''):
         self._manifestlog = manifestlog
         self._dir = dir
@@ -2152,7 +2152,7 @@ class memtreemanifestctx(object):
 
 
 @interfaceutil.implementer(repository.imanifestrevisionstored)
-class treemanifestctx(object):
+class treemanifestctx:
     def __init__(self, manifestlog, dir, node):
         self._manifestlog = manifestlog
         self._dir = dir

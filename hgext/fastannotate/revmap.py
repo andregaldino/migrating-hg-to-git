@@ -48,7 +48,7 @@ renameflag = 2
 _hshlen = 20
 
 
-class revmap(object):
+class revmap:
     """trivial hg bin hash - linelog rev bidirectional map
 
     also stores a flag (uint8) for each revision, and track renames.

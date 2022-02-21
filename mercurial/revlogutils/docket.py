@@ -99,7 +99,7 @@ S_HEADER = struct.Struct(constants.INDEX_HEADER_FMT + b'BBBBBBLLLLLLc')
 S_OLD_UID = struct.Struct('>BL')
 
 
-class RevlogDocket(object):
+class RevlogDocket:
     """metadata associated with revlog"""
 
     def __init__(

@@ -626,7 +626,7 @@ def unquotestring(s):
     return s[1:-1]
 
 
-class resourcemapper(object):  # pytype: disable=ignored-metaclass
+class resourcemapper:  # pytype: disable=ignored-metaclass
     """Mapper of internal template resources"""
 
     __metaclass__ = abc.ABCMeta
@@ -663,7 +663,7 @@ class nullresourcemapper(resourcemapper):
         return {}
 
 
-class engine(object):
+class engine:
     """template expansion engine.
 
     template expansion works like this. a map file contains key=value
@@ -919,7 +919,7 @@ def _readmapfile(fp, mapfile):
     return cache, tmap, aliases
 
 
-class loader(object):
+class loader:
     """Load template fragments optionally from a map file"""
 
     def __init__(self, cache, aliases):
@@ -994,7 +994,7 @@ class loader(object):
         return syms
 
 
-class templater(object):
+class templater:
     def __init__(
         self,
         filters=None,

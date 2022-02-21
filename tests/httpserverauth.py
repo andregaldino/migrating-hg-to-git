@@ -16,7 +16,7 @@ def parse_keqv_list(req, l):
     return parsed
 
 
-class digestauthserver(object):
+class digestauthserver:
     def __init__(self):
         self._user_hashes = {}
 

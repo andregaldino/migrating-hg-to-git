@@ -41,7 +41,7 @@ class StoreError(Exception):
         return b"%s: %s" % (urlutil.hidepassword(self.url), self.detail)
 
 
-class basestore(object):
+class basestore:
     def __init__(self, ui, repo, url):
         self.ui = ui
         self.repo = repo

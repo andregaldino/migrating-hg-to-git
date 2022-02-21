@@ -31,7 +31,7 @@ nullrev = -1
 wdirrev = 0x7FFFFFFF
 
 
-class sha1nodeconstants(object):
+class sha1nodeconstants:
     nodelen = 20
 
     # In hex, this is '0000000000000000000000000000000000000000'

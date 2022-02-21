@@ -46,7 +46,7 @@ __all__ = []
 commands = {}
 
 
-class webcommand(object):
+class webcommand:
     """Decorator used to register a web command handler.
 
     The decorator takes as its positional arguments the name/path the

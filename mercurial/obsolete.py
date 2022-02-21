@@ -541,7 +541,7 @@ def _checkinvalidmarkers(repo, markers):
             )
 
 
-class obsstore(object):
+class obsstore:
     """Store obsolete markers
 
     Markers can be accessed with two mappings:

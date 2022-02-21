@@ -498,7 +498,7 @@ def keepset(repo, keyfn, lastkeepkeys=None):
     return keepkeys
 
 
-class repacker(object):
+class repacker:
     """Class for orchestrating the repack of data and history information into a
     new format.
     """
@@ -819,7 +819,7 @@ class repacker(object):
         return sortednodes
 
 
-class repackledger(object):
+class repackledger:
     """Storage for all the bookkeeping that happens during a repack. It contains
     the list of revisions being repacked, what happened to each revision, and
     which source store contained which revision originally (for later cleanup).
@@ -867,7 +867,7 @@ class repackledger(object):
         self.created.add(value)
 
 
-class repackentry(object):
+class repackentry:
     """Simple class representing a single revision entry in the repackledger."""
 
     __slots__ = (

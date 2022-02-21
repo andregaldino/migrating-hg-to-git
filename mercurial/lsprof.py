@@ -22,7 +22,7 @@ def profile(f, *args, **kwds):
     return Stats(p.getstats())
 
 
-class Stats(object):
+class Stats:
     """XXX docstring"""
 
     def __init__(self, data):

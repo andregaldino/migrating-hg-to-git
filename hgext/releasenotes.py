@@ -77,7 +77,7 @@ RE_ISSUE = br'\bissue ?[0-9]{4,6}(?![0-9])\b'
 BULLET_SECTION = _(b'Other Changes')
 
 
-class parsedreleasenotes(object):
+class parsedreleasenotes:
     def __init__(self):
         self.sections = {}
 
@@ -170,7 +170,7 @@ class parsedreleasenotes(object):
                 self.addnontitleditem(section, paragraphs)
 
 
-class releasenotessections(object):
+class releasenotessections:
     def __init__(self, ui, repo=None):
         if repo:
             sections = util.sortdict(DEFAULT_SECTIONS)

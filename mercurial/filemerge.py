@@ -84,7 +84,7 @@ _otherchangedlocaldeletedmsg = _(
 )
 
 
-class absentfilectx(object):
+class absentfilectx:
     """Represents a file that's ostensibly in a context but is actually not
     present in it.
 

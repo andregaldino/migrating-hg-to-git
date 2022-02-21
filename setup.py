@@ -213,7 +213,7 @@ def runcmd(cmd, env, cwd=None):
     return p.returncode, out, err
 
 
-class hgcommand(object):
+class hgcommand:
     def __init__(self, cmd, env):
         self.cmd = cmd
         self.env = env
@@ -1528,7 +1528,7 @@ except ImportError:
     # the cygwinccompiler package is not available on some Python
     # distributions like the ones from the optware project for Synology
     # DiskStation boxes
-    class HackedMingw32CCompiler(object):
+    class HackedMingw32CCompiler:
         pass
 
 

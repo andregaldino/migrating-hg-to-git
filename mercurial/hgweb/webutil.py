@@ -99,7 +99,7 @@ def _navseq(step, firststep=None):
         step *= 10
 
 
-class revnav(object):
+class revnav:
     def __init__(self, repo):
         """Navigation generation object
 

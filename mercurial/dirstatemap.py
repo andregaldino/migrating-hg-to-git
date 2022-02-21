@@ -34,7 +34,7 @@ else:
 rangemask = 0x7FFFFFFF
 
 
-class _dirstatemapcommon(object):
+class _dirstatemapcommon:
     """
     Methods that are identical for both implementations of the dirstatemap
     class, with and without Rust extensions enabled.

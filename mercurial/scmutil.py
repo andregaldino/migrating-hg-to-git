@@ -62,7 +62,7 @@ termsize = scmplatform.termsize
 
 
 @attr.s(slots=True, repr=False)
-class status(object):
+class status:
     """Struct with a list of files per status.
 
     The 'deleted', 'unknown' and 'ignored' properties are only
@@ -323,7 +323,7 @@ def checkportabilityalert(ui):
     return abort, warn
 
 
-class casecollisionauditor(object):
+class casecollisionauditor:
     def __init__(self, ui, abort, dirstate):
         self._ui = ui
         self._abort = abort
@@ -1019,7 +1019,7 @@ def backuppath(ui, repo, filepath):
     return origvfs.join(filepath)
 
 
-class _containsnode(object):
+class _containsnode:
     """proxy __contains__(node) to container.__contains__ which accepts revs"""
 
     def __init__(self, repo, revcontainer):
@@ -1567,7 +1567,7 @@ def writerequires(opener, requirements):
             fp.write(b"%s\n" % r)
 
 
-class filecachesubentry(object):
+class filecachesubentry:
     def __init__(self, path, stat):
         self.path = path
         self.cachestat = None
@@ -1623,7 +1623,7 @@ class filecachesubentry(object):
                 raise
 
 
-class filecacheentry(object):
+class filecacheentry:
     def __init__(self, paths, stat=True):
         self._entries = []
         for path in paths:
@@ -1641,7 +1641,7 @@ class filecacheentry(object):
             entry.refresh()
 
 
-class filecache(object):
+class filecache:
     """A property like decorator that tracks files under .hg/ for updates.
 
     On first access, the files defined as arguments are stat()ed and the
@@ -1798,7 +1798,7 @@ def extdatasource(repo, source):
     return data
 
 
-class progress(object):
+class progress:
     def __init__(self, ui, updatebar, topic, unit=b"", total=None):
         self.ui = ui
         self.pos = 0
@@ -1863,7 +1863,7 @@ def gddeltaconfig(ui):
     return ui.configbool(b'format', b'generaldelta')
 
 
-class simplekeyvaluefile(object):
+class simplekeyvaluefile:
     """A simple file with key=value lines
 
     Keys must be alphanumerics and start with a letter, values must not

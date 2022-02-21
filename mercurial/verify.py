@@ -54,7 +54,7 @@ WARN_NULLID_COPY_SOURCE = _(
 )
 
 
-class verifier(object):
+class verifier:
     def __init__(self, repo, level=None):
         self.repo = repo.unfiltered()
         self.ui = repo.ui

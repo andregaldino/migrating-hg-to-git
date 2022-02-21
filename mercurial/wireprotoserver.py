@@ -56,7 +56,7 @@ def decodevaluefromheaders(req, headerprefix):
 
 
 @interfaceutil.implementer(wireprototypes.baseprotocolhandler)
-class httpv1protocolhandler(object):
+class httpv1protocolhandler:
     def __init__(self, req, ui, checkperm):
         self._req = req
         self._ui = ui
@@ -374,7 +374,7 @@ def _sshv1respondooberror(fout, ferr, rsp):
 
 
 @interfaceutil.implementer(wireprototypes.baseprotocolhandler)
-class sshv1protocolhandler(object):
+class sshv1protocolhandler:
     """Handler for requests services via version 1 of SSH protocol."""
 
     def __init__(self, ui, fin, fout):
@@ -520,7 +520,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
             )
 
 
-class sshserver(object):
+class sshserver:
     def __init__(self, ui, repo, logfh=None):
         self._ui = ui
         self._repo = repo

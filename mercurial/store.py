@@ -455,7 +455,7 @@ FILETYPE_FILELOG_OTHER = FILEFLAGS_FILELOG | FILEFLAGS_REVLOG_OTHER
 FILETYPE_OTHER = FILEFLAGS_OTHER
 
 
-class basicstore(object):
+class basicstore:
     '''base class for local repository stores'''
 
     def __init__(self, path, vfstype):
@@ -601,7 +601,7 @@ class encodedstore(basicstore):
         return [b'requires', b'00changelog.i'] + [b'store/' + f for f in _data]
 
 
-class fncache(object):
+class fncache:
     # the filename used to be partially encoded
     # hence the encodedir/decodedir dance
     def __init__(self, vfs):

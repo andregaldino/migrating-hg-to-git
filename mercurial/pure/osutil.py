@@ -220,7 +220,7 @@ else:
             err.errno, '%s: %s' % (encoding.strfromlocal(name), err.strerror)
         )
 
-    class posixfile(object):
+    class posixfile:
         """a file object aiming for POSIX-like semantics
 
         CPython's open() returns a file that was opened *without* setting the

@@ -66,7 +66,7 @@ if pygit2:
 
 
 @interfaceutil.implementer(intdirstate.idirstate)
-class gitdirstate(object):
+class gitdirstate:
     def __init__(self, ui, root, gitrepo):
         self._ui = ui
         self._root = os.path.dirname(root)

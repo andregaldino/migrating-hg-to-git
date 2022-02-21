@@ -282,7 +282,7 @@ class journalentry(
     __str__ = encoding.strmethod(__bytes__)
 
 
-class journalstorage(object):
+class journalstorage:
     """Storage for journal entries
 
     Entries are divided over two files; one with entries that pertain to the

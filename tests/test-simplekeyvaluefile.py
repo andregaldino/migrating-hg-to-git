@@ -7,7 +7,7 @@ from mercurial import (
 )
 
 
-class mockfile(object):
+class mockfile:
     def __init__(self, name, fs):
         self.name = name
         self.fs = fs
@@ -25,7 +25,7 @@ class mockfile(object):
         return self.fs.contents[self.name]
 
 
-class mockvfs(object):
+class mockvfs:
     def __init__(self):
         self.contents = {}
 

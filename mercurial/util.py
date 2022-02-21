@@ -231,7 +231,7 @@ for k in DIGESTS_BY_STRENGTH:
     assert k in DIGESTS
 
 
-class digester(object):
+class digester:
     """helper to compute digests.
 
     This helper can be used to compute one or more digests given their name.
@@ -279,7 +279,7 @@ class digester(object):
         return None
 
 
-class digestchecker(object):
+class digestchecker:
     """file handle wrapper that additionally checks content against a given
     size and digests.
 
@@ -329,7 +329,7 @@ except NameError:
 _chunksize = 4096
 
 
-class bufferedinputpipe(object):
+class bufferedinputpipe:
     """a manually buffered input pipe
 
     Python will not let us use buffered IO and lazy reading with 'polling' at
@@ -457,7 +457,7 @@ def mmapread(fp, size=None):
         raise
 
 
-class fileobjectproxy(object):
+class fileobjectproxy:
     """A proxy around file objects that tells a watcher when events occur.
 
     This type is intended to only be used for testing purposes. Think hard
@@ -693,7 +693,7 @@ PROXIED_SOCKET_METHODS = {
 }
 
 
-class socketproxy(object):
+class socketproxy:
     """A proxy around a socket that tells a watcher when events occur.
 
     This is like ``fileobjectproxy`` except for sockets.
@@ -816,7 +816,7 @@ class socketproxy(object):
         )
 
 
-class baseproxyobserver(object):
+class baseproxyobserver:
     def __init__(self, fh, name, logdata, logdataapis):
         self.fh = fh
         self.name = name
@@ -1256,7 +1256,7 @@ def cachefunc(func):
     return f
 
 
-class cow(object):
+class cow:
     """helper class to make copy-on-write easier
 
     Call preparewrite before doing any writes.
@@ -1349,7 +1349,7 @@ class cowsortdict(cow, sortdict):
     """
 
 
-class transactional(object):  # pytype: disable=ignored-metaclass
+class transactional:  # pytype: disable=ignored-metaclass
     """Base class for making a transactional type into a context manager."""
 
     __metaclass__ = abc.ABCMeta
@@ -1400,7 +1400,7 @@ def nullcontextmanager(enter_result=None):
     yield enter_result
 
 
-class _lrucachenode(object):
+class _lrucachenode:
     """A node in a doubly linked list.
 
     Holds a reference to nodes on either side as well as a key-value
@@ -1424,7 +1424,7 @@ class _lrucachenode(object):
         self.cost = 0
 
 
-class lrucachedict(object):
+class lrucachedict:
     """Dict that caches most recent accesses and sets.
 
     The dict consists of an actual backing dict - indexed by original
@@ -1755,7 +1755,7 @@ def lrucachefunc(func):
     return f
 
 
-class propertycache(object):
+class propertycache:
     def __init__(self, func):
         self.func = func
         self.name = func.__name__
@@ -2214,7 +2214,7 @@ except ImportError:
     _re2 = False
 
 
-class _re(object):
+class _re:
     def _checkre2(self):
         global _re2
         global _re2_input
@@ -2416,7 +2416,7 @@ def mktempcopy(name, emptyok=False, createmode=None, enforcewritable=False):
     return temp
 
 
-class filestat(object):
+class filestat:
     """help to exactly detect change of a file
 
     'stat' attribute is result of 'os.stat()' if specified 'path'
@@ -2522,7 +2522,7 @@ class filestat(object):
         return not self == other
 
 
-class atomictempfile(object):
+class atomictempfile:
     """writable file object that atomically updates a file
 
     All writes will go to a temporary copy of the original file. Call
@@ -2665,7 +2665,7 @@ def appendfile(path, text):
         fp.write(text)
 
 
-class chunkbuffer(object):
+class chunkbuffer:
     """Allow arbitrary sized chunks of data to be efficiently read from an
     iterator over chunks of arbitrary size."""
 
@@ -2770,7 +2770,7 @@ def filechunkiter(f, size=131072, limit=None):
         yield s
 
 
-class cappedreader(object):
+class cappedreader:
     """A file object proxy that allows reading up to N bytes.
 
     Given a source file object, instances of this type allow reading up to
@@ -2858,7 +2858,7 @@ bytecount = unitcountfn(
 )
 
 
-class transformingwriter(object):
+class transformingwriter:
     """Writable file wrapper to transform data by function"""
 
     def __init__(self, fp, encode):
@@ -2966,7 +2966,7 @@ timecount = unitcountfn(
 
 
 @attr.s
-class timedcmstats(object):
+class timedcmstats:
     """Stats information produced by the timedcm context manager on entering."""
 
     # the starting value of the timer as a float (meaning and resulution is
@@ -3067,7 +3067,7 @@ def sizetoint(s):
         raise error.ParseError(_(b"couldn't parse size: %s") % s)
 
 
-class hooks(object):
+class hooks:
     """A collection of hook functions that can be used to extend a
     function's behavior. Hooks are called in lexicographic order,
     based on the names of their sources."""

@@ -25,7 +25,7 @@ from . import (
 from .utils import stringutil
 
 
-class parser(object):
+class parser:
     def __init__(self, elements, methods=None):
         self._elements = elements
         self._methods = methods
@@ -415,7 +415,7 @@ def parseerrordetail(inst):
         return inst.message
 
 
-class alias(object):
+class alias:
     """Parsed result of alias"""
 
     def __init__(self, name, args, err, replacement):
@@ -429,7 +429,7 @@ class alias(object):
         self.warned = False
 
 
-class basealiasrules(object):
+class basealiasrules:
     """Parsing and expansion rule set of aliases
 
     This is a helper for fileset/revset/template aliases. A concrete rule set

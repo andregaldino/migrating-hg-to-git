@@ -26,7 +26,7 @@ def label(code):
         )
 
 
-class KCacheGrind(object):
+class KCacheGrind:
     def __init__(self, profiler):
         self.data = profiler.getstats()
         self.out_file = None

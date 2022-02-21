@@ -100,7 +100,7 @@ CHANGE_REMOVED = b'removed'
 CHANGE_MODIFIED = b'modified'
 
 
-class MergeAction(object):
+class MergeAction:
     """represent an "action" merge need to take for a given file
 
     Attributes:
@@ -194,7 +194,7 @@ CONVERT_MERGE_ACTIONS = (
 )
 
 
-class _mergestate_base(object):
+class _mergestate_base:
     """track 3-way merge state of individual files
 
     The merge state is stored on disk when needed. Two files are used: one with

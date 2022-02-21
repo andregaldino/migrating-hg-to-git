@@ -388,7 +388,7 @@ class ipeerv2(ipeerconnection, ipeercapabilities, ipeerrequests):
 
 
 @interfaceutil.implementer(ipeerbase)
-class peer(object):
+class peer:
     """Base class for peer repositories."""
 
     limitedarguments = False

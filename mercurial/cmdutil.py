@@ -666,7 +666,7 @@ def dorecord(
     return commit(ui, repo, recordinwlock, pats, opts)
 
 
-class dirnode(object):
+class dirnode:
     """
     Represent a directory in user working copy with information required for
     the purpose of tersing its status.
@@ -832,7 +832,7 @@ def _commentlines(raw):
 
 
 @attr.s(frozen=True)
-class morestatus(object):
+class morestatus:
     reporoot = attr.ib()
     unfinishedop = attr.ib()
     unfinishedmsg = attr.ib()
@@ -1343,7 +1343,7 @@ def isstdiofilename(pat):
     return not pat or pat == b'-'
 
 
-class _unclosablefile(object):
+class _unclosablefile:
     def __init__(self, fp):
         self._fp = fp
 

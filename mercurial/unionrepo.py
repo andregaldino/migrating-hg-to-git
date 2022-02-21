@@ -209,7 +209,7 @@ class unionpeer(localrepo.localpeer):
         return False
 
 
-class unionrepository(object):
+class unionrepository:
     """Represents the union of data in 2 repositories.
 
     Instances are not usable if constructed directly. Use ``instance()``

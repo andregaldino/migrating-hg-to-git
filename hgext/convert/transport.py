@@ -70,7 +70,7 @@ class NotBranchError(SubversionException):
     pass
 
 
-class SvnRaTransport(object):
+class SvnRaTransport:
     """
     Open an ra connection to a Subversion repository.
     """
@@ -107,7 +107,7 @@ class SvnRaTransport(object):
             self.ra = ra
             svn.ra.reparent(self.ra, self.svn_url.encode('utf8'))
 
-    class Reporter(object):
+    class Reporter:
         def __init__(self, reporter_data):
             self._reporter, self._baton = reporter_data
 

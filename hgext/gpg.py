@@ -64,7 +64,7 @@ help.CATEGORY_ORDER.insert(
 help.CATEGORY_NAMES[_HELP_CATEGORY] = b'Signing changes (GPG)'
 
 
-class gpg(object):
+class gpg:
     def __init__(self, path, key=None):
         self.path = path
         self.key = (key and b" --local-user \"%s\"" % key) or b""

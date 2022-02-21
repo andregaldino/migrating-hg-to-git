@@ -173,7 +173,7 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     return l
 
 
-class lock(object):
+class lock:
     """An advisory lock held by one process to control access to a set
     of files.  Non-cooperating processes or incorrectly written scripts
     can ignore Mercurial's locking scheme and stomp all over the

@@ -39,7 +39,7 @@ if pycompat.TYPE_CHECKING:
         assert t
 
 
-class cmdstate(object):
+class cmdstate:
     """a wrapper class to store the state of commands like `rebase`, `graft`,
     `histedit`, `shelve` etc. Extensions can also use this to write state files.
 
@@ -102,7 +102,7 @@ class cmdstate(object):
         return self._repo.vfs.exists(self.fname)
 
 
-class _statecheck(object):
+class _statecheck:
     """a utility class that deals with multistep operations like graft,
     histedit, bisect, update etc and check whether such commands
     are in an unfinished conditition or not and return appropriate message

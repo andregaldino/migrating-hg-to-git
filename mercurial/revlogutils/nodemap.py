@@ -113,7 +113,7 @@ def setup_persistent_nodemap(tr, revlog):
     tr.addfinalize(callback_id, lambda tr: persist_nodemap(tr, revlog))
 
 
-class _NoTransaction(object):
+class _NoTransaction:
     """transaction like object to update the nodemap outside a transaction"""
 
     def __init__(self):
@@ -304,7 +304,7 @@ S_VERSION = struct.Struct(">B")
 S_HEADER = struct.Struct(">BQQQQ")
 
 
-class NodeMapDocket(object):
+class NodeMapDocket:
     """metadata associated with persistent nodemap data
 
     The persistent data may come from disk or be on their way to disk.

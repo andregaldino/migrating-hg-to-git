@@ -107,7 +107,7 @@ urlreq = util.urlreq
 DEBUG = None
 
 
-class ConnectionManager(object):
+class ConnectionManager:
     """
     The connection manager must be able to:
       * keep track of all existing
@@ -170,7 +170,7 @@ class ConnectionManager(object):
             return dict(self._hostmap)
 
 
-class KeepAliveHandler(object):
+class KeepAliveHandler:
     def __init__(self, timeout=None):
         self._cm = ConnectionManager()
         self._timeout = timeout
@@ -789,7 +789,7 @@ def test_timeout(url):
     global DEBUG
     dbbackup = DEBUG
 
-    class FakeLogger(object):
+    class FakeLogger:
         def debug(self, msg, *args):
             print(msg % args)
 

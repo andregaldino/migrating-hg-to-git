@@ -34,7 +34,7 @@ urlerr = util.urlerr
 urlreq = util.urlreq
 
 
-class httprangereader(object):
+class httprangereader:
     def __init__(self, url, opener):
         # we assume opener has HTTPRangeHandler
         self.url = url

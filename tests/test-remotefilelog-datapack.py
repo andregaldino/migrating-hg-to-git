@@ -35,7 +35,7 @@ from hgext.remotefilelog import (
 )
 
 
-class datapacktestsbase(object):
+class datapacktestsbase:
     def __init__(self, datapackreader, paramsavailable):
         self.datapackreader = datapackreader
         self.paramsavailable = paramsavailable

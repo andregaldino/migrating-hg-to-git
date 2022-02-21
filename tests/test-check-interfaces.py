@@ -80,7 +80,7 @@ def checkzobject(o, allowextra=False):
 
 
 # Facilitates testing localpeer.
-class dummyrepo(object):
+class dummyrepo:
     def __init__(self):
         self.ui = uimod.ui()
         self._wanted_sidedata = set()
@@ -92,7 +92,7 @@ class dummyrepo(object):
         pass
 
 
-class dummyopener(object):
+class dummyopener:
     handlers = []
 
 
@@ -108,7 +108,7 @@ class badpeer(httppeer.httppeer):
         pass
 
 
-class dummypipe(object):
+class dummypipe:
     def close(self):
         pass
 

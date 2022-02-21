@@ -54,7 +54,7 @@ def _hgextimport(importfunc, name, globals, *args, **kwargs):
         return importfunc(hgextname, globals, *args, **kwargs)
 
 
-class _demandmod(object):
+class _demandmod:
     """module demand-loader and proxy
 
     Specify 1 as 'level' argument at construction, to import module

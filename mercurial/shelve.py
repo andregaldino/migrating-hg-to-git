@@ -68,7 +68,7 @@ shelvefileextensions = [b'hg', b'patch', b'shelve']
 shelveuser = b'shelve@localhost'
 
 
-class ShelfDir(object):
+class ShelfDir:
     def __init__(self, repo, for_backups=False):
         if for_backups:
             self.vfs = vfsmod.vfs(repo.vfs.join(backupdir))
@@ -101,7 +101,7 @@ class ShelfDir(object):
         return sorted(info, reverse=True)
 
 
-class Shelf(object):
+class Shelf:
     """Represents a shelf, including possibly multiple files storing it.
 
     Old shelves will have a .patch and a .hg file. Newer shelves will
@@ -213,7 +213,7 @@ class Shelf(object):
             self.vfs.tryunlink(self.name + b'.' + ext)
 
 
-class shelvedstate(object):
+class shelvedstate:
     """Handle persistence during unshelving operations.
 
     Handles saving and restoring a shelved state. Ensures that different

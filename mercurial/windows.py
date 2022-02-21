@@ -53,7 +53,7 @@ unlink = win32.unlink
 umask = 0o022
 
 
-class mixedfilemodewrapper(object):
+class mixedfilemodewrapper:
     """Wraps a file handle when it is opened in read/write mode.
 
     fopen() and fdopen() on Windows have a specific-to-Windows requirement
@@ -130,7 +130,7 @@ class mixedfilemodewrapper(object):
         return self._fp.readlines(*args, **kwargs)
 
 
-class fdproxy(object):
+class fdproxy:
     """Wraps osutil.posixfile() to override the name attribute to reflect the
     underlying file name.
     """
@@ -214,7 +214,7 @@ def get_password():
     return encoding.unitolocal(pw)
 
 
-class winstdout(object):
+class winstdout:
     """Some files on Windows misbehave.
 
     When writing to a broken pipe, EINVAL instead of EPIPE may be raised.
@@ -658,7 +658,7 @@ def isexec(f):
     return False
 
 
-class cachestat(object):
+class cachestat:
     def __init__(self, path):
         pass
 

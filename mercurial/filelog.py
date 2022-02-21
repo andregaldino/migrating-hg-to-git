@@ -24,7 +24,7 @@ from .revlogutils import (
 
 
 @interfaceutil.implementer(repository.ifilestorage)
-class filelog(object):
+class filelog:
     def __init__(self, opener, path):
         self._revlog = revlog.revlog(
             opener,
