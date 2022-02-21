@@ -826,9 +826,7 @@ class treemanifest(object):
     def _loadalllazy(self):
         selfdirs = self._dirs
         subpath = self._subpath
-        for d, (node, readsubtree, docopy) in pycompat.iteritems(
-            self._lazydirs
-        ):
+        for d, (node, readsubtree, docopy) in self._lazydirs.items():
             if docopy:
                 selfdirs[d] = readsubtree(subpath(d), node).copy()
             else:
@@ -2245,7 +2243,7 @@ class treemanifestctx(object):
             m0 = self._manifestlog.get(self._dir, store.node(r0)).read()
             m1 = self.read()
             md = treemanifest(self._manifestlog.nodeconstants, dir=self._dir)
-            for f, ((n0, fl0), (n1, fl1)) in pycompat.iteritems(m0.diff(m1)):
+            for f, ((n0, fl0), (n1, fl1)) in m0.diff(m1).items():
                 if n1:
                     md[f] = n1
                     if fl1:
