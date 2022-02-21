@@ -246,13 +246,9 @@ def _generic_proxytunnel(self):
 
     # majority of the following code is duplicated from
     # httplib.HTTPConnection as there are no adequate places to
-    # override functions to provide the needed functionality
-    # strict was removed in Python 3.4.
-    kwargs = {}
-    if not pycompat.ispy3:
-        kwargs[b'strict'] = self.strict
+    # override functions to provide the needed functionality.
 
-    res = self.response_class(self.sock, method=self._method, **kwargs)
+    res = self.response_class(self.sock, method=self._method)
 
     while True:
         version, status, reason = res._read_status()
