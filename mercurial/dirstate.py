@@ -1308,9 +1308,9 @@ class dirstate(object):
         # - match.traversedir does something, because match.traversedir should
         #   be called for every dir in the working dir
         full = listclean or match.traversedir is not None
-        for fn, st in pycompat.iteritems(
-            self.walk(match, subrepos, listunknown, listignored, full=full)
-        ):
+        for fn, st in self.walk(
+            match, subrepos, listunknown, listignored, full=full
+        ).items():
             if not dcontains(fn):
                 if (listignored or mexact(fn)) and dirignore(fn):
                     if listignored:
