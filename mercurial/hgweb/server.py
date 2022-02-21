@@ -185,18 +185,11 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env['REMOTE_ADDR'] = self.client_address[0]
         env['QUERY_STRING'] = query or ''
 
-        if pycompat.ispy3:
-            if self.headers.get_content_type() is None:
-                env['CONTENT_TYPE'] = self.headers.get_default_type()
-            else:
-                env['CONTENT_TYPE'] = self.headers.get_content_type()
-            length = self.headers.get('content-length')
+        if self.headers.get_content_type() is None:
+            env['CONTENT_TYPE'] = self.headers.get_default_type()
         else:
-            if self.headers.typeheader is None:
-                env['CONTENT_TYPE'] = self.headers.type
-            else:
-                env['CONTENT_TYPE'] = self.headers.typeheader
-            length = self.headers.getheader('content-length')
+            env['CONTENT_TYPE'] = self.headers.get_content_type()
+        length = self.headers.get('content-length')
         if length:
             env['CONTENT_LENGTH'] = length
         for header in [
