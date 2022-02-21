@@ -467,43 +467,28 @@ def mimeencode(ui, s, charsets=None, display=False):
     return mimetextqp(s, 'plain', cs)
 
 
-if pycompat.ispy3:
-
-    Generator = email.generator.BytesGenerator
-
-    def parse(fp):
-        # type: (Any) -> email.message.Message
-        ep = email.parser.Parser()
-        # disable the "universal newlines" mode, which isn't binary safe.
-        # I have no idea if ascii/surrogateescape is correct, but that's
-        # what the standard Python email parser does.
-        fp = io.TextIOWrapper(
-            fp, encoding='ascii', errors='surrogateescape', newline=chr(10)
-        )
-        try:
-            return ep.parse(fp)
-        finally:
-            fp.detach()
-
-    def parsebytes(data):
-        # type: (bytes) -> email.message.Message
-        ep = email.parser.BytesParser()
-        return ep.parsebytes(data)
+Generator = email.generator.BytesGenerator
 
 
-else:
-
-    Generator = email.generator.Generator
-
-    def parse(fp):
-        # type: (Any) -> email.message.Message
-        ep = email.parser.Parser()
+def parse(fp):
+    # type: (Any) -> email.message.Message
+    ep = email.parser.Parser()
+    # disable the "universal newlines" mode, which isn't binary safe.
+    # I have no idea if ascii/surrogateescape is correct, but that's
+    # what the standard Python email parser does.
+    fp = io.TextIOWrapper(
+        fp, encoding='ascii', errors='surrogateescape', newline=chr(10)
+    )
+    try:
         return ep.parse(fp)
+    finally:
+        fp.detach()
 
-    def parsebytes(data):
-        # type: (str) -> email.message.Message
-        ep = email.parser.Parser()
-        return ep.parsestr(data)
+
+def parsebytes(data):
+    # type: (bytes) -> email.message.Message
+    ep = email.parser.BytesParser()
+    return ep.parsebytes(data)
 
 
 def headdecode(s):
