@@ -4,7 +4,6 @@
   $ cd "$TESTDIR"/..
 
   $ testrepohg files 'set:(**.py) - grep(pygments)' \
-  > -X hgdemandimport/demandimportpy2.py \
   > -X hgext/fsmonitor/pywatchman \
   > -X mercurial/cffi \
   > -X mercurial/thirdparty \

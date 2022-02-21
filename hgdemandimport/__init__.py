@@ -15,10 +15,7 @@
 import os
 import sys
 
-if sys.version_info[0] >= 3:
-    from . import demandimportpy3 as demandimport
-else:
-    from . import demandimportpy2 as demandimport
+from . import demandimportpy3 as demandimport
 
 # Full module names which can't be lazy imported.
 # Extensions can add to this set.
