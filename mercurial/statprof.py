@@ -607,9 +607,7 @@ def display_by_method(data, fp):
             # only show line numbers for significant locations (>1% time spent)
             if stat.selfpercent() > 1:
                 source = stat.site.getsource(25)
-                if sys.version_info.major >= 3 and not isinstance(
-                    source, bytes
-                ):
+                if not isinstance(source, bytes):
                     source = pycompat.bytestr(source)
 
                 stattuple = (
