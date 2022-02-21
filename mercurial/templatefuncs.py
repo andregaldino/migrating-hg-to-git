@@ -88,7 +88,7 @@ def dict_(context, mapping, args):
 
     data.update(
         (k, evalfuncarg(context, mapping, v))
-        for k, v in pycompat.iteritems(args[b'kwargs'])
+        for k, v in args[b'kwargs'].items()
     )
     return templateutil.hybriddict(data)
 
