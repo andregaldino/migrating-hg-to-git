@@ -685,7 +685,7 @@ def showpeerurls(context, mapping):
         d = {b'name': k}
         if len(ps) == 1:
             d[b'url'] = ps[0].rawloc
-            sub_opts = pycompat.iteritems(ps[0].suboptions)
+            sub_opts = ps[0].suboptions.items()
             sub_opts = util.sortdict(sorted(sub_opts))
             d.update(sub_opts)
         path_dict = util.sortdict()
