@@ -6,7 +6,6 @@ use crate::dirstate_tree::on_disk::Docket as DirstateDocket;
 use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgResultExt;
 use crate::errors::{HgError, IoResultExt};
-use crate::exit_codes;
 use crate::lock::{try_with_lock_no_wait, LockError};
 use crate::manifest::{Manifest, Manifestlog};
 use crate::revlog::filelog::Filelog;
@@ -160,31 +159,8 @@ impl Repo {
                 requirements::load(Vfs { base: &shared_path })?
                     .contains(requirements::SHARESAFE_REQUIREMENT);
 
-            if share_safe && !source_is_share_safe {
-                return Err(match config
-                    .get(b"share", b"safe-mismatch.source-not-safe")
-                {
-                    Some(b"abort") | None => HgError::abort(
-                        "abort: share source does not support share-safe requirement\n\
-                        (see `hg help config.format.use-share-safe` for more information)",
-                        exit_codes::ABORT,
-                    ),
-                    _ => HgError::unsupported("share-safe downgrade"),
-                }
-                .into());
-            } else if source_is_share_safe && !share_safe {
-                return Err(
-                    match config.get(b"share", b"safe-mismatch.source-safe") {
-                        Some(b"abort") | None => HgError::abort(
-                            "abort: version mismatch: source uses share-safe \
-                            functionality while the current share does not\n\
-                            (see `hg help config.format.use-share-safe` for more information)",
-                        exit_codes::ABORT,
-                        ),
-                        _ => HgError::unsupported("share-safe upgrade"),
-                    }
-                    .into(),
-                );
+            if share_safe != source_is_share_safe {
+                return Err(HgError::unsupported("share-safe mismatch").into());
             }
 
             if share_safe {
