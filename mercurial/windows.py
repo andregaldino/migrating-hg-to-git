@@ -162,8 +162,7 @@ def posixfile(name, mode=b'r', buffering=-1):
 
         # PyFile_FromFd() ignores the name, and seems to report fp.name as the
         # underlying file descriptor.
-        if pycompat.ispy3:
-            fp = fdproxy(name, fp)
+        fp = fdproxy(name, fp)
 
         # The position when opening in append mode is implementation defined, so
         # make it consistent with other platforms, which position at EOF.
