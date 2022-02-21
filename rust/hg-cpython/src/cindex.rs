@@ -18,7 +18,7 @@ use hg::revlog::{Node, RevlogIndex};
 use hg::{Graph, GraphError, Revision, WORKING_DIRECTORY_REVISION};
 use libc::{c_int, ssize_t};
 
-const REVLOG_CABI_VERSION: c_int = 2;
+const REVLOG_CABI_VERSION: c_int = 3;
 
 #[repr(C)]
 pub struct Revlog_CAPI {
@@ -29,6 +29,10 @@ pub struct Revlog_CAPI {
         index: *mut revlog_capi::RawPyObject,
         rev: ssize_t,
     ) -> *const Node,
+    fast_rank: unsafe extern "C" fn(
+        index: *mut revlog_capi::RawPyObject,
+        rev: ssize_t,
+    ) -> ssize_t,
     index_parents: unsafe extern "C" fn(
         index: *mut revlog_capi::RawPyObject,
         rev: c_int,

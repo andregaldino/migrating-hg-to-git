@@ -33,6 +33,7 @@ typedef struct {
 	int abi_version;
 	Py_ssize_t (*index_length)(const indexObject *);
 	const char *(*index_node)(indexObject *, Py_ssize_t);
+	int (*fast_rank)(indexObject *, Py_ssize_t);
 	int (*index_parents)(PyObject *, int, int *);
 } Revlog_CAPI;
 
@@ -561,6 +562,34 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	}
 
 	return data ? node_id : NULL;
+}
+
+/*
+ * Return the stored rank of a given revision if known, or rank_unknown
+ * otherwise.
+ *
+ * The rank of a revision is the size of the sub-graph it defines as a head.
+ * Equivalently, the rank of a revision `r` is the size of the set
+ * `ancestors(r)`, `r` included.
+ *
+ * This method returns the rank retrieved from the revlog in constant time. It
+ * makes no attempt at computing unknown values for versions of the revlog
+ * which do not persist the rank.
+ */
+static int index_fast_rank(indexObject *self, Py_ssize_t pos)
+{
+	Py_ssize_t length = index_length(self);
+	int rank;
+
+	if (self->format_version != format_cl2 || pos >= length) {
+		return rank_unknown;
+	}
+
+	if (pos == nullrev) {
+		return 0; /* convention */
+	}
+
+	return *(index_deref(self, pos) + entry_cl2_offset_rank);
 }
 
 /*
@@ -3248,10 +3277,7 @@ bail:
 static Revlog_CAPI CAPI = {
     /* increment the abi_version field upon each change in the Revlog_CAPI
        struct or in the ABI of the listed functions */
-    2,
-    index_length,
-    index_node,
-    HgRevlogIndex_GetParents,
+    3, index_length, index_node, index_fast_rank, HgRevlogIndex_GetParents,
 };
 
 void revlog_module_init(PyObject *mod)
