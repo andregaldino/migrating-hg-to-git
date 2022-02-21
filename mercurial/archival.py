@@ -305,9 +305,6 @@ def archive(
     subrepos tells whether to include subrepos.
     """
 
-    if kind == b'txz' and not pycompat.ispy3:
-        raise error.Abort(_(b'xz compression is only available in Python 3'))
-
     if kind == b'files':
         if prefix:
             raise error.Abort(_(b'cannot give prefix when archiving to files'))
