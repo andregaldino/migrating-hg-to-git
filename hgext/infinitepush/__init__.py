@@ -405,7 +405,7 @@ def _checkheads(orig, pushop):
 
 def wireprotolistkeyspatterns(repo, proto, namespace, patterns):
     patterns = wireprototypes.decodelist(patterns)
-    d = pycompat.iteritems(repo.listkeys(encoding.tolocal(namespace), patterns))
+    d = repo.listkeys(encoding.tolocal(namespace), patterns).items()
     return pushkey.encodekeys(d)
 
 
