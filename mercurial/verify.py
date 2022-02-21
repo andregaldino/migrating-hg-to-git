@@ -574,7 +574,7 @@ class verifier(object):
 
             # cross-check
             if f in filenodes:
-                fns = [(v, k) for k, v in pycompat.iteritems(filenodes[f])]
+                fns = [(v, k) for k, v in filenodes[f].items()]
                 for lr, node in sorted(fns):
                     msg = _(b"manifest refers to unknown revision %s")
                     self._err(lr, msg % short(node), f)
