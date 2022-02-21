@@ -460,12 +460,9 @@ class hgwebdir(object):
                 if real:
                     # Re-parse the WSGI environment to take into account our
                     # repository path component.
-                    uenv = req.rawenv
-                    if pycompat.ispy3:
-                        uenv = {
-                            k.decode('latin1'): v
-                            for k, v in pycompat.iteritems(uenv)
-                        }
+                    uenv = {
+                        k.decode('latin1'): v for k, v in req.rawenv.items()
+                    }
                     req = requestmod.parserequestfromenv(
                         uenv,
                         reponame=virtualrepo,
