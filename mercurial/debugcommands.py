@@ -2384,7 +2384,7 @@ def debugmergestate(ui, repo, *args, **opts):
     fm_files.end()
 
     fm_extras = fm.nested(b'extras')
-    for f, d in sorted(pycompat.iteritems(ms.allextras())):
+    for f, d in sorted(ms.allextras().items()):
         if f in ms:
             # If file is in mergestate, we have already processed it's extras
             continue
@@ -2888,7 +2888,7 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
             ui.status(pycompat.bytestr(r) + b'\n')
             return not r
         else:
-            for k, v in sorted(pycompat.iteritems(target.listkeys(namespace))):
+            for k, v in sorted(target.listkeys(namespace).items()):
                 ui.write(
                     b"%s\t%s\n"
                     % (stringutil.escapestr(k), stringutil.escapestr(v))
