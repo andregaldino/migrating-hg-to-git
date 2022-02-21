@@ -56,12 +56,7 @@ if stable_docket_file:
             if inst.errno != errno.ENOENT:
                 raise
             seed = b'04'  # chosen by a fair dice roll. garanteed to be random
-        if pycompat.ispy3:
-            iter_seed = iter(seed)
-        else:
-            # pytype: disable=wrong-arg-types
-            iter_seed = (ord(c) for c in seed)
-            # pytype: enable=wrong-arg-types
+        iter_seed = iter(seed)
         # some basic circular sum hashing on 64 bits
         int_seed = 0
         low_mask = int('1' * 35, 2)
