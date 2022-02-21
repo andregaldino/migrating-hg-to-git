@@ -398,12 +398,8 @@ class HTTPResponse(httplib.HTTPResponse):
     # modification from socket.py
 
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
-        extrakw = {}
-        if not pycompat.ispy3:
-            extrakw['strict'] = True
-            extrakw['buffering'] = True
         httplib.HTTPResponse.__init__(
-            self, sock, debuglevel=debuglevel, method=method, **extrakw
+            self, sock, debuglevel=debuglevel, method=method
         )
         self.fileno = sock.fileno
         self.code = None
