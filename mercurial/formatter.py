@@ -558,8 +558,7 @@ def reference_templatespec(ref, refargs=None):
 
 
 def literal_templatespec(tmpl):
-    if pycompat.ispy3:
-        assert not isinstance(tmpl, str), b'tmpl must not be a str'
+    assert not isinstance(tmpl, str), b'tmpl must not be a str'
     return templatespec(b'', tmpl, None)
 
 
