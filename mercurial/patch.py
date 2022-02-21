@@ -1259,7 +1259,7 @@ the hunk is left unchanged.
                     # Remove comment lines
                     patchfp = open(patchfn, 'rb')
                     ncpatchfp = stringio()
-                    for line in util.iterfile(patchfp):
+                    for line in patchfp:
                         line = util.fromnativeeol(line)
                         if not line.startswith(b'#'):
                             ncpatchfp.write(line)
@@ -2343,7 +2343,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files, similarity):
     ui.debug(b'Using external patch tool: %s\n' % cmd)
     fp = procutil.popen(cmd, b'rb')
     try:
-        for line in util.iterfile(fp):
+        for line in fp:
             line = line.rstrip()
             ui.note(line + b'\n')
             if line.startswith(b'patching file '):

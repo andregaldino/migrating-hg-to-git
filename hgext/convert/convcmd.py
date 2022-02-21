@@ -242,7 +242,7 @@ class converter(object):
         m = {}
         try:
             fp = open(path, b'rb')
-            for i, line in enumerate(util.iterfile(fp)):
+            for i, line in enumerate(fp):
                 line = line.splitlines()[0].rstrip()
                 if not line:
                     # Ignore blank lines

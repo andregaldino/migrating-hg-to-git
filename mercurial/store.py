@@ -661,7 +661,7 @@ class fncache(object):
         """make sure there is no empty string in entries"""
         if b'' in self.entries:
             fp.seek(0)
-            for n, line in enumerate(util.iterfile(fp)):
+            for n, line in enumerate(fp):
                 if not line.rstrip(b'\n'):
                     t = _(b'invalid entry in fncache, line %d') % (n + 1)
                     if warn:
