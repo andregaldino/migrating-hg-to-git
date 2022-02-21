@@ -40,7 +40,7 @@ class gitlfspointer(dict):
 
     def serialize(self):
         sortkeyfunc = lambda x: (x[0] != b'version', x)
-        items = sorted(pycompat.iteritems(self.validate()), key=sortkeyfunc)
+        items = sorted(self.validate().items(), key=sortkeyfunc)
         return b''.join(b'%s %s\n' % (k, v) for k, v in items)
 
     def oid(self):

@@ -399,7 +399,7 @@ def lfsfiles(context, mapping):
     def pointer(v):
         # In the file spec, version is first and the other keys are sorted.
         sortkeyfunc = lambda x: (x[0] != b'version', x)
-        items = sorted(pycompat.iteritems(pointers[v]), key=sortkeyfunc)
+        items = sorted(pointers[v].items(), key=sortkeyfunc)
         return util.sortdict(items)
 
     makemap = lambda v: {
