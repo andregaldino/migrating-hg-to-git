@@ -53,11 +53,8 @@ if '__pypy__' in sys.builtin_module_names:
     policy = b'cffi'
 
 # Environment variable can always force settings.
-if sys.version_info[0] >= 3:
-    if 'HGMODULEPOLICY' in os.environ:
-        policy = os.environ['HGMODULEPOLICY'].encode('utf-8')
-else:
-    policy = os.environ.get('HGMODULEPOLICY', policy)
+if 'HGMODULEPOLICY' in os.environ:
+    policy = os.environ['HGMODULEPOLICY'].encode('utf-8')
 
 
 def _importfrom(pkgname, modname):
