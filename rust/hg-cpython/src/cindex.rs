@@ -177,6 +177,20 @@ impl vcsgraph::graph::Graph for Index {
     }
 }
 
+impl vcsgraph::graph::RankedGraph for Index {
+    fn rank(
+        &self,
+        rev: Revision,
+    ) -> Result<vcsgraph::graph::Rank, vcsgraph::graph::GraphReadError> {
+        match unsafe {
+            (self.capi.fast_rank)(self.index.as_ptr(), rev as ssize_t)
+        } {
+            -1 => Err(vcsgraph::graph::GraphReadError::InconsistentGraphData),
+            rank => Ok(rank as usize),
+        }
+    }
+}
+
 impl RevlogIndex for Index {
     /// Note C return type is Py_ssize_t (hence signed), but we shall
     /// force it to unsigned, because it's a length
