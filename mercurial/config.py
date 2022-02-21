@@ -114,16 +114,15 @@ class config(object):
         return [(k, v[0]) for (k, v) in items]
 
     def set(self, section, item, value, source=b""):
-        if pycompat.ispy3:
-            assert not isinstance(
-                section, str
-            ), b'config section may not be unicode strings on Python 3'
-            assert not isinstance(
-                item, str
-            ), b'config item may not be unicode strings on Python 3'
-            assert not isinstance(
-                value, str
-            ), b'config values may not be unicode strings on Python 3'
+        assert not isinstance(
+            section, str
+        ), b'config section may not be unicode strings on Python 3'
+        assert not isinstance(
+            item, str
+        ), b'config item may not be unicode strings on Python 3'
+        assert not isinstance(
+            value, str
+        ), b'config values may not be unicode strings on Python 3'
         if section not in self:
             self._data[section] = util.cowsortdict()
         else:
