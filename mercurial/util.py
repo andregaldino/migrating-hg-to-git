@@ -188,7 +188,7 @@ if _dowarn:
     warnings.filterwarnings('default', '', DeprecationWarning, 'mercurial')
     warnings.filterwarnings('default', '', DeprecationWarning, 'hgext')
     warnings.filterwarnings('default', '', DeprecationWarning, 'hgext3rd')
-if _dowarn and pycompat.ispy3:
+if _dowarn:
     # silence warning emitted by passing user string to re.sub()
     warnings.filterwarnings(
         'ignore', 'bad escape', DeprecationWarning, 'mercurial'
