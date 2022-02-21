@@ -159,7 +159,7 @@ def _buildpackmeta(metadict):
     length limit is exceeded
     """
     metabuf = b''
-    for k, v in sorted(pycompat.iteritems((metadict or {}))):
+    for k, v in sorted((metadict or {}).items()):
         if len(k) != 1:
             raise error.ProgrammingError(b'packmeta: illegal key: %s' % k)
         if len(v) > 0xFFFE:
@@ -187,7 +187,7 @@ def buildpackmeta(metadict):
     and METAKEYFLAG will be dropped if its value is 0.
     """
     newmeta = {}
-    for k, v in pycompat.iteritems(metadict or {}):
+    for k, v in (metadict or {}).items():
         expectedtype = _metaitemtypes.get(k, (bytes,))
         if not isinstance(v, expectedtype):
             raise error.ProgrammingError(b'packmeta: wrong type of key %s' % k)
