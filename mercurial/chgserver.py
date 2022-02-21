@@ -408,22 +408,13 @@ class chgcmdserver(commandserver.server):
             # be unbuffered no matter if it is a tty or not.
             if fn == b'ferr':
                 newfp = fp
-            elif pycompat.ispy3:
+            else:
                 # On Python 3, the standard library doesn't offer line-buffered
                 # binary streams, so wrap/unwrap it.
                 if fp.isatty():
                     newfp = procutil.make_line_buffered(fp)
                 else:
                     newfp = procutil.unwrap_line_buffered(fp)
-            else:
-                # Python 2 uses the I/O streams provided by the C library, so
-                # make it line-buffered explicitly. Otherwise the default would
-                # be decided on first write(), where fout could be a pager.
-                if fp.isatty():
-                    bufsize = 1  # line buffered
-                else:
-                    bufsize = -1  # system default
-                newfp = os.fdopen(fp.fileno(), mode, bufsize)
             if newfp is not fp:
                 setattr(ui, fn, newfp)
             setattr(self, cn, newfp)
