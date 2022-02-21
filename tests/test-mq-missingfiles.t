@@ -5,10 +5,7 @@ future qrefresh.
 
   $ cat > writelines.py <<EOF
   > import sys
-  > if sys.version_info[0] >= 3:
-  >     encode = lambda x: x.encode('utf-8').decode('unicode_escape').encode('utf-8')
-  > else:
-  >     encode = lambda x: x.decode('string_escape')
+  > encode = lambda x: x.encode('utf-8').decode('unicode_escape').encode('utf-8')
   > path = sys.argv[1]
   > args = sys.argv[2:]
   > assert (len(args) % 2) == 0
