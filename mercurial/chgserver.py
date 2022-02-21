@@ -439,16 +439,13 @@ class chgcmdserver(commandserver.server):
         ui = self.ui
         for (ch, fp, fd), (cn, fn, mode) in zip(self._oldios, _iochannels):
             newfp = getattr(ui, fn)
-            # On Python 2, newfp and fp may be separate file objects associated
-            # with the same fd, so we must close newfp while it's associated
-            # with the client. Otherwise the new associated fd would be closed
-            # when newfp gets deleted. On Python 3, newfp is just a wrapper
-            # around fp even if newfp is not fp, so deleting newfp is safe.
-            if not (pycompat.ispy3 or newfp is fp):
+            # On Python 3, newfp is just a wrapper around fp even if newfp is
+            # not fp, so deleting newfp is safe.
+            if newfp is not fp:
                 newfp.close()
             # restore original fd: fp is open again
             try:
-                if (pycompat.ispy3 or newfp is fp) and 'w' in mode:
+                if newfp is fp and 'w' in mode:
                     # Discard buffered data which couldn't be flushed because
                     # of EPIPE. The data should belong to the current session
                     # and should never persist.
