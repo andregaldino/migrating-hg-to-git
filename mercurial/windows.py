@@ -225,7 +225,6 @@ class winstdout(object):
 
     def __init__(self, fp):
         self.fp = fp
-        self.throttle = not pycompat.ispy3 and _isatty(fp)
 
     def __getattr__(self, key):
         return getattr(self.fp, key)
@@ -238,17 +237,7 @@ class winstdout(object):
 
     def write(self, s):
         try:
-            if not self.throttle:
-                return self.fp.write(s)
-            # This is workaround for "Not enough space" error on
-            # writing large size of data to console.
-            limit = 16000
-            l = len(s)
-            start = 0
-            while start < l:
-                end = start + limit
-                self.fp.write(s[start:end])
-                start = end
+            return self.fp.write(s)
         except IOError as inst:
             if inst.errno != 0 and not win32.lasterrorwaspipeerror(inst):
                 raise
