@@ -93,8 +93,13 @@ Initialize repository
   $ cd ..
 
 
+#if no-windows
+
 Test streaming from/to repository without a store:
 ==================================================
+
+This is skipped Windows needs dot-encode to handle some of the file in this
+tests, and dot-encode need the store enabled.
 
   $ hg clone --pull --config format.usestore=no server server-no-store
   requesting all changes
@@ -149,12 +154,14 @@ no-store → store cloning
 
 
   $ killdaemons.py
+  $ rm hg-*.pid errors-*.txt
+
+#endif
 
 
 Test streaming from/to repository without a fncache
 ===================================================
 
-  $ rm hg-*.pid errors-*.txt
   $ hg clone --pull --config format.usefncache=no server server-no-fncache
   requesting all changes
   adding changesets
