@@ -25,6 +25,7 @@ from . import (
     mergestate as mergestatemod,
     obsutil,
     pathutil,
+    policy,
     pycompat,
     scmutil,
     subrepoutil,
@@ -1764,9 +1765,9 @@ def _advertisefsmonitor(repo, num_gets, p1node):
         b'fsmonitor', b'warn_update_file_count'
     )
     # avoid cycle dirstate -> sparse -> merge -> dirstate
-    from . import dirstate
+    dirstate_rustmod = policy.importrust("dirstate")
 
-    if dirstate.rustmod is not None:
+    if dirstate_rustmod is not None:
         # When using rust status, fsmonitor becomes necessary at higher sizes
         fsmonitorthreshold = repo.ui.configint(
             b'fsmonitor',

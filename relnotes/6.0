@@ -1,3 +1,11 @@
+= Mercurial 6.0.3 =
+
+  * Fix an infinite loop in edge cases of the pure Python dirstate-v2 packer
+  * Fix a small race condition with deleted files in Rust-augmented status
+  * Small improvement to Python 3.11 compatibility
+  * Fixed some typos in help messages that caused missing sections
+  * Centos -> Rockylinux packaging
+
 = Mercurial 6.0.2 =
 
   * Fix `hg incoming` and `hg outgoing` with remote subrepos on Windows
