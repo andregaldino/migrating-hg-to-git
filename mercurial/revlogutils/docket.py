@@ -25,7 +25,6 @@ from .. import (
     encoding,
     error,
     node,
-    pycompat,
     util,
 )
 
@@ -65,10 +64,7 @@ if stable_docket_file:
             low_part = (int_seed & low_mask) << 28
             int_seed = high_part + low_part + i
         r = random.Random()
-        if pycompat.ispy3:
-            r.seed(int_seed, version=1)
-        else:
-            r.seed(int_seed)
+        r.seed(int_seed, version=1)
         # once we drop python 3.8 support we can simply use r.randbytes
         raw = r.getrandbits(id_size * 4)
         assert id_size == 8
