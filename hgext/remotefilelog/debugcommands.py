@@ -210,7 +210,7 @@ def verifyremotefilelog(ui, path, **opts):
                 continue
             filepath = os.path.join(root, file)
             size, firstnode, mapping = parsefileblob(filepath, decompress)
-            for p1, p2, linknode, copyfrom in pycompat.itervalues(mapping):
+            for p1, p2, linknode, copyfrom in mapping.values():
                 if linknode == sha1nodeconstants.nullid:
                     actualpath = os.path.relpath(root, path)
                     key = fileserverclient.getcachekey(

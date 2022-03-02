@@ -2117,9 +2117,7 @@ class ui(object):
         """
         if not self._loggers:
             return
-        activeloggers = [
-            l for l in pycompat.itervalues(self._loggers) if l.tracked(event)
-        ]
+        activeloggers = [l for l in self._loggers.values() if l.tracked(event)]
         if not activeloggers:
             return
         msg = msgfmt % msgargs

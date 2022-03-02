@@ -1342,11 +1342,7 @@ the hunk is left unchanged.
                 fixoffset += chunk.removed - chunk.added
     return (
         sum(
-            [
-                h
-                for h in pycompat.itervalues(applied)
-                if h[0].special() or len(h) > 1
-            ],
+            [h for h in applied.values() if h[0].special() or len(h) > 1],
             [],
         ),
         {},

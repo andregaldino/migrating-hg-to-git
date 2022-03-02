@@ -13,7 +13,6 @@ from .node import (
 from . import (
     error,
     filemerge,
-    pycompat,
     util,
 )
 from .utils import hashutil
@@ -467,7 +466,7 @@ class _mergestate_base(object):
         """return counts for updated, merged and removed files in this
         session"""
         updated, merged, removed = 0, 0, 0
-        for r, action in pycompat.itervalues(self._results):
+        for r, action in self._results.values():
             if r is None:
                 updated += 1
             elif r == 0:

@@ -854,7 +854,7 @@ def _pushb2checkphases(pushop, bundler):
         checks = {p: [] for p in phases.allphases}
         checks[phases.public].extend(pushop.remotephases.publicheads)
         checks[phases.draft].extend(pushop.remotephases.draftroots)
-        if any(pycompat.itervalues(checks)):
+        if any(checks.values()):
             for phase in checks:
                 checks[phase].sort()
             checkdata = phases.binaryencode(checks)

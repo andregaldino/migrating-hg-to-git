@@ -119,7 +119,7 @@ class BranchMapCache(object):
         clbranchinfo = cl.branchinfo
         rbheads = []
         closed = set()
-        for bheads in pycompat.itervalues(remotebranchmap):
+        for bheads in remotebranchmap.values():
             rbheads += bheads
             for h in bheads:
                 r = clrev(h)
@@ -406,7 +406,7 @@ class branchcache(object):
     def iterheads(self):
         """returns all the heads"""
         self._verifyall()
-        return pycompat.itervalues(self._entries)
+        return self._entries.values()
 
     def copy(self):
         """return an deep copy of the branchcache object"""
