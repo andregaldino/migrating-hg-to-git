@@ -10,7 +10,6 @@ from mercurial.i18n import _
 
 from mercurial import (
     error,
-    pycompat,
     util,
 )
 
@@ -52,9 +51,8 @@ class remotestore(basestore.basestore):
     def exists(self, hashes):
         return {
             h: s == 0
-            for (h, s) in pycompat.iteritems(
-                self._stat(hashes)
-            )  # dict-from-generator
+            for (h, s) in self._stat(hashes).items()
+            # dict-from-generator
         }
 
     def sendfile(self, filename, hash):
