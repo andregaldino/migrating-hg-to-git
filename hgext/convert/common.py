@@ -10,6 +10,7 @@ import base64
 import datetime
 import errno
 import os
+import pickle
 import re
 import shlex
 import subprocess
@@ -25,7 +26,6 @@ from mercurial import (
 )
 from mercurial.utils import procutil
 
-pickle = util.pickle
 propertycache = util.propertycache
 
 

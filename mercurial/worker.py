@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 import errno
 import os
+import pickle
 import signal
 import sys
 import threading
@@ -27,7 +28,6 @@ from . import (
     error,
     pycompat,
     scmutil,
-    util,
 )
 
 
@@ -256,7 +256,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
                         os.close(w)
                     os.close(rfd)
                     for result in func(*(staticargs + (pargs,))):
-                        os.write(wfd, util.pickle.dumps(result))
+                        os.write(wfd, pickle.dumps(result))
                     return 0
 
                 ret = scmutil.callcatch(ui, workerfunc)
@@ -292,7 +292,7 @@ def _posixworker(ui, func, staticargs, args, hasretval):
         while openpipes > 0:
             for key, events in selector.select():
                 try:
-                    res = util.pickle.load(_blockingreader(key.fileobj))
+                    res = pickle.load(_blockingreader(key.fileobj))
                     if hasretval and res[0]:
                         retval.update(res[1])
                     else:

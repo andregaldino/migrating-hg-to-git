@@ -202,6 +202,7 @@ except ImportError:
 
 import functools
 import os
+import pickle
 import struct
 
 from mercurial.i18n import _
@@ -245,7 +246,6 @@ from mercurial.utils import (
     urlutil,
 )
 
-pickle = util.pickle
 cmdtable = {}
 command = registrar.command(cmdtable)
 

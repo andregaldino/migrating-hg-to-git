@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import functools
 import os
+import pickle
 import re
 
 from mercurial.i18n import _
@@ -24,8 +25,6 @@ from mercurial.utils import (
     procutil,
     stringutil,
 )
-
-pickle = util.pickle
 
 
 class logentry(object):

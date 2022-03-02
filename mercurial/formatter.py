@@ -110,6 +110,7 @@ from __future__ import absolute_import, print_function
 import contextlib
 import itertools
 import os
+import pickle
 
 from .i18n import _
 from .node import (
@@ -132,8 +133,6 @@ from .utils import (
     dateutil,
     stringutil,
 )
-
-pickle = util.pickle
 
 
 def isprintable(obj):

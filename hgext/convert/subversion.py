@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import codecs
 import locale
 import os
+import pickle
 import re
 import xml.dom.minidom
 
@@ -26,7 +27,6 @@ from mercurial.utils import (
 
 from . import common
 
-pickle = util.pickle
 stringio = util.stringio
 propertycache = util.propertycache
 urlerr = util.urlerr

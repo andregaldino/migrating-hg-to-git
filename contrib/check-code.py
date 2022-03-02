@@ -446,8 +446,6 @@ commonpypats = [
         ),
         (r'^import urlparse', "don't use urlparse, use util.urlreq"),
         (r'^import xmlrpclib', "don't use xmlrpclib, use util.xmlrpclib"),
-        (r'^import cPickle', "don't use cPickle, use util.pickle"),
-        (r'^import pickle', "don't use pickle, use util.pickle"),
         (r'^import httplib', "don't use httplib, use util.httplib"),
         (r'^import BaseHTTPServer', "use util.httpserver instead"),
         (

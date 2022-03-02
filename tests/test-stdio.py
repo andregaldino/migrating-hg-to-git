@@ -7,6 +7,7 @@ from __future__ import absolute_import
 import contextlib
 import errno
 import os
+import pickle
 import signal
 import subprocess
 import sys
@@ -336,7 +337,7 @@ class TestStdio(unittest.TestCase):
             proc.stdin.close()
 
         def post_child_check():
-            err = util.pickle.load(err_f)
+            err = pickle.load(err_f)
             self.assertEqual(err.errno, errno.EPIPE)
             self.assertEqual(err.strerror, "Broken pipe")
 
