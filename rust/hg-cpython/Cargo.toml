@@ -12,12 +12,10 @@ crate-type = ["cdylib"]
 default = ["python3"]
 
 # Features to build an extension module:
-python27 = ["cpython/python27-sys", "cpython/extension-module-2-7"]
 python3 = ["cpython/python3-sys", "cpython/extension-module"]
 
-# Enable one of these features to build a test executable linked to libpython:
-# e.g. cargo test --no-default-features --features python27-bin
-python27-bin = ["cpython/python27-sys"]
+# Enable this feature to build a test executable linked to libpython:
+# e.g. cargo test --no-default-features --features python3-bin
 python3-bin = ["cpython/python3-sys"]
 
 [dependencies]
@@ -29,4 +27,3 @@ log = "0.4.8"
 env_logger = "0.7.1"
 stable_deref_trait = "1.2.0"
 vcsgraph = "0.2.0"
-
