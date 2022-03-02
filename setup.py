@@ -741,12 +741,9 @@ class buildhgexe(build_ext):
 
                 # Copy the pythonXY.dll next to the binary so that it runs
                 # without tampering with PATH.
-                fsdecode = lambda x: x
-                if sys.version_info[0] >= 3:
-                    fsdecode = os.fsdecode
                 dest = os.path.join(
                     os.path.dirname(self.hgtarget),
-                    fsdecode(dllbasename),
+                    os.fsdecode(dllbasename),
                 )
 
                 if not os.path.exists(dest):
@@ -756,7 +753,7 @@ class buildhgexe(build_ext):
                 # TODO: also handle the MSYS flavor
                 if sys.version_info[0] >= 3:
                     python_x = os.path.join(
-                        os.path.dirname(fsdecode(buf.value)),
+                        os.path.dirname(os.fsdecode(buf.value)),
                         "python3.dll",
                     )
 
