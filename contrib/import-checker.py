@@ -24,6 +24,7 @@ import testparseutil
 allowsymbolimports = (
     '__future__',
     'breezy',
+    'concurrent',
     'hgclient',
     'mercurial',
     'mercurial.hgweb.common',
