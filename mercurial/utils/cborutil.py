@@ -7,7 +7,6 @@
 
 
 import struct
-import sys
 
 
 # Very short very of RFC 7049...
@@ -246,16 +245,8 @@ class CBORDecodeError(Exception):
     """Represents an error decoding CBOR."""
 
 
-if sys.version_info.major >= 3:
-
-    def _elementtointeger(b, i):
-        return b[i]
-
-
-else:
-
-    def _elementtointeger(b, i):
-        return ord(b[i])
+def _elementtointeger(b, i):
+    return b[i]
 
 
 STRUCT_BIG_UBYTE = struct.Struct('>B')
