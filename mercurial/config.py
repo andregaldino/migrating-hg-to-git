@@ -14,7 +14,6 @@ from .pycompat import getattr
 from . import (
     encoding,
     error,
-    pycompat,
     util,
 )
 
@@ -110,7 +109,7 @@ class config(object):
         return sorted(self._data.keys())
 
     def items(self, section):
-        items = pycompat.iteritems(self._data.get(section, {}))
+        items = self._data.get(section, {}).items()
         return [(k, v[0]) for (k, v) in items]
 
     def set(self, section, item, value, source=b""):
