@@ -39,7 +39,6 @@ from mercurial import (
     merge as mergemod,
     mergestate,
     phases,
-    pycompat,
     util,
 )
 from mercurial.utils import dateutil
@@ -423,7 +422,7 @@ class mercurial_sink(common.converter_sink):
         tagparent = tagparent or self.repo.nullid
 
         oldlines = set()
-        for branch, heads in pycompat.iteritems(self.repo.branchmap()):
+        for branch, heads in self.repo.branchmap().items():
             for h in heads:
                 if b'.hgtags' in self.repo[h]:
                     oldlines.update(
