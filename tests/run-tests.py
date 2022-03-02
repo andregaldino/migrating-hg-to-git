@@ -72,6 +72,13 @@ import unittest
 import uuid
 import xml.dom.minidom as minidom
 
+if sys.version_info < (3, 5, 0):
+    print(
+        '%s is only supported on Python 3.5+, not %s'
+        % (sys.argv[0], '.'.join(str(v) for v in sys.version_info[:3]))
+    )
+    sys.exit(70)  # EX_SOFTWARE from `man 3 sysexit`
+
 WINDOWS = os.name == r'nt'
 shellquote = shlex.quote
 
@@ -143,12 +150,6 @@ if pygmentspresent:
 
 origenviron = os.environ.copy()
 
-if sys.version_info < (3, 5, 0):
-    print(
-        '%s is only supported on Python 3.5+, not %s'
-        % (sys.argv[0], '.'.join(str(v) for v in sys.version_info[:3]))
-    )
-    sys.exit(70)  # EX_SOFTWARE from `man 3 sysexit`
 
 xrange = range  # we use xrange in one place, and we'd rather not use range
 
