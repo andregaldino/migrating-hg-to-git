@@ -1249,14 +1249,6 @@ for name in os.listdir(os.path.join('mercurial', 'templates')):
     ):
         packages.append('mercurial.templates.%s' % name)
 
-if sys.version_info[0] == 2:
-    packages.extend(
-        [
-            'mercurial.thirdparty.concurrent',
-            'mercurial.thirdparty.concurrent.futures',
-        ]
-    )
-
 if 'HG_PY2EXE_EXTRA_INSTALL_PACKAGES' in os.environ:
     # py2exe can't cope with namespace packages very well, so we have to
     # install any hgext3rd.* extensions that we want in the final py2exe
