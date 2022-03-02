@@ -22,7 +22,6 @@ supportedpy = ','.join(
 import sys, platform
 import sysconfig
 
-printf = eval('print')
 libdir_escape = 'unicode_escape'
 
 
@@ -51,7 +50,7 @@ Please make sure that your Python installation was compiled against an OpenSSL
 version enabling these features (likely this requires the OpenSSL version to
 be at least 1.0.1).
 """
-    printf(error, file=sys.stderr)
+    print(error, file=sys.stderr)
     sys.exit(1)
 
 if sys.version_info[0] >= 3:
@@ -236,8 +235,8 @@ class hgcommand(object):
         returncode, out, err = runcmd(cmd, self.env)
         err = filterhgerr(err)
         if err or returncode != 0:
-            printf("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
-            printf(err, file=sys.stderr)
+            print("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
+            print(err, file=sys.stderr)
             return b''
         return out
 
@@ -470,7 +469,7 @@ class hgdist(Distribution):
             if hgrustext != 'cpython' and hgrustext is not None:
                 if hgrustext:
                     msg = 'unknown HGWITHRUSTEXT value: %s' % hgrustext
-                    printf(msg, file=sys.stderr)
+                    print(msg, file=sys.stderr)
                 hgrustext = None
             self.rust = hgrustext is not None
             self.no_rust = not self.rust
