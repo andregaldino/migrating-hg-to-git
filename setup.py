@@ -1663,9 +1663,7 @@ if os.name == 'nt':
 if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
     version = runcmd(['/usr/bin/xcodebuild', '-version'], {})[1].splitlines()
     if version:
-        version = version[0]
-        if sys.version_info[0] == 3:
-            version = version.decode('utf-8')
+        version = version[0].decode('utf-8')
         xcode4 = version.startswith('Xcode') and StrictVersion(
             version.split()[1]
         ) >= StrictVersion('4.0')
