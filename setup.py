@@ -13,15 +13,7 @@ import os
 # bug link: https://bugs.python.org/issue25270
 supportedpy = ','.join(
     [
-        '>=2.7.4',
-        '!=3.0.*',
-        '!=3.1.*',
-        '!=3.2.*',
-        '!=3.3.*',
-        '!=3.4.*',
-        '!=3.5.0',
-        '!=3.5.1',
-        '!=3.5.2',
+        '>=3.5.3',
         '!=3.6.0',
         '!=3.6.1',
     ]
@@ -36,7 +28,6 @@ if sys.version_info[0] >= 3:
 
     def sysstr(s):
         return s.decode('latin-1')
-
 
 else:
     libdir_escape = 'string_escape'
