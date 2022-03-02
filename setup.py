@@ -1380,13 +1380,9 @@ class RustExtension(Extension):
 
         cargocmd = ['cargo', 'rustc', '--release']
 
-        feature_flags = []
+        feature_flags = ['python3']
 
         cargocmd.append('--no-default-features')
-        if sys.version_info[0] == 2:
-            feature_flags.append('python27')
-        elif sys.version_info[0] == 3:
-            feature_flags.append('python3')
 
         rust_features = env.get("HG_RUST_FEATURES")
         if rust_features:
