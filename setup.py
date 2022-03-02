@@ -22,8 +22,6 @@ supportedpy = ','.join(
 import sys, platform
 import sysconfig
 
-libdir_escape = 'unicode_escape'
-
 
 def sysstr(s):
     return s.decode('latin-1')
@@ -1116,7 +1114,7 @@ class hginstallscripts(install_scripts):
                 )
                 continue
 
-            data = data.replace(b'@LIBDIR@', libdir.encode(libdir_escape))
+            data = data.replace(b'@LIBDIR@', libdir.encode('unicode_escape'))
             with open(outfile, 'wb') as fp:
                 fp.write(data)
 
