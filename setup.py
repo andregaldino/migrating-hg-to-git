@@ -51,11 +51,7 @@ be at least 1.0.1).
     print(error, file=sys.stderr)
     sys.exit(1)
 
-if sys.version_info[0] >= 3:
-    DYLIB_SUFFIX = sysconfig.get_config_vars()['EXT_SUFFIX']
-else:
-    # deprecated in Python 3
-    DYLIB_SUFFIX = sysconfig.get_config_vars()['SO']
+DYLIB_SUFFIX = sysconfig.get_config_vars()['EXT_SUFFIX']
 
 # Solaris Python packaging brain damage
 try:
