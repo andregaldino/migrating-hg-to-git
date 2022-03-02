@@ -22,23 +22,12 @@ supportedpy = ','.join(
 import sys, platform
 import sysconfig
 
-if sys.version_info[0] >= 3:
-    printf = eval('print')
-    libdir_escape = 'unicode_escape'
+printf = eval('print')
+libdir_escape = 'unicode_escape'
 
-    def sysstr(s):
-        return s.decode('latin-1')
 
-else:
-    libdir_escape = 'string_escape'
-
-    def printf(*args, **kwargs):
-        f = kwargs.get('file', sys.stdout)
-        end = kwargs.get('end', '\n')
-        f.write(b' '.join(args) + end)
-
-    def sysstr(s):
-        return s
+def sysstr(s):
+    return s.decode('latin-1')
 
 
 import ssl
