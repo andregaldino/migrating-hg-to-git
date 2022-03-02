@@ -16,6 +16,7 @@ import sys
 import time
 import weakref
 
+from concurrent import futures
 from .i18n import _
 from .node import (
     bin,
@@ -278,7 +279,7 @@ class localcommandexecutor(object):
         # method on the peer and return a resolved future.
         fn = getattr(self._peer, pycompat.sysstr(command))
 
-        f = pycompat.futures.Future()
+        f = futures.Future()
 
         try:
             result = fn(**pycompat.strkwargs(args))

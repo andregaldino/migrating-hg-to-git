@@ -14,6 +14,7 @@ import os
 import socket
 import struct
 
+from concurrent import futures
 from .i18n import _
 from .pycompat import getattr
 from . import (
@@ -538,12 +539,12 @@ class httppeer(wireprotov1peer.wirepeer):
         raise exception
 
 
-class queuedcommandfuture(pycompat.futures.Future):
+class queuedcommandfuture(futures.Future):
     """Wraps result() on command futures to trigger submission on call."""
 
     def result(self, timeout=None):
         if self.done():
-            return pycompat.futures.Future.result(self, timeout)
+            return futures.Future.result(self, timeout)
 
         self._peerexecutor.sendcommands()
 

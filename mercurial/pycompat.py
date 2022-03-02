@@ -35,8 +35,6 @@ if not ispy3:
     import SocketServer as socketserver
     import xmlrpclib
 
-    from .thirdparty.concurrent import futures
-
     def future_set_exception_info(f, exc_info):
         f.set_exception_info(*exc_info)
 
@@ -45,7 +43,6 @@ if not ispy3:
 
 else:
     import builtins
-    import concurrent.futures as futures
     import http.cookiejar as cookielib
     import http.client as httplib
     import pickle
