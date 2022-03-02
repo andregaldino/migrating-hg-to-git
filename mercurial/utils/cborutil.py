@@ -9,7 +9,6 @@
 import struct
 import sys
 
-from .. import pycompat
 
 # Very short very of RFC 7049...
 #
@@ -207,7 +206,7 @@ def streamencodenone(v):
 STREAM_ENCODERS = {
     bytes: streamencodebytestring,
     int: streamencodeint,
-    pycompat.long: streamencodeint,
+    int: streamencodeint,
     list: streamencodearray,
     tuple: streamencodearray,
     dict: streamencodemap,

@@ -150,7 +150,7 @@ class monotone_source(common.converter_source, common.commandline):
                 raise error.Abort(_(b'bad mtn packet - no end of packet size'))
             lengthstr += read
         try:
-            length = pycompat.long(lengthstr[:-1])
+            length = int(lengthstr[:-1])
         except TypeError:
             raise error.Abort(
                 _(b'bad mtn packet - bad packet size %s') % lengthstr

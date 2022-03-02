@@ -141,7 +141,7 @@ def isprintable(obj):
     Returns False if the object is unsupported or must be pre-processed by
     formatdate(), formatdict(), or formatlist().
     """
-    return isinstance(obj, (type(None), bool, int, pycompat.long, float, bytes))
+    return isinstance(obj, (type(None), bool, int, int, float, bytes))
 
 
 class _nullconverter(object):

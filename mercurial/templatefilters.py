@@ -334,7 +334,7 @@ def json(obj, paranoid=True):
         return b'false'
     elif obj is True:
         return b'true'
-    elif isinstance(obj, (int, pycompat.long, float)):
+    elif isinstance(obj, (int, int, float)):
         return pycompat.bytestr(obj)
     elif isinstance(obj, bytes):
         return b'"%s"' % encoding.jsonescape(obj, paranoid=paranoid)

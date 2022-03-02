@@ -175,8 +175,8 @@ def _buildpackmeta(metadict):
 
 
 _metaitemtypes = {
-    constants.METAKEYFLAG: (int, pycompat.long),
-    constants.METAKEYSIZE: (int, pycompat.long),
+    constants.METAKEYFLAG: (int, int),
+    constants.METAKEYSIZE: (int, int),
 }
 
 
