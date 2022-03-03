@@ -151,12 +151,9 @@ testpy-%:
         $(MAKE) -f $(HGROOT)/contrib/Makefile.python PYTHONVER=$* PREFIX=$(HGPYTHONS)/$* python )
 	cd tests && $(HGPYTHONS)/$*/bin/python run-tests.py $(TESTFLAGS)
 
-rust-tests: py_feature = $(shell $(PYTHON) -c \
- 'import sys; print(["python27-bin", "python3-bin"][sys.version_info[0] >= 3])')
 rust-tests:
 	cd $(HGROOT)/rust/hg-cpython \
-		&& $(CARGO) test --quiet --all \
-			--no-default-features --features "$(py_feature) $(HG_RUST_FEATURES)"
+		&& $(CARGO) test --quiet --all --features "$(HG_RUST_FEATURES)"
 
 check-code:
 	hg manifest | xargs python contrib/check-code.py

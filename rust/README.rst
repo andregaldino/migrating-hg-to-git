@@ -40,8 +40,8 @@ binding crates like a hypothetical ``HGWITHRUSTEXT=hpy``.
 Special features
 ================
 
-You might want to check the `features` section in ``hg-cpython/Cargo.toml``.
-It may contain features that might be interesting to try out.
+In the future, compile-time opt-ins may be added
+to the `features` section in ``hg-cpython/Cargo.toml``.
 
 To use features from the Makefile, use the `HG_RUST_FEATURES` environment
 variable: for instance `HG_RUST_FEATURES="some-feature other-feature"`

@@ -1380,15 +1380,9 @@ class RustExtension(Extension):
 
         cargocmd = ['cargo', 'rustc', '--release']
 
-        feature_flags = ['python3']
-
-        cargocmd.append('--no-default-features')
-
         rust_features = env.get("HG_RUST_FEATURES")
         if rust_features:
-            feature_flags.append(rust_features)
-
-        cargocmd.extend(('--features', " ".join(feature_flags)))
+            cargocmd.extend(('--features', rust_features))
 
         cargocmd.append('--')
         if sys.platform == 'darwin':

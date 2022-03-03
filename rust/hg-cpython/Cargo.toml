@@ -8,18 +8,8 @@ edition = "2018"
 name='rusthg'
 crate-type = ["cdylib"]
 
-[features]
-default = ["python3"]
-
-# Features to build an extension module:
-python3 = ["cpython/python3-sys", "cpython/extension-module"]
-
-# Enable this feature to build a test executable linked to libpython:
-# e.g. cargo test --no-default-features --features python3-bin
-python3-bin = ["cpython/python3-sys"]
-
 [dependencies]
-cpython = { version = "0.7.0", default-features = false }
+cpython = { version = "0.7.0", features = ["extension-module"] }
 crossbeam-channel = "0.4"
 hg-core = { path = "../hg-core"}
 libc = "0.2"
