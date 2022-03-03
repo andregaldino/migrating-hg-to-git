@@ -46,8 +46,7 @@ _jsonescapeu8fast = charencode.jsonescapeu8fast
 
 _sysstr = pycompat.sysstr
 
-if pycompat.ispy3:
-    unichr = chr
+unichr = chr
 
 # These unicode characters are ignored by HFS+ (Apple Technote 1150,
 # "Unicode Subtleties"), so we need to ignore them in some places for
@@ -78,10 +77,8 @@ def hfsignoreclean(s):
 
 # encoding.environ is provided read-only, which may not be used to modify
 # the process environment
-_nativeenviron = not pycompat.ispy3 or os.supports_bytes_environ
-if not pycompat.ispy3:
-    environ = os.environ  # re-exports
-elif _nativeenviron:
+_nativeenviron = os.supports_bytes_environ
+if _nativeenviron:
     environ = os.environb  # re-exports
 else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
@@ -98,7 +95,7 @@ _encodingrewrites = {
 # cp65001 is a Windows variant of utf-8, which isn't supported on Python 2.
 # No idea if it should be rewritten to the canonical name 'utf-8' on Python 3.
 # https://bugs.python.org/issue13216
-if pycompat.iswindows and not pycompat.ispy3:
+if pycompat.iswindows:
     _encodingrewrites[b'cp65001'] = b'utf-8'
 
 try:
@@ -270,21 +267,9 @@ def unimethod(bytesfunc):
 # converter functions between native str and byte string. use these if the
 # character encoding is not aware (e.g. exception message) or is known to
 # be locale dependent (e.g. date formatting.)
-if pycompat.ispy3:
-    strtolocal = unitolocal
-    strfromlocal = unifromlocal
-    strmethod = unimethod
-else:
-
-    def strtolocal(s):
-        # type: (str) -> bytes
-        return s  # pytype: disable=bad-return-type
-
-    def strfromlocal(s):
-        # type: (bytes) -> str
-        return s  # pytype: disable=bad-return-type
-
-    strmethod = pycompat.identity
+strtolocal = unitolocal
+strfromlocal = unifromlocal
+strmethod = unimethod
 
 
 def lower(s):
@@ -344,7 +329,7 @@ def upperfallback(s):
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
-    if pycompat.iswindows and pycompat.ispy3:
+    if pycompat.iswindows:
 
         class WindowsEnviron(dict):
             """`os.environ` normalizes environment variables to uppercase on windows"""
@@ -360,36 +345,34 @@ if not _nativeenviron:
 
 DRIVE_RE = re.compile(b'^[a-z]:')
 
-if pycompat.ispy3:
-    # os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
-    # returns bytes.
-    if pycompat.iswindows:
-        # Python 3 on Windows issues a DeprecationWarning about using the bytes
-        # API when os.getcwdb() is called.
-        #
-        # Additionally, py3.8+ uppercases the drive letter when calling
-        # os.path.realpath(), which is used on ``repo.root``.  Since those
-        # strings are compared in various places as simple strings, also call
-        # realpath here.  See https://bugs.python.org/issue40368
-        #
-        # However this is not reliable, so lets explicitly make this drive
-        # letter upper case.
-        #
-        # note: we should consider dropping realpath here since it seems to
-        # change the semantic of `getcwd`.
+# os.getcwd() on Python 3 returns string, but it has os.getcwdb() which
+# returns bytes.
+if pycompat.iswindows:
+    # Python 3 on Windows issues a DeprecationWarning about using the bytes
+    # API when os.getcwdb() is called.
+    #
+    # Additionally, py3.8+ uppercases the drive letter when calling
+    # os.path.realpath(), which is used on ``repo.root``.  Since those
+    # strings are compared in various places as simple strings, also call
+    # realpath here.  See https://bugs.python.org/issue40368
+    #
+    # However this is not reliable, so lets explicitly make this drive
+    # letter upper case.
+    #
+    # note: we should consider dropping realpath here since it seems to
+    # change the semantic of `getcwd`.
 
-        def getcwd():
-            cwd = os.getcwd()  # re-exports
-            cwd = os.path.realpath(cwd)
-            cwd = strtolocal(cwd)
-            if DRIVE_RE.match(cwd):
-                cwd = cwd[0:1].upper() + cwd[1:]
-            return cwd
+    def getcwd():
+        cwd = os.getcwd()  # re-exports
+        cwd = os.path.realpath(cwd)
+        cwd = strtolocal(cwd)
+        if DRIVE_RE.match(cwd):
+            cwd = cwd[0:1].upper() + cwd[1:]
+        return cwd
 
-    else:
-        getcwd = os.getcwdb  # re-exports
+
 else:
-    getcwd = os.getcwd  # re-exports
+    getcwd = os.getcwdb  # re-exports
 
 # How to treat ambiguous-width characters. Set to 'wide' to treat as wide.
 _wide = _sysstr(
@@ -600,10 +583,7 @@ def jsonescape(s, paranoid=False):
 
 # We need to decode/encode U+DCxx codes transparently since invalid UTF-8
 # bytes are mapped to that range.
-if pycompat.ispy3:
-    _utf8strict = r'surrogatepass'
-else:
-    _utf8strict = r'strict'
+_utf8strict = r'surrogatepass'
 
 _utf8len = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 4]
 
