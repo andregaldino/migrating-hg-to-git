@@ -5,17 +5,11 @@
 # 'python setup.py --help' for more options
 import os
 
-# Mercurial will never work on Python 3 before 3.5 due to a lack
-# of % formatting on bytestrings, and can't work on 3.6.0 or 3.6.1
-# due to a bug in % formatting in bytestrings.
-# We cannot support Python 3.5.0, 3.5.1, 3.5.2 because of bug in
-# codecs.escape_encode() where it raises SystemError on empty bytestring
-# bug link: https://bugs.python.org/issue25270
+# Mercurial can't work on 3.6.0 or 3.6.1 due to a bug in % formatting
+# in bytestrings.
 supportedpy = ','.join(
     [
-        '>=3.5.3',
-        '!=3.6.0',
-        '!=3.6.1',
+        '>=3.6.2',
     ]
 )
 
