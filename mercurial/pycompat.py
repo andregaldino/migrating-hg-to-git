@@ -10,13 +10,21 @@ This contains aliases to hide python version-specific details from the core.
 
 from __future__ import absolute_import
 
+import builtins
+import concurrent.futures as futures
 import getopt
+import http.client as httplib
+import http.cookiejar as cookielib
 import inspect
 import json
 import os
+import pickle
+import queue
 import shlex
+import socketserver
 import sys
 import tempfile
+import xmlrpc.client as xmlrpclib
 
 ispy3 = sys.version_info[0] >= 3
 ispypy = '__pypy__' in sys.builtin_module_names
@@ -27,33 +35,12 @@ if not globals():  # hide this from non-pytype users
 
     TYPE_CHECKING = typing.TYPE_CHECKING
 
-if not ispy3:
-    import cookielib
-    import cPickle as pickle
-    import httplib
-    import Queue as queue
-    import SocketServer as socketserver
-    import xmlrpclib
 
-    def future_set_exception_info(f, exc_info):
-        f.set_exception_info(*exc_info)
+def future_set_exception_info(f, exc_info):
+    f.set_exception(exc_info[0])
 
-    # this is close enough for our usage
-    FileNotFoundError = OSError
 
-else:
-    import builtins
-    import http.cookiejar as cookielib
-    import http.client as httplib
-    import pickle
-    import queue as queue
-    import socketserver
-    import xmlrpc.client as xmlrpclib
-
-    def future_set_exception_info(f, exc_info):
-        f.set_exception(exc_info[0])
-
-    FileNotFoundError = builtins.FileNotFoundError
+FileNotFoundError = builtins.FileNotFoundError
 
 
 def identity(a):
