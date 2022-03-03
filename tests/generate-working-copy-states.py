@@ -29,7 +29,6 @@
 # $ hg forget *_*_*-untracked
 # $ rm *_*_missing-*
 
-from __future__ import absolute_import, print_function
 
 import os
 import sys

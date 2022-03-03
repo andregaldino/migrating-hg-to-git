@@ -34,7 +34,6 @@ Typically you'll want to place the path to the named pipe in the
 HGCATAPULTSERVERPIPE environment variable, which both run-tests and hg
 understand. To trace *only* run-tests, use HGTESTCATAPULTSERVERPIPE instead.
 """
-from __future__ import absolute_import, print_function
 
 import argparse
 import json

@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''Overridden Mercurial commands and functions for the largefiles extension'''
-from __future__ import absolute_import
 
 import copy
 import os

@@ -14,7 +14,6 @@ For more information:
 https://mercurial-scm.org/wiki/RebaseExtension
 '''
 
-from __future__ import absolute_import
 
 import errno
 import os

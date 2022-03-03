@@ -5,7 +5,6 @@
 
 '''commands to sign and verify changesets'''
 
-from __future__ import absolute_import
 
 import binascii
 import os

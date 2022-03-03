@@ -8,7 +8,6 @@
 # This module is for handling Breezy imports or `brz`, but it's also compatible
 # with Bazaar or `bzr`, that was formerly known as Bazaar-NG;
 # it cannot access `bar` repositories, but they were never used very much.
-from __future__ import absolute_import
 
 import os
 

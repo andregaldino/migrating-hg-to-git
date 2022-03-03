@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from mercurial.thirdparty import attr
 from mercurial import (
     cmdutil,

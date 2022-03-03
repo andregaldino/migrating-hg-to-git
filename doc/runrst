@@ -12,7 +12,6 @@
 where WRITER is the name of a Docutils writer such as 'html' or 'manpage'
 """
 
-from __future__ import absolute_import
 
 import sys
 

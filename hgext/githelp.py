@@ -15,7 +15,6 @@ If an unknown command or parameter combination is detected, an error is
 produced.
 """
 
-from __future__ import absolute_import
 
 import getopt
 import re

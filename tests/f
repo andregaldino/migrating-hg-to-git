@@ -23,7 +23,6 @@ This can be used instead of tools like:
   md5sum.py
 """
 
-from __future__ import absolute_import
 
 import binascii
 import glob

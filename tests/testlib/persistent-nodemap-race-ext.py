@@ -35,7 +35,6 @@ It involves 3 process <LEFT> (a writer) <RIGHT> (a writer) and <READER>
      /!\ valid.
 """
 
-from __future__ import print_function
 
 import os
 

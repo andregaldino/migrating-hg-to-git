@@ -18,7 +18,6 @@ number in the file at the introducing revision. When an insertion or
 deletion is performed on the file, a jump instruction is used to patch
 in a new body of annotate information.
 """
-from __future__ import absolute_import, print_function
 
 import abc
 import struct

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import absolute_import
 import errno
 import os
 import signal

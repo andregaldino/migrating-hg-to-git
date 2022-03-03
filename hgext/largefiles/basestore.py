@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''base class for store implementations and store-related utility code'''
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 

@@ -10,7 +10,6 @@ This extension provides an ``amend`` command that is similar to
 ``commit --amend`` but does not prompt an editor.
 """
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (

@@ -3,7 +3,6 @@
 # A small script to automatically reject idle Diffs
 #
 # you need to set the PHABBOT_USER and PHABBOT_TOKEN environment variable for authentication
-from __future__ import absolute_import, print_function
 
 import datetime
 import os

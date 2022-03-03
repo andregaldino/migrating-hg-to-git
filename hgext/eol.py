@@ -91,7 +91,6 @@ See :hg:`help patterns` for more information about the glob patterns
 used.
 """
 
-from __future__ import absolute_import
 
 import os
 import re

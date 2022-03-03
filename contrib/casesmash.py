@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import __builtin__
 import os
 from mercurial import util

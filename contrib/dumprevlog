@@ -2,7 +2,6 @@
 # Dump revlogs as raw data stream
 # $ find .hg/store/ -name "*.i" | xargs dumprevlog > repo.dump
 
-from __future__ import absolute_import, print_function
 
 import sys
 from mercurial.node import hex

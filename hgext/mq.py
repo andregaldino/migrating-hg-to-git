@@ -62,7 +62,6 @@ This extension used to provide a strip command. This command now lives
 in the strip extension.
 '''
 
-from __future__ import absolute_import, print_function
 
 import errno
 import os

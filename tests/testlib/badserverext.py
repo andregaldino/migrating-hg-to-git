@@ -44,7 +44,6 @@ close-after-send-patterns
    request)
 """
 
-from __future__ import absolute_import
 
 import re
 import socket

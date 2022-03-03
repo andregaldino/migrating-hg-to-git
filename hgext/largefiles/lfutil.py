@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''largefiles utility code: must not import other modules in this package.'''
-from __future__ import absolute_import
 
 import contextlib
 import copy

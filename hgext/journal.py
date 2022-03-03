@@ -11,7 +11,6 @@ bookmarks were previously located.
 
 """
 
-from __future__ import absolute_import
 
 import collections
 import errno

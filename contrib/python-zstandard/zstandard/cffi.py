@@ -6,7 +6,6 @@
 
 """Python interface to the Zstandard (zstd) compression library."""
 
-from __future__ import absolute_import, unicode_literals
 
 # This should match what the C extension exports.
 __all__ = [

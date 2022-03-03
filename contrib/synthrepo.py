@@ -36,7 +36,6 @@ A few obvious properties that are not currently handled realistically:
 - Symlinks and binary files are ignored
 '''
 
-from __future__ import absolute_import
 import bisect
 import collections
 import itertools

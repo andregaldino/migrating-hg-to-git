@@ -1,7 +1,6 @@
 # Read the output of a "svn log --xml" command on stdin, parse it and
 # print a subset of attributes common to all svn versions tested by
 # hg.
-from __future__ import absolute_import
 import sys
 import xml.dom.minidom
 

@@ -10,7 +10,6 @@
 Each revset benchmark is parameterized with variants (first, last, sort, ...)
 '''
 
-from __future__ import absolute_import
 
 import os
 import string

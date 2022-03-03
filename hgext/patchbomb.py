@@ -71,7 +71,6 @@ specified by --flag option are exported as ``{flags}`` keyword::
 You can set patchbomb to always ask for confirmation by setting
 ``patchbomb.confirm`` to true.
 '''
-from __future__ import absolute_import
 
 import email.encoders as emailencoders
 import email.mime.base as emimebase

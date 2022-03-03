@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import unittest
 from mercurial import error, mdiff
 from mercurial.utils import stringutil

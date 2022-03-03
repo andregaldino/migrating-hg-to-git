@@ -26,7 +26,6 @@ Pygments will try very hard to identify the file type from content and any
 match (even matches with a low confidence score) will be used.
 """
 
-from __future__ import absolute_import
 
 from . import highlight
 from mercurial.hgweb import (

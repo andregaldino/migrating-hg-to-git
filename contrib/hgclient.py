@@ -1,6 +1,5 @@
 # A minimal client for Mercurial's command server
 
-from __future__ import absolute_import, print_function
 
 import io
 import os

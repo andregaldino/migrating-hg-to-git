@@ -3,7 +3,6 @@
 It also checks certain aspects of the parsers module as a whole.
 """
 
-from __future__ import absolute_import, print_function
 
 import os
 import struct

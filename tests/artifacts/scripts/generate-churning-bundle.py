@@ -17,7 +17,6 @@
 #
 # Running with `chg` in your path and `CHGHG` set is recommended for speed.
 
-from __future__ import absolute_import, print_function
 
 import hashlib
 import os

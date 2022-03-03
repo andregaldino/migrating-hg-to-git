@@ -32,7 +32,6 @@ not ensure that they exit cleanly.
 
 """
 
-from __future__ import absolute_import
 
 import os
 

@@ -122,7 +122,6 @@ amended into the revision being fixed; fixer tools should always write fixed
 file content back to stdout as documented above.
 """
 
-from __future__ import absolute_import
 
 import collections
 import itertools

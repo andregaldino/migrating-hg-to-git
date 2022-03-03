@@ -45,7 +45,6 @@ service entry controls the service name used when reading keys.
 
 '''
 
-from __future__ import absolute_import
 
 import os
 from mercurial.i18n import _

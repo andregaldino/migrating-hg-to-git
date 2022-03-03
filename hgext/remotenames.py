@@ -24,7 +24,6 @@ remotenames.hoistedpeer
   namespace (default: 'default')
 """
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 

@@ -1,6 +1,5 @@
 # This test verifies the conformance of various classes to various
 # storage interfaces.
-from __future__ import absolute_import
 
 import silenttestrunner
 

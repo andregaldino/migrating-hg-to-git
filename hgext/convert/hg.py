@@ -16,7 +16,6 @@
 #   identifier to be stored in the converted revision. This will cause
 #   the converted revision to have a different identity than the
 #   source.
-from __future__ import absolute_import
 
 import os
 import re

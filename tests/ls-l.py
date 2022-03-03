@@ -2,7 +2,6 @@
 
 # like ls -l, but do not print date, user, or non-common mode bit, to avoid
 # using globs in tests.
-from __future__ import absolute_import, print_function
 
 import os
 import stat

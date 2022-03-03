@@ -4,7 +4,6 @@
 r"""dump stack trace when receiving SIGQUIT (Ctrl-\) or SIGINFO (Ctrl-T on BSDs)
 """
 
-from __future__ import absolute_import, print_function
 import signal
 import sys
 import traceback

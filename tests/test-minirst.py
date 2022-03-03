@@ -1,4 +1,3 @@
-from __future__ import absolute_import, print_function
 from mercurial import minirst
 from mercurial.utils import stringutil
 

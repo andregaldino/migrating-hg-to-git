@@ -13,7 +13,6 @@ possibly in another repository. The transplant is done using 'diff' patches.
 Transplanted patches are recorded in .hg/transplant/transplants, as a
 map from a changeset hash to its hash in the source repository.
 '''
-from __future__ import absolute_import
 
 import os
 

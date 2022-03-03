@@ -8,7 +8,6 @@
 # This extension replaces the SSH server started via `hg serve --stdio`.
 # The server behaves differently depending on environment variables.
 
-from __future__ import absolute_import
 
 from mercurial import (
     error,

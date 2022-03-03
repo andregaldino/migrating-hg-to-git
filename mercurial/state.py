@@ -17,7 +17,6 @@ We store the data on disk in cbor, for which we use the CBOR format to encode
 the data.
 """
 
-from __future__ import absolute_import
 
 import contextlib
 

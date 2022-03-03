@@ -1,5 +1,4 @@
 """utilities to assist in working with pygit2"""
-from __future__ import absolute_import
 
 from mercurial.node import bin, hex, sha1nodeconstants
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 # Import something from Mercurial, so the module loader gets initialized.
 from mercurial import pycompat
 

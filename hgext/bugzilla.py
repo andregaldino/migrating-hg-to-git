@@ -291,7 +291,6 @@ All the above add a comment to the Bugzilla bug record of the form::
     Changeset commit comment. Bug 1234.
 '''
 
-from __future__ import absolute_import
 
 import json
 import re

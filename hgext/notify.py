@@ -154,7 +154,6 @@ web.baseurl
   references. See also ``notify.strip``.
 
 '''
-from __future__ import absolute_import
 
 import email.errors as emailerrors
 import email.utils as emailutils

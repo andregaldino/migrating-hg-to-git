@@ -10,7 +10,6 @@
 # Eventually, it could take care of updating (adding/removing/moving)
 # tags too.
 
-from __future__ import absolute_import
 
 import errno
 import io

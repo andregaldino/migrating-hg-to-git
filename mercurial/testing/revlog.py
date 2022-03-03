@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 import unittest
 
 # picked from test-parse-index2, copied rather than imported

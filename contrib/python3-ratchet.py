@@ -15,8 +15,6 @@ You probably want to run it like this:
   $ python3 ../contrib/python3-ratchet.py \
   >   --working-tests=../contrib/python3-whitelist
 """
-from __future__ import print_function
-from __future__ import absolute_import
 
 import argparse
 import json

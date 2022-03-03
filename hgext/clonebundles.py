@@ -202,7 +202,6 @@ instructions when a failure occurs, thus driving more load to the original
 Mercurial server when the bundle hosting service fails.
 """
 
-from __future__ import absolute_import
 
 from mercurial import (
     bundlecaches,

@@ -8,7 +8,6 @@
 
 '''command to display statistics about repository history'''
 
-from __future__ import absolute_import, division
 
 import datetime
 import os

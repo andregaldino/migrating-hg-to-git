@@ -15,7 +15,6 @@
 #
 # * a data file, containing variable width data for these revisions,
 
-from __future__ import absolute_import
 
 import errno
 import os

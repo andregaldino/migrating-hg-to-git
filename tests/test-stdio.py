@@ -2,7 +2,6 @@
 """
 Tests the buffering behavior of stdio streams in `mercurial.utils.procutil`.
 """
-from __future__ import absolute_import
 
 import contextlib
 import errno

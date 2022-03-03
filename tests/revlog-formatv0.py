@@ -17,7 +17,6 @@ description:
 empty file
 """
 
-from __future__ import absolute_import
 import binascii
 import os
 import sys

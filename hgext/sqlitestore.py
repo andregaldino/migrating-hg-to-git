@@ -43,7 +43,6 @@ option to ``sqlite`` to enable new repositories to use SQLite for storage.
 #     --extra-config-opt extensions.sqlitestore= \
 #     --extra-config-opt storage.new-repo-backend=sqlite
 
-from __future__ import absolute_import
 
 import sqlite3
 import struct

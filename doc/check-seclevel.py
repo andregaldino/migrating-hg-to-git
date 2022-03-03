@@ -2,7 +2,6 @@
 #
 # checkseclevel - checking section title levels in each online help document
 
-from __future__ import absolute_import
 
 import optparse
 import os

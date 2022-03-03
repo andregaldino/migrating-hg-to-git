@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import
-
 """Fuzz testing for operations against a Mercurial repository
 
 This uses Hypothesis's stateful testing to generate random repository

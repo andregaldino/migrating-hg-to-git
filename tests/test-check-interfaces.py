@@ -1,6 +1,5 @@
 # Test that certain objects conform to well-defined interfaces.
 
-from __future__ import absolute_import, print_function
 
 from mercurial import encoding
 

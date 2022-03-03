@@ -2,7 +2,6 @@
 
 """dummy SMTP server for use in tests"""
 
-from __future__ import absolute_import
 
 import asyncore
 import optparse

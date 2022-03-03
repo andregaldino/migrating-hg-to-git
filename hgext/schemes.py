@@ -39,7 +39,6 @@ For convenience, the extension adds these schemes by default::
 You can override a predefined scheme by defining a new scheme with the
 same name.
 """
-from __future__ import absolute_import
 
 import os
 import re

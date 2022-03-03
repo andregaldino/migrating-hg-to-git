@@ -11,7 +11,6 @@ The :hg:`releasenotes` command provided by this extension makes the
 process simpler by automating it.
 """
 
-from __future__ import absolute_import
 
 import difflib
 import errno

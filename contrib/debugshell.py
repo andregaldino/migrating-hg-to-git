@@ -1,7 +1,6 @@
 # debugshell extension
 """a python shell with repo, changelog & manifest objects"""
 
-from __future__ import absolute_import
 import code
 import mercurial
 import sys

@@ -6,7 +6,6 @@
 # This use a subsetmaker extension (next to this script) to generate a steam of
 # random discovery instance. When interesting case are discovered, information
 # about them are print on the stdout.
-from __future__ import print_function
 
 import json
 import os

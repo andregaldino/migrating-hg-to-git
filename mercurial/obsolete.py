@@ -67,7 +67,6 @@ The header is followed by the markers. Marker format depend of the version. See
 comment associated with each format for details.
 
 """
-from __future__ import absolute_import
 
 import errno
 import struct

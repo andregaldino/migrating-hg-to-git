@@ -28,7 +28,6 @@ command="cd repos && hg-ssh user/thomas/* projects/{mercurial,foo}"
 You can also add a --read-only flag to allow read-only access to a key, e.g.:
 command="hg-ssh --read-only repos/*"
 """
-from __future__ import absolute_import
 
 import os
 import re

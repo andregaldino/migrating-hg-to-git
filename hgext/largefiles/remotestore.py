@@ -5,7 +5,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''remote largefile store; the base class for wirestore'''
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 

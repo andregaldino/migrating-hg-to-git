@@ -57,7 +57,6 @@ Config::
     example.phabtoken = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 """
 
-from __future__ import absolute_import
 
 import base64
 import contextlib

@@ -17,7 +17,6 @@ Usage:
     python:hgext.hooklib.changeset_published.hook
 """
 
-from __future__ import absolute_import
 
 import email.errors as emailerrors
 import email.utils as emailutils

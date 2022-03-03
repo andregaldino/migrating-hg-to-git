@@ -8,7 +8,6 @@
 #
 # call with --help for details
 
-from __future__ import absolute_import, print_function
 import math
 import optparse  # cannot use argparse, python 2.7 only
 import os

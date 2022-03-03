@@ -4,7 +4,6 @@
 where DOC is the name of a document
 """
 
-from __future__ import absolute_import
 
 import os
 import sys

@@ -5,7 +5,6 @@
 
 '''close arbitrary heads without checking them out first'''
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (

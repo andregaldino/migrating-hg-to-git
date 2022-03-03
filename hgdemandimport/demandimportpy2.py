@@ -24,7 +24,6 @@ These imports will not be delayed:
   b = __import__(a)
 '''
 
-from __future__ import absolute_import
 
 import __builtin__ as builtins
 import contextlib

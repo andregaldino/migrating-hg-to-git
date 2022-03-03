@@ -12,7 +12,6 @@
 #   - [output] is the name of the output file (default: use sys.stdout)
 #              the file will be opened in append mode.
 #
-from __future__ import absolute_import
 import argparse
 import os
 import sys

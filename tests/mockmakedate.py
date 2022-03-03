@@ -1,6 +1,5 @@
 # mock out util.makedate() to supply testable values
 
-from __future__ import absolute_import
 
 import os
 

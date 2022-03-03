@@ -1,7 +1,5 @@
 # tiny extension to report phase changes during transaction
 
-from __future__ import absolute_import
-
 
 def reposetup(ui, repo):
     def reportphasemove(tr):

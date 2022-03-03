@@ -83,8 +83,6 @@ like CVS' $Log$, are not supported. A keyword template map "Log =
 '''
 
 
-from __future__ import absolute_import
-
 import os
 import re
 import weakref

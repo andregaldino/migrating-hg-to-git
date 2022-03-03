@@ -4,7 +4,6 @@ The repoview overlay is quite complex. We test the behavior of
 property cache of both localrepo and repoview to prevent
 regression."""
 
-from __future__ import absolute_import, print_function
 import os
 import subprocess
 

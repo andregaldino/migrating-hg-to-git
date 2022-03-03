@@ -2,7 +2,6 @@
 # with files from different users/groups, we cheat a bit by
 # monkey-patching some functions in the util module
 
-from __future__ import absolute_import, print_function
 
 import os
 import sys

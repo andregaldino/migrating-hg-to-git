@@ -1,7 +1,6 @@
 # Subversion 1.4/1.5 Python API backend
 #
 # Copyright(C) 2007 Daniel Holth et al
-from __future__ import absolute_import
 
 import codecs
 import locale

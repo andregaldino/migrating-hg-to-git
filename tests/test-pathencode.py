@@ -5,7 +5,6 @@
 # that have proven likely to expose bugs and divergent behavior in
 # different encoding implementations.
 
-from __future__ import absolute_import, print_function
 
 import binascii
 import collections

@@ -54,7 +54,6 @@ Configurations
 # - make perf command for recent feature work correctly with early
 #   Mercurial
 
-from __future__ import absolute_import
 import contextlib
 import functools
 import gc

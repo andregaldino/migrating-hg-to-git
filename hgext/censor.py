@@ -28,7 +28,6 @@ A few informative commands such as ``hg grep`` will unconditionally
 ignore censored data and merely report that it was encountered.
 """
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial.node import short

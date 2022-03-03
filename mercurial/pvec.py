@@ -48,7 +48,6 @@ Uses:
   different branches
 '''
 
-from __future__ import absolute_import
 
 from .node import nullrev
 from . import (

@@ -78,7 +78,6 @@
 # - Restart the web server and see if things are running.
 #
 
-from __future__ import absolute_import
 
 # Configuration file location
 hgweb_config = r'c:\your\directory\wsgi.config'

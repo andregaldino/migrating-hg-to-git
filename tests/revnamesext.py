@@ -1,6 +1,5 @@
 # Dummy extension to define a namespace containing revision names
 
-from __future__ import absolute_import
 
 from mercurial import namespaces
 

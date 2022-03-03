@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''setup for largefiles repositories: reposetup'''
-from __future__ import absolute_import
 
 import copy
 

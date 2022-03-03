@@ -6,7 +6,6 @@
 # of the PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2, which is
 # GPL-compatible.
 
-from __future__ import absolute_import
 
 import hashlib
 import os

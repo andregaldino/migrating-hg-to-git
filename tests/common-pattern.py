@@ -1,5 +1,4 @@
 # common patterns in test at can safely be replaced
-from __future__ import absolute_import
 
 import os
 

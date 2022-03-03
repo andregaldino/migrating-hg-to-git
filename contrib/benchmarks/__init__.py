@@ -31,7 +31,6 @@ Invocation example:
     $ asv --config contrib/asv.conf.json preview
 '''
 
-from __future__ import absolute_import
 
 import functools
 import os

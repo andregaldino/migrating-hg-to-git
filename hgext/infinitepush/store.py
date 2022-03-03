@@ -3,7 +3,6 @@
 
 # based on bundleheads extension by Gregory Szorc <gps@mozilla.com>
 
-from __future__ import absolute_import
 
 import abc
 import os

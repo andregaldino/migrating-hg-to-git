@@ -9,7 +9,6 @@
 # various plot related to write performance in a revlog
 #
 # usage: perf-revlog-write-plot.py details.json
-from __future__ import absolute_import, print_function
 import json
 import re
 

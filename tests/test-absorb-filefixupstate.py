@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 import itertools
 from mercurial import pycompat
 from hgext import absorb

@@ -3,7 +3,6 @@
 run-test.t only checks positive matches and can not see warnings
 (both by design)
 """
-from __future__ import absolute_import, print_function
 
 import doctest
 import os

@@ -10,7 +10,6 @@
 #   $ HGREPOFEATURES="simplestore" ./run-tests.py \
 #       --extra-config-opt extensions.simplestore=`pwd`/simplestorerepo.py
 
-from __future__ import absolute_import
 
 import stat
 

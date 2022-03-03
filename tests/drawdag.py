@@ -80,7 +80,6 @@ Some special comments could have side effects:
       # split: A -> B, C           # 1 to many
       # prune: A, B, C             # many to nothing
 """
-from __future__ import absolute_import, print_function
 
 import collections
 import itertools

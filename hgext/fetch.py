@@ -7,7 +7,6 @@
 
 '''pull, update and merge in one command (DEPRECATED)'''
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial.node import short

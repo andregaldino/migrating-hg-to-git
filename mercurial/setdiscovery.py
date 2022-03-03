@@ -40,7 +40,6 @@ nodes that will maximize the number of nodes that will be
 classified with it (since all ancestors or descendants will be marked as well).
 """
 
-from __future__ import absolute_import
 
 import collections
 import random

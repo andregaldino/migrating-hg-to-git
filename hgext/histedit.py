@@ -190,7 +190,6 @@ unexpectedly::
 
 """
 
-from __future__ import absolute_import
 
 # chistedit dependencies that are not available everywhere
 try:

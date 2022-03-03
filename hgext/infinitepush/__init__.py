@@ -87,7 +87,6 @@ delete this code at the end of 2020.
     bookmarks = True
 """
 
-from __future__ import absolute_import
 
 import collections
 import contextlib

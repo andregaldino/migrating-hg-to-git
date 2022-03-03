@@ -19,7 +19,6 @@ when a rule triggers wrong, do one of the following (prefer one from top):
  * ONLY use no--check-code for skipping entire files from external sources
 """
 
-from __future__ import absolute_import, print_function
 import glob
 import keyword
 import optparse

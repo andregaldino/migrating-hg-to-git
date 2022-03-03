@@ -1,6 +1,5 @@
 # test revlog interaction about raw data (flagprocessor)
 
-from __future__ import absolute_import, print_function
 
 import collections
 import hashlib

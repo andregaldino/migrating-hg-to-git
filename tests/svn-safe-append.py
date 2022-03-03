@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from __future__ import absolute_import
 
 __doc__ = """Same as `echo a >> b`, but ensures a changed mtime of b.
 Without this svn will not detect workspace changes."""

@@ -3,7 +3,6 @@
 # This is literally `cat` but in python, one char at a time.
 #
 # see sigpipe-remote.py for details.
-from __future__ import print_function
 
 import io
 import os

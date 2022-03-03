@@ -5,7 +5,6 @@
 #   - 'workingctx._poststatusfixup()' (= 'repo.status()')
 #   - 'committablectx.markcommitted()'
 
-from __future__ import absolute_import
 
 from mercurial import (
     context,

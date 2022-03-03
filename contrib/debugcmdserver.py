@@ -7,7 +7,6 @@
 # $ ./hg serve --cmds pipe | ./contrib/debugcmdserver.py -
 # o, 52   -> 'capabilities: getencoding runcommand\nencoding: UTF-8'
 
-from __future__ import absolute_import, print_function
 import struct
 import sys
 

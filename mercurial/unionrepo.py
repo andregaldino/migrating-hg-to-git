@@ -11,7 +11,6 @@
 allowing operations like diff and log with revsets.
 """
 
-from __future__ import absolute_import
 
 from .i18n import _
 from .pycompat import getattr

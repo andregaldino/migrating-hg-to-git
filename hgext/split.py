@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 """command to split a changeset into smaller ones (EXPERIMENTAL)"""
 
-from __future__ import absolute_import
 
 from mercurial.i18n import _
 

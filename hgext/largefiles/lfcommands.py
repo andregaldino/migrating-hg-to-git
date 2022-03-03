@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 '''High-level command function for lfconvert, plus the cmdtable.'''
-from __future__ import absolute_import
 
 import errno
 import os

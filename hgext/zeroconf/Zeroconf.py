@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 """ Multicast DNS Service Discovery for Python, v0.12
     Copyright (C) 2003, Paul Scott-Murphy
 

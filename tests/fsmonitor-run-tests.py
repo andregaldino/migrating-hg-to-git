@@ -11,8 +11,6 @@
 # Watchman and runs the Mercurial tests against it. This ensures that the global
 # version of Watchman isn't affected by anything this test does.
 
-from __future__ import absolute_import
-from __future__ import print_function
 
 import argparse
 import contextlib

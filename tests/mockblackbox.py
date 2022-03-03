@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 from mercurial.utils import procutil
 
 # XXX: we should probably offer a devel option to do this in blackbox directly

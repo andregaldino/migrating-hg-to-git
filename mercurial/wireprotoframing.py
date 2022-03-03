@@ -9,7 +9,6 @@
 # protocol. For details about the protocol, see
 # `hg help internals.wireprotocol`.
 
-from __future__ import absolute_import
 
 import collections
 import struct

@@ -41,7 +41,6 @@ pushed or pulled::
   # or pretxnchangegroup.cr = python:hgext.win32text.forbidcr
 '''
 
-from __future__ import absolute_import
 
 import re
 from mercurial.i18n import _

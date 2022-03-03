@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 """recreates hardlinks between repository clones"""
-from __future__ import absolute_import
 
 import os
 import stat

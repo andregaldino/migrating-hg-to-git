@@ -2,7 +2,6 @@
 
 # Filter output by pyflakes to control which warnings we check
 
-from __future__ import absolute_import, print_function
 
 import re
 import sys

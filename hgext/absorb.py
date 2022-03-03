@@ -31,7 +31,6 @@ amend modified chunks into the corresponding non-public changesets.
 #  * Converge getdraftstack() with other code in core
 #  * move many attributes on fixupstate to be private
 
-from __future__ import absolute_import
 
 import collections
 
