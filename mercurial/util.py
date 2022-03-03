@@ -25,7 +25,6 @@ import itertools
 import locale
 import mmap
 import os
-import platform as pyplatform
 import re as remod
 import shutil
 import stat
@@ -2905,50 +2904,10 @@ else:
     fromnativeeol = pycompat.identity
     nativeeolwriter = pycompat.identity
 
-if pyplatform.python_implementation() == b'CPython' and sys.version_info < (
-    3,
-    0,
-):
-    # There is an issue in CPython that some IO methods do not handle EINTR
-    # correctly. The following table shows what CPython version (and functions)
-    # are affected (buggy: has the EINTR bug, okay: otherwise):
-    #
-    #                | < 2.7.4 | 2.7.4 to 2.7.12 | >= 3.0
-    #   --------------------------------------------------
-    #    fp.__iter__ | buggy   | buggy           | okay
-    #    fp.read*    | buggy   | okay [1]        | okay
-    #
-    # [1]: fixed by changeset 67dc99a989cd in the cpython hg repo.
-    #
-    # Here we workaround the EINTR issue for fileobj.__iter__. Other methods
-    # like "read*" work fine, as we do not support Python < 2.7.4.
-    #
-    # Although we can workaround the EINTR issue for fp.__iter__, it is slower:
-    # "for x in fp" is 4x faster than "for x in iter(fp.readline, '')" in
-    # CPython 2, because CPython 2 maintains an internal readahead buffer for
-    # fp.__iter__ but not other fp.read* methods.
-    #
-    # On modern systems like Linux, the "read" syscall cannot be interrupted
-    # when reading "fast" files like on-disk files. So the EINTR issue only
-    # affects things like pipes, sockets, ttys etc. We treat "normal" (S_ISREG)
-    # files approximately as "fast" files and use the fast (unsafe) code path,
-    # to minimize the performance impact.
 
-    def iterfile(fp):
-        fastpath = True
-        if type(fp) is file:
-            fastpath = stat.S_ISREG(os.fstat(fp.fileno()).st_mode)
-        if fastpath:
-            return fp
-        else:
-            # fp.readline deals with EINTR correctly, use it as a workaround.
-            return iter(fp.readline, b'')
-
-
-else:
-    # PyPy and CPython 3 do not have the EINTR issue thus no workaround needed.
-    def iterfile(fp):
-        return fp
+# TODO delete since workaround variant for Python 2 no longer needed.
+def iterfile(fp):
+    return fp
 
 
 def iterlines(iterator):
