@@ -59,21 +59,7 @@ expandglobs = False
 umask = os.umask(0)
 os.umask(umask)
 
-if not pycompat.ispy3:
-
-    def posixfile(name, mode='r', buffering=-1):
-        fp = open(name, mode=mode, buffering=buffering)
-        # The position when opening in append mode is implementation defined, so
-        # make it consistent by always seeking to the end.
-        if 'a' in mode:
-            fp.seek(0, os.SEEK_END)
-        return fp
-
-
-else:
-    # The underlying file object seeks as required in Python 3:
-    # https://github.com/python/cpython/blob/v3.7.3/Modules/_io/fileio.c#L474
-    posixfile = open
+posixfile = open
 
 
 def split(p):
