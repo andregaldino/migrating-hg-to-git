@@ -1176,9 +1176,6 @@ static PyObject *posixfile(PyObject *self, PyObject *args, PyObject *kwds)
 	char fpmode[4];
 	int fppos = 0;
 	int plus;
-#ifndef IS_PY3K
-	FILE *fp;
-#endif
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|yi:posixfile",
 					 kwlist,
@@ -1250,26 +1247,9 @@ static PyObject *posixfile(PyObject *self, PyObject *args, PyObject *kwds)
 		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 		goto bail;
 	}
-#ifndef IS_PY3K
-	fp = _fdopen(fd, fpmode);
-	if (fp == NULL) {
-		_close(fd);
-		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
-		goto bail;
-	}
-
-	file_obj = PyFile_FromFile(fp, name, mode, fclose);
-	if (file_obj == NULL) {
-		fclose(fp);
-		goto bail;
-	}
-
-	PyFile_SetBufSize(file_obj, bufsize);
-#else
 	file_obj = PyFile_FromFd(fd, name, mode, bufsize, NULL, NULL, NULL, 1);
 	if (file_obj == NULL)
 		goto bail;
-#endif
 bail:
 	PyMem_Free(name);
 	return file_obj;
