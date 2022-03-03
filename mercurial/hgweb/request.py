@@ -160,24 +160,22 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # TODO enable this once we fix internal violations.
     # wsgiref.validate.check_environ(env)
 
-    # PEP-0333 states that environment keys and values are native strings
-    # (bytes on Python 2 and str on Python 3). The code points for the Unicode
-    # strings on Python 3 must be between \00000-\000FF. We deal with bytes
-    # in Mercurial, so mass convert string keys and values to bytes.
-    if pycompat.ispy3:
+    # PEP-0333 states that environment keys and values are native strings.
+    # The code points for the Unicode strings on Python 3 must be between
+    # \00000-\000FF. We deal with bytes in Mercurial, so mass convert string
+    # keys and values to bytes.
+    def tobytes(s):
+        if not isinstance(s, str):
+            return s
+        if pycompat.iswindows:
+            # This is what mercurial.encoding does for os.environ on
+            # Windows.
+            return encoding.strtolocal(s)
+        else:
+            # This is what is documented to be used for os.environ on Unix.
+            return pycompat.fsencode(s)
 
-        def tobytes(s):
-            if not isinstance(s, str):
-                return s
-            if pycompat.iswindows:
-                # This is what mercurial.encoding does for os.environ on
-                # Windows.
-                return encoding.strtolocal(s)
-            else:
-                # This is what is documented to be used for os.environ on Unix.
-                return pycompat.fsencode(s)
-
-        env = {tobytes(k): tobytes(v) for k, v in pycompat.iteritems(env)}
+    env = {tobytes(k): tobytes(v) for k, v in pycompat.iteritems(env)}
 
     # Some hosting solutions are emulating hgwebdir, and dispatching directly
     # to an hgweb instance using this environment variable.  This was always
