@@ -30,13 +30,13 @@ variables:
         - echo "$RUNTEST_ARGS"
         - HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" "$PYTHON" tests/run-tests.py --color=always $RUNTEST_ARGS
 
-checks-py3:
+checks:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
         PYTHON: python3
 
-rust-cargo-test-py3:
+rust-cargo-test:
     stage: tests
     script:
         - echo "python used, $PYTHON"
@@ -62,7 +62,7 @@ phabricator-refresh:
             ./contrib/phab-refresh-stack.sh --comment "$DEFAULT_COMMENT";
         fi
 
-test-py3:
+test-c:
     <<: *runtests
     variables:
         RUNTEST_ARGS: " --no-rust --blacklist /tmp/check-tests.txt"
@@ -70,14 +70,14 @@ test-py3:
         TEST_HGMODULEPOLICY: "c"
         TEST_HGTESTS_ALLOW_NETIO: "1"
 
-test-py3-pure:
+test-pure:
     <<: *runtests
     variables:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "py"
 
-test-py3-rust:
+test-rust:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
@@ -85,7 +85,7 @@ test-py3-rust:
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
 
-test-py3-rhg:
+test-rhg:
     <<: *runtests
     variables:
         HGWITHRUSTEXT: cpython
@@ -93,14 +93,14 @@ test-py3-rhg:
         PYTHON: python3
         TEST_HGMODULEPOLICY: "rust+c"
 
-test-py3-chg:
+test-chg:
     <<: *runtests
     variables:
         PYTHON: python3
         RUNTEST_ARGS: "--blacklist /tmp/check-tests.txt --chg"
         TEST_HGMODULEPOLICY: "c"
 
-check-pytype-py3:
+check-pytype:
     extends: .runtests_template
     before_script:
       - hg clone . /tmp/mercurial-ci/ --noupdate --config phases.publish=no
@@ -138,7 +138,7 @@ check-pytype-py3:
 
         - C:/MinGW/msys/1.0/bin/sh.exe --login -c 'cd "$OLDPWD" && HGTESTS_ALLOW_NETIO="$TEST_HGTESTS_ALLOW_NETIO" HGMODULEPOLICY="$TEST_HGMODULEPOLICY" $PYTHON tests/run-tests.py --color=always $RUNTEST_ARGS'
 
-windows-py3:
+windows:
     <<: *windows_runtests
     tags:
       - windows
@@ -147,7 +147,7 @@ windows-py3:
         RUNTEST_ARGS: "--blacklist C:/Temp/check-tests.txt"
         PYTHON: py -3
 
-windows-py3-pyox:
+windows-pyox:
     <<: *windows_runtests
     tags:
       - windows
