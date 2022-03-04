@@ -279,7 +279,11 @@ def _posixworker(ui, func, staticargs, args, hasretval):
         while openpipes > 0:
             for key, events in selector.select():
                 try:
+                    # The pytype error likely goes away on a modern version of
+                    # pytype having a modern typeshed snapshot.
+                    # pytype: disable=wrong-arg-types
                     res = pickle.load(_blockingreader(key.fileobj))
+                    # pytype: enable=wrong-arg-types
                     if hasretval and res[0]:
                         retval.update(res[1])
                     else:
