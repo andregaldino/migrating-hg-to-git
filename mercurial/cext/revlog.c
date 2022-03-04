@@ -579,7 +579,6 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 static int index_fast_rank(indexObject *self, Py_ssize_t pos)
 {
 	Py_ssize_t length = index_length(self);
-	int rank;
 
 	if (self->format_version != format_cl2 || pos >= length) {
 		return rank_unknown;
