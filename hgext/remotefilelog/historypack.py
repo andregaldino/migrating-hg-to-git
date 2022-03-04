@@ -519,7 +519,7 @@ class mutablehistorypack(basepack.mutablebasepack):
 
         files = (
             (hashutil.sha1(filename).digest(), filename, offset, size)
-            for filename, (offset, size) in pycompat.iteritems(self.files)
+            for filename, (offset, size) in self.files.items()
         )
         files = sorted(files)
 
@@ -555,7 +555,7 @@ class mutablehistorypack(basepack.mutablebasepack):
             )
             nodeindexoffset += constants.FILENAMESIZE + len(filename)
 
-            for node, location in sorted(pycompat.iteritems(nodelocations)):
+            for node, location in sorted(nodelocations.items()):
                 nodeindexentries.append(
                     struct.pack(nodeindexformat, node, location)
                 )

@@ -573,7 +573,7 @@ def display_by_method(data, fp):
 
     # compute sums for each function
     functiondata = []
-    for fname, sitestats in pycompat.iteritems(grouped):
+    for fname, sitestats in grouped.items():
         total_cum_sec = 0
         total_self_sec = 0
         total_percent = 0
@@ -652,7 +652,7 @@ def display_about_method(data, fp, function=None, **kwargs):
                 else:
                     children[site] = 1
 
-    parents = [(parent, count) for parent, count in pycompat.iteritems(parents)]
+    parents = [(parent, count) for parent, count in parents.items()]
     parents.sort(reverse=True, key=lambda x: x[1])
     for parent, count in parents:
         fp.write(
@@ -696,7 +696,7 @@ def display_about_method(data, fp, function=None, **kwargs):
         )
     )
 
-    children = [(child, count) for child, count in pycompat.iteritems(children)]
+    children = [(child, count) for child, count in children.items()]
     children.sort(reverse=True, key=lambda x: x[1])
     for child, count in children:
         fp.write(
@@ -827,7 +827,7 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
     fd, path = pycompat.mkstemp()
 
     with open(path, b"w+") as file:
-        for line, count in pycompat.iteritems(lines):
+        for line, count in lines.items():
             file.write(b"%s %d\n" % (line, count))
 
     if outputfile is None:

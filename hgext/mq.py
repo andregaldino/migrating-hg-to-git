@@ -2024,7 +2024,7 @@ class queue(object):
                             # we can't copy a file created by the patch itself
                             if dst in copies:
                                 del copies[dst]
-                        for src, dsts in pycompat.iteritems(copies):
+                        for src, dsts in copies.items():
                             for dst in dsts:
                                 repo.dirstate.copy(src, dst)
                     else:
@@ -4287,7 +4287,7 @@ def extsetup(ui):
     entry[1].extend(mqopt)
 
     def dotable(cmdtable):
-        for cmd, entry in pycompat.iteritems(cmdtable):
+        for cmd, entry in cmdtable.items():
             cmd = cmdutil.parsealiases(cmd)[0]
             func = entry[0]
             if func.norepo:

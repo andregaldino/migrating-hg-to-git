@@ -2239,7 +2239,7 @@ def handlecheckphases(op, inpart):
         b'remote repository changed while pushing - please try again '
         b'(%s is %s expected %s)'
     )
-    for expectedphase, nodes in pycompat.iteritems(phasetonodes):
+    for expectedphase, nodes in phasetonodes.items():
         for n in nodes:
             actualphase = phasecache.phase(unfi, cl.rev(n))
             if actualphase != expectedphase:

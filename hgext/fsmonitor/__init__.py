@@ -501,15 +501,11 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
             visit.update(f for f in copymap if f not in results and matchfn(f))
     else:
         if matchalways:
-            visit.update(
-                f for f, st in pycompat.iteritems(dmap) if f not in results
-            )
+            visit.update(f for f, st in dmap.items() if f not in results)
             visit.update(f for f in copymap if f not in results)
         else:
             visit.update(
-                f
-                for f, st in pycompat.iteritems(dmap)
-                if f not in results and matchfn(f)
+                f for f, st in dmap.items() if f not in results and matchfn(f)
             )
             visit.update(f for f in copymap if f not in results and matchfn(f))
 

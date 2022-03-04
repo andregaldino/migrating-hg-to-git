@@ -417,7 +417,7 @@ class commandline(object):
     def _cmdline(self, cmd, *args, **kwargs):
         kwargs = pycompat.byteskwargs(kwargs)
         cmdline = [self.command, cmd] + list(args)
-        for k, v in pycompat.iteritems(kwargs):
+        for k, v in kwargs.items():
             if len(k) == 1:
                 cmdline.append(b'-' + k)
             else:

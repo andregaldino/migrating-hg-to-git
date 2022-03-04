@@ -1199,7 +1199,7 @@ def _workingpath(repo, ctx):
 
 def loadinternalmerge(ui, extname, registrarobj):
     """Load internal merge tool from specified registrarobj"""
-    for name, func in pycompat.iteritems(registrarobj._table):
+    for name, func in registrarobj._table.items():
         fullname = b':' + name
         internals[fullname] = func
         internals[b'internal:' + name] = func

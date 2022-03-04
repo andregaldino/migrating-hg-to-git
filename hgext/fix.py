@@ -377,9 +377,7 @@ def cleanup(repo, replacements, wdirwritten):
     Useful as a hook point for extending "hg fix" with output summarizing the
     effects of the command, though we choose not to output anything here.
     """
-    replacements = {
-        prec: [succ] for prec, succ in pycompat.iteritems(replacements)
-    }
+    replacements = {prec: [succ] for prec, succ in replacements.items()}
     scmutil.cleanupnodes(repo, replacements, b'fix', fixphase=True)
 
 
@@ -692,7 +690,7 @@ def fixfile(ui, repo, opts, fixers, fixctx, path, basepaths, basectxs):
     """
     metadata = {}
     newdata = fixctx[path].data()
-    for fixername, fixer in pycompat.iteritems(fixers):
+    for fixername, fixer in fixers.items():
         if fixer.affects(opts, fixctx, path):
             ranges = lineranges(
                 opts, path, basepaths, basectxs, fixctx, newdata
@@ -770,7 +768,7 @@ def writeworkingdir(repo, ctx, filedata, replacements):
 
     Directly updates the dirstate for the affected files.
     """
-    for path, data in pycompat.iteritems(filedata):
+    for path, data in filedata.items():
         fctx = ctx[path]
         fctx.write(data, fctx.flags())
 

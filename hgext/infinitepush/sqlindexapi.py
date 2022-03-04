@@ -13,8 +13,6 @@ import time
 import warnings
 import mysql.connector
 
-from mercurial import pycompat
-
 from . import indexapi
 
 
@@ -179,7 +177,7 @@ class sqlindexapi(indexapi.indexapi):
             self.sqlconnect()
         args = []
         values = []
-        for bookmark, node in pycompat.iteritems(bookmarks):
+        for bookmark, node in bookmarks.items():
             args.append(b'(%s, %s, %s)')
             values.extend((bookmark, node, self.reponame))
         args = b','.join(args)

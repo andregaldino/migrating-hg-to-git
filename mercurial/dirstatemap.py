@@ -12,7 +12,6 @@ from . import (
     error,
     pathutil,
     policy,
-    pycompat,
     txnutil,
     util,
 )
@@ -354,7 +353,7 @@ class dirstatemap(_dirstatemapcommon):
         util.clearcachedproperty(self, b"dirfoldmap")
 
     def items(self):
-        return pycompat.iteritems(self._map)
+        return self._map.items()
 
     # forward for python2,3 compat
     iteritems = items
@@ -378,7 +377,7 @@ class dirstatemap(_dirstatemapcommon):
         self._dirtyparents = True
         copies = {}
         if fold_p2:
-            for f, s in pycompat.iteritems(self._map):
+            for f, s in self._map.items():
                 # Discard "merged" markers when moving away from a merge state
                 if s.p2_info:
                     source = self.copymap.pop(f, None)
@@ -501,7 +500,7 @@ class dirstatemap(_dirstatemapcommon):
 
         f = {}
         normcase = util.normcase
-        for name, s in pycompat.iteritems(self._map):
+        for name, s in self._map.items():
             if not s.removed:
                 f[normcase(name)] = name
         f[b'.'] = b'.'  # prevents useless util.fspath() invocation

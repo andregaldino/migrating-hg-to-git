@@ -108,7 +108,7 @@ def itersubrepos(ctx1, ctx2):
             del subpaths[subpath]
             missing.add(subpath)
 
-    for subpath, ctx in sorted(pycompat.iteritems(subpaths)):
+    for subpath, ctx in sorted(subpaths.items()):
         yield subpath, ctx.sub(subpath)
 
     # Yield an empty subrepo based on ctx1 for anything only in ctx2.  That way,
@@ -1336,7 +1336,7 @@ def _interestingfiles(repo, matcher):
         ignored=False,
         full=False,
     )
-    for abs, st in pycompat.iteritems(walkresults):
+    for abs, st in walkresults.items():
         entry = dirstate.get_entry(abs)
         if (not entry.any_tracked) and audit_path.check(abs):
             unknown.append(abs)
@@ -1383,7 +1383,7 @@ def _markchanges(repo, unknown, deleted, renames):
     with repo.wlock():
         wctx.forget(deleted)
         wctx.add(unknown)
-        for new, old in pycompat.iteritems(renames):
+        for new, old in renames.items():
             wctx.copy(old, new)
 
 
@@ -1509,12 +1509,9 @@ def movedirstate(repo, newctx, match=None):
     # Merge old parent and old working dir copies
     oldcopies = copiesmod.pathcopies(newctx, oldctx, match)
     oldcopies.update(copies)
-    copies = {
-        dst: oldcopies.get(src, src)
-        for dst, src in pycompat.iteritems(oldcopies)
-    }
+    copies = {dst: oldcopies.get(src, src) for dst, src in oldcopies.items()}
     # Adjust the dirstate copies
-    for dst, src in pycompat.iteritems(copies):
+    for dst, src in copies.items():
         if src not in newctx or dst in newctx or not ds.get_entry(dst).added:
             src = None
         ds.copy(src, dst)

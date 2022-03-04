@@ -342,7 +342,7 @@ class dirstate(object):
         return iter(sorted(self._map))
 
     def items(self):
-        return pycompat.iteritems(self._map)
+        return self._map.items()
 
     iteritems = items
 
@@ -770,9 +770,7 @@ class dirstate(object):
     def _writedirstate(self, tr, st):
         # notify callbacks about parents change
         if self._origpl is not None and self._origpl != self._pl:
-            for c, callback in sorted(
-                pycompat.iteritems(self._plchangecallbacks)
-            ):
+            for c, callback in sorted(self._plchangecallbacks.items()):
                 callback(self, self._origpl, self._pl)
             self._origpl = None
         self._map.write(tr, st)
@@ -935,7 +933,7 @@ class dirstate(object):
         if match.isexact() and self._checkcase:
             normed = {}
 
-            for f, st in pycompat.iteritems(results):
+            for f, st in results.items():
                 if st is None:
                     continue
 
@@ -948,7 +946,7 @@ class dirstate(object):
 
                 paths.add(f)
 
-            for norm, paths in pycompat.iteritems(normed):
+            for norm, paths in normed.items():
                 if len(paths) > 1:
                     for path in paths:
                         folded = self._discoverpath(

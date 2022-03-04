@@ -453,7 +453,7 @@ class mutabledatapack(basepack.mutablebasepack):
 
     def createindex(self, nodelocations, indexoffset):
         entries = sorted(
-            (n, db, o, s) for n, (db, o, s) in pycompat.iteritems(self.entries)
+            (n, db, o, s) for n, (db, o, s) in self.entries.items()
         )
 
         rawindex = b''

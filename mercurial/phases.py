@@ -219,7 +219,7 @@ def binaryencode(phasemapping):
     The revision lists are encoded as (phase, root) pairs.
     """
     binarydata = []
-    for phase, nodes in pycompat.iteritems(phasemapping):
+    for phase, nodes in phasemapping.items():
         for head in nodes:
             binarydata.append(_fphasesentry.pack(phase, head))
     return b''.join(binarydata)
@@ -363,9 +363,7 @@ class phasecache(object):
             self.invalidate()
             self.loadphaserevs(repo)
         return any(
-            revs
-            for phase, revs in pycompat.iteritems(self.phaseroots)
-            if phase != public
+            revs for phase, revs in self.phaseroots.items() if phase != public
         )
 
     def nonpublicphaseroots(self, repo):
@@ -383,7 +381,7 @@ class phasecache(object):
         return set().union(
             *[
                 revs
-                for phase, revs in pycompat.iteritems(self.phaseroots)
+                for phase, revs in self.phaseroots.items()
                 if phase != public
             ]
         )
@@ -528,7 +526,7 @@ class phasecache(object):
             f.close()
 
     def _write(self, fp):
-        for phase, roots in pycompat.iteritems(self.phaseroots):
+        for phase, roots in self.phaseroots.items():
             for h in sorted(roots):
                 fp.write(b'%i %s\n' % (phase, hex(h)))
         self.dirty = False
@@ -612,7 +610,7 @@ class phasecache(object):
     def retractboundary(self, repo, tr, targetphase, nodes):
         oldroots = {
             phase: revs
-            for phase, revs in pycompat.iteritems(self.phaseroots)
+            for phase, revs in self.phaseroots.items()
             if phase <= targetphase
         }
         if tr is None:
@@ -690,7 +688,7 @@ class phasecache(object):
         """
         filtered = False
         has_node = repo.changelog.index.has_node  # to filter unknown nodes
-        for phase, nodes in pycompat.iteritems(self.phaseroots):
+        for phase, nodes in self.phaseroots.items():
             missing = sorted(node for node in nodes if not has_node(node))
             if missing:
                 for mnode in missing:
@@ -854,7 +852,7 @@ def analyzeremotephases(repo, subset, roots):
     # build list from dictionary
     draftroots = []
     has_node = repo.changelog.index.has_node  # to filter unknown nodes
-    for nhex, phase in pycompat.iteritems(roots):
+    for nhex, phase in roots.items():
         if nhex == b'publishing':  # ignore data related to publish option
             continue
         node = bin(nhex)

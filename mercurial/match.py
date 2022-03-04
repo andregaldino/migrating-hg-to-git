@@ -1638,7 +1638,7 @@ def readpatternfile(filepath, warn, sourceinfo=False):
             continue
 
         linesyntax = syntax
-        for s, rels in pycompat.iteritems(syntaxes):
+        for s, rels in syntaxes.items():
             if line.startswith(rels):
                 linesyntax = rels
                 line = line[len(rels) :]

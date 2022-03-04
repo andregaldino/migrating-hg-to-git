@@ -412,7 +412,7 @@ class hgweb(object):
 
             if cmd == b'archive':
                 fn = req.qsparams[b'node']
-                for type_, spec in pycompat.iteritems(webutil.archivespecs):
+                for type_, spec in webutil.archivespecs.items():
                     ext = spec[2]
                     if fn.endswith(ext):
                         req.qsparams[b'node'] = fn[: -len(ext)]

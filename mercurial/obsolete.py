@@ -248,7 +248,7 @@ def _fm0readmarkers(data, off, stop):
                 # if content cannot be translated to nodeid drop the data.
                 parents = None
 
-        metadata = tuple(sorted(pycompat.iteritems(metadata)))
+        metadata = tuple(sorted(metadata.items()))
 
         yield (pre, sucs, flags, metadata, date, parents)
 
@@ -278,7 +278,7 @@ def _fm0encodemeta(meta):
     """Return encoded metadata string to string mapping.
 
     Assume no ':' in key and no '\0' in both key and value."""
-    for key, value in pycompat.iteritems(meta):
+    for key, value in meta.items():
         if b':' in key or b'\0' in key:
             raise ValueError(b"':' and '\0' are forbidden in metadata key'")
         if b'\0' in value:
@@ -652,7 +652,7 @@ class obsstore(object):
                 'in-marker cycle with %s' % pycompat.sysstr(hex(prec))
             )
 
-        metadata = tuple(sorted(pycompat.iteritems(metadata)))
+        metadata = tuple(sorted(metadata.items()))
         for k, v in metadata:
             try:
                 # might be better to reject non-ASCII keys

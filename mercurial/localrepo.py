@@ -2068,7 +2068,7 @@ class localrepository(object):
         else:
             tags = self._tagscache.tags
         rev = self.changelog.rev
-        for k, v in pycompat.iteritems(tags):
+        for k, v in tags.items():
             try:
                 # ignore tags to unknown nodes
                 rev(v)
@@ -2103,13 +2103,12 @@ class localrepository(object):
         # writing to the cache), but the rest of Mercurial wants them in
         # local encoding.
         tags = {}
-        for (name, (node, hist)) in pycompat.iteritems(alltags):
+        for (name, (node, hist)) in alltags.items():
             if node != self.nullid:
                 tags[encoding.tolocal(name)] = node
         tags[b'tip'] = self.changelog.tip()
         tagtypes = {
-            encoding.tolocal(name): value
-            for (name, value) in pycompat.iteritems(tagtypes)
+            encoding.tolocal(name): value for (name, value) in tagtypes.items()
         }
         return (tags, tagtypes)
 
@@ -2138,7 +2137,7 @@ class localrepository(object):
         '''return the tags associated with a node'''
         if not self._tagscache.nodetagscache:
             nodetagscache = {}
-            for t, n in pycompat.iteritems(self._tagscache.tags):
+            for t, n in self._tagscache.tags.items():
                 nodetagscache.setdefault(n, []).append(t)
             for tags in pycompat.itervalues(nodetagscache):
                 tags.sort()
@@ -2256,7 +2255,7 @@ class localrepository(object):
                 mf = matchmod.match(self.root, b'', [pat])
                 fn = None
                 params = cmd
-                for name, filterfn in pycompat.iteritems(self._datafilters):
+                for name, filterfn in self._datafilters.items():
                     if cmd.startswith(name):
                         fn = filterfn
                         params = cmd[len(name) :].lstrip()

@@ -62,7 +62,7 @@ class gitlfspointer(dict):
     def validate(self):
         """raise InvalidPointer on error. return self if there is no error"""
         requiredcount = 0
-        for k, v in pycompat.iteritems(self):
+        for k, v in self.items():
             if k in self._requiredre:
                 if not self._requiredre[k].match(v):
                     raise InvalidPointer(

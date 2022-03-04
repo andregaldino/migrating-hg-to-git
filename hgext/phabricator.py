@@ -2279,7 +2279,7 @@ def phabupdate(ui, repo, *specs, **opts):
         drevmap = getdrevmap(repo, logcmdutil.revrange(repo, [revs]))
         specs = []
         unknown = []
-        for r, d in pycompat.iteritems(drevmap):
+        for r, d in drevmap.items():
             if d is None:
                 unknown.append(repo[r])
             else:
@@ -2364,7 +2364,7 @@ def phabstatusshowview(ui, repo, displayer):
     revs = repo.revs('sort(_underway(), topo)')
     drevmap = getdrevmap(repo, revs)
     unknownrevs, drevids, revsbydrevid = [], set(), {}
-    for rev, drevid in pycompat.iteritems(drevmap):
+    for rev, drevid in drevmap.items():
         if drevid is not None:
             drevids.add(drevid)
             revsbydrevid.setdefault(drevid, set()).add(rev)

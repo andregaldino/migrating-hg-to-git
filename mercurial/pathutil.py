@@ -324,7 +324,7 @@ class dirs(object):
         self._dirs = {}
         addpath = self.addpath
         if isinstance(map, dict) and only_tracked:
-            for f, s in pycompat.iteritems(map):
+            for f, s in map.items():
                 if s.state != b'r':
                     addpath(f)
         elif only_tracked:

@@ -18,7 +18,6 @@ from ..node import (
 from ..thirdparty import attr
 from .. import (
     error,
-    pycompat,
     revlogutils,
     util,
 )
@@ -959,7 +958,7 @@ def pack_dirstate(dmap, copymap, pl):
     cs = stringio()
     write = cs.write
     write(b"".join(pl))
-    for f, e in pycompat.iteritems(dmap):
+    for f, e in dmap.items():
         if f in copymap:
             f = b"%s\0%s" % (f, copymap[f])
         e = _pack(

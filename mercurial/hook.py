@@ -166,7 +166,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     else:
         env[b'HGPLAIN'] = b''
 
-    for k, v in pycompat.iteritems(args):
+    for k, v in args.items():
         # transaction changes can accumulate MBs of data, so skip it
         # for external hooks
         if k == b'changes':

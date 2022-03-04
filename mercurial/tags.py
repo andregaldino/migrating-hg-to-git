@@ -25,7 +25,6 @@ from . import (
     encoding,
     error,
     match as matchmod,
-    pycompat,
     scmutil,
     util,
 )
@@ -354,7 +353,7 @@ def _updatetags(filetags, alltags, tagtype=None, tagtypes=None):
     if tagtype is None:
         assert tagtypes is None
 
-    for name, nodehist in pycompat.iteritems(filetags):
+    for name, nodehist in filetags.items():
         if name not in alltags:
             alltags[name] = nodehist
             if tagtype is not None:
@@ -507,7 +506,7 @@ def _getfnodes(ui, repo, nodes):
 
     if unknown_entries:
         fixed_nodemap = fnodescache.refresh_invalid_nodes(unknown_entries)
-        for node, fnode in pycompat.iteritems(fixed_nodemap):
+        for node, fnode in fixed_nodemap.items():
             if fnode != repo.nullid:
                 cachefnode[node] = fnode
 
@@ -549,7 +548,7 @@ def _writetagcache(ui, repo, valid, cachetags):
     # we keep them in UTF-8 throughout this module.  If we converted
     # them local encoding on input, we would lose info writing them to
     # the cache.
-    for (name, (node, hist)) in sorted(pycompat.iteritems(cachetags)):
+    for (name, (node, hist)) in sorted(cachetags.items()):
         for n in hist:
             cachefile.write(b"%s %s\n" % (hex(n), name))
         cachefile.write(b"%s %s\n" % (hex(node), name))

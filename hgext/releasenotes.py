@@ -177,7 +177,7 @@ class releasenotessections(object):
             custom_sections = getcustomadmonitions(repo)
             if custom_sections:
                 sections.update(custom_sections)
-            self._sections = list(pycompat.iteritems(sections))
+            self._sections = list(sections.items())
         else:
             self._sections = list(DEFAULT_SECTIONS)
 

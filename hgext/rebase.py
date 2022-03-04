@@ -243,7 +243,7 @@ class rebaseruntime(object):
         f.write(b'%d\n' % int(self.keepbranchesf))
         f.write(b'%s\n' % (self.activebookmark or b''))
         destmap = self.destmap
-        for d, v in pycompat.iteritems(self.state):
+        for d, v in self.state.items():
             oldrev = repo[d].hex()
             if v >= 0:
                 newrev = repo[v].hex()
@@ -505,7 +505,7 @@ class rebaseruntime(object):
             # commits.
             self.storestatus(tr)
 
-        cands = [k for k, v in pycompat.iteritems(self.state) if v == revtodo]
+        cands = [k for k, v in self.state.items() if v == revtodo]
         p = repo.ui.makeprogress(
             _(b"rebasing"), unit=_(b'changesets'), total=len(cands)
         )
@@ -1336,7 +1336,7 @@ def _definedestmap(ui, repo, inmemory, destf, srcf, basef, revf, destspace):
             # emulate the old behavior, showing "nothing to rebase" (a better
             # behavior may be abort with "cannot find branching point" error)
             bpbase.clear()
-        for bp, bs in pycompat.iteritems(bpbase):  # calculate roots
+        for bp, bs in bpbase.items():  # calculate roots
             roots += list(repo.revs(b'children(%d) & ancestors(%ld)', bp, bs))
 
         rebaseset = repo.revs(b'%ld::', roots)
@@ -2103,7 +2103,7 @@ def clearrebased(
         fl = fm.formatlist
         fd = fm.formatdict
         changes = {}
-        for oldns, newn in pycompat.iteritems(replacements):
+        for oldns, newn in replacements.items():
             for oldn in oldns:
                 changes[hf(oldn)] = fl([hf(n) for n in newn], name=b'node')
         nodechanges = fd(changes, key=b"oldnode", value=b"newnodes")

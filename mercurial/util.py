@@ -1301,7 +1301,7 @@ class sortdict(collections.OrderedDict):
         # __setitem__() isn't called as of PyPy 5.8.0
         def update(self, src, **f):
             if isinstance(src, dict):
-                src = pycompat.iteritems(src)
+                src = src.items()
             for k, v in src:
                 self[k] = v
             for k in f:

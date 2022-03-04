@@ -137,7 +137,7 @@ class bmstore(object):
         return iter(self._refmap)
 
     def iteritems(self):
-        return pycompat.iteritems(self._refmap)
+        return self._refmap.items()
 
     def items(self):
         return self._refmap.items()
@@ -250,7 +250,7 @@ class bmstore(object):
         self._aclean = True
 
     def _write(self, fp):
-        for name, node in sorted(pycompat.iteritems(self._refmap)):
+        for name, node in sorted(self._refmap.items()):
             fp.write(b"%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()
@@ -418,7 +418,7 @@ def headsforactive(repo):
         )
     name = repo._activebookmark.split(b'@', 1)[0]
     heads = []
-    for mark, n in pycompat.iteritems(repo._bookmarks):
+    for mark, n in repo._bookmarks.items():
         if mark.split(b'@', 1)[0] == name:
             heads.append(n)
     return heads
@@ -476,7 +476,7 @@ def listbinbookmarks(repo):
     marks = getattr(repo, '_bookmarks', {})
 
     hasnode = repo.changelog.hasnode
-    for k, v in pycompat.iteritems(marks):
+    for k, v in marks.items():
         # don't expose local divergent bookmarks
         if hasnode(v) and not isdivergent(k):
             yield k, v
@@ -687,7 +687,7 @@ def mirroring_remote(ui, repo, remotemarks):
     remotemarks"""
     changed = []
     localmarks = repo._bookmarks
-    for (b, id) in pycompat.iteritems(remotemarks):
+    for (b, id) in remotemarks.items():
         if id != localmarks.get(b, None) and id in repo:
             changed.append((b, id, ui.debug, _(b"updating bookmark %s\n") % b))
     for b in localmarks:
@@ -1074,7 +1074,7 @@ def _printbookmarks(ui, repo, fm, bmarks):
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_(b"no bookmarks set\n"))
-    for bmark, (n, prefix, label) in sorted(pycompat.iteritems(bmarks)):
+    for bmark, (n, prefix, label) in sorted(bmarks.items()):
         fm.startitem()
         fm.context(repo=repo)
         if not ui.quiet:

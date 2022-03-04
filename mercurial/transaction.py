@@ -382,7 +382,7 @@ class transaction(util.transactional):
             skip_pre = group == GEN_GROUP_POST_FINALIZE
             skip_post = group == GEN_GROUP_PRE_FINALIZE
 
-        for id, entry in sorted(pycompat.iteritems(self._filegenerators)):
+        for id, entry in sorted(self._filegenerators.items()):
             any = True
             order, filenames, genfunc, location, post_finalize = entry
 

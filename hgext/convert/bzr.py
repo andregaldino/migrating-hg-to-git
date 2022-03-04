@@ -15,7 +15,6 @@ from mercurial.i18n import _
 from mercurial import (
     demandimport,
     error,
-    pycompat,
     util,
 )
 from . import common
@@ -209,7 +208,7 @@ class bzr_source(common.converter_source):
             if not branch.supports_tags():
                 return {}
             tagdict = branch.tags.get_tag_dict()
-            for name, rev in pycompat.iteritems(tagdict):
+            for name, rev in tagdict.items():
                 bytetags[self.recode(name)] = rev
         return bytetags
 

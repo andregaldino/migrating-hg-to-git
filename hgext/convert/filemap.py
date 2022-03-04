@@ -125,7 +125,7 @@ class filemapper(object):
         repo belong to the source repo and what parts don't."""
         if self.targetprefixes is None:
             self.targetprefixes = set()
-            for before, after in pycompat.iteritems(self.rename):
+            for before, after in self.rename.items():
                 self.targetprefixes.add(after)
 
         # If "." is a target, then all target files are considered from the

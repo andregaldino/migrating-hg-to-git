@@ -2643,11 +2643,7 @@ def diffhunks(
     if copysourcematch:
         # filter out copies where source side isn't inside the matcher
         # (copies.pathcopies() already filtered out the destination)
-        copy = {
-            dst: src
-            for dst, src in pycompat.iteritems(copy)
-            if copysourcematch(src)
-        }
+        copy = {dst: src for dst, src in copy.items() if copysourcematch(src)}
 
     modifiedset = set(modified)
     addedset = set(added)

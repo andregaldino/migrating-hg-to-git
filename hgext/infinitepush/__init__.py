@@ -419,7 +419,7 @@ def localrepolistkeys(orig, self, namespace, patterns=None):
             if pattern.endswith(b'*'):
                 pattern = b're:^' + pattern[:-1] + b'.*'
             kind, pat, matcher = stringutil.stringmatcher(pattern)
-            for bookmark, node in pycompat.iteritems(bookmarks):
+            for bookmark, node in bookmarks.items():
                 if matcher(bookmark):
                     results[bookmark] = node
         return results
@@ -542,7 +542,7 @@ def _generateoutputparts(head, bundlerepo, bundleroots, bundlefile):
                     if part.type == b'changegroup':
                         haschangegroup = True
                     newpart = bundle2.bundlepart(part.type, data=part.read())
-                    for key, value in pycompat.iteritems(part.params):
+                    for key, value in part.params.items():
                         newpart.addparam(key, value)
                     parts.append(newpart)
 
@@ -794,7 +794,7 @@ def _saveremotebookmarks(repo, newbookmarks, remote):
             # saveremotenames expects 20 byte binary nodes for branches
             branches[rname].append(bin(hexnode))
 
-    for bookmark, hexnode in pycompat.iteritems(newbookmarks):
+    for bookmark, hexnode in newbookmarks.items():
         bookmarks[bookmark] = hexnode
     remotenamesext.saveremotenames(repo, remotepath, branches, bookmarks)
 
@@ -804,7 +804,7 @@ def _savelocalbookmarks(repo, bookmarks):
         return
     with repo.wlock(), repo.lock(), repo.transaction(b'bookmark') as tr:
         changes = []
-        for scratchbook, node in pycompat.iteritems(bookmarks):
+        for scratchbook, node in bookmarks.items():
             changectx = repo[node]
             changes.append((scratchbook, changectx.node()))
         repo._bookmarks.applychanges(repo, tr, changes)
@@ -1045,7 +1045,7 @@ def storetobundlestore(orig, repo, op, unbundler):
                 bundle2._processpart(op, part)
             else:
                 bundlepart = bundle2.bundlepart(part.type, data=part.read())
-                for key, value in pycompat.iteritems(part.params):
+                for key, value in part.params.items():
                     bundlepart.addparam(key, value)
 
                 # Certain parts require a response
@@ -1137,7 +1137,7 @@ def processparts(orig, repo, op, unbundler):
                     # differs from previous behavior, we need to put it behind a
                     # config flag for incremental rollout.
                     bundlepart = bundle2.bundlepart(part.type, data=part.read())
-                    for key, value in pycompat.iteritems(part.params):
+                    for key, value in part.params.items():
                         bundlepart.addparam(key, value)
 
                     # Certain parts require a response
@@ -1323,9 +1323,7 @@ def _maybeaddpushbackpart(op, bookmark, newnode, oldnode, params):
                 b'new': newnode,
                 b'old': oldnode,
             }
-            op.reply.newpart(
-                b'pushkey', mandatoryparams=pycompat.iteritems(params)
-            )
+            op.reply.newpart(b'pushkey', mandatoryparams=params.items())
 
 
 def bundle2pushkey(orig, op, part):

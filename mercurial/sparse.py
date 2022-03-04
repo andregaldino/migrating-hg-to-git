@@ -554,7 +554,7 @@ def refreshwdir(repo, origstatus, origsparsematch, force=False):
         )
 
     # Check for files that were only in the dirstate.
-    for file, state in pycompat.iteritems(dirstate):
+    for file, state in dirstate.items():
         if not file in files:
             old = origsparsematch(file)
             new = sparsematch(file)

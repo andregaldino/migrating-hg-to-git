@@ -115,7 +115,7 @@ def parseoptions(ui, cmdoptions, args):
     opts = dict(
         [
             (k, convert(v)) if isinstance(v, bytes) else (k, v)
-            for k, v in pycompat.iteritems(opts)
+            for k, v in opts.items()
         ]
     )
 
@@ -131,7 +131,7 @@ class Command(object):
     def __bytes__(self):
         cmd = b"hg " + self.name
         if self.opts:
-            for k, values in sorted(pycompat.iteritems(self.opts)):
+            for k, values in sorted(self.opts.items()):
                 for v in values:
                     if v:
                         if isinstance(v, int):

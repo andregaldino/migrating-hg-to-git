@@ -626,7 +626,7 @@ def dorecord(
             # 5. finally restore backed-up files
             try:
                 dirstate = repo.dirstate
-                for realname, tmpname in pycompat.iteritems(backups):
+                for realname, tmpname in backups.items():
                     ui.debug(b'restoring %r to %r\n' % (tmpname, realname))
 
                     if dirstate.get_entry(realname).maybe_clean:

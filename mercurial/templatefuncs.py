@@ -910,7 +910,7 @@ def word(context, mapping, args):
 
 def loadfunction(ui, extname, registrarobj):
     """Load template function from specified registrarobj"""
-    for name, func in pycompat.iteritems(registrarobj._table):
+    for name, func in registrarobj._table.items():
         funcs[name] = func
 
 

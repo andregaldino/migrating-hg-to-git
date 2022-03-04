@@ -125,7 +125,7 @@ def listexts(header, exts, indent=1, showdeprecated=False):
     '''return a text listing of the given extensions'''
     rst = []
     if exts:
-        for name, desc in sorted(pycompat.iteritems(exts)):
+        for name, desc in sorted(exts.items()):
             if not showdeprecated and any(w in desc for w in _exclkeywords):
                 continue
             rst.append(b'%s:%s: %s\n' % (b' ' * indent, name, desc))
@@ -280,7 +280,7 @@ def topicmatch(ui, commands, kw):
             name = names[0]
             if not filtertopic(ui, name):
                 results[b'topics'].append((names[0], header))
-    for cmd, entry in pycompat.iteritems(commands.table):
+    for cmd, entry in commands.table.items():
         if len(entry) == 3:
             summary = entry[2]
         else:
@@ -664,7 +664,7 @@ def _getcategorizedhelpcmds(ui, cmdtable, name, select=None):
     h = {}
     # Command -> string showing synonyms
     syns = {}
-    for c, e in pycompat.iteritems(cmdtable):
+    for c, e in cmdtable.items():
         fs = cmdutil.parsealiases(c)
         f = fs[0]
         syns[f] = fs

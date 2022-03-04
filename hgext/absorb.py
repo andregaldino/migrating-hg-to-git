@@ -733,7 +733,7 @@ class fixupstate(object):
 
     def apply(self):
         """apply fixups to individual filefixupstates"""
-        for path, state in pycompat.iteritems(self.fixupmap):
+        for path, state in self.fixupmap.items():
             if self.ui.debugflag:
                 self.ui.write(_(b'applying fixups to %s\n') % path)
             state.apply()
@@ -741,10 +741,7 @@ class fixupstate(object):
     @property
     def chunkstats(self):
         """-> {path: chunkstats}. collect chunkstats from filefixupstates"""
-        return {
-            path: state.chunkstats
-            for path, state in pycompat.iteritems(self.fixupmap)
-        }
+        return {path: state.chunkstats for path, state in self.fixupmap.items()}
 
     def commit(self):
         """commit changes. update self.finalnode, self.replacemap"""
@@ -762,7 +759,7 @@ class fixupstate(object):
         chunkstats = self.chunkstats
         if ui.verbose:
             # chunkstats for each file
-            for path, stat in pycompat.iteritems(chunkstats):
+            for path, stat in chunkstats.items():
                 if stat[0]:
                     ui.write(
                         _(b'%s: %d of %d chunk(s) applied\n')
@@ -845,7 +842,7 @@ class fixupstate(object):
         repo = self.repo
         needupdate = [
             (name, self.replacemap[hsh])
-            for name, hsh in pycompat.iteritems(repo._bookmarks)
+            for name, hsh in repo._bookmarks.items()
             if hsh in self.replacemap
         ]
         changes = []
@@ -908,7 +905,7 @@ class fixupstate(object):
         # ctx changes more files (not a subset of memworkingcopy)
         if not set(ctx.files()).issubset(set(memworkingcopy)):
             return False
-        for path, content in pycompat.iteritems(memworkingcopy):
+        for path, content in memworkingcopy.items():
             if path not in pctx or path not in ctx:
                 return False
             fctx = ctx[path]
@@ -951,7 +948,7 @@ class fixupstate(object):
     def _cleanupoldcommits(self):
         replacements = {
             k: ([v] if v is not None else [])
-            for k, v in pycompat.iteritems(self.replacemap)
+            for k, v in self.replacemap.items()
         }
         if replacements:
             scmutil.cleanupnodes(
@@ -1001,7 +998,7 @@ def overlaydiffcontext(ctx, chunks):
         if not path or not info:
             continue
         patchmap[path].append(info)
-    for path, patches in pycompat.iteritems(patchmap):
+    for path, patches in patchmap.items():
         if path not in ctx or not patches:
             continue
         patches.sort(reverse=True)

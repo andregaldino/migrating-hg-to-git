@@ -466,7 +466,7 @@ def createlog(ui, directory=None, root=b"", rlog=True, cache=None):
 
             # find the branches starting from this revision
             branchpoints = set()
-            for branch, revision in pycompat.iteritems(branchmap):
+            for branch, revision in branchmap.items():
                 revparts = tuple([int(i) for i in revision.split(b'.')])
                 if len(revparts) < 2:  # bad tags
                     continue

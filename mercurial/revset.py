@@ -594,7 +594,7 @@ def bookmark(repo, subset, x):
             bms.add(repo[bmrev].rev())
         else:
             matchrevs = set()
-            for name, bmrev in pycompat.iteritems(repo._bookmarks):
+            for name, bmrev in repo._bookmarks.items():
                 if matcher(name):
                     matchrevs.add(bmrev)
             for bmrev in matchrevs:
@@ -1706,7 +1706,7 @@ def named(repo, subset, x):
             )
         namespaces.add(repo.names[pattern])
     else:
-        for name, ns in pycompat.iteritems(repo.names):
+        for name, ns in repo.names.items():
             if matcher(name):
                 namespaces.add(ns)
 
@@ -2803,7 +2803,7 @@ def makematcher(tree):
 
 def loadpredicate(ui, extname, registrarobj):
     """Load revset predicates from specified registrarobj"""
-    for name, func in pycompat.iteritems(registrarobj._table):
+    for name, func in registrarobj._table.items():
         symbols[name] = func
         if func._safe:
             safesymbols.add(name)

@@ -123,7 +123,7 @@ class basectx(object):
         deleted, unknown, ignored = s.deleted, s.unknown, s.ignored
         deletedset = set(deleted)
         d = mf1.diff(mf2, match=match, clean=listclean)
-        for fn, value in pycompat.iteritems(d):
+        for fn, value in d.items():
             if fn in deletedset:
                 continue
             if value is None:

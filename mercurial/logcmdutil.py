@@ -327,7 +327,7 @@ class changesetprinter(object):
         if branch != b'default':
             self.ui.write(columns[b'branch'] % branch, label=b'log.branch')
 
-        for nsname, ns in pycompat.iteritems(self.repo.names):
+        for nsname, ns in self.repo.names.items():
             # branches has special logic already handled above, so here we just
             # skip it
             if nsname == b'branches':
@@ -991,7 +991,7 @@ def _makerevset(repo, wopts, slowpath):
         opts[b'_patslog'] = list(wopts.pats)
 
     expr = []
-    for op, val in sorted(pycompat.iteritems(opts)):
+    for op, val in sorted(opts.items()):
         if not val:
             continue
         revop, listop = _opt2logrevset[op]

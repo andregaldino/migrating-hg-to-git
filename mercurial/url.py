@@ -240,7 +240,7 @@ def _generic_proxytunnel(self):
         if x.lower().startswith('proxy-')
     }
     self.send(b'CONNECT %s HTTP/1.0\r\n' % self.realhostport)
-    for header in pycompat.iteritems(proxyheaders):
+    for header in proxyheaders.items():
         self.send(b'%s: %s\r\n' % header)
     self.send(b'\r\n')
 

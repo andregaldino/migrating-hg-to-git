@@ -235,7 +235,7 @@ def between(repo, proto, pairs):
 def branchmap(repo, proto):
     branchmap = repo.branchmap()
     heads = []
-    for branch, nodes in pycompat.iteritems(branchmap):
+    for branch, nodes in branchmap.items():
         branchname = urlreq.quote(encoding.fromlocal(branch))
         branchnodes = wireprototypes.encodelist(nodes)
         heads.append(b'%s %s' % (branchname, branchnodes))
@@ -432,7 +432,7 @@ def getbundle(repo, proto, others):
     opts = options(
         b'getbundle', wireprototypes.GETBUNDLE_ARGUMENTS.keys(), others
     )
-    for k, v in pycompat.iteritems(opts):
+    for k, v in opts.items():
         keytype = wireprototypes.GETBUNDLE_ARGUMENTS[k]
         if keytype == b'nodes':
             opts[k] = wireprototypes.decodelist(v)

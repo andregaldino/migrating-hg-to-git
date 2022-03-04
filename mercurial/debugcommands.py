@@ -492,7 +492,7 @@ def debugcapabilities(ui, path, **opts):
         b2caps = bundle2.bundle2caps(peer)
         if b2caps:
             ui.writenoi18n(b'Bundle2 capabilities:\n')
-            for key, values in sorted(pycompat.iteritems(b2caps)):
+            for key, values in sorted(b2caps.items()):
                 ui.write(b'  %s\n' % key)
                 for v in values:
                     ui.write(b'    %s\n' % v)
@@ -2388,7 +2388,7 @@ def debugmergestate(ui, repo, *args, **opts):
         if f in ms:
             # If file is in mergestate, we have already processed it's extras
             continue
-        for k, v in pycompat.iteritems(d):
+        for k, v in d.items():
             fm_extras.startitem()
             fm_extras.data(file=f)
             fm_extras.data(key=k)
@@ -2405,7 +2405,7 @@ def debugnamecomplete(ui, repo, *args):
     names = set()
     # since we previously only listed open branches, we will handle that
     # specially (after this for loop)
-    for name, ns in pycompat.iteritems(repo.names):
+    for name, ns in repo.names.items():
         if name != b'branches':
             names.update(ns.listnames(repo))
     names.update(
@@ -2699,7 +2699,7 @@ def debugpathcomplete(ui, repo, *specs, **opts):
         fullpaths = opts['full']
         files, dirs = set(), set()
         adddir, addfile = dirs.add, files.add
-        for f, st in pycompat.iteritems(dirstate):
+        for f, st in dirstate.items():
             if f.startswith(spec) and st.state in acceptable:
                 if fixpaths:
                     f = f.replace(b'/', pycompat.ossep)
@@ -4270,7 +4270,7 @@ def debugwireargs(ui, repopath, *vals, **opts):
         for opt in cmdutil.remoteopts:
             del opts[opt[1]]
         args = {}
-        for k, v in pycompat.iteritems(opts):
+        for k, v in opts.items():
             if v:
                 args[k] = v
         args = pycompat.strkwargs(args)

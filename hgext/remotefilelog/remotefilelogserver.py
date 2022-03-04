@@ -21,7 +21,6 @@ from mercurial import (
     error,
     extensions,
     match,
-    pycompat,
     scmutil,
     store,
     streamclone,
@@ -416,7 +415,7 @@ def gcserver(ui, repo):
     cachepath = repo.vfs.join(b"remotefilelogcache")
     for head in heads:
         mf = repo[head].manifest()
-        for filename, filenode in pycompat.iteritems(mf):
+        for filename, filenode in mf.items():
             filecachepath = os.path.join(cachepath, filename, hex(filenode))
             neededfiles.add(filecachepath)
 

@@ -2469,7 +2469,7 @@ def copy(ui, repo, *pats, **opts):
 )
 def debugcommands(ui, cmd=b'', *args):
     """list all available commands and options"""
-    for cmd, vals in sorted(pycompat.iteritems(table)):
+    for cmd, vals in sorted(table.items()):
         cmd = cmd.split(b'|')[0]
         opts = b', '.join([i[1] for i in vals[1]])
         ui.write(b'%s: %s\n' % (cmd, opts))
@@ -7089,7 +7089,7 @@ def summary(ui, repo, **opts):
 
     c = repo.dirstate.copies()
     copied, renamed = [], []
-    for d, s in pycompat.iteritems(c):
+    for d, s in c.items():
         if s in status.removed:
             status.removed.remove(s)
             renamed.append(d)

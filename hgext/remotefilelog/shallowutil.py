@@ -102,7 +102,7 @@ def sumdicts(*dicts):
     """
     result = collections.defaultdict(lambda: 0)
     for dict in dicts:
-        for k, v in pycompat.iteritems(dict):
+        for k, v in dict.items():
             result[k] += v
     return result
 
@@ -110,7 +110,7 @@ def sumdicts(*dicts):
 def prefixkeys(dict, prefix):
     """Returns ``dict`` with ``prefix`` prepended to all its keys."""
     result = {}
-    for k, v in pycompat.iteritems(dict):
+    for k, v in dict.items():
         result[prefix + k] = v
     return result
 
@@ -208,7 +208,7 @@ def parsepackmeta(metabuf):
     integers.
     """
     metadict = _parsepackmeta(metabuf)
-    for k, v in pycompat.iteritems(metadict):
+    for k, v in metadict.items():
         if k in _metaitemtypes and int in _metaitemtypes[k]:
             metadict[k] = bin2int(v)
     return metadict

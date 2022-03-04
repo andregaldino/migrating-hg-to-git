@@ -530,8 +530,7 @@ def _buildfuncargs(exp, context, curmethods, funcname, argspec):
 
     def compiledict(xs):
         return util.sortdict(
-            (k, compileexp(x, context, curmethods))
-            for k, x in pycompat.iteritems(xs)
+            (k, compileexp(x, context, curmethods)) for k, x in xs.items()
         )
 
     def compilelist(xs):
@@ -708,7 +707,7 @@ class engine(object):
         newres = self._resources.availablekeys(newmapping)
         mapping = {
             k: v
-            for k, v in pycompat.iteritems(origmapping)
+            for k, v in origmapping.items()
             if (
                 k in knownres  # not a symbol per self.symbol()
                 or newres.isdisjoint(self._defaultrequires(k))

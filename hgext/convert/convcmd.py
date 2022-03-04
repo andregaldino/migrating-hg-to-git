@@ -584,9 +584,7 @@ class converter(object):
                         # write another hash correspondence to override the
                         # previous one so we don't end up with extra tag heads
                         tagsparents = [
-                            e
-                            for e in pycompat.iteritems(self.map)
-                            if e[1] == tagsparent
+                            e for e in self.map.items() if e[1] == tagsparent
                         ]
                         if tagsparents:
                             self.map[tagsparents[0][0]] = nrev

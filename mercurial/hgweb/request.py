@@ -77,7 +77,7 @@ class multidict(object):
         return vals[0]
 
     def asdictoflists(self):
-        return {k: list(v) for k, v in pycompat.iteritems(self._items)}
+        return {k: list(v) for k, v in self._items.items()}
 
 
 @attr.s(frozen=True)
@@ -175,7 +175,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
             # This is what is documented to be used for os.environ on Unix.
             return pycompat.fsencode(s)
 
-    env = {tobytes(k): tobytes(v) for k, v in pycompat.iteritems(env)}
+    env = {tobytes(k): tobytes(v) for k, v in env.items()}
 
     # Some hosting solutions are emulating hgwebdir, and dispatching directly
     # to an hgweb instance using this environment variable.  This was always
@@ -309,7 +309,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     # perform case normalization for us. We just rewrite underscore to dash
     # so keys match what likely went over the wire.
     headers = []
-    for k, v in pycompat.iteritems(env):
+    for k, v in env.items():
         if k.startswith(b'HTTP_'):
             headers.append((k[len(b'HTTP_') :].replace(b'_', b'-'), v))
 

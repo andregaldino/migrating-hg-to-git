@@ -12,7 +12,6 @@ from mercurial import (
     changegroup,
     error,
     extensions,
-    pycompat,
     revsetlang,
     util,
 )
@@ -67,7 +66,7 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
     parts.append(
         bundle2.bundlepart(
             scratchbranchparttype.upper(),
-            advisoryparams=pycompat.iteritems(params),
+            advisoryparams=params.items(),
             data=cg,
         )
     )

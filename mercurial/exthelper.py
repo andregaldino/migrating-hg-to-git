@@ -14,7 +14,6 @@ from . import (
     commands,
     error,
     extensions,
-    pycompat,
     registrar,
 )
 
@@ -114,7 +113,7 @@ class exthelper(object):
         self._extcommandwrappers.extend(other._extcommandwrappers)
         self._functionwrappers.extend(other._functionwrappers)
         self.cmdtable.update(other.cmdtable)
-        for section, items in pycompat.iteritems(other.configtable):
+        for section, items in other.configtable.items():
             if section in self.configtable:
                 self.configtable[section].update(items)
             else:

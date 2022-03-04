@@ -102,7 +102,7 @@ class monotone_source(common.converter_source, common.commandline):
         # Prepare the command in automate stdio format
         kwargs = pycompat.byteskwargs(kwargs)
         command = []
-        for k, v in pycompat.iteritems(kwargs):
+        for k, v in kwargs.items():
             command.append(b"%d:%s" % (len(k), k))
             if v:
                 command.append(b"%d:%s" % (len(v), v))

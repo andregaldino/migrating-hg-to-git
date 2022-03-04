@@ -270,7 +270,7 @@ class branchcache(object):
         return key in self._entries
 
     def iteritems(self):
-        for k, v in pycompat.iteritems(self._entries):
+        for k, v in self._entries.items():
             self._verifybranch(k)
             yield k, v
 
@@ -400,7 +400,7 @@ class branchcache(object):
         return heads
 
     def iterbranches(self):
-        for bn, heads in pycompat.iteritems(self):
+        for bn, heads in self.items():
             yield (bn, heads) + self._branchtip(heads)
 
     def iterheads(self):
@@ -434,7 +434,7 @@ class branchcache(object):
                 cachekey.append(hex(self.filteredhash))
             f.write(b" ".join(cachekey) + b'\n')
             nodecount = 0
-            for label, nodes in sorted(pycompat.iteritems(self._entries)):
+            for label, nodes in sorted(self._entries.items()):
                 label = encoding.fromlocal(label)
                 for node in nodes:
                     nodecount += 1
@@ -490,7 +490,7 @@ class branchcache(object):
         # Faster than using ctx.obsolete()
         obsrevs = obsolete.getrevs(repo, b'obsolete')
 
-        for branch, newheadrevs in pycompat.iteritems(newbranches):
+        for branch, newheadrevs in newbranches.items():
             # For every branch, compute the new branchheads.
             # A branchhead is a revision such that no descendant is on
             # the same branch.
