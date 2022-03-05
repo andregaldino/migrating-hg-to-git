@@ -35,6 +35,7 @@ build
 contrib/chg/chg
 contrib/hgsh/hgsh
 contrib/vagrant/.vagrant
+contrib/merge-lists/target/
 dist
 packages
 doc/common.txt
