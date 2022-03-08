@@ -1725,9 +1725,9 @@ class ui(object):
             if usereadline:
                 self.flush()
                 prompt = encoding.strfromlocal(prompt)
-                line = encoding.strtolocal(pycompat.rawinput(prompt))
+                line = encoding.strtolocal(input(prompt))
                 # When stdin is in binary mode on Windows, it can cause
-                # raw_input() to emit an extra trailing carriage return
+                # input() to emit an extra trailing carriage return
                 if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
                     line = line[:-1]
             else:
