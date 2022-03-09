@@ -43,10 +43,9 @@ from hgdemandimport import tracing
 with tracing.log('hg script'):
     # enable importing on demand to reduce startup time
     try:
-        if sys.version_info[0] < 3 or sys.version_info >= (3, 6):
-            import hgdemandimport
+        import hgdemandimport
 
-            hgdemandimport.enable()
+        hgdemandimport.enable()
     except ImportError:
         sys.stderr.write(
             "abort: couldn't find mercurial libraries in [%s]\n"
