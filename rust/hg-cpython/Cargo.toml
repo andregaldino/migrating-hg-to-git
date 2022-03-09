@@ -10,10 +10,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 cpython = { version = "0.7.0", features = ["extension-module"] }
-crossbeam-channel = "0.4"
+crossbeam-channel = "0.5.2"
 hg-core = { path = "../hg-core"}
-libc = "0.2"
-log = "0.4.8"
-env_logger = "0.7.1"
+libc = "0.2.119"
+log = "0.4.14"
+env_logger = "0.9.0"
 stable_deref_trait = "1.2.0"
 vcsgraph = "0.2.0"
