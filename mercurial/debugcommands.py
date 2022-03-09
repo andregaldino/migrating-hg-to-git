@@ -1020,7 +1020,7 @@ def debugdirstateignorepatternshash(ui, repo, **opts):
             b'',
             b'remote-as-revs',
             b"",
-            b'use local as remote, with only these these revisions',
+            b'use local as remote, with only these revisions',
         ),
     ]
     + cmdutil.remoteopts
