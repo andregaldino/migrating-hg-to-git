@@ -33,12 +33,6 @@ from . import tracing
 
 _deactivated = False
 
-# Python 3.5's LazyLoader doesn't work for some reason.
-# https://bugs.python.org/issue26186 is a known issue with extension
-# importing. But it appears to not have a meaningful effect with
-# Mercurial.
-_supported = sys.version_info[0:2] >= (3, 6)
-
 
 class _lazyloaderex(importlib.util.LazyLoader):
     """This is a LazyLoader except it also follows the _deactivated global and
@@ -144,9 +138,6 @@ def disable():
 
 
 def enable():
-    if not _supported:
-        return
-
     new_finders = []
     for finder in sys.meta_path:
         new_finders.append(
