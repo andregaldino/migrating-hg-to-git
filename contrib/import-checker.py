@@ -19,7 +19,7 @@ if True:  # disable lexical sorting checks
 
 import testparseutil
 
-# Whitelist of modules that symbols can be directly imported from.
+# Allow list of modules that symbols can be directly imported from.
 allowsymbolimports = (
     '__future__',
     'breezy',
@@ -46,9 +46,10 @@ allowsymbolimports = (
     'mercurial.thirdparty.attr',
     'mercurial.thirdparty.zope',
     'mercurial.thirdparty.zope.interface',
+    'typing',
 )
 
-# Whitelist of symbols that can be directly imported.
+# Allow list of symbols that can be directly imported.
 directsymbols = ('demandimport',)
 
 # Modules that must be aliased because they are commonly confused with
