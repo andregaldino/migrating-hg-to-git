@@ -86,7 +86,7 @@ def rapply(f, xs):
     return _rapply(f, xs)
 
 
-if os.name == r'nt' and sys.version_info >= (3, 6):
+if os.name == r'nt':
     # MBCS (or ANSI) filesystem encoding must be used as before.
     # Otherwise non-ASCII filenames in existing repositories would be
     # corrupted.
@@ -414,7 +414,6 @@ if sys.version_info[0:2] < (3, 6):
             s = s.decode(_detect_encoding(s), 'surrogatepass')
 
         return json.loads(s, *args, **kwargs)
-
 
 else:
     json_loads = json.loads
