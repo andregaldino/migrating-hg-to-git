@@ -238,10 +238,11 @@ def checksocketfamily(name, port=20058):
         s.bind(('localhost', port))
         s.close()
         return True
-    except socket.error as exc:
+    except (socket.error, OSError) as exc:
         if exc.errno == errno.EADDRINUSE:
             return True
-        elif exc.errno in (errno.EADDRNOTAVAIL, errno.EPROTONOSUPPORT):
+        elif exc.errno in (errno.EADDRNOTAVAIL, errno.EPROTONOSUPPORT,
+                           errno.EAFNOSUPPORT):
             return False
         else:
             raise
