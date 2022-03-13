@@ -15,6 +15,10 @@ from mercurial import (
     smartset,
 )
 
+import sortedcontainers
+
+SortedSet = sortedcontainers.SortedSet
+
 revsetpredicate = registrar.revsetpredicate()
 
 
@@ -78,7 +82,7 @@ def scratch(repo, subset, x):
     n = revsetlang.getinteger(n, _(b"scratch expects a number"))
 
     selected = set()
-    heads = set()
+    heads = SortedSet()
     children_count = collections.defaultdict(lambda: 0)
     parents = repo.changelog._uncheckedparentrevs
 
@@ -102,9 +106,7 @@ def scratch(repo, subset, x):
     for x in range(n):
         if not heads:
             break
-        pickable = list(heads)
-        pickable.sort()
-        pick = rand.choice(pickable)
+        pick = rand.choice(heads)
         heads.remove(pick)
         assert pick not in selected
         selected.add(pick)
