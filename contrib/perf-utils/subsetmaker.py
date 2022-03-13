@@ -102,7 +102,9 @@ def scratch(repo, subset, x):
     for x in range(n):
         if not heads:
             break
-        pick = rand.choice(list(heads))
+        pickable = list(heads)
+        pickable.sort()
+        pick = rand.choice(pickable)
         heads.remove(pick)
         assert pick not in selected
         selected.add(pick)
