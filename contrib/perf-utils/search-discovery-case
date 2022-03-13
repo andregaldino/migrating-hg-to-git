@@ -147,13 +147,23 @@ def interesting_boundary(res):
     roundtrips = res["total-roundtrips"]
     if roundtrips <= 1:
         return None
+    total_revs = res["nb-revs"]
+    common_revs = res["nb-revs-common"]
+    missing_revs = res["nb-revs-missing"]
     undecided_common = res["nb-ini_und-common"]
     undecided_missing = res["nb-ini_und-missing"]
     if undecided_common == 0:
         return None
     if undecided_missing == 0:
         return None
-    return (roundtrips, undecided_common, undecided_missing)
+    return (
+        roundtrips,
+        undecided_common,
+        undecided_missing,
+        total_revs,
+        common_revs,
+        missing_revs,
+    )
 
 
 def end(*args, **kwargs):
