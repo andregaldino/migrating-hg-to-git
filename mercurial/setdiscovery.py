@@ -298,6 +298,9 @@ def findcommonheads(
 
     samplegrowth = float(ui.config(b'devel', b'discovery.grow-sample.rate'))
 
+    if audit is not None:
+        audit[b'total-queries'] = 0
+
     start = util.timer()
 
     roundtrips = 0
@@ -376,6 +379,8 @@ def findcommonheads(
         roundtrips += 1
         with remote.commandexecutor() as e:
             fheads = e.callcommand(b'heads', {})
+            if audit is not None:
+                audit[b'total-queries'] += len(sample)
             fknown = e.callcommand(
                 b'known',
                 {
@@ -478,6 +483,8 @@ def findcommonheads(
         sample = list(sample)
 
         with remote.commandexecutor() as e:
+            if audit is not None:
+                audit[b'total-queries'] += len(sample)
             yesno = e.callcommand(
                 b'known',
                 {

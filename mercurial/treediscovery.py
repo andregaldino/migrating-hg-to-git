@@ -39,6 +39,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
 
     if audit is not None:
         audit[b'total-roundtrips'] = 1
+        audit[b'total-queries'] = 0
 
     if repo.changelog.tip() == repo.nullid:
         base.add(repo.nullid)
@@ -69,6 +70,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
     # head, root, first parent, second parent
     # (a branch always has two parents (or none) by definition)
     with remote.commandexecutor() as e:
+        if audit is not None:
+            audit[b'total-queries'] += len(unknown)
         branches = e.callcommand(b'branches', {b'nodes': unknown}).result()
 
     unknown = collections.deque(branches)
@@ -115,10 +118,13 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
             )
             for p in pycompat.xrange(0, len(r), 10):
                 with remote.commandexecutor() as e:
+                    subset = r[p : p + 10]
+                    if audit is not None:
+                        audit[b'total-queries'] += len(subset)
                     branches = e.callcommand(
                         b'branches',
                         {
-                            b'nodes': r[p : p + 10],
+                            b'nodes': subset,
                         },
                     ).result()
 
@@ -135,6 +141,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
         progress.increment()
 
         with remote.commandexecutor() as e:
+            if audit is not None:
+                audit[b'total-queries'] += len(search)
             between = e.callcommand(b'between', {b'pairs': search}).result()
 
         for n, l in zip(search, between):

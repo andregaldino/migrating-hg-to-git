@@ -45,6 +45,7 @@ Small superset:
   unpruned common: 01241442b3c2 66f7d451a68b b5714e113bc0
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                       6
   heads summary:
     total common heads:          2
       also local heads:          2
@@ -77,6 +78,7 @@ Small superset:
   all local changesets known remotely
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       2
   heads summary:
     total common heads:          2
       also local heads:          2
@@ -109,6 +111,7 @@ Small superset:
   all local changesets known remotely
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       1
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -140,6 +143,7 @@ Small superset:
   unpruned common: 01241442b3c2 b5714e113bc0
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       0
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -172,6 +176,7 @@ Small superset:
   all remote heads known locally
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       3
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -204,6 +209,7 @@ Small superset:
   all remote heads known locally
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       1
   heads summary:
     total common heads:          2
       also local heads:          1
@@ -242,6 +248,7 @@ Many new:
   unpruned common: bebd167eb94d
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                       3
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -277,6 +284,7 @@ Many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      31
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -312,6 +320,7 @@ Many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -343,6 +352,7 @@ Many new:
   unpruned common: 66f7d451a68b bebd167eb94d
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -378,6 +388,7 @@ Many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                       3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -413,6 +424,7 @@ Many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                       3
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -450,6 +462,7 @@ Both sides many new with stub:
   unpruned common: 2dc09a01254d
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -485,6 +498,7 @@ Both sides many new with stub:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      31
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -520,6 +534,7 @@ Both sides many new with stub:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -551,6 +566,7 @@ Both sides many new with stub:
   unpruned common: 2dc09a01254d 66f7d451a68b
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -586,6 +602,7 @@ Both sides many new with stub:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      30
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -621,6 +638,7 @@ Both sides many new with stub:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      30
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -659,6 +677,7 @@ Both many new:
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -694,6 +713,7 @@ Both many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -729,6 +749,7 @@ Both many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -760,6 +781,7 @@ Both many new:
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -795,6 +817,7 @@ Both many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -830,6 +853,7 @@ Both many new:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -868,6 +892,7 @@ Both many new skewed:
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -903,6 +928,7 @@ Both many new skewed:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      52
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -938,6 +964,7 @@ Both many new skewed:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      52
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -969,6 +996,7 @@ Both many new skewed:
   unpruned common: 66f7d451a68b
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                       4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1004,6 +1032,7 @@ Both many new skewed:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1039,6 +1068,7 @@ Both many new skewed:
   2 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   2
+  queries:                      32
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1077,6 +1107,7 @@ Both many new on top of long history:
   unpruned common: 7ead0cba2838
   elapsed time:  * seconds (glob)
   round-trips:                   4
+  queries:                       5
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1115,6 +1146,7 @@ Both many new on top of long history:
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                      43
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1153,6 +1185,7 @@ Both many new on top of long history:
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                      43
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1184,6 +1217,7 @@ Both many new on top of long history:
   unpruned common: 7ead0cba2838
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                       4
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1222,6 +1256,7 @@ Both many new on top of long history:
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                      27
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1260,6 +1295,7 @@ Both many new on top of long history:
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                      27
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1350,6 +1386,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   6 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   6
+  queries:                    1054
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1387,6 +1424,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   3 total queries in *.????s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                      13
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1436,6 +1474,7 @@ One with >200 heads. We now switch to send them all in the initial roundtrip, bu
   9 total queries in *s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   9
+  queries:                     993
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1564,6 +1603,7 @@ returned as common heads.
   searching for changes
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                       1
   heads summary:
     total common heads:          1
       also local heads:          1
@@ -1610,6 +1650,7 @@ remote will be last 25 heads of the local graph
   all remote heads known locally
   elapsed time:  * seconds (glob)
   round-trips:                   1
+  queries:                     260
   heads summary:
     total common heads:         25
       also local heads:         25
@@ -1655,6 +1696,7 @@ remote will be last 25 heads of the local graph
   3 total queries *s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                     109
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1700,6 +1742,7 @@ remote will be last 25 heads of the local graph
   3 total queries in *s (glob)
   elapsed time:  * seconds (glob)
   round-trips:                   3
+  queries:                     109
   heads summary:
     total common heads:          1
       also local heads:          0
@@ -1757,6 +1800,7 @@ Test -T json output
     "nb-revs-common": 300,
     "nb-revs-missing": 100,
     "output": "query 1; heads\nsearching for changes\ntaking quick initial sample\nquery 2; still undecided: 375, sample size is: 81\nsampling from both directions\nquery 3; still undecided: 3, sample size is: 3\n3 total queries in *s\n", (glob)
+    "total-queries": 109,
     "total-roundtrips": 3
    }
   ]

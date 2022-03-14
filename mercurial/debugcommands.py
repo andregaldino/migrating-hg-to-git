@@ -1221,6 +1221,7 @@ def debugdiscovery(ui, repo, remoteurl=b"default", **opts):
     # display discovery summary
     fm.plain(b"elapsed time:  %(elapsed)f seconds\n" % data)
     fm.plain(b"round-trips:           %(total-roundtrips)9d\n" % data)
+    fm.plain(b"queries:               %(total-queries)9d\n" % data)
     fm.plain(b"heads summary:\n")
     fm.plain(b"  total common heads:  %(nb-common-heads)9d\n" % data)
     fm.plain(b"    also local heads:  %(nb-common-heads-local)9d\n" % data)
