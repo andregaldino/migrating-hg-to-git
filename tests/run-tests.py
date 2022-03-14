@@ -241,8 +241,11 @@ def checksocketfamily(name, port=20058):
     except (socket.error, OSError) as exc:
         if exc.errno == errno.EADDRINUSE:
             return True
-        elif exc.errno in (errno.EADDRNOTAVAIL, errno.EPROTONOSUPPORT,
-                           errno.EAFNOSUPPORT):
+        elif exc.errno in (
+            errno.EADDRNOTAVAIL,
+            errno.EPROTONOSUPPORT,
+            errno.EAFNOSUPPORT,
+        ):
             return False
         else:
             raise
