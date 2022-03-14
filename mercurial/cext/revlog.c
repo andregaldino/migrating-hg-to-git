@@ -179,7 +179,7 @@ static const long entry_cl2_offset_rank = 69;
 /* next free offset: 73 */
 
 static const char comp_mode_inline = 2;
-static const char rank_unknown = -1;
+static const int rank_unknown = -1;
 
 static void raise_revlog_error(void)
 {
