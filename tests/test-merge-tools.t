@@ -1225,12 +1225,8 @@ with premerge=keep and $output in tool args, $local does not have markers:
   merging f
   revision 0
   space
-  <<<<<<< working copy: ef83787e2614 - test: revision 1 (known-bad-output !)
   revision 1
   space
-  ======= (known-bad-output !)
-  revision 4 (known-bad-output !)
-  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4 (known-bad-output !)
   revision 4
   <<<<<<< working copy: ef83787e2614 - test: revision 1
   revision 1
