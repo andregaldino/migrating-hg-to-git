@@ -588,7 +588,7 @@ static int index_fast_rank(indexObject *self, Py_ssize_t pos)
 		return 0; /* convention */
 	}
 
-	return *(index_deref(self, pos) + entry_cl2_offset_rank);
+	return getbe32(index_deref(self, pos) + entry_cl2_offset_rank);
 }
 
 /*
