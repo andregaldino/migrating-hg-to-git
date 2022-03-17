@@ -14,14 +14,7 @@ while we're running
   >     f="\${WAITLOCK_FILE}"
   >     start=\`date +%s\`
   >     timeout=5
-  >     while [ \\( ! -f \$f \\) -a \\( ! -L \$f \\) ]; do
-  >         now=\`date +%s\`
-  >         if [ "\`expr \$now - \$start\`" -gt \$timeout ]; then
-  >             echo "timeout: \$f was not created in \$timeout seconds (it is now \$(date +%s))"
-  >             exit 1
-  >         fi
-  >         sleep 0.1
-  >     done
+  >     $RUNTESTDIR/testlib/wait-on-file "\$timeout" "\$f"
   >     if [ \$# -gt 1 ]; then
   >         cat "\$@"
   >     fi
