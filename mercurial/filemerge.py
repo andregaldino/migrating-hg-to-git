@@ -1119,7 +1119,7 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 def _run_partial_resolution_tools(repo, local, other, base):
     """Runs partial-resolution tools on the three inputs and updates them."""
     ui = repo.ui
-    # Tuples of (order, name, executable path)
+    # Tuples of (order, name, executable path, args)
     tools = []
     seen = set()
     section = b"partial-merge-tools"
@@ -1135,7 +1135,8 @@ def _run_partial_resolution_tools(repo, local, other, base):
         if is_match:
             order = ui.configint(section, b'%s.order' % name, 0)
             executable = ui.config(section, b'%s.executable' % name, name)
-            tools.append((order, name, executable))
+            args = ui.config(section, b'%s.args' % name)
+            tools.append((order, name, executable, args))
 
     if not tools:
         return
@@ -1151,11 +1152,21 @@ def _run_partial_resolution_tools(repo, local, other, base):
     with _maketempfiles(files) as temppaths:
         localpath, basepath, otherpath = temppaths
 
-        for order, name, executable in tools:
+        for order, name, executable, args in tools:
             cmd = procutil.shellquote(executable)
-            # TODO: Allow the user to configure the command line using
-            # $local, $base, $other.
-            cmd = b'%s %s %s %s' % (cmd, localpath, basepath, otherpath)
+            replace = {
+                b'local': localpath,
+                b'base': basepath,
+                b'other': otherpath,
+            }
+            args = util.interpolate(
+                br'\$',
+                replace,
+                args,
+                lambda s: procutil.shellquote(util.localpath(s)),
+            )
+
+            cmd = b'%s %s' % (cmd, args)
             r = ui.system(cmd, cwd=repo.root, blockedtag=b'partial-mergetool')
             if r:
                 raise error.StateError(

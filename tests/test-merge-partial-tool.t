@@ -207,3 +207,35 @@ merge the rest, then the regular merge tool should not be used. Here we merge
   c
   d
   e3
+
+Test that arguments get passed as expected.
+
+  $ cat >> "$TESTTMP/log-args.sh" <<'EOF'
+  > #!/bin/sh
+  > echo "$@" > args.log
+  > EOF
+  $ chmod +x "$TESTTMP/log-args.sh"
+  $ cat >> "$HGRCPATH" <<EOF
+  > [partial-merge-tools]
+  > log-args.executable=$TESTTMP/log-args.sh
+  > EOF
+  $ hg up -C 2
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 1
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat args.log
+  */hgmerge-*/file~local */hgmerge-*/file~base */hgmerge-*/file~other (glob)
+  $ hg up -C 2
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 1 --config partial-merge-tools.log-args.args='--other $other $base --foo --local $local --also-other $other'
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat args.log
+  --other */hgmerge-*/file~other */hgmerge-*/file~base --foo --local */hgmerge-*/file~local --also-other */hgmerge-*/file~other (glob)

@@ -1601,6 +1601,14 @@ coreconfigitem(
     experimental=True,
 )
 coreconfigitem(
+    b'partial-merge-tools',
+    br'.*\.args',
+    default=b"$local $base $other",
+    generic=True,
+    priority=-1,
+    experimental=True,
+)
+coreconfigitem(
     b'merge-tools',
     b'.*',
     default=None,
