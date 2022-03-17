@@ -976,7 +976,7 @@ Test shelve --keep
 Test shelve --delete
 
   $ hg shelve --list
-  default         (*s ago)    changes to: create conflict (glob)
+  default         (*s ago) * changes to: create conflict (glob)
   $ hg shelve --delete doesnotexist
   abort: shelved change 'doesnotexist' not found
   [10]
@@ -1209,7 +1209,7 @@ Abort unshelve while merging (issue5123)
   $ hg add e
   $ hg ci -m e
   $ hg shelve --patch
-  default         (*s ago)    changes to: b (glob)
+  default         (*s ago) * changes to: b (glob)
   
   diff --git a/c b/c
   new file mode 100644
@@ -1258,7 +1258,7 @@ Abort unshelve while merging (issue5123)
   e
 -- shelve should not contain `c` now
   $ hg shelve --patch
-  default         (*s ago)    changes to: b (glob)
+  default         (*s ago) * changes to: b (glob)
   
   diff --git a/d b/d
   new file mode 100644
@@ -1357,7 +1357,7 @@ Abort unshelve while merging (issue5123)
   A
   B
   $ hg shelve --patch
-  default         (*s ago)    changes to: add B to foo (glob)
+  default         (*s ago) * changes to: add B to foo (glob)
   
   diff --git a/foo b/foo
   --- a/foo

@@ -210,6 +210,6 @@ Check that unshelve isn't broken by halting the merge
   merge halted after failed merge (see hg resolve)
   [240]
   $ hg shelve --list
-  default         (* ago)    changes to: foo (glob)
+  default         (*s ago) * changes to: foo (glob)
   $ hg unshelve --abort
   unshelve of 'default' aborted
