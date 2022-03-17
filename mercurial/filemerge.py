@@ -754,8 +754,7 @@ def _xmerge(repo, mynode, local, other, base, toolconf, backup):
         # Remove the .orig to make syntax-highlighting more likely.
         if localoutputpath.endswith(b'.orig'):
             localoutputpath, ext = os.path.splitext(localoutputpath)
-        localdata = util.readfile(localpath)
-        files.append((b"local", localoutputpath, localdata))
+        files.append((b"local", localoutputpath, backup.data()))
 
     with _maketempfiles(files) as temppaths:
         basepath, otherpath = temppaths[:2]

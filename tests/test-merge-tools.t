@@ -1213,6 +1213,42 @@ premerge=keep keeps conflict markers in:
   # hg resolve --list
   R f
 
+with premerge=keep and $output in tool args, $local does not have markers:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 4 --config merge-tools.true.premerge=keep --config 'merge-tools.true.args=$base $local $other $output'
+  merging f
+  revision 0
+  space
+  revision 1
+  space
+  revision 4
+  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
 premerge=keep-merge3 keeps conflict markers with base content:
 
   $ beforemerge
