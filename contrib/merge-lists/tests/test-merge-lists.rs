@@ -1,7 +1,8 @@
 use similar::DiffableStr;
+use std::ffi::OsStr;
 use tempdir::TempDir;
 
-fn run_test(input: &str) -> String {
+fn run_test(arg: &str, input: &str) -> String {
     let mut cmd = assert_cmd::Command::cargo_bin("merge-lists").unwrap();
     let temp_dir = TempDir::new("test").unwrap();
     let base_path = temp_dir.path().join("base");
@@ -16,6 +17,7 @@ fn run_test(input: &str) -> String {
     std::fs::write(&local_path, split.next().unwrap()).unwrap();
     std::fs::write(&other_path, split.next().unwrap()).unwrap();
     cmd.args(&[
+        OsStr::new(arg),
         local_path.as_os_str(),
         base_path.as_os_str(),
         other_path.as_os_str(),
@@ -38,6 +40,7 @@ fn run_test(input: &str) -> String {
 #[test]
 fn test_merge_lists_basic() {
     let output = run_test(
+        "--python-imports",
         r"
 base:
 import lib1
@@ -72,6 +75,7 @@ fn test_merge_lists_from() {
     // Test some "from x import y" statements and some non-import conflicts
     // (unresolvable)
     let output = run_test(
+        "--python-imports",
         r"
 base:
 from . import x
@@ -116,6 +120,7 @@ fn test_merge_lists_not_sorted() {
     // Test that nothing is done if the elements in the conflicting hunks are
     // not sorted
     let output = run_test(
+        "--python-imports",
         r"
 base:
 import x
@@ -152,5 +157,48 @@ import y
     import y
 
     3+3
+    "###);
+}
+
+#[test]
+fn test_custom_regex() {
+    // Test merging of all lines (by matching anything)
+    let output = run_test(
+        "--pattern=.*",
+        r"
+base:
+aardvark
+baboon
+camel
+
+local:
+aardvark
+camel
+eagle
+
+other:
+aardvark
+camel
+deer
+",
+    );
+    insta::assert_snapshot!(output, @r###"
+    base:
+    aardvark
+    camel
+    deer
+    eagle
+
+    local:
+    aardvark
+    camel
+    deer
+    eagle
+
+    other:
+    aardvark
+    camel
+    deer
+    eagle
     "###);
 }

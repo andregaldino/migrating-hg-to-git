@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 use itertools::Itertools;
 use regex::bytes::Regex;
 use similar::ChangeTag;
@@ -150,6 +150,7 @@ fn resolve(
 /// for partial merge tools (configured in `[partial-merge-tools]`).
 #[derive(Parser, Debug)]
 #[clap(version, about, long_about = None)]
+#[clap(group(ArgGroup::new("match").required(true).args(&["pattern", "python-imports"])))]
 struct Args {
     /// Path to the file's content in the "local" side
     local: OsString,
@@ -159,6 +160,26 @@ struct Args {
 
     /// Path to the file's content in the "other" side
     other: OsString,
+
+    /// Regular expression to use
+    #[clap(long, short)]
+    pattern: Option<String>,
+
+    /// Use built-in regular expression for Python imports
+    #[clap(long)]
+    python_imports: bool,
+}
+
+fn get_regex(args: &Args) -> Regex {
+    let pattern = if args.python_imports {
+        r"import \w+(\.\w+)*( +#.*)?\n|from (\w+(\.\w+)* import \w+( as \w+)?(, \w+( as \w+)?)*( +#.*)?)"
+    } else if let Some(pattern) = &args.pattern {
+        pattern
+    } else {
+        ".*"
+    };
+    let pattern = format!(r"{}\r?\n?", pattern);
+    regex::bytes::Regex::new(&pattern).unwrap()
 }
 
 fn main() {
@@ -172,8 +193,7 @@ fn main() {
     let local_bytes = std::fs::read(&local_path).unwrap();
     let other_bytes = std::fs::read(&other_path).unwrap();
 
-    let regex =
-        regex::bytes::Regex::new(r"import \w+(\.\w+)*( +#.*)?\n|from (\w+(\.\w+)* import \w+( as \w+)?(, \w+( as \w+)?)*( +#.*)?)\r?\n?").unwrap();
+    let regex = get_regex(&args);
     let (new_base_bytes, new_local_bytes, new_other_bytes) =
         resolve(&base_bytes, &local_bytes, &other_bytes, &regex);
 
