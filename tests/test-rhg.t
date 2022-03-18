@@ -391,3 +391,17 @@ The `:required` extension suboptions are correctly ignored
   $ echo "*:required = yes" >> $HGRCPATH
   $ rhg files
   a
+
+We can ignore all extensions at once
+
+  $ echo "[extensions]" >> $HGRCPATH
+  $ echo "thisextensionbetternotexist=" >> $HGRCPATH
+  $ echo "thisextensionbetternotexisteither=" >> $HGRCPATH
+  $ $NO_FALLBACK rhg files
+  unsupported feature: extensions: thisextensionbetternotexist, thisextensionbetternotexisteither (consider adding them to 'rhg.ignored-extensions' config)
+  [252]
+
+  $ echo "[rhg]" >> $HGRCPATH
+  $ echo "ignored-extensions=*" >> $HGRCPATH
+  $ $NO_FALLBACK rhg files
+  a

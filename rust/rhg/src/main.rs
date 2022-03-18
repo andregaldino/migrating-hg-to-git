@@ -643,6 +643,11 @@ const SUPPORTED_EXTENSIONS: &[&[u8]] =
     &[b"blackbox", b"share", b"sparse", b"narrow", b"*"];
 
 fn check_extensions(config: &Config) -> Result<(), CommandError> {
+    if let Some(b"*") = config.get(b"rhg", b"ignored-extensions") {
+        // All extensions are to be ignored, nothing to do here
+        return Ok(());
+    }
+
     let enabled: HashSet<&[u8]> = config
         .get_section_keys(b"extensions")
         .into_iter()
