@@ -316,6 +316,15 @@ Test writing only to filelog
   a -> k
 #endif
 
+Existing copy information is preserved by amend
+  $ hg cp a l
+  $ hg ci -m 'copy a to l'
+  $ hg showcopies
+  a -> l
+  $ hg ci --amend -m 'new description'
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
+  $ hg showcopies
+  a -> l (no-extra !)
   $ cd ..
 
 Test rebasing a commit with copy information
