@@ -674,6 +674,9 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
     if unsupported.is_empty() {
         Ok(())
     } else {
+        let mut unsupported: Vec<_> = unsupported.into_iter().collect();
+        // Sort the extensions to get a stable output
+        unsupported.sort();
         Err(CommandError::UnsupportedFeature {
             message: format_bytes!(
                 b"extensions: {} (consider adding them to 'rhg.ignored-extensions' config)",
