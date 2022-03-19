@@ -2906,7 +2906,14 @@ def amend(ui, repo, old, extra, pats, opts):
         filestoamend = {f for f in wctx.files() if matcher(f)}
 
         changes = len(filestoamend) > 0
-        if changes:
+        changeset_copies = (
+            repo.ui.config(b'experimental', b'copies.read-from')
+            != b'filelog-only'
+        )
+        # If there are changes to amend or if copy information needs to be read
+        # from the changeset extras, we cannot take the fast path of using
+        # filectxs from the old commit.
+        if changes or changeset_copies:
             # Recompute copies (avoid recording a -> b -> a)
             copied = copies.pathcopies(base, wctx, matcher)
             if old.p2:
@@ -2927,19 +2934,19 @@ def amend(ui, repo, old, extra, pats, opts):
 
             def filectxfn(repo, ctx_, path):
                 try:
-                    # If the file being considered is not amongst the files
-                    # to be amended, we should return the file context from the
-                    # old changeset. This avoids issues when only some files in
-                    # the working copy are being amended but there are also
-                    # changes to other files from the old changeset.
-                    if path not in filestoamend:
-                        return old.filectx(path)
-
                     # Return None for removed files.
                     if path in wctx.removed():
                         return None
 
-                    fctx = wctx[path]
+                    # If the file being considered is not amongst the files
+                    # to be amended, we should use the file context from the
+                    # old changeset. This avoids issues when only some files in
+                    # the working copy are being amended but there are also
+                    # changes to other files from the old changeset.
+                    if path in filestoamend:
+                        fctx = wctx[path]
+                    else:
+                        fctx = old.filectx(path)
                     flags = fctx.flags()
                     mctx = context.memfilectx(
                         repo,

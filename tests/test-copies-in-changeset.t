@@ -324,7 +324,7 @@ Existing copy information is preserved by amend
   $ hg ci --amend -m 'new description'
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
   $ hg showcopies
-  a -> l (no-extra !)
+  a -> l
   $ cd ..
 
 Test rebasing a commit with copy information
