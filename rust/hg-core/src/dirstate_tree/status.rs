@@ -47,6 +47,17 @@ pub fn status<'tree, 'on_disk: 'tree>(
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
 ) -> Result<(DirstateStatus<'on_disk>, Vec<PatternFileWarning>), StatusError> {
+    // Force the global rayon threadpool to not exceed 16 concurrent threads.
+    // This is a stop-gap measure until we figure out why using more than 16
+    // threads makes `status` slower for each additional thread.
+    // We use `ok()` in case the global threadpool has already been
+    // instantiated in `rhg` or some other caller.
+    // TODO find the underlying cause and fix it, then remove this.
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(16)
+        .build_global()
+        .ok();
+
     let (ignore_fn, warnings, patterns_changed): (IgnoreFnType, _, _) =
         if options.list_ignored || options.list_unknown {
             let mut hasher = Sha1::new();

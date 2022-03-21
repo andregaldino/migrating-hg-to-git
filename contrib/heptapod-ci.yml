@@ -7,7 +7,7 @@ image: registry.heptapod.net/mercurial/ci-images/mercurial-core:$HG_CI_IMAGE_TAG
 variables:
     PYTHON: python
     TEST_HGMODULEPOLICY: "allow"
-    HG_CI_IMAGE_TAG: "latest"
+    HG_CI_IMAGE_TAG: "v1.0"
     TEST_HGTESTS_ALLOW_NETIO: "0"
 
 .all_template: &all
