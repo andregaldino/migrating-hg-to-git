@@ -1278,6 +1278,12 @@ coreconfigitem(
 )
 coreconfigitem(
     b'format',
+    b'use-dirstate-v2.automatic-upgrade-of-mismatching-repositories',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
+    b'format',
     b'use-dirstate-tracked-hint',
     default=False,
     experimental=True,

@@ -944,6 +944,24 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     For a more comprehensive guide, see :hg:`help internals.dirstate-v2`.
 
+``use-dirstate-v2.automatic-upgrade-of-mismatching-repositories``
+   When enabled, an automatic upgrade will be triggered when a repository format
+   does not match its `use-dirstate-v2` config.
+
+   This is an advanced behavior that most users will not need. We recommend you
+   don't use this unless you are a seasoned administrator of a Mercurial install
+   base.
+
+   Automatic upgrade means that any process accessing the repository will
+   upgrade the repository format to use `dirstate-v2`. This only triggers if a
+   change is needed. This also applies to operations that would have been
+   read-only (like hg status).
+
+   This configuration will apply for moves in any direction, either adding the
+   `dirstate-v2` format if `format.use-dirstate-v2=yes` or removing the
+   `dirstate-v2` requirement if `format.use-dirstate-v2=no`. So we recommend
+   setting both this value and `format.use-dirstate-v2` at the same time.
+
 ``use-dirstate-tracked-hint``
     Enable or disable the writing of "tracked key" file alongside the dirstate.
     (default to disabled)

@@ -1994,3 +1994,70 @@ downgrade
   dirstate-v2:         no
 
   $ cd ..
+
+Test automatic upgrade/downgrade
+================================
+
+
+For dirstate v2
+---------------
+
+create an initial repository
+
+  $ hg init auto-upgrade \
+  >     --config format.use-dirstate-v2=no \
+  >     --config format.use-dirstate-tracked-hint=yes \
+  >     --config format.use-share-safe=no
+  $ hg debugbuilddag -R auto-upgrade --new-file .+5
+  $ hg -R auto-upgrade update
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugformat -R auto-upgrade | grep dirstate-v2
+  dirstate-v2:         no
+
+upgrade it to dirstate-v2 automatically
+
+  $ hg status -R auto-upgrade \
+  >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-dirstate-v2=yes
+  automatically upgrading repository to the `dirstate-v2` feature
+  (see `hg help config.format.use-dirstate-v2` for details)
+  $ hg debugformat -R auto-upgrade | grep dirstate-v2
+  dirstate-v2:        yes
+
+downgrade it from dirstate-v2 automatically
+
+  $ hg status -R auto-upgrade \
+  >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-dirstate-v2=no
+  automatically downgrading repository from the `dirstate-v2` feature
+  (see `hg help config.format.use-dirstate-v2` for details)
+  $ hg debugformat -R auto-upgrade | grep dirstate-v2
+  dirstate-v2:         no
+
+
+For multiple change at the same time
+------------------------------------
+
+  $ hg debugformat -R auto-upgrade | egrep '(dirstate-v2|tracked|share-safe)'
+  dirstate-v2:         no
+  tracked-hint:       yes
+  share-safe:          no
+
+  $ hg status -R auto-upgrade \
+  >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-dirstate-v2=yes \
+  >     --config format.use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-dirstate-tracked-hint=no\
+  >     --config format.use-share-safe.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-share-safe=yes
+  automatically upgrading repository to the `dirstate-v2` feature
+  (see `hg help config.format.use-dirstate-v2` for details)
+  automatically upgrading repository to the `share-safe` feature
+  (see `hg help config.format.use-share-safe` for details)
+  automatically downgrading repository from the `tracked-hint` feature
+  (see `hg help config.format.use-dirstate-tracked-hint` for details)
+  $ hg debugformat -R auto-upgrade | egrep '(dirstate-v2|tracked|share-safe)'
+  dirstate-v2:        yes
+  tracked-hint:        no
+  share-safe:         yes
+

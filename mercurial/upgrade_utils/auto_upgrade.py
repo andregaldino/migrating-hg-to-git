@@ -136,7 +136,64 @@ def get_tracked_hint_action(repo):
     return action
 
 
+def get_dirstate_v2_action(repo):
+    """return an automatic-upgrade action for `dirstate-v2` if applicable
+
+    If no action is needed, return None, otherwise return a callback to upgrade
+    or downgrade the repository according the configuration and repository
+    format.
+    """
+    ui = repo.ui
+    requirements = set(repo.requirements)
+    auto_upgrade_tracked_hint = ui.configbool(
+        b'format',
+        b'use-dirstate-v2.automatic-upgrade-of-mismatching-repositories',
+    )
+
+    action = None
+
+    if auto_upgrade_tracked_hint:
+        d2_config = ui.configbool(b'format', b'use-dirstate-v2')
+        d2_local = requirementsmod.DIRSTATE_V2_REQUIREMENT in requirements
+        if d2_config and not d2_local:
+            msg = _(
+                b"automatically upgrading repository to the `dirstate-v2`"
+                b" feature\n"
+            )
+            hint = (
+                b"(see `hg help config.format.use-dirstate-v2` for details)\n"
+            )
+
+            def action():
+                if not ui.quiet:
+                    ui.write_err(msg)
+                    ui.write_err(hint)
+                requirements.add(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+                fake_op = AutoUpgradeOperation(requirements)
+                engine.upgrade_dirstate(repo.ui, repo, fake_op, b'v1', b'v2')
+
+        elif d2_local and not d2_config:
+            msg = _(
+                b"automatically downgrading repository from the `dirstate-v2`"
+                b" feature\n"
+            )
+            hint = (
+                b"(see `hg help config.format.use-dirstate-v2` for details)\n"
+            )
+
+            def action():
+                if not ui.quiet:
+                    ui.write_err(msg)
+                    ui.write_err(hint)
+                requirements.discard(requirementsmod.DIRSTATE_V2_REQUIREMENT)
+                fake_op = AutoUpgradeOperation(requirements)
+                engine.upgrade_dirstate(repo.ui, repo, fake_op, b'v2', b'v1')
+
+    return action
+
+
 AUTO_UPGRADE_ACTIONS = [
+    get_dirstate_v2_action,
     get_share_safe_action,
     get_tracked_hint_action,
 ]

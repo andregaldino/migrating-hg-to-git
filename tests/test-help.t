@@ -1600,6 +1600,8 @@ Separate sections from subsections
   
       "use-dirstate-v2"
   
+      "use-dirstate-v2.automatic-upgrade-of-mismatching-repositories"
+  
       "use-dirstate-tracked-hint"
   
       "use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories"
