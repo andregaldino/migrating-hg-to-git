@@ -30,7 +30,6 @@ mercurial/repoview.py         # [attribute-error]
 mercurial/testing/storage.py  # tons of [attribute-error]
 mercurial/ui.py               # [attribute-error], [wrong-arg-types]
 mercurial/unionrepo.py        # ui, svfs, unfiltered [attribute-error]
-mercurial/utils/memorytop.py  # not 3.6 compatible
 mercurial/win32.py            # [not-callable]
 mercurial/wireprotoframing.py # [unsupported-operands], [attribute-error], [import-error]
 mercurial/wireprotov1peer.py  # [attribute-error]
@@ -39,7 +38,7 @@ mercurial/wireprotov1server.py  # BUG?: BundleValueError handler accesses subcla
 TODO: use --no-cache on test server?  Caching the files locally helps during
 development, but may be a hinderance for CI testing.
 
-  $ pytype -V 3.6 --keep-going --jobs auto mercurial \
+  $ pytype -V 3.7 --keep-going --jobs auto mercurial \
   >    -x mercurial/bundlerepo.py \
   >    -x mercurial/context.py \
   >    -x mercurial/crecord.py \
@@ -62,7 +61,6 @@ development, but may be a hinderance for CI testing.
   >    -x mercurial/thirdparty \
   >    -x mercurial/ui.py \
   >    -x mercurial/unionrepo.py \
-  >    -x mercurial/utils/memorytop.py \
   >    -x mercurial/win32.py \
   >    -x mercurial/wireprotoframing.py \
   >    -x mercurial/wireprotov1peer.py \
