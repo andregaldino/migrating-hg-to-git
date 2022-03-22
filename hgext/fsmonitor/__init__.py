@@ -335,7 +335,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     nonnormalset = {
         f
         for f, e in self._map.items()
-        if e.v1_state() != b"n" or e.v1_mtime() == -1
+        if e._v1_state() != b"n" or e._v1_mtime() == -1
     }
 
     copymap = self._map.copymap

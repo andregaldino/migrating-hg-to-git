@@ -289,27 +289,6 @@ static PyObject *dirstate_item_v2_data(dirstateItemObject *self)
 	                     self->mtime_ns);
 };
 
-static PyObject *dirstate_item_v1_state(dirstateItemObject *self)
-{
-	char state = dirstate_item_c_v1_state(self);
-	return PyBytes_FromStringAndSize(&state, 1);
-};
-
-static PyObject *dirstate_item_v1_mode(dirstateItemObject *self)
-{
-	return PyLong_FromLong(dirstate_item_c_v1_mode(self));
-};
-
-static PyObject *dirstate_item_v1_size(dirstateItemObject *self)
-{
-	return PyLong_FromLong(dirstate_item_c_v1_size(self));
-};
-
-static PyObject *dirstate_item_v1_mtime(dirstateItemObject *self)
-{
-	return PyLong_FromLong(dirstate_item_c_v1_mtime(self));
-};
-
 static PyObject *dirstate_item_mtime_likely_equal_to(dirstateItemObject *self,
                                                      PyObject *other)
 {
@@ -402,20 +381,6 @@ dirstate_item_from_v1_data(char state, int mode, int size, int mtime)
 
 	return t;
 }
-
-/* This will never change since it's bound to V1, unlike `dirstate_item_new` */
-static PyObject *dirstate_item_from_v1_meth(PyTypeObject *subtype,
-                                            PyObject *args)
-{
-	/* We do all the initialization here and not a tp_init function because
-	 * dirstate_item is immutable. */
-	char state;
-	int size, mode, mtime;
-	if (!PyArg_ParseTuple(args, "ciii", &state, &mode, &size, &mtime)) {
-		return NULL;
-	}
-	return (PyObject *)dirstate_item_from_v1_data(state, mode, size, mtime);
-};
 
 static PyObject *dirstate_item_from_v2_meth(PyTypeObject *subtype,
                                             PyObject *args)
@@ -526,18 +491,8 @@ static PyObject *dirstate_item_drop_merge_data(dirstateItemObject *self)
 static PyMethodDef dirstate_item_methods[] = {
     {"v2_data", (PyCFunction)dirstate_item_v2_data, METH_NOARGS,
      "return data suitable for v2 serialization"},
-    {"v1_state", (PyCFunction)dirstate_item_v1_state, METH_NOARGS,
-     "return a \"state\" suitable for v1 serialization"},
-    {"v1_mode", (PyCFunction)dirstate_item_v1_mode, METH_NOARGS,
-     "return a \"mode\" suitable for v1 serialization"},
-    {"v1_size", (PyCFunction)dirstate_item_v1_size, METH_NOARGS,
-     "return a \"size\" suitable for v1 serialization"},
-    {"v1_mtime", (PyCFunction)dirstate_item_v1_mtime, METH_NOARGS,
-     "return a \"mtime\" suitable for v1 serialization"},
     {"mtime_likely_equal_to", (PyCFunction)dirstate_item_mtime_likely_equal_to,
      METH_O, "True if the stored mtime is likely equal to the given mtime"},
-    {"from_v1_data", (PyCFunction)dirstate_item_from_v1_meth,
-     METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V1 data"},
     {"from_v2_data", (PyCFunction)dirstate_item_from_v2_meth,
      METH_VARARGS | METH_CLASS, "build a new DirstateItem object from V2 data"},
     {"set_possibly_dirty", (PyCFunction)dirstate_item_set_possibly_dirty,

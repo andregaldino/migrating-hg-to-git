@@ -8,10 +8,8 @@ use cpython::PyResult;
 use cpython::Python;
 use cpython::PythonObject;
 use hg::dirstate::DirstateEntry;
-use hg::dirstate::EntryState;
 use hg::dirstate::TruncatedTimestamp;
 use std::cell::Cell;
-use std::convert::TryFrom;
 
 py_class!(pub class DirstateItem |py| {
     data entry: Cell<DirstateEntry>;
@@ -173,27 +171,6 @@ py_class!(pub class DirstateItem |py| {
         Ok(self.entry(py).get().any_tracked())
     }
 
-    def v1_state(&self) -> PyResult<PyBytes> {
-        let (state, _mode, _size, _mtime) = self.entry(py).get().v1_data();
-        let state_byte: u8 = state.into();
-        Ok(PyBytes::new(py, &[state_byte]))
-    }
-
-    def v1_mode(&self) -> PyResult<i32> {
-        let (_state, mode, _size, _mtime) = self.entry(py).get().v1_data();
-        Ok(mode)
-    }
-
-    def v1_size(&self) -> PyResult<i32> {
-        let (_state, _mode, size, _mtime) = self.entry(py).get().v1_data();
-        Ok(size)
-    }
-
-    def v1_mtime(&self) -> PyResult<i32> {
-        let (_state, _mode, _size, mtime) = self.entry(py).get().v1_data();
-        Ok(mtime)
-    }
-
     def mtime_likely_equal_to(&self, other: (u32, u32, bool))
         -> PyResult<bool> {
         if let Some(mtime) = self.entry(py).get().truncated_mtime() {
@@ -201,22 +178,6 @@ py_class!(pub class DirstateItem |py| {
         } else {
             Ok(false)
         }
-    }
-
-    @classmethod
-    def from_v1_data(
-        _cls,
-        state: PyBytes,
-        mode: i32,
-        size: i32,
-        mtime: i32,
-    ) -> PyResult<Self> {
-        let state = <[u8; 1]>::try_from(state.data(py))
-            .ok()
-            .and_then(|state| EntryState::try_from(state[0]).ok())
-            .ok_or_else(|| PyErr::new::<exc::ValueError, _>(py, "invalid state"))?;
-        let entry = DirstateEntry::from_v1_data(state, mode, size, mtime);
-        DirstateItem::create_instance(py, Cell::new(entry))
     }
 
     def drop_merge_data(&self) -> PyResult<PyNone> {

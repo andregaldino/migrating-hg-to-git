@@ -291,15 +291,15 @@ class DirstateItem:
 
     @property
     def mode(self):
-        return self.v1_mode()
+        return self._v1_mode()
 
     @property
     def size(self):
-        return self.v1_size()
+        return self._v1_size()
 
     @property
     def mtime(self):
-        return self.v1_mtime()
+        return self._v1_mtime()
 
     def mtime_likely_equal_to(self, other_mtime):
         self_sec = self._mtime_s
@@ -338,7 +338,7 @@ class DirstateItem:
         """
         if not self.any_tracked:
             return b'?'
-        return self.v1_state()
+        return self._v1_state()
 
     @property
     def has_fallback_exec(self):
@@ -498,7 +498,7 @@ class DirstateItem:
         # since we never set _DIRSTATE_V2_HAS_DIRCTORY_MTIME
         return (flags, self._size or 0, self._mtime_s or 0, self._mtime_ns or 0)
 
-    def v1_state(self):
+    def _v1_state(self):
         """return a "state" suitable for v1 serialization"""
         if not self.any_tracked:
             # the object has no state to record, this is -currently-
@@ -513,11 +513,11 @@ class DirstateItem:
         else:
             return b'n'
 
-    def v1_mode(self):
+    def _v1_mode(self):
         """return a "mode" suitable for v1 serialization"""
         return self._mode if self._mode is not None else 0
 
-    def v1_size(self):
+    def _v1_size(self):
         """return a "size" suitable for v1 serialization"""
         if not self.any_tracked:
             # the object has no state to record, this is -currently-
@@ -536,7 +536,7 @@ class DirstateItem:
         else:
             return self._size
 
-    def v1_mtime(self):
+    def _v1_mtime(self):
         """return a "mtime" suitable for v1 serialization"""
         if not self.any_tracked:
             # the object has no state to record, this is -currently-
@@ -963,10 +963,10 @@ def pack_dirstate(dmap, copymap, pl):
             f = b"%s\0%s" % (f, copymap[f])
         e = _pack(
             b">cllll",
-            e.v1_state(),
-            e.v1_mode(),
-            e.v1_size(),
-            e.v1_mtime(),
+            e._v1_state(),
+            e._v1_mode(),
+            e._v1_size(),
+            e._v1_mtime(),
             len(f),
         )
         write(e)
