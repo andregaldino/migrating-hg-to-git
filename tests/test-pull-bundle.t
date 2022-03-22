@@ -194,7 +194,7 @@ Test recovery from misconfigured server sending no new data
   * sending pullbundle "0.hg" (glob)
   $ rm repo/.hg/blackbox.log
 
-Test processing when nodes used in the pullbundle.manifest end up being hidden
+Test processing when nodes used in the pullbundles.manifest end up being hidden
 
   $ hg --repo repo debugobsolete ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a
   1 new obsolescence markers
