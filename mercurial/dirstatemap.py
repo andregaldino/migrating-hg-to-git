@@ -150,7 +150,6 @@ class _dirstatemapcommon:
         p1_tracked=False,
         p2_info=False,
         has_meaningful_mtime=True,
-        has_meaningful_data=True,
         parentfiledata=None,
     ):
         """Set a entry to a given state, diregarding all previous state
