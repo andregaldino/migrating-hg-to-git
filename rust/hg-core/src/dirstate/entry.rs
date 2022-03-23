@@ -259,6 +259,12 @@ pub struct DirstateV2Data {
     pub fallback_symlink: Option<bool>,
 }
 
+#[derive(Debug, Default, Copy, Clone)]
+pub struct ParentFileData {
+    pub mode_size: Option<(u32, u32)>,
+    pub mtime: Option<TruncatedTimestamp>,
+}
+
 impl DirstateEntry {
     pub fn from_v2_data(v2_data: DirstateV2Data) -> Self {
         let DirstateV2Data {

@@ -11,6 +11,8 @@ use crate::dirstate::parsers::pack_entry;
 use crate::dirstate::parsers::packed_entry_size;
 use crate::dirstate::parsers::parse_dirstate_entries;
 use crate::dirstate::CopyMapIter;
+use crate::dirstate::DirstateV2Data;
+use crate::dirstate::ParentFileData;
 use crate::dirstate::StateMapIter;
 use crate::dirstate::TruncatedTimestamp;
 use crate::dirstate::SIZE_FROM_OTHER_PARENT;
@@ -606,6 +608,73 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
+    fn reset_state(
+        &mut self,
+        filename: &HgPath,
+        old_entry_opt: Option<DirstateEntry>,
+        wc_tracked: bool,
+        p1_tracked: bool,
+        p2_info: bool,
+        has_meaningful_mtime: bool,
+        parent_file_data_opt: Option<ParentFileData>,
+    ) -> Result<(), DirstateError> {
+        let (had_entry, was_tracked) = match old_entry_opt {
+            Some(old_entry) => (true, old_entry.tracked()),
+            None => (false, false),
+        };
+        let node = Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            WithBasename::to_cow_owned,
+            |ancestor| {
+                if !had_entry {
+                    ancestor.descendants_with_entry_count += 1;
+                }
+                if was_tracked {
+                    if !wc_tracked {
+                        ancestor.tracked_descendants_count = ancestor
+                            .tracked_descendants_count
+                            .checked_sub(1)
+                            .expect("tracked count to be >= 0");
+                    }
+                } else {
+                    if wc_tracked {
+                        ancestor.tracked_descendants_count += 1;
+                    }
+                }
+            },
+        )?;
+
+        let v2_data = if let Some(parent_file_data) = parent_file_data_opt {
+            DirstateV2Data {
+                wc_tracked,
+                p1_tracked,
+                p2_info,
+                mode_size: parent_file_data.mode_size,
+                mtime: if has_meaningful_mtime {
+                    parent_file_data.mtime
+                } else {
+                    None
+                },
+                ..Default::default()
+            }
+        } else {
+            DirstateV2Data {
+                wc_tracked,
+                p1_tracked,
+                p2_info,
+                ..Default::default()
+            }
+        };
+        if !had_entry {
+            self.nodes_with_entry_count += 1;
+        }
+        node.data = NodeData::Entry(DirstateEntry::from_v2_data(v2_data));
+        Ok(())
+    }
+
     fn set_tracked(
         &mut self,
         filename: &HgPath,
@@ -810,6 +879,34 @@ impl OwningDirstateMap {
     ) -> Result<bool, DirstateV2ParseError> {
         let old_entry_opt = self.get(filename)?;
         self.with_dmap_mut(|map| map.set_tracked(filename, old_entry_opt))
+    }
+
+    pub fn reset_state(
+        &mut self,
+        filename: &HgPath,
+        wc_tracked: bool,
+        p1_tracked: bool,
+        p2_info: bool,
+        has_meaningful_mtime: bool,
+        parent_file_data_opt: Option<ParentFileData>,
+    ) -> Result<(), DirstateError> {
+        if !(p1_tracked || p2_info || wc_tracked) {
+            self.drop_entry_and_copy_source(filename)?;
+            return Ok(());
+        }
+        self.copy_map_remove(filename)?;
+        let old_entry_opt = self.get(filename)?;
+        self.with_dmap_mut(|map| {
+            map.reset_state(
+                filename,
+                old_entry_opt,
+                wc_tracked,
+                p1_tracked,
+                p2_info,
+                has_meaningful_mtime,
+                parent_file_data_opt,
+            )
+        })
     }
 
     pub fn remove_file(

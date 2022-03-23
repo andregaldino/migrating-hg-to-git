@@ -15,6 +15,7 @@ use cpython::{
     exc, PyBool, PyBytes, PyClone, PyDict, PyErr, PyList, PyNone, PyObject,
     PyResult, Python, PythonObject, ToPyObject, UnsafePyLeaked,
 };
+use hg::dirstate::{ParentFileData, TruncatedTimestamp};
 
 use crate::{
     dirstate::copymap::{CopyMap, CopyMapItemsIterator, CopyMapKeysIterator},
@@ -139,6 +140,55 @@ py_class!(pub class DirstateMap |py| {
             Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
         })?;
         Ok(was_tracked.to_py_object(py))
+    }
+
+    def reset_state(
+        &self,
+        f: PyObject,
+        wc_tracked: bool,
+        p1_tracked: bool,
+        p2_info: bool,
+        has_meaningful_mtime: bool,
+        parentfiledata: Option<(u32, u32, Option<(i64, u32, bool)>)>,
+    ) -> PyResult<PyNone> {
+        let mut has_meaningful_mtime = has_meaningful_mtime;
+        let parent_file_data = match parentfiledata {
+            None => {
+                has_meaningful_mtime = false;
+                None
+            },
+            Some(data) => {
+                let (mode, size, mtime_info) = data;
+                let mtime = if let Some(mtime_info) = mtime_info {
+                    let (mtime_s, mtime_ns, second_ambiguous) = mtime_info;
+                    let timestamp = TruncatedTimestamp::new_truncate(
+                        mtime_s, mtime_ns, second_ambiguous
+                    );
+                    Some(timestamp)
+                } else {
+                    has_meaningful_mtime = false;
+                    None
+                };
+                Some(ParentFileData {
+                    mode_size: Some((mode, size)),
+                    mtime,
+                })
+            }
+        };
+        let bytes = f.extract::<PyBytes>(py)?;
+        let path = HgPath::new(bytes.data(py));
+        let res = self.inner(py).borrow_mut().reset_state(
+            path,
+            wc_tracked,
+            p1_tracked,
+            p2_info,
+            has_meaningful_mtime,
+            parent_file_data,
+        );
+        res.or_else(|_| {
+            Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
+        })?;
+        Ok(PyNone)
     }
 
     def removefile(
