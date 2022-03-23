@@ -8,6 +8,7 @@ use cpython::PyResult;
 use cpython::Python;
 use cpython::PythonObject;
 use hg::dirstate::DirstateEntry;
+use hg::dirstate::DirstateV2Data;
 use hg::dirstate::TruncatedTimestamp;
 use std::cell::Cell;
 
@@ -38,15 +39,15 @@ py_class!(pub class DirstateItem |py| {
                 }
             }
         }
-        let entry = DirstateEntry::from_v2_data(
-            wc_tracked,
+        let entry = DirstateEntry::from_v2_data(DirstateV2Data {
+            wc_tracked: wc_tracked,
             p1_tracked,
             p2_info,
-            mode_size_opt,
-            mtime_opt,
+            mode_size: mode_size_opt,
+            mtime: mtime_opt,
             fallback_exec,
             fallback_symlink,
-        );
+        });
         DirstateItem::create_instance(py, Cell::new(entry))
     }
 

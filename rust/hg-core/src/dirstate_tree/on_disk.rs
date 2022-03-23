@@ -2,7 +2,7 @@
 //!
 //! See `mercurial/helptext/internals/dirstate-v2.txt`
 
-use crate::dirstate::TruncatedTimestamp;
+use crate::dirstate::{DirstateV2Data, TruncatedTimestamp};
 use crate::dirstate_tree::dirstate_map::{self, DirstateMap, NodeRef};
 use crate::dirstate_tree::path_with_basename::WithBasename;
 use crate::errors::HgError;
@@ -412,7 +412,7 @@ impl Node {
 
     fn assume_entry(&self) -> Result<DirstateEntry, DirstateV2ParseError> {
         // TODO: convert through raw bits instead?
-        let wdir_tracked = self.flags().contains(Flags::WDIR_TRACKED);
+        let wc_tracked = self.flags().contains(Flags::WDIR_TRACKED);
         let p1_tracked = self.flags().contains(Flags::P1_TRACKED);
         let p2_info = self.flags().contains(Flags::P2_INFO);
         let mode_size = if self.flags().contains(Flags::HAS_MODE_AND_SIZE)
@@ -442,15 +442,15 @@ impl Node {
             } else {
                 None
             };
-        Ok(DirstateEntry::from_v2_data(
-            wdir_tracked,
+        Ok(DirstateEntry::from_v2_data(DirstateV2Data {
+            wc_tracked,
             p1_tracked,
             p2_info,
             mode_size,
             mtime,
             fallback_exec,
             fallback_symlink,
-        ))
+        }))
     }
 
     pub(super) fn entry(
@@ -490,18 +490,18 @@ impl Node {
     fn from_dirstate_entry(
         entry: &DirstateEntry,
     ) -> (Flags, U32Be, PackedTruncatedTimestamp) {
-        let (
-            wdir_tracked,
+        let DirstateV2Data {
+            wc_tracked,
             p1_tracked,
             p2_info,
-            mode_size_opt,
-            mtime_opt,
+            mode_size: mode_size_opt,
+            mtime: mtime_opt,
             fallback_exec,
             fallback_symlink,
-        ) = entry.v2_data();
-        // TODO: convert throug raw flag bits instead?
+        } = entry.v2_data();
+        // TODO: convert through raw flag bits instead?
         let mut flags = Flags::empty();
-        flags.set(Flags::WDIR_TRACKED, wdir_tracked);
+        flags.set(Flags::WDIR_TRACKED, wc_tracked);
         flags.set(Flags::P1_TRACKED, p1_tracked);
         flags.set(Flags::P2_INFO, p2_info);
         let size = if let Some((m, s)) = mode_size_opt {
