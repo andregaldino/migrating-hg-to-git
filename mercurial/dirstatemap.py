@@ -143,45 +143,6 @@ class _dirstatemapcommon:
             self._refresh_entry(f, entry)
             return True
 
-    def reset_state(
-        self,
-        filename,
-        wc_tracked=False,
-        p1_tracked=False,
-        p2_info=False,
-        has_meaningful_mtime=True,
-        parentfiledata=None,
-    ):
-        """Set a entry to a given state, diregarding all previous state
-
-        This is to be used by the part of the dirstate API dedicated to
-        adjusting the dirstate after a update/merge.
-
-        note: calling this might result to no entry existing at all if the
-        dirstate map does not see any point at having one for this file
-        anymore.
-        """
-        # copy information are now outdated
-        # (maybe new information should be in directly passed to this function)
-        self.copymap.pop(filename, None)
-
-        if not (p1_tracked or p2_info or wc_tracked):
-            old_entry = self._map.get(filename)
-            self._drop_entry(filename)
-            self._dirs_decr(filename, old_entry=old_entry)
-            return
-
-        old_entry = self._map.get(filename)
-        self._dirs_incr(filename, old_entry)
-        entry = DirstateItem(
-            wc_tracked=wc_tracked,
-            p1_tracked=p1_tracked,
-            p2_info=p2_info,
-            has_meaningful_mtime=has_meaningful_mtime,
-            parentfiledata=parentfiledata,
-        )
-        self._insert_entry(filename, entry)
-
     ### disk interaction
 
     def _opendirstatefile(self):
@@ -513,6 +474,45 @@ class dirstatemap(_dirstatemapcommon):
 
     ### code related to manipulation of entries and copy-sources
 
+    def reset_state(
+        self,
+        filename,
+        wc_tracked=False,
+        p1_tracked=False,
+        p2_info=False,
+        has_meaningful_mtime=True,
+        parentfiledata=None,
+    ):
+        """Set a entry to a given state, diregarding all previous state
+
+        This is to be used by the part of the dirstate API dedicated to
+        adjusting the dirstate after a update/merge.
+
+        note: calling this might result to no entry existing at all if the
+        dirstate map does not see any point at having one for this file
+        anymore.
+        """
+        # copy information are now outdated
+        # (maybe new information should be in directly passed to this function)
+        self.copymap.pop(filename, None)
+
+        if not (p1_tracked or p2_info or wc_tracked):
+            old_entry = self._map.get(filename)
+            self._drop_entry(filename)
+            self._dirs_decr(filename, old_entry=old_entry)
+            return
+
+        old_entry = self._map.get(filename)
+        self._dirs_incr(filename, old_entry)
+        entry = DirstateItem(
+            wc_tracked=wc_tracked,
+            p1_tracked=p1_tracked,
+            p2_info=p2_info,
+            has_meaningful_mtime=has_meaningful_mtime,
+            parentfiledata=parentfiledata,
+        )
+        self._insert_entry(filename, entry)
+
     def set_tracked(self, filename):
         new = False
         entry = self.get(filename)
@@ -723,6 +723,24 @@ if rustmod is not None:
 
         def set_tracked(self, f):
             return self._map.set_tracked(f)
+
+        def reset_state(
+            self,
+            filename,
+            wc_tracked=False,
+            p1_tracked=False,
+            p2_info=False,
+            has_meaningful_mtime=True,
+            parentfiledata=None,
+        ):
+            return self._map.reset_state(
+                filename,
+                wc_tracked,
+                p1_tracked,
+                p2_info,
+                has_meaningful_mtime,
+                parentfiledata,
+            )
 
         def _drop_entry(self, f):
             self._map.drop_item_and_copy_source(f)
