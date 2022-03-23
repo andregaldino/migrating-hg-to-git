@@ -676,14 +676,21 @@ def lookupreg(key, valname=None, scope=None):
     LOCAL_MACHINE).
     """
     if scope is None:
+        # pytype: disable=module-attr
         scope = (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE)
+        # pytype: enable=module-attr
     elif not isinstance(scope, (list, tuple)):
         scope = (scope,)
     for s in scope:
         try:
+            # pytype: disable=module-attr
             with winreg.OpenKey(s, encoding.strfromlocal(key)) as hkey:
+                # pytype: enable=module-attr
                 name = valname and encoding.strfromlocal(valname) or valname
+                # pytype: disable=module-attr
                 val = winreg.QueryValueEx(hkey, name)[0]
+                # pytype: enable=module-attr
+
                 # never let a Unicode string escape into the wild
                 return encoding.unitolocal(val)
         except EnvironmentError:

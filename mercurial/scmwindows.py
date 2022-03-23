@@ -52,7 +52,11 @@ def systemrcpath():
 
     # next look for a system rcpath in the registry
     value = util.lookupreg(
-        b'SOFTWARE\\Mercurial', None, winreg.HKEY_LOCAL_MACHINE
+        # pytype: disable=module-attr
+        b'SOFTWARE\\Mercurial',
+        None,
+        winreg.HKEY_LOCAL_MACHINE
+        # pytype: enable=module-attr
     )
     if value and isinstance(value, bytes):
         value = util.localpath(value)
