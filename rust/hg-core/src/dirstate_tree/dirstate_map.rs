@@ -727,49 +727,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(new)
     }
 
-    fn add_or_remove_file(
-        &mut self,
-        path: &HgPath,
-        old_state: Option<EntryState>,
-        new_entry: DirstateEntry,
-    ) -> Result<(), DirstateV2ParseError> {
-        let had_entry = old_state.is_some();
-        let was_tracked = old_state.map_or(false, |s| s.is_tracked());
-        let tracked_count_increment =
-            match (was_tracked, new_entry.state().is_tracked()) {
-                (false, true) => 1,
-                (true, false) => -1,
-                _ => 0,
-            };
-
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            path,
-            WithBasename::to_cow_owned,
-            |ancestor| {
-                if !had_entry {
-                    ancestor.descendants_with_entry_count += 1;
-                }
-
-                // We can’t use `+= increment` because the counter is unsigned,
-                // and we want debug builds to detect accidental underflow
-                // through zero
-                match tracked_count_increment {
-                    1 => ancestor.tracked_descendants_count += 1,
-                    -1 => ancestor.tracked_descendants_count -= 1,
-                    _ => {}
-                }
-            },
-        )?;
-        if !had_entry {
-            self.nodes_with_entry_count += 1
-        }
-        node.data = NodeData::Entry(new_entry);
-        Ok(())
-    }
-
     /// It is the responsibility of the caller to know that there was an entry
     /// there before. Does not handle the removal of copy source
     fn set_untracked(
@@ -935,17 +892,6 @@ impl OwningDirstateMap {
         self.with_dmap_mut(|map| {
             map.get_or_insert(&filename)?.data = NodeData::Entry(entry);
             Ok(())
-        })
-    }
-
-    pub fn add_file(
-        &mut self,
-        filename: &HgPath,
-        entry: DirstateEntry,
-    ) -> Result<(), DirstateError> {
-        let old_state = self.get(filename)?.map(|e| e.state());
-        self.with_dmap_mut(|map| {
-            Ok(map.add_or_remove_file(filename, old_state, entry)?)
         })
     }
 

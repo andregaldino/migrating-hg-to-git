@@ -118,20 +118,6 @@ py_class!(pub class DirstateMap |py| {
         Ok(py.None())
     }
 
-    def addfile(
-        &self,
-        f: PyBytes,
-        item: DirstateItem,
-    ) -> PyResult<PyNone> {
-        let filename = HgPath::new(f.data(py));
-        let entry = item.get_entry(py);
-        self.inner(py)
-            .borrow_mut()
-            .add_file(filename, entry)
-            .map_err(|e |dirstate_error(py, e))?;
-        Ok(PyNone)
-    }
-
     def set_tracked(&self, f: PyObject) -> PyResult<PyBool> {
         let bytes = f.extract::<PyBytes>(py)?;
         let path = HgPath::new(bytes.data(py));
