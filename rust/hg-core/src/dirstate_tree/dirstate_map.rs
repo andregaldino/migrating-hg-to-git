@@ -606,6 +606,52 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
+    fn set_tracked(
+        &mut self,
+        filename: &HgPath,
+        old_entry_opt: Option<DirstateEntry>,
+    ) -> Result<bool, DirstateV2ParseError> {
+        let was_tracked = old_entry_opt.map_or(false, |e| e.tracked());
+        let had_entry = old_entry_opt.is_some();
+        let tracked_count_increment = if was_tracked { 0 } else { 1 };
+        let mut new = false;
+
+        let node = Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            WithBasename::to_cow_owned,
+            |ancestor| {
+                if !had_entry {
+                    ancestor.descendants_with_entry_count += 1;
+                }
+
+                ancestor.tracked_descendants_count += tracked_count_increment;
+            },
+        )?;
+        let new_entry = if let Some(old_entry) = old_entry_opt {
+            let mut e = old_entry.clone();
+            if e.tracked() {
+                // XXX
+                // This is probably overkill for more case, but we need this to
+                // fully replace the `normallookup` call with `set_tracked`
+                // one. Consider smoothing this in the future.
+                e.set_possibly_dirty();
+            } else {
+                new = true;
+                e.set_tracked();
+            }
+            e
+        } else {
+            self.nodes_with_entry_count += 1;
+            new = true;
+            DirstateEntry::new_tracked()
+        };
+        node.data = NodeData::Entry(new_entry);
+        Ok(new)
+    }
+
     fn add_or_remove_file(
         &mut self,
         path: &HgPath,
@@ -756,6 +802,14 @@ impl OwningDirstateMap {
         self.with_dmap_mut(|map| {
             Ok(map.add_or_remove_file(filename, old_state, entry)?)
         })
+    }
+
+    pub fn set_tracked(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<bool, DirstateV2ParseError> {
+        let old_entry_opt = self.get(filename)?;
+        self.with_dmap_mut(|map| map.set_tracked(filename, old_entry_opt))
     }
 
     pub fn remove_file(

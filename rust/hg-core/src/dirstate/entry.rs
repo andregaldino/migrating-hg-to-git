@@ -367,6 +367,10 @@ impl DirstateEntry {
         Self::from_v1_data(EntryState::Removed, 0, size, 0)
     }
 
+    pub fn new_tracked() -> Self {
+        Self::from_v2_data(true, false, false, None, None, None, None)
+    }
+
     pub fn tracked(&self) -> bool {
         self.flags.contains(Flags::WDIR_TRACKED)
     }
