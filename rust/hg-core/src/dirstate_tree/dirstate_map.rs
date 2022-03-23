@@ -15,8 +15,6 @@ use crate::dirstate::DirstateV2Data;
 use crate::dirstate::ParentFileData;
 use crate::dirstate::StateMapIter;
 use crate::dirstate::TruncatedTimestamp;
-use crate::dirstate::SIZE_FROM_OTHER_PARENT;
-use crate::dirstate::SIZE_NON_NORMAL;
 use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::DirstateEntry;
@@ -1048,40 +1046,6 @@ impl OwningDirstateMap {
                 has_meaningful_mtime,
                 parent_file_data_opt,
             )
-        })
-    }
-
-    pub fn remove_file(
-        &mut self,
-        filename: &HgPath,
-        in_merge: bool,
-    ) -> Result<(), DirstateError> {
-        let old_entry_opt = self.get(filename)?;
-        let old_state = old_entry_opt.map(|e| e.state());
-        let mut size = 0;
-        if in_merge {
-            // XXX we should not be able to have 'm' state and 'FROM_P2' if not
-            // during a merge. So I (marmoute) am not sure we need the
-            // conditionnal at all. Adding double checking this with assert
-            // would be nice.
-            if let Some(old_entry) = old_entry_opt {
-                // backup the previous state
-                if old_entry.state() == EntryState::Merged {
-                    size = SIZE_NON_NORMAL;
-                } else if old_entry.state() == EntryState::Normal
-                    && old_entry.size() == SIZE_FROM_OTHER_PARENT
-                {
-                    // other parent
-                    size = SIZE_FROM_OTHER_PARENT;
-                }
-            }
-        }
-        if size == 0 {
-            self.copy_map_remove(filename)?;
-        }
-        self.with_dmap_mut(|map| {
-            let entry = DirstateEntry::new_removed(size);
-            Ok(map.add_or_remove_file(filename, old_state, entry)?)
         })
     }
 

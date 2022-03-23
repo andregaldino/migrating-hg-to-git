@@ -233,25 +233,6 @@ py_class!(pub class DirstateMap |py| {
         Ok(PyNone)
     }
 
-    def removefile(
-        &self,
-        f: PyObject,
-        in_merge: PyObject
-    ) -> PyResult<PyObject> {
-        self.inner(py).borrow_mut()
-            .remove_file(
-                HgPath::new(f.extract::<PyBytes>(py)?.data(py)),
-                in_merge.extract::<PyBool>(py)?.is_true(),
-            )
-            .or_else(|_| {
-                Err(PyErr::new::<exc::OSError, _>(
-                    py,
-                    "Dirstate error".to_string(),
-                ))
-            })?;
-        Ok(py.None())
-    }
-
     def drop_item_and_copy_source(
         &self,
         f: PyBytes,
