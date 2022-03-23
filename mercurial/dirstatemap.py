@@ -101,12 +101,6 @@ class _dirstatemapcommon:
     def _refresh_entry(self, f, entry):
         """record updated state of an entry"""
 
-    def _insert_entry(self, f, entry):
-        """add a new dirstate entry (or replace an unrelated one)
-
-        The fact it is actually new is the responsability of the caller
-        """
-
     def _drop_entry(self, f):
         """remove any entry for file f
 
@@ -511,7 +505,7 @@ class dirstatemap(_dirstatemapcommon):
             has_meaningful_mtime=has_meaningful_mtime,
             parentfiledata=parentfiledata,
         )
-        self._insert_entry(filename, entry)
+        self._map[filename] = entry
 
     def set_tracked(self, filename):
         new = False
@@ -522,7 +516,7 @@ class dirstatemap(_dirstatemapcommon):
                 wc_tracked=True,
             )
 
-            self._insert_entry(filename, entry)
+            self._map[filename] = entry
             new = True
         elif not entry.tracked:
             self._dirs_incr(filename, entry)
@@ -540,9 +534,6 @@ class dirstatemap(_dirstatemapcommon):
     def _refresh_entry(self, f, entry):
         if not entry.any_tracked:
             self._map.pop(f, None)
-
-    def _insert_entry(self, f, entry):
-        self._map[f] = entry
 
     def _drop_entry(self, f):
         self._map.pop(f, None)
@@ -717,9 +708,6 @@ if rustmod is not None:
                 self._map.drop_item_and_copy_source(f)
             else:
                 self._map.addfile(f, entry)
-
-        def _insert_entry(self, f, entry):
-            self._map.addfile(f, entry)
 
         def set_tracked(self, f):
             return self._map.set_tracked(f)
