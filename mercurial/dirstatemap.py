@@ -130,30 +130,6 @@ class _dirstatemapcommon:
         self._refresh_entry(filename, entry)
         self.copymap.pop(filename, None)
 
-    def set_tracked(self, filename):
-        new = False
-        entry = self.get(filename)
-        if entry is None:
-            self._dirs_incr(filename)
-            entry = DirstateItem(
-                wc_tracked=True,
-            )
-
-            self._insert_entry(filename, entry)
-            new = True
-        elif not entry.tracked:
-            self._dirs_incr(filename, entry)
-            entry.set_tracked()
-            self._refresh_entry(filename, entry)
-            new = True
-        else:
-            # XXX This is probably overkill for more case, but we need this to
-            # fully replace the `normallookup` call with `set_tracked` one.
-            # Consider smoothing this in the future.
-            entry.set_possibly_dirty()
-            self._refresh_entry(filename, entry)
-        return new
-
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
         entry = self.get(f)
@@ -538,6 +514,30 @@ class dirstatemap(_dirstatemapcommon):
 
     ### code related to manipulation of entries and copy-sources
 
+    def set_tracked(self, filename):
+        new = False
+        entry = self.get(filename)
+        if entry is None:
+            self._dirs_incr(filename)
+            entry = DirstateItem(
+                wc_tracked=True,
+            )
+
+            self._insert_entry(filename, entry)
+            new = True
+        elif not entry.tracked:
+            self._dirs_incr(filename, entry)
+            entry.set_tracked()
+            self._refresh_entry(filename, entry)
+            new = True
+        else:
+            # XXX This is probably overkill for more case, but we need this to
+            # fully replace the `normallookup` call with `set_tracked` one.
+            # Consider smoothing this in the future.
+            entry.set_possibly_dirty()
+            self._refresh_entry(filename, entry)
+        return new
+
     def _refresh_entry(self, f, entry):
         if not entry.any_tracked:
             self._map.pop(f, None)
@@ -721,6 +721,9 @@ if rustmod is not None:
 
         def _insert_entry(self, f, entry):
             self._map.addfile(f, entry)
+
+        def set_tracked(self, f):
+            return self._map.set_tracked(f)
 
         def _drop_entry(self, f):
             self._map.drop_item_and_copy_source(f)

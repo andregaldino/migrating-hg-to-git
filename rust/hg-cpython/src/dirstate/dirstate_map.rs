@@ -131,6 +131,16 @@ py_class!(pub class DirstateMap |py| {
         Ok(PyNone)
     }
 
+    def set_tracked(&self, f: PyObject) -> PyResult<PyBool> {
+        let bytes = f.extract::<PyBytes>(py)?;
+        let path = HgPath::new(bytes.data(py));
+        let res = self.inner(py).borrow_mut().set_tracked(path);
+        let was_tracked = res.or_else(|_| {
+            Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
+        })?;
+        Ok(was_tracked.to_py_object(py))
+    }
+
     def removefile(
         &self,
         f: PyObject,
