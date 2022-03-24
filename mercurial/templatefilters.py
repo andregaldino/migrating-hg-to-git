@@ -269,7 +269,7 @@ def fill76(text):
 def firstline(text):
     """Any text. Returns the first line of text."""
     try:
-        return text.splitlines(True)[0].rstrip(b'\r\n')
+        return text.splitlines()[0]
     except IndexError:
         return b''
 
