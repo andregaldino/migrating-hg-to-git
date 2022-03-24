@@ -552,9 +552,7 @@ class histeditaction:
             summary = cmdutil.rendertemplate(
                 ctx, ui.config(b'histedit', b'summary-template')
             )
-        # Handle the fact that `''.splitlines() => []`
-        summary = summary.splitlines()[0] if summary else b''
-        line = b'%s %s %s' % (self.verb, ctx, summary)
+        line = b'%s %s %s' % (self.verb, ctx, stringutil.firstline(summary))
         # trim to 75 columns by default so it's not stupidly wide in my editor
         # (the 5 more are left for verb)
         maxlen = self.repo.ui.configint(b'histedit', b'linelen')
@@ -1192,7 +1190,7 @@ class histeditrule:
         # This is split off from the prefix property so that we can
         # separately make the description for 'roll' red (since it
         # will get discarded).
-        return self.ctx.description().splitlines()[0].strip()
+        return stringutil.firstline(self.ctx.description())
 
     def checkconflicts(self, other):
         if other.pos > self.pos and other.origpos <= self.origpos:
@@ -1291,7 +1289,7 @@ class _chistedit_state:
         line = b"bookmark:  %s" % b' '.join(bms)
         win.addstr(3, 1, line[:length])
 
-        line = b"summary:   %s" % (ctx.description().splitlines()[0])
+        line = b"summary:   %s" % stringutil.firstline(ctx.description())
         win.addstr(4, 1, line[:length])
 
         line = b"files:     "
@@ -2324,9 +2322,7 @@ def _getsummary(ctx):
     # a common pattern is to extract the summary but default to the empty
     # string
     summary = ctx.description() or b''
-    if summary:
-        summary = summary.splitlines()[0]
-    return summary
+    return stringutil.firstline(summary)
 
 
 def bootstrapcontinue(ui, state, opts):
