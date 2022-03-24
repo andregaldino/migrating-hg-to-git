@@ -268,10 +268,7 @@ def fill76(text):
 @templatefilter(b'firstline', intype=bytes)
 def firstline(text):
     """Any text. Returns the first line of text."""
-    try:
-        return text.splitlines()[0]
-    except IndexError:
-        return b''
+    return stringutil.firstline(text)
 
 
 @templatefilter(b'hex', intype=bytes)

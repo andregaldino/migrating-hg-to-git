@@ -685,6 +685,14 @@ def isauthorwellformed(author):
     return _correctauthorformat.match(author) is not None
 
 
+def firstline(text):
+    """Return the first line of the input"""
+    try:
+        return text.splitlines()[0]
+    except IndexError:
+        return b''
+
+
 def ellipsis(text, maxlength=400):
     """Trim string to at most maxlength (default: 400) columns in display."""
     return encoding.trim(text, maxlength, ellipsis=b'...')
