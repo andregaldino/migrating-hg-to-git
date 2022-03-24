@@ -2319,10 +2319,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
 
 
 def _getsummary(ctx):
-    # a common pattern is to extract the summary but default to the empty
-    # string
-    summary = ctx.description() or b''
-    return stringutil.firstline(summary)
+    return stringutil.firstline(ctx.description())
 
 
 def bootstrapcontinue(ui, state, opts):
