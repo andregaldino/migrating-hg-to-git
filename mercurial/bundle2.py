@@ -2528,7 +2528,8 @@ def bundle2getvars(op, part):
 @parthandler(b'stream2', (b'requirements', b'filecount', b'bytecount'))
 def handlestreamv2bundle(op, part):
 
-    requirements = urlreq.unquote(part.params[b'requirements']).split(b',')
+    requirements = urlreq.unquote(part.params[b'requirements'])
+    requirements = requirements.split(b',') if requirements else []
     filecount = int(part.params[b'filecount'])
     bytecount = int(part.params[b'bytecount'])
 
