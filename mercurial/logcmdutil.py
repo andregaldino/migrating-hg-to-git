@@ -416,7 +416,7 @@ class changesetprinter:
                 self.ui.write(b"\n\n")
             else:
                 self.ui.write(
-                    columns[b'summary'] % description.splitlines()[0],
+                    columns[b'summary'] % stringutil.firstline(description),
                     label=b'log.summary',
                 )
         self.ui.write(b"\n")
