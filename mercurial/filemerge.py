@@ -848,7 +848,7 @@ def _populate_label_detail(input, template):
 
     props = {b'ctx': ctx}
     templateresult = template.renderdefault(props)
-    input.label_detail = templateresult.splitlines()[0]  # split for safety
+    input.label_detail = stringutil.firstline(templateresult)  # avoid '\n'
 
 
 def _populate_label_details(repo, inputs, tool=None):
