@@ -831,7 +831,7 @@ def disabled():
     for name, path in paths.items():
         doc = _disabledhelp(path)
         if doc and name != b'__index__':
-            exts[name] = doc.splitlines()[0]
+            exts[name] = stringutil.firstline(doc)
 
     return exts
 
@@ -935,7 +935,7 @@ def enabled(shortname=True):
         assert doc is not None  # help pytype
         if shortname:
             ename = ename.split(b'.')[-1]
-        exts[ename] = doc.splitlines()[0].strip()
+        exts[ename] = stringutil.firstline(doc).strip()
 
     return exts
 
