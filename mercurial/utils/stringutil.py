@@ -687,6 +687,10 @@ def isauthorwellformed(author):
 
 def firstline(text):
     """Return the first line of the input"""
+    # Try to avoid running splitlines() on the whole string
+    i = text.find(b'\n')
+    if i != -1:
+        text = text[:i]
     try:
         return text.splitlines()[0]
     except IndexError:
