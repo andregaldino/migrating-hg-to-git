@@ -37,6 +37,7 @@ from .hgweb import webcommands
 from .utils import (
     compression,
     resourceutil,
+    stringutil,
 )
 
 _exclkeywords = {
@@ -289,9 +290,8 @@ def topicmatch(ui, commands, kw):
         func = entry[0]
         docs = _(pycompat.getdoc(func)) or b''
         if kw in cmd or lowercontains(summary) or lowercontains(docs):
-            doclines = docs.splitlines()
-            if doclines:
-                summary = doclines[0]
+            if docs:
+                summary = stringutil.firstline(docs)
             cmdname = cmdutil.parsealiases(cmd)[0]
             if filtercmd(ui, cmdname, func, kw, docs):
                 continue
@@ -305,7 +305,7 @@ def topicmatch(ui, commands, kw):
         name = name.rpartition(b'.')[-1]
         if lowercontains(name) or lowercontains(docs):
             # extension docs are already translated
-            results[b'extensions'].append((name, docs.splitlines()[0]))
+            results[b'extensions'].append((name, stringutil.firstline(docs)))
         try:
             mod = extensions.load(ui, name, b'')
         except ImportError:
@@ -317,7 +317,7 @@ def topicmatch(ui, commands, kw):
                 func = entry[0]
                 cmddoc = pycompat.getdoc(func)
                 if cmddoc:
-                    cmddoc = gettext(cmddoc).splitlines()[0]
+                    cmddoc = stringutil.firstline(gettext(cmddoc))
                 else:
                     cmddoc = _(b'(no help text available)')
                 if filtercmd(ui, cmdname, func, kw, cmddoc):
@@ -607,7 +607,7 @@ def makeitemsdoc(ui, topic, doc, marker, items, dedent=False):
             # Abuse latin1 to use textwrap.dedent() on bytes.
             text = textwrap.dedent(text.decode('latin1')).encode('latin1')
         lines = text.splitlines()
-        doclines = [(lines[0])]
+        doclines = [lines[0]]
         for l in lines[1:]:
             # Stop once we find some Python doctest
             if l.strip().startswith(b'>>>'):
@@ -677,7 +677,7 @@ def _getcategorizedhelpcmds(ui, cmdtable, name, select=None):
         doc = gettext(doc)
         if not doc:
             doc = _(b"(no help text available)")
-        h[f] = doc.splitlines()[0].rstrip()
+        h[f] = stringutil.firstline(doc).rstrip()
 
         cat = getattr(func, 'helpcategory', None) or (
             registrar.command.CATEGORY_NONE
@@ -1043,7 +1043,7 @@ def help_(
         cmd, ext, doc = extensions.disabledcmd(
             ui, name, ui.configbool(b'ui', b'strict')
         )
-        doc = doc.splitlines()[0]
+        doc = stringutil.firstline(doc)
 
         rst = listexts(
             _(b"'%s' is provided by the following extension:") % cmd,
