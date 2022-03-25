@@ -1062,7 +1062,7 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
             fm.context(ctx=ctx)
             fm.data(linetype=b'changeset')
             fm.write(b'node', b'%-7.7s ', ctx.hex(), label=b'absorb.node')
-            descfirstline = ctx.description().splitlines()[0]
+            descfirstline = stringutil.firstline(ctx.description())
             fm.write(
                 b'descfirstline',
                 b'%s\n',
