@@ -26642,7 +26642,7 @@ msgstr ""
 
 msgid ""
 "``pullbundle``\n"
-"    When set, the server will check pullbundle.manifest for bundles\n"
+"    When set, the server will check pullbundles.manifest for bundles\n"
 "    covering the requested heads and common nodes. The first matching\n"
 "    entry will be streamed to the client."
 msgstr ""

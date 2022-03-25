@@ -273,6 +273,15 @@ def unamend(ui, repo, **opts):
         if len(curctx.parents()) > 1:
             raise error.InputError(_(b"cannot unamend merge changeset"))
 
+        expected_keys = (b'amend_source', b'unamend_source')
+        if not any(key in curctx.extra() for key in expected_keys):
+            raise error.InputError(
+                _(
+                    b"working copy parent was not created by 'hg amend' or "
+                    b"'hg unamend'"
+                )
+            )
+
         # identify the commit to which to unamend
         markers = list(predecessormarkers(curctx))
         if len(markers) != 1:

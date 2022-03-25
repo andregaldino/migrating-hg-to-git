@@ -39,8 +39,23 @@ Repo Setup
 Trying to unamend when there was no amend done
 
   $ hg unamend
+  abort: working copy parent was not created by 'hg amend' or 'hg unamend'
+  [10]
+  $ echo "bar" >> h
+
+Trying to unamend when the obsmarker is missing
+
+  $ hg amend
+  $ hg debugobsolete --delete 0
+  deleted 1 obsolescence markers
+  $ hg unamend
   abort: changeset must have one predecessor, found 0 predecessors
   [10]
+  $ hg strip tip --config extensions.strip=
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/c9fa1a715c1b-06e5c233-backup.hg
+  $ hg up tip
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Unamend on clean wdir and tip
 
