@@ -23,7 +23,6 @@ from .util import (
 
 
 STAGING_RULES_WINDOWS = [
-    ('contrib/bash_completion', 'contrib/'),
     ('contrib/hgk', 'contrib/hgk.tcl'),
     ('contrib/hgweb.fcgi', 'contrib/'),
     ('contrib/hgweb.wsgi', 'contrib/'),
@@ -36,7 +35,6 @@ STAGING_RULES_WINDOWS = [
     ('contrib/win32/postinstall.txt', 'ReleaseNotes.txt'),
     ('contrib/win32/ReadMe.html', 'ReadMe.html'),
     ('contrib/xml.rnc', 'contrib/'),
-    ('contrib/zsh_completion', 'contrib/'),
     ('doc/*.html', 'doc/'),
     ('doc/style.css', 'doc/'),
     ('COPYING', 'Copying.txt'),

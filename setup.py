@@ -982,6 +982,10 @@ class hginstall(install):
         ),
     ]
 
+    sub_commands = install.sub_commands + [
+        ('install_completion', lambda self: True)
+    ]
+
     # Also helps setuptools not be sad while we refuse to create eggs.
     single_version_externally_managed = True
 
@@ -1101,6 +1105,33 @@ class hginstallscripts(install_scripts):
                 fp.write(data)
 
 
+class hginstallcompletion(Command):
+    description = 'Install shell completion'
+
+    def initialize_options(self):
+        self.install_dir = None
+
+    def finalize_options(self):
+        self.set_undefined_options(
+            'install_data', ('install_dir', 'install_dir')
+        )
+
+    def run(self):
+        for src, dir_path, dest in (
+            (
+                'bash_completion',
+                ('share', 'bash-completion', 'completions'),
+                'hg',
+            ),
+            ('zsh_completion', ('share', 'zsh', 'site-functions'), '_hg'),
+        ):
+            dir = os.path.join(self.install_dir, *dir_path)
+            self.mkpath(dir)
+            self.copy_file(
+                os.path.join('contrib', src), os.path.join(dir, dest)
+            )
+
+
 # virtualenv installs custom distutils/__init__.py and
 # distutils/distutils.cfg files which essentially proxy back to the
 # "real" distutils in the main Python install. The presence of this
@@ -1191,6 +1222,7 @@ cmdclass = {
     'build_scripts': hgbuildscripts,
     'build_hgextindex': buildhgextindex,
     'install': hginstall,
+    'install_completion': hginstallcompletion,
     'install_lib': hginstalllib,
     'install_scripts': hginstallscripts,
     'build_hgexe': buildhgexe,

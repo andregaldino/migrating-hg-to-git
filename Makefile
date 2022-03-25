@@ -235,16 +235,6 @@ osx:
         # Place a bogon .DS_Store file in the target dir so we can be
         # sure it doesn't get included in the final package.
 	touch build/mercurial/.DS_Store
-        # install zsh completions - this location appears to be
-        # searched by default as of macOS Sierra.
-	install -d build/mercurial/usr/local/share/zsh/site-functions/
-	install -m 0644 contrib/zsh_completion build/mercurial/usr/local/share/zsh/site-functions/_hg
-        # install bash completions - there doesn't appear to be a
-        # place that's searched by default for bash, so we'll follow
-        # the lead of Apple's git install and just put it in a
-        # location of our own.
-	install -d build/mercurial/usr/local/hg/contrib/
-	install -m 0644 contrib/bash_completion build/mercurial/usr/local/hg/contrib/hg-completion.bash
 	make -C contrib/chg \
 	  HGPATH=/usr/local/bin/hg \
 	  PYTHON=/usr/bin/python2.7 \

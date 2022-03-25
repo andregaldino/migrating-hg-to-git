@@ -39,8 +39,8 @@ Spot-check some randomly selected files:
   ./Library/Python/2.7/site-packages/mercurial/pure/bdiff.pyo	100644	0/0
   $ grep zsh/site-functions/_hg boms.txt | cut -d '	' -f 1,2,3
   ./usr/local/share/zsh/site-functions/_hg	100644	0/0
-  $ grep hg-completion.bash boms.txt | cut -d '	' -f 1,2,3
-  ./usr/local/hg/contrib/hg-completion.bash	100644	0/0
+  $ grep bash-completion/completions/hg boms.txt | cut -d '	' -f 1,2,3
+  ./usr/local/share/bash-completion-completions/hg	100644	0/0
   $ egrep 'man[15]' boms.txt | cut -d '	' -f 1,2,3
   ./usr/local/share/man/man1	40755	0/0
   ./usr/local/share/man/man1/chg.1	100644	0/0

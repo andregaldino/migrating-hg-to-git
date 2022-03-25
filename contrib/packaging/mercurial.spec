@@ -126,14 +126,6 @@ install -m 755 contrib/chg/chg $RPM_BUILD_ROOT%{_bindir}/
 install -m 755 contrib/hgk $RPM_BUILD_ROOT%{_bindir}/
 install -m 755 contrib/hg-ssh $RPM_BUILD_ROOT%{_bindir}/
 
-bash_completion_dir=$RPM_BUILD_ROOT%{_sysconfdir}/bash_completion.d
-mkdir -p $bash_completion_dir
-install -m 644 contrib/bash_completion $bash_completion_dir/mercurial.sh
-
-zsh_completion_dir=$RPM_BUILD_ROOT%{_datadir}/zsh/site-functions
-mkdir -p $zsh_completion_dir
-install -m 644 contrib/zsh_completion $zsh_completion_dir/_mercurial
-
 mkdir -p $RPM_BUILD_ROOT%{emacs_lispdir}
 install -m 644 contrib/mercurial.el $RPM_BUILD_ROOT%{emacs_lispdir}/
 install -m 644 contrib/mq.el $RPM_BUILD_ROOT%{emacs_lispdir}/
@@ -148,9 +140,12 @@ rm -rf $RPM_BUILD_ROOT
 %doc CONTRIBUTORS COPYING doc/README doc/hg*.txt doc/hg*.html *.cgi contrib/*.fcgi contrib/*.wsgi
 %doc %attr(644,root,root) %{_mandir}/man?/hg*
 %doc %attr(644,root,root) contrib/*.svg
+%dir %{_datadir}/bash-completion/
+%dir %{_datadir}/bash-completion/completions
+%{_datadir}/bash-completion/completions/hg
 %dir %{_datadir}/zsh/
 %dir %{_datadir}/zsh/site-functions/
-%{_datadir}/zsh/site-functions/_mercurial
+%{_datadir}/zsh/site-functions/_hg
 %dir %{_datadir}/emacs/site-lisp/
 %{_datadir}/emacs/site-lisp/mercurial.el
 %{_datadir}/emacs/site-lisp/mq.el
@@ -158,8 +153,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/chg
 %{_bindir}/hgk
 %{_bindir}/hg-ssh
-%dir %{_sysconfdir}/bash_completion.d/
-%config(noreplace) %{_sysconfdir}/bash_completion.d/mercurial.sh
 %dir %{_sysconfdir}/mercurial
 %dir %{_sysconfdir}/mercurial/hgrc.d
 %if "%{?withpython}"
