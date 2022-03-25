@@ -27,6 +27,7 @@ from . import (
     util,
 )
 from .utils import (
+    stringutil,
     urlutil,
 )
 
@@ -342,7 +343,7 @@ def _readactive(repo, marks):
     # No readline() in osutil.posixfile, reading everything is
     # cheap.
     content = repo.vfs.tryread(b'bookmarks.current')
-    mark = encoding.tolocal((content.splitlines() or [b''])[0])
+    mark = encoding.tolocal(stringutil.firstline(content))
     if mark == b'' or mark not in marks:
         mark = None
     return mark
