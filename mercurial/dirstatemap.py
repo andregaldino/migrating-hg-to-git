@@ -79,25 +79,6 @@ class _dirstatemapcommon:
     def __getitem__(self, item):
         return self._map[item]
 
-    ### sub-class utility method
-    #
-    # Use to allow for generic implementation of some method while still coping
-    # with minor difference between implementation.
-
-    def _dirs_incr(self, filename, old_entry=None):
-        """increment the dirstate counter if applicable
-
-        This might be a no-op for some subclasses who deal with directory
-        tracking in a different way.
-        """
-
-    def _dirs_decr(self, filename, old_entry=None, remove_variant=False):
-        """decrement the dirstate counter if applicable
-
-        This might be a no-op for some subclasses who deal with directory
-        tracking in a different way.
-        """
-
     ### disk interaction
 
     def _opendirstatefile(self):
@@ -354,7 +335,7 @@ class dirstatemap(_dirstatemapcommon):
     # (e.g. "has_dir")
 
     def _dirs_incr(self, filename, old_entry=None):
-        """incremente the dirstate counter if applicable"""
+        """increment the dirstate counter if applicable"""
         if (
             old_entry is None or old_entry.removed
         ) and "_dirs" in self.__dict__:
@@ -363,7 +344,7 @@ class dirstatemap(_dirstatemapcommon):
             self._alldirs.addpath(filename)
 
     def _dirs_decr(self, filename, old_entry=None, remove_variant=False):
-        """decremente the dirstate counter if applicable"""
+        """decrement the dirstate counter if applicable"""
         if old_entry is not None:
             if "_dirs" in self.__dict__ and not old_entry.removed:
                 self._dirs.delpath(filename)
