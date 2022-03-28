@@ -730,6 +730,3 @@ if rustmod is not None:
                 has_meaningful_mtime,
                 parentfiledata,
             )
-
-        def _drop_entry(self, f):
-            self._map.drop_item_and_copy_source(f)
