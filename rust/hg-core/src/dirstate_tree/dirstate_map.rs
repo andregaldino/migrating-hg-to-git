@@ -343,7 +343,13 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
     pub(super) fn state(
         &self,
     ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        Ok(self.entry()?.map(|e| e.state()))
+        Ok(self.entry()?.and_then(|e| {
+            if e.any_tracked() {
+                Some(e.state())
+            } else {
+                None
+            }
+        }))
     }
 
     pub(super) fn cached_directory_mtime(
