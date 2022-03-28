@@ -1375,6 +1375,41 @@ impl OwningDirstateMap {
         )))
     }
 
+    /// Only public because it needs to be exposed to the Python layer.
+    /// It is not the full `setparents` logic, only the parts that mutate the
+    /// entries.
+    pub fn setparents_fixup(
+        &mut self,
+    ) -> Result<Vec<(HgPathBuf, HgPathBuf)>, DirstateV2ParseError> {
+        // XXX
+        // All the copying and re-querying is quite inefficient, but this is
+        // still a lot better than doing it from Python.
+        //
+        // The better solution is to develop a mechanism for `iter_mut`,
+        // which will be a lot more involved: we're dealing with a lazy,
+        // append-mostly, tree-like data structure. This will do for now.
+        let mut copies = vec![];
+        let mut files_with_p2_info = vec![];
+        for res in self.iter() {
+            let (path, entry) = res?;
+            if entry.p2_info() {
+                files_with_p2_info.push(path.to_owned())
+            }
+        }
+        self.with_dmap_mut(|map| {
+            for path in files_with_p2_info.iter() {
+                let node = map.get_or_insert(path)?;
+                let entry =
+                    node.data.as_entry_mut().expect("entry should exist");
+                entry.drop_merge_data();
+                if let Some(source) = node.copy_source.take().as_deref() {
+                    copies.push((path.to_owned(), source.to_owned()));
+                }
+            }
+            Ok(copies)
+        })
+    }
+
     pub fn debug_iter(
         &self,
         all: bool,

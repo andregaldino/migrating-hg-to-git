@@ -593,22 +593,7 @@ if rustmod is not None:
             self._dirtyparents = True
             copies = {}
             if fold_p2:
-                # Collect into an intermediate list to avoid a `RuntimeError`
-                # exception due to mutation during iteration.
-                # TODO: move this the whole loop to Rust where `iter_mut`
-                # enables in-place mutation of elements of a collection while
-                # iterating it, without mutating the collection itself.
-                files_with_p2_info = [
-                    f for f, s in self._map.items() if s.p2_info
-                ]
-                rust_map = self._map
-                for f in files_with_p2_info:
-                    e = rust_map.get(f)
-                    source = self.copymap.pop(f, None)
-                    if source:
-                        copies[f] = source
-                    e.drop_merge_data()
-                    rust_map.set_dirstate_item(f, e)
+                copies = self._map.setparents_fixup()
             return copies
 
         ### disk interaction

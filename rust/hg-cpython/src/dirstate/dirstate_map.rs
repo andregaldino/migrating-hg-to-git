@@ -489,6 +489,19 @@ py_class!(pub class DirstateMap |py| {
         Ok(dirs)
     }
 
+    def setparents_fixup(&self) -> PyResult<PyDict> {
+        let dict = PyDict::new(py);
+        let copies = self.inner(py).borrow_mut().setparents_fixup();
+        for (key, value) in copies.map_err(|e| v2_error(py, e))? {
+            dict.set_item(
+                py,
+                PyBytes::new(py, key.as_bytes()),
+                PyBytes::new(py, value.as_bytes()),
+            )?;
+        }
+        Ok(dict)
+    }
+
     def debug_iter(&self, all: bool) -> PyResult<PyList> {
         let dirs = PyList::new(py, &[]);
         for item in self.inner(py).borrow().debug_iter(all) {
