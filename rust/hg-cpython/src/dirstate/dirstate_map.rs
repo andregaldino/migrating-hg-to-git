@@ -164,6 +164,16 @@ py_class!(pub class DirstateMap |py| {
         Ok(PyNone)
     }
 
+    def set_possibly_dirty(&self, f: PyObject) -> PyResult<PyNone> {
+        let bytes = f.extract::<PyBytes>(py)?;
+        let path = HgPath::new(bytes.data(py));
+        let res = self.inner(py).borrow_mut().set_possibly_dirty(path);
+        res.or_else(|_| {
+            Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
+        })?;
+        Ok(PyNone)
+    }
+
     def reset_state(
         &self,
         f: PyObject,

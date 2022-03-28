@@ -427,6 +427,13 @@ impl NodeData {
             _ => None,
         }
     }
+
+    fn as_entry_mut(&mut self) -> Option<&mut DirstateEntry> {
+        match self {
+            NodeData::Entry(entry) => Some(entry),
+            _ => None,
+        }
+    }
 }
 
 impl<'on_disk> DirstateMap<'on_disk> {
@@ -791,6 +798,24 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(())
     }
 
+    fn set_possibly_dirty(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<(), DirstateError> {
+        let node = Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            WithBasename::to_cow_owned,
+            |_ancestor| {},
+        )?;
+        let entry = node.data.as_entry_mut().expect("entry should exist");
+        entry.set_possibly_dirty();
+        node.data = NodeData::Entry(*entry);
+        Ok(())
+    }
+
     fn iter_nodes<'tree>(
         &'tree self,
     ) -> impl Iterator<
@@ -927,6 +952,16 @@ impl OwningDirstateMap {
         self.with_dmap_mut(|map| {
             map.set_clean(filename, old_entry, mode, size, mtime)
         })
+    }
+
+    pub fn set_possibly_dirty(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<(), DirstateError> {
+        if self.get(filename)?.is_none() {
+            return Err(DirstateMapError::PathNotFound(filename.into()).into());
+        }
+        self.with_dmap_mut(|map| map.set_possibly_dirty(filename))
     }
 
     pub fn reset_state(
