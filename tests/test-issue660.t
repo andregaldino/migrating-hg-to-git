@@ -1,7 +1,8 @@
 https://bz.mercurial-scm.org/660 and:
 https://bz.mercurial-scm.org/322
 
-  $ hg init
+  $ hg init repo
+  $ cd repo
   $ echo a > a
   $ mkdir b
   $ echo b > b/b
