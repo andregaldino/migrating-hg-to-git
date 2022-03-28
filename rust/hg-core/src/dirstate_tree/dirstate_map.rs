@@ -884,17 +884,6 @@ impl OwningDirstateMap {
         });
     }
 
-    pub fn set_entry(
-        &mut self,
-        filename: &HgPath,
-        entry: DirstateEntry,
-    ) -> Result<(), DirstateV2ParseError> {
-        self.with_dmap_mut(|map| {
-            map.get_or_insert(&filename)?.data = NodeData::Entry(entry);
-            Ok(())
-        })
-    }
-
     pub fn set_tracked(
         &mut self,
         filename: &HgPath,
