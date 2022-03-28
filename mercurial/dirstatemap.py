@@ -116,14 +116,6 @@ class _dirstatemapcommon:
         entry.set_possibly_dirty()
         self._refresh_entry(filename, entry)
 
-    def set_clean(self, filename, mode, size, mtime):
-        """mark a file as back to a clean state"""
-        entry = self[filename]
-        size = size & rangemask
-        entry.set_clean(mode, size, mtime)
-        self._refresh_entry(filename, entry)
-        self.copymap.pop(filename, None)
-
     def set_untracked(self, f):
         """Mark a file as no longer tracked in the dirstate map"""
         entry = self.get(f)
@@ -531,6 +523,14 @@ class dirstatemap(_dirstatemapcommon):
             self._refresh_entry(filename, entry)
         return new
 
+    def set_clean(self, filename, mode, size, mtime):
+        """mark a file as back to a clean state"""
+        entry = self[filename]
+        size = size & rangemask
+        entry.set_clean(mode, size, mtime)
+        self._refresh_entry(filename, entry)
+        self.copymap.pop(filename, None)
+
     def _refresh_entry(self, f, entry):
         if not entry.any_tracked:
             self._map.pop(f, None)
@@ -711,6 +711,9 @@ if rustmod is not None:
 
         def set_tracked(self, f):
             return self._map.set_tracked(f)
+
+        def set_clean(self, filename, mode, size, mtime):
+            self._map.set_clean(filename, mode, size, mtime)
 
         def reset_state(
             self,
