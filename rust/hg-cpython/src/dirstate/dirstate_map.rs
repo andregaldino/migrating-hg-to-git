@@ -142,6 +142,28 @@ py_class!(pub class DirstateMap |py| {
         Ok(was_tracked.to_py_object(py))
     }
 
+    def set_clean(
+        &self,
+        f: PyObject,
+        mode: u32,
+        size: u32,
+        mtime: (i64, u32, bool)
+    ) -> PyResult<PyNone> {
+        let (mtime_s, mtime_ns, second_ambiguous) = mtime;
+        let timestamp = TruncatedTimestamp::new_truncate(
+            mtime_s, mtime_ns, second_ambiguous
+        );
+        let bytes = f.extract::<PyBytes>(py)?;
+        let path = HgPath::new(bytes.data(py));
+        let res = self.inner(py).borrow_mut().set_clean(
+            path, mode, size, timestamp,
+        );
+        res.or_else(|_| {
+            Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
+        })?;
+        Ok(PyNone)
+    }
+
     def reset_state(
         &self,
         f: PyObject,

@@ -21,6 +21,7 @@ use crate::matchers::Matcher;
 use crate::utils::hg_path::{HgPath, HgPathBuf};
 use crate::DirstateEntry;
 use crate::DirstateError;
+use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
 use crate::EntryState;
@@ -764,6 +765,32 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(())
     }
 
+    fn set_clean(
+        &mut self,
+        filename: &HgPath,
+        old_entry: DirstateEntry,
+        mode: u32,
+        size: u32,
+        mtime: TruncatedTimestamp,
+    ) -> Result<(), DirstateError> {
+        let node = Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            WithBasename::to_cow_owned,
+            |ancestor| {
+                if !old_entry.tracked() {
+                    ancestor.tracked_descendants_count += 1;
+                }
+            },
+        )?;
+        let mut new_entry = old_entry.clone();
+        new_entry.set_clean(mode, size, mtime);
+        node.data = NodeData::Entry(new_entry);
+        Ok(())
+    }
+
     fn iter_nodes<'tree>(
         &'tree self,
     ) -> impl Iterator<
@@ -879,6 +906,27 @@ impl OwningDirstateMap {
     ) -> Result<bool, DirstateV2ParseError> {
         let old_entry_opt = self.get(filename)?;
         self.with_dmap_mut(|map| map.set_tracked(filename, old_entry_opt))
+    }
+
+    pub fn set_clean(
+        &mut self,
+        filename: &HgPath,
+        mode: u32,
+        size: u32,
+        mtime: TruncatedTimestamp,
+    ) -> Result<(), DirstateError> {
+        let old_entry = match self.get(filename)? {
+            None => {
+                return Err(
+                    DirstateMapError::PathNotFound(filename.into()).into()
+                )
+            }
+            Some(e) => e,
+        };
+        self.copy_map_remove(filename)?;
+        self.with_dmap_mut(|map| {
+            map.set_clean(filename, old_entry, mode, size, mtime)
+        })
     }
 
     pub fn reset_state(
