@@ -3749,10 +3749,12 @@ def _performrevert(
 
     for f in actions[b'add'][0]:
         # Don't checkout modified files, they are already created by the diff
-        if f not in newlyaddedandmodifiedfiles:
-            prntstatusmsg(b'add', f)
-            checkout(f)
-            repo.dirstate.set_tracked(f)
+        if f in newlyaddedandmodifiedfiles:
+            continue
+
+        prntstatusmsg(b'add', f)
+        checkout(f)
+        repo.dirstate.set_tracked(f)
 
     for f in actions[b'undelete'][0]:
         if interactive:
