@@ -772,6 +772,32 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(())
     }
 
+    /// It is the responsibility of the caller to know that there was an entry
+    /// there before. Does not handle the removal of copy source
+    fn set_untracked(
+        &mut self,
+        filename: &HgPath,
+        old_entry: DirstateEntry,
+    ) -> Result<(), DirstateV2ParseError> {
+        let node = Self::get_or_insert_node(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            WithBasename::to_cow_owned,
+            |ancestor| {
+                ancestor.tracked_descendants_count = ancestor
+                    .tracked_descendants_count
+                    .checked_sub(1)
+                    .expect("tracked_descendants_count should be >= 0");
+            },
+        )?;
+        let mut new_entry = old_entry.clone();
+        new_entry.set_untracked();
+        node.data = NodeData::Entry(new_entry);
+        Ok(())
+    }
+
     fn set_clean(
         &mut self,
         filename: &HgPath,
@@ -931,6 +957,39 @@ impl OwningDirstateMap {
     ) -> Result<bool, DirstateV2ParseError> {
         let old_entry_opt = self.get(filename)?;
         self.with_dmap_mut(|map| map.set_tracked(filename, old_entry_opt))
+    }
+
+    pub fn set_untracked(
+        &mut self,
+        filename: &HgPath,
+    ) -> Result<bool, DirstateError> {
+        let old_entry_opt = self.get(filename)?;
+        match old_entry_opt {
+            None => Ok(false),
+            Some(old_entry) => {
+                if !old_entry.tracked() {
+                    // `DirstateMap::set_untracked` is not a noop if
+                    // already not tracked as it will decrement the
+                    // tracked counters while going down.
+                    return Ok(true);
+                }
+                if old_entry.added() {
+                    // Untracking an "added" entry will just result in a
+                    // worthless entry (and other parts of the code will
+                    // complain about it), just drop it entirely.
+                    self.drop_entry_and_copy_source(filename)?;
+                    return Ok(true);
+                }
+                if !old_entry.p2_info() {
+                    self.copy_map_remove(filename)?;
+                }
+
+                self.with_dmap_mut(|map| {
+                    map.set_untracked(filename, old_entry)?;
+                    Ok(true)
+                })
+            }
+        }
     }
 
     pub fn set_clean(

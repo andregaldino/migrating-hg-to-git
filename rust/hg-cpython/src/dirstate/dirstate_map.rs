@@ -142,6 +142,16 @@ py_class!(pub class DirstateMap |py| {
         Ok(was_tracked.to_py_object(py))
     }
 
+    def set_untracked(&self, f: PyObject) -> PyResult<PyBool> {
+        let bytes = f.extract::<PyBytes>(py)?;
+        let path = HgPath::new(bytes.data(py));
+        let res = self.inner(py).borrow_mut().set_untracked(path);
+        let was_tracked = res.or_else(|_| {
+            Err(PyErr::new::<exc::OSError, _>(py, "Dirstate error".to_string()))
+        })?;
+        Ok(was_tracked.to_py_object(py))
+    }
+
     def set_clean(
         &self,
         f: PyObject,
