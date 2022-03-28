@@ -15,7 +15,6 @@ use hg::config::Config;
 use hg::dirstate::has_exec_bit;
 use hg::dirstate::status::StatusPath;
 use hg::dirstate::TruncatedTimestamp;
-use hg::dirstate::RANGE_MASK_31BIT;
 use hg::errors::{HgError, IoResultExt};
 use hg::lock::LockError;
 use hg::manifest::Manifest;
@@ -390,12 +389,8 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
                         .when_reading_file(&fs_path)?
                     {
                         let mode = fs_metadata.mode();
-                        let size = fs_metadata.len() as u32 & RANGE_MASK_31BIT;
-                        let mut entry = dmap
-                            .get(&hg_path)?
-                            .expect("ambiguous file not in dirstate");
-                        entry.set_clean(mode, size, mtime);
-                        dmap.add_file(&hg_path, entry)?;
+                        let size = fs_metadata.len();
+                        dmap.set_clean(&hg_path, mode, size as u32, mtime)?;
                         dirstate_write_needed = true
                     }
                 }
