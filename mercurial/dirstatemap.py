@@ -733,7 +733,3 @@ if rustmod is not None:
 
         def _drop_entry(self, f):
             self._map.drop_item_and_copy_source(f)
-
-        def __setitem__(self, key, value):
-            assert isinstance(value, DirstateItem)
-            self._map.set_dirstate_item(key, value)
