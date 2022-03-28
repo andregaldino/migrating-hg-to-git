@@ -101,13 +101,6 @@ class _dirstatemapcommon:
     def _refresh_entry(self, f, entry):
         """record updated state of an entry"""
 
-    def _drop_entry(self, f):
-        """remove any entry for file f
-
-        This should also drop associated copy information
-
-        The fact we actually need to drop it is the responsability of the caller"""
-
     ### disk interaction
 
     def _opendirstatefile(self):
@@ -534,6 +527,11 @@ class dirstatemap(_dirstatemapcommon):
             self._map.pop(f, None)
 
     def _drop_entry(self, f):
+        """remove any entry for file f
+
+        This should also drop associated copy information
+
+        The fact we actually need to drop it is the responsability of the caller"""
         self._map.pop(f, None)
         self.copymap.pop(f, None)
 
