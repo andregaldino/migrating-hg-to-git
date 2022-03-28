@@ -205,17 +205,6 @@ py_class!(pub class DirstateMap |py| {
         Ok(PyNone)
     }
 
-    def drop_item_and_copy_source(
-        &self,
-        f: PyBytes,
-    ) -> PyResult<PyNone> {
-        self.inner(py)
-            .borrow_mut()
-            .drop_entry_and_copy_source(HgPath::new(f.data(py)))
-            .map_err(|e |dirstate_error(py, e))?;
-        Ok(PyNone)
-    }
-
     def hastrackeddir(&self, d: PyObject) -> PyResult<PyBool> {
         let d = d.extract::<PyBytes>(py)?;
         Ok(self.inner(py).borrow_mut()
