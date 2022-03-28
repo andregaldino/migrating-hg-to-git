@@ -423,7 +423,7 @@ impl DirstateEntry {
     ) {
         if !self.any_tracked() {
             // TODO: return an Option instead?
-            panic!("Accessing v1_state of an untracked DirstateEntry")
+            panic!("Accessing v2_data of an untracked DirstateEntry")
         }
         let wdir_tracked = self.flags.contains(Flags::WDIR_TRACKED);
         let p1_tracked = self.flags.contains(Flags::P1_TRACKED);
