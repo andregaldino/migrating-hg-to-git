@@ -278,7 +278,7 @@ class DirstateItem:
         self._mtime_ns = None
 
     def drop_merge_data(self):
-        """remove all "merge-only" from a DirstateItem
+        """remove all "merge-only" information from a DirstateItem
 
         This is to be call by the dirstatemap code when the second parent is dropped
         """
