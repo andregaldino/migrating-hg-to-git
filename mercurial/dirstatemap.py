@@ -701,12 +701,6 @@ if rustmod is not None:
 
         ### code related to manipulation of entries and copy-sources
 
-        def _refresh_entry(self, f, entry):
-            if not entry.any_tracked:
-                self._map.drop_item_and_copy_source(f)
-            else:
-                self._map.addfile(f, entry)
-
         def set_tracked(self, f):
             return self._map.set_tracked(f)
 
