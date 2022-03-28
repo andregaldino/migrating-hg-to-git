@@ -420,6 +420,19 @@ Check editing files newly added by a revert
   forgetting newfile
   $ hg status
   ? newfile
+  $ rm newfile
+  $ hg up 0
+  1 files updated, 0 files merged, 4 files removed, 0 files unresolved
+  $ hg status
+  $ hg revert -r 2 -i <<EOF
+  > y
+  > n
+  > EOF
+  add new file folder1/g (Yn)? y
+  adding folder1/g
+  add new file folder2/h (Yn)? n
+  $ hg status
+  A folder1/g
 
 When a line without EOL is selected during "revert -i" (issue5651)
 

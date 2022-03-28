@@ -3752,6 +3752,12 @@ def _performrevert(
         if f in newlyaddedandmodifiedfiles:
             continue
 
+        if interactive:
+            choice = repo.ui.promptchoice(
+                _(b"add new file %s (Yn)?$$ &Yes $$ &No") % uipathfn(f)
+            )
+            if choice != 0:
+                continue
         prntstatusmsg(b'add', f)
         checkout(f)
         repo.dirstate.set_tracked(f)
