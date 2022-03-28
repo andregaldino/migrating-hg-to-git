@@ -98,9 +98,6 @@ class _dirstatemapcommon:
         tracking in a different way.
         """
 
-    def _refresh_entry(self, f, entry):
-        """record updated state of an entry"""
-
     ### disk interaction
 
     def _opendirstatefile(self):
@@ -523,6 +520,7 @@ class dirstatemap(_dirstatemapcommon):
         self._refresh_entry(filename, entry)
 
     def _refresh_entry(self, f, entry):
+        """record updated state of an entry"""
         if not entry.any_tracked:
             self._map.pop(f, None)
 
