@@ -48,9 +48,12 @@ def _formatrevs(repo, revs, maxrevs=4):
     return summary
 
 
-def precheck(repo, revs, action=b'rewrite'):
+def precheck(repo, revs, action=b'rewrite', check_divergence=True):
     """check if revs can be rewritten
     action is used to control the error message.
+
+    check_divergence allows skipping the divergence checks in cases like adding
+    a prune marker (A, ()) to obsstore (which can't be diverging).
 
     Make sure this function is called after taking the lock.
     """
@@ -83,6 +86,9 @@ def precheck(repo, revs, action=b'rewrite'):
             % (action, len(newunstable)),
             hint=hint,
         )
+
+    if not check_divergence:
+        return
 
     if not obsolete.isenabled(repo, obsolete.allowdivergenceopt):
         new_divergence = _find_new_divergence(repo, revs)

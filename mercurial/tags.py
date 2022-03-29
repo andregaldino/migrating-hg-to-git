@@ -806,7 +806,7 @@ class hgtagsfnodescache:
             # There is some no-merge changeset where p1 is null and p2 is set
             # Processing them as merge is just slower, but still gives a good
             # result.
-            p2node = cl.node(p1rev)
+            p2node = cl.node(p2rev)
             p2fnode = self.getfnode(p2node, computemissing=False)
             if p1fnode != p2fnode:
                 # we cannot rely on readfast because we don't know against what

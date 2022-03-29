@@ -933,3 +933,58 @@ Avoid writing logs on trying to delete an already deleted tag
   a8a82d372bb35b42ff736e74f07c23bcd99c371f a
   a8a82d372bb35b42ff736e74f07c23bcd99c371f a
   0000000000000000000000000000000000000000 a
+
+  $ cd ..
+
+.hgtags fnode should be properly resolved at merge revision (issue6673)
+
+  $ hg init issue6673
+  $ cd issue6673
+
+  $ touch a
+  $ hg ci -qAm a
+  $ hg branch -q stable
+  $ hg ci -m branch
+
+  $ hg up -q default
+  $ hg merge -q stable
+  $ hg ci -m merge
+
+ add tag to stable branch:
+
+  $ hg up -q stable
+  $ echo a >> a
+  $ hg ci -m a
+  $ hg tag whatever
+  $ hg log -GT'{rev} {tags}\n'
+  @  4 tip
+  |
+  o  3 whatever
+  |
+  | o  2
+  |/|
+  o |  1
+  |/
+  o  0
+  
+
+ merge tagged stable into default:
+
+  $ hg up -q default
+  $ hg merge -q  stable
+  $ hg ci -m merge
+  $ hg log -GT'{rev} {tags}\n'
+  @    5 tip
+  |\
+  | o  4
+  | |
+  | o  3 whatever
+  | |
+  o |  2
+  |\|
+  | o  1
+  |/
+  o  0
+  
+
+  $ cd ..

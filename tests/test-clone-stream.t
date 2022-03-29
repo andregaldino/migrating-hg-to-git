@@ -817,3 +817,9 @@ Clone non-publishing with obsolescence
   $ killdaemons.py
 
 #endif
+
+Cloning a repo with no requirements doesn't give some obscure error
+
+  $ mkdir -p empty-repo/.hg
+  $ hg clone -q --stream ssh://user@dummy/empty-repo empty-repo2
+  $ hg --cwd empty-repo2 verify -q

@@ -501,6 +501,8 @@ static PyObject *dirstate_item_set_tracked(dirstateItemObject *self)
 static PyObject *dirstate_item_set_untracked(dirstateItemObject *self)
 {
 	self->flags &= ~dirstate_flag_wc_tracked;
+	self->flags &= ~dirstate_flag_has_meaningful_data;
+	self->flags &= ~dirstate_flag_has_mtime;
 	self->mode = 0;
 	self->size = 0;
 	self->mtime_s = 0;
