@@ -1433,3 +1433,417 @@ impl OwningDirstateMap {
         }))
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Shortcut to return tracked descendants of a path.
+    /// Panics if the path does not exist.
+    fn tracked_descendants(map: &OwningDirstateMap, path: &[u8]) -> u32 {
+        let path = dbg!(HgPath::new(path));
+        let node = map.get_map().get_node(path);
+        node.unwrap().unwrap().tracked_descendants_count()
+    }
+
+    /// Shortcut to return descendants with an entry.
+    /// Panics if the path does not exist.
+    fn descendants_with_an_entry(map: &OwningDirstateMap, path: &[u8]) -> u32 {
+        let path = dbg!(HgPath::new(path));
+        let node = map.get_map().get_node(path);
+        node.unwrap().unwrap().descendants_with_entry_count()
+    }
+
+    fn assert_does_not_exist(map: &OwningDirstateMap, path: &[u8]) {
+        let path = dbg!(HgPath::new(path));
+        let node = map.get_map().get_node(path);
+        assert!(node.unwrap().is_none());
+    }
+
+    /// Shortcut for path creation in tests
+    fn p(b: &[u8]) -> &HgPath {
+        HgPath::new(b)
+    }
+
+    /// Test the very simple case a single tracked file
+    #[test]
+    fn test_tracked_descendants_simple() -> Result<(), DirstateError> {
+        let mut map = OwningDirstateMap::new_empty(vec![]);
+        assert_eq!(map.len(), 0);
+
+        map.set_tracked(p(b"some/nested/path"))?;
+
+        assert_eq!(map.len(), 1);
+        assert_eq!(tracked_descendants(&map, b"some"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/nested/path"), 0);
+
+        map.set_untracked(p(b"some/nested/path"))?;
+        assert_eq!(map.len(), 0);
+        assert!(map.get_map().get_node(p(b"some"))?.is_none());
+
+        Ok(())
+    }
+
+    /// Test the simple case of all tracked, but multiple files
+    #[test]
+    fn test_tracked_descendants_multiple() -> Result<(), DirstateError> {
+        let mut map = OwningDirstateMap::new_empty(vec![]);
+
+        map.set_tracked(p(b"some/nested/path"))?;
+        map.set_tracked(p(b"some/nested/file"))?;
+        // one layer without any files to test deletion cascade
+        map.set_tracked(p(b"some/other/nested/path"))?;
+        map.set_tracked(p(b"root_file"))?;
+        map.set_tracked(p(b"some/file"))?;
+        map.set_tracked(p(b"some/file2"))?;
+        map.set_tracked(p(b"some/file3"))?;
+
+        assert_eq!(map.len(), 7);
+        assert_eq!(tracked_descendants(&map, b"some"), 6);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 2);
+        assert_eq!(tracked_descendants(&map, b"some/other"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/nested/path"), 0);
+
+        map.set_untracked(p(b"some/nested/path"))?;
+        assert_eq!(map.len(), 6);
+        assert_eq!(tracked_descendants(&map, b"some"), 5);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested"), 1);
+
+        map.set_untracked(p(b"some/nested/file"))?;
+        assert_eq!(map.len(), 5);
+        assert_eq!(tracked_descendants(&map, b"some"), 4);
+        assert_eq!(tracked_descendants(&map, b"some/other"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested"), 1);
+        assert_does_not_exist(&map, b"some_nested");
+
+        map.set_untracked(p(b"some/other/nested/path"))?;
+        assert_eq!(map.len(), 4);
+        assert_eq!(tracked_descendants(&map, b"some"), 3);
+        assert_does_not_exist(&map, b"some/other");
+
+        map.set_untracked(p(b"root_file"))?;
+        assert_eq!(map.len(), 3);
+        assert_eq!(tracked_descendants(&map, b"some"), 3);
+        assert_does_not_exist(&map, b"root_file");
+
+        map.set_untracked(p(b"some/file"))?;
+        assert_eq!(map.len(), 2);
+        assert_eq!(tracked_descendants(&map, b"some"), 2);
+        assert_does_not_exist(&map, b"some/file");
+
+        map.set_untracked(p(b"some/file2"))?;
+        assert_eq!(map.len(), 1);
+        assert_eq!(tracked_descendants(&map, b"some"), 1);
+        assert_does_not_exist(&map, b"some/file2");
+
+        map.set_untracked(p(b"some/file3"))?;
+        assert_eq!(map.len(), 0);
+        assert_does_not_exist(&map, b"some/file3");
+
+        Ok(())
+    }
+
+    /// Check with a mix of tracked and non-tracked items
+    #[test]
+    fn test_tracked_descendants_different() -> Result<(), DirstateError> {
+        let mut map = OwningDirstateMap::new_empty(vec![]);
+
+        // A file that was just added
+        map.set_tracked(p(b"some/nested/path"))?;
+        // This has no information, the dirstate should ignore it
+        map.reset_state(p(b"some/file"), false, false, false, false, None)?;
+        assert_does_not_exist(&map, b"some/file");
+
+        // A file that was removed
+        map.reset_state(
+            p(b"some/nested/file"),
+            false,
+            true,
+            false,
+            false,
+            None,
+        )?;
+        assert!(!map.get(p(b"some/nested/file"))?.unwrap().tracked());
+        // Only present in p2
+        map.reset_state(p(b"some/file3"), false, false, true, false, None)?;
+        assert!(!map.get(p(b"some/file3"))?.unwrap().tracked());
+        // A file that was merged
+        map.reset_state(p(b"root_file"), true, true, true, false, None)?;
+        assert!(map.get(p(b"root_file"))?.unwrap().tracked());
+        // A file that is added, with info from p2
+        // XXX is that actually possible?
+        map.reset_state(p(b"some/file2"), true, false, true, false, None)?;
+        assert!(map.get(p(b"some/file2"))?.unwrap().tracked());
+        // A clean file
+        // One layer without any files to test deletion cascade
+        map.reset_state(
+            p(b"some/other/nested/path"),
+            true,
+            true,
+            false,
+            false,
+            None,
+        )?;
+        assert!(map.get(p(b"some/other/nested/path"))?.unwrap().tracked());
+
+        assert_eq!(map.len(), 6);
+        assert_eq!(tracked_descendants(&map, b"some"), 3);
+        assert_eq!(descendants_with_an_entry(&map, b"some"), 5);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/other/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested/path"), 0);
+        assert_eq!(
+            descendants_with_an_entry(&map, b"some/other/nested/path"),
+            0
+        );
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/nested"), 2);
+
+        // might as well check this
+        map.set_untracked(p(b"path/does/not/exist"))?;
+        assert_eq!(map.len(), 6);
+
+        map.set_untracked(p(b"some/other/nested/path"))?;
+        // It is set untracked but not deleted since it held other information
+        assert_eq!(map.len(), 6);
+        assert_eq!(tracked_descendants(&map, b"some"), 2);
+        assert_eq!(descendants_with_an_entry(&map, b"some"), 5);
+        assert_eq!(descendants_with_an_entry(&map, b"some/other"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/other/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/nested"), 2);
+
+        map.set_untracked(p(b"some/nested/path"))?;
+        // It is set untracked *and* deleted since it was only added
+        assert_eq!(map.len(), 5);
+        assert_eq!(tracked_descendants(&map, b"some"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some"), 4);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 0);
+        assert_eq!(descendants_with_an_entry(&map, b"some/nested"), 1);
+        assert_does_not_exist(&map, b"some/nested/path");
+
+        map.set_untracked(p(b"root_file"))?;
+        // Untracked but not deleted
+        assert_eq!(map.len(), 5);
+        assert!(map.get(p(b"root_file"))?.is_some());
+
+        map.set_untracked(p(b"some/file2"))?;
+        assert_eq!(map.len(), 5);
+        assert_eq!(tracked_descendants(&map, b"some"), 0);
+        assert!(map.get(p(b"some/file2"))?.is_some());
+
+        map.set_untracked(p(b"some/file3"))?;
+        assert_eq!(map.len(), 5);
+        assert_eq!(tracked_descendants(&map, b"some"), 0);
+        assert!(map.get(p(b"some/file3"))?.is_some());
+
+        Ok(())
+    }
+
+    /// Check that copies counter is correctly updated
+    #[test]
+    fn test_copy_source() -> Result<(), DirstateError> {
+        let mut map = OwningDirstateMap::new_empty(vec![]);
+
+        // Clean file
+        map.reset_state(p(b"files/clean"), true, true, false, false, None)?;
+        // Merged file
+        map.reset_state(p(b"files/from_p2"), true, true, true, false, None)?;
+        // Removed file
+        map.reset_state(p(b"removed"), false, true, false, false, None)?;
+        // Added file
+        map.reset_state(p(b"files/added"), true, false, false, false, None)?;
+        // Add copy
+        map.copy_map_insert(p(b"files/clean"), p(b"clean_copy_source"))?;
+        assert_eq!(map.copy_map_len(), 1);
+
+        // Copy override
+        map.copy_map_insert(p(b"files/clean"), p(b"other_clean_copy_source"))?;
+        assert_eq!(map.copy_map_len(), 1);
+
+        // Multiple copies
+        map.copy_map_insert(p(b"removed"), p(b"removed_copy_source"))?;
+        assert_eq!(map.copy_map_len(), 2);
+
+        map.copy_map_insert(p(b"files/added"), p(b"added_copy_source"))?;
+        assert_eq!(map.copy_map_len(), 3);
+
+        // Added, so the entry is completely removed
+        map.set_untracked(p(b"files/added"))?;
+        assert_does_not_exist(&map, b"files/added");
+        assert_eq!(map.copy_map_len(), 2);
+
+        // Removed, so the entry is kept around, so is its copy
+        map.set_untracked(p(b"removed"))?;
+        assert!(map.get(p(b"removed"))?.is_some());
+        assert_eq!(map.copy_map_len(), 2);
+
+        // Clean, so the entry is kept around, but not its copy
+        map.set_untracked(p(b"files/clean"))?;
+        assert!(map.get(p(b"files/clean"))?.is_some());
+        assert_eq!(map.copy_map_len(), 1);
+
+        map.copy_map_insert(p(b"files/from_p2"), p(b"from_p2_copy_source"))?;
+        assert_eq!(map.copy_map_len(), 2);
+
+        // Info from p2, so its copy source info is kept around
+        map.set_untracked(p(b"files/from_p2"))?;
+        assert!(map.get(p(b"files/from_p2"))?.is_some());
+        assert_eq!(map.copy_map_len(), 2);
+
+        Ok(())
+    }
+
+    /// Test with "on disk" data. For the sake of this test, the "on disk" data
+    /// does not actually come from the disk, but it's opaque to the code being
+    /// tested.
+    #[test]
+    fn test_on_disk() -> Result<(), DirstateError> {
+        // First let's create some data to put "on disk"
+        let mut map = OwningDirstateMap::new_empty(vec![]);
+
+        // A file that was just added
+        map.set_tracked(p(b"some/nested/added"))?;
+        map.copy_map_insert(p(b"some/nested/added"), p(b"added_copy_source"))?;
+
+        // A file that was removed
+        map.reset_state(
+            p(b"some/nested/removed"),
+            false,
+            true,
+            false,
+            false,
+            None,
+        )?;
+        // Only present in p2
+        map.reset_state(
+            p(b"other/p2_info_only"),
+            false,
+            false,
+            true,
+            false,
+            None,
+        )?;
+        map.copy_map_insert(
+            p(b"other/p2_info_only"),
+            p(b"other/p2_info_copy_source"),
+        )?;
+        // A file that was merged
+        map.reset_state(p(b"merged"), true, true, true, false, None)?;
+        // A file that is added, with info from p2
+        // XXX is that actually possible?
+        map.reset_state(
+            p(b"other/added_with_p2"),
+            true,
+            false,
+            true,
+            false,
+            None,
+        )?;
+        // One layer without any files to test deletion cascade
+        // A clean file
+        map.reset_state(
+            p(b"some/other/nested/clean"),
+            true,
+            true,
+            false,
+            false,
+            None,
+        )?;
+
+        let (packed, metadata, _should_append) = map.pack_v2(false)?;
+        let packed_len = packed.len();
+        assert!(packed_len > 0);
+
+        // Recreate "from disk"
+        let mut map = OwningDirstateMap::new_v2(
+            packed,
+            packed_len,
+            metadata.as_bytes(),
+        )?;
+
+        // Check that everything is accounted for
+        assert!(map.contains_key(p(b"some/nested/added"))?);
+        assert!(map.contains_key(p(b"some/nested/removed"))?);
+        assert!(map.contains_key(p(b"merged"))?);
+        assert!(map.contains_key(p(b"other/p2_info_only"))?);
+        assert!(map.contains_key(p(b"other/added_with_p2"))?);
+        assert!(map.contains_key(p(b"some/other/nested/clean"))?);
+        assert_eq!(
+            map.copy_map_get(p(b"some/nested/added"))?,
+            Some(p(b"added_copy_source"))
+        );
+        assert_eq!(
+            map.copy_map_get(p(b"other/p2_info_only"))?,
+            Some(p(b"other/p2_info_copy_source"))
+        );
+        assert_eq!(tracked_descendants(&map, b"some"), 2);
+        assert_eq!(descendants_with_an_entry(&map, b"some"), 3);
+        assert_eq!(tracked_descendants(&map, b"other"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"other"), 2);
+        assert_eq!(tracked_descendants(&map, b"some/other"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/other"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/other/nested"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/other/nested"), 1);
+        assert_eq!(tracked_descendants(&map, b"some/nested"), 1);
+        assert_eq!(descendants_with_an_entry(&map, b"some/nested"), 2);
+        assert_eq!(map.len(), 6);
+        assert_eq!(map.get_map().unreachable_bytes, 0);
+        assert_eq!(map.copy_map_len(), 2);
+
+        // Shouldn't change anything since it's already not tracked
+        map.set_untracked(p(b"some/nested/removed"))?;
+        assert_eq!(map.get_map().unreachable_bytes, 0);
+
+        match map.get_map().root {
+            ChildNodes::InMemory(_) => {
+                panic!("root should not have been mutated")
+            }
+            _ => (),
+        }
+        // We haven't mutated enough (nothing, actually), we should still be in
+        // the append strategy
+        assert!(map.get_map().write_should_append());
+
+        // But this mutates the structure, so there should be unreachable_bytes
+        assert!(map.set_untracked(p(b"some/nested/added"))?);
+        let unreachable_bytes = map.get_map().unreachable_bytes;
+        assert!(unreachable_bytes > 0);
+
+        match map.get_map().root {
+            ChildNodes::OnDisk(_) => panic!("root should have been mutated"),
+            _ => (),
+        }
+
+        // This should not mutate the structure either, since `root` has
+        // already been mutated along with its direct children.
+        map.set_untracked(p(b"merged"))?;
+        assert_eq!(map.get_map().unreachable_bytes, unreachable_bytes);
+
+        match map.get_map().get_node(p(b"other/added_with_p2"))?.unwrap() {
+            NodeRef::InMemory(_, _) => {
+                panic!("'other/added_with_p2' should not have been mutated")
+            }
+            _ => (),
+        }
+        // But this should, since it's in a different path
+        // than `<root>some/nested/add`
+        map.set_untracked(p(b"other/added_with_p2"))?;
+        assert!(map.get_map().unreachable_bytes > unreachable_bytes);
+
+        match map.get_map().get_node(p(b"other/added_with_p2"))?.unwrap() {
+            NodeRef::OnDisk(_) => {
+                panic!("'other/added_with_p2' should have been mutated")
+            }
+            _ => (),
+        }
+
+        // We have rewritten most of the tree, we should create a new file
+        assert!(!map.get_map().write_should_append());
+
+        Ok(())
+    }
+}
