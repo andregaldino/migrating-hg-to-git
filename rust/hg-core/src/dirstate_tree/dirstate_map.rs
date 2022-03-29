@@ -988,9 +988,7 @@ impl OwningDirstateMap {
         &mut self,
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
-        let was_tracked = self
-            .get(filename)?
-            .map_or(false, |e| e.state().is_tracked());
+        let was_tracked = self.get(filename)?.map_or(false, |e| e.tracked());
         struct Dropped {
             was_tracked: bool,
             had_entry: bool,
