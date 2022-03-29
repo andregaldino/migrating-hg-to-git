@@ -32,6 +32,7 @@ use crate::StatusOptions;
 /// anymore) is less than this fraction of the total amount of existing data.
 const ACCEPTABLE_UNREACHABLE_BYTES_RATIO: f32 = 0.5;
 
+#[derive(Debug)]
 pub struct DirstateMap<'on_disk> {
     /// Contents of the `.hg/dirstate` file
     pub(super) on_disk: &'on_disk [u8],
@@ -61,21 +62,25 @@ pub(super) type NodeKey<'on_disk> = WithBasename<Cow<'on_disk, HgPath>>;
 
 /// Similar to `&'tree Cow<'on_disk, HgPath>`, but can also be returned
 /// for on-disk nodes that don’t actually have a `Cow` to borrow.
+#[derive(Debug)]
 pub(super) enum BorrowedPath<'tree, 'on_disk> {
     InMemory(&'tree HgPathBuf),
     OnDisk(&'on_disk HgPath),
 }
 
+#[derive(Debug)]
 pub(super) enum ChildNodes<'on_disk> {
     InMemory(FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
     OnDisk(&'on_disk [on_disk::Node]),
 }
 
+#[derive(Debug)]
 pub(super) enum ChildNodesRef<'tree, 'on_disk> {
     InMemory(&'tree FastHashMap<NodeKey<'on_disk>, Node<'on_disk>>),
     OnDisk(&'on_disk [on_disk::Node]),
 }
 
+#[derive(Debug)]
 pub(super) enum NodeRef<'tree, 'on_disk> {
     InMemory(&'tree NodeKey<'on_disk>, &'tree Node<'on_disk>),
     OnDisk(&'on_disk on_disk::Node),
@@ -383,7 +388,7 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
 }
 
 /// Represents a file or a directory
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub(super) struct Node<'on_disk> {
     pub(super) data: NodeData,
 
@@ -399,6 +404,7 @@ pub(super) struct Node<'on_disk> {
     pub(super) tracked_descendants_count: u32,
 }
 
+#[derive(Debug)]
 pub(super) enum NodeData {
     Entry(DirstateEntry),
     CachedDirectory { mtime: TruncatedTimestamp },

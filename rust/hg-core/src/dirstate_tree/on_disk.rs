@@ -84,7 +84,7 @@ pub struct TreeMetadata {
 
 /// Fields are documented in the *The data file format*
 /// section of `mercurial/helptext/internals/dirstate-v2.txt`
-#[derive(BytesCast)]
+#[derive(BytesCast, Debug)]
 #[repr(C)]
 pub(super) struct Node {
     full_path: PathSlice,
@@ -124,7 +124,7 @@ bitflags! {
 }
 
 /// Duration since the Unix epoch
-#[derive(BytesCast, Copy, Clone)]
+#[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct PackedTruncatedTimestamp {
     truncated_seconds: U32Be,
@@ -152,7 +152,7 @@ type PathSize = U16Be;
 /// Always sorted by ascending `full_path`, to allow binary search.
 /// Since nodes with the same parent nodes also have the same parent path,
 /// only the `base_name`s need to be compared during binary search.
-#[derive(BytesCast, Copy, Clone)]
+#[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct ChildNodes {
     start: Offset,
@@ -160,7 +160,7 @@ struct ChildNodes {
 }
 
 /// A `HgPath` of `len` bytes
-#[derive(BytesCast, Copy, Clone)]
+#[derive(BytesCast, Copy, Clone, Debug)]
 #[repr(C)]
 struct PathSlice {
     start: Offset,
