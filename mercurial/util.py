@@ -42,7 +42,6 @@ from .pycompat import (
     open,
     setattr,
 )
-from .node import hex
 from hgdemandimport import tracing
 from . import (
     encoding,
