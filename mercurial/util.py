@@ -25,6 +25,7 @@ import itertools
 import locale
 import mmap
 import os
+import pickle  # provides util.pickle symbol
 import re as remod
 import shutil
 import stat
