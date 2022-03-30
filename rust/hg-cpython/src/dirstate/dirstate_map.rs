@@ -23,13 +23,10 @@ use crate::{
     pybytes_deref::PyBytesDeref,
 };
 use hg::{
-    dirstate::StateMapIter,
-    dirstate_tree::on_disk::DirstateV2ParseError,
-    dirstate_tree::owning::OwningDirstateMap,
-    revlog::Node,
-    utils::files::normalize_case,
-    utils::hg_path::{HgPath, HgPathBuf},
-    DirstateEntry, DirstateError, DirstateParents, EntryState,
+    dirstate::StateMapIter, dirstate_tree::on_disk::DirstateV2ParseError,
+    dirstate_tree::owning::OwningDirstateMap, revlog::Node,
+    utils::files::normalize_case, utils::hg_path::HgPath, DirstateEntry,
+    DirstateError, DirstateParents, EntryState,
 };
 
 // TODO
@@ -411,8 +408,8 @@ py_class!(pub class DirstateMap |py| {
         self.inner(py)
             .borrow_mut()
             .copy_map_insert(
-                HgPathBuf::from_bytes(key.data(py)),
-                HgPathBuf::from_bytes(value.data(py)),
+                HgPath::new(key.data(py)),
+                HgPath::new(value.data(py)),
             )
             .map_err(|e| v2_error(py, e))?;
         Ok(py.None())

@@ -1284,8 +1284,8 @@ impl OwningDirstateMap {
 
     pub fn copy_map_insert(
         &mut self,
-        key: HgPathBuf,
-        value: HgPathBuf,
+        key: &HgPath,
+        value: &HgPath,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         self.with_dmap_mut(|map| {
             let node = DirstateMap::get_or_insert_node(
@@ -1299,7 +1299,10 @@ impl OwningDirstateMap {
             if node.copy_source.is_none() {
                 map.nodes_with_copy_source_count += 1
             }
-            Ok(node.copy_source.replace(value.into()).map(Cow::into_owned))
+            Ok(node
+                .copy_source
+                .replace(value.to_owned().into())
+                .map(Cow::into_owned))
         })
     }
 
