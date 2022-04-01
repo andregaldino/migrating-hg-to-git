@@ -287,7 +287,7 @@ def _rundispatch(req):
             ferr.write(inst.format())
             return -1
 
-        msg = _formatargs(req.args)
+        formattedargs = _formatargs(req.args)
         starttime = util.timer()
         ret = 1  # default of Python exit code on unhandled exception
         try:
@@ -326,7 +326,7 @@ def _rundispatch(req):
             req.ui.log(
                 b"commandfinish",
                 b"%s exited %d after %0.2f seconds\n",
-                msg,
+                formattedargs,
                 return_code,
                 duration,
                 return_code=return_code,
