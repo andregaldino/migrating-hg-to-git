@@ -51,17 +51,18 @@ pub struct ChangelogRevisionData {
 impl ChangelogRevisionData {
     /// Return an iterator over the lines of the entry.
     pub fn lines(&self) -> impl Iterator<Item = &[u8]> {
-        self.bytes
-            .split(|b| b == &b'\n')
-            .filter(|line| !line.is_empty())
+        self.bytes.split(|b| b == &b'\n')
     }
 
     /// Return the node id of the `manifest` referenced by this `changelog`
     /// entry.
     pub fn manifest_node(&self) -> Result<Node, HgError> {
-        match self.lines().next() {
-            None => Ok(NULL_NODE),
-            Some(x) => Node::from_hex_for_repo(x),
+        let manifest_node_hex =
+            self.lines().next().expect("Empty iterator from split()?");
+        if manifest_node_hex.is_empty() {
+            Ok(NULL_NODE)
+        } else {
+            Node::from_hex_for_repo(manifest_node_hex)
         }
     }
 }
