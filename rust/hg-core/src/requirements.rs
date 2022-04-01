@@ -92,6 +92,8 @@ const SUPPORTED: &[&str] = &[
     // not should opt out by checking `has_sparse` and `has_narrow`.
     SPARSE_REQUIREMENT,
     NARROW_REQUIREMENT,
+    // rhg doesn't care about bookmarks at all yet
+    BOOKMARKS_IN_STORE_REQUIREMENT,
 ];
 
 // Copied from mercurial/requirements.py:
@@ -102,6 +104,11 @@ pub(crate) const DIRSTATE_V2_REQUIREMENT: &str = "dirstate-v2";
 /// we should move this to just "narrow" or similar.
 #[allow(unused)]
 pub(crate) const NARROW_REQUIREMENT: &str = "narrowhg-experimental";
+
+/// Bookmarks must be stored in the `store` part of the repository and will be
+/// share accross shares
+#[allow(unused)]
+pub(crate) const BOOKMARKS_IN_STORE_REQUIREMENT: &str = "bookmarksinstore";
 
 /// Enables sparse working directory usage
 #[allow(unused)]
