@@ -3,8 +3,8 @@ use bytes_cast::{unaligned, BytesCast};
 use memmap2::Mmap;
 use std::path::{Path, PathBuf};
 
-use crate::repo::Repo;
 use crate::utils::strip_suffix;
+use crate::vfs::Vfs;
 
 const ONDISK_VERSION: u8 = 1;
 
@@ -34,12 +34,12 @@ impl NodeMapDocket {
     /// * The docket file points to a missing (likely deleted) data file (this
     ///   can happen in a rare race condition).
     pub fn read_from_file(
-        repo: &Repo,
+        store_vfs: &Vfs,
         index_path: &Path,
     ) -> Result<Option<(Self, Mmap)>, HgError> {
         let docket_path = index_path.with_extension("n");
         let docket_bytes = if let Some(bytes) =
-            repo.store_vfs().read(&docket_path).io_not_found_as_none()?
+            store_vfs.read(&docket_path).io_not_found_as_none()?
         {
             bytes
         } else {
@@ -75,10 +75,8 @@ impl NodeMapDocket {
         let data_path = rawdata_path(&docket_path, uid);
         // TODO: use `vfs.read()` here when the `persistent-nodemap.mmap`
         // config is false?
-        if let Some(mmap) = repo
-            .store_vfs()
-            .mmap_open(&data_path)
-            .io_not_found_as_none()?
+        if let Some(mmap) =
+            store_vfs.mmap_open(&data_path).io_not_found_as_none()?
         {
             if mmap.len() >= data_length {
                 Ok(Some((docket, mmap)))

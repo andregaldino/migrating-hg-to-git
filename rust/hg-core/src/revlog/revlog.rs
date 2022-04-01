@@ -118,7 +118,7 @@ impl Revlog {
             // If .hg/requires does not opt it, don’t try to open a nodemap
             None
         } else {
-            NodeMapDocket::read_from_file(repo, index_path)?.map(
+            NodeMapDocket::read_from_file(&repo.store_vfs(), index_path)?.map(
                 |(docket, data)| {
                     nodemap::NodeTree::load_bytes(
                         Box::new(data),
