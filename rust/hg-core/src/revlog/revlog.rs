@@ -18,7 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
-use crate::{Node, NULL_REVISION};
+use crate::{requirements, Node, NULL_REVISION};
 
 const REVISION_FLAG_CENSORED: u16 = 1 << 15;
 const REVISION_FLAG_ELLIPSIS: u16 = 1 << 14;
@@ -110,6 +110,12 @@ impl Revlog {
             };
 
         let nodemap = if index.is_inline() {
+            None
+        } else if !repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT)
+        {
+            // If .hg/requires does not opt it, don’t try to open a nodemap
             None
         } else {
             NodeMapDocket::read_from_file(repo, index_path)?.map(
