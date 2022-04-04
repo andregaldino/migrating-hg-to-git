@@ -1741,6 +1741,12 @@ coreconfigitem(
     generic=True,
 )
 coreconfigitem(
+    b'paths',
+    b'.*:bookmarks.mode',
+    default='default',
+    generic=True,
+)
+coreconfigitem(
     b'phases',
     b'checksubrepos',
     default=b'follow',
