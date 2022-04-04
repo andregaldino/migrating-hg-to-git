@@ -691,7 +691,24 @@ def determine_upgrade_actions(
     return newactions
 
 
-class UpgradeOperation:
+class BaseOperation:
+    """base class that contains the minimum for an upgrade to work
+
+    (this might need to be extended as the usage for subclass alternative to
+    UpgradeOperation extends)
+    """
+
+    def __init__(
+        self,
+        new_requirements,
+        backup_store,
+    ):
+        self.new_requirements = new_requirements
+        # should this operation create a backup of the store
+        self.backup_store = backup_store
+
+
+class UpgradeOperation(BaseOperation):
     """represent the work to be done during an upgrade"""
 
     def __init__(
@@ -704,8 +721,11 @@ class UpgradeOperation:
         revlogs_to_process,
         backup_store,
     ):
+        super().__init__(
+            new_requirements,
+            backup_store,
+        )
         self.ui = ui
-        self.new_requirements = new_requirements
         self.current_requirements = current_requirements
         # list of upgrade actions the operation will perform
         self.upgrade_actions = upgrade_actions
@@ -746,9 +766,6 @@ class UpgradeOperation:
         self.force_re_delta_both_parents = (
             b're-delta-multibase' in upgrade_actions_names
         )
-
-        # should this operation create a backup of the store
-        self.backup_store = backup_store
 
     @property
     def upgrade_actions_names(self):
