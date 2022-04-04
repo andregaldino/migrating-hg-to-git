@@ -1747,6 +1747,12 @@ coreconfigitem(
     generic=True,
 )
 coreconfigitem(
+    b'paths',
+    b'.*:multi-urls',
+    default=False,
+    generic=True,
+)
+coreconfigitem(
     b'phases',
     b'checksubrepos',
     default=b'follow',
