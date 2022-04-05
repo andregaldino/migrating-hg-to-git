@@ -2061,3 +2061,18 @@ For multiple change at the same time
   tracked-hint:        no
   share-safe:         yes
 
+Attempting Auto-upgrade on a read-only repository
+-------------------------------------------------
+
+  $ chmod -R a-w auto-upgrade
+
+  $ hg status -R auto-upgrade \
+  >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
+  >     --config format.use-dirstate-v2=no
+  abort: could not lock working directory of auto-upgrade: Permission denied
+  [20]
+  $ hg debugformat -R auto-upgrade | grep dirstate-v2
+  dirstate-v2:        yes
+
+  $ chmod -R u+w auto-upgrade
+
