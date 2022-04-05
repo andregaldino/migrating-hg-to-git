@@ -1,6 +1,25 @@
 '''This is the last release to support Python 2. Mercurial is Python 3 only starting with 6.2'''
 
-= Mercurial 6.1rc0 =
+= Mercurial 6.1.1 =
+
+ * Fix Rust compilation on `aarcch64`
+ * Fix Rust compilation on architectures where `char` is unsigned
+ * When the merge tool uses `$output`, don't leave markers in `$local`
+ * Improve test suite support on big-endian platforms
+ * Cap the number of concurrent threads to 16 in Rust `hg status` to prevent huge speed regression at higher thread counts
+ * Fix `amend` with copies in extras
+ * Abort if commit we're trying to `unamend` was not created by `hg [un]amend`
+ * Fix file name in the pullbundle help text
+ * Fix an issue with data not being correctly reset in the C implementation of dirstate-v2
+ * Fix issue6673 where some tags were missing from cache after a merge
+ * Fix stream-cloning a repo with empty requirements
+ * Fix a false warning about content-divergence creation
+ * Fix silly blackbox entries when hg is interrupted
+ * Fix unsoundness (no known exploits) in Rust extensions (see cfd270d83169 and dd6b67d5c256)
+ * Fix Rust dirstate counters not being updated correctly leading to some potential bugs (none known)
+ * Stop relying on a compiler implementation detail in Rust HgPath
+
+= Mercurial 6.1 =
 
 == New Features ==
   * Added a way of specifying required extensions that prevent Mercurial from starting if they are not found. See `hg help config.extensions`.
