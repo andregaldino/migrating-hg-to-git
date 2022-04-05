@@ -1,7 +1,6 @@
 use crate::changelog::Changelog;
 use crate::config::{Config, ConfigError, ConfigParseError};
 use crate::dirstate::DirstateParents;
-use crate::dirstate_tree::dirstate_map::DirstateMap;
 use crate::dirstate_tree::on_disk::Docket as DirstateDocket;
 use crate::dirstate_tree::owning::OwningDirstateMap;
 use crate::errors::HgResultExt;
@@ -340,25 +339,19 @@ impl Repo {
                 .set(Some(docket.uuid.to_owned()));
             let data_size = docket.data_size();
             let metadata = docket.tree_metadata();
-            let mut map = if let Some(data_mmap) = self
+            if let Some(data_mmap) = self
                 .hg_vfs()
                 .mmap_open(docket.data_filename())
                 .io_not_found_as_none()?
             {
-                OwningDirstateMap::new_empty(data_mmap)
+                OwningDirstateMap::new_v2(data_mmap, data_size, metadata)
             } else {
-                OwningDirstateMap::new_empty(Vec::new())
-            };
-            let (on_disk, placeholder) = map.get_pair_mut();
-            *placeholder = DirstateMap::new_v2(on_disk, data_size, metadata)?;
-            Ok(map)
+                OwningDirstateMap::new_v2(Vec::new(), data_size, metadata)
+            }
         } else {
-            let mut map = OwningDirstateMap::new_empty(dirstate_file_contents);
-            let (on_disk, placeholder) = map.get_pair_mut();
-            let (inner, parents) = DirstateMap::new_v1(on_disk)?;
-            self.dirstate_parents
-                .set(parents.unwrap_or(DirstateParents::NULL));
-            *placeholder = inner;
+            let (map, parents) =
+                OwningDirstateMap::new_v1(dirstate_file_contents)?;
+            self.dirstate_parents.set(parents);
             Ok(map)
         }
     }

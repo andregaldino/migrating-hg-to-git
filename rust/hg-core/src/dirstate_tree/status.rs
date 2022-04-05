@@ -40,13 +40,14 @@ use std::time::SystemTime;
 /// exists in one of the two trees, depending on information requested by
 /// `options` we may need to traverse the remaining subtree.
 #[timed]
-pub fn status<'tree, 'on_disk: 'tree>(
-    dmap: &'tree mut DirstateMap<'on_disk>,
+pub fn status<'dirstate>(
+    dmap: &'dirstate mut DirstateMap,
     matcher: &(dyn Matcher + Sync),
     root_dir: PathBuf,
     ignore_files: Vec<PathBuf>,
     options: StatusOptions,
-) -> Result<(DirstateStatus<'on_disk>, Vec<PatternFileWarning>), StatusError> {
+) -> Result<(DirstateStatus<'dirstate>, Vec<PatternFileWarning>), StatusError>
+{
     // Force the global rayon threadpool to not exceed 16 concurrent threads.
     // This is a stop-gap measure until we figure out why using more than 16
     // threads makes `status` slower for each additional thread.
