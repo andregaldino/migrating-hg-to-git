@@ -723,10 +723,11 @@ where
 
 impl OwningDirstateMap {
     pub fn clear(&mut self) {
-        let map = self.get_map_mut();
-        map.root = Default::default();
-        map.nodes_with_entry_count = 0;
-        map.nodes_with_copy_source_count = 0;
+        self.with_dmap_mut(|map| {
+            map.root = Default::default();
+            map.nodes_with_entry_count = 0;
+            map.nodes_with_copy_source_count = 0;
+        });
     }
 
     pub fn set_entry(
@@ -734,9 +735,10 @@ impl OwningDirstateMap {
         filename: &HgPath,
         entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
-        let map = self.get_map_mut();
-        map.get_or_insert(&filename)?.data = NodeData::Entry(entry);
-        Ok(())
+        self.with_dmap_mut(|map| {
+            map.get_or_insert(&filename)?.data = NodeData::Entry(entry);
+            Ok(())
+        })
     }
 
     pub fn add_file(
@@ -745,8 +747,9 @@ impl OwningDirstateMap {
         entry: DirstateEntry,
     ) -> Result<(), DirstateError> {
         let old_state = self.get(filename)?.map(|e| e.state());
-        let map = self.get_map_mut();
-        Ok(map.add_or_remove_file(filename, old_state, entry)?)
+        self.with_dmap_mut(|map| {
+            Ok(map.add_or_remove_file(filename, old_state, entry)?)
+        })
     }
 
     pub fn remove_file(
@@ -777,9 +780,10 @@ impl OwningDirstateMap {
         if size == 0 {
             self.copy_map_remove(filename)?;
         }
-        let map = self.get_map_mut();
-        let entry = DirstateEntry::new_removed(size);
-        Ok(map.add_or_remove_file(filename, old_state, entry)?)
+        self.with_dmap_mut(|map| {
+            let entry = DirstateEntry::new_removed(size);
+            Ok(map.add_or_remove_file(filename, old_state, entry)?)
+        })
     }
 
     pub fn drop_entry_and_copy_source(
@@ -789,7 +793,6 @@ impl OwningDirstateMap {
         let was_tracked = self
             .get(filename)?
             .map_or(false, |e| e.state().is_tracked());
-        let map = self.get_map_mut();
         struct Dropped {
             was_tracked: bool,
             had_entry: bool,
@@ -826,10 +829,20 @@ impl OwningDirstateMap {
                 )? {
                     dropped = d;
                     if dropped.had_entry {
-                        node.descendants_with_entry_count -= 1;
+                        node.descendants_with_entry_count = node
+                            .descendants_with_entry_count
+                            .checked_sub(1)
+                            .expect(
+                                "descendants_with_entry_count should be >= 0",
+                            );
                     }
                     if dropped.was_tracked {
-                        node.tracked_descendants_count -= 1;
+                        node.tracked_descendants_count = node
+                            .tracked_descendants_count
+                            .checked_sub(1)
+                            .expect(
+                                "tracked_descendants_count should be >= 0",
+                            );
                     }
 
                     // Directory caches must be invalidated when removing a
@@ -843,21 +856,22 @@ impl OwningDirstateMap {
                     return Ok(None);
                 }
             } else {
-                let had_entry = node.data.has_entry();
+                let entry = node.data.as_entry();
+                let was_tracked = entry.map_or(false, |entry| entry.tracked());
+                let had_entry = entry.is_some();
                 if had_entry {
                     node.data = NodeData::None
                 }
+                let mut had_copy_source = false;
                 if let Some(source) = &node.copy_source {
                     DirstateMap::count_dropped_path(unreachable_bytes, source);
+                    had_copy_source = true;
                     node.copy_source = None
                 }
                 dropped = Dropped {
-                    was_tracked: node
-                        .data
-                        .as_entry()
-                        .map_or(false, |entry| entry.state().is_tracked()),
+                    was_tracked,
                     had_entry,
-                    had_copy_source: node.copy_source.take().is_some(),
+                    had_copy_source,
                 };
             }
             // After recursion, for both leaf (rest_of_path is None) nodes and
@@ -876,52 +890,62 @@ impl OwningDirstateMap {
             Ok(Some((dropped, remove)))
         }
 
-        if let Some((dropped, _removed)) = recur(
-            map.on_disk,
-            &mut map.unreachable_bytes,
-            &mut map.root,
-            filename,
-        )? {
-            if dropped.had_entry {
-                map.nodes_with_entry_count -= 1
+        self.with_dmap_mut(|map| {
+            if let Some((dropped, _removed)) = recur(
+                map.on_disk,
+                &mut map.unreachable_bytes,
+                &mut map.root,
+                filename,
+            )? {
+                if dropped.had_entry {
+                    map.nodes_with_entry_count = map
+                        .nodes_with_entry_count
+                        .checked_sub(1)
+                        .expect("nodes_with_entry_count should be >= 0");
+                }
+                if dropped.had_copy_source {
+                    map.nodes_with_copy_source_count = map
+                        .nodes_with_copy_source_count
+                        .checked_sub(1)
+                        .expect("nodes_with_copy_source_count should be >= 0");
+                }
+            } else {
+                debug_assert!(!was_tracked);
             }
-            if dropped.had_copy_source {
-                map.nodes_with_copy_source_count -= 1
-            }
-        } else {
-            debug_assert!(!was_tracked);
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn has_tracked_dir(
         &mut self,
         directory: &HgPath,
     ) -> Result<bool, DirstateError> {
-        let map = self.get_map_mut();
-        if let Some(node) = map.get_node(directory)? {
-            // A node without a `DirstateEntry` was created to hold child
-            // nodes, and is therefore a directory.
-            let state = node.state()?;
-            Ok(state.is_none() && node.tracked_descendants_count() > 0)
-        } else {
-            Ok(false)
-        }
+        self.with_dmap_mut(|map| {
+            if let Some(node) = map.get_node(directory)? {
+                // A node without a `DirstateEntry` was created to hold child
+                // nodes, and is therefore a directory.
+                let state = node.state()?;
+                Ok(state.is_none() && node.tracked_descendants_count() > 0)
+            } else {
+                Ok(false)
+            }
+        })
     }
 
     pub fn has_dir(
         &mut self,
         directory: &HgPath,
     ) -> Result<bool, DirstateError> {
-        let map = self.get_map_mut();
-        if let Some(node) = map.get_node(directory)? {
-            // A node without a `DirstateEntry` was created to hold child
-            // nodes, and is therefore a directory.
-            let state = node.state()?;
-            Ok(state.is_none() && node.descendants_with_entry_count() > 0)
-        } else {
-            Ok(false)
-        }
+        self.with_dmap_mut(|map| {
+            if let Some(node) = map.get_node(directory)? {
+                // A node without a `DirstateEntry` was created to hold child
+                // nodes, and is therefore a directory.
+                let state = node.state()?;
+                Ok(state.is_none() && node.descendants_with_entry_count() > 0)
+            } else {
+                Ok(false)
+            }
+        })
     }
 
     #[timed]
@@ -973,16 +997,29 @@ impl OwningDirstateMap {
         on_disk::write(map, can_append)
     }
 
-    pub fn status<'a>(
-        &'a mut self,
-        matcher: &'a (dyn Matcher + Sync),
+    /// `callback` allows the caller to process and do something with the
+    /// results of the status. This is needed to do so efficiently (i.e.
+    /// without cloning the `DirstateStatus` object with its paths) because
+    /// we need to borrow from `Self`.
+    pub fn with_status<R>(
+        &mut self,
+        matcher: &(dyn Matcher + Sync),
         root_dir: PathBuf,
         ignore_files: Vec<PathBuf>,
         options: StatusOptions,
-    ) -> Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>
-    {
-        let map = self.get_map_mut();
-        super::status::status(map, matcher, root_dir, ignore_files, options)
+        callback: impl for<'r> FnOnce(
+            Result<(DirstateStatus<'r>, Vec<PatternFileWarning>), StatusError>,
+        ) -> R,
+    ) -> R {
+        self.with_dmap_mut(|map| {
+            callback(super::status::status(
+                map,
+                matcher,
+                root_dir,
+                ignore_files,
+                options,
+            ))
+        })
     }
 
     pub fn copy_map_len(&self) -> usize {
@@ -1030,22 +1067,23 @@ impl OwningDirstateMap {
         &mut self,
         key: &HgPath,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
-        let map = self.get_map_mut();
-        let count = &mut map.nodes_with_copy_source_count;
-        let unreachable_bytes = &mut map.unreachable_bytes;
-        Ok(DirstateMap::get_node_mut(
-            map.on_disk,
-            unreachable_bytes,
-            &mut map.root,
-            key,
-        )?
-        .and_then(|node| {
-            if let Some(source) = &node.copy_source {
-                *count -= 1;
-                DirstateMap::count_dropped_path(unreachable_bytes, source);
-            }
-            node.copy_source.take().map(Cow::into_owned)
-        }))
+        self.with_dmap_mut(|map| {
+            let count = &mut map.nodes_with_copy_source_count;
+            let unreachable_bytes = &mut map.unreachable_bytes;
+            Ok(DirstateMap::get_node_mut(
+                map.on_disk,
+                unreachable_bytes,
+                &mut map.root,
+                key,
+            )?
+            .and_then(|node| {
+                if let Some(source) = &node.copy_source {
+                    *count -= 1;
+                    DirstateMap::count_dropped_path(unreachable_bytes, source);
+                }
+                node.copy_source.take().map(Cow::into_owned)
+            }))
+        })
     }
 
     pub fn copy_map_insert(
@@ -1053,19 +1091,20 @@ impl OwningDirstateMap {
         key: HgPathBuf,
         value: HgPathBuf,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
-        let map = self.get_map_mut();
-        let node = DirstateMap::get_or_insert_node(
-            map.on_disk,
-            &mut map.unreachable_bytes,
-            &mut map.root,
-            &key,
-            WithBasename::to_cow_owned,
-            |_ancestor| {},
-        )?;
-        if node.copy_source.is_none() {
-            map.nodes_with_copy_source_count += 1
-        }
-        Ok(node.copy_source.replace(value.into()).map(Cow::into_owned))
+        self.with_dmap_mut(|map| {
+            let node = DirstateMap::get_or_insert_node(
+                map.on_disk,
+                &mut map.unreachable_bytes,
+                &mut map.root,
+                &key,
+                WithBasename::to_cow_owned,
+                |_ancestor| {},
+            )?;
+            if node.copy_source.is_none() {
+                map.nodes_with_copy_source_count += 1
+            }
+            Ok(node.copy_source.replace(value.into()).map(Cow::into_owned))
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -1113,7 +1152,7 @@ impl OwningDirstateMap {
         >,
         DirstateError,
     > {
-        let map = self.get_map_mut();
+        let map = self.get_map();
         let on_disk = map.on_disk;
         Ok(Box::new(filter_map_results(
             map.iter_nodes(),

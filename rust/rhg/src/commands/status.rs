@@ -25,6 +25,9 @@ use hg::utils::files::get_bytes_from_os_string;
 use hg::utils::files::get_bytes_from_path;
 use hg::utils::files::get_path_from_bytes;
 use hg::utils::hg_path::{hg_path_to_path_buf, HgPath};
+use hg::DirstateStatus;
+use hg::PatternFileWarning;
+use hg::StatusError;
 use hg::StatusOptions;
 use log::info;
 use std::io;
@@ -230,117 +233,132 @@ pub fn run(invocation: &crate::CliInvocation) -> Result<(), CommandError> {
         list_copies,
         collect_traversed_dirs: false,
     };
-    let (mut ds_status, pattern_warnings) = dmap.status(
-        &AlwaysMatcher,
-        repo.working_directory_path().to_owned(),
-        ignore_files(repo, config),
-        options,
-    )?;
-    for warning in pattern_warnings {
-        match warning {
-            hg::PatternFileWarning::InvalidSyntax(path, syntax) => ui
-                .write_stderr(&format_bytes!(
-                    b"{}: ignoring invalid syntax '{}'\n",
-                    get_bytes_from_path(path),
-                    &*syntax
-                ))?,
-            hg::PatternFileWarning::NoSuchFile(path) => {
-                let path = if let Ok(relative) =
-                    path.strip_prefix(repo.working_directory_path())
-                {
-                    relative
+
+    type StatusResult<'a> =
+        Result<(DirstateStatus<'a>, Vec<PatternFileWarning>), StatusError>;
+
+    let after_status = |res: StatusResult| -> Result<_, CommandError> {
+        let (mut ds_status, pattern_warnings) = res?;
+        for warning in pattern_warnings {
+            match warning {
+                hg::PatternFileWarning::InvalidSyntax(path, syntax) => ui
+                    .write_stderr(&format_bytes!(
+                        b"{}: ignoring invalid syntax '{}'\n",
+                        get_bytes_from_path(path),
+                        &*syntax
+                    ))?,
+                hg::PatternFileWarning::NoSuchFile(path) => {
+                    let path = if let Ok(relative) =
+                        path.strip_prefix(repo.working_directory_path())
+                    {
+                        relative
+                    } else {
+                        &*path
+                    };
+                    ui.write_stderr(&format_bytes!(
+                        b"skipping unreadable pattern file '{}': \
+                          No such file or directory\n",
+                        get_bytes_from_path(path),
+                    ))?
+                }
+            }
+        }
+
+        for (path, error) in ds_status.bad {
+            let error = match error {
+                hg::BadMatch::OsError(code) => {
+                    std::io::Error::from_raw_os_error(code).to_string()
+                }
+                hg::BadMatch::BadType(ty) => {
+                    format!("unsupported file type (type is {})", ty)
+                }
+            };
+            ui.write_stderr(&format_bytes!(
+                b"{}: {}\n",
+                path.as_bytes(),
+                error.as_bytes()
+            ))?
+        }
+        if !ds_status.unsure.is_empty() {
+            info!(
+                "Files to be rechecked by retrieval from filelog: {:?}",
+                ds_status.unsure.iter().map(|s| &s.path).collect::<Vec<_>>()
+            );
+        }
+        let mut fixup = Vec::new();
+        if !ds_status.unsure.is_empty()
+            && (display_states.modified || display_states.clean)
+        {
+            let p1 = repo.dirstate_parents()?.p1;
+            let manifest = repo.manifest_for_node(p1).map_err(|e| {
+                CommandError::from((e, &*format!("{:x}", p1.short())))
+            })?;
+            for to_check in ds_status.unsure {
+                if unsure_is_modified(repo, &manifest, &to_check.path)? {
+                    if display_states.modified {
+                        ds_status.modified.push(to_check);
+                    }
                 } else {
-                    &*path
-                };
-                ui.write_stderr(&format_bytes!(
-                    b"skipping unreadable pattern file '{}': \
-                      No such file or directory\n",
-                    get_bytes_from_path(path),
-                ))?
+                    if display_states.clean {
+                        ds_status.clean.push(to_check.clone());
+                    }
+                    fixup.push(to_check.path.into_owned())
+                }
             }
         }
-    }
-
-    for (path, error) in ds_status.bad {
-        let error = match error {
-            hg::BadMatch::OsError(code) => {
-                std::io::Error::from_raw_os_error(code).to_string()
-            }
-            hg::BadMatch::BadType(ty) => {
-                format!("unsupported file type (type is {})", ty)
-            }
-        };
-        ui.write_stderr(&format_bytes!(
-            b"{}: {}\n",
-            path.as_bytes(),
-            error.as_bytes()
-        ))?
-    }
-    if !ds_status.unsure.is_empty() {
-        info!(
-            "Files to be rechecked by retrieval from filelog: {:?}",
-            ds_status.unsure.iter().map(|s| &s.path).collect::<Vec<_>>()
-        );
-    }
-    let mut fixup = Vec::new();
-    if !ds_status.unsure.is_empty()
-        && (display_states.modified || display_states.clean)
-    {
-        let p1 = repo.dirstate_parents()?.p1;
-        let manifest = repo.manifest_for_node(p1).map_err(|e| {
-            CommandError::from((e, &*format!("{:x}", p1.short())))
-        })?;
-        for to_check in ds_status.unsure {
-            if unsure_is_modified(repo, &manifest, &to_check.path)? {
-                if display_states.modified {
-                    ds_status.modified.push(to_check);
-                }
+        let relative_paths = (!ui.plain(None))
+            && config
+                .get_option(b"commands", b"status.relative")?
+                .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);
+        let output = DisplayStatusPaths {
+            ui,
+            no_status,
+            relativize: if relative_paths {
+                Some(RelativizePaths::new(repo)?)
             } else {
-                if display_states.clean {
-                    ds_status.clean.push(to_check.clone());
-                }
-                fixup.push(to_check.path.into_owned())
-            }
+                None
+            },
+        };
+        if display_states.modified {
+            output.display(b"M ", "status.modified", ds_status.modified)?;
         }
-    }
-    let relative_paths = (!ui.plain(None))
-        && config
-            .get_option(b"commands", b"status.relative")?
-            .unwrap_or(config.get_bool(b"ui", b"relative-paths")?);
-    let output = DisplayStatusPaths {
-        ui,
-        no_status,
-        relativize: if relative_paths {
-            Some(RelativizePaths::new(repo)?)
-        } else {
-            None
-        },
-    };
-    if display_states.modified {
-        output.display(b"M ", "status.modified", ds_status.modified)?;
-    }
-    if display_states.added {
-        output.display(b"A ", "status.added", ds_status.added)?;
-    }
-    if display_states.removed {
-        output.display(b"R ", "status.removed", ds_status.removed)?;
-    }
-    if display_states.deleted {
-        output.display(b"! ", "status.deleted", ds_status.deleted)?;
-    }
-    if display_states.unknown {
-        output.display(b"? ", "status.unknown", ds_status.unknown)?;
-    }
-    if display_states.ignored {
-        output.display(b"I ", "status.ignored", ds_status.ignored)?;
-    }
-    if display_states.clean {
-        output.display(b"C ", "status.clean", ds_status.clean)?;
-    }
+        if display_states.added {
+            output.display(b"A ", "status.added", ds_status.added)?;
+        }
+        if display_states.removed {
+            output.display(b"R ", "status.removed", ds_status.removed)?;
+        }
+        if display_states.deleted {
+            output.display(b"! ", "status.deleted", ds_status.deleted)?;
+        }
+        if display_states.unknown {
+            output.display(b"? ", "status.unknown", ds_status.unknown)?;
+        }
+        if display_states.ignored {
+            output.display(b"I ", "status.ignored", ds_status.ignored)?;
+        }
+        if display_states.clean {
+            output.display(b"C ", "status.clean", ds_status.clean)?;
+        }
 
-    let mut dirstate_write_needed = ds_status.dirty;
-    let filesystem_time_at_status_start =
-        ds_status.filesystem_time_at_status_start;
+        let dirstate_write_needed = ds_status.dirty;
+        let filesystem_time_at_status_start =
+            ds_status.filesystem_time_at_status_start;
+
+        Ok((
+            fixup,
+            dirstate_write_needed,
+            filesystem_time_at_status_start,
+        ))
+    };
+    let (fixup, mut dirstate_write_needed, filesystem_time_at_status_start) =
+        dmap.with_status(
+            &AlwaysMatcher,
+            repo.working_directory_path().to_owned(),
+            ignore_files(repo, config),
+            options,
+            after_status,
+        )?;
 
     if (fixup.is_empty() || filesystem_time_at_status_start.is_none())
         && !dirstate_write_needed

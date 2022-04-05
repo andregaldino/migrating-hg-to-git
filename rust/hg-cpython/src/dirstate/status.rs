@@ -127,25 +127,29 @@ pub fn status_wrapper(
     // The caller may call `copymap.items()` separately
     let list_copies = false;
 
+    let after_status = |res: Result<(DirstateStatus<'_>, _), StatusError>| {
+        let (status_res, warnings) =
+            res.map_err(|e| handle_fallback(py, e))?;
+        build_response(py, status_res, warnings)
+    };
+
     match matcher.get_type(py).name(py).borrow() {
         "alwaysmatcher" => {
             let matcher = AlwaysMatcher;
-            let (status_res, warnings) = dmap
-                .status(
-                    &matcher,
-                    root_dir.to_path_buf(),
-                    ignore_files,
-                    StatusOptions {
-                        check_exec,
-                        list_clean,
-                        list_ignored,
-                        list_unknown,
-                        list_copies,
-                        collect_traversed_dirs,
-                    },
-                )
-                .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, status_res, warnings)
+            dmap.with_status(
+                &matcher,
+                root_dir.to_path_buf(),
+                ignore_files,
+                StatusOptions {
+                    check_exec,
+                    list_clean,
+                    list_ignored,
+                    list_unknown,
+                    list_copies,
+                    collect_traversed_dirs,
+                },
+                after_status,
+            )
         }
         "exactmatcher" => {
             let files = matcher.call_method(
@@ -167,22 +171,20 @@ pub fn status_wrapper(
             let files = files?;
             let matcher = FileMatcher::new(files.as_ref())
                 .map_err(|e| PyErr::new::<ValueError, _>(py, e.to_string()))?;
-            let (status_res, warnings) = dmap
-                .status(
-                    &matcher,
-                    root_dir.to_path_buf(),
-                    ignore_files,
-                    StatusOptions {
-                        check_exec,
-                        list_clean,
-                        list_ignored,
-                        list_unknown,
-                        list_copies,
-                        collect_traversed_dirs,
-                    },
-                )
-                .map_err(|e| handle_fallback(py, e))?;
-            build_response(py, status_res, warnings)
+            dmap.with_status(
+                &matcher,
+                root_dir.to_path_buf(),
+                ignore_files,
+                StatusOptions {
+                    check_exec,
+                    list_clean,
+                    list_ignored,
+                    list_unknown,
+                    list_copies,
+                    collect_traversed_dirs,
+                },
+                after_status,
+            )
         }
         "includematcher" => {
             // Get the patterns from Python even though most of them are
@@ -219,23 +221,20 @@ pub fn status_wrapper(
             let matcher = IncludeMatcher::new(ignore_patterns)
                 .map_err(|e| handle_fallback(py, e.into()))?;
 
-            let (status_res, warnings) = dmap
-                .status(
-                    &matcher,
-                    root_dir.to_path_buf(),
-                    ignore_files,
-                    StatusOptions {
-                        check_exec,
-                        list_clean,
-                        list_ignored,
-                        list_unknown,
-                        list_copies,
-                        collect_traversed_dirs,
-                    },
-                )
-                .map_err(|e| handle_fallback(py, e))?;
-
-            build_response(py, status_res, warnings)
+            dmap.with_status(
+                &matcher,
+                root_dir.to_path_buf(),
+                ignore_files,
+                StatusOptions {
+                    check_exec,
+                    list_clean,
+                    list_ignored,
+                    list_unknown,
+                    list_copies,
+                    collect_traversed_dirs,
+                },
+                after_status,
+            )
         }
         e => Err(PyErr::new::<ValueError, _>(
             py,

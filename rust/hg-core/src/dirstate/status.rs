@@ -136,8 +136,6 @@ pub enum StatusError {
     DirstateV2ParseError(DirstateV2ParseError),
 }
 
-pub type StatusResult<T> = Result<T, StatusError>;
-
 impl fmt::Display for StatusError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

@@ -23,7 +23,6 @@ use crate::{
 };
 use hg::{
     dirstate::StateMapIter,
-    dirstate_tree::dirstate_map::DirstateMap as TreeDirstateMap,
     dirstate_tree::on_disk::DirstateV2ParseError,
     dirstate_tree::owning::OwningDirstateMap,
     revlog::Node,
@@ -53,18 +52,12 @@ py_class!(pub class DirstateMap |py| {
         on_disk: PyBytes,
     ) -> PyResult<PyObject> {
         let on_disk = PyBytesDeref::new(py, on_disk);
-        let mut map = OwningDirstateMap::new_empty(on_disk);
-        let (on_disk, map_placeholder) = map.get_pair_mut();
-
-        let (actual_map, parents) = TreeDirstateMap::new_v1(on_disk)
+        let (map, parents) = OwningDirstateMap::new_v1(on_disk)
             .map_err(|e| dirstate_error(py, e))?;
-        *map_placeholder = actual_map;
         let map = Self::create_instance(py, map)?;
-        let parents = parents.map(|p| {
-            let p1 = PyBytes::new(py, p.p1.as_bytes());
-            let p2 = PyBytes::new(py, p.p2.as_bytes());
-            (p1, p2)
-        });
+        let p1 = PyBytes::new(py, parents.p1.as_bytes());
+        let p2 = PyBytes::new(py, parents.p2.as_bytes());
+        let parents = (p1, p2);
         Ok((map, parents).to_py_object(py).into_object())
     }
 
@@ -79,9 +72,7 @@ py_class!(pub class DirstateMap |py| {
             PyErr::new::<exc::OSError, _>(py, format!("Dirstate error: {:?}", e))
         };
         let on_disk = PyBytesDeref::new(py, on_disk);
-        let mut map = OwningDirstateMap::new_empty(on_disk);
-        let (on_disk, map_placeholder) = map.get_pair_mut();
-        *map_placeholder = TreeDirstateMap::new_v2(
+        let map = OwningDirstateMap::new_v2(
             on_disk, data_size, tree_metadata.data(py),
         ).map_err(dirstate_error)?;
         let map = Self::create_instance(py, map)?;

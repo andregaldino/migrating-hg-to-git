@@ -144,15 +144,8 @@ impl From<HgPathError> for std::io::Error {
 /// On Unix, it's just byte-to-byte conversion. On Windows, it has to be
 /// decoded from MBCS to WTF-8. If WindowsUTF8Plan is implemented, the source
 /// character encoding will be determined on a per-repository basis.
-//
-// FIXME: (adapted from a comment in the stdlib)
-// `HgPath::new()` current implementation relies on `Slice` being
-// layout-compatible with `[u8]`.
-// When attribute privacy is implemented, `Slice` should be annotated as
-// `#[repr(transparent)]`.
-// Anyway, `Slice` representation and layout are considered implementation
-// detail, are not documented and must not be relied upon.
 #[derive(Eq, Ord, PartialEq, PartialOrd, Hash)]
+#[repr(transparent)]
 pub struct HgPath {
     inner: [u8],
 }
