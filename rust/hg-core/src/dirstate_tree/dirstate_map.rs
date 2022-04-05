@@ -864,14 +864,16 @@ impl OwningDirstateMap {
                 if had_entry {
                     node.data = NodeData::None
                 }
+                let mut had_copy_source = false;
                 if let Some(source) = &node.copy_source {
                     DirstateMap::count_dropped_path(unreachable_bytes, source);
+                    had_copy_source = true;
                     node.copy_source = None
                 }
                 dropped = Dropped {
                     was_tracked,
                     had_entry,
-                    had_copy_source: node.copy_source.take().is_some(),
+                    had_copy_source,
                 };
             }
             // After recursion, for both leaf (rest_of_path is None) nodes and
