@@ -957,6 +957,9 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
    change is needed. This also applies to operations that would have been
    read-only (like hg status).
 
+   If the repository cannot be locked, the automatic-upgrade operation will be
+   skipped. The next operation will attempt it again.
+
    This configuration will apply for moves in any direction, either adding the
    `dirstate-v2` format if `format.use-dirstate-v2=yes` or removing the
    `dirstate-v2` requirement if `format.use-dirstate-v2=no`. So we recommend
@@ -1007,6 +1010,9 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
    upgrade the repository format to use `dirstate-tracked-hint`. This only
    triggers if a change is needed. This also applies to operations that would
    have been read-only (like hg status).
+
+   If the repository cannot be locked, the automatic-upgrade operation will be
+   skipped. The next operation will attempt it again.
 
    This configuration will apply for moves in any direction, either adding the
    `dirstate-tracked-hint` format if `format.use-dirstate-tracked-hint=yes` or
@@ -1083,6 +1089,9 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
    upgrade the repository format to use `share-safe`. This only triggers if a
    change is needed. This also applies to operation that would have been
    read-only (like hg status).
+
+   If the repository cannot be locked, the automatic-upgrade operation will be
+   skipped. The next operation will attempt it again.
 
    This configuration will apply for moves in any direction, either adding the
    `share-safe` format if `format.use-share-safe=yes` or removing the

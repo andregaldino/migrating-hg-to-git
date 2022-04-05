@@ -217,19 +217,26 @@ def may_auto_upgrade(repo, maker_func):
 
     loop = 0
 
-    while not clear:
-        loop += 1
-        if loop > 100:
-            # XXX basic protection against infinite loop, make it better.
-            raise error.ProgrammingError("Too many auto upgrade loops")
-        clear = True
-        for get_action in AUTO_UPGRADE_ACTIONS:
-            action = get_action(repo)
-            if action is not None:
-                clear = False
-                with repo.wlock(wait=False), repo.lock(wait=False):
-                    action = get_action(repo)
-                    if action is not None:
-                        action()
-                    repo = maker_func()
+    try:
+        while not clear:
+            loop += 1
+            if loop > 100:
+                # XXX basic protection against infinite loop, make it better.
+                raise error.ProgrammingError("Too many auto upgrade loops")
+            clear = True
+            for get_action in AUTO_UPGRADE_ACTIONS:
+                action = get_action(repo)
+                if action is not None:
+                    clear = False
+                    with repo.wlock(wait=False), repo.lock(wait=False):
+                        action = get_action(repo)
+                        if action is not None:
+                            action()
+                        repo = maker_func()
+    except error.LockError:
+        # if we cannot get the lock, ignore the auto-upgrade attemps and
+        # proceed. We might want to make this behavior configurable in the
+        # future.
+        pass
+
     return repo

@@ -2069,8 +2069,6 @@ Attempting Auto-upgrade on a read-only repository
   $ hg status -R auto-upgrade \
   >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
   >     --config format.use-dirstate-v2=no
-  abort: could not lock working directory of auto-upgrade: Permission denied
-  [20]
   $ hg debugformat -R auto-upgrade | grep dirstate-v2
   dirstate-v2:        yes
 
@@ -2085,8 +2083,6 @@ Attempting Auto-upgrade on a locked repository
   $ hg status -R auto-upgrade \
   >     --config format.use-dirstate-v2.automatic-upgrade-of-mismatching-repositories=yes \
   >     --config format.use-dirstate-v2=no
-  abort: repository auto-upgrade: timed out waiting for lock held by 'brunhoff/effffffc:1215708'
-  [20]
   $ hg debugformat -R auto-upgrade | grep dirstate-v2
   dirstate-v2:        yes
 
