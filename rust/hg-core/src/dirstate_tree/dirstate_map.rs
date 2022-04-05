@@ -831,10 +831,20 @@ impl OwningDirstateMap {
                 )? {
                     dropped = d;
                     if dropped.had_entry {
-                        node.descendants_with_entry_count -= 1;
+                        node.descendants_with_entry_count = node
+                            .descendants_with_entry_count
+                            .checked_sub(1)
+                            .expect(
+                                "descendants_with_entry_count should be >= 0",
+                            );
                     }
                     if dropped.was_tracked {
-                        node.tracked_descendants_count -= 1;
+                        node.tracked_descendants_count = node
+                            .tracked_descendants_count
+                            .checked_sub(1)
+                            .expect(
+                                "tracked_descendants_count should be >= 0",
+                            );
                     }
 
                     // Directory caches must be invalidated when removing a
@@ -889,10 +899,16 @@ impl OwningDirstateMap {
                 filename,
             )? {
                 if dropped.had_entry {
-                    map.nodes_with_entry_count -= 1
+                    map.nodes_with_entry_count = map
+                        .nodes_with_entry_count
+                        .checked_sub(1)
+                        .expect("nodes_with_entry_count should be >= 0");
                 }
                 if dropped.had_copy_source {
-                    map.nodes_with_copy_source_count -= 1
+                    map.nodes_with_copy_source_count = map
+                        .nodes_with_copy_source_count
+                        .checked_sub(1)
+                        .expect("nodes_with_copy_source_count should be >= 0");
                 }
             } else {
                 debug_assert!(!was_tracked);
