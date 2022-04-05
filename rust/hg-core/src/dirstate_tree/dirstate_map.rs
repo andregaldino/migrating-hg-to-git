@@ -858,7 +858,9 @@ impl OwningDirstateMap {
                     return Ok(None);
                 }
             } else {
-                let had_entry = node.data.has_entry();
+                let entry = node.data.as_entry();
+                let was_tracked = entry.map_or(false, |entry| entry.tracked());
+                let had_entry = entry.is_some();
                 if had_entry {
                     node.data = NodeData::None
                 }
@@ -867,10 +869,7 @@ impl OwningDirstateMap {
                     node.copy_source = None
                 }
                 dropped = Dropped {
-                    was_tracked: node
-                        .data
-                        .as_entry()
-                        .map_or(false, |entry| entry.state().is_tracked()),
+                    was_tracked,
                     had_entry,
                     had_copy_source: node.copy_source.take().is_some(),
                 };
