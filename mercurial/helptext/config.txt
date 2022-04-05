@@ -976,6 +976,27 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     2) storing the value and comparing it to a later value.
 
+
+``use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories``
+   When enabled, an automatic upgrade will be triggered when a repository format
+   does not match its `use-dirstate-tracked-hint` config.
+
+   This is an advanced behavior that most users will not need. We recommend you
+   don't use this unless you are a seasoned administrator of a Mercurial install
+   base.
+
+   Automatic upgrade means that any process accessing the repository will
+   upgrade the repository format to use `dirstate-tracked-hint`. This only
+   triggers if a change is needed. This also applies to operations that would
+   have been read-only (like hg status).
+
+   This configuration will apply for moves in any direction, either adding the
+   `dirstate-tracked-hint` format if `format.use-dirstate-tracked-hint=yes` or
+   removing the `dirstate-tracked-hint` requirement if
+   `format.use-dirstate-tracked-hint=no`. So we recommend setting both this
+   value and `format.use-dirstate-tracked-hint` at the same time.
+
+
 ``use-persistent-nodemap``
     Enable or disable the "persistent-nodemap" feature which improves
     performance if the Rust extensions are available.

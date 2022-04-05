@@ -202,3 +202,37 @@ upgrade
   .hg/dirstate-tracked-hint
   $ hg debugrequires | grep 'tracked'
   dirstate-tracked-key-v1
+  $ cd ..
+
+Test automatic upgrade and downgrade
+------------------------------------
+
+create an initial repository
+
+  $ hg init auto-upgrade \
+  > --config format.use-dirstate-tracked-hint=no
+  $ hg debugbuilddag -R auto-upgrade --new-file .+5
+  $ hg -R auto-upgrade update
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg debugformat -R auto-upgrade | grep tracked
+  tracked-hint:        no
+
+upgrade it to dirstate-tracked-hint automatically
+
+  $ hg status -R auto-upgrade \
+  > --config format.use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories=yes \
+  > --config format.use-dirstate-tracked-hint=yes
+  automatically upgrading repository to the `tracked-hint` feature
+  (see `hg help config.format.use-dirstate-tracked-hint` for details)
+  $ hg debugformat -R auto-upgrade | grep tracked
+  tracked-hint:       yes
+
+downgrade it from dirstate-tracked-hint automatically
+
+  $ hg status -R auto-upgrade \
+  > --config format.use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories=yes \
+  > --config format.use-dirstate-tracked-hint=no
+  automatically downgrading repository from the `tracked-hint` feature
+  (see `hg help config.format.use-dirstate-tracked-hint` for details)
+  $ hg debugformat -R auto-upgrade | grep tracked
+  tracked-hint:        no

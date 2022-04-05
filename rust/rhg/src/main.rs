@@ -731,6 +731,11 @@ const AUTO_UPGRADES: &[((&str, &str), (&str, &str), &str)] = &[
         ("format", "use-share-safe"),
         requirements::SHARESAFE_REQUIREMENT,
     ),
+    (
+        ("format", "use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories"),
+        ("format", "use-dirstate-tracked-hint"),
+        requirements::DIRSTATE_TRACKED_HINT_V1,
+    ),
 ];
 
 /// Mercurial allows users to automatically upgrade their repository.

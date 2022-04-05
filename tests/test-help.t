@@ -1602,6 +1602,8 @@ Separate sections from subsections
   
       "use-dirstate-tracked-hint"
   
+      "use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories"
+  
       "use-persistent-nodemap"
   
       "use-share-safe"

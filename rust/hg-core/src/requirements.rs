@@ -100,6 +100,10 @@ const SUPPORTED: &[&str] = &[
 
 pub const DIRSTATE_V2_REQUIREMENT: &str = "dirstate-v2";
 
+/// A repository that uses the tracked hint dirstate file
+#[allow(unused)]
+pub const DIRSTATE_TRACKED_HINT_V1: &str = "dirstate-tracked-key-v1";
+
 /// When narrowing is finalized and no longer subject to format changes,
 /// we should move this to just "narrow" or similar.
 #[allow(unused)]

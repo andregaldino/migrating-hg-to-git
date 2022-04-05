@@ -12,6 +12,24 @@ from .. import (
     scmutil,
 )
 
+from . import (
+    actions,
+    engine,
+)
+
+
+class AutoUpgradeOperation(actions.BaseOperation):
+    """A limited Upgrade Operation used to run simple auto upgrade task
+
+    (Expand it as needed in the future)
+    """
+
+    def __init__(self, req):
+        super().__init__(
+            new_requirements=req,
+            backup_store=False,
+        )
+
 
 def get_share_safe_action(repo):
     """return an automatic-upgrade action for `share-safe` if applicable
@@ -66,8 +84,61 @@ def get_share_safe_action(repo):
     return action
 
 
+def get_tracked_hint_action(repo):
+    """return an automatic-upgrade action for `tracked-hint` if applicable
+
+    If no action is needed, return None, otherwise return a callback to upgrade
+    or downgrade the repository according the configuration and repository
+    format.
+    """
+    ui = repo.ui
+    requirements = set(repo.requirements)
+    auto_upgrade_tracked_hint = ui.configbool(
+        b'format',
+        b'use-dirstate-tracked-hint.automatic-upgrade-of-mismatching-repositories',
+    )
+
+    action = None
+
+    if auto_upgrade_tracked_hint:
+        th_config = ui.configbool(b'format', b'use-dirstate-tracked-hint')
+        th_local = requirementsmod.DIRSTATE_TRACKED_HINT_V1 in requirements
+        if th_config and not th_local:
+            msg = _(
+                b"automatically upgrading repository to the `tracked-hint`"
+                b" feature\n"
+            )
+            hint = b"(see `hg help config.format.use-dirstate-tracked-hint` for details)\n"
+
+            def action():
+                if not ui.quiet:
+                    ui.write_err(msg)
+                    ui.write_err(hint)
+                requirements.add(requirementsmod.DIRSTATE_TRACKED_HINT_V1)
+                op = AutoUpgradeOperation(requirements)
+                engine.upgrade_tracked_hint(ui, repo, op, add=True)
+
+        elif th_local and not th_config:
+            msg = _(
+                b"automatically downgrading repository from the `tracked-hint`"
+                b" feature\n"
+            )
+            hint = b"(see `hg help config.format.use-dirstate-tracked-hint` for details)\n"
+
+            def action():
+                if not ui.quiet:
+                    ui.write_err(msg)
+                    ui.write_err(hint)
+                requirements.discard(requirementsmod.DIRSTATE_TRACKED_HINT_V1)
+                op = AutoUpgradeOperation(requirements)
+                engine.upgrade_tracked_hint(ui, repo, op, add=False)
+
+    return action
+
+
 AUTO_UPGRADE_ACTIONS = [
     get_share_safe_action,
+    get_tracked_hint_action,
 ]
 
 
