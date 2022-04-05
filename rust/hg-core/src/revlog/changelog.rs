@@ -1,6 +1,5 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
-use crate::revlog::node::NULL_NODE;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
@@ -33,7 +32,11 @@ impl Changelog {
         rev: Revision,
     ) -> Result<ChangelogRevisionData, RevlogError> {
         let bytes = self.revlog.get_rev_data(rev)?.into_owned();
-        Ok(ChangelogRevisionData { bytes })
+        if bytes.is_empty() {
+            Ok(ChangelogRevisionData::null())
+        } else {
+            Ok(ChangelogRevisionData::new(bytes))
+        }
     }
 
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
@@ -49,6 +52,16 @@ pub struct ChangelogRevisionData {
 }
 
 impl ChangelogRevisionData {
+    fn new(bytes: Vec<u8>) -> Self {
+        Self { bytes }
+    }
+
+    fn null() -> Self {
+        Self::new(
+            b"0000000000000000000000000000000000000000\n\n0 0\n\n".to_vec(),
+        )
+    }
+
     /// Return an iterator over the lines of the entry.
     pub fn lines(&self) -> impl Iterator<Item = &[u8]> {
         self.bytes.split(|b| b == &b'\n')
@@ -59,10 +72,6 @@ impl ChangelogRevisionData {
     pub fn manifest_node(&self) -> Result<Node, HgError> {
         let manifest_node_hex =
             self.lines().next().expect("Empty iterator from split()?");
-        if manifest_node_hex.is_empty() {
-            Ok(NULL_NODE)
-        } else {
-            Node::from_hex_for_repo(manifest_node_hex)
-        }
+        Node::from_hex_for_repo(manifest_node_hex)
     }
 }
