@@ -2201,7 +2201,19 @@ def debuglocks(ui, repo, **opts):
             except error.LockHeld:
                 raise error.Abort(_(b'lock is already held'))
         if len(locks):
-            ui.promptchoice(_(b"ready to release the lock (y)? $$ &Yes"))
+            try:
+                if ui.interactive():
+                    prompt = _(b"ready to release the lock (y)? $$ &Yes")
+                    ui.promptchoice(prompt)
+                else:
+                    msg = b"%d locks held, waiting for signal\n"
+                    msg %= len(locks)
+                    ui.status(msg)
+                    while True:  # XXX wait for a signal
+                        time.sleep(0.1)
+            except KeyboardInterrupt:
+                msg = b"signal-received releasing locks\n"
+                ui.status(msg)
             return 0
     finally:
         release(*locks)
