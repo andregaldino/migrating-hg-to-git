@@ -2,6 +2,43 @@ use super::dirstate_map::DirstateMap;
 use stable_deref_trait::StableDeref;
 use std::ops::Deref;
 
+/*
+// /!\ This is unsound and can cause use after free. It will be fixed in the
+// next patch
+
+// If we change `value` from its current use of `HgPathBuf` to `&HgPath`,
+// nothing here tells that `value` will outlive `OwningDirstateMap`
+pub fn copy_map_insert<'a,'owned>(
+    &'owned mut self,
+    key: &HgPath,
+    value: &'a HgPath,
+) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
+    // `'local` is smaller than `'a` here
+    let map: &'local mut DirstateMap<'local> = self.get_map_mut();
+    let node: &'local mut Node<'local> = DirstateMap::get_or_insert_node(
+        map.on_disk,
+        &mut map.unreachable_bytes,
+        &mut map.root,
+        &key,
+        WithBasename::to_cow_owned,
+        |_ancestor| {},
+    )?;
+    if node.copy_source.is_none() {
+        map.nodes_with_copy_source_count += 1
+    }
+    Ok(node.copy_source.replace(value.into()).map(Cow::into_owned))
+    // and right here ----------^^^^^^^^^^^^
+    // we are storing `&'a HgPath` in `Node<'local>` which is possible
+    // because to the compiler, `'a` is longer than ``local`.
+    // It is wrong because nothing proves that `&'a HgPath` will outlive `self`.
+}
+
+// All of this is caused by the wrong cast of the DirstateMap pointer that
+// fakes the lifetime of `DirstateMap` and ensures the compiler that it lives
+// as long as `on_disk`, which is only true for its immutable data.
+// This will be fixed in the next commit.
+*/
+
 /// Keep a `DirstateMap<'on_disk>` next to the `on_disk` buffer that it
 /// borrows.
 ///
