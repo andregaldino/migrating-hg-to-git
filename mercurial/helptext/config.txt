@@ -1032,6 +1032,24 @@ https://www.mercurial-scm.org/wiki/MissingRequirement
 
     Enabled by default in Mercurial 6.1.
 
+``use-share-safe.automatic-upgrade-of-mismatching-repositories``
+   When enabled, an automatic upgrade will be triggered when a repository format
+   does not match its `use-share-safe` config.
+
+   This is an advanced behavior that most users will not need. We recommend you
+   don't use this unless you are a seasoned administrator of a Mercurial install
+   base.
+
+   Automatic upgrade means that any process accessing the repository will
+   upgrade the repository format to use `share-safe`. This only triggers if a
+   change is needed. This also applies to operation that would have been
+   read-only (like hg status).
+
+   This configuration will apply for moves in any direction, either adding the
+   `share-safe` format if `format.use-share-safe=yes` or removing the
+   `share-safe` requirement if `format.use-share-safe=no`. So we recommend
+   setting both this value and `format.use-share-safe` at the same time.
+
 ``usestore``
     Enable or disable the "store" repository format which improves
     compatibility with systems that fold case or otherwise mangle

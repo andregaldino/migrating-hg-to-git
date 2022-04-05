@@ -3516,11 +3516,20 @@ def undoname(fn):
 
 
 def instance(ui, path, create, intents=None, createopts=None):
+
+    # prevent cyclic import localrepo -> upgrade -> localrepo
+    from . import upgrade
+
     localpath = urlutil.urllocalpath(path)
     if create:
         createrepository(ui, localpath, createopts=createopts)
 
-    return makelocalrepository(ui, localpath, intents=intents)
+    def repo_maker():
+        return makelocalrepository(ui, localpath, intents=intents)
+
+    repo = repo_maker()
+    repo = upgrade.may_auto_upgrade(repo, repo_maker)
+    return repo
 
 
 def islocal(path):

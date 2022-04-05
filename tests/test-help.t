@@ -1606,6 +1606,8 @@ Separate sections from subsections
   
       "use-share-safe"
   
+      "use-share-safe.automatic-upgrade-of-mismatching-repositories"
+  
       "usestore"
   
       "sparse-revlog"

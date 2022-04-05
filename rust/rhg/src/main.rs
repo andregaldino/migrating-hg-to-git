@@ -7,10 +7,10 @@ use clap::Arg;
 use clap::ArgMatches;
 use format_bytes::{format_bytes, join};
 use hg::config::{Config, ConfigSource};
-use hg::exit_codes;
 use hg::repo::{Repo, RepoError};
 use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
+use hg::{exit_codes, requirements};
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::os::unix::prelude::CommandExt;
@@ -724,6 +724,50 @@ fn check_extensions(config: &Config) -> Result<(), CommandError> {
     }
 }
 
+/// Array of tuples of (auto upgrade conf, feature conf, local requirement)
+const AUTO_UPGRADES: &[((&str, &str), (&str, &str), &str)] = &[
+    (
+        ("format", "use-share-safe.automatic-upgrade-of-mismatching-repositories"),
+        ("format", "use-share-safe"),
+        requirements::SHARESAFE_REQUIREMENT,
+    ),
+];
+
+/// Mercurial allows users to automatically upgrade their repository.
+/// `rhg` does not have the ability to upgrade yet, so fallback if an upgrade
+/// is needed.
+fn check_auto_upgrade(
+    config: &Config,
+    reqs: &HashSet<String>,
+) -> Result<(), CommandError> {
+    for (upgrade_conf, feature_conf, local_req) in AUTO_UPGRADES.iter() {
+        let auto_upgrade = config
+            .get_bool(upgrade_conf.0.as_bytes(), upgrade_conf.1.as_bytes())?;
+
+        if auto_upgrade {
+            let want_it = config.get_bool(
+                feature_conf.0.as_bytes(),
+                feature_conf.1.as_bytes(),
+            )?;
+            let have_it = reqs.contains(*local_req);
+
+            let action = match (want_it, have_it) {
+                (true, false) => Some("upgrade"),
+                (false, true) => Some("downgrade"),
+                _ => None,
+            };
+            if let Some(action) = action {
+                let message = format!(
+                    "automatic {} {}.{}",
+                    action, upgrade_conf.0, upgrade_conf.1
+                );
+                return Err(CommandError::unsupported(message));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn check_unsupported(
     config: &Config,
     repo: Result<&Repo, &NoRepoInCwdError>,
@@ -740,6 +784,7 @@ fn check_unsupported(
         if repo.has_subrepos()? {
             Err(CommandError::unsupported("sub-repositories"))?
         }
+        check_auto_upgrade(config, repo.requirements())?;
     }
 
     if config.has_non_empty_section(b"encode") {

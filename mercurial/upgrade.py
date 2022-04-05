@@ -19,6 +19,7 @@ from . import (
 
 from .upgrade_utils import (
     actions as upgrade_actions,
+    auto_upgrade,
     engine as upgrade_engine,
 )
 
@@ -26,6 +27,7 @@ from .utils import (
     stringutil,
 )
 
+may_auto_upgrade = auto_upgrade.may_auto_upgrade
 allformatvariant = upgrade_actions.allformatvariant
 
 
