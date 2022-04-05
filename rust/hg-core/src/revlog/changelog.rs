@@ -1,6 +1,6 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
-use crate::revlog::revlog::{Revlog, RevlogError};
+use crate::revlog::revlog::{Revlog, RevlogEntry, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
 use crate::utils::hg_path::HgPath;
@@ -30,6 +30,14 @@ impl Changelog {
         self.data_for_rev(rev)
     }
 
+    /// Return the `RevlogEntry` of the given revision number.
+    pub fn entry_for_rev(
+        &self,
+        rev: Revision,
+    ) -> Result<RevlogEntry, RevlogError> {
+        self.revlog.get_entry(rev)
+    }
+
     /// Return the `ChangelogEntry` of the given revision number.
     pub fn data_for_rev(
         &self,
@@ -50,6 +58,13 @@ impl Changelog {
 
     pub fn node_from_rev(&self, rev: Revision) -> Option<&Node> {
         self.revlog.node_from_rev(rev)
+    }
+
+    pub fn rev_from_node(
+        &self,
+        node: NodePrefix,
+    ) -> Result<Revision, RevlogError> {
+        self.revlog.rev_from_node(node)
     }
 }
 

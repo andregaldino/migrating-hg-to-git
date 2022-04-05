@@ -331,12 +331,48 @@ impl<'a> RevlogEntry<'a> {
         self.rev
     }
 
+    pub fn node(&self) -> &Node {
+        &self.hash
+    }
+
     pub fn uncompressed_len(&self) -> Option<u32> {
         u32::try_from(self.uncompressed_len).ok()
     }
 
     pub fn has_p1(&self) -> bool {
         self.p1 != NULL_REVISION
+    }
+
+    pub fn p1_entry(&self) -> Result<Option<RevlogEntry>, RevlogError> {
+        if self.p1 == NULL_REVISION {
+            Ok(None)
+        } else {
+            Ok(Some(self.revlog.get_entry(self.p1)?))
+        }
+    }
+
+    pub fn p2_entry(&self) -> Result<Option<RevlogEntry>, RevlogError> {
+        if self.p2 == NULL_REVISION {
+            Ok(None)
+        } else {
+            Ok(Some(self.revlog.get_entry(self.p2)?))
+        }
+    }
+
+    pub fn p1(&self) -> Option<Revision> {
+        if self.p1 == NULL_REVISION {
+            None
+        } else {
+            Some(self.p1)
+        }
+    }
+
+    pub fn p2(&self) -> Option<Revision> {
+        if self.p2 == NULL_REVISION {
+            None
+        } else {
+            Some(self.p2)
+        }
     }
 
     pub fn is_cencored(&self) -> bool {
