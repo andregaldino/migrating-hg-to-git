@@ -1,4 +1,5 @@
 #require curses
+#testcases committed wdir
 
 Revert interactive tests with the Curses interface
 
@@ -12,6 +13,22 @@ Revert interactive tests with the Curses interface
 
 TODO: Make a curses version of the other tests from test-revert-interactive.t.
 
+#if committed
+  $ maybe_commit() {
+  >   hg ci "$@"
+  > }
+  $ do_revert() {
+  >   hg revert -ir'.^'
+  > }
+#else
+  $ maybe_commit() {
+  >   true
+  > }
+  $ do_revert() {
+  >   hg revert -i
+  > }
+#endif
+
 When a line without EOL is selected during "revert -i"
 
   $ hg init $TESTTMP/revert-i-curses-eol
@@ -19,7 +36,7 @@ When a line without EOL is selected during "revert -i"
   $ echo 0 > a
   $ hg ci -qAm 0
   $ printf 1 >> a
-  $ hg ci -qAm 1
+  $ maybe_commit -qAm 1
   $ cat a
   0
   1 (no-eol)
@@ -28,7 +45,7 @@ When a line without EOL is selected during "revert -i"
   > c
   > EOF
 
-  $ hg revert -ir'.^'
+  $ do_revert
   reverting a
   $ cat a
   0
@@ -40,7 +57,7 @@ When a selected line is reverted to have no EOL
   $ printf 0 > a
   $ hg ci -qAm 0
   $ echo 0 > a
-  $ hg ci -qAm 1
+  $ maybe_commit -qAm 1
   $ cat a
   0
 
@@ -48,8 +65,9 @@ When a selected line is reverted to have no EOL
   > c
   > EOF
 
-  $ hg revert -ir'.^'
+  $ do_revert
   reverting a
   $ cat a
+  0 (wdir known-bad-output !)
   0 (no-eol)
 
