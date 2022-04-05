@@ -68,6 +68,5 @@ When a selected line is reverted to have no EOL
   $ do_revert
   reverting a
   $ cat a
-  0 (wdir known-bad-output !)
   0 (no-eol)
 

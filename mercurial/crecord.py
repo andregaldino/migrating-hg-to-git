@@ -505,7 +505,7 @@ class uihunk(patchnode):
             text = line.linetext
             if line.linetext == diffhelper.MISSING_NEWLINE_MARKER:
                 noeol = True
-                break
+                continue
             if line.applied:
                 if text.startswith(b'+'):
                     dels.append(text[1:])
