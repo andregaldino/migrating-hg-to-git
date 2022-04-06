@@ -38,14 +38,24 @@ Start an hg commit that will take a while
   > EOF
 #endif
 
+  $ cat >> .hg/hgrc << EOF
+  > [ui]
+  > editor=sh $TESTTMP/waitlock_editor.sh
+  > EOF
+
   $ echo foo > foo
-  $ (WAITLOCK_ANNOUNCE="${EDITOR_STARTED}" \
+  $ (unset HGEDITOR;
+  >      WAITLOCK_ANNOUNCE="${EDITOR_STARTED}" \
   >      WAITLOCK_FILE="${MISCHIEF_MANAGED}" \
-  >           HGEDITOR="sh $TESTTMP/waitlock_editor.sh" \
   >           hg commit -qAm 'r1 (foo)' --edit foo > .foo_commit_out 2>&1 ; touch "${JOBS_FINISHED}") &
 
 Wait for the "editor" to actually start
-  $ WAITLOCK_FILE="${EDITOR_STARTED}" sh "$TESTTMP/waitlock_editor.sh"
+  $ sh "$RUNTESTDIR/testlib/wait-on-file" 5 "${EDITOR_STARTED}"
+
+  $ cat >> .hg/hgrc << EOF
+  > [ui]
+  > editor=
+  > EOF
 
 Break the locks, and make another commit.
   $ hg debuglocks -LW
