@@ -1459,7 +1459,7 @@ class Zeroconf:
     def notifyAll(self):
         """Notifies all waiting threads"""
         self.condition.acquire()
-        self.condition.notifyAll()
+        self.condition.notify_all()
         self.condition.release()
 
     def getServiceInfo(self, type, name, timeout=3000):
