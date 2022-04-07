@@ -2631,7 +2631,7 @@ User interface controls.
     Largest file size that gives no memory use warning.
     Possible values are integers or 0 to disable the check.
     Value is expressed in bytes by default, one can use standard units for
-    convenience (e.g. 10MB, 0.1GB, etc) (default: 10000000)
+    convenience (e.g. 10MB, 0.1GB, etc) (default: 10MB)
 
 ``logtemplate``
     (DEPRECATED) Use ``command-templates.log`` instead.
