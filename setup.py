@@ -1110,11 +1110,15 @@ class hginstallcompletion(Command):
 
     def initialize_options(self):
         self.install_dir = None
+        self.outputs = []
 
     def finalize_options(self):
         self.set_undefined_options(
             'install_data', ('install_dir', 'install_dir')
         )
+
+    def get_outputs(self):
+        return self.outputs
 
     def run(self):
         for src, dir_path, dest in (
@@ -1127,9 +1131,10 @@ class hginstallcompletion(Command):
         ):
             dir = os.path.join(self.install_dir, *dir_path)
             self.mkpath(dir)
-            self.copy_file(
-                os.path.join('contrib', src), os.path.join(dir, dest)
-            )
+
+            dest = os.path.join(dir, dest)
+            self.outputs.append(dest)
+            self.copy_file(os.path.join('contrib', src), dest)
 
 
 # virtualenv installs custom distutils/__init__.py and
