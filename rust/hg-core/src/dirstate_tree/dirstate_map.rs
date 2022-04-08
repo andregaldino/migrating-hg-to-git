@@ -1337,7 +1337,9 @@ impl OwningDirstateMap {
             )?
             .and_then(|node| {
                 if let Some(source) = &node.copy_source {
-                    *count -= 1;
+                    *count = count
+                        .checked_sub(1)
+                        .expect("nodes_with_copy_source_count should be >= 0");
                     DirstateMap::count_dropped_path(unreachable_bytes, source);
                 }
                 node.copy_source.take().map(Cow::into_owned)
