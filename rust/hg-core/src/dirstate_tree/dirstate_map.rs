@@ -823,6 +823,30 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(())
     }
 
+    /// Sets the cached mtime for the (potential) folder at `path`.
+    pub(super) fn set_cached_mtime(
+        &mut self,
+        path: &HgPath,
+        mtime: TruncatedTimestamp,
+    ) -> Result<(), DirstateV2ParseError> {
+        let node = match DirstateMap::get_node_mut(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            path,
+        )? {
+            Some(node) => node,
+            None => return Ok(()),
+        };
+        match &node.data {
+            NodeData::Entry(_) => {} // Don’t overwrite an entry
+            NodeData::CachedDirectory { .. } | NodeData::None => {
+                node.data = NodeData::CachedDirectory { mtime }
+            }
+        }
+        Ok(())
+    }
+
     fn iter_nodes<'tree>(
         &'tree self,
     ) -> impl Iterator<

@@ -4,7 +4,6 @@ use crate::dirstate::status::StatusPath;
 use crate::dirstate_tree::dirstate_map::BorrowedPath;
 use crate::dirstate_tree::dirstate_map::ChildNodesRef;
 use crate::dirstate_tree::dirstate_map::DirstateMap;
-use crate::dirstate_tree::dirstate_map::NodeData;
 use crate::dirstate_tree::dirstate_map::NodeRef;
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::matchers::get_ignore_function;
@@ -143,13 +142,7 @@ pub fn status<'dirstate>(
         dmap.clear_cached_mtime(path)?;
     }
     for (path, mtime) in &new_cachable {
-        let node = dmap.get_or_insert(path)?;
-        match &node.data {
-            NodeData::Entry(_) => {} // Don’t overwrite an entry
-            NodeData::CachedDirectory { .. } | NodeData::None => {
-                node.data = NodeData::CachedDirectory { mtime: *mtime }
-            }
-        }
+        dmap.set_cached_mtime(path, *mtime)?;
     }
 
     Ok((outcome, warnings))
