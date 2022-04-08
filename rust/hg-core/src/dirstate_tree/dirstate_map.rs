@@ -545,13 +545,32 @@ impl<'on_disk> DirstateMap<'on_disk> {
 
     /// Returns a mutable reference to the node at `path` if it exists
     ///
+    /// `each_ancestor` is a callback that is called for each ancestor node
+    /// when descending the tree. It is used to keep the different counters
+    /// of the `DirstateMap` up-to-date.
+    fn get_node_mut<'tree>(
+        &'tree mut self,
+        path: &HgPath,
+        each_ancestor: impl FnMut(&mut Node),
+    ) -> Result<Option<&'tree mut Node<'on_disk>>, DirstateV2ParseError> {
+        Self::get_node_mut_inner(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            path,
+            each_ancestor,
+        )
+    }
+
+    /// Lower-level version of `get_node_mut`.
+    ///
     /// This takes `root` instead of `&mut self` so that callers can mutate
     /// other fields while the returned borrow is still valid.
     ///
     /// `each_ancestor` is a callback that is called for each ancestor node
     /// when descending the tree. It is used to keep the different counters
     /// of the `DirstateMap` up-to-date.
-    fn get_node_mut<'tree>(
+    fn get_node_mut_inner<'tree>(
         on_disk: &'on_disk [u8],
         unreachable_bytes: &mut u32,
         root: &'tree mut ChildNodes<'on_disk>,
@@ -746,19 +765,14 @@ impl<'on_disk> DirstateMap<'on_disk> {
         filename: &HgPath,
         old_entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
-        let node = DirstateMap::get_node_mut(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            |ancestor| {
+        let node = self
+            .get_node_mut(filename, |ancestor| {
                 ancestor.tracked_descendants_count = ancestor
                     .tracked_descendants_count
                     .checked_sub(1)
                     .expect("tracked_descendants_count should be >= 0");
-            },
-        )?
-        .expect("node should exist");
+            })?
+            .expect("node should exist");
         let mut new_entry = old_entry.clone();
         new_entry.set_untracked();
         node.data = NodeData::Entry(new_entry);
@@ -780,18 +794,13 @@ impl<'on_disk> DirstateMap<'on_disk> {
         size: u32,
         mtime: TruncatedTimestamp,
     ) -> Result<(), DirstateError> {
-        let node = DirstateMap::get_node_mut(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            |ancestor| {
+        let node = self
+            .get_node_mut(filename, |ancestor| {
                 if !old_entry.tracked() {
                     ancestor.tracked_descendants_count += 1;
                 }
-            },
-        )?
-        .expect("node should exist");
+            })?
+            .expect("node should exist");
         let mut new_entry = old_entry.clone();
         new_entry.set_clean(mode, size, mtime);
         node.data = NodeData::Entry(new_entry);
@@ -807,14 +816,9 @@ impl<'on_disk> DirstateMap<'on_disk> {
         &mut self,
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
-        let node = DirstateMap::get_node_mut(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            |_ancestor| {},
-        )?
-        .expect("node should exist");
+        let node = self
+            .get_node_mut(filename, |_ancestor| {})?
+            .expect("node should exist");
         let entry = node.data.as_entry_mut().expect("entry should exist");
         entry.set_possibly_dirty();
         node.data = NodeData::Entry(*entry);
@@ -826,13 +830,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         &mut self,
         path: &HgPath,
     ) -> Result<(), DirstateV2ParseError> {
-        let node = match DirstateMap::get_node_mut(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            path,
-            |_ancestor| {},
-        )? {
+        let node = match self.get_node_mut(path, |_ancestor| {})? {
             Some(node) => node,
             None => return Ok(()),
         };
@@ -848,13 +846,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         path: &HgPath,
         mtime: TruncatedTimestamp,
     ) -> Result<(), DirstateV2ParseError> {
-        let node = match DirstateMap::get_node_mut(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            path,
-            |_ancestor| {},
-        )? {
+        let node = match self.get_node_mut(path, |_ancestor| {})? {
             Some(node) => node,
             None => return Ok(()),
         };
@@ -1336,7 +1328,7 @@ impl OwningDirstateMap {
         self.with_dmap_mut(|map| {
             let count = &mut map.nodes_with_copy_source_count;
             let unreachable_bytes = &mut map.unreachable_bytes;
-            Ok(DirstateMap::get_node_mut(
+            Ok(DirstateMap::get_node_mut_inner(
                 map.on_disk,
                 unreachable_bytes,
                 &mut map.root,
