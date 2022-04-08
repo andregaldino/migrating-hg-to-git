@@ -574,20 +574,6 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
-    pub(super) fn get_or_insert<'tree, 'path>(
-        &'tree mut self,
-        path: &HgPath,
-    ) -> Result<&'tree mut Node<'on_disk>, DirstateV2ParseError> {
-        Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            path,
-            WithBasename::to_cow_owned,
-            |_| {},
-        )
-    }
-
     fn get_or_insert_node<'tree, 'path>(
         on_disk: &'on_disk [u8],
         unreachable_bytes: &mut u32,
@@ -1438,7 +1424,14 @@ impl OwningDirstateMap {
         }
         self.with_dmap_mut(|map| {
             for path in files_with_p2_info.iter() {
-                let node = map.get_or_insert(path)?;
+                let node = DirstateMap::get_or_insert_node(
+                    map.on_disk,
+                    &mut map.unreachable_bytes,
+                    &mut map.root,
+                    path,
+                    WithBasename::to_cow_owned,
+                    |_| {},
+                )?;
                 let entry =
                     node.data.as_entry_mut().expect("entry should exist");
                 entry.drop_merge_data();
