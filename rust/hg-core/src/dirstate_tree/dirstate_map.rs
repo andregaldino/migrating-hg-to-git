@@ -546,12 +546,17 @@ impl<'on_disk> DirstateMap<'on_disk> {
     /// Returns a mutable reference to the node at `path` if it exists
     ///
     /// This takes `root` instead of `&mut self` so that callers can mutate
-    /// other fields while the returned borrow is still valid
+    /// other fields while the returned borrow is still valid.
+    ///
+    /// `each_ancestor` is a callback that is called for each ancestor node
+    /// when descending the tree. It is used to keep the different counters
+    /// of the `DirstateMap` up-to-date.
     fn get_node_mut<'tree>(
         on_disk: &'on_disk [u8],
         unreachable_bytes: &mut u32,
         root: &'tree mut ChildNodes<'on_disk>,
         path: &HgPath,
+        mut each_ancestor: impl FnMut(&mut Node),
     ) -> Result<Option<&'tree mut Node<'on_disk>>, DirstateV2ParseError> {
         let mut children = root;
         let mut components = path.components();
@@ -563,6 +568,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 .get_mut(component)
             {
                 if let Some(next_component) = components.next() {
+                    each_ancestor(child);
                     component = next_component;
                     children = &mut child.children;
                 } else {
@@ -786,6 +792,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             &mut self.unreachable_bytes,
             &mut self.root,
             path,
+            |_ancestor| {},
         )? {
             Some(node) => node,
             None => return Ok(()),
@@ -807,6 +814,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             &mut self.unreachable_bytes,
             &mut self.root,
             path,
+            |_ancestor| {},
         )? {
             Some(node) => node,
             None => return Ok(()),
@@ -1294,6 +1302,7 @@ impl OwningDirstateMap {
                 unreachable_bytes,
                 &mut map.root,
                 key,
+                |_ancestor| {},
             )?
             .and_then(|node| {
                 if let Some(source) = &node.copy_source {
