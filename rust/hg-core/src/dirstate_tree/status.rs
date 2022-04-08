@@ -140,10 +140,7 @@ pub fn status<'dirstate>(
     // Remove outdated mtimes before adding new mtimes, in case a given
     // directory is both
     for path in &outdated {
-        let node = dmap.get_or_insert(path)?;
-        if let NodeData::CachedDirectory { .. } = &node.data {
-            node.data = NodeData::None
-        }
+        dmap.clear_cached_mtime(path)?;
     }
     for (path, mtime) in &new_cachable {
         let node = dmap.get_or_insert(path)?;
