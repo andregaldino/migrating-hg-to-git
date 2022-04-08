@@ -478,7 +478,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             map.on_disk,
             |path, entry, copy_source| {
                 let tracked = entry.state().is_tracked();
-                let node = Self::get_or_insert_node(
+                let node = Self::get_or_insert_node_inner(
                     map.on_disk,
                     &mut map.unreachable_bytes,
                     &mut map.root,
@@ -574,7 +574,30 @@ impl<'on_disk> DirstateMap<'on_disk> {
         }
     }
 
+    /// Get a mutable reference to the node at `path`, creating it if it does
+    /// not exist.
+    ///
+    /// `each_ancestor` is a callback that is called for each ancestor node
+    /// when descending the tree. It is used to keep the different counters
+    /// of the `DirstateMap` up-to-date.
     fn get_or_insert_node<'tree, 'path>(
+        &'tree mut self,
+        path: &'path HgPath,
+        each_ancestor: impl FnMut(&mut Node),
+    ) -> Result<&'tree mut Node<'on_disk>, DirstateV2ParseError> {
+        Self::get_or_insert_node_inner(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            path,
+            WithBasename::to_cow_owned,
+            each_ancestor,
+        )
+    }
+
+    /// Lower-level version of `get_or_insert_node_inner`, which is used when
+    /// parsing disk data to remove allocations for new nodes.
+    fn get_or_insert_node_inner<'tree, 'path>(
         on_disk: &'on_disk [u8],
         unreachable_bytes: &mut u32,
         root: &'tree mut ChildNodes<'on_disk>,
@@ -620,30 +643,23 @@ impl<'on_disk> DirstateMap<'on_disk> {
             Some(old_entry) => (true, old_entry.tracked()),
             None => (false, false),
         };
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            WithBasename::to_cow_owned,
-            |ancestor| {
-                if !had_entry {
-                    ancestor.descendants_with_entry_count += 1;
+        let node = self.get_or_insert_node(filename, |ancestor| {
+            if !had_entry {
+                ancestor.descendants_with_entry_count += 1;
+            }
+            if was_tracked {
+                if !wc_tracked {
+                    ancestor.tracked_descendants_count = ancestor
+                        .tracked_descendants_count
+                        .checked_sub(1)
+                        .expect("tracked count to be >= 0");
                 }
-                if was_tracked {
-                    if !wc_tracked {
-                        ancestor.tracked_descendants_count = ancestor
-                            .tracked_descendants_count
-                            .checked_sub(1)
-                            .expect("tracked count to be >= 0");
-                    }
-                } else {
-                    if wc_tracked {
-                        ancestor.tracked_descendants_count += 1;
-                    }
+            } else {
+                if wc_tracked {
+                    ancestor.tracked_descendants_count += 1;
                 }
-            },
-        )?;
+            }
+        })?;
 
         let v2_data = if let Some(parent_file_data) = parent_file_data_opt {
             DirstateV2Data {
@@ -666,10 +682,10 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 ..Default::default()
             }
         };
+        node.data = NodeData::Entry(DirstateEntry::from_v2_data(v2_data));
         if !had_entry {
             self.nodes_with_entry_count += 1;
         }
-        node.data = NodeData::Entry(DirstateEntry::from_v2_data(v2_data));
         Ok(())
     }
 
@@ -683,21 +699,14 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let tracked_count_increment = if was_tracked { 0 } else { 1 };
         let mut new = false;
 
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            WithBasename::to_cow_owned,
-            |ancestor| {
-                if !had_entry {
-                    ancestor.descendants_with_entry_count += 1;
-                }
+        let node = self.get_or_insert_node(filename, |ancestor| {
+            if !had_entry {
+                ancestor.descendants_with_entry_count += 1;
+            }
 
-                ancestor.tracked_descendants_count += tracked_count_increment;
-            },
-        )?;
-        let new_entry = if let Some(old_entry) = old_entry_opt {
+            ancestor.tracked_descendants_count += tracked_count_increment;
+        })?;
+        if let Some(old_entry) = old_entry_opt {
             let mut e = old_entry.clone();
             if e.tracked() {
                 // XXX
@@ -709,13 +718,12 @@ impl<'on_disk> DirstateMap<'on_disk> {
                 new = true;
                 e.set_tracked();
             }
-            e
+            node.data = NodeData::Entry(e)
         } else {
+            node.data = NodeData::Entry(DirstateEntry::new_tracked());
             self.nodes_with_entry_count += 1;
             new = true;
-            DirstateEntry::new_tracked()
         };
-        node.data = NodeData::Entry(new_entry);
         Ok(new)
     }
 
@@ -726,19 +734,12 @@ impl<'on_disk> DirstateMap<'on_disk> {
         filename: &HgPath,
         old_entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            WithBasename::to_cow_owned,
-            |ancestor| {
-                ancestor.tracked_descendants_count = ancestor
-                    .tracked_descendants_count
-                    .checked_sub(1)
-                    .expect("tracked_descendants_count should be >= 0");
-            },
-        )?;
+        let node = self.get_or_insert_node(filename, |ancestor| {
+            ancestor.tracked_descendants_count = ancestor
+                .tracked_descendants_count
+                .checked_sub(1)
+                .expect("tracked_descendants_count should be >= 0");
+        })?;
         let mut new_entry = old_entry.clone();
         new_entry.set_untracked();
         node.data = NodeData::Entry(new_entry);
@@ -753,18 +754,11 @@ impl<'on_disk> DirstateMap<'on_disk> {
         size: u32,
         mtime: TruncatedTimestamp,
     ) -> Result<(), DirstateError> {
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            WithBasename::to_cow_owned,
-            |ancestor| {
-                if !old_entry.tracked() {
-                    ancestor.tracked_descendants_count += 1;
-                }
-            },
-        )?;
+        let node = self.get_or_insert_node(filename, |ancestor| {
+            if !old_entry.tracked() {
+                ancestor.tracked_descendants_count += 1;
+            }
+        })?;
         let mut new_entry = old_entry.clone();
         new_entry.set_clean(mode, size, mtime);
         node.data = NodeData::Entry(new_entry);
@@ -775,14 +769,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         &mut self,
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
-        let node = Self::get_or_insert_node(
-            self.on_disk,
-            &mut self.unreachable_bytes,
-            &mut self.root,
-            filename,
-            WithBasename::to_cow_owned,
-            |_ancestor| {},
-        )?;
+        let node = self.get_or_insert_node(filename, |_ancestor| {})?;
         let entry = node.data.as_entry_mut().expect("entry should exist");
         entry.set_possibly_dirty();
         node.data = NodeData::Entry(*entry);
@@ -1324,21 +1311,16 @@ impl OwningDirstateMap {
         value: &HgPath,
     ) -> Result<Option<HgPathBuf>, DirstateV2ParseError> {
         self.with_dmap_mut(|map| {
-            let node = DirstateMap::get_or_insert_node(
-                map.on_disk,
-                &mut map.unreachable_bytes,
-                &mut map.root,
-                &key,
-                WithBasename::to_cow_owned,
-                |_ancestor| {},
-            )?;
-            if node.copy_source.is_none() {
-                map.nodes_with_copy_source_count += 1
-            }
-            Ok(node
+            let node = map.get_or_insert_node(&key, |_ancestor| {})?;
+            let had_copy_source = node.copy_source.is_none();
+            let old = node
                 .copy_source
                 .replace(value.to_owned().into())
-                .map(Cow::into_owned))
+                .map(Cow::into_owned);
+            if had_copy_source {
+                map.nodes_with_copy_source_count += 1
+            }
+            Ok(old)
         })
     }
 
@@ -1424,14 +1406,7 @@ impl OwningDirstateMap {
         }
         self.with_dmap_mut(|map| {
             for path in files_with_p2_info.iter() {
-                let node = DirstateMap::get_or_insert_node(
-                    map.on_disk,
-                    &mut map.unreachable_bytes,
-                    &mut map.root,
-                    path,
-                    WithBasename::to_cow_owned,
-                    |_| {},
-                )?;
+                let node = map.get_or_insert_node(path, |_| {})?;
                 let entry =
                     node.data.as_entry_mut().expect("entry should exist");
                 entry.drop_merge_data();
