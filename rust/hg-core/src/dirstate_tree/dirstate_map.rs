@@ -733,25 +733,45 @@ impl<'on_disk> DirstateMap<'on_disk> {
         Ok(new)
     }
 
-    /// It is the responsibility of the caller to know that there was an entry
-    /// there before. Does not handle the removal of copy source
+    /// Set a node as untracked in the dirstate.
+    ///
+    /// It is the responsibility of the caller to remove the copy source and/or
+    /// the entry itself if appropriate.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node does not exist.
     fn set_untracked(
         &mut self,
         filename: &HgPath,
         old_entry: DirstateEntry,
     ) -> Result<(), DirstateV2ParseError> {
-        let node = self.get_or_insert_node(filename, |ancestor| {
-            ancestor.tracked_descendants_count = ancestor
-                .tracked_descendants_count
-                .checked_sub(1)
-                .expect("tracked_descendants_count should be >= 0");
-        })?;
+        let node = DirstateMap::get_node_mut(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            |ancestor| {
+                ancestor.tracked_descendants_count = ancestor
+                    .tracked_descendants_count
+                    .checked_sub(1)
+                    .expect("tracked_descendants_count should be >= 0");
+            },
+        )?
+        .expect("node should exist");
         let mut new_entry = old_entry.clone();
         new_entry.set_untracked();
         node.data = NodeData::Entry(new_entry);
         Ok(())
     }
 
+    /// Set a node as clean in the dirstate.
+    ///
+    /// It is the responsibility of the caller to remove the copy source.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node does not exist.
     fn set_clean(
         &mut self,
         filename: &HgPath,
@@ -760,22 +780,41 @@ impl<'on_disk> DirstateMap<'on_disk> {
         size: u32,
         mtime: TruncatedTimestamp,
     ) -> Result<(), DirstateError> {
-        let node = self.get_or_insert_node(filename, |ancestor| {
-            if !old_entry.tracked() {
-                ancestor.tracked_descendants_count += 1;
-            }
-        })?;
+        let node = DirstateMap::get_node_mut(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            |ancestor| {
+                if !old_entry.tracked() {
+                    ancestor.tracked_descendants_count += 1;
+                }
+            },
+        )?
+        .expect("node should exist");
         let mut new_entry = old_entry.clone();
         new_entry.set_clean(mode, size, mtime);
         node.data = NodeData::Entry(new_entry);
         Ok(())
     }
 
+    /// Set a node as possibly dirty in the dirstate.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the node does not exist.
     fn set_possibly_dirty(
         &mut self,
         filename: &HgPath,
     ) -> Result<(), DirstateError> {
-        let node = self.get_or_insert_node(filename, |_ancestor| {})?;
+        let node = DirstateMap::get_node_mut(
+            self.on_disk,
+            &mut self.unreachable_bytes,
+            &mut self.root,
+            filename,
+            |_ancestor| {},
+        )?
+        .expect("node should exist");
         let entry = node.data.as_entry_mut().expect("entry should exist");
         entry.set_possibly_dirty();
         node.data = NodeData::Entry(*entry);
