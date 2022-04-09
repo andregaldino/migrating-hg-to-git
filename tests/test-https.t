@@ -518,7 +518,7 @@ Start hgweb that requires client certificates:
 without client certificate:
 
   $ P="$CERTSDIR" hg id https://localhost:$HGPORT/
-  abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure).* (re)
+  abort: error: .*(\$ECONNRESET\$|certificate required|handshake failure|EOF occurred).* (re)
   [100]
 
 with client certificate:
