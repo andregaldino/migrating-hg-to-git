@@ -113,16 +113,18 @@ def _hostsettings(ui, hostname):
     minimumprotocol = ui.config(b'hostsecurity', key, minimumprotocol)
     validateprotocol(minimumprotocol, key)
 
+    ciphers = ui.config(b'hostsecurity', b'ciphers')
+    ciphers = ui.config(b'hostsecurity', b'%s:ciphers' % bhostname, ciphers)
+
     # If --insecure is used, we allow the use of TLS 1.0 despite config options.
     # We always print a "connection security to %s is disabled..." message when
     # --insecure is used. So no need to print anything more here.
     if ui.insecureconnections:
         minimumprotocol = b'tls1.0'
+        if not ciphers:
+            ciphers = b'DEFAULT'
 
     s[b'minimumprotocol'] = minimumprotocol
-
-    ciphers = ui.config(b'hostsecurity', b'ciphers')
-    ciphers = ui.config(b'hostsecurity', b'%s:ciphers' % bhostname, ciphers)
     s[b'ciphers'] = ciphers
 
     # Look for fingerprints in [hostsecurity] section. Value is a list
@@ -617,8 +619,11 @@ def wrapserversocket(
     sslcontext.options |= getattr(ssl, 'OP_SINGLE_DH_USE', 0)
     sslcontext.options |= getattr(ssl, 'OP_SINGLE_ECDH_USE', 0)
 
-    # Use the list of more secure ciphers if found in the ssl module.
-    if util.safehasattr(ssl, b'_RESTRICTED_SERVER_CIPHERS'):
+    # In tests, allow insecure ciphers
+    # Otherwise, use the list of more secure ciphers if found in the ssl module.
+    if exactprotocol:
+        sslcontext.set_ciphers('DEFAULT')
+    elif util.safehasattr(ssl, b'_RESTRICTED_SERVER_CIPHERS'):
         sslcontext.options |= getattr(ssl, 'OP_CIPHER_SERVER_PREFERENCE', 0)
         # pytype: disable=module-attr
         sslcontext.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
