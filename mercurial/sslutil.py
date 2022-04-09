@@ -425,7 +425,10 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             # outright. Hopefully the reason for this error is that we require
             # TLS 1.1+ and the server only supports TLS 1.0. Whatever the
             # reason, try to emit an actionable warning.
-            if e.reason == 'UNSUPPORTED_PROTOCOL':
+            if e.reason in (
+                'UNSUPPORTED_PROTOCOL',
+                'TLSV1_ALERT_PROTOCOL_VERSION',
+            ):
                 # We attempted TLS 1.0+.
                 if settings[b'minimumprotocol'] == b'tls1.0':
                     # We support more than just TLS 1.0+. If this happens,
