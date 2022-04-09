@@ -403,7 +403,7 @@ impl NodeTree {
         Err(NodeMapError::MultipleResults)
     }
 
-    fn visit<'n>(&'n self, prefix: NodePrefix) -> NodeTreeVisitor<'n> {
+    fn visit(&self, prefix: NodePrefix) -> NodeTreeVisitor {
         NodeTreeVisitor {
             nt: self,
             prefix,
