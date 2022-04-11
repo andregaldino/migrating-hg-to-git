@@ -111,7 +111,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   10000: head out of range
   -2: head out of range
   -10000: head out of range
-  None: an integer is required( .got type NoneType.)? (re)
+  None: (an integer is required( .got type NoneType.)?|'NoneType' object cannot be interpreted as an integer) (re)
   good roots:
   0: [0]
   1: [1]
@@ -122,7 +122,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   -2: []
   -10000: []
   bad roots:
-  None: an integer is required( .got type NoneType.)? (re)
+  None: (an integer is required( .got type NoneType.)?|'NoneType' object cannot be interpreted as an integer) (re)
 
   $ cd ..
 
