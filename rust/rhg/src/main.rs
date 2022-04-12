@@ -25,6 +25,7 @@ pub mod utils {
 }
 
 fn main_with_result(
+    argv: Vec<OsString>,
     process_start_time: &blackbox::ProcessStartTime,
     ui: &ui::Ui,
     repo: Result<&Repo, &NoRepoInCwdError>,
@@ -78,7 +79,7 @@ fn main_with_result(
         .version("0.0.1");
     let app = add_subcommand_args(app);
 
-    let matches = app.clone().get_matches_safe()?;
+    let matches = app.clone().get_matches_from_safe(argv.iter())?;
 
     let (subcommand_name, subcommand_matches) = matches.subcommand();
 
@@ -123,23 +124,26 @@ fn main_with_result(
     if config.is_extension_enabled(b"blackbox") {
         let blackbox =
             blackbox::Blackbox::new(&invocation, process_start_time)?;
-        blackbox.log_command_start();
+        blackbox.log_command_start(argv.iter());
         let result = run(&invocation);
-        blackbox.log_command_end(exit_code(
-            &result,
-            // TODO: show a warning or combine with original error if
-            // `get_bool` returns an error
-            config
-                .get_bool(b"ui", b"detailed-exit-code")
-                .unwrap_or(false),
-        ));
+        blackbox.log_command_end(
+            argv.iter(),
+            exit_code(
+                &result,
+                // TODO: show a warning or combine with original error if
+                // `get_bool` returns an error
+                config
+                    .get_bool(b"ui", b"detailed-exit-code")
+                    .unwrap_or(false),
+            ),
+        );
         result
     } else {
         run(&invocation)
     }
 }
 
-fn main() {
+fn rhg_main(argv: Vec<OsString>) -> ! {
     // Run this first, before we find out if the blackbox extension is even
     // enabled, in order to include everything in-between in the duration
     // measurements. Reading config files can be slow if they’re on NFS.
@@ -147,7 +151,7 @@ fn main() {
 
     env_logger::init();
 
-    let early_args = EarlyArgs::parse(std::env::args_os());
+    let early_args = EarlyArgs::parse(&argv);
 
     let initial_current_dir = early_args.cwd.map(|cwd| {
         let cwd = get_path_from_bytes(&cwd);
@@ -158,6 +162,7 @@ fn main() {
             })
             .unwrap_or_else(|error| {
                 exit(
+                    &argv,
                     &None,
                     &Ui::new_infallible(&Config::empty()),
                     OnUnsupported::Abort,
@@ -179,6 +184,7 @@ fn main() {
             let on_unsupported = OnUnsupported::Abort;
 
             exit(
+                &argv,
                 &initial_current_dir,
                 &Ui::new_infallible(&Config::empty()),
                 on_unsupported,
@@ -191,6 +197,7 @@ fn main() {
         .load_cli_args(early_args.config, early_args.color)
         .unwrap_or_else(|error| {
             exit(
+                &argv,
                 &initial_current_dir,
                 &Ui::new_infallible(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
@@ -209,6 +216,7 @@ fn main() {
         }
         if SCHEME_RE.is_match(&repo_path_bytes) {
             exit(
+                &argv,
                 &initial_current_dir,
                 &Ui::new_infallible(&non_repo_config),
                 OnUnsupported::from_config(&non_repo_config),
@@ -299,6 +307,7 @@ fn main() {
             Err(NoRepoInCwdError { cwd: at })
         }
         Err(error) => exit(
+            &argv,
             &initial_current_dir,
             &Ui::new_infallible(&non_repo_config),
             OnUnsupported::from_config(&non_repo_config),
@@ -318,6 +327,7 @@ fn main() {
     };
     let ui = Ui::new(&config).unwrap_or_else(|error| {
         exit(
+            &argv,
             &initial_current_dir,
             &Ui::new_infallible(&config),
             OnUnsupported::from_config(&config),
@@ -330,12 +340,14 @@ fn main() {
     let on_unsupported = OnUnsupported::from_config(config);
 
     let result = main_with_result(
+        argv.iter().map(|s| s.to_owned()).collect(),
         &process_start_time,
         &ui,
         repo_result.as_ref(),
         config,
     );
     exit(
+        &argv,
         &initial_current_dir,
         &ui,
         on_unsupported,
@@ -346,6 +358,10 @@ fn main() {
             .get_bool(b"ui", b"detailed-exit-code")
             .unwrap_or(false),
     )
+}
+
+fn main() -> ! {
+    rhg_main(std::env::args_os().collect())
 }
 
 fn exit_code(
@@ -374,7 +390,8 @@ fn exit_code(
     }
 }
 
-fn exit(
+fn exit<'a>(
+    original_args: &'a [OsString],
     initial_current_dir: &Option<PathBuf>,
     ui: &Ui,
     mut on_unsupported: OnUnsupported,
@@ -386,7 +403,7 @@ fn exit(
         Err(CommandError::UnsupportedFeature { message }),
     ) = (&on_unsupported, &result)
     {
-        let mut args = std::env::args_os();
+        let mut args = original_args.iter();
         let executable = match executable {
             None => {
                 exit_no_fallback(
@@ -546,7 +563,7 @@ struct EarlyArgs {
 }
 
 impl EarlyArgs {
-    fn parse(args: impl IntoIterator<Item = OsString>) -> Self {
+    fn parse<'a>(args: impl IntoIterator<Item = &'a OsString>) -> Self {
         let mut args = args.into_iter().map(get_bytes_from_os_str);
         let mut config = Vec::new();
         let mut color = None;

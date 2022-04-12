@@ -5,6 +5,7 @@ use format_bytes::format_bytes;
 use hg::errors::HgError;
 use hg::repo::Repo;
 use hg::utils::{files::get_bytes_from_os_str, shell_quote};
+use std::ffi::OsString;
 
 const ONE_MEBIBYTE: u64 = 1 << 20;
 
@@ -83,14 +84,21 @@ impl<'a> Blackbox<'a> {
         })
     }
 
-    pub fn log_command_start(&self) {
+    pub fn log_command_start<'arg>(
+        &self,
+        argv: impl Iterator<Item = &'arg OsString>,
+    ) {
         if let Some(configured) = &self.configured {
-            let message = format_bytes!(b"(rust) {}", format_cli_args());
+            let message = format_bytes!(b"(rust) {}", format_cli_args(argv));
             configured.log(&self.process_start_time.calendar_based, &message);
         }
     }
 
-    pub fn log_command_end(&self, exit_code: i32) {
+    pub fn log_command_end<'arg>(
+        &self,
+        argv: impl Iterator<Item = &'arg OsString>,
+        exit_code: i32,
+    ) {
         if let Some(configured) = &self.configured {
             let now = chrono::Local::now();
             let duration = self
@@ -100,7 +108,7 @@ impl<'a> Blackbox<'a> {
                 .as_secs_f64();
             let message = format_bytes!(
                 b"(rust) {} exited {} after {} seconds",
-                format_cli_args(),
+                format_cli_args(argv),
                 exit_code,
                 format_bytes::Utf8(format_args!("{:.03}", duration))
             );
@@ -147,8 +155,9 @@ impl ConfiguredBlackbox<'_> {
     }
 }
 
-fn format_cli_args() -> Vec<u8> {
-    let mut args = std::env::args_os();
+fn format_cli_args<'a>(
+    mut args: impl Iterator<Item = &'a OsString>,
+) -> Vec<u8> {
     let _ = args.next(); // Skip the first (or zeroth) arg, the name of the `rhg` executable
     let mut args = args.map(|arg| shell_quote(&get_bytes_from_os_str(arg)));
     let mut formatted = Vec::new();
