@@ -10,7 +10,6 @@
 //! Used to counts the references to directories in a manifest or dirstate.
 use crate::dirstate_tree::on_disk::DirstateV2ParseError;
 use crate::{
-    dirstate::EntryState,
     utils::{
         files,
         hg_path::{HgPath, HgPathBuf, HgPathError},
@@ -49,7 +48,7 @@ impl DirsMultiset {
             let filename = filename.as_ref();
             // This `if` is optimized out of the loop
             if only_tracked {
-                if entry.state() != EntryState::Removed {
+                if !entry.removed() {
                     multiset.add_path(filename)?;
                 }
             } else {
@@ -215,6 +214,8 @@ impl<'a> DirsChildrenMultiset<'a> {
 
 #[cfg(test)]
 mod tests {
+    use crate::EntryState;
+
     use super::*;
 
     #[test]
