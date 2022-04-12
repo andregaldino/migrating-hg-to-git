@@ -13,7 +13,6 @@ use crate::utils::files::get_path_from_bytes;
 use crate::utils::hg_path::HgPath;
 use crate::BadMatch;
 use crate::DirstateStatus;
-use crate::EntryState;
 use crate::HgPathBuf;
 use crate::HgPathCow;
 use crate::PatternFileWarning;
@@ -459,17 +458,23 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
             )?
         } else {
             if file_or_symlink && self.matcher.matches(hg_path) {
-                if let Some(state) = dirstate_node.state()? {
-                    match state {
-                        EntryState::Added => {
-                            self.push_outcome(Outcome::Added, &dirstate_node)?
-                        }
-                        EntryState::Removed => self
-                            .push_outcome(Outcome::Removed, &dirstate_node)?,
-                        EntryState::Merged => self
-                            .push_outcome(Outcome::Modified, &dirstate_node)?,
-                        EntryState::Normal => self
-                            .handle_normal_file(&dirstate_node, fs_metadata)?,
+                if let Some(entry) = dirstate_node.entry()? {
+                    if !entry.any_tracked() {
+                        // Forward-compat if we start tracking unknown/ignored
+                        // files for caching reasons
+                        self.mark_unknown_or_ignored(
+                            has_ignored_ancestor,
+                            hg_path,
+                        );
+                    }
+                    if entry.added() {
+                        self.push_outcome(Outcome::Added, &dirstate_node)?;
+                    } else if entry.removed() {
+                        self.push_outcome(Outcome::Removed, &dirstate_node)?;
+                    } else if entry.modified() {
+                        self.push_outcome(Outcome::Modified, &dirstate_node)?;
+                    } else {
+                        self.handle_normal_file(&dirstate_node, fs_metadata)?;
                     }
                 } else {
                     // `node.entry.is_none()` indicates a "directory"
@@ -579,8 +584,7 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         Ok(())
     }
 
-    /// A file with `EntryState::Normal` in the dirstate was found in the
-    /// filesystem
+    /// A file that is clean in the dirstate was found in the filesystem
     fn handle_normal_file(
         &self,
         dirstate_node: &NodeRef<'tree, 'on_disk>,
