@@ -587,7 +587,7 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
     ) -> Result<(), DirstateV2ParseError> {
         for node in read_nodes(on_disk, nodes)? {
             if let Some(entry) = node.entry()? {
-                if entry.state().is_tracked() {
+                if entry.tracked() {
                     f(node.full_path(on_disk)?)
                 }
             }

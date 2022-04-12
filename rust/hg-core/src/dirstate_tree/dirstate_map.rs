@@ -477,7 +477,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
         let parents = parse_dirstate_entries(
             map.on_disk,
             |path, entry, copy_source| {
-                let tracked = entry.state().is_tracked();
+                let tracked = entry.tracked();
                 let node = Self::get_or_insert_node_inner(
                     map.on_disk,
                     &mut map.unreachable_bytes,

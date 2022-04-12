@@ -401,7 +401,7 @@ impl Repo {
 
     pub fn has_subrepos(&self) -> Result<bool, DirstateError> {
         if let Some(entry) = self.dirstate_map()?.get(HgPath::new(".hgsub"))? {
-            Ok(entry.state().is_tracked())
+            Ok(entry.tracked())
         } else {
             Ok(false)
         }

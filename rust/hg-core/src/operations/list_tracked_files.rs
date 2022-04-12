@@ -51,7 +51,7 @@ impl Dirstate {
                 let _parents = parse_dirstate_entries(
                     &self.content,
                     |path, entry, _copy_source| {
-                        if entry.state().is_tracked() {
+                        if entry.tracked() {
                             files.push(path)
                         }
                         Ok(())
