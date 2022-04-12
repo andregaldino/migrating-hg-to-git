@@ -22,7 +22,6 @@ use crate::DirstateError;
 use crate::DirstateMapError;
 use crate::DirstateParents;
 use crate::DirstateStatus;
-use crate::EntryState;
 use crate::FastHashbrownMap as FastHashMap;
 use crate::PatternFileWarning;
 use crate::StatusError;
@@ -344,18 +343,6 @@ impl<'tree, 'on_disk> NodeRef<'tree, 'on_disk> {
             }
             NodeRef::OnDisk(node) => node.entry(),
         }
-    }
-
-    pub(super) fn state(
-        &self,
-    ) -> Result<Option<EntryState>, DirstateV2ParseError> {
-        Ok(self.entry()?.and_then(|e| {
-            if e.any_tracked() {
-                Some(e.state())
-            } else {
-                None
-            }
-        }))
     }
 
     pub(super) fn cached_directory_mtime(
