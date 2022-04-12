@@ -18,7 +18,7 @@ use super::patch;
 use crate::errors::HgError;
 use crate::repo::Repo;
 use crate::revlog::Revision;
-use crate::{requirements, Node, NULL_REVISION};
+use crate::{Node, NULL_REVISION};
 
 const REVISION_FLAG_CENSORED: u16 = 1 << 15;
 const REVISION_FLAG_ELLIPSIS: u16 = 1 << 14;
@@ -84,6 +84,7 @@ impl Revlog {
         repo: &Repo,
         index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
+        use_nodemap: bool,
     ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
         let index = {
@@ -111,11 +112,7 @@ impl Revlog {
 
         let nodemap = if index.is_inline() {
             None
-        } else if !repo
-            .requirements()
-            .contains(requirements::NODEMAP_REQUIREMENT)
-        {
-            // If .hg/requires does not opt it, don’t try to open a nodemap
+        } else if !use_nodemap {
             None
         } else {
             NodeMapDocket::read_from_file(&repo.store_vfs(), index_path)?.map(

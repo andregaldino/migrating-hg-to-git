@@ -6,6 +6,7 @@
 // GNU General Public License version 2 or any later version.
 
 use crate::repo::Repo;
+use crate::requirements;
 use crate::revlog::revlog::{Revlog, RevlogError};
 
 /// Kind of data to debug
@@ -25,7 +26,10 @@ pub fn debug_data(
         DebugDataKind::Changelog => "00changelog.i",
         DebugDataKind::Manifest => "00manifest.i",
     };
-    let revlog = Revlog::open(repo, index_file, None)?;
+    let use_nodemap = repo
+        .requirements()
+        .contains(requirements::NODEMAP_REQUIREMENT);
+    let revlog = Revlog::open(repo, index_file, None, use_nodemap)?;
     let rev =
         crate::revset::resolve_rev_number_or_hex_prefix(revset, &revlog)?;
     let data = revlog.get_rev_data(rev)?;

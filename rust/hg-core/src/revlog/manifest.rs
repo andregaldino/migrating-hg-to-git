@@ -1,5 +1,6 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
+use crate::requirements;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
@@ -15,7 +16,10 @@ pub struct Manifestlog {
 impl Manifestlog {
     /// Open the `manifest` of a repository given by its root.
     pub fn open(repo: &Repo) -> Result<Self, HgError> {
-        let revlog = Revlog::open(repo, "00manifest.i", None)?;
+        let use_nodemap = repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT);
+        let revlog = Revlog::open(repo, "00manifest.i", None, use_nodemap)?;
         Ok(Self { revlog })
     }
 

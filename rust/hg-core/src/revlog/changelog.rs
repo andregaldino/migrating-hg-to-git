@@ -1,5 +1,6 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
+use crate::requirements;
 use crate::revlog::revlog::{Revlog, RevlogEntry, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
@@ -17,7 +18,10 @@ pub struct Changelog {
 impl Changelog {
     /// Open the `changelog` of a repository given by its root.
     pub fn open(repo: &Repo) -> Result<Self, HgError> {
-        let revlog = Revlog::open(repo, "00changelog.i", None)?;
+        let use_nodemap = repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT);
+        let revlog = Revlog::open(repo, "00changelog.i", None, use_nodemap)?;
         Ok(Self { revlog })
     }
 
@@ -213,7 +217,6 @@ fn debug_bytes(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use itertools::Itertools;
     use pretty_assertions::assert_eq;
 
     #[test]

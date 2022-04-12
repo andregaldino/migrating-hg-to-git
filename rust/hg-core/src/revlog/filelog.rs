@@ -1,5 +1,6 @@
 use crate::errors::HgError;
 use crate::repo::Repo;
+use crate::requirements;
 use crate::revlog::path_encode::path_encode;
 use crate::revlog::revlog::RevlogEntry;
 use crate::revlog::revlog::{Revlog, RevlogError};
@@ -20,7 +21,11 @@ impl Filelog {
     pub fn open(repo: &Repo, file_path: &HgPath) -> Result<Self, HgError> {
         let index_path = store_path(file_path, b".i");
         let data_path = store_path(file_path, b".d");
-        let revlog = Revlog::open(repo, index_path, Some(&data_path))?;
+        let use_nodemap = repo
+            .requirements()
+            .contains(requirements::NODEMAP_REQUIREMENT);
+        let revlog =
+            Revlog::open(repo, index_path, Some(&data_path), use_nodemap)?;
         Ok(Self { revlog })
     }
 
