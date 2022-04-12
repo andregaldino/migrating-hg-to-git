@@ -653,10 +653,15 @@ impl<'a, 'tree, 'on_disk> StatusCommon<'a, 'tree, 'on_disk> {
         &self,
         dirstate_node: &NodeRef<'tree, 'on_disk>,
     ) -> Result<(), DirstateV2ParseError> {
-        if let Some(state) = dirstate_node.state()? {
+        if let Some(entry) = dirstate_node.entry()? {
+            if !entry.any_tracked() {
+                // Future-compat for when we start storing ignored and unknown
+                // files for caching reasons
+                return Ok(());
+            }
             let path = dirstate_node.full_path(self.dmap.on_disk)?;
             if self.matcher.matches(path) {
-                if let EntryState::Removed = state {
+                if entry.removed() {
                     self.push_outcome(Outcome::Removed, dirstate_node)?
                 } else {
                     self.push_outcome(Outcome::Deleted, &dirstate_node)?
