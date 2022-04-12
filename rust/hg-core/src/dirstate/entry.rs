@@ -655,8 +655,7 @@ impl DirstateEntry {
     }
 
     pub(crate) fn is_from_other_parent(&self) -> bool {
-        self.state() == EntryState::Normal
-            && self.size() == SIZE_FROM_OTHER_PARENT
+        self.flags.contains(Flags::WDIR_TRACKED | Flags::P2_INFO)
     }
 
     // TODO: other platforms
