@@ -26,7 +26,7 @@ use hg::{
     dirstate::StateMapIter, dirstate_tree::on_disk::DirstateV2ParseError,
     dirstate_tree::owning::OwningDirstateMap, revlog::Node,
     utils::files::normalize_case, utils::hg_path::HgPath, DirstateEntry,
-    DirstateError, DirstateParents, EntryState,
+    DirstateError, DirstateParents,
 };
 
 // TODO
@@ -269,7 +269,7 @@ py_class!(pub class DirstateMap |py| {
         let dict = PyDict::new(py);
         for item in self.inner(py).borrow_mut().iter() {
             let (path, entry) = item.map_err(|e| v2_error(py, e))?;
-            if entry.state() != EntryState::Removed {
+            if !entry.removed() {
                 let key = normalize_case(path);
                 let value = path;
                 dict.set_item(
