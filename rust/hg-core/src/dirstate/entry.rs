@@ -417,6 +417,11 @@ impl DirstateEntry {
         self.flags.contains(Flags::WDIR_TRACKED) && !self.in_either_parent()
     }
 
+    pub fn modified(&self) -> bool {
+        self.flags
+            .contains(Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO)
+    }
+
     pub fn maybe_clean(&self) -> bool {
         if !self.flags.contains(Flags::WDIR_TRACKED) {
             false
@@ -463,10 +468,7 @@ impl DirstateEntry {
         }
         if self.removed() {
             EntryState::Removed
-        } else if self
-            .flags
-            .contains(Flags::WDIR_TRACKED | Flags::P1_TRACKED | Flags::P2_INFO)
-        {
+        } else if self.modified() {
             EntryState::Merged
         } else if self.added() {
             EntryState::Added
