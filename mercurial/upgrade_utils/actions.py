@@ -37,6 +37,7 @@ RECLONES_REQUIREMENTS = {
 def preservedrequirements(repo):
     preserved = {
         requirements.SHARED_REQUIREMENT,
+        requirements.NARROW_REQUIREMENT,
     }
     return preserved & repo.requirements
 
@@ -1004,7 +1005,7 @@ def supportremovedrequirements(repo):
 def supporteddestrequirements(repo):
     """Obtain requirements that upgrade supports in the destination.
 
-    If the result of the upgrade would create requirements not in this set,
+    If the result of the upgrade would have requirements not in this set,
     the upgrade is disallowed.
 
     Extensions should monkeypatch this to add their custom requirements.
@@ -1024,6 +1025,7 @@ def supporteddestrequirements(repo):
         requirements.SHARESAFE_REQUIREMENT,
         requirements.SPARSEREVLOG_REQUIREMENT,
         requirements.STORE_REQUIREMENT,
+        requirements.NARROW_REQUIREMENT,
     }
     for name in compression.compengines:
         engine = compression.compengines[name]
