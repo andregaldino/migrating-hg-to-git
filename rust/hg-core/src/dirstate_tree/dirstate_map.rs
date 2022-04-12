@@ -1182,8 +1182,8 @@ impl OwningDirstateMap {
             if let Some(node) = map.get_node(directory)? {
                 // A node without a `DirstateEntry` was created to hold child
                 // nodes, and is therefore a directory.
-                let state = node.state()?;
-                Ok(state.is_none() && node.tracked_descendants_count() > 0)
+                let is_dir = node.entry()?.is_none();
+                Ok(is_dir && node.tracked_descendants_count() > 0)
             } else {
                 Ok(false)
             }
@@ -1198,8 +1198,8 @@ impl OwningDirstateMap {
             if let Some(node) = map.get_node(directory)? {
                 // A node without a `DirstateEntry` was created to hold child
                 // nodes, and is therefore a directory.
-                let state = node.state()?;
-                Ok(state.is_none() && node.descendants_with_entry_count() > 0)
+                let is_dir = node.entry()?.is_none();
+                Ok(is_dir && node.descendants_with_entry_count() > 0)
             } else {
                 Ok(false)
             }
