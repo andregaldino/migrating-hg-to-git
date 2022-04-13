@@ -32,7 +32,7 @@ const REVIDX_KNOWN_FLAGS: u16 = REVISION_FLAG_CENSORED
     | REVISION_FLAG_EXTSTORED
     | REVISION_FLAG_HASCOPIESINFO;
 
-#[derive(derive_more::From)]
+#[derive(Debug, derive_more::From)]
 pub enum RevlogError {
     InvalidRevision,
     /// Working directory is not supported
@@ -504,4 +504,93 @@ fn hash(
     }
     hasher.update(data);
     *hasher.finalize().as_ref()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::index::{IndexEntryBuilder, INDEX_ENTRY_SIZE};
+    use itertools::Itertools;
+
+    #[test]
+    fn test_empty() {
+        let temp = tempfile::tempdir().unwrap();
+        let vfs = Vfs { base: temp.path() };
+        std::fs::write(temp.path().join("foo.i"), b"").unwrap();
+        let revlog = Revlog::open(&vfs, "foo.i", None, false).unwrap();
+        assert!(revlog.is_empty());
+        assert_eq!(revlog.len(), 0);
+        assert!(revlog.get_entry(0).is_err());
+        assert!(!revlog.has_rev(0));
+    }
+
+    #[test]
+    fn test_inline() {
+        let temp = tempfile::tempdir().unwrap();
+        let vfs = Vfs { base: temp.path() };
+        let node0 = Node::from_hex("2ed2a3912a0b24502043eae84ee4b279c18b90dd")
+            .unwrap();
+        let node1 = Node::from_hex("b004912a8510032a0350a74daa2803dadfb00e12")
+            .unwrap();
+        let node2 = Node::from_hex("dd6ad206e907be60927b5a3117b97dffb2590582")
+            .unwrap();
+        let entry0_bytes = IndexEntryBuilder::new()
+            .is_first(true)
+            .with_version(1)
+            .with_inline(true)
+            .with_offset(INDEX_ENTRY_SIZE)
+            .with_node(node0)
+            .build();
+        let entry1_bytes = IndexEntryBuilder::new()
+            .with_offset(INDEX_ENTRY_SIZE)
+            .with_node(node1)
+            .build();
+        let entry2_bytes = IndexEntryBuilder::new()
+            .with_offset(INDEX_ENTRY_SIZE)
+            .with_p1(0)
+            .with_p2(1)
+            .with_node(node2)
+            .build();
+        let contents = vec![entry0_bytes, entry1_bytes, entry2_bytes]
+            .into_iter()
+            .flatten()
+            .collect_vec();
+        std::fs::write(temp.path().join("foo.i"), contents).unwrap();
+        let revlog = Revlog::open(&vfs, "foo.i", None, false).unwrap();
+
+        let entry0 = revlog.get_entry(0).ok().unwrap();
+        assert_eq!(entry0.revision(), 0);
+        assert_eq!(*entry0.node(), node0);
+        assert!(!entry0.has_p1());
+        assert_eq!(entry0.p1(), None);
+        assert_eq!(entry0.p2(), None);
+        let p1_entry = entry0.p1_entry().unwrap();
+        assert!(p1_entry.is_none());
+        let p2_entry = entry0.p2_entry().unwrap();
+        assert!(p2_entry.is_none());
+
+        let entry1 = revlog.get_entry(1).ok().unwrap();
+        assert_eq!(entry1.revision(), 1);
+        assert_eq!(*entry1.node(), node1);
+        assert!(!entry1.has_p1());
+        assert_eq!(entry1.p1(), None);
+        assert_eq!(entry1.p2(), None);
+        let p1_entry = entry1.p1_entry().unwrap();
+        assert!(p1_entry.is_none());
+        let p2_entry = entry1.p2_entry().unwrap();
+        assert!(p2_entry.is_none());
+
+        let entry2 = revlog.get_entry(2).ok().unwrap();
+        assert_eq!(entry2.revision(), 2);
+        assert_eq!(*entry2.node(), node2);
+        assert!(entry2.has_p1());
+        assert_eq!(entry2.p1(), Some(0));
+        assert_eq!(entry2.p2(), Some(1));
+        let p1_entry = entry2.p1_entry().unwrap();
+        assert!(p1_entry.is_some());
+        assert_eq!(p1_entry.unwrap().revision(), 0);
+        let p2_entry = entry2.p2_entry().unwrap();
+        assert!(p2_entry.is_some());
+        assert_eq!(p2_entry.unwrap().revision(), 1);
+    }
 }
