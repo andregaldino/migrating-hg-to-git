@@ -1432,6 +1432,14 @@ class ui:
             # HGPLAINEXCEPT=pager, and the user didn't specify --debug.
             return
 
+        # py2exe doesn't appear to be able to use legacy I/O, and nothing is
+        # output to the pager for paged commands.  Piping to `more` in cmd.exe
+        # works, but is easy to forget.  Just disable pager for py2exe, but
+        # leave it working for pyoxidizer and exewrapper builds.
+        if pycompat.iswindows and getattr(sys, "frozen", None) == "console_exe":
+            self.debug(b"pager is unavailable with py2exe packaging\n")
+            return
+
         pagercmd = self.config(b'pager', b'pager', rcutil.fallbackpager)
         if not pagercmd:
             return
