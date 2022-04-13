@@ -1003,6 +1003,33 @@ Test that update_hash_refs works.
   o  0: d20a80d4def3 'base'
   
 
+Add an explicit test for rewrite_hash_refs when the detected prefix is
+ambiguous. Here's the super low-tech way I found this collision, if the hashing
+scheme ever changes:
+# hg init
+# echo test0 > test
+# hg ci -qAm 'test0' -u 'test' -d '0 0'
+# i=1
+# while [[ $(chg log -r . -T'{shortest(node, 6)}' | wc -c) -eq 6 ]]; do
+#   chg co -r 0000000000
+#   echo "test$i" > test
+#   chg ci -qAm "test$i" -u test -d '0 0'
+#   (( ++i ))
+# done
+  $ hg co -q 0000000000
+  $ echo test5281 > test
+  $ hg ci -qAm 'test5281'
+  $ hg co -q 000000000
+  $ echo test9912 > test
+  $ hg ci -qAm 'test9912'
+  $ hg co -q 4
+  $ echo contents > some_file
+  $ hg ci -qAm 'The previous two (parentless) commits had a hash prefix of b04363. Check that rewrite_hash_refs will not fail because of that.'
+  $ hg rebase -r . -d 5
+  rebasing 8:5c4cdabf5769 tip "The previous two (parentless) commits had a hash prefix of b04363. Check that rewrite_hash_refs will not fail because of that."
+  abort: 00changelog@b04363: ambiguous identifier (known-bad-output !)
+  [50]
+
   $ cd ..
 
 Test (virtual) working directory without changes, created by merge conflict
