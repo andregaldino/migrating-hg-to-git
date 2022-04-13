@@ -197,7 +197,7 @@ def hasheader(cc, headername):
 try:
     import py2exe
 
-    py2exe.Distribution  # silence unused import warning
+    py2exe.patch_distutils()
     py2exeloaded = True
     # import py2exe's patched Distribution class
     from distutils.core import Distribution
