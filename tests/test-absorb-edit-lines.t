@@ -15,10 +15,10 @@ Make some commits:
 
 absorb --edit-lines will run the editor if filename is provided:
 
-  $ hg absorb --edit-lines --apply-changes
+  $ hg absorb --edit-lines
   nothing applied
   [1]
-  $ HGEDITOR=cat hg absorb --edit-lines --apply-changes a
+  $ HGEDITOR=cat hg absorb --edit-lines a
   HG: editing a
   HG: "y" means the line to the right exists in the changeset to the top
   HG:
@@ -43,7 +43,7 @@ Edit the file using --edit-lines:
   >     y   : f
   >     yyy : g
   > EOF
-  $ HGEDITOR='cat editortext >' hg absorb -q --edit-lines --apply-changes a
+  $ HGEDITOR='cat editortext >' hg absorb -q --edit-lines a
   $ hg cat -r 0 a
   d  
   e

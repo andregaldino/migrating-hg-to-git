@@ -1045,6 +1045,10 @@ def absorb(ui, repo, stack=None, targetctx=None, pats=None, opts=None):
         origchunks = patch.parsepatch(diff)
         chunks = cmdutil.recordfilter(ui, origchunks, matcher)[0]
         targetctx = overlaydiffcontext(stack[-1], chunks)
+    if opts.get(b'edit_lines'):
+        # If we're going to open the editor, don't ask the user to confirm
+        # first
+        opts[b'apply_changes'] = True
     fm = None
     if opts.get(b'print_changes') or not opts.get(b'apply_changes'):
         fm = ui.formatter(b'absorb', opts)
