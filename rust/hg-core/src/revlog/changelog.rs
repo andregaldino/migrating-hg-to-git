@@ -6,6 +6,7 @@ use crate::utils::hg_path::HgPath;
 use crate::vfs::Vfs;
 use itertools::Itertools;
 use std::ascii::escape_default;
+use std::borrow::Cow;
 use std::fmt::{Debug, Formatter};
 
 /// A specialized `Revlog` to work with `changelog` data format.
@@ -44,7 +45,7 @@ impl Changelog {
         &self,
         rev: Revision,
     ) -> Result<ChangelogRevisionData, RevlogError> {
-        let bytes = self.revlog.get_rev_data(rev)?.into_owned();
+        let bytes = self.revlog.get_rev_data(rev)?;
         if bytes.is_empty() {
             Ok(ChangelogRevisionData::null())
         } else {
@@ -71,9 +72,9 @@ impl Changelog {
 
 /// `Changelog` entry which knows how to interpret the `changelog` data bytes.
 #[derive(PartialEq)]
-pub struct ChangelogRevisionData {
+pub struct ChangelogRevisionData<'changelog> {
     /// The data bytes of the `changelog` entry.
-    bytes: Vec<u8>,
+    bytes: Cow<'changelog, [u8]>,
     /// The end offset for the hex manifest (not including the newline)
     manifest_end: usize,
     /// The end offset for the user+email (not including the newline)
@@ -85,8 +86,8 @@ pub struct ChangelogRevisionData {
     files_end: usize,
 }
 
-impl ChangelogRevisionData {
-    fn new(bytes: Vec<u8>) -> Result<Self, HgError> {
+impl<'changelog> ChangelogRevisionData<'changelog> {
+    fn new(bytes: Cow<'changelog, [u8]>) -> Result<Self, HgError> {
         let mut line_iter = bytes.split(|b| b == &b'\n');
         let manifest_end = line_iter
             .next()
@@ -129,9 +130,9 @@ impl ChangelogRevisionData {
     }
 
     fn null() -> Self {
-        Self::new(
-            b"0000000000000000000000000000000000000000\n\n0 0\n\n".to_vec(),
-        )
+        Self::new(Cow::Borrowed(
+            b"0000000000000000000000000000000000000000\n\n0 0\n\n",
+        ))
         .unwrap()
     }
 
@@ -173,7 +174,7 @@ impl ChangelogRevisionData {
     }
 }
 
-impl Debug for ChangelogRevisionData {
+impl Debug for ChangelogRevisionData<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ChangelogRevisionData")
             .field("bytes", &debug_bytes(&self.bytes))
@@ -219,28 +220,30 @@ mod tests {
     #[test]
     fn test_create_changelogrevisiondata_invalid() {
         // Completely empty
-        assert!(ChangelogRevisionData::new(b"abcd".to_vec()).is_err());
+        assert!(ChangelogRevisionData::new(Cow::Borrowed(b"abcd")).is_err());
         // No newline after manifest
-        assert!(ChangelogRevisionData::new(b"abcd".to_vec()).is_err());
+        assert!(ChangelogRevisionData::new(Cow::Borrowed(b"abcd")).is_err());
         // No newline after user
-        assert!(ChangelogRevisionData::new(b"abcd\n".to_vec()).is_err());
+        assert!(ChangelogRevisionData::new(Cow::Borrowed(b"abcd\n")).is_err());
         // No newline after timestamp
-        assert!(ChangelogRevisionData::new(b"abcd\n\n0 0".to_vec()).is_err());
+        assert!(
+            ChangelogRevisionData::new(Cow::Borrowed(b"abcd\n\n0 0")).is_err()
+        );
         // Missing newline after files
-        assert!(ChangelogRevisionData::new(
-            b"abcd\n\n0 0\nfile1\nfile2".to_vec()
-        )
+        assert!(ChangelogRevisionData::new(Cow::Borrowed(
+            b"abcd\n\n0 0\nfile1\nfile2"
+        ))
         .is_err(),);
         // Only one newline after files
-        assert!(ChangelogRevisionData::new(
-            b"abcd\n\n0 0\nfile1\nfile2\n".to_vec()
-        )
+        assert!(ChangelogRevisionData::new(Cow::Borrowed(
+            b"abcd\n\n0 0\nfile1\nfile2\n"
+        ))
         .is_err(),);
     }
 
     #[test]
     fn test_create_changelogrevisiondata() {
-        let data = ChangelogRevisionData::new(
+        let data = ChangelogRevisionData::new(Cow::Borrowed(
             b"0123456789abcdef0123456789abcdef01234567
 Some One <someone@example.com>
 0 0
@@ -249,9 +252,8 @@ file2
 
 some
 commit
-message"
-                .to_vec(),
-        )
+message",
+        ))
         .unwrap();
         assert_eq!(
             data.manifest_node().unwrap(),
