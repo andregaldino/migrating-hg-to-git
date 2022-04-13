@@ -112,7 +112,9 @@ class WriteAllWrapper(object):
         total_to_write = len(s)
         total_written = 0
         while total_written < total_to_write:
-            total_written += write1(m[total_written:])
+            c = write1(m[total_written:])
+            if c:
+                total_written += c
         return total_written
 
 
