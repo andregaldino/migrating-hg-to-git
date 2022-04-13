@@ -61,6 +61,10 @@ try:
     # Force loading of the resources module
     resources.open_binary  # pytype: disable=module-attr
 
+    # py2exe raises an AssertionError if uses importlib.resources
+    if getattr(sys, "frozen", None) in ("console_exe", "windows_exe"):
+        raise ImportError
+
 except (ImportError, AttributeError):
     # importlib.resources was not found (almost definitely because we're on a
     # Python version before 3.7)
