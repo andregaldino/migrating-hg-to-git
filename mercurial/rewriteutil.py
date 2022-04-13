@@ -215,9 +215,9 @@ def update_hash_refs(repo, commitmsg, pending=None):
     for h in hashes:
         try:
             fullnode = scmutil.resolvehexnodeidprefix(unfi, h)
-        except error.WdirUnsupported:
-            # Someone has an fffff... in a commit message we're
-            # rewriting. Don't try rewriting that.
+        except (error.WdirUnsupported, error.AmbiguousPrefixLookupError):
+            # Someone has an fffff... or some other prefix that's ambiguous in a
+            # commit message we're rewriting. Don't try rewriting that.
             continue
         if fullnode is None:
             continue

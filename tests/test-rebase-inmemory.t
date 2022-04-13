@@ -1027,8 +1027,7 @@ scheme ever changes:
   $ hg ci -qAm 'The previous two (parentless) commits had a hash prefix of b04363. Check that rewrite_hash_refs will not fail because of that.'
   $ hg rebase -r . -d 5
   rebasing 8:5c4cdabf5769 tip "The previous two (parentless) commits had a hash prefix of b04363. Check that rewrite_hash_refs will not fail because of that."
-  abort: 00changelog@b04363: ambiguous identifier (known-bad-output !)
-  [50]
+  saved backup bundle to $TESTTMP/keep_merge/.hg/strip-backup/5c4cdabf5769-335e1828-rebase.hg
 
   $ cd ..
 
