@@ -29,7 +29,8 @@ pub fn debug_data(
     let use_nodemap = repo
         .requirements()
         .contains(requirements::NODEMAP_REQUIREMENT);
-    let revlog = Revlog::open(repo, index_file, None, use_nodemap)?;
+    let revlog =
+        Revlog::open(&repo.store_vfs(), index_file, None, use_nodemap)?;
     let rev =
         crate::revset::resolve_rev_number_or_hex_prefix(revset, &revlog)?;
     let data = revlog.get_rev_data(rev)?;

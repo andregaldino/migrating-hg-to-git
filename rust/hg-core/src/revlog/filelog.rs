@@ -20,7 +20,12 @@ impl Filelog {
     pub fn open(repo: &Repo, file_path: &HgPath) -> Result<Self, HgError> {
         let index_path = store_path(file_path, b".i");
         let data_path = store_path(file_path, b".d");
-        let revlog = Revlog::open(repo, index_path, Some(&data_path), false)?;
+        let revlog = Revlog::open(
+            &repo.store_vfs(),
+            index_path,
+            Some(&data_path),
+            false,
+        )?;
         Ok(Self { revlog })
     }
 

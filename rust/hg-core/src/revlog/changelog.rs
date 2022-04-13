@@ -21,7 +21,12 @@ impl Changelog {
         let use_nodemap = repo
             .requirements()
             .contains(requirements::NODEMAP_REQUIREMENT);
-        let revlog = Revlog::open(repo, "00changelog.i", None, use_nodemap)?;
+        let revlog = Revlog::open(
+            &repo.store_vfs(),
+            "00changelog.i",
+            None,
+            use_nodemap,
+        )?;
         Ok(Self { revlog })
     }
 

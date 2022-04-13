@@ -16,8 +16,8 @@ use super::nodemap::{NodeMap, NodeMapError};
 use super::nodemap_docket::NodeMapDocket;
 use super::patch;
 use crate::errors::HgError;
-use crate::repo::Repo;
 use crate::revlog::Revision;
+use crate::vfs::Vfs;
 use crate::{Node, NULL_REVISION};
 
 const REVISION_FLAG_CENSORED: u16 = 1 << 15;
@@ -81,14 +81,14 @@ impl Revlog {
     /// interleaved.
     #[timed]
     pub fn open(
-        repo: &Repo,
+        store_vfs: &Vfs,
         index_path: impl AsRef<Path>,
         data_path: Option<&Path>,
         use_nodemap: bool,
     ) -> Result<Self, HgError> {
         let index_path = index_path.as_ref();
         let index = {
-            match repo.store_vfs().mmap_open_opt(&index_path)? {
+            match store_vfs.mmap_open_opt(&index_path)? {
                 None => Index::new(Box::new(vec![])),
                 Some(index_mmap) => {
                     let index = Index::new(Box::new(index_mmap))?;
@@ -106,7 +106,7 @@ impl Revlog {
                 None
             } else {
                 let data_path = data_path.unwrap_or(&default_data_path);
-                let data_mmap = repo.store_vfs().mmap_open(data_path)?;
+                let data_mmap = store_vfs.mmap_open(data_path)?;
                 Some(Box::new(data_mmap))
             };
 
@@ -115,7 +115,7 @@ impl Revlog {
         } else if !use_nodemap {
             None
         } else {
-            NodeMapDocket::read_from_file(&repo.store_vfs(), index_path)?.map(
+            NodeMapDocket::read_from_file(store_vfs, index_path)?.map(
                 |(docket, data)| {
                     nodemap::NodeTree::load_bytes(
                         Box::new(data),
