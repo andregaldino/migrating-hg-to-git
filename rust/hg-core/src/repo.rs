@@ -187,8 +187,8 @@ impl Repo {
                 Self::read_dirstate_data_file_uuid,
             ),
             dirstate_map: LazyCell::new(Self::new_dirstate_map),
-            changelog: LazyCell::new(Changelog::open),
-            manifestlog: LazyCell::new(Manifestlog::open),
+            changelog: LazyCell::new(Self::new_changelog),
+            manifestlog: LazyCell::new(Self::new_manifestlog),
         };
 
         requirements::check(&repo)?;
@@ -344,12 +344,26 @@ impl Repo {
         self.dirstate_map.get_mut_or_init(self)
     }
 
+    fn new_changelog(&self) -> Result<Changelog, HgError> {
+        let use_nodemap = self
+            .requirements
+            .contains(requirements::NODEMAP_REQUIREMENT);
+        Changelog::open(&self.store_vfs(), use_nodemap)
+    }
+
     pub fn changelog(&self) -> Result<Ref<Changelog>, HgError> {
         self.changelog.get_or_init(self)
     }
 
     pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, HgError> {
         self.changelog.get_mut_or_init(self)
+    }
+
+    fn new_manifestlog(&self) -> Result<Manifestlog, HgError> {
+        let use_nodemap = self
+            .requirements
+            .contains(requirements::NODEMAP_REQUIREMENT);
+        Manifestlog::open(&self.store_vfs(), use_nodemap)
     }
 
     pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, HgError> {

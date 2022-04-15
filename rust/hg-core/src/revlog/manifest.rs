@@ -1,11 +1,10 @@
 use crate::errors::HgError;
-use crate::repo::Repo;
-use crate::requirements;
 use crate::revlog::revlog::{Revlog, RevlogError};
 use crate::revlog::Revision;
 use crate::revlog::{Node, NodePrefix};
 use crate::utils::hg_path::HgPath;
 use crate::utils::SliceExt;
+use crate::vfs::Vfs;
 
 /// A specialized `Revlog` to work with `manifest` data format.
 pub struct Manifestlog {
@@ -15,16 +14,9 @@ pub struct Manifestlog {
 
 impl Manifestlog {
     /// Open the `manifest` of a repository given by its root.
-    pub fn open(repo: &Repo) -> Result<Self, HgError> {
-        let use_nodemap = repo
-            .requirements()
-            .contains(requirements::NODEMAP_REQUIREMENT);
-        let revlog = Revlog::open(
-            &repo.store_vfs(),
-            "00manifest.i",
-            None,
-            use_nodemap,
-        )?;
+    pub fn open(store_vfs: &Vfs, use_nodemap: bool) -> Result<Self, HgError> {
+        let revlog =
+            Revlog::open(store_vfs, "00manifest.i", None, use_nodemap)?;
         Ok(Self { revlog })
     }
 
