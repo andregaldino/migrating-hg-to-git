@@ -98,35 +98,35 @@ const SUPPORTED: &[&str] = &[
 
 // Copied from mercurial/requirements.py:
 
-pub(crate) const DIRSTATE_V2_REQUIREMENT: &str = "dirstate-v2";
+pub const DIRSTATE_V2_REQUIREMENT: &str = "dirstate-v2";
 
 /// When narrowing is finalized and no longer subject to format changes,
 /// we should move this to just "narrow" or similar.
 #[allow(unused)]
-pub(crate) const NARROW_REQUIREMENT: &str = "narrowhg-experimental";
+pub const NARROW_REQUIREMENT: &str = "narrowhg-experimental";
 
 /// Bookmarks must be stored in the `store` part of the repository and will be
 /// share accross shares
 #[allow(unused)]
-pub(crate) const BOOKMARKS_IN_STORE_REQUIREMENT: &str = "bookmarksinstore";
+pub const BOOKMARKS_IN_STORE_REQUIREMENT: &str = "bookmarksinstore";
 
 /// Enables sparse working directory usage
 #[allow(unused)]
-pub(crate) const SPARSE_REQUIREMENT: &str = "exp-sparse";
+pub const SPARSE_REQUIREMENT: &str = "exp-sparse";
 
 /// Enables the internal phase which is used to hide changesets instead
 /// of stripping them
 #[allow(unused)]
-pub(crate) const INTERNAL_PHASE_REQUIREMENT: &str = "internal-phase";
+pub const INTERNAL_PHASE_REQUIREMENT: &str = "internal-phase";
 
 /// Stores manifest in Tree structure
 #[allow(unused)]
-pub(crate) const TREEMANIFEST_REQUIREMENT: &str = "treemanifest";
+pub const TREEMANIFEST_REQUIREMENT: &str = "treemanifest";
 
 /// Increment the sub-version when the revlog v2 format changes to lock out old
 /// clients.
 #[allow(unused)]
-pub(crate) const REVLOGV2_REQUIREMENT: &str = "exp-revlogv2.1";
+pub const REVLOGV2_REQUIREMENT: &str = "exp-revlogv2.1";
 
 /// A repository with the sparserevlog feature will have delta chains that
 /// can spread over a larger span. Sparse reading cuts these large spans into
@@ -137,32 +137,32 @@ pub(crate) const REVLOGV2_REQUIREMENT: &str = "exp-revlogv2.1";
 /// chain. This is why once a repository has enabled sparse-read, it becomes
 /// required.
 #[allow(unused)]
-pub(crate) const SPARSEREVLOG_REQUIREMENT: &str = "sparserevlog";
+pub const SPARSEREVLOG_REQUIREMENT: &str = "sparserevlog";
 
 /// A repository with the the copies-sidedata-changeset requirement will store
 /// copies related information in changeset's sidedata.
 #[allow(unused)]
-pub(crate) const COPIESSDC_REQUIREMENT: &str = "exp-copies-sidedata-changeset";
+pub const COPIESSDC_REQUIREMENT: &str = "exp-copies-sidedata-changeset";
 
 /// The repository use persistent nodemap for the changelog and the manifest.
 #[allow(unused)]
-pub(crate) const NODEMAP_REQUIREMENT: &str = "persistent-nodemap";
+pub const NODEMAP_REQUIREMENT: &str = "persistent-nodemap";
 
 /// Denotes that the current repository is a share
 #[allow(unused)]
-pub(crate) const SHARED_REQUIREMENT: &str = "shared";
+pub const SHARED_REQUIREMENT: &str = "shared";
 
 /// Denotes that current repository is a share and the shared source path is
 /// relative to the current repository root path
 #[allow(unused)]
-pub(crate) const RELATIVE_SHARED_REQUIREMENT: &str = "relshared";
+pub const RELATIVE_SHARED_REQUIREMENT: &str = "relshared";
 
 /// A repository with share implemented safely. The repository has different
 /// store and working copy requirements i.e. both `.hg/requires` and
 /// `.hg/store/requires` are present.
 #[allow(unused)]
-pub(crate) const SHARESAFE_REQUIREMENT: &str = "share-safe";
+pub const SHARESAFE_REQUIREMENT: &str = "share-safe";
 
 /// A repository that use zstd compression inside its revlog
 #[allow(unused)]
-pub(crate) const REVLOG_COMPRESSION_ZSTD: &str = "revlog-compression-zstd";
+pub const REVLOG_COMPRESSION_ZSTD: &str = "revlog-compression-zstd";
