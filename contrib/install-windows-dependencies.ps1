@@ -29,19 +29,19 @@ $PYTHON38_x86_SHA256 = "ad07633a1f0cd795f3bf9da33729f662281df196b4567fa795829f3b
 $PYTHON38_x64_URL = "https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe"
 $PYTHON38_x64_SHA256 = "7628244cb53408b50639d2c1287c659f4e29d3dfdb9084b11aed5870c0c6a48a"
 
-$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.9/python-3.9.9.exe"
-$PYTHON39_x86_SHA256 = "6646a5683adf14d35e8c53aab946895bc0f0b825f7acac3a62cc85ee7d0dc71a"
-$PYTHON39_X64_URL = "https://www.python.org/ftp/python/3.9.9/python-3.9.9-amd64.exe"
-$PYTHON39_x64_SHA256 = "137d59e5c0b01a8f1bdcba08344402ae658c81c6bf03b6602bd8b4e951ad0714"
+$PYTHON39_x86_URL = "https://www.python.org/ftp/python/3.9.12/python-3.9.12.exe"
+$PYTHON39_x86_SHA256 = "3d883326f30ac231c06b33f2a8ea700a185c20bf98d01da118079e9134d5fd20"
+$PYTHON39_X64_URL = "https://www.python.org/ftp/python/3.9.12/python-3.9.12-amd64.exe"
+$PYTHON39_x64_SHA256 = "2ba57ab2281094f78fc0227a27f4d47c90d94094e7cca35ce78419e616b3cb63"
 
-$PYTHON310_x86_URL = "https://www.python.org/ftp/python/3.10.0/python-3.10.0.exe"
-$PYTHON310_x86_SHA256 = "ea896eeefb1db9e12fb89ec77a6e28c9fe52b4a162a34c85d9688be2ec2392e8"
-$PYTHON310_X64_URL = "https://www.python.org/ftp/python/3.10.0/python-3.10.0-amd64.exe"
-$PYTHON310_x64_SHA256 = "cb580eb7dc55f9198e650f016645023e8b2224cf7d033857d12880b46c5c94ef"
+$PYTHON310_x86_URL = "https://www.python.org/ftp/python/3.10.4/python-3.10.4.exe"
+$PYTHON310_x86_SHA256 = "97c37c53c7a826f5b00e185754ab2a324a919f7afc469b20764b71715c80041d"
+$PYTHON310_X64_URL = "https://www.python.org/ftp/python/3.10.4/python-3.10.4-amd64.exe"
+$PYTHON310_x64_SHA256 = "a81fc4180f34e5733c3f15526c668ff55de096366f9006d8a44c0336704e50f1"
 
-# PIP 19.2.3.
-$PIP_URL = "https://github.com/pypa/get-pip/raw/309a56c5fd94bd1134053a541cb4657a4e47e09d/get-pip.py"
-$PIP_SHA256 = "57e3643ff19f018f8a00dfaa6b7e4620e3c1a7a2171fd218425366ec006b3bfe"
+# PIP 22.0.4.
+$PIP_URL = "https://github.com/pypa/get-pip/raw/38e54e5de07c66e875c11a1ebbdb938854625dd8/public/get-pip.py"
+$PIP_SHA256 = "e235c437e5c7d7524fbce3880ca39b917a73dc565e0c813465b7a7a329bb279a"
 
 $INNO_SETUP_URL = "http://files.jrsoftware.org/is/5/innosetup-5.6.1-unicode.exe"
 $INNO_SETUP_SHA256 = "27D49E9BC769E9D1B214C153011978DB90DC01C2ACD1DDCD9ED7B3FE3B96B538"
