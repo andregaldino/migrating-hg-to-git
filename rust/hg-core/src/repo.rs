@@ -246,6 +246,11 @@ impl Repo {
         self.requirements.contains(requirements::NARROW_REQUIREMENT)
     }
 
+    pub fn has_nodemap(&self) -> bool {
+        self.requirements
+            .contains(requirements::NODEMAP_REQUIREMENT)
+    }
+
     fn dirstate_file_contents(&self) -> Result<Vec<u8>, HgError> {
         Ok(self
             .hg_vfs()
@@ -345,10 +350,7 @@ impl Repo {
     }
 
     fn new_changelog(&self) -> Result<Changelog, HgError> {
-        let use_nodemap = self
-            .requirements
-            .contains(requirements::NODEMAP_REQUIREMENT);
-        Changelog::open(&self.store_vfs(), use_nodemap)
+        Changelog::open(&self.store_vfs(), self.has_nodemap())
     }
 
     pub fn changelog(&self) -> Result<Ref<Changelog>, HgError> {
@@ -360,10 +362,7 @@ impl Repo {
     }
 
     fn new_manifestlog(&self) -> Result<Manifestlog, HgError> {
-        let use_nodemap = self
-            .requirements
-            .contains(requirements::NODEMAP_REQUIREMENT);
-        Manifestlog::open(&self.store_vfs(), use_nodemap)
+        Manifestlog::open(&self.store_vfs(), self.has_nodemap())
     }
 
     pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, HgError> {
