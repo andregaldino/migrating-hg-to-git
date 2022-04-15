@@ -90,7 +90,13 @@ function Invoke-Process($path, $arguments) {
     $p = Start-Process -FilePath $path -ArgumentList $arguments -Wait -PassThru -WindowStyle Hidden
 
     if ($p.ExitCode -ne 0) {
-        throw "process exited non-0: $($p.ExitCode)"
+        # If the MSI is already installed, ignore the error
+        if ($p.ExitCode -eq 1638) {
+            Write-Output "program already installed; continuing..."
+        }
+        else {
+            throw "process exited non-0: $($p.ExitCode)"
+        }
     }
 }
 
@@ -150,7 +156,7 @@ function Install-Dependencies($prefix) {
     Install-Python3 "Python 3.7 32-bit" ${prefix}\assets\python37-x86.exe ${prefix}\python37-x86 ${pip}
     Install-Python3 "Python 3.7 64-bit" ${prefix}\assets\python37-x64.exe ${prefix}\python37-x64 ${pip}
     Install-Python3 "Python 3.8 32-bit" ${prefix}\assets\python38-x86.exe ${prefix}\python38-x86 ${pip}
-#    Install-Python3 "Python 3.8 64-bit" ${prefix}\assets\python38-x64.exe ${prefix}\python38-x64 ${pip}
+    Install-Python3 "Python 3.8 64-bit" ${prefix}\assets\python38-x64.exe ${prefix}\python38-x64 ${pip}
     Install-Python3 "Python 3.9 32-bit" ${prefix}\assets\python39-x86.exe ${prefix}\python39-x86 ${pip}
     Install-Python3 "Python 3.9 64-bit" ${prefix}\assets\python39-x64.exe ${prefix}\python39-x64 ${pip}
     Install-Python3 "Python 3.10 32-bit" ${prefix}\assets\python310-x86.exe ${prefix}\python310-x86 ${pip}
