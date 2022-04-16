@@ -282,6 +282,10 @@ impl<'a> IndexEntry<'a> {
         BigEndian::read_i32(&self.bytes[16..])
     }
 
+    pub fn link_revision(&self) -> Revision {
+        BigEndian::read_i32(&self.bytes[20..])
+    }
+
     pub fn p1(&self) -> Revision {
         BigEndian::read_i32(&self.bytes[24..])
     }
@@ -302,6 +306,7 @@ impl<'a> IndexEntry<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::node::NULL_NODE;
 
     #[cfg(test)]
     #[derive(Debug, Copy, Clone)]
@@ -314,6 +319,10 @@ mod tests {
         compressed_len: usize,
         uncompressed_len: usize,
         base_revision_or_base_of_delta_chain: Revision,
+        link_revision: Revision,
+        p1: Revision,
+        p2: Revision,
+        node: Node,
     }
 
     #[cfg(test)]
@@ -328,6 +337,10 @@ mod tests {
                 compressed_len: 0,
                 uncompressed_len: 0,
                 base_revision_or_base_of_delta_chain: 0,
+                link_revision: 0,
+                p1: NULL_REVISION,
+                p2: NULL_REVISION,
+                node: NULL_NODE,
             }
         }
 
@@ -374,6 +387,26 @@ mod tests {
             self
         }
 
+        pub fn with_link_revision(&mut self, value: Revision) -> &mut Self {
+            self.link_revision = value;
+            self
+        }
+
+        pub fn with_p1(&mut self, value: Revision) -> &mut Self {
+            self.p1 = value;
+            self
+        }
+
+        pub fn with_p2(&mut self, value: Revision) -> &mut Self {
+            self.p2 = value;
+            self
+        }
+
+        pub fn with_node(&mut self, value: Node) -> &mut Self {
+            self.node = value;
+            self
+        }
+
         pub fn build(&self) -> Vec<u8> {
             let mut bytes = Vec::with_capacity(INDEX_ENTRY_SIZE);
             if self.is_first {
@@ -396,6 +429,11 @@ mod tests {
             bytes.extend(
                 &self.base_revision_or_base_of_delta_chain.to_be_bytes(),
             );
+            bytes.extend(&self.link_revision.to_be_bytes());
+            bytes.extend(&self.p1.to_be_bytes());
+            bytes.extend(&self.p2.to_be_bytes());
+            bytes.extend(self.node.as_bytes());
+            bytes.extend(vec![0u8; 12]);
             bytes
         }
     }
@@ -511,6 +549,56 @@ mod tests {
         };
 
         assert_eq!(entry.base_revision_or_base_of_delta_chain(), 1)
+    }
+
+    #[test]
+    fn link_revision_test() {
+        let bytes = IndexEntryBuilder::new().with_link_revision(123).build();
+
+        let entry = IndexEntry {
+            bytes: &bytes,
+            offset_override: None,
+        };
+
+        assert_eq!(entry.link_revision(), 123);
+    }
+
+    #[test]
+    fn p1_test() {
+        let bytes = IndexEntryBuilder::new().with_p1(123).build();
+
+        let entry = IndexEntry {
+            bytes: &bytes,
+            offset_override: None,
+        };
+
+        assert_eq!(entry.p1(), 123);
+    }
+
+    #[test]
+    fn p2_test() {
+        let bytes = IndexEntryBuilder::new().with_p2(123).build();
+
+        let entry = IndexEntry {
+            bytes: &bytes,
+            offset_override: None,
+        };
+
+        assert_eq!(entry.p2(), 123);
+    }
+
+    #[test]
+    fn node_test() {
+        let node = Node::from_hex("0123456789012345678901234567890123456789")
+            .unwrap();
+        let bytes = IndexEntryBuilder::new().with_node(node).build();
+
+        let entry = IndexEntry {
+            bytes: &bytes,
+            offset_override: None,
+        };
+
+        assert_eq!(*entry.hash(), node);
     }
 
     #[test]
