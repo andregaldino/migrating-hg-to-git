@@ -323,7 +323,7 @@ mod tests {
                 is_first: false,
                 is_inline: false,
                 is_general_delta: true,
-                version: 2,
+                version: 1,
                 offset: 0,
                 compressed_len: 0,
                 uncompressed_len: 0,
@@ -517,10 +517,10 @@ mod tests {
     fn version_test() {
         let bytes = IndexEntryBuilder::new()
             .is_first(true)
-            .with_version(1)
+            .with_version(2)
             .build();
 
-        assert_eq!(get_version(&bytes), 1)
+        assert_eq!(get_version(&bytes), 2)
     }
 }
 
