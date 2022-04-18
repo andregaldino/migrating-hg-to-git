@@ -10,6 +10,7 @@
 import gzip
 import hashlib
 import pathlib
+import typing
 import urllib.request
 
 
@@ -126,8 +127,8 @@ def download_to_path(url: str, path: pathlib.Path, size: int, sha256: str):
 
 
 def download_entry(
-    name: dict, dest_path: pathlib.Path, local_name=None
-) -> pathlib.Path:
+    name: str, dest_path: pathlib.Path, local_name=None
+) -> typing.Tuple[pathlib.Path, typing.Dict[str, typing.Union[str, int]]]:
     entry = DOWNLOADS[name]
 
     url = entry['url']
