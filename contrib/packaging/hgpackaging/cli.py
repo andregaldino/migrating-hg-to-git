@@ -91,7 +91,7 @@ def get_parser():
     sp.add_argument(
         "--version",
         help="Mercurial version string to use "
-        "(detected from __version__.py if not defined",
+        "(detected from __version__.py if not defined)",
     )
     sp.set_defaults(func=build_inno)
 
