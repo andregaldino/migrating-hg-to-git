@@ -33,7 +33,7 @@ def readpatternfile(orig, filepath, warn, sourceinfo=False):
         return orig(filepath, warn, sourceinfo=False)
     result = []
     warnings = []
-    with open(filepath, b'rb') as fp:
+    with open(filepath, 'rb') as fp:
         for l in fp:
             l = l.strip()
             if not l or l.startswith(b'#'):
