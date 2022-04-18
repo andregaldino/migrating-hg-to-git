@@ -16,6 +16,7 @@ from mercurial import (
     localrepo,
     pycompat,
     registrar,
+    requirements as requirementsmod,
     scmutil,
     store,
     util,
@@ -300,9 +301,15 @@ def reposetup(ui, repo):
 
         class gitlocalrepo(orig):
             def _makedirstate(self):
+                v2_req = requirementsmod.DIRSTATE_V2_REQUIREMENT
+                use_dirstate_v2 = v2_req in self.requirements
+
                 # TODO narrow support here
                 return dirstate.gitdirstate(
-                    self.ui, self.vfs.base, self.store.git
+                    self.ui,
+                    self.vfs,
+                    self.store.git,
+                    use_dirstate_v2,
                 )
 
             def commit(self, *args, **kwargs):
