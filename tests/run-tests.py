@@ -1402,6 +1402,9 @@ class Test(unittest.TestCase):
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = _bytes2sys(self._testtmp)
+        # the FORWARD_SLASH version is useful when running `sh` on non unix
+        # system (e.g. Windows)
+        env['TESTTMP_FORWARD_SLASH'] = env['TESTTMP'].replace(os.sep, '/')
         uid_file = os.path.join(_bytes2sys(self._testtmp), 'UID')
         env['HGTEST_UUIDFILE'] = uid_file
         env['TESTNAME'] = self.name
@@ -3065,6 +3068,10 @@ class TestRunner:
             if pathname:
                 testdir = os.path.join(testdir, pathname)
         self._testdir = osenvironb[b'TESTDIR'] = testdir
+        osenvironb[b'TESTDIR_FORWARD_SLASH'] = osenvironb[b'TESTDIR'].replace(
+            os.sep.encode('ascii'), b'/'
+        )
+
         if self.options.outputdir:
             self._outputdir = canonpath(_sys2bytes(self.options.outputdir))
         else:
@@ -3209,6 +3216,9 @@ class TestRunner:
         fileb = _sys2bytes(__file__)
         runtestdir = os.path.abspath(os.path.dirname(fileb))
         osenvironb[b'RUNTESTDIR'] = runtestdir
+        osenvironb[b'RUNTESTDIR_FORWARD_SLASH'] = runtestdir.replace(
+            os.sep.encode('ascii'), b'/'
+        )
         sepb = _sys2bytes(os.pathsep)
         path = [self._bindir, runtestdir] + osenvironb[b"PATH"].split(sepb)
         if os.path.islink(__file__):

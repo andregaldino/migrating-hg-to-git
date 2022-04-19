@@ -2317,7 +2317,7 @@ coreconfigitem(
 coreconfigitem(
     b'ui',
     b'large-file-limit',
-    default=10000000,
+    default=10 * (2 ** 20),
 )
 coreconfigitem(
     b'ui',

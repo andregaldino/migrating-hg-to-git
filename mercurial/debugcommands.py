@@ -2148,9 +2148,9 @@ def debuglocks(ui, repo, **opts):
     """
 
     if opts.get('force_free_lock'):
-        repo.svfs.unlink(b'lock')
+        repo.svfs.tryunlink(b'lock')
     if opts.get('force_free_wlock'):
-        repo.vfs.unlink(b'wlock')
+        repo.vfs.tryunlink(b'wlock')
     if opts.get('force_free_lock') or opts.get('force_free_wlock'):
         return 0
 

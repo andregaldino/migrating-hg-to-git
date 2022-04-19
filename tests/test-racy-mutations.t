@@ -9,12 +9,12 @@ while we're running
   $ hg init a
   $ cd a
 
-  $ cat > "$TESTTMP/waitlock_editor.sh" <<EOF
+  $ cat > "$TESTTMP_FORWARD_SLASH/waitlock_editor.sh" <<EOF
   >     [ -n "\${WAITLOCK_ANNOUNCE:-}" ] && touch "\${WAITLOCK_ANNOUNCE}"
   >     f="\${WAITLOCK_FILE}"
   >     start=\`date +%s\`
   >     timeout=5
-  >     $RUNTESTDIR/testlib/wait-on-file "\$timeout" "\$f"
+  >     "$RUNTESTDIR_FORWARD_SLASH/testlib/wait-on-file" "\$timeout" "\$f"
   >     if [ \$# -gt 1 ]; then
   >         cat "\$@"
   >     fi
@@ -27,9 +27,9 @@ this all starts, so let's make one.
   $ hg commit -qAm 'r0'
 
 Start an hg commit that will take a while
-  $ EDITOR_STARTED="$(pwd)/.editor_started"
-  $ MISCHIEF_MANAGED="$(pwd)/.mischief_managed"
-  $ JOBS_FINISHED="$(pwd)/.jobs_finished"
+  $ EDITOR_STARTED="$TESTTMP_FORWARD_SLASH/a/.editor_started"
+  $ MISCHIEF_MANAGED="$TESTTMP_FORWARD_SLASH/a/.mischief_managed"
+  $ JOBS_FINISHED="$TESTTMP_FORWARD_SLASH/a/.jobs_finished"
 
 #if fail-if-detected
   $ cat >> .hg/hgrc << EOF
@@ -38,14 +38,24 @@ Start an hg commit that will take a while
   > EOF
 #endif
 
+  $ cat >> .hg/hgrc << EOF
+  > [ui]
+  > editor=sh $TESTTMP_FORWARD_SLASH/waitlock_editor.sh
+  > EOF
+
   $ echo foo > foo
-  $ (WAITLOCK_ANNOUNCE="${EDITOR_STARTED}" \
+  $ (unset HGEDITOR;
+  >      WAITLOCK_ANNOUNCE="${EDITOR_STARTED}" \
   >      WAITLOCK_FILE="${MISCHIEF_MANAGED}" \
-  >           HGEDITOR="sh $TESTTMP/waitlock_editor.sh" \
   >           hg commit -qAm 'r1 (foo)' --edit foo > .foo_commit_out 2>&1 ; touch "${JOBS_FINISHED}") &
 
 Wait for the "editor" to actually start
-  $ WAITLOCK_FILE="${EDITOR_STARTED}" sh "$TESTTMP/waitlock_editor.sh"
+  $ sh "$RUNTESTDIR_FORWARD_SLASH/testlib/wait-on-file" 5 "${EDITOR_STARTED}"
+
+  $ cat >> .hg/hgrc << EOF
+  > [ui]
+  > editor=
+  > EOF
 
 Break the locks, and make another commit.
   $ hg debuglocks -LW
@@ -59,7 +69,7 @@ Break the locks, and make another commit.
 Awaken the editor from that first commit
   $ touch "${MISCHIEF_MANAGED}"
 And wait for it to finish
-  $ WAITLOCK_FILE="${JOBS_FINISHED}" sh "$TESTTMP/waitlock_editor.sh"
+  $ WAITLOCK_FILE="${JOBS_FINISHED}" sh "$TESTTMP_FORWARD_SLASH/waitlock_editor.sh"
 
 #if skip-detection
 (Ensure there was no output)
