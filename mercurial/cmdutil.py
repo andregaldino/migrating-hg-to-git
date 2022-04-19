@@ -2933,16 +2933,15 @@ def amend(ui, repo, old, extra, pats, opts):
 
             def filectxfn(repo, ctx_, path):
                 try:
-                    # Return None for removed files.
-                    if path in wctx.removed() and path in filestoamend:
-                        return None
-
                     # If the file being considered is not amongst the files
                     # to be amended, we should use the file context from the
                     # old changeset. This avoids issues when only some files in
                     # the working copy are being amended but there are also
                     # changes to other files from the old changeset.
                     if path in filestoamend:
+                        # Return None for removed files.
+                        if path in wctx.removed():
+                            return None
                         fctx = wctx[path]
                     else:
                         fctx = old.filectx(path)
