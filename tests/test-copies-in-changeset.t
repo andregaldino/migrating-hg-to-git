@@ -325,6 +325,15 @@ Existing copy information is preserved by amend
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
   $ hg showcopies
   a -> l
+
+No crash on partial amend
+  $ hg st --change .
+  A l
+  $ echo modified >> a
+  $ hg rm l
+  $ hg commit --amend a 2>&1 | grep AttributeError
+  AttributeError: 'NoneType' object has no attribute 'renamed' (known-bad-output !)
+
   $ cd ..
 
 Test rebasing a commit with copy information
