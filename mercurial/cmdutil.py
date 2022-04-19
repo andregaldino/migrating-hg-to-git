@@ -2935,7 +2935,7 @@ def amend(ui, repo, old, extra, pats, opts):
             def filectxfn(repo, ctx_, path):
                 try:
                     # Return None for removed files.
-                    if path in wctx.removed():
+                    if path in wctx.removed() and path in filestoamend:
                         return None
 
                     # If the file being considered is not amongst the files

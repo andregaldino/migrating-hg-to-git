@@ -331,8 +331,8 @@ No crash on partial amend
   A l
   $ echo modified >> a
   $ hg rm l
-  $ hg commit --amend a 2>&1 | grep AttributeError
-  AttributeError: 'NoneType' object has no attribute 'renamed' (known-bad-output !)
+  $ hg commit --amend a
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/*-*-amend.hg (glob)
 
   $ cd ..
 
