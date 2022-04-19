@@ -179,15 +179,8 @@ Fallback to Python
   [1]
 
   $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=hg-non-existent
-  tried to fall back to a 'hg-non-existent' sub-process but got error $ENOENT$
-  unsupported feature: error: Found argument '--exclude' which wasn't expected, or isn't valid in this context
-  
-  USAGE:
-      rhg cat [OPTIONS] <FILE>...
-  
-  For more information try --help
-  
-  [252]
+  abort: invalid fallback 'hg-non-existent': cannot find binary path
+  [253]
 
   $ rhg cat original --exclude="*.rs" --config rhg.fallback-executable=rhg
   Blocking recursive fallback. The 'rhg.fallback-executable = rhg' config points to `rhg` itself.

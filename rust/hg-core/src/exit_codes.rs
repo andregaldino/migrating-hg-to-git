@@ -17,3 +17,6 @@ pub const UNSUCCESSFUL: ExitCode = 1;
 
 /// Command or feature not implemented by rhg
 pub const UNIMPLEMENTED: ExitCode = 252;
+
+/// The fallback path is not valid
+pub const INVALID_FALLBACK: ExitCode = 253;

@@ -13,6 +13,7 @@ use hg::utils::files::{get_bytes_from_os_str, get_path_from_bytes};
 use hg::utils::SliceExt;
 use std::collections::HashSet;
 use std::ffi::OsString;
+use std::os::unix::prelude::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -365,11 +366,13 @@ fn exit_code(
             }
         }
         Err(CommandError::Unsuccessful) => exit_codes::UNSUCCESSFUL,
-
         // Exit with a specific code and no error message to let a potential
         // wrapper script fallback to Python-based Mercurial.
         Err(CommandError::UnsupportedFeature { .. }) => {
             exit_codes::UNIMPLEMENTED
+        }
+        Err(CommandError::InvalidFallback { .. }) => {
+            exit_codes::INVALID_FALLBACK
         }
     }
 }
@@ -415,6 +418,17 @@ fn exit(
         } else {
             log::debug!("falling back (see trace-level log)");
             log::trace!("{}", local_to_utf8(message));
+            if let Err(err) = which::which(executable_path) {
+                exit_no_fallback(
+                    ui,
+                    OnUnsupported::Abort,
+                    Err(CommandError::InvalidFallback {
+                        path: executable.to_owned(),
+                        err: err.to_string(),
+                    }),
+                    use_detailed_exit_code,
+                )
+            }
             // `args` is now `argv[1..]` since we’ve already consumed
             // `argv[0]`
             let mut command = Command::new(executable_path);
@@ -422,19 +436,19 @@ fn exit(
             if let Some(initial) = initial_current_dir {
                 command.current_dir(initial);
             }
-            let result = command.status();
-            match result {
-                Ok(status) => std::process::exit(
-                    status.code().unwrap_or(exit_codes::ABORT),
-                ),
-                Err(error) => {
-                    let _ = ui.write_stderr(&format_bytes!(
-                        b"tried to fall back to a '{}' sub-process but got error {}\n",
-                        executable, format_bytes::Utf8(error)
-                    ));
-                    on_unsupported = OnUnsupported::Abort
-                }
-            }
+            // We don't use subprocess because proper signal handling is harder
+            // and we don't want to keep `rhg` around after a fallback anyway.
+            // For example, if `rhg` is run in the background and falls back to
+            // `hg` which, in turn, waits for a signal, we'll get stuck if
+            // we're doing plain subprocess.
+            //
+            // If `exec` returns, we can only assume our process is very broken
+            // (see its documentation), so only try to forward the error code
+            // when exiting.
+            let err = command.exec();
+            std::process::exit(
+                err.raw_os_error().unwrap_or(exit_codes::ABORT),
+            );
         }
     }
     exit_no_fallback(ui, on_unsupported, result, use_detailed_exit_code)
@@ -470,6 +484,13 @@ fn exit_no_fallback(
                 OnUnsupported::AbortSilent => {}
                 OnUnsupported::Fallback { .. } => unreachable!(),
             }
+        }
+        Err(CommandError::InvalidFallback { path, err }) => {
+            let _ = ui.write_stderr(&format_bytes!(
+                b"abort: invalid fallback '{}': {}\n",
+                path,
+                err.as_bytes(),
+            ));
         }
     }
     std::process::exit(exit_code(&result, use_detailed_exit_code))
