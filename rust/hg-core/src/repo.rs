@@ -29,11 +29,11 @@ pub struct Repo {
     store: PathBuf,
     requirements: HashSet<String>,
     config: Config,
-    dirstate_parents: LazyCell<DirstateParents, HgError>,
-    dirstate_data_file_uuid: LazyCell<Option<Vec<u8>>, HgError>,
-    dirstate_map: LazyCell<OwningDirstateMap, DirstateError>,
-    changelog: LazyCell<Changelog, HgError>,
-    manifestlog: LazyCell<Manifestlog, HgError>,
+    dirstate_parents: LazyCell<DirstateParents>,
+    dirstate_data_file_uuid: LazyCell<Option<Vec<u8>>>,
+    dirstate_map: LazyCell<OwningDirstateMap>,
+    changelog: LazyCell<Changelog>,
+    manifestlog: LazyCell<Manifestlog>,
 }
 
 #[derive(Debug, derive_more::From)]
@@ -182,13 +182,11 @@ impl Repo {
             store: store_path,
             dot_hg,
             config: repo_config,
-            dirstate_parents: LazyCell::new(Self::read_dirstate_parents),
-            dirstate_data_file_uuid: LazyCell::new(
-                Self::read_dirstate_data_file_uuid,
-            ),
-            dirstate_map: LazyCell::new(Self::new_dirstate_map),
-            changelog: LazyCell::new(Self::new_changelog),
-            manifestlog: LazyCell::new(Self::new_manifestlog),
+            dirstate_parents: LazyCell::new(),
+            dirstate_data_file_uuid: LazyCell::new(),
+            dirstate_map: LazyCell::new(),
+            changelog: LazyCell::new(),
+            manifestlog: LazyCell::new(),
         };
 
         requirements::check(&repo)?;
@@ -260,7 +258,9 @@ impl Repo {
     }
 
     pub fn dirstate_parents(&self) -> Result<DirstateParents, HgError> {
-        Ok(*self.dirstate_parents.get_or_init(self)?)
+        Ok(*self
+            .dirstate_parents
+            .get_or_init(|| self.read_dirstate_parents())?)
     }
 
     fn read_dirstate_parents(&self) -> Result<DirstateParents, HgError> {
@@ -340,13 +340,14 @@ impl Repo {
     pub fn dirstate_map(
         &self,
     ) -> Result<Ref<OwningDirstateMap>, DirstateError> {
-        self.dirstate_map.get_or_init(self)
+        self.dirstate_map.get_or_init(|| self.new_dirstate_map())
     }
 
     pub fn dirstate_map_mut(
         &self,
     ) -> Result<RefMut<OwningDirstateMap>, DirstateError> {
-        self.dirstate_map.get_mut_or_init(self)
+        self.dirstate_map
+            .get_mut_or_init(|| self.new_dirstate_map())
     }
 
     fn new_changelog(&self) -> Result<Changelog, HgError> {
@@ -354,11 +355,11 @@ impl Repo {
     }
 
     pub fn changelog(&self) -> Result<Ref<Changelog>, HgError> {
-        self.changelog.get_or_init(self)
+        self.changelog.get_or_init(|| self.new_changelog())
     }
 
     pub fn changelog_mut(&self) -> Result<RefMut<Changelog>, HgError> {
-        self.changelog.get_mut_or_init(self)
+        self.changelog.get_mut_or_init(|| self.new_changelog())
     }
 
     fn new_manifestlog(&self) -> Result<Manifestlog, HgError> {
@@ -366,11 +367,11 @@ impl Repo {
     }
 
     pub fn manifestlog(&self) -> Result<Ref<Manifestlog>, HgError> {
-        self.manifestlog.get_or_init(self)
+        self.manifestlog.get_or_init(|| self.new_manifestlog())
     }
 
     pub fn manifestlog_mut(&self) -> Result<RefMut<Manifestlog>, HgError> {
-        self.manifestlog.get_mut_or_init(self)
+        self.manifestlog.get_mut_or_init(|| self.new_manifestlog())
     }
 
     /// Returns the manifest of the *changeset* with the given node ID
@@ -424,7 +425,9 @@ impl Repo {
         // it’s unset
         let parents = self.dirstate_parents()?;
         let (packed_dirstate, old_uuid_to_remove) = if self.has_dirstate_v2() {
-            let uuid_opt = self.dirstate_data_file_uuid.get_or_init(self)?;
+            let uuid_opt = self
+                .dirstate_data_file_uuid
+                .get_or_init(|| self.read_dirstate_data_file_uuid())?;
             let uuid_opt = uuid_opt.as_ref();
             let can_append = uuid_opt.is_some();
             let (data, tree_metadata, append, old_data_size) =
@@ -508,19 +511,17 @@ impl Repo {
 /// Lazily-initialized component of `Repo` with interior mutability
 ///
 /// This differs from `OnceCell` in that the value can still be "deinitialized"
-/// later by setting its inner `Option` to `None`.
-struct LazyCell<T, E> {
+/// later by setting its inner `Option` to `None`. It also takes the
+/// initialization function as an argument when the value is requested, not
+/// when the instance is created.
+struct LazyCell<T> {
     value: RefCell<Option<T>>,
-    // `Fn`s that don’t capture environment are zero-size, so this box does
-    // not allocate:
-    init: Box<dyn Fn(&Repo) -> Result<T, E>>,
 }
 
-impl<T, E> LazyCell<T, E> {
-    fn new(init: impl Fn(&Repo) -> Result<T, E> + 'static) -> Self {
+impl<T> LazyCell<T> {
+    fn new() -> Self {
         Self {
             value: RefCell::new(None),
-            init: Box::new(init),
         }
     }
 
@@ -528,23 +529,29 @@ impl<T, E> LazyCell<T, E> {
         *self.value.borrow_mut() = Some(value)
     }
 
-    fn get_or_init(&self, repo: &Repo) -> Result<Ref<T>, E> {
+    fn get_or_init<E>(
+        &self,
+        init: impl Fn() -> Result<T, E>,
+    ) -> Result<Ref<T>, E> {
         let mut borrowed = self.value.borrow();
         if borrowed.is_none() {
             drop(borrowed);
             // Only use `borrow_mut` if it is really needed to avoid panic in
             // case there is another outstanding borrow but mutation is not
             // needed.
-            *self.value.borrow_mut() = Some((self.init)(repo)?);
+            *self.value.borrow_mut() = Some(init()?);
             borrowed = self.value.borrow()
         }
         Ok(Ref::map(borrowed, |option| option.as_ref().unwrap()))
     }
 
-    fn get_mut_or_init(&self, repo: &Repo) -> Result<RefMut<T>, E> {
+    fn get_mut_or_init<E>(
+        &self,
+        init: impl Fn() -> Result<T, E>,
+    ) -> Result<RefMut<T>, E> {
         let mut borrowed = self.value.borrow_mut();
         if borrowed.is_none() {
-            *borrowed = Some((self.init)(repo)?);
+            *borrowed = Some(init()?);
         }
         Ok(RefMut::map(borrowed, |option| option.as_mut().unwrap()))
     }
