@@ -438,7 +438,8 @@ impl Repo {
             let uuid = self.dirstate_data_file_uuid.get_or_init(self)?;
             let mut uuid = uuid.as_ref();
             let can_append = uuid.is_some();
-            let (data, tree_metadata, append) = map.pack_v2(can_append)?;
+            let (data, tree_metadata, append, old_data_size) =
+                map.pack_v2(can_append)?;
             if !append {
                 uuid = None
             }
@@ -464,10 +465,19 @@ impl Repo {
                 // returns `ErrorKind::AlreadyExists`? Collision chance of two
                 // random IDs is one in 2**32
                 let mut file = options.open(&data_filename)?;
-                file.write_all(&data)?;
-                file.flush()?;
-                // TODO: use https://doc.rust-lang.org/std/io/trait.Seek.html#method.stream_position when we require Rust 1.51+
-                file.seek(SeekFrom::Current(0))
+                if data.is_empty() {
+                    // If we're not appending anything, the data size is the
+                    // same as in the previous docket. It is *not* the file
+                    // length, since it could have garbage at the end.
+                    // We don't have to worry about it when we do have data
+                    // to append since we rewrite the root node in this case.
+                    Ok(old_data_size as u64)
+                } else {
+                    file.write_all(&data)?;
+                    file.flush()?;
+                    // TODO: use https://doc.rust-lang.org/std/io/trait.Seek.html#method.stream_position when we require Rust 1.51+
+                    file.seek(SeekFrom::Current(0))
+                }
             })()
             .when_writing_file(&data_filename)?;
             DirstateDocket::serialize(

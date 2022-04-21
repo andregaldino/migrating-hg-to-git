@@ -211,7 +211,7 @@ py_class!(pub class DirstateMap |py| {
         let inner = self.inner(py).borrow();
         let result = inner.pack_v2(can_append);
         match result {
-            Ok((packed, tree_metadata, append)) => {
+            Ok((packed, tree_metadata, append, _old_data_size)) => {
                 let packed = PyBytes::new(py, &packed);
                 let tree_metadata = PyBytes::new(py, tree_metadata.as_bytes());
                 let tuple = (packed, tree_metadata, append);

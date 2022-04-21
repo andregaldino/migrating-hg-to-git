@@ -49,6 +49,10 @@ pub struct DirstateMap<'on_disk> {
 
     /// How many bytes of `on_disk` are not used anymore
     pub(super) unreachable_bytes: u32,
+
+    /// Size of the data used to first load this `DirstateMap`. Used in case
+    /// we need to write some new metadata, but no new data on disk.
+    pub(super) old_data_size: usize,
 }
 
 /// Using a plain `HgPathBuf` of the full path from the repository root as a
@@ -429,6 +433,7 @@ impl<'on_disk> DirstateMap<'on_disk> {
             nodes_with_copy_source_count: 0,
             ignore_patterns_hash: [0; on_disk::IGNORE_PATTERNS_HASH_LEN],
             unreachable_bytes: 0,
+            old_data_size: 0,
         }
     }
 
@@ -989,12 +994,13 @@ impl OwningDirstateMap {
     /// Returns new data and metadata together with whether that data should be
     /// appended to the existing data file whose content is at
     /// `map.on_disk` (true), instead of written to a new data file
-    /// (false).
+    /// (false), and the previous size of data on disk.
     #[timed]
     pub fn pack_v2(
         &self,
         can_append: bool,
-    ) -> Result<(Vec<u8>, on_disk::TreeMetadata, bool), DirstateError> {
+    ) -> Result<(Vec<u8>, on_disk::TreeMetadata, bool, usize), DirstateError>
+    {
         let map = self.get_map();
         on_disk::write(map, can_append)
     }
