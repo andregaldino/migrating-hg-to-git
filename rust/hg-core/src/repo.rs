@@ -434,7 +434,7 @@ impl Repo {
         // TODO: Maintain a `DirstateMap::dirty` flag, and return early here if
         // it’s unset
         let parents = self.dirstate_parents()?;
-        let packed_dirstate = if self.has_dirstate_v2() {
+        let (packed_dirstate, old_uuid_to_remove) = if self.has_dirstate_v2() {
             let uuid = self.dirstate_data_file_uuid.get_or_init(self)?;
             let mut uuid = uuid.as_ref();
             let can_append = uuid.is_some();
@@ -443,14 +443,16 @@ impl Repo {
             if !append {
                 uuid = None
             }
-            let uuid = if let Some(uuid) = uuid {
-                std::str::from_utf8(uuid)
+            let (uuid, old_uuid) = if let Some(uuid) = uuid {
+                let as_str = std::str::from_utf8(uuid)
                     .map_err(|_| {
                         HgError::corrupted("non-UTF-8 dirstate data file ID")
                     })?
-                    .to_owned()
+                    .to_owned();
+                let old_uuid_to_remove = Some(as_str.to_owned());
+                (as_str, old_uuid_to_remove)
             } else {
-                DirstateDocket::new_uid()
+                (DirstateDocket::new_uid(), None)
             };
             let data_filename = format!("dirstate.{}", uuid);
             let data_filename = self.hg_vfs().join(data_filename);
@@ -480,7 +482,8 @@ impl Repo {
                 }
             })()
             .when_writing_file(&data_filename)?;
-            DirstateDocket::serialize(
+
+            let packed_dirstate = DirstateDocket::serialize(
                 parents,
                 tree_metadata,
                 data_size,
@@ -488,11 +491,20 @@ impl Repo {
             )
             .map_err(|_: std::num::TryFromIntError| {
                 HgError::corrupted("overflow in dirstate docket serialization")
-            })?
+            })?;
+
+            (packed_dirstate, old_uuid)
         } else {
-            map.pack_v1(parents)?
+            (map.pack_v1(parents)?, None)
         };
-        self.hg_vfs().atomic_write("dirstate", &packed_dirstate)?;
+
+        let vfs = self.hg_vfs();
+        vfs.atomic_write("dirstate", &packed_dirstate)?;
+        if let Some(uuid) = old_uuid_to_remove {
+            // Remove the old data file after the new docket pointing to the
+            // new data file was written.
+            vfs.remove_file(format!("dirstate.{}", uuid))?;
+        }
         Ok(())
     }
 }
