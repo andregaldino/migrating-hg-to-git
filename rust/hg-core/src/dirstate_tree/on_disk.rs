@@ -290,6 +290,7 @@ pub(super) fn read<'on_disk>(
         nodes_with_copy_source_count: meta.nodes_with_copy_source_count.get(),
         ignore_patterns_hash: meta.ignore_patterns_hash,
         unreachable_bytes: meta.unreachable_bytes.get(),
+        old_data_size: on_disk.len(),
     };
     Ok(dirstate_map)
 }
@@ -601,11 +602,11 @@ pub(crate) fn for_each_tracked_path<'on_disk>(
 /// Returns new data and metadata, together with whether that data should be
 /// appended to the existing data file whose content is at
 /// `dirstate_map.on_disk` (true), instead of written to a new data file
-/// (false).
+/// (false), and the previous size of data on disk.
 pub(super) fn write(
     dirstate_map: &DirstateMap,
     can_append: bool,
-) -> Result<(Vec<u8>, TreeMetadata, bool), DirstateError> {
+) -> Result<(Vec<u8>, TreeMetadata, bool, usize), DirstateError> {
     let append = can_append && dirstate_map.write_should_append();
 
     // This ignores the space for paths, and for nodes without an entry.
@@ -631,7 +632,7 @@ pub(super) fn write(
         unused: [0; 4],
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };
-    Ok((writer.out, meta, append))
+    Ok((writer.out, meta, append, dirstate_map.old_data_size))
 }
 
 struct Writer<'dmap, 'on_disk> {
