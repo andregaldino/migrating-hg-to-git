@@ -435,25 +435,32 @@ impl Repo {
         // it’s unset
         let parents = self.dirstate_parents()?;
         let (packed_dirstate, old_uuid_to_remove) = if self.has_dirstate_v2() {
-            let uuid = self.dirstate_data_file_uuid.get_or_init(self)?;
-            let mut uuid = uuid.as_ref();
-            let can_append = uuid.is_some();
+            let uuid_opt = self.dirstate_data_file_uuid.get_or_init(self)?;
+            let uuid_opt = uuid_opt.as_ref();
+            let can_append = uuid_opt.is_some();
             let (data, tree_metadata, append, old_data_size) =
                 map.pack_v2(can_append)?;
-            if !append {
-                uuid = None
-            }
-            let (uuid, old_uuid) = if let Some(uuid) = uuid {
-                let as_str = std::str::from_utf8(uuid)
-                    .map_err(|_| {
-                        HgError::corrupted("non-UTF-8 dirstate data file ID")
-                    })?
-                    .to_owned();
-                let old_uuid_to_remove = Some(as_str.to_owned());
-                (as_str, old_uuid_to_remove)
-            } else {
-                (DirstateDocket::new_uid(), None)
+
+            // Reuse the uuid, or generate a new one, keeping the old for
+            // deletion.
+            let (uuid, old_uuid) = match uuid_opt {
+                Some(uuid) => {
+                    let as_str = std::str::from_utf8(uuid)
+                        .map_err(|_| {
+                            HgError::corrupted(
+                                "non-UTF-8 dirstate data file ID",
+                            )
+                        })?
+                        .to_owned();
+                    if append {
+                        (as_str, None)
+                    } else {
+                        (DirstateDocket::new_uid(), Some(as_str))
+                    }
+                }
+                None => (DirstateDocket::new_uid(), None),
             };
+
             let data_filename = format!("dirstate.{}", uuid);
             let data_filename = self.hg_vfs().join(data_filename);
             let mut options = std::fs::OpenOptions::new();

@@ -120,4 +120,58 @@ infinite loop.
   C hgext3rd/__init__.py
 
   $ cd ..
+
+Check that the old dirstate data file is removed correctly and the new one is
+valid.
+
+  $ dirstate_data_files () {
+  >   find .hg -maxdepth 1 -name "dirstate.*"
+  > }
+
+  $ find_dirstate_uuid () {
+  >   dirstate_data_files | sed 's#.hg/dirstate.##'
+  > }
+
+  $ dirstate_uuid_has_not_changed () {
+  >   # Pure Python always rewrites the whole dirstate
+  >   if [ $# -eq 1 ] || [ "$HGMODULEPOLICY" = *"rust"* ] || [ -n "$RHG_INSTALLED_AS_HG" ]; then
+  >     test $current_uid = $(find_dirstate_uuid)
+  >   fi
+  > }
+
+  $ cd ..
+  $ hg init append-mostly
+  $ cd append-mostly
+  $ mkdir dir dir2
+  $ touch dir/a dir/b dir/c dir/d dir/e dir2/f
+  $ hg commit -Aqm initial
+  $ hg st
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ current_uid=$(find_dirstate_uuid)
+
+Nothing changes here
+
+  $ hg st
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+
+Trigger an append with a small change
+
+  $ echo "modified" > dir2/f
+  $ hg st
+  M dir2/f
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+
+Delete most of the dirstate to trigger a non-append
+  $ hg rm dir/a dir/b dir/c dir/d
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed also-if-python
+  [1]
+
+  $ cd ..
 #endif
