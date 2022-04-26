@@ -120,6 +120,57 @@ be recorded and the regular merge tool should not be invoked for the file.
   e
 
 
+Can disable all partial merge tools (the `head` tool would have resolved this
+conflict it had been enabled)
+
+  $ hg up -C 4
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 3 -t :merge3 --config merge.disable-partial-tools=yes
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat file
+  a
+  b
+  c
+  d
+  e
+  <<<<<<< working copy:    d57edaa6e21a - test: a b c d e f3
+  f3
+  ||||||| common ancestor: 8ae8bb9cc43a - test: a b c d e f
+  f
+  =======
+  f2
+  >>>>>>> merge rev:       8c217da987be - test: a b c d e f2
+
+
+Can disable one partial merge tool (the `head` tool would have resolved this
+conflict it had been enabled)
+
+  $ hg up -C 4
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg merge 3 -t :merge3 --config partial-merge-tools.head.disable=yes
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
+  [1]
+  $ cat file
+  b
+  c
+  d
+  e
+  <<<<<<< working copy:    d57edaa6e21a - test: a b c d e f3
+  f3
+  ||||||| common ancestor: 8ae8bb9cc43a - test: a b c d e f
+  f
+  =======
+  f2
+  >>>>>>> merge rev:       8c217da987be - test: a b c d e f2
+
+
 Only tools whose patterns match are run. We make `head` not match here, so
 only `tail` should run
 

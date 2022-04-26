@@ -1570,6 +1570,12 @@ coreconfigitem(
     default=False,
 )
 coreconfigitem(
+    b'merge',
+    b'disable-partial-tools',
+    default=False,
+    experimental=True,
+)
+coreconfigitem(
     b'partial-merge-tools',
     b'.*',
     default=None,
@@ -1604,6 +1610,14 @@ coreconfigitem(
     b'partial-merge-tools',
     br'.*\.args',
     default=b"$local $base $other",
+    generic=True,
+    priority=-1,
+    experimental=True,
+)
+coreconfigitem(
+    b'partial-merge-tools',
+    br'.*\.disable',
+    default=False,
     generic=True,
     priority=-1,
     experimental=True,

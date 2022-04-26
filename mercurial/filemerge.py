@@ -1119,6 +1119,8 @@ def filemerge(repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 def _run_partial_resolution_tools(repo, local, other, base):
     """Runs partial-resolution tools on the three inputs and updates them."""
     ui = repo.ui
+    if ui.configbool(b'merge', b'disable-partial-tools'):
+        return
     # Tuples of (order, name, executable path, args)
     tools = []
     seen = set()
@@ -1133,6 +1135,8 @@ def _run_partial_resolution_tools(repo, local, other, base):
             m = match.match(repo.root, b'', patterns)
             is_match = m(local.fctx.path())
         if is_match:
+            if ui.configbool(section, b'%s.disable' % name):
+                continue
             order = ui.configint(section, b'%s.order' % name, 0)
             executable = ui.config(section, b'%s.executable' % name, name)
             args = ui.config(section, b'%s.args' % name)
