@@ -17,7 +17,7 @@ TestCase 1: 2 changeset branch, only the head is rewritten
 ..
 .. new-state:
 ..
-.. * 1 new changesets branches superceeding only the head of the old one
+.. * 1 new changesets branches superseding only the head of the old one
 .. * base of the old branch is still alive
 ..
 .. expected-result:

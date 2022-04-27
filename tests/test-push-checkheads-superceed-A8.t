@@ -8,7 +8,7 @@ some of the new one we push.
 
 This case is part of a series of tests checking this behavior.
 
-Category A: simple case involving a branch being superceeded by another.
+Category A: simple case involving a branch being superseded by another.
 TestCase 8: single-changeset branch indirect rewrite
 
 .. old-state:

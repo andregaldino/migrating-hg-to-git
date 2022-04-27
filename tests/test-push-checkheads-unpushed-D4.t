@@ -17,8 +17,8 @@ TestCase 4: multi-changeset branch, split on multiple other, (base on its own ne
 ..
 .. new-state:
 ..
-.. * 1 new branch superceeding the base of the old-2-changesets-branch,
-.. * 1 new changesets on the old-1-changeset-branch superceeding the head of the other
+.. * 1 new branch superseding the base of the old-2-changesets-branch,
+.. * 1 new changesets on the old-1-changeset-branch superseding the head of the other
 ..
 .. expected-result:
 ..

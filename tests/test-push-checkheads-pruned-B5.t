@@ -9,7 +9,7 @@ some of the new one we push.
 This case is part of a series of tests checking this behavior.
 
 Category B: simple case involving pruned changesets
-TestCase 5: multi-changeset branch, mix of pruned and superceeded
+TestCase 5: multi-changeset branch, mix of pruned and superseded
 
 .. old-state:
 ..
@@ -18,7 +18,7 @@ TestCase 5: multi-changeset branch, mix of pruned and superceeded
 .. new-state:
 ..
 .. * old head is pruned
-.. * old mid is superceeded
+.. * old mid is superseded
 .. * old root is pruned
 ..
 .. expected-result:

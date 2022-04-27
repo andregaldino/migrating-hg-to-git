@@ -9,7 +9,7 @@ some of the new one we push.
 This case is part of a series of tests checking this behavior.
 
 Category B: simple case involving pruned changesets
-TestCase 2: multi-changeset branch, head is pruned, rest is superceeded, through other
+TestCase 2: multi-changeset branch, head is pruned, rest is superseded, through other
 
 .. old-state:
 ..

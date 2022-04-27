@@ -8,7 +8,7 @@ some of the new one we push.
 
 This case is part of a series of tests checking this behavior.
 
-Category A: simple case involving a branch being superceeded by another.
+Category A: simple case involving a branch being superseded by another.
 TestCase 7: multi-changeset branch, split on multiple other, (head on its own branch), same number of head
 
 .. old-state:
@@ -17,8 +17,8 @@ TestCase 7: multi-changeset branch, split on multiple other, (head on its own br
 ..
 .. new-state:
 ..
-.. * 1 new branch superceeding the head of the old-2-changesets-branch,
-.. * 1 new changesets on the old-1-changeset-branch superceeding the base of the other
+.. * 1 new branch superseding the head of the old-2-changesets-branch,
+.. * 1 new changesets on the old-1-changeset-branch superseding the base of the other
 ..
 .. expected-result:
 ..
