@@ -356,6 +356,8 @@ check saving last-message.txt, at first
   A f
 
   $ rm -f .hg/last-message.txt
+  $ mkdir dir
+  $ cd dir
   $ HGEDITOR="sh $TESTTMP/editor.sh" hg histedit tip --commands - 2>&1 << EOF
   > mess 1fd3b2fe7754 f
   > EOF
@@ -372,10 +374,11 @@ check saving last-message.txt, at first
   ====
   transaction abort!
   rollback completed
-  note: commit message saved in .hg/last-message.txt
-  note: use 'hg commit --logfile .hg/last-message.txt --edit' to reuse it
+  note: commit message saved in ../.hg/last-message.txt
+  note: use 'hg commit --logfile ../.hg/last-message.txt --edit' to reuse it
   abort: pretxncommit.unexpectedabort hook exited with status 1
   [40]
+  $ cd ..
   $ cat .hg/last-message.txt
   f
   
