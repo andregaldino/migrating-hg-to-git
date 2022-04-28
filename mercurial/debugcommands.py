@@ -1018,22 +1018,6 @@ def debugstate(ui, repo, **opts):
 
 
 @command(
-    b'debugdirstateignorepatternshash',
-    [],
-    _(b''),
-)
-def debugdirstateignorepatternshash(ui, repo, **opts):
-    """show the hash of ignore patterns stored in dirstate if v2,
-    or nothing for dirstate-v2
-    """
-    if repo.dirstate._use_dirstate_v2:
-        docket = repo.dirstate._map.docket
-        hash_len = 20  # 160 bits for SHA-1
-        hash_bytes = docket.tree_metadata[-hash_len:]
-        ui.write(binascii.hexlify(hash_bytes) + b'\n')
-
-
-@command(
     b'debugdiscovery',
     [
         (b'', b'old', None, _(b'use old-style discovery')),
