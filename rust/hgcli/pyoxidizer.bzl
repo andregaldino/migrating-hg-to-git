@@ -292,7 +292,6 @@ def make_msi(manifest):
         "Platform": platform,
         "Version": VERSION,
         "Comments": "Installs Mercurial version %s" % VERSION,
-        "PythonVersion": "3",
         "MercurialHasLib": "1",
     }
 
