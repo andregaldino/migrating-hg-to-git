@@ -33,8 +33,8 @@
            CompressionLevel='high' />
     <Property Id='DiskPrompt' Value="Mercurial $(var.Version) Installation [1]" />
 
-    <Condition Message='Mercurial MSI installers require Windows XP or higher'>
-        VersionNT >= 501
+    <Condition Message='Mercurial MSI installers require Windows 8.1 or higher'>
+        VersionNT >= 603
     </Condition>
 
     <Property Id="INSTALLDIR">
