@@ -47,6 +47,7 @@ from . import (
     context,
     copies,
     dagparser,
+    dirstateutils,
     encoding,
     error,
     exchange,
@@ -940,6 +941,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         (b'', b'datesort', None, _(b'sort by saved mtime')),
         (
             b'',
+            b'docket',
+            False,
+            _(b'display the docket (metadata file) instead'),
+        ),
+        (
+            b'',
             b'all',
             False,
             _(b'display dirstate-v2 tree nodes that would not exist in v1'),
@@ -949,6 +956,33 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 )
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
+
+    if opts.get("docket"):
+        if not repo.dirstate._use_dirstate_v2:
+            raise error.Abort(_(b'dirstate v1 does not have a docket'))
+
+        docket = repo.dirstate._map.docket
+        (
+            start_offset,
+            root_nodes,
+            nodes_with_entry,
+            nodes_with_copy,
+            unused_bytes,
+            _unused,
+            ignore_pattern,
+        ) = dirstateutils.v2.TREE_METADATA.unpack(docket.tree_metadata)
+
+        ui.write(_(b"size of dirstate data: %d\n") % docket.data_size)
+        ui.write(_(b"data file uuid: %s\n") % docket.uuid)
+        ui.write(_(b"start offset of root nodes: %d\n") % start_offset)
+        ui.write(_(b"number of root nodes: %d\n") % root_nodes)
+        ui.write(_(b"nodes with entries: %d\n") % nodes_with_entry)
+        ui.write(_(b"nodes with copies: %d\n") % nodes_with_copy)
+        ui.write(_(b"number of unused bytes: %d\n") % unused_bytes)
+        ui.write(
+            _(b"ignore pattern hash: %s\n") % binascii.hexlify(ignore_pattern)
+        )
+        return
 
     nodates = not opts['dates']
     if opts.get('nodates') is not None:
