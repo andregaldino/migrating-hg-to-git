@@ -195,8 +195,7 @@ Delete most of the dirstate to trigger a non-append
 Check that unused bytes counter is reset when creating a new docket
 
   $ hg debugstate --docket | grep unused
-  number of unused bytes: 0 (no-rust !)
-  number of unused bytes: [1-9]\d* (re) (rust known-bad-output !)
+  number of unused bytes: 0
 
 #endif
 
