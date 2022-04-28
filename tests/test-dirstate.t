@@ -166,6 +166,25 @@ Trigger an append with a small change
    *1 (re)
   $ dirstate_uuid_has_not_changed
 
+Unused bytes counter is non-0 when appending
+  $ touch file
+  $ hg add file
+  $ current_uid=$(find_dirstate_uuid)
+
+Trigger a rust/rhg run which updates the unused bytes value
+  $ hg st
+  M dir2/f
+  A file
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+
+  $ hg debugstate --docket | grep unused
+  number of unused bytes: 0 (no-rust no-rhg !)
+  number of unused bytes: [1-9]\d* (re) (rhg no-rust !)
+  number of unused bytes: [1-9]\d* (re) (rust no-rhg !)
+  number of unused bytes: [1-9]\d* (re) (rust rhg !)
+
 Delete most of the dirstate to trigger a non-append
   $ hg rm dir/a dir/b dir/c dir/d
   $ dirstate_data_files | wc -l
@@ -173,5 +192,12 @@ Delete most of the dirstate to trigger a non-append
   $ dirstate_uuid_has_not_changed also-if-python
   [1]
 
-  $ cd ..
+Check that unused bytes counter is reset when creating a new docket
+
+  $ hg debugstate --docket | grep unused
+  number of unused bytes: 0 (no-rust !)
+  number of unused bytes: [1-9]\d* (re) (rust known-bad-output !)
+
 #endif
+
+  $ cd ..
