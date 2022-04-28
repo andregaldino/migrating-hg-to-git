@@ -129,7 +129,7 @@ valid.
   > }
 
   $ find_dirstate_uuid () {
-  >   dirstate_data_files | sed 's#.hg/dirstate.##'
+  >   hg debugstate --docket | grep uuid | sed 's/.*uuid: \(.*\)/\1/'
   > }
 
   $ dirstate_uuid_has_not_changed () {
