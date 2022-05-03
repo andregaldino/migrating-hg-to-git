@@ -22,7 +22,7 @@ except ImportError:
 # available. Relax C module requirements.
 os.environ['HGMODULEPOLICY'] = 'allow'
 # import from the live mercurial repo
-sys.path.insert(0, "..")
+sys.path.insert(0, os.path.abspath(".."))
 from mercurial import demandimport
 
 demandimport.enable()
