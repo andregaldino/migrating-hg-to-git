@@ -28,7 +28,8 @@ in progress. For more experimental work see the "rhg" section.
 Checking for Rust
 =================
 
-You may already have the Rust extensions depending on how you install Mercurial.
+You may already have the Rust extensions depending on how you install
+Mercurial::
 
   $ hg debuginstall | grep -i rust
   checking Rust extensions (installed)
@@ -46,7 +47,7 @@ version to use.
 Using pip
 ---------
 
-Users of `pip` can install the Rust extensions with the following command:
+Users of `pip` can install the Rust extensions with the following command::
 
   $ pip install mercurial --global-option --rust --no-use-pep517
 
