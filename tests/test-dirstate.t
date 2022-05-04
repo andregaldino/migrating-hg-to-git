@@ -136,6 +136,8 @@ valid.
   >   # Non-Rust always rewrites the whole dirstate
   >   if [ $# -eq 1 ] || ([ -n "$HGMODULEPOLICY" ] && [ -z "${HGMODULEPOLICY##*rust*}" ]) || [ -n "$RHG_INSTALLED_AS_HG" ]; then
   >     test $current_uid = $(find_dirstate_uuid)
+  >   else
+  >     echo "not testing because using Python implementation"
   >   fi
   > }
 
@@ -156,6 +158,7 @@ Nothing changes here
   $ dirstate_data_files | wc -l
    *1 (re)
   $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
 
 Trigger an append with a small change
 
@@ -165,6 +168,7 @@ Trigger an append with a small change
   $ dirstate_data_files | wc -l
    *1 (re)
   $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
 
 Unused bytes counter is non-0 when appending
   $ touch file
@@ -178,6 +182,7 @@ Trigger a rust/rhg run which updates the unused bytes value
   $ dirstate_data_files | wc -l
    *1 (re)
   $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
 
   $ hg debugstate --docket | grep unused
   number of unused bytes: 0 (no-rust no-rhg !)
