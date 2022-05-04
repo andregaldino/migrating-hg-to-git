@@ -19,5 +19,4 @@
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cat target
   $ hg update tip
-  abort: file censored data/target:b1c12cf98dc8 (known-bad-output !)
-  [255]
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved

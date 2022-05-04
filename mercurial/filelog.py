@@ -202,10 +202,10 @@ class filelog(object):
 
         # for revisions with renames, we have to go the slow way
         node = self.node(rev)
-        if self.renamed(node):
-            return len(self.read(node))
         if self.iscensored(rev):
             return 0
+        if self.renamed(node):
+            return len(self.read(node))
 
         # XXX if self.read(node).startswith("\1\n"), this returns (size+4)
         return self._revlog.size(rev)
