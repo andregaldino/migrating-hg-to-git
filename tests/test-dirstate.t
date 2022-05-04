@@ -119,4 +119,88 @@ infinite loop.
   C hgext3rd/__init__.py
 
   $ cd ..
+
+Check that the old dirstate data file is removed correctly and the new one is
+valid.
+
+  $ dirstate_data_files () {
+  >   find .hg -maxdepth 1 -name "dirstate.*"
+  > }
+
+  $ find_dirstate_uuid () {
+  >   hg debugstate --docket | grep uuid | sed 's/.*uuid: \(.*\)/\1/'
+  > }
+
+  $ dirstate_uuid_has_not_changed () {
+  >   # Non-Rust always rewrites the whole dirstate
+  >   if [ $# -eq 1 ] || ([ -n "$HGMODULEPOLICY" ] && [ -z "${HGMODULEPOLICY##*rust*}" ]) || [ -n "$RHG_INSTALLED_AS_HG" ]; then
+  >     test $current_uid = $(find_dirstate_uuid)
+  >   else
+  >     echo "not testing because using Python implementation"
+  >   fi
+  > }
+
+  $ cd ..
+  $ hg init append-mostly
+  $ cd append-mostly
+  $ mkdir dir dir2
+  $ touch dir/a dir/b dir/c dir/d dir/e dir2/f
+  $ hg commit -Aqm initial
+  $ hg st
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ current_uid=$(find_dirstate_uuid)
+
+Nothing changes here
+
+  $ hg st
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
+
+Trigger an append with a small change
+
+  $ echo "modified" > dir2/f
+  $ hg st
+  M dir2/f
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
+
+Unused bytes counter is non-0 when appending
+  $ touch file
+  $ hg add file
+  $ current_uid=$(find_dirstate_uuid)
+
+Trigger a rust/rhg run which updates the unused bytes value
+  $ hg st
+  M dir2/f
+  A file
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed
+  not testing because using Python implementation (no-rust no-rhg !)
+
+  $ hg debugstate --docket | grep unused
+  number of unused bytes: 0 (no-rust no-rhg !)
+  number of unused bytes: [1-9]\d* (re) (rhg no-rust !)
+  number of unused bytes: [1-9]\d* (re) (rust no-rhg !)
+  number of unused bytes: [1-9]\d* (re) (rust rhg !)
+
+Delete most of the dirstate to trigger a non-append
+  $ hg rm dir/a dir/b dir/c dir/d
+  $ dirstate_data_files | wc -l
+   *1 (re)
+  $ dirstate_uuid_has_not_changed also-if-python
+  [1]
+
+Check that unused bytes counter is reset when creating a new docket
+
+  $ hg debugstate --docket | grep unused
+  number of unused bytes: 0
+
 #endif
+
+  $ cd ..

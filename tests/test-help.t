@@ -1013,8 +1013,6 @@ Test list of internal help commands
                  dump information about delta chains in a revlog
    debugdirstate
                  show the contents of the current dirstate
-   debugdirstateignorepatternshash
-                 show the hash of ignore patterns stored in dirstate if v2,
    debugdiscovery
                  runs the changeset discovery protocol in isolation
    debugdownload

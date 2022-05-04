@@ -622,13 +622,18 @@ pub(super) fn write(
 
     let root_nodes = writer.write_nodes(dirstate_map.root.as_ref())?;
 
+    let unreachable_bytes = if append {
+        dirstate_map.unreachable_bytes
+    } else {
+        0
+    };
     let meta = TreeMetadata {
         root_nodes,
         nodes_with_entry_count: dirstate_map.nodes_with_entry_count.into(),
         nodes_with_copy_source_count: dirstate_map
             .nodes_with_copy_source_count
             .into(),
-        unreachable_bytes: dirstate_map.unreachable_bytes.into(),
+        unreachable_bytes: unreachable_bytes.into(),
         unused: [0; 4],
         ignore_patterns_hash: dirstate_map.ignore_patterns_hash,
     };

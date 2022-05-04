@@ -418,14 +418,14 @@ This is an optimization that is only relevant when using the Rust extensions
   $ hg status > /dev/null
   $ cat .hg/testhgignore .hg/testhgignorerel .hgignore dir2/.hgignore dir1/.hgignore dir1/.hgignoretwo | $TESTDIR/f --sha1
   sha1=6e315b60f15fb5dfa02be00f3e2c8f923051f5ff
-  $ hg debugdirstateignorepatternshash
-  6e315b60f15fb5dfa02be00f3e2c8f923051f5ff
+  $ hg debugstate --docket | grep ignore
+  ignore pattern hash: 6e315b60f15fb5dfa02be00f3e2c8f923051f5ff
 
   $ echo rel > .hg/testhgignorerel
   $ hg status > /dev/null
   $ cat .hg/testhgignore .hg/testhgignorerel .hgignore dir2/.hgignore dir1/.hgignore dir1/.hgignoretwo | $TESTDIR/f --sha1
   sha1=dea19cc7119213f24b6b582a4bae7b0cb063e34e
-  $ hg debugdirstateignorepatternshash
-  dea19cc7119213f24b6b582a4bae7b0cb063e34e
+  $ hg debugstate --docket | grep ignore
+  ignore pattern hash: dea19cc7119213f24b6b582a4bae7b0cb063e34e
 
 #endif

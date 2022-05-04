@@ -46,6 +46,7 @@ from . import (
     context,
     copies,
     dagparser,
+    dirstateutils,
     encoding,
     error,
     exchange,
@@ -939,6 +940,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         (b'', b'datesort', None, _(b'sort by saved mtime')),
         (
             b'',
+            b'docket',
+            False,
+            _(b'display the docket (metadata file) instead'),
+        ),
+        (
+            b'',
             b'all',
             False,
             _(b'display dirstate-v2 tree nodes that would not exist in v1'),
@@ -948,6 +955,33 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 )
 def debugstate(ui, repo, **opts):
     """show the contents of the current dirstate"""
+
+    if opts.get("docket"):
+        if not repo.dirstate._use_dirstate_v2:
+            raise error.Abort(_(b'dirstate v1 does not have a docket'))
+
+        docket = repo.dirstate._map.docket
+        (
+            start_offset,
+            root_nodes,
+            nodes_with_entry,
+            nodes_with_copy,
+            unused_bytes,
+            _unused,
+            ignore_pattern,
+        ) = dirstateutils.v2.TREE_METADATA.unpack(docket.tree_metadata)
+
+        ui.write(_(b"size of dirstate data: %d\n") % docket.data_size)
+        ui.write(_(b"data file uuid: %s\n") % docket.uuid)
+        ui.write(_(b"start offset of root nodes: %d\n") % start_offset)
+        ui.write(_(b"number of root nodes: %d\n") % root_nodes)
+        ui.write(_(b"nodes with entries: %d\n") % nodes_with_entry)
+        ui.write(_(b"nodes with copies: %d\n") % nodes_with_copy)
+        ui.write(_(b"number of unused bytes: %d\n") % unused_bytes)
+        ui.write(
+            _(b"ignore pattern hash: %s\n") % binascii.hexlify(ignore_pattern)
+        )
+        return
 
     nodates = not opts['dates']
     if opts.get('nodates') is not None:
@@ -980,22 +1014,6 @@ def debugstate(ui, repo, **opts):
         ui.write(b"%c %s %10d %s%s\n" % (state, mode, size, timestr, filename))
     for f in repo.dirstate.copies():
         ui.write(_(b"copy: %s -> %s\n") % (repo.dirstate.copied(f), f))
-
-
-@command(
-    b'debugdirstateignorepatternshash',
-    [],
-    _(b''),
-)
-def debugdirstateignorepatternshash(ui, repo, **opts):
-    """show the hash of ignore patterns stored in dirstate if v2,
-    or nothing for dirstate-v2
-    """
-    if repo.dirstate._use_dirstate_v2:
-        docket = repo.dirstate._map.docket
-        hash_len = 20  # 160 bits for SHA-1
-        hash_bytes = docket.tree_metadata[-hash_len:]
-        ui.write(binascii.hexlify(hash_bytes) + b'\n')
 
 
 @command(

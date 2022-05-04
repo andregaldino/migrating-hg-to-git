@@ -29,6 +29,9 @@ pub enum CommandError {
     /// `rhg` may attempt to silently fall back to Python-based `hg`, which
     /// may or may not support this feature.
     UnsupportedFeature { message: Vec<u8> },
+    /// The fallback executable does not exist (or has some other problem if
+    /// we end up being more precise about broken fallbacks).
+    InvalidFallback { path: Vec<u8>, err: String },
 }
 
 impl CommandError {

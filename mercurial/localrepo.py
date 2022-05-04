@@ -3175,7 +3175,7 @@ class localrepository:
             # Save commit message in case this transaction gets rolled back
             # (e.g. by a pretxncommit hook).  Leave the content alone on
             # the assumption that the user will use the same editor again.
-            msgfn = self.savecommitmessage(cctx._text)
+            msg_path = self.savecommitmessage(cctx._text)
 
             # commit subs and write new state
             if subs:
@@ -3205,13 +3205,14 @@ class localrepository:
             except:  # re-raises
                 if edited:
                     self.ui.write(
-                        _(b'note: commit message saved in %s\n') % msgfn
+                        _(b'note: commit message saved in %s\n') % msg_path
                     )
                     self.ui.write(
                         _(
                             b"note: use 'hg commit --logfile "
-                            b".hg/last-message.txt --edit' to reuse it\n"
+                            b"%s --edit' to reuse it\n"
                         )
+                        % msg_path
                     )
                 raise
 
