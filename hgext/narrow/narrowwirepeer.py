@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from mercurial import (
     bundle2,
     error,
+    exchange,
     extensions,
     hg,
     narrowspec,
@@ -86,6 +87,11 @@ def narrow_widen(
         newincludes = splitpaths(newincludes)
         oldexcludes = splitpaths(oldexcludes)
         newexcludes = splitpaths(newexcludes)
+
+        # enforce narrow acl if set
+        if repo.ui.has_section(exchange._NARROWACL_SECTION):
+            exchange.applynarrowacl(repo, {'includepats': newincludes})
+
         # validate the patterns
         narrowspec.validatepatterns(set(oldincludes))
         narrowspec.validatepatterns(set(newincludes))

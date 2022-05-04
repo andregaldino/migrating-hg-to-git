@@ -41,3 +41,39 @@ NarrowHG should track f1 and f2
   $ hg -R narrowclone1 tracked
   I path:f1
   I path:f2
+
+Narrow should not be able to widen to include f3
+  $ hg -R narrowclone1 tracked --addinclude f3
+  comparing with http://localhost:$HGPORT1/
+  searching for changes
+  abort: The following includes are not accessible for test: ['path:f3']
+  [255]
+  $ ls -A -1 narrowclone1 | sort
+  .hg
+  f1
+  f2
+  $ hg -R narrowclone1 tracked
+  I path:f1
+  I path:f2
+
+Narrow should allow widen to include f2
+  $ hg -R narrowclone1 tracked --removeinclude f2 > /dev/null
+  $ hg -R narrowclone1 tracked
+  I path:f1
+  $ ls -A -1 narrowclone1 | sort
+  .hg
+  f1
+  $ hg -R narrowclone1 tracked --addinclude f2
+  comparing with http://localhost:$HGPORT1/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 0 changesets with 1 changes to 1 files
+  $ hg -R narrowclone1 tracked
+  I path:f1
+  I path:f2
+  $ ls -A -1 narrowclone1 | sort
+  .hg
+  f1
+  f2
