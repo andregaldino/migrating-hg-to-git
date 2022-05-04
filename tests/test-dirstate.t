@@ -133,8 +133,8 @@ valid.
   > }
 
   $ dirstate_uuid_has_not_changed () {
-  >   # Pure Python always rewrites the whole dirstate
-  >   if [ $# -eq 1 ] || [ "$HGMODULEPOLICY" = *"rust"* ] || [ -n "$RHG_INSTALLED_AS_HG" ]; then
+  >   # Non-Rust always rewrites the whole dirstate
+  >   if [ $# -eq 1 ] || ([ -n "$HGMODULEPOLICY" ] && [ -z "${HGMODULEPOLICY##*rust*}" ]) || [ -n "$RHG_INSTALLED_AS_HG" ]; then
   >     test $current_uid = $(find_dirstate_uuid)
   >   fi
   > }
