@@ -41,18 +41,11 @@ checks-py3:
         RUNTEST_ARGS: "--time --test-list /tmp/check-tests.txt"
         PYTHON: python3
 
-rust-cargo-test-py2: &rust_cargo_test
-    <<: *all
+rust-cargo-test-py3:
     stage: tests
     script:
         - echo "python used, $PYTHON"
         - make rust-tests
-
-rust-cargo-test-py3:
-    stage: tests
-    <<: *rust_cargo_test
-    variables:
-        PYTHON: python3
 
 phabricator-refresh:
     stage: phabricator
@@ -99,13 +92,6 @@ test-py3-pure:
         RUNTEST_ARGS: "--pure --blacklist /tmp/check-tests.txt"
         PYTHON: python3
         TEST_HGMODULEPOLICY: "py"
-
-test-py2-rust:
-    <<: *runtests
-    variables:
-        HGWITHRUSTEXT: cpython
-        RUNTEST_ARGS: "--rust --blacklist /tmp/check-tests.txt"
-        TEST_HGMODULEPOLICY: "rust+c"
 
 test-py3-rust:
     <<: *runtests
