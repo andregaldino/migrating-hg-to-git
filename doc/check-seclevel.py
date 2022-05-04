@@ -10,7 +10,7 @@ import sys
 
 # import from the live mercurial repo
 os.environ['HGMODULEPOLICY'] = 'py'
-sys.path.insert(0, "..")
+sys.path.insert(0, os.path.abspath(".."))
 from mercurial import demandimport
 
 demandimport.enable()
