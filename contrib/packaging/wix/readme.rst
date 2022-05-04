@@ -49,7 +49,7 @@ Relationship to TortoiseHG
 TortoiseHG uses the WiX files in this directory.
 
 The code for building TortoiseHG installers lives at
-https://bitbucket.org/tortoisehg/thg-winbuild and is maintained by
+https://foss.heptapod.net/mercurial/tortoisehg/thg-winbuild and is maintained by
 Steve Borho (steve@borho.org).
 
 When changing behavior of the WiX installer, be sure to notify
