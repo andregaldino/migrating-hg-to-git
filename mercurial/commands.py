@@ -2536,7 +2536,8 @@ def diff(ui, repo, *pats, **opts):
 
        :hg:`diff` may generate unexpected results for merges, as it will
        default to comparing against the working directory's first
-       parent changeset if no revisions are specified.
+       parent changeset if no revisions are specified.  To diff against the
+       conflict regions, you can use `--config diff.merge=yes`.
 
     By default, the working directory files are compared to its first parent. To
     see the differences from another revision, use --from. To see the difference
