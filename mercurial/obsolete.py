@@ -338,8 +338,6 @@ _fm1nodesha1size = _calcsize(_fm1nodesha1)
 _fm1nodesha256size = _calcsize(_fm1nodesha256)
 _fm1fsize = _calcsize(_fm1fixed)
 _fm1parentnone = 3
-_fm1parentshift = 14
-_fm1parentmask = _fm1parentnone << _fm1parentshift
 _fm1metapair = b'BB'
 _fm1metapairsize = _calcsize(_fm1metapair)
 
