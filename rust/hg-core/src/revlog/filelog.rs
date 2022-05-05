@@ -95,7 +95,7 @@ impl FilelogEntry<'_> {
         // Let’s call `file_data_len` what would be returned by
         // `self.data().file_data().len()`.
 
-        if self.0.is_cencored() {
+        if self.0.is_censored() {
             let file_data_len = 0;
             return other_len != file_data_len;
         }

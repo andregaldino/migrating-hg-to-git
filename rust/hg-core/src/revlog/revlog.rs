@@ -378,7 +378,7 @@ impl<'a> RevlogEntry<'a> {
         }
     }
 
-    pub fn is_cencored(&self) -> bool {
+    pub fn is_censored(&self) -> bool {
         (self.flags & REVISION_FLAG_CENSORED) != 0
     }
 
@@ -389,7 +389,7 @@ impl<'a> RevlogEntry<'a> {
     }
 
     /// The data for this entry, after resolving deltas if any.
-    pub fn data(&self) -> Result<Cow<'a, [u8]>, HgError> {
+    pub fn rawdata(&self) -> Result<Cow<'a, [u8]>, HgError> {
         let mut entry = self.clone();
         let mut delta_chain = vec![];
 
@@ -414,6 +414,13 @@ impl<'a> RevlogEntry<'a> {
             Revlog::build_data_from_deltas(entry, &delta_chain)?.into()
         };
 
+        Ok(data)
+    }
+
+    fn check_data(
+        &self,
+        data: Cow<'a, [u8]>,
+    ) -> Result<Cow<'a, [u8]>, HgError> {
         if self.revlog.check_hash(
             self.p1,
             self.p2,
@@ -424,6 +431,14 @@ impl<'a> RevlogEntry<'a> {
         } else {
             Err(corrupted())
         }
+    }
+
+    pub fn data(&self) -> Result<Cow<'a, [u8]>, HgError> {
+        let data = self.rawdata()?;
+        if self.is_censored() {
+            return Err(HgError::CensoredNodeError);
+        }
+        self.check_data(data)
     }
 
     /// Extract the data contained in the entry.

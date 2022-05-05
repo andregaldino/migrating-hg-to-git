@@ -73,6 +73,9 @@ impl From<HgError> for CommandError {
             HgError::UnsupportedFeature(message) => {
                 CommandError::unsupported(message)
             }
+            HgError::CensoredNodeError => {
+                CommandError::unsupported("Encountered a censored node")
+            }
             HgError::Abort {
                 message,
                 detailed_exit_code,

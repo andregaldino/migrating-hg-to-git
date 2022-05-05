@@ -42,6 +42,9 @@ pub enum HgError {
     /// and syntax of each value.
     #[from]
     ConfigValueParseError(ConfigValueParseError),
+
+    /// Censored revision data.
+    CensoredNodeError,
 }
 
 /// Details about where an I/O error happened
@@ -100,6 +103,9 @@ impl fmt::Display for HgError {
             }
             HgError::UnsupportedFeature(explanation) => {
                 write!(f, "unsupported feature: {}", explanation)
+            }
+            HgError::CensoredNodeError => {
+                write!(f, "encountered a censored node")
             }
             HgError::ConfigValueParseError(error) => error.fmt(f),
         }
