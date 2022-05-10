@@ -558,11 +558,15 @@ def _filterfull(entry, copy, vfsmap):
 @contextlib.contextmanager
 def maketempcopies():
     """return a function to temporary copy file"""
+
     files = []
+    dst_dir = pycompat.mkdtemp(prefix=b'hg-clone-')
     try:
 
         def copy(src):
-            fd, dst = pycompat.mkstemp()
+            fd, dst = pycompat.mkstemp(
+                prefix=os.path.basename(src), dir=dst_dir
+            )
             os.close(fd)
             files.append(dst)
             util.copyfiles(src, dst, hardlink=True)
@@ -572,6 +576,7 @@ def maketempcopies():
     finally:
         for tmp in files:
             util.tryunlink(tmp)
+        util.tryrmdir(dst_dir)
 
 
 def _makemap(repo):

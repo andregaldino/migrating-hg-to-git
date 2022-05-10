@@ -2592,6 +2592,14 @@ class atomictempfile:
             self.close()
 
 
+def tryrmdir(f):
+    try:
+        removedirs(f)
+    except OSError as e:
+        if e.errno != errno.ENOENT and e.errno != errno.ENOTEMPTY:
+            raise
+
+
 def unlinkpath(f, ignoremissing=False, rmdir=True):
     # type: (bytes, bool, bool) -> None
     """unlink and remove the directory if it is empty"""
