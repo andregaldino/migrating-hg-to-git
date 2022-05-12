@@ -2915,9 +2915,9 @@ def amend(ui, repo, old, extra, pats, opts):
         # filectxs from the old commit.
         if changes or changeset_copies:
             # Recompute copies (avoid recording a -> b -> a)
-            copied = copies.pathcopies(base, wctx, matcher)
-            if old.p2:
-                copied.update(copies.pathcopies(old.p2(), wctx, matcher))
+            copied = copies.pathcopies(base, wctx)
+            if old.p2():
+                copied.update(copies.pathcopies(old.p2(), wctx))
 
             # Prune files which were reverted by the updates: if old
             # introduced file X and the file was renamed in the working

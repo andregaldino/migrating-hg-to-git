@@ -625,4 +625,4 @@ cause them to be lost
   $ hg status --change . --copies
   A new_file_amend_me
   A r0_copied
-    r0 (missing-correct-output !)
+    r0
