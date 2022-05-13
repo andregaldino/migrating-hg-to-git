@@ -428,22 +428,22 @@ class branchcache:
             self._delayed = True
             return
         try:
-            f = repo.cachevfs(self._filename(repo), b"w", atomictemp=True)
-            cachekey = [hex(self.tipnode), b'%d' % self.tiprev]
-            if self.filteredhash is not None:
-                cachekey.append(hex(self.filteredhash))
-            f.write(b" ".join(cachekey) + b'\n')
-            nodecount = 0
-            for label, nodes in sorted(self._entries.items()):
-                label = encoding.fromlocal(label)
-                for node in nodes:
-                    nodecount += 1
-                    if node in self._closednodes:
-                        state = b'c'
-                    else:
-                        state = b'o'
-                    f.write(b"%s %s %s\n" % (hex(node), state, label))
-            f.close()
+            filename = self._filename(repo)
+            with repo.cachevfs(filename, b"w", atomictemp=True) as f:
+                cachekey = [hex(self.tipnode), b'%d' % self.tiprev]
+                if self.filteredhash is not None:
+                    cachekey.append(hex(self.filteredhash))
+                f.write(b" ".join(cachekey) + b'\n')
+                nodecount = 0
+                for label, nodes in sorted(self._entries.items()):
+                    label = encoding.fromlocal(label)
+                    for node in nodes:
+                        nodecount += 1
+                        if node in self._closednodes:
+                            state = b'c'
+                        else:
+                            state = b'o'
+                        f.write(b"%s %s %s\n" % (hex(node), state, label))
             repo.ui.log(
                 b'branchcache',
                 b'wrote %s with %d labels and %d nodes\n',
