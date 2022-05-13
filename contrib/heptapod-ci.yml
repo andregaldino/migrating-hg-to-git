@@ -37,6 +37,7 @@ checks:
         PYTHON: python3
 
 rust-cargo-test:
+    <<: *all
     stage: tests
     script:
         - echo "python used, $PYTHON"
