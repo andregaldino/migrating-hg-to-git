@@ -11,7 +11,7 @@ variables:
     TEST_HGTESTS_ALLOW_NETIO: "0"
 
 .all_template: &all
-  when: always
+  when: on_success
 
 .runtests_template: &runtests
     <<: *all
@@ -49,11 +49,11 @@ rust-cargo-test-py3:
 
 phabricator-refresh:
     stage: phabricator
-    rules:
-      - if: '"$PHABRICATOR_TOKEN" != "NO-PHAB"'
-        when: on_success
-      - if: '"$PHABRICATOR_TOKEN" == "NO-PHAB"'
-        when: never
+    except:
+      refs:
+        - merge_requests
+      variables:
+        - $PHABRICATOR_TOKEN == "NO-PHAB"
     variables:
       DEFAULT_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)"
       STABLE_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)\n⚠ This patch is intended for stable ⚠\n{image https://media.giphy.com/media/nYI8SmmChYXK0/source.gif}"
