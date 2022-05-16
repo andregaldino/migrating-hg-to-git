@@ -94,6 +94,7 @@ Show debug commands if there are no other candidates
   debugdate
   debugdeltachain
   debugdirstate
+  debugdirstateignorepatternshash
   debugdiscovery
   debugdownload
   debugextensions
@@ -284,6 +285,7 @@ Show all commands + options
   debugdata: changelog, manifest, dir
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
+  debugdirstateignorepatternshash: 
   debugdirstate: nodates, dates, datesort, docket, all
   debugdiscovery: old, nonheads, rev, seed, local-as-revs, remote-as-revs, ssh, remotecmd, insecure, template
   debugdownload: output
