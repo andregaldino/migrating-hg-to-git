@@ -497,7 +497,7 @@ static PyObject *index_pack_header(indexObject *self, PyObject *args)
 	if (self->format_version != format_v1) {
 		PyErr_Format(PyExc_RuntimeError,
 		             "version header should go in the docket, not the "
-		             "index: %lu",
+		             "index: %d",
 		             header);
 		return NULL;
 	}
