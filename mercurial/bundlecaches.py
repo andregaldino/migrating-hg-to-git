@@ -44,9 +44,12 @@ class bundlespec:
         # kept for Backward Compatibility concerns.
         return self.params
 
-    def set_param(self, key, value):
-        """overwrite a parameter value"""
-        self._explicit_params[key] = value
+    def set_param(self, key, value, overwrite=True):
+        """Set a bundle parameter value.
+
+        Will only overwrite if overwrite is true"""
+        if overwrite or key not in self._explicit_params:
+            self._explicit_params[key] = value
 
 
 # Maps bundle version human names to changegroup versions.
