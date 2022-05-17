@@ -1600,8 +1600,9 @@ def bundle(ui, repo, fname, *dests, **opts):
             raise error.InputError(
                 _(b"--base is incompatible with specifying destinations")
             )
-        common = [repo[rev].node() for rev in base]
-        heads = [repo[r].node() for r in revs] if revs else None
+        cl = repo.changelog
+        common = [cl.node(rev) for rev in base]
+        heads = [cl.node(r) for r in revs] if revs else None
         outgoing = discovery.outgoing(repo, common, heads)
         missing = outgoing.missing
         excluded = outgoing.excluded
