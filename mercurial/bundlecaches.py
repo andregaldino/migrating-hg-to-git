@@ -56,7 +56,12 @@ _bundlespeccontentopts = {
         b'tagsfnodescache': True,
         b'revbranchcache': True,
     },
-    b'packed1': {b'cg.version': b's1'},
+    b'packed1': {
+        b'cg.version': b's1',
+    },
+    b'bundle2': {  # legacy
+        b'cg.version': b'02',
+    },
 }
 _bundlespeccontentopts[b'bundle2'] = _bundlespeccontentopts[b'v2']
 
@@ -150,7 +155,7 @@ def parsebundlespec(repo, spec, strict=True):
 
         version, params = parseparams(version)
 
-        if version not in _bundlespeccgversions:
+        if version not in _bundlespeccontentopts:
             raise error.UnsupportedBundleSpecification(
                 _(b'%s is not a recognized bundle version') % version
             )
@@ -172,7 +177,7 @@ def parsebundlespec(repo, spec, strict=True):
             # Modern compression engines require v2.
             if compression not in _bundlespecv1compengines:
                 version = b'v2'
-        elif spec in _bundlespeccgversions:
+        elif spec in _bundlespeccontentopts:
             if spec == b'packed1':
                 compression = b'none'
             else:
@@ -212,7 +217,7 @@ def parsebundlespec(repo, spec, strict=True):
 
     engine = util.compengines.forbundlename(compression)
     compression, wirecompression = engine.bundletype()
-    wireversion = _bundlespeccgversions[version]
+    wireversion = _bundlespeccontentopts[version][b'cg.version']
 
     return bundlespec(
         compression, wirecompression, version, wireversion, params, contentopts
