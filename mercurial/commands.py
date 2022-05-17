@@ -1570,7 +1570,7 @@ def bundle(ui, repo, fname, *dests, **opts):
             pycompat.bytestr(e),
             hint=_(b"see 'hg help bundlespec' for supported values for --type"),
         )
-    cgversion = bundlespec.contentopts[b"cg.version"]
+    cgversion = bundlespec.params[b"cg.version"]
 
     # Packed bundles are a pseudo bundle format for now.
     if cgversion == b's1':
@@ -1680,14 +1680,12 @@ def bundle(ui, repo, fname, *dests, **opts):
     # Bundling of obsmarker and phases is optional as not all clients
     # support the necessary features.
     cfg = ui.configbool
-    contentopts = {
-        b'obsolescence': cfg(b'experimental', b'evolution.bundle-obsmarker'),
-        b'obsolescence-mandatory': cfg(
-            b'experimental', b'evolution.bundle-obsmarker:mandatory'
-        ),
-        b'phases': cfg(b'experimental', b'bundle-phases'),
-    }
-    bundlespec.contentopts.update(contentopts)
+    obsolescence_cfg = cfg(b'experimental', b'evolution.bundle-obsmarker')
+    bundlespec.set_param(b'obsolescence', obsolescence_cfg)
+    obs_mand_cfg = cfg(b'experimental', b'evolution.bundle-obsmarker:mandatory')
+    bundlespec.set_param(b'obsolescence-mandatory', obs_mand_cfg)
+    phases_cfg = cfg(b'experimental', b'bundle-phases')
+    bundlespec.set_param(b'phases', phases_cfg)
 
     bundle2.writenewbundle(
         ui,
@@ -1696,7 +1694,7 @@ def bundle(ui, repo, fname, *dests, **opts):
         fname,
         bversion,
         outgoing,
-        bundlespec.contentopts,
+        bundlespec.params,
         compression=bcompression,
         compopts=compopts,
     )

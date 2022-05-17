@@ -3,6 +3,8 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+import collections
+
 from .i18n import _
 
 from .thirdparty import attr
@@ -26,8 +28,25 @@ class bundlespec:
     wirecompression = attr.ib()
     version = attr.ib()
     wireversion = attr.ib()
-    params = attr.ib()
-    contentopts = attr.ib()
+    # parameters explicitly overwritten by the config or the specification
+    _explicit_params = attr.ib()
+    # default parameter for the version
+    #
+    # Keeping it separated is useful to check what was actually overwritten.
+    _default_opts = attr.ib()
+
+    @property
+    def params(self):
+        return collections.ChainMap(self._explicit_params, self._default_opts)
+
+    @property
+    def contentopts(self):
+        # kept for Backward Compatibility concerns.
+        return self.params
+
+    def set_param(self, key, value):
+        """overwrite a parameter value"""
+        self._explicit_params[key] = value
 
 
 # Maps bundle version human names to changegroup versions.
