@@ -56,6 +56,15 @@ _bundlespeccontentopts = {
         b'tagsfnodescache': True,
         b'revbranchcache': True,
     },
+    b'streamv2': {
+        b'changegroup': False,
+        b'cg.version': b'02',
+        b'obsolescence': False,
+        b'phases': False,
+        b"streamv2": True,
+        b'tagsfnodescache': False,
+        b'revbranchcache': False,
+    },
     b'packed1': {
         b'cg.version': b's1',
     },
@@ -65,14 +74,7 @@ _bundlespeccontentopts = {
 }
 _bundlespeccontentopts[b'bundle2'] = _bundlespeccontentopts[b'v2']
 
-_bundlespecvariants = {
-    b"streamv2": {
-        b"changegroup": False,
-        b"streamv2": True,
-        b"tagsfnodescache": False,
-        b"revbranchcache": False,
-    }
-}
+_bundlespecvariants = {b"streamv2": {}}
 
 # Compression engines allowed in version 1. THIS SHOULD NEVER CHANGE.
 _bundlespecv1compengines = {b'gzip', b'bzip2', b'none'}
@@ -208,12 +210,21 @@ def parsebundlespec(repo, spec, strict=True):
             )
 
     # Compute contentopts based on the version
-    contentopts = _bundlespeccontentopts.get(version, {}).copy()
-
-    # Process the variants
     if b"stream" in params and params[b"stream"] == b"v2":
-        variant = _bundlespecvariants[b"streamv2"]
-        contentopts.update(variant)
+        # That case is fishy as this mostly derails the version selection
+        # mechanism. `stream` bundles are quite specific and used differently
+        # as "normal" bundles.
+        #
+        # So we are pinning this to "v2", as this will likely be
+        # compatible forever. (see the next conditional).
+        #
+        # (we should probably define a cleaner way to do this and raise a
+        # warning when the old way is encounter)
+        version = b"streamv2"
+    contentopts = _bundlespeccontentopts.get(version, {}).copy()
+    if version == b"streamv2":
+        # streamv2 have been reported as "v2" for a while.
+        version = b"v2"
 
     engine = util.compengines.forbundlename(compression)
     compression, wirecompression = engine.bundletype()
