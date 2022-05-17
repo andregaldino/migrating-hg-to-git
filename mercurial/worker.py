@@ -78,6 +78,21 @@ if pycompat.ispy3:
         # _wrapped.readinto(), since that is unbuffered. The unpickler is fine
         # with just read() and readline(), so we don't need to implement it.
 
+        if (3, 8, 0) <= sys.version_info[:3] < (3, 8, 2):
+
+            # This is required for python 3.8, prior to 3.8.2.  See issue6444.
+            def readinto(self, b):
+                pos = 0
+                size = len(b)
+
+                while pos < size:
+                    ret = self._wrapped.readinto(b[pos:])
+                    if not ret:
+                        break
+                    pos += ret
+
+                return pos
+
         def readline(self):
             return self._wrapped.readline()
 
