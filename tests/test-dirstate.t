@@ -132,6 +132,10 @@ valid.
   >   hg debugstate --docket | grep uuid | sed 's/.*uuid: \(.*\)/\1/'
   > }
 
+  $ find_dirstate_data_size () {
+  >   hg debugstate --docket | grep 'size of dirstate data' | sed 's/.*size of dirstate data: \(.*\)/\1/'
+  > }
+
   $ dirstate_uuid_has_not_changed () {
   >   # Non-Rust always rewrites the whole dirstate
   >   if [ $# -eq 1 ] || ([ -n "$HGMODULEPOLICY" ] && [ -z "${HGMODULEPOLICY##*rust*}" ]) || [ -n "$RHG_INSTALLED_AS_HG" ]; then
@@ -162,13 +166,19 @@ Nothing changes here
 
 Trigger an append with a small change
 
-  $ echo "modified" > dir2/f
+  $ current_data_size=$(find_dirstate_data_size)
+  $ rm dir2/f
   $ hg st
-  M dir2/f
+  ! dir2/f
   $ dirstate_data_files | wc -l
    *1 (re)
   $ dirstate_uuid_has_not_changed
   not testing because using Python implementation (no-rust no-rhg !)
+  $ new_data_size=$(find_dirstate_data_size)
+  $ [ "$current_data_size" -eq "$new_data_size" ]; echo $?
+  0 (no-rust no-rhg !)
+  1 (rust !)
+  1 (no-rust rhg !)
 
 Unused bytes counter is non-0 when appending
   $ touch file
@@ -177,8 +187,8 @@ Unused bytes counter is non-0 when appending
 
 Trigger a rust/rhg run which updates the unused bytes value
   $ hg st
-  M dir2/f
   A file
+  ! dir2/f
   $ dirstate_data_files | wc -l
    *1 (re)
   $ dirstate_uuid_has_not_changed
