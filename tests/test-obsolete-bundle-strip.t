@@ -1446,6 +1446,7 @@ Actual testing
   # unbundling: (run 'hg update' to get a working copy)
 
 Test that advisory obsolescence markers in bundles are ignored if unsupported
+-----------------------------------------------------------------------------
 
   $ hg init repo-with-obs
   $ cd repo-with-obs
