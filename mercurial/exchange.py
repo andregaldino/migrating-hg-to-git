@@ -80,6 +80,14 @@ def readbundle(ui, fh, fname, vfs=None):
         )
 
 
+def _format_params(params):
+    parts = []
+    for key, value in sorted(params.items()):
+        value = urlreq.quote(value)
+        parts.append(b"%s=%s" % (key, value))
+    return b';'.join(parts)
+
+
 def getbundlespec(ui, fh):
     """Infer the bundlespec from a bundle file handle.
 
@@ -92,6 +100,8 @@ def getbundlespec(ui, fh):
             return util.compengines.forbundletype(alg).bundletype()[0]
         except KeyError:
             return None
+
+    params = {}
 
     b = readbundle(ui, fh, None)
     if isinstance(b, changegroup.cg1unpacker):
@@ -115,9 +125,12 @@ def getbundlespec(ui, fh):
         version = None
         for part in b.iterparts():
             if part.type == b'changegroup':
-                version = part.params[b'version']
-                if version in (b'01', b'02'):
+                cgversion = part.params[b'version']
+                if cgversion in (b'01', b'02'):
                     version = b'v2'
+                elif cgversion in (b'03',):
+                    version = b'v2'
+                    params[b'cg.version'] = cgversion
                 else:
                     raise error.Abort(
                         _(
@@ -138,8 +151,12 @@ def getbundlespec(ui, fh):
             raise error.Abort(
                 _(b'could not identify changegroup version in bundle')
             )
+        spec = b'%s-%s' % (comp, version)
+        if params:
+            spec += b';'
+            spec += _format_params(params)
+        return spec
 
-        return b'%s-%s' % (comp, version)
     elif isinstance(b, streamclone.streamcloneapplier):
         requirements = streamclone.readbundle1header(fh)[2]
         formatted = bundle2._formatrequirementsparams(requirements)

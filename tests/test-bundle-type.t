@@ -265,6 +265,4 @@ Test controlling the changegroup version
   changegroup -- {nbchanges: 1, version: 03} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
   $ hg debugbundle ./v2-cg-03.hg --spec
-  abort: changegroup version 03 does not have a known bundlespec (known-bad-output !)
-  (try upgrading your Mercurial client) (known-bad-output !)
-  [255]
+  bzip2-v2;cg.version=03
