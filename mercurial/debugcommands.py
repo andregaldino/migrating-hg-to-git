@@ -764,6 +764,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     :``chainlen``:  delta chain length to this revision
     :``prevrev``:   previous revision in delta chain
     :``deltatype``: role of delta / how it was computed
+                    - base:  a full snapshot
+                    - snap:  an intermediate snapshot
+                    - p1:    a delta against the first parent
+                    - p2:    a delta against the second parent
+                    - prev:  a delta against the previous revision
+                    - other: a delta against an arbitrary revision
     :``compsize``:  compressed size of revision
     :``uncompsize``: uncompressed size of revision
     :``chainsize``: total size of compressed revisions in chain
