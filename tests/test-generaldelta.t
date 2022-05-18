@@ -105,33 +105,22 @@ delta coming from the server base delta server are not recompressed.
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R repo debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base        104        135        104   0.77037       104         0    0.00000 (no-zstd !)
-        1       1        2        0    prev         57        135        161   1.19259       161         0    0.00000 (no-zstd !)
-        2       1        3        1    prev         57        135        218   1.61481       218         0    0.00000 (no-zstd !)
-        0       1        1       -1    base        107        135        107   0.79259       107         0    0.00000 (zstd !)
-        1       1        2        0    prev         57        135        164   1.21481       164         0    0.00000 (zstd !)
-        2       1        3        1    prev         57        135        221   1.63704       221         0    0.00000 (zstd !)
+        0       1        1       -1    base        10?        135        10?   0.7????       10?         0    0.00000 (glob)
+        1       1        2        0    prev         57        135        1??   1.?????       16?         0    0.00000 (glob)
+        2       1        3        1    prev         57        135        2??   1.6????       2??         0    0.00000 (glob)
         3       2        1       -1    base        104        135        104   0.77037       104         0    0.00000
   $ hg -R usegd debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base        104        135        104   0.77037       104         0    0.00000 (no-zstd !)
-        1       1        2        0      p1         57        135        161   1.19259       161         0    0.00000 (no-zstd !)
-        2       1        3        1    prev         57        135        218   1.61481       218         0    0.00000 (no-zstd !)
-        3       1        2        0      p1         57        135        161   1.19259       275       114    0.70807 (no-zstd !)
-        0       1        1       -1    base        107        135        107   0.79259       107         0    0.00000 (zstd !)
-        1       1        2        0      p1         57        135        164   1.21481       164         0    0.00000 (zstd !)
-        2       1        3        1    prev         57        135        221   1.63704       221         0    0.00000 (zstd !)
-        3       1        2        0      p1         57        135        164   1.21481       278       114    0.69512 (zstd !)
+        0       1        1       -1    base        10?        135        10?   0.7????       10?         0    0.00000 (glob)
+        1       1        2        0      p1         57        135        16?   1.?????       16?         0    0.00000 (glob)
+        2       1        3        1    prev         57        135        2??   1.6????       2??         0    0.00000 (glob)
+        3       1        2        0      p1         57        135        16?   1.?????       27?       114    0.????? (glob)
   $ hg -R full debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base        104        135        104   0.77037       104         0    0.00000 (no-zstd !)
-        1       1        2        0      p1         57        135        161   1.19259       161         0    0.00000 (no-zstd !)
-        2       1        2        0      p1         57        135        161   1.19259       218        57    0.35404 (no-zstd !)
-        3       1        2        0      p1         57        135        161   1.19259       275       114    0.70807 (no-zstd !)
-        0       1        1       -1    base        107        135        107   0.79259       107         0    0.00000 (zstd !)
-        1       1        2        0      p1         57        135        164   1.21481       164         0    0.00000 (zstd !)
-        2       1        2        0      p1         57        135        164   1.21481       221        57    0.34756 (zstd !)
-        3       1        2        0      p1         57        135        164   1.21481       278       114    0.69512 (zstd !)
+        0       1        1       -1    base        10?        135        10?   0.7????       10?         0    0.00000 (glob)
+        1       1        2        0      p1         57        135        16?   1.?????       16?         0    0.00000 (glob)
+        2       1        2        0      p1         57        135        16?   1.?????       2??        57    0.3???? (glob)
+        3       1        2        0      p1         57        135        16?   1.?????       27?       114    0.????? (glob)
 
 Test revlog.optimize-delta-parent-choice
 
@@ -152,12 +141,9 @@ Test revlog.optimize-delta-parent-choice
   $ hg commit -q -m merge
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000 (no-zstd !)
-        1       1        2        0    prev         61         86        120   1.39535       120         0    0.00000 (no-zstd !)
-        2       1        2        0      p2         62        301        121   0.40199       182        61    0.50413 (no-zstd !)
-        0       1        1       -1    base         68        215         68   0.31628        68         0    0.00000 (zstd !)
-        1       1        2        0    prev         70         86        138   1.60465       138         0    0.00000 (zstd !)
-        2       1        2        0      p2         68        301        136   0.45183       206        70    0.51471 (zstd !)
+        0       1        1       -1    base         ??        215         ??   0.?????        ??         0    0.00000 (glob)
+        1       1        2        0    prev         ??         86        1??   1.?????       1??         0    0.00000 (glob)
+        2       1        2        0      p2         ??        301        1??   0.4????       ???        ??    0.5???? (glob)
 
   $ hg strip -q -r . --config extensions.strip=
 
@@ -167,12 +153,9 @@ Test revlog.optimize-delta-parent-choice
   $ hg commit -q -m merge --config storage.revlog.optimize-delta-parent-choice=yes
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
-        0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000 (no-zstd !)
-        1       1        2        0    prev         61         86        120   1.39535       120         0    0.00000 (no-zstd !)
-        2       1        2        0      p2         62        301        121   0.40199       182        61    0.50413 (no-zstd !)
-        0       1        1       -1    base         68        215         68   0.31628        68         0    0.00000 (zstd !)
-        1       1        2        0    prev         70         86        138   1.60465       138         0    0.00000 (zstd !)
-        2       1        2        0      p2         68        301        136   0.45183       206        70    0.51471 (zstd !)
+        0       1        1       -1    base         ??        215         ??   0.?????        ??         0    0.00000 (glob)
+        1       1        2        0    prev         ??         86        1??   1.?????       1??         0    0.00000 (glob)
+        2       1        2        0      p2         ??        301        1??   0.4????       ???        ??    0.5???? (glob)
 
 Test that strip bundle use bundle2
   $ hg --config extensions.strip= strip .
@@ -283,20 +266,12 @@ test maxdeltachainspan
        46       3       29       45      p1         58       1334       1671   1.25262      1671         0    0.00000
        47       3       30       46      p1         58       1380       1729   1.25290      1729         0    0.00000
        48       3       31       47      p1         58       1426       1787   1.25316      1787         0    0.00000
-       49       4        1       -1    base        197        316        197   0.62342       197         0    0.00000 (no-zstd !)
-       50       4        2       49      p1         58        362        255   0.70442       255         0    0.00000 (no-zstd !)
-       51       4        3       50    prev        356        594        611   1.02862       611         0    0.00000 (no-zstd !)
-       52       4        4       51      p1         58        640        669   1.04531       669         0    0.00000 (no-zstd !)
-       49       4        1       -1    base        205        316        205   0.64873       205         0    0.00000 (zstd !)
-       50       4        2       49      p1         58        362        263   0.72652       263         0    0.00000 (zstd !)
-       51       4        3       50    prev        366        594        629   1.05892       629         0    0.00000 (zstd no-bigendian !)
-       52       4        4       51      p1         58        640        687   1.07344       687         0    0.00000 (zstd no-bigendian !)
-       51       4        3       50    prev        367        594        630   1.06061       630         0    0.00000 (zstd bigendian !)
-       52       4        4       51      p1         58        640        688   1.07500       688         0    0.00000 (zstd bigendian !)
+       49       4        1       -1    base        ???        316        ???   0.6????       ???         0    0.00000 (glob)
+       50       4        2       49      p1         58        362        2??   0.7????       2??         0    0.00000 (glob)
+       51       4        3       50    prev        3??        5??        6??   1.0????       6??         0    0.00000 (glob)
+       52       4        4       51      p1         58        640        6??   1.0????       6??         0    0.00000 (glob)
        53       5        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       6        1       -1    base        369        640        369   0.57656       369         0    0.00000 (no-zstd !)
-       54       6        1       -1    base        375        640        375   0.58594       375         0    0.00000 (zstd no-bigendian !)
-       54       6        1       -1    base        376        640        376   0.58750       376         0    0.00000 (zstd bigendian !)
+       54       6        1       -1    base        3??        640        3??   0.5????       3??         0    0.00000 (glob)
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=2800 relax-chain --config format.generaldelta=yes
   requesting all changes
   adding changesets
@@ -357,19 +332,12 @@ test maxdeltachainspan
        46       3       29       45      p1         58       1334       1671   1.25262      1671         0    0.00000
        47       3       30       46      p1         58       1380       1729   1.25290      1729         0    0.00000
        48       3       31       47      p1         58       1426       1787   1.25316      1787         0    0.00000
-       49       4        1       -1    base        197        316        197   0.62342       197         0    0.00000 (no-zstd !)
-       50       4        2       49      p1         58        362        255   0.70442       255         0    0.00000 (no-zstd !)
-       51       2       13       17      p1         58        594        739   1.24411      2781      2042    2.76319 (no-zstd !)
-       52       5        1       -1    base        369        640        369   0.57656       369         0    0.00000 (no-zstd !)
-       49       4        1       -1    base        205        316        205   0.64873       205         0    0.00000 (zstd !)
-       50       4        2       49      p1         58        362        263   0.72652       263         0    0.00000 (zstd !)
-       51       2       13       17      p1         58        594        739   1.24411      2789      2050    2.77402 (zstd !)
-       52       5        1       -1    base        375        640        375   0.58594       375         0    0.00000 (zstd no-bigendian !)
-       52       5        1       -1    base        376        640        376   0.58750       376         0    0.00000 (zstd bigendian !)
+       49       4        1       -1    base        ???        316        ???   0.6????       ???         0    0.00000 (glob)
+       50       4        2       49      p1         58        362        2??   0.7????       2??         0    0.00000 (glob)
+       51       2       13       17      p1         58        594        739   1.24411      278?      20??    2.7???? (glob)
+       52       5        1       -1    base        3??        640        3??   0.5????       3??         0    0.00000 (glob)
        53       6        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       7        1       -1    base        369        640        369   0.57656       369         0    0.00000 (no-zstd !)
-       54       7        1       -1    base        375        640        375   0.58594       375         0    0.00000 (zstd no-bigendian !)
-       54       7        1       -1    base        376        640        376   0.58750       376         0    0.00000 (zstd bigendian !)
+       54       7        1       -1    base        3??        640        3??   0.5????       3??         0    0.00000 (glob)
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=0 noconst-chain --config format.usegeneraldelta=yes --config storage.revlog.reuse-external-delta-parent=no
   requesting all changes
   adding changesets
@@ -435,6 +403,4 @@ test maxdeltachainspan
        51       2       13       17      p1         58        594        739   1.24411      2642      1903    2.57510
        52       2       14       51      p1         58        640        797   1.24531      2700      1903    2.38770
        53       4        1       -1    base          0          0          0   0.00000         0         0    0.00000
-       54       5        1       -1    base        369        640        369   0.57656       369         0    0.00000 (no-zstd !)
-       54       5        1       -1    base        375        640        375   0.58594       375         0    0.00000 (zstd no-bigendian !)
-       54       5        1       -1    base        376        640        376   0.58750       376         0    0.00000 (zstd bigendian !)
+       54       5        1       -1    base        3??        640        3??   0.5????       3??         0    0.00000 (glob)
