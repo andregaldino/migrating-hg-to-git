@@ -103,6 +103,7 @@ from .utils import (
 )
 
 from .revlogutils import (
+    constants as revlog_constants,
     deltas as deltautil,
     nodemap,
     rewrite,
@@ -796,25 +797,29 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
     def revinfo(rev):
         e = index[rev]
-        compsize = e[1]
-        uncompsize = e[2]
+        compsize = e[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH]
+        uncompsize = e[revlog_constants.ENTRY_DATA_UNCOMPRESSED_LENGTH]
         chainsize = 0
 
+        base = e[revlog_constants.ENTRY_DELTA_BASE]
+        p1 = e[revlog_constants.ENTRY_PARENT_1]
+        p2 = e[revlog_constants.ENTRY_PARENT_2]
+
         if generaldelta:
-            if e[3] == e[5]:
+            if base == p1:
                 deltatype = b'p1'
-            elif e[3] == e[6]:
+            elif base == p2:
                 deltatype = b'p2'
-            elif e[3] == rev:
+            elif base == rev:
                 deltatype = b'base'
             elif r.issnapshot(rev):
                 deltatype = b'snap'
-            elif e[3] == rev - 1:
+            elif base == rev - 1:
                 deltatype = b'prev'
             else:
                 deltatype = b'other'
         else:
-            if e[3] == rev:
+            if base == rev:
                 deltatype = b'base'
             else:
                 deltatype = b'prev'
@@ -822,7 +827,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         chain = r._deltachain(rev)[0]
         for iterrev in chain:
             e = index[iterrev]
-            chainsize += e[1]
+            chainsize += e[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH]
 
         return compsize, uncompsize, deltatype, chain, chainsize
 
