@@ -1692,7 +1692,7 @@ def writenewbundle(
         raise error.ProgrammingError(b'unknown bundle type: %s' % bundletype)
 
     caps = {}
-    if b'obsolescence' in opts:
+    if opts.get(b'obsolescence', False):
         caps[b'obsmarkers'] = (b'V1',)
     bundle = bundle20(ui, caps)
     bundle.setcompression(compression, compopts)
