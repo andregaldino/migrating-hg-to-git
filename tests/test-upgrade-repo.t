@@ -1453,10 +1453,10 @@ repository config is taken in account
   format.revlog-compression=$BUNDLE2_COMPRESSIONS$
   format.maxchainlen=9001
   $ hg debugdeltachain file
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
-        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
-        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
-        2       1        2        0    snap         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
+      rev      p1      p2  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0      -1      -1       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
+        1       0      -1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
+        2       1      -1       1        2        0    snap         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
 
   $ hg debugupgraderepo --run --optimize 're-delta-all'
   upgrade will perform the following actions:
@@ -1501,10 +1501,10 @@ repository config is taken in account
   copy of old repository backed up at $TESTTMP/localconfig/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
   $ hg debugdeltachain file
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
-        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
-        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
-        2       1        3        1      p1         21        200        119   0.59500       119         0    0.00000        119        119   1.00000        1
+      rev      p1      p2  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0      -1      -1       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
+        1       0      -1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
+        2       1      -1       1        3        1      p1         21        200        119   0.59500       119         0    0.00000        119        119   1.00000        1
   $ cd ..
 
   $ cat << EOF >> $HGRCPATH

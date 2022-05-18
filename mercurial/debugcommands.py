@@ -758,6 +758,8 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     Output can be templatized. Available template keywords are:
 
     :``rev``:       revision number
+    :``p1``:        parent 1 revision number (for reference)
+    :``p2``:        parent 2 revision number (for reference)
     :``chainid``:   delta chain identifier (numbered by unique base)
     :``chainlen``:  delta chain length to this revision
     :``prevrev``:   previous revision in delta chain
@@ -829,12 +831,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
             e = index[iterrev]
             chainsize += e[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH]
 
-        return compsize, uncompsize, deltatype, chain, chainsize
+        return p1, p2, compsize, uncompsize, deltatype, chain, chainsize
 
     fm = ui.formatter(b'debugdeltachain', opts)
 
     fm.plain(
-        b'    rev  chain# chainlen     prev   delta       '
+        b'    rev      p1      p2  chain# chainlen     prev   delta       '
         b'size    rawsize  chainsize     ratio   lindist extradist '
         b'extraratio'
     )
@@ -844,7 +846,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
     chainbases = {}
     for rev in r:
-        comp, uncomp, deltatype, chain, chainsize = revinfo(rev)
+        p1, p2, comp, uncomp, deltatype, chain, chainsize = revinfo(rev)
         chainbase = chain[0]
         chainid = chainbases.setdefault(chainbase, len(chainbases) + 1)
         basestart = start(chainbase)
@@ -868,11 +870,13 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
         fm.startitem()
         fm.write(
-            b'rev chainid chainlen prevrev deltatype compsize '
+            b'rev p1 p2 chainid chainlen prevrev deltatype compsize '
             b'uncompsize chainsize chainratio lindist extradist '
             b'extraratio',
-            b'%7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f',
+            b'%7d %7d %7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f',
             rev,
+            p1,
+            p2,
             chainid,
             len(chain),
             prevrev,

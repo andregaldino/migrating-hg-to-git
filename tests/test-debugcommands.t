@@ -197,10 +197,10 @@ debugdelta chain basic output
 
 #if reporevlogstore no-pure
   $ hg debugdeltachain -m
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
-        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
-        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
-        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+      rev      p1      p2  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0      -1      -1       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+        1       0      -1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
+        2       1      -1       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen}\n'
   0 1 1
@@ -220,6 +220,8 @@ debugdelta chain basic output
     "extraratio": 0.0,
     "largestblock": 44,
     "lindist": 44,
+    "p1": -1,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1.0,
     "readsize": 44,
@@ -238,6 +240,8 @@ debugdelta chain basic output
     "extraratio": 0,
     "largestblock": 0,
     "lindist": 0,
+    "p1": 0,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1,
     "readsize": 0,
@@ -256,6 +260,8 @@ debugdelta chain basic output
     "extraratio": 0.0,
     "largestblock": 44,
     "lindist": 44,
+    "p1": 1,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1.0,
     "readsize": 44,
@@ -272,10 +278,10 @@ debugdelta chain with sparse read enabled
   > sparse-read = True
   > EOF
   $ hg debugdeltachain -m
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
-        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
-        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
-        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+      rev      p1      p2  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0      -1      -1       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+        1       0      -1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
+        2       1      -1       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen} {readsize} {largestblock} {readdensity}\n'
   0 1 1 44 44 1.0
@@ -295,6 +301,8 @@ debugdelta chain with sparse read enabled
     "extraratio": 0.0,
     "largestblock": 44,
     "lindist": 44,
+    "p1": -1,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1.0,
     "readsize": 44,
@@ -313,6 +321,8 @@ debugdelta chain with sparse read enabled
     "extraratio": 0,
     "largestblock": 0,
     "lindist": 0,
+    "p1": 0,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1,
     "readsize": 0,
@@ -331,6 +341,8 @@ debugdelta chain with sparse read enabled
     "extraratio": 0.0,
     "largestblock": 44,
     "lindist": 44,
+    "p1": 1,
+    "p2": -1,
     "prevrev": -1,
     "readdensity": 1.0,
     "readsize": 44,
