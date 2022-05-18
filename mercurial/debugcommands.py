@@ -768,6 +768,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                     - snap:  an intermediate snapshot
                     - p1:    a delta against the first parent
                     - p2:    a delta against the second parent
+                    - skip1: a delta against the same base as p1
+                              (when p1 has empty delta
+                    - skip2: a delta against the same base as p2
+                              (when p2 has empty delta
                     - prev:  a delta against the previous revision
                     - other: a delta against an arbitrary revision
     :``compsize``:  compressed size of revision
@@ -803,6 +807,9 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     generaldelta = r._generaldelta
     withsparseread = getattr(r, '_withsparseread', False)
 
+    # security to avoid crash on corrupted revlogs
+    total_revs = len(index)
+
     def revinfo(rev):
         e = index[rev]
         compsize = e[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH]
@@ -813,6 +820,39 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         p1 = e[revlog_constants.ENTRY_PARENT_1]
         p2 = e[revlog_constants.ENTRY_PARENT_2]
 
+        # If the parents of a revision has an empty delta, we never try to delta
+        # against that parent, but directly against the delta base of that
+        # parent (recursively). It avoids adding a useless entry in the chain.
+        #
+        # However we need to detect that as a special case for delta-type, that
+        # is not simply "other".
+        p1_base = p1
+        if p1 != nullrev and p1 < total_revs:
+            e1 = index[p1]
+            while e1[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH] == 0:
+                new_base = e1[revlog_constants.ENTRY_DELTA_BASE]
+                if (
+                    new_base == p1_base
+                    or new_base == nullrev
+                    or new_base >= total_revs
+                ):
+                    break
+                p1_base = new_base
+                e1 = index[p1_base]
+        p2_base = p2
+        if p2 != nullrev and p2 < total_revs:
+            e2 = index[p2]
+            while e2[revlog_constants.ENTRY_DATA_COMPRESSED_LENGTH] == 0:
+                new_base = e2[revlog_constants.ENTRY_DELTA_BASE]
+                if (
+                    new_base == p2_base
+                    or new_base == nullrev
+                    or new_base >= total_revs
+                ):
+                    break
+                p2_base = new_base
+                e2 = index[p2_base]
+
         if generaldelta:
             if base == p1:
                 deltatype = b'p1'
@@ -820,6 +860,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                 deltatype = b'p2'
             elif base == rev:
                 deltatype = b'base'
+            elif base == p1_base:
+                deltatype = b'skip1'
+            elif base == p2_base:
+                deltatype = b'skip2'
             elif r.issnapshot(rev):
                 deltatype = b'snap'
             elif base == rev - 1:
