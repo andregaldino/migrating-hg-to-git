@@ -239,3 +239,32 @@ test invalid bundle type
   (see 'hg help bundlespec' for supported values for --type)
   [10]
   $ cd ..
+
+Test controlling the changegroup version
+
+  $ hg -R t1 bundle --config experimental.changegroup3=yes -a -t v2 ./v2-cg-default.hg
+  1 changesets found
+  $ hg debugbundle ./v2-cg-default.hg --part-type changegroup
+  Stream params: {Compression: BZ}
+  changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
+      c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  $ hg debugbundle ./v2-cg-default.hg --spec
+  bzip2-v2
+  $ hg -R t1 bundle --config experimental.changegroup3=yes -a -t 'v2;cg.version=02' ./v2-cg-02.hg
+  1 changesets found
+  $ hg debugbundle ./v2-cg-02.hg --part-type changegroup
+  Stream params: {Compression: BZ}
+  changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
+      c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  $ hg debugbundle ./v2-cg-02.hg --spec
+  bzip2-v2
+  $ hg -R t1 bundle --config experimental.changegroup3=yes -a -t 'v2;cg.version=03' ./v2-cg-03.hg
+  1 changesets found
+  $ hg debugbundle ./v2-cg-03.hg --part-type changegroup
+  Stream params: {Compression: BZ}
+  changegroup -- {nbchanges: 1, version: 03} (mandatory: True)
+      c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  $ hg debugbundle ./v2-cg-03.hg --spec
+  abort: changegroup version 03 does not have a known bundlespec (known-bad-output !)
+  (try upgrading your Mercurial client) (known-bad-output !)
+  [255]
