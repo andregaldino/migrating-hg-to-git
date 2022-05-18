@@ -102,6 +102,24 @@ _bundlespecvariants = {b"streamv2": {}}
 _bundlespecv1compengines = {b'gzip', b'bzip2', b'none'}
 
 
+def param_bool(key, value):
+    """make a boolean out of a parameter value"""
+    b = stringutil.parsebool(value)
+    if b is None:
+        msg = _(b"parameter %s should be a boolean ('%s')")
+        msg %= (key, value)
+        raise error.InvalidBundleSpecification(msg)
+    return b
+
+
+# mapping of known parameter name need their value processed
+bundle_spec_param_processing = {
+    b"obsolescence": param_bool,
+    b"obsolescence-mandatory": param_bool,
+    b"phases": param_bool,
+}
+
+
 def _parseparams(s):
     """parse bundlespec parameter section
 
@@ -124,6 +142,9 @@ def _parseparams(s):
         key, value = p.split(b'=', 1)
         key = urlreq.unquote(key)
         value = urlreq.unquote(value)
+        process = bundle_spec_param_processing.get(key)
+        if process is not None:
+            value = process(key, value)
         params[key] = value
 
     return version, params
