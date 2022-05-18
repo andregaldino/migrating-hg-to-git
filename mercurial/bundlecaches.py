@@ -102,6 +102,33 @@ _bundlespecvariants = {b"streamv2": {}}
 _bundlespecv1compengines = {b'gzip', b'bzip2', b'none'}
 
 
+def _parseparams(s):
+    """parse bundlespec parameter section
+
+    input: "comp-version;params" string
+
+    return: (spec; {param_key: param_value})
+    """
+    if b';' not in s:
+        return s, {}
+
+    params = {}
+    version, paramstr = s.split(b';', 1)
+
+    err = _(b'invalid bundle specification: missing "=" in parameter: %s')
+    for p in paramstr.split(b';'):
+        if b'=' not in p:
+            msg = err % p
+            raise error.InvalidBundleSpecification(msg)
+
+        key, value = p.split(b'=', 1)
+        key = urlreq.unquote(key)
+        value = urlreq.unquote(value)
+        params[key] = value
+
+    return version, params
+
+
 def parsebundlespec(repo, spec, strict=True):
     """Parse a bundle string specification into parts.
 
@@ -135,31 +162,6 @@ def parsebundlespec(repo, spec, strict=True):
     Note: this function will likely eventually return a more complex data
     structure, including bundle2 part information.
     """
-
-    def parseparams(s):
-        if b';' not in s:
-            return s, {}
-
-        params = {}
-        version, paramstr = s.split(b';', 1)
-
-        for p in paramstr.split(b';'):
-            if b'=' not in p:
-                raise error.InvalidBundleSpecification(
-                    _(
-                        b'invalid bundle specification: '
-                        b'missing "=" in parameter: %s'
-                    )
-                    % p
-                )
-
-            key, value = p.split(b'=', 1)
-            key = urlreq.unquote(key)
-            value = urlreq.unquote(value)
-            params[key] = value
-
-        return version, params
-
     if strict and b'-' not in spec:
         raise error.InvalidBundleSpecification(
             _(
@@ -177,7 +179,7 @@ def parsebundlespec(repo, spec, strict=True):
                 _(b'%s compression is not supported') % compression
             )
 
-        version, params = parseparams(version)
+        version, params = _parseparams(version)
 
         if version not in _bundlespeccontentopts:
             raise error.UnsupportedBundleSpecification(
@@ -188,7 +190,7 @@ def parsebundlespec(repo, spec, strict=True):
         # case some defaults are assumed (but only when not in strict mode).
         assert not strict
 
-        spec, params = parseparams(spec)
+        spec, params = _parseparams(spec)
 
         if spec in util.compengines.supportedbundlenames:
             compression = spec
