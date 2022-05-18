@@ -1456,7 +1456,7 @@ repository config is taken in account
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
         0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000         77         77   1.00000        1
         1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000         98         98   1.00000        1
-        2       1        2        0   other         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
+        2       1        2        0    snap         30        200        107   0.53500       128        21    0.19626        128        128   0.83594        1
 
   $ hg debugupgraderepo --run --optimize 're-delta-all'
   upgrade will perform the following actions:

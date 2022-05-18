@@ -805,10 +805,12 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                 deltatype = b'p1'
             elif e[3] == e[6]:
                 deltatype = b'p2'
-            elif e[3] == rev - 1:
-                deltatype = b'prev'
             elif e[3] == rev:
                 deltatype = b'base'
+            elif r.issnapshot(rev):
+                deltatype = b'snap'
+            elif e[3] == rev - 1:
+                deltatype = b'prev'
             else:
                 deltatype = b'other'
         else:
