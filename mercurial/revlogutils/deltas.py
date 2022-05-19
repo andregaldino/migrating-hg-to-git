@@ -20,6 +20,9 @@ from .constants import (
     COMP_MODE_DEFAULT,
     COMP_MODE_INLINE,
     COMP_MODE_PLAIN,
+    KIND_CHANGELOG,
+    KIND_FILELOG,
+    KIND_MANIFESTLOG,
     REVIDX_ISCENSORED,
     REVIDX_RAWTEXT_CHANGING_FLAGS,
 )
@@ -928,8 +931,9 @@ def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
 
 
 class deltacomputer:
-    def __init__(self, revlog):
+    def __init__(self, revlog, write_debug=None):
         self.revlog = revlog
+        self._write_debug = write_debug
 
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
@@ -1083,6 +1087,15 @@ class deltacomputer:
         if revinfo.flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
             return self._fullsnapshotinfo(fh, revinfo, target_rev)
 
+        if self._write_debug is not None:
+            start = util.timer()
+
+        # count the number of different delta we tried (for debug purpose)
+        dbg_try_count = 0
+        # count the number of "search round" we did. (for debug purpose)
+        dbg_try_rounds = 0
+        dbg_type = b'unknown'
+
         cachedelta = revinfo.cachedelta
         p1 = revinfo.p1
         p2 = revinfo.p2
@@ -1090,11 +1103,23 @@ class deltacomputer:
 
         deltainfo = None
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
+
+        if self._write_debug is not None:
+            if p1r != nullrev:
+                p1_chain_len = revlog._chaininfo(p1r)[0]
+            else:
+                p1_chain_len = -1
+            if p2r != nullrev:
+                p2_chain_len = revlog._chaininfo(p2r)[0]
+            else:
+                p2_chain_len = -1
+
         groups = _candidategroups(
             self.revlog, revinfo.textlen, p1r, p2r, cachedelta
         )
         candidaterevs = next(groups)
         while candidaterevs is not None:
+            dbg_try_rounds += 1
             nominateddeltas = []
             if deltainfo is not None:
                 # if we already found a good delta,
@@ -1105,6 +1130,7 @@ class deltacomputer:
                     continue
                 if candidaterev >= target_rev:
                     continue
+                dbg_try_count += 1
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if candidatedelta is not None:
                     if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
@@ -1117,7 +1143,68 @@ class deltacomputer:
                 candidaterevs = next(groups)
 
         if deltainfo is None:
+            dbg_type = b"full"
             deltainfo = self._fullsnapshotinfo(fh, revinfo, target_rev)
+        elif deltainfo.snapshotdepth:
+            dbg_type = b"snapshot"
+        else:
+            dbg_type = b"delta"
+
+        if self._write_debug is not None:
+            end = util.timer()
+            dbg = {
+                'duration': end - start,
+                'revision': target_rev,
+                'search_round_count': dbg_try_rounds,
+                'delta_try_count': dbg_try_count,
+                'type': dbg_type,
+                'p1-chain-len': p1_chain_len,
+                'p2-chain-len': p2_chain_len,
+            }
+            if deltainfo.snapshotdepth is not None:
+                dbg['snapshot-depth'] = deltainfo.snapshotdepth
+            else:
+                dbg['snapshot-depth'] = 0
+            target_revlog = b"UNKNOWN"
+            target_type = self.revlog.target[0]
+            target_key = self.revlog.target[1]
+            if target_type == KIND_CHANGELOG:
+                target_revlog = b'CHANGELOG:'
+            elif target_type == KIND_MANIFESTLOG:
+                target_revlog = b'MANIFESTLOG:'
+                if target_key:
+                    target_revlog += b'%s:' % target_key
+            elif target_type == KIND_FILELOG:
+                target_revlog = b'FILELOG:'
+                if target_key:
+                    target_revlog += b'%s:' % target_key
+            dbg['target-revlog'] = target_revlog
+
+            msg = (
+                b"DBG-DELTAS:"
+                b" %-12s"
+                b" rev=%d:"
+                b" search-rounds=%d"
+                b" try-count=%d"
+                b" - delta-type=%-6s"
+                b" snap-depth=%d"
+                b" - p1-chain-length=%d"
+                b" p2-chain-length=%d"
+                b" - duration=%f"
+                b"\n"
+            )
+            msg %= (
+                dbg["target-revlog"],
+                dbg["revision"],
+                dbg["search_round_count"],
+                dbg["delta_try_count"],
+                dbg["type"],
+                dbg["snapshot-depth"],
+                dbg["p1-chain-len"],
+                dbg["p2-chain-len"],
+                dbg["duration"],
+            )
+            self._write_debug(msg)
         return deltainfo
 
 
