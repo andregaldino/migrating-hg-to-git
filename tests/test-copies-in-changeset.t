@@ -443,9 +443,7 @@ downgrading
      removed: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
-    - all-filelogs
     - changelog
-    - manifest
   
   $ hg debugformat -v | egrep 'format-variant|revlog-v2|copies-sdc|changelog-v2'
   format-variant     repo config default
@@ -470,9 +468,7 @@ upgrading
      added: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
-    - all-filelogs
     - changelog
-    - manifest
   
   $ hg debugformat -v | egrep 'format-variant|revlog-v2|copies-sdc|changelog-v2'
   format-variant     repo config default

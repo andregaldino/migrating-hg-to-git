@@ -1661,9 +1661,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
      added: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
-    - all-filelogs
     - changelog
-    - manifest
   
 #endif
 
@@ -1689,9 +1687,7 @@ We upgrade a repository that is not using sidedata (the filelog case) and
      added: exp-changelog-v2, exp-copies-sidedata-changeset
   
   processed revlogs:
-    - all-filelogs
     - changelog
-    - manifest
   
 #endif
 

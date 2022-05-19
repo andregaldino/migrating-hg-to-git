@@ -362,6 +362,9 @@ class copiessdc(requirementformatvariant):
         b'Allows to use more efficient algorithm to deal with ' b'copy tracing.'
     )
 
+    touches_filelogs = False
+    touches_manifests = False
+
 
 @registerformatvariant
 class revlogv2(requirementformatvariant):
