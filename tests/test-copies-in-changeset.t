@@ -435,7 +435,18 @@ downgrading
   > [format]
   > exp-use-copies-side-data-changeset = no
   > EOF
-  $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
+  $ hg debugupgraderepo --run --quiet --no-backup
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     removed: exp-changelog-v2, exp-copies-sidedata-changeset
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugformat -v | egrep 'format-variant|revlog-v2|copies-sdc|changelog-v2'
   format-variant     repo config default
   copies-sdc:          no     no      no
@@ -451,7 +462,18 @@ upgrading
   > [format]
   > exp-use-copies-side-data-changeset = yes
   > EOF
-  $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
+  $ hg debugupgraderepo --run --quiet --no-backup
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: * (glob)
+     added: exp-changelog-v2, exp-copies-sidedata-changeset
+  
+  processed revlogs:
+    - all-filelogs
+    - changelog
+    - manifest
+  
   $ hg debugformat -v | egrep 'format-variant|revlog-v2|copies-sdc|changelog-v2'
   format-variant     repo config default
   copies-sdc:         yes    yes      no
