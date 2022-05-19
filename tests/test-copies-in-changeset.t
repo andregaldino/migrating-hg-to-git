@@ -434,14 +434,12 @@ downgrading
   $ cat << EOF > .hg/hgrc
   > [format]
   > exp-use-copies-side-data-changeset = no
-  > [experimental]
-  > revlogv2 = enable-unstable-format-and-corrupt-my-data
   > EOF
   $ hg debugupgraderepo --run --quiet --no-backup > /dev/null
   $ hg debugformat -v | egrep 'format-variant|revlog-v2|copies-sdc|changelog-v2'
   format-variant     repo config default
   copies-sdc:          no     no      no
-  revlog-v2:          yes    yes      no
+  revlog-v2:           no     no      no
   changelog-v2:        no     no      no
   $ hg debugsidedata -c -- 0
   $ hg debugsidedata -c -- 1
