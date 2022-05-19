@@ -380,6 +380,9 @@ class changelogv2(requirementformatvariant):
     description = _(b'An iteration of the revlog focussed on changelog needs.')
     upgrademessage = _(b'quite experimental')
 
+    touches_filelogs = False
+    touches_manifests = False
+
 
 @registerformatvariant
 class removecldeltachain(formatvariant):
