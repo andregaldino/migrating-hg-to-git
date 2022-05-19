@@ -1070,6 +1070,7 @@ def resolverevlogstorevfsoptions(ui, requirements, features):
         b'storage', b'revlog.optimize-delta-parent-choice'
     )
     options[b'deltabothparents'] = deltabothparents
+    options[b'debug-delta'] = ui.configbool(b'debug', b'revlog.debug-delta')
 
     issue6528 = ui.configbool(b'storage', b'revlog.issue6528.fix-incoming')
     options[b'issue6528.fix-incoming'] = issue6528

@@ -1038,3 +1038,28 @@ Test the option that create slim bundle
 Test the option that create and no-delta's bundle
   $ hg bundle -a --config devel.bundle.delta=full ./full.hg
   3 changesets found
+
+Test the debug output when applying delta
+-----------------------------------------
+
+  $ hg init foo
+  $ hg -R foo unbundle ./slim.hg \
+  > --config debug.revlog.debug-delta=yes \
+  > --config storage.revlog.reuse-external-delta=no \
+  > --config storage.revlog.reuse-external-delta-parent=no
+  adding changesets
+  DBG-DELTAS: CHANGELOG:   rev=0: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=-1 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: CHANGELOG:   rev=1: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=0 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: CHANGELOG:   rev=2: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=0 p2-chain-length=-1 - duration=* (glob)
+  adding manifests
+  DBG-DELTAS: MANIFESTLOG: rev=0: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=-1 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: MANIFESTLOG: rev=1: search-rounds=1 try-count=1 - delta-type=delta  snap-depth=0 - p1-chain-length=0 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: MANIFESTLOG: rev=2: search-rounds=1 try-count=1 - delta-type=delta  snap-depth=0 - p1-chain-length=1 p2-chain-length=-1 - duration=* (glob)
+  adding file changes
+  DBG-DELTAS: FILELOG:a:   rev=0: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=-1 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: FILELOG:b:   rev=0: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=-1 p2-chain-length=-1 - duration=* (glob)
+  DBG-DELTAS: FILELOG:c:   rev=0: search-rounds=0 try-count=0 - delta-type=full   snap-depth=0 - p1-chain-length=-1 p2-chain-length=-1 - duration=* (glob)
+  added 3 changesets with 3 changes to 3 files
+  new changesets 4fe08cd4693e:4652c276ac4f (3 drafts)
+  (run 'hg update' to get a working copy)
+

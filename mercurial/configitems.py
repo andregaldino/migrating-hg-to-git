@@ -584,6 +584,11 @@ coreconfigitem(
     default=b'',
 )
 coreconfigitem(
+    b'debug',
+    b'revlog.debug-delta',
+    default=False,
+)
+coreconfigitem(
     b'defaults',
     b'.*',
     default=None,

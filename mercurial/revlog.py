@@ -346,6 +346,7 @@ class revlog:
         self._chunkcachesize = 65536
         self._maxchainlen = None
         self._deltabothparents = True
+        self._debug_delta = False
         self.index = None
         self._docket = None
         self._nodemap_docket = None
@@ -423,6 +424,8 @@ class revlog:
         self._lazydeltabase = False
         if self._lazydelta:
             self._lazydeltabase = bool(opts.get(b'lazydeltabase', False))
+        if b'debug-delta' in opts:
+            self._debug_delta = opts[b'debug-delta']
         if b'compengine' in opts:
             self._compengine = opts[b'compengine']
         if b'zlib.level' in opts:
@@ -2426,7 +2429,12 @@ class revlog:
             textlen = len(rawtext)
 
         if deltacomputer is None:
-            deltacomputer = deltautil.deltacomputer(self)
+            write_debug = None
+            if self._debug_delta:
+                write_debug = transaction._report
+            deltacomputer = deltautil.deltacomputer(
+                self, write_debug=write_debug
+            )
 
         revinfo = revlogutils.revisioninfo(
             node,
@@ -2639,7 +2647,13 @@ class revlog:
         empty = True
         try:
             with self._writing(transaction):
-                deltacomputer = deltautil.deltacomputer(self)
+                write_debug = None
+                if self._debug_delta:
+                    write_debug = transaction._report
+                deltacomputer = deltautil.deltacomputer(
+                    self,
+                    write_debug=write_debug,
+                )
                 # loop through our set of deltas
                 for data in deltas:
                     (
@@ -3015,7 +3029,13 @@ class revlog:
         sidedata_helpers,
     ):
         """perform the core duty of `revlog.clone` after parameter processing"""
-        deltacomputer = deltautil.deltacomputer(destrevlog)
+        write_debug = None
+        if self._debug_delta:
+            write_debug = tr._report
+        deltacomputer = deltautil.deltacomputer(
+            destrevlog,
+            write_debug=write_debug,
+        )
         index = self.index
         for rev in self:
             entry = index[rev]
