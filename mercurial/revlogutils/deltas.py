@@ -931,9 +931,10 @@ def _rawgroups(revlog, p1, p2, cachedelta, snapshots=None):
 
 
 class deltacomputer:
-    def __init__(self, revlog, write_debug=None):
+    def __init__(self, revlog, write_debug=None, debug_search=False):
         self.revlog = revlog
         self._write_debug = write_debug
+        self._debug_search = debug_search
 
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
@@ -980,6 +981,7 @@ class deltacomputer:
     def _builddeltainfo(self, revinfo, base, fh):
         # can we use the cached delta?
         revlog = self.revlog
+        debug_search = self._write_debug is not None and self._debug_search
         chainbase = revlog.chainbase(base)
         if revlog._generaldelta:
             deltabase = base
@@ -1009,13 +1011,27 @@ class deltacomputer:
                 delta = revinfo.cachedelta[1]
         if delta is None:
             delta = self._builddeltadiff(base, revinfo, fh)
+        if debug_search:
+            msg = b"DBG-DELTAS-SEARCH:     uncompressed-delta-size=%d\n"
+            msg %= len(delta)
+            self._write_debug(msg)
         # snapshotdept need to be neither None nor 0 level snapshot
         if revlog.upperboundcomp is not None and snapshotdepth:
             lowestrealisticdeltalen = len(delta) // revlog.upperboundcomp
             snapshotlimit = revinfo.textlen >> snapshotdepth
+            if debug_search:
+                msg = b"DBG-DELTAS-SEARCH:     projected-lower-size=%d\n"
+                msg %= lowestrealisticdeltalen
+                self._write_debug(msg)
             if snapshotlimit < lowestrealisticdeltalen:
+                if debug_search:
+                    msg = b"DBG-DELTAS-SEARCH:     DISCARDED (snapshot limit)\n"
+                    self._write_debug(msg)
                 return None
             if revlog.length(base) < lowestrealisticdeltalen:
+                if debug_search:
+                    msg = b"DBG-DELTAS-SEARCH:     DISCARDED (prev size)\n"
+                    self._write_debug(msg)
                 return None
         header, data = revlog.compress(delta)
         deltalen = len(header) + len(data)
@@ -1090,6 +1106,8 @@ class deltacomputer:
         if self._write_debug is not None:
             start = util.timer()
 
+        debug_search = self._write_debug is not None and self._debug_search
+
         # count the number of different delta we tried (for debug purpose)
         dbg_try_count = 0
         # count the number of "search round" we did. (for debug purpose)
@@ -1113,6 +1131,10 @@ class deltacomputer:
                 p2_chain_len = revlog._chaininfo(p2r)[0]
             else:
                 p2_chain_len = -1
+        if debug_search:
+            msg = b"DBG-DELTAS-SEARCH: SEARCH rev=%d\n"
+            msg %= target_rev
+            self._write_debug(msg)
 
         groups = _candidategroups(
             self.revlog, revinfo.textlen, p1r, p2r, cachedelta
@@ -1120,21 +1142,93 @@ class deltacomputer:
         candidaterevs = next(groups)
         while candidaterevs is not None:
             dbg_try_rounds += 1
+            if debug_search:
+                prev = None
+                if deltainfo is not None:
+                    prev = deltainfo.base
+
+                if p1 in candidaterevs or p2 in candidaterevs:
+                    round_type = b"parents"
+                elif prev is not None and all(c < prev for c in candidaterevs):
+                    round_type = b"refine-down"
+                elif prev is not None and all(c > prev for c in candidaterevs):
+                    round_type = b"refine-up"
+                else:
+                    round_type = b"search-down"
+                msg = b"DBG-DELTAS-SEARCH: ROUND #%d - %d candidates - %s\n"
+                msg %= (dbg_try_rounds, len(candidaterevs), round_type)
+                self._write_debug(msg)
             nominateddeltas = []
             if deltainfo is not None:
+                if debug_search:
+                    msg = (
+                        b"DBG-DELTAS-SEARCH:   CONTENDER: rev=%d - length=%d\n"
+                    )
+                    msg %= (deltainfo.base, deltainfo.deltalen)
+                    self._write_debug(msg)
                 # if we already found a good delta,
                 # challenge it against refined candidates
                 nominateddeltas.append(deltainfo)
             for candidaterev in candidaterevs:
+                if debug_search:
+                    msg = b"DBG-DELTAS-SEARCH:   CANDIDATE: rev=%d\n"
+                    msg %= candidaterev
+                    self._write_debug(msg)
+                    candidate_type = None
+                    if candidaterev == p1:
+                        candidate_type = b"p1"
+                    elif candidaterev == p2:
+                        candidate_type = b"p2"
+                    elif self.revlog.issnapshot(candidaterev):
+                        candidate_type = b"snapshot-%d"
+                        candidate_type %= self.revlog.snapshotdepth(
+                            candidaterev
+                        )
+
+                    if candidate_type is not None:
+                        msg = b"DBG-DELTAS-SEARCH:     type=%s\n"
+                        msg %= candidate_type
+                        self._write_debug(msg)
+                    msg = b"DBG-DELTAS-SEARCH:     size=%d\n"
+                    msg %= self.revlog.length(candidaterev)
+                    self._write_debug(msg)
+                    msg = b"DBG-DELTAS-SEARCH:     base=%d\n"
+                    msg %= self.revlog.deltaparent(candidaterev)
+                    self._write_debug(msg)
                 if candidaterev in excluded_bases:
+                    if debug_search:
+                        msg = b"DBG-DELTAS-SEARCH:     EXCLUDED\n"
+                        self._write_debug(msg)
                     continue
                 if candidaterev >= target_rev:
+                    if debug_search:
+                        msg = b"DBG-DELTAS-SEARCH:     TOO-HIGH\n"
+                        self._write_debug(msg)
                     continue
                 dbg_try_count += 1
+
+                if debug_search:
+                    delta_start = util.timer()
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
+                if debug_search:
+                    delta_end = util.timer()
+                    msg = b"DBG-DELTAS-SEARCH:     delta-search-time=%f\n"
+                    msg %= delta_end - delta_start
+                    self._write_debug(msg)
                 if candidatedelta is not None:
                     if isgooddeltainfo(self.revlog, candidatedelta, revinfo):
+                        if debug_search:
+                            msg = b"DBG-DELTAS-SEARCH:     DELTA: length=%d (GOOD)\n"
+                            msg %= candidatedelta.deltalen
+                            self._write_debug(msg)
                         nominateddeltas.append(candidatedelta)
+                    elif debug_search:
+                        msg = b"DBG-DELTAS-SEARCH:     DELTA: length=%d (BAD)\n"
+                        msg %= candidatedelta.deltalen
+                        self._write_debug(msg)
+                elif debug_search:
+                    msg = b"DBG-DELTAS-SEARCH:     NO-DELTA\n"
+                    self._write_debug(msg)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
             if deltainfo is not None:
@@ -1145,7 +1239,7 @@ class deltacomputer:
         if deltainfo is None:
             dbg_type = b"full"
             deltainfo = self._fullsnapshotinfo(fh, revinfo, target_rev)
-        elif deltainfo.snapshotdepth:
+        elif deltainfo.snapshotdepth:  # pytype: disable=attribute-error
             dbg_type = b"snapshot"
         else:
             dbg_type = b"delta"
@@ -1161,8 +1255,13 @@ class deltacomputer:
                 'p1-chain-len': p1_chain_len,
                 'p2-chain-len': p2_chain_len,
             }
-            if deltainfo.snapshotdepth is not None:
-                dbg['snapshot-depth'] = deltainfo.snapshotdepth
+            if (
+                deltainfo.snapshotdepth  # pytype: disable=attribute-error
+                is not None
+            ):
+                dbg[
+                    'snapshot-depth'
+                ] = deltainfo.snapshotdepth  # pytype: disable=attribute-error
             else:
                 dbg['snapshot-depth'] = 0
             target_revlog = b"UNKNOWN"

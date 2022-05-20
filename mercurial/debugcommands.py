@@ -73,6 +73,7 @@ from . import (
     repoview,
     requirements,
     revlog,
+    revlogutils,
     revset,
     revsetlang,
     scmutil,
@@ -986,6 +987,65 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         fm.plain(b'\n')
 
     fm.end()
+
+
+@command(
+    b'debug-delta-find',
+    cmdutil.debugrevlogopts + cmdutil.formatteropts,
+    _(b'-c|-m|FILE REV'),
+    optionalrepo=True,
+)
+def debugdeltafind(ui, repo, arg_1, arg_2=None, **opts):
+    """display the computation to get to a valid delta for storing REV
+
+    This command will replay the process used to find the "best" delta to store
+    a revision and display information about all the steps used to get to that
+    result.
+
+    The revision use the revision number of the target storage (not changelog
+    revision number).
+
+    note: the process is initiated from a full text of the revision to store.
+    """
+    opts = pycompat.byteskwargs(opts)
+    if arg_2 is None:
+        file_ = None
+        rev = arg_1
+    else:
+        file_ = arg_1
+        rev = arg_2
+
+    rev = int(rev)
+
+    revlog = cmdutil.openrevlog(repo, b'debugdeltachain', file_, opts)
+
+    deltacomputer = deltautil.deltacomputer(
+        revlog,
+        write_debug=ui.write,
+        debug_search=True,
+    )
+
+    node = revlog.node(rev)
+    p1r, p2r = revlog.parentrevs(rev)
+    p1 = revlog.node(p1r)
+    p2 = revlog.node(p2r)
+    btext = [revlog.revision(rev)]
+    textlen = len(btext[0])
+    cachedelta = None
+    flags = revlog.flags(rev)
+
+    revinfo = revlogutils.revisioninfo(
+        node,
+        p1,
+        p2,
+        btext,
+        textlen,
+        cachedelta,
+        flags,
+    )
+
+    fh = revlog._datafp()
+    deltacomputer.finddeltainfo(revinfo, fh, target_rev=rev)
 
 
 @command(

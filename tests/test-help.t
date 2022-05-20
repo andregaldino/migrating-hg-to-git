@@ -978,6 +978,8 @@ Test list of internal help commands
   $ hg help debug
   debug commands (internal and unsupported):
   
+   debug-delta-find
+                 display the computation to get to a valid delta for storing REV
    debug-repair-issue6528
                  find affected revisions and repair them. See issue6528 for more
                  details.

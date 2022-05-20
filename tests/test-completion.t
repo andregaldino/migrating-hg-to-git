@@ -74,6 +74,7 @@ Do not show debug commands if there are other candidates
 
 Show debug commands if there are no other candidates
   $ hg debugcomplete debug
+  debug-delta-find
   debug-repair-issue6528
   debugancestor
   debugantivirusrunning
@@ -267,6 +268,7 @@ Show all commands + options
   config: untrusted, exp-all-known, edit, local, source, shared, non-shared, global, template
   continue: dry-run
   copy: forget, after, at-rev, force, include, exclude, dry-run
+  debug-delta-find: changelog, manifest, dir, template
   debug-repair-issue6528: to-report, from-report, paranoid, dry-run
   debugancestor: 
   debugantivirusrunning: 
