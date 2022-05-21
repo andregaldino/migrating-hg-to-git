@@ -69,6 +69,13 @@ def ismainthread():
 
 
 class _blockingreader:
+    """Wrap unbuffered stream such that pickle.load() works with it.
+
+    pickle.load() expects that calls to read() and readinto() read as many
+    bytes as requested. On EOF, it is fine to read fewer bytes. In this case,
+    pickle.load() raises an EOFError.
+    """
+
     def __init__(self, wrapped):
         self._wrapped = wrapped
 
@@ -94,7 +101,7 @@ class _blockingreader:
     def readline(self):
         return self._wrapped.readline()
 
-    # issue multiple reads until size is fulfilled
+    # issue multiple reads until size is fulfilled (or EOF is encountered)
     def read(self, size=-1):
         if size < 0:
             return self._wrapped.readall()
