@@ -107,16 +107,16 @@ class _blockingreader:
             return self._wrapped.readall()
 
         buf = bytearray(size)
-        view = memoryview(buf)
         pos = 0
 
-        while pos < size:
-            ret = self._wrapped.readinto(view[pos:])
-            if not ret:
-                break
-            pos += ret
+        with memoryview(buf) as view:
+            while pos < size:
+                with view[pos:] as subview:
+                    ret = self._wrapped.readinto(subview)
+                if not ret:
+                    break
+                pos += ret
 
-        del view
         del buf[pos:]
         return bytes(buf)
 
