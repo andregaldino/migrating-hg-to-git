@@ -280,6 +280,10 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     selector = selectors.DefaultSelector()
     for rfd, wfd in pipes:
         os.close(wfd)
+        # The stream has to be unbuffered. Otherwise, if all data is read from
+        # the raw file into the buffer, the selector thinks that the FD is not
+        # ready to read while pickle.load() could read from the buffer. This
+        # would delay the processing of readable items.
         selector.register(os.fdopen(rfd, 'rb', 0), selectors.EVENT_READ)
 
     def cleanup():
