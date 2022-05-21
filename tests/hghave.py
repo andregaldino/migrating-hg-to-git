@@ -1123,7 +1123,7 @@ def has_emacs():
 @check('black', 'the black formatter for python (>= 20.8b1)')
 def has_black():
     blackcmd = 'black --version'
-    version_regex = b'black, version ([0-9a-b.]+)'
+    version_regex = b'black, (?:version )?([0-9a-b.]+)'
     version = matchoutput(blackcmd, version_regex)
     sv = distutils.version.StrictVersion
     return version and sv(_bytes2sys(version.group(1))) >= sv('20.8b1')
