@@ -250,8 +250,10 @@ def _posixworker(ui, func, staticargs, args, hasretval):
                         os.close(r)
                         os.close(w)
                     os.close(rfd)
-                    for result in func(*(staticargs + (pargs,))):
-                        os.write(wfd, pickle.dumps(result))
+                    with os.fdopen(wfd, 'wb') as wf:
+                        for result in func(*(staticargs + (pargs,))):
+                            pickle.dump(result, wf)
+                            wf.flush()
                     return 0
 
                 ret = scmutil.callcatch(ui, workerfunc)
