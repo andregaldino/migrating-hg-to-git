@@ -78,12 +78,6 @@ This is what we did to produce the repo in test-revlog-diff-relative-to-nullrev.
   $ hg debugdeltachain a
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
         0       1        2       -1      p1         15          3         15   5.00000        15         0    0.00000         15         15   1.00000        1
-#if rhg
-  $ hg cat --config rhg.cat=true -r 0 a
-  abort: corrupted revlog
-  [255]
-#else
   $ hg cat --config rhg.cat=true -r 0 a
   hi
-#endif
   $ cd ..
