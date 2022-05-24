@@ -2567,7 +2567,7 @@ class TestSuite(unittest.TestSuite):
                 test(result)
                 done.put(None)
             except KeyboardInterrupt:
-                pass
+                done.put(None)
             except:  # re-raises
                 done.put(('!', test, 'run-test raised an error, see traceback'))
                 raise
