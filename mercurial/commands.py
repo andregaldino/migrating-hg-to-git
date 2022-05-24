@@ -1681,11 +1681,13 @@ def bundle(ui, repo, fname, *dests, **opts):
     # support the necessary features.
     cfg = ui.configbool
     obsolescence_cfg = cfg(b'experimental', b'evolution.bundle-obsmarker')
-    bundlespec.set_param(b'obsolescence', obsolescence_cfg)
+    bundlespec.set_param(b'obsolescence', obsolescence_cfg, overwrite=False)
     obs_mand_cfg = cfg(b'experimental', b'evolution.bundle-obsmarker:mandatory')
-    bundlespec.set_param(b'obsolescence-mandatory', obs_mand_cfg)
+    bundlespec.set_param(
+        b'obsolescence-mandatory', obs_mand_cfg, overwrite=False
+    )
     phases_cfg = cfg(b'experimental', b'bundle-phases')
-    bundlespec.set_param(b'phases', phases_cfg)
+    bundlespec.set_param(b'phases', phases_cfg, overwrite=False)
 
     bundle2.writenewbundle(
         ui,
