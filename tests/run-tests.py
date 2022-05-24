@@ -2553,16 +2553,18 @@ class TestSuite(unittest.TestSuite):
         done = queue.Queue()
         running = 0
 
+        channels_lock = threading.Lock()
         channels = [""] * self._jobs
 
         def job(test, result):
-            for n, v in enumerate(channels):
-                if not v:
-                    channel = n
-                    break
-            else:
-                raise ValueError('Could not find output channel')
-            channels[channel] = "=" + test.name[5:].split(".")[0]
+            with channels_lock:
+                for n, v in enumerate(channels):
+                    if not v:
+                        channel = n
+                        break
+                else:
+                    raise ValueError('Could not find output channel')
+                channels[channel] = "=" + test.name[5:].split(".")[0]
 
             r = None
             try:
