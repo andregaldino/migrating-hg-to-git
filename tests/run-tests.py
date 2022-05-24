@@ -2563,19 +2563,21 @@ class TestSuite(unittest.TestSuite):
             else:
                 raise ValueError('Could not find output channel')
             channels[channel] = "=" + test.name[5:].split(".")[0]
+
+            r = None
             try:
                 test(result)
-                done.put(None)
             except KeyboardInterrupt:
-                done.put(None)
+                pass
             except:  # re-raises
-                done.put(('!', test, 'run-test raised an error, see traceback'))
+                r = ('!', test, 'run-test raised an error, see traceback')
                 raise
             finally:
                 try:
                     channels[channel] = ''
                 except IndexError:
                     pass
+                done.put(r)
 
         def stat():
             count = 0
