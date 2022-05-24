@@ -491,7 +491,7 @@ static PyObject *index_pack_header(indexObject *self, PyObject *args)
 {
 	int header;
 	char out[4];
-	if (!PyArg_ParseTuple(args, "I", &header)) {
+	if (!PyArg_ParseTuple(args, "i", &header)) {
 		return NULL;
 	}
 	if (self->format_version != format_v1) {
