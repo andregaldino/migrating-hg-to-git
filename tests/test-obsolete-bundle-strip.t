@@ -1489,6 +1489,8 @@ Test bundlespec overwrite default
 
   $ hg bundle -R repo-with-obs --type 'v2;obsolescence=yes' --all --hidden bundle-type-with-obs
   1 changesets found
+  $ hg debugbundle --spec bundle-type-with-obs
+  bzip2-v2;obsolescence=yes
   $ hg debugbundle bundle-type-with-obs --part-type obsmarkers
   Stream params: {Compression: BZ}
   obsmarkers -- {} (mandatory: True)
@@ -1497,6 +1499,8 @@ Test bundlespec overwrite default
 
   $ hg bundle -R repo-with-obs --type 'v2;obsolescence=yes;obsolescence-mandatory=no' --all --hidden bundle-type-with-obs-adv
   1 changesets found
+  $ hg debugbundle --spec bundle-type-with-obs-adv
+  bzip2-v2;obsolescence=yes;obsolescence-mandatory=no
   $ hg debugbundle bundle-type-with-obs-adv --part-type obsmarkers
   Stream params: {Compression: BZ}
   obsmarkers -- {} (mandatory: False)
@@ -1504,6 +1508,8 @@ Test bundlespec overwrite default
       1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg bundle -R repo-with-obs --type 'v2;obsolescence=no' --all --hidden bundle-type-without-obs
   1 changesets found
+  $ hg debugbundle --spec bundle-type-without-obs
+  bzip2-v2
   $ hg debugbundle bundle-type-without-obs --part-type obsmarkers
   Stream params: {Compression: BZ}
 
@@ -1512,6 +1518,8 @@ Test bundlespec overwrite local config
 
   $ hg bundle -R repo-with-obs --config experimental.evolution.bundle-obsmarker=false --type 'v2;obsolescence=yes' --all --hidden bundle-type-with-obs2
   1 changesets found
+  $ hg debugbundle --spec bundle-type-with-obs2
+  bzip2-v2;obsolescence=yes
   $ hg debugbundle bundle-type-with-obs2 --part-type obsmarkers
   Stream params: {Compression: BZ}
   obsmarkers -- {} (mandatory: True)
@@ -1519,5 +1527,7 @@ Test bundlespec overwrite local config
       1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg bundle -R repo-with-obs --config experimental.evolution.bundle-obsmarker=true --type 'v2;obsolescence=no' --all --hidden bundle-type-without-obs2
   1 changesets found
+  $ hg debugbundle --spec bundle-type-without-obs2
+  bzip2-v2
   $ hg debugbundle bundle-type-without-obs2 --part-type obsmarkers
   Stream params: {Compression: BZ}

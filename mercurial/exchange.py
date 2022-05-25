@@ -146,6 +146,10 @@ def getbundlespec(ui, fh):
                 splitted = requirements.split()
                 params = bundle2._formatrequirementsparams(splitted)
                 return b'none-v2;stream=v2;%s' % params
+            elif part.type == b'obsmarkers':
+                params[b'obsolescence'] = b'yes'
+                if not part.mandatory:
+                    params[b'obsolescence-mandatory'] = b'no'
 
         if not version:
             raise error.Abort(
