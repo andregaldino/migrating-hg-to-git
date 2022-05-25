@@ -1494,6 +1494,13 @@ Test bundlespec overwrite default
   obsmarkers -- {} (mandatory: True)
       version: 1 (50 bytes)
       1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  $ hg bundle -R repo-with-obs --type 'v2;obsolescence=no' --all --hidden bundle-type-without-obs
+  1 changesets found
+  $ hg debugbundle bundle-type-without-obs --part-type obsmarkers
+  Stream params: {Compression: BZ}
+  obsmarkers -- {} (mandatory: True) (known-bad-output !)
+      version: 1 (50 bytes) (known-bad-output !)
+      1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'} (known-bad-output !)
 
 Test bundlespec overwrite local config
 --------------------------------------
@@ -1505,3 +1512,10 @@ Test bundlespec overwrite local config
   obsmarkers -- {} (mandatory: True)
       version: 1 (50 bytes)
       1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  $ hg bundle -R repo-with-obs --config experimental.evolution.bundle-obsmarker=true --type 'v2;obsolescence=no' --all --hidden bundle-type-without-obs2
+  1 changesets found
+  $ hg debugbundle bundle-type-without-obs2 --part-type obsmarkers
+  Stream params: {Compression: BZ}
+  obsmarkers -- {} (mandatory: True) (known-bad-output !)
+      version: 1 (50 bytes) (known-bad-output !)
+      1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'} (known-bad-output !)
