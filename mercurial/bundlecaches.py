@@ -192,7 +192,8 @@ def parsebundlespec(repo, spec, strict=True):
             % spec
         )
 
-    if b'-' in spec:
+    pre_args = spec.split(b';', 1)[0]
+    if b'-' in pre_args:
         compression, version = spec.split(b'-', 1)
 
         if compression not in util.compengines.supportedbundlenames:
