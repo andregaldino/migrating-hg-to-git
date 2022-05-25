@@ -1477,3 +1477,20 @@ Test that advisory obsolescence markers in bundles are ignored if unsupported
   added 1 changesets with 0 changes to 0 files
   new changesets 1ea73414a91b (1 drafts)
   (run 'hg update' to get a working copy)
+  $ cd ..
+
+Test bundlespec overwrite default
+---------------------------------
+
+# move back to the default
+
+  $ grep -v evolution.bundle-obsmarker $HGRCPATH > a
+  $ mv a $HGRCPATH
+
+  $ hg bundle -R repo-with-obs --type 'v2;obsolescence=yes' --all --hidden bundle-type-with-obs
+  1 changesets found
+  $ hg debugbundle bundle-type-with-obs --part-type obsmarkers
+  Stream params: {Compression: BZ}
+  obsmarkers -- {} (mandatory: True) (missing-correct-output !)
+      version: 1 (50 bytes) (missing-correct-output !)
+      1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'} (missing-correct-output !)
