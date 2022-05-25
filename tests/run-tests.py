@@ -2505,29 +2505,33 @@ class TestSuite(unittest.TestSuite):
         done = queue.Queue()
         running = 0
 
+        channels_lock = threading.Lock()
         channels = [""] * self._jobs
 
         def job(test, result):
-            for n, v in enumerate(channels):
-                if not v:
-                    channel = n
-                    break
-            else:
-                raise ValueError('Could not find output channel')
-            channels[channel] = "=" + test.name[5:].split(".")[0]
+            with channels_lock:
+                for n, v in enumerate(channels):
+                    if not v:
+                        channel = n
+                        break
+                else:
+                    raise ValueError('Could not find output channel')
+                channels[channel] = "=" + test.name[5:].split(".")[0]
+
+            r = None
             try:
                 test(result)
-                done.put(None)
             except KeyboardInterrupt:
                 pass
             except:  # re-raises
-                done.put(('!', test, 'run-test raised an error, see traceback'))
+                r = ('!', test, 'run-test raised an error, see traceback')
                 raise
             finally:
                 try:
                     channels[channel] = ''
                 except IndexError:
                     pass
+                done.put(r)
 
         def stat():
             count = 0

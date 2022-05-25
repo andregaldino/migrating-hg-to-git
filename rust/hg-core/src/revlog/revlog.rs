@@ -32,6 +32,8 @@ const REVIDX_KNOWN_FLAGS: u16 = REVISION_FLAG_CENSORED
     | REVISION_FLAG_EXTSTORED
     | REVISION_FLAG_HASCOPIESINFO;
 
+const NULL_REVLOG_ENTRY_FLAGS: u16 = 0;
+
 #[derive(Debug, derive_more::From)]
 pub enum RevlogError {
     InvalidRevision,
@@ -265,11 +267,29 @@ impl Revlog {
         }
     }
 
+    pub fn make_null_entry(&self) -> RevlogEntry {
+        RevlogEntry {
+            revlog: self,
+            rev: NULL_REVISION,
+            bytes: b"",
+            compressed_len: 0,
+            uncompressed_len: 0,
+            base_rev_or_base_of_delta_chain: None,
+            p1: NULL_REVISION,
+            p2: NULL_REVISION,
+            flags: NULL_REVLOG_ENTRY_FLAGS,
+            hash: NULL_NODE,
+        }
+    }
+
     /// Get an entry of the revlog.
     pub fn get_entry(
         &self,
         rev: Revision,
     ) -> Result<RevlogEntry, RevlogError> {
+        if rev == NULL_REVISION {
+            return Ok(self.make_null_entry());
+        }
         let index_entry = self
             .index
             .get_entry(rev)

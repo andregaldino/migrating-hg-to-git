@@ -76,7 +76,7 @@ if __name__ == '__main__':
     # specified. When running as test-check-py3-compat.t, we technically
     # would import the correct paths, but it's cleaner to have both cases
     # use the same import logic.
-    sys.path.insert(0, '.')
+    sys.path.insert(0, os.getcwd())
 
     for f in sys.argv[1:]:
         with warnings.catch_warnings(record=True) as warns:

@@ -456,29 +456,38 @@ impl Repo {
             let data_filename = format!("dirstate.{}", uuid);
             let data_filename = self.hg_vfs().join(data_filename);
             let mut options = std::fs::OpenOptions::new();
-            if append {
-                options.append(true);
-            } else {
-                options.write(true).create_new(true);
+            options.write(true);
+
+            // Why are we not using the O_APPEND flag when appending?
+            //
+            // - O_APPEND makes it trickier to deal with garbage at the end of
+            //   the file, left by a previous uncommitted transaction. By
+            //   starting the write at [old_data_size] we make sure we erase
+            //   all such garbage.
+            //
+            // - O_APPEND requires to special-case 0-byte writes, whereas we
+            //   don't need that.
+            //
+            // - Some OSes have bugs in implementation O_APPEND:
+            //   revlog.py talks about a Solaris bug, but we also saw some ZFS
+            //   bug: https://github.com/openzfs/zfs/pull/3124,
+            //   https://github.com/openzfs/zfs/issues/13370
+            //
+            if !append {
+                options.create_new(true);
             }
+
             let data_size = (|| {
                 // TODO: loop and try another random ID if !append and this
                 // returns `ErrorKind::AlreadyExists`? Collision chance of two
                 // random IDs is one in 2**32
                 let mut file = options.open(&data_filename)?;
-                if data.is_empty() {
-                    // If we're not appending anything, the data size is the
-                    // same as in the previous docket. It is *not* the file
-                    // length, since it could have garbage at the end.
-                    // We don't have to worry about it when we do have data
-                    // to append since we rewrite the root node in this case.
-                    Ok(old_data_size as u64)
-                } else {
-                    file.write_all(&data)?;
-                    file.flush()?;
-                    // TODO: use https://doc.rust-lang.org/std/io/trait.Seek.html#method.stream_position when we require Rust 1.51+
-                    file.seek(SeekFrom::Current(0))
+                if append {
+                    file.seek(SeekFrom::Start(old_data_size as u64))?;
                 }
+                file.write_all(&data)?;
+                file.flush()?;
+                file.seek(SeekFrom::Current(0))
             })()
             .when_writing_file(&data_filename)?;
 
