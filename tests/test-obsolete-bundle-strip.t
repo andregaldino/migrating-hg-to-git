@@ -1494,3 +1494,14 @@ Test bundlespec overwrite default
   obsmarkers -- {} (mandatory: True)
       version: 1 (50 bytes)
       1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+
+Test bundlespec overwrite local config
+--------------------------------------
+
+  $ hg bundle -R repo-with-obs --config experimental.evolution.bundle-obsmarker=false --type 'v2;obsolescence=yes' --all --hidden bundle-type-with-obs2
+  1 changesets found
+  $ hg debugbundle bundle-type-with-obs2 --part-type obsmarkers
+  Stream params: {Compression: BZ}
+  obsmarkers -- {} (mandatory: True)
+      version: 1 (50 bytes)
+      1ea73414a91b0920940797d8fc6a11e447f8ea1e 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
