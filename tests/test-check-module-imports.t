@@ -1,4 +1,4 @@
-#require test-repo
+#require test-repo hg10
 
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ import_checker="$TESTDIR"/../contrib/import-checker.py
