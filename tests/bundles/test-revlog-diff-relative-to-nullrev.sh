@@ -27,6 +27,8 @@ rm -rf nullrev-diff
 cd nullrev-diff
 echo hi > a
 ../../../hg commit -Am root-B
+echo ho > a
+../../../hg commit -Am child-A
 ../../../hg debugdeltachain a
 rm -rf .hg/cache/ .hg/wcache/
 cd ..

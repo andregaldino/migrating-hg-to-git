@@ -78,6 +78,9 @@ This is what we did to produce the repo in test-revlog-diff-relative-to-nullrev.
   $ hg debugdeltachain a
       rev      p1      p2  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
         0      -1      -1       1        2       -1      p1         15          3         15   5.00000        15         0    0.00000         15         15   1.00000        1
+        1       0      -1       1        2       -1      p2         15          3         15   5.00000        30        15    1.00000         30         30   0.50000        1
   $ hg cat --config rhg.cat=true -r 0 a
   hi
+  $ hg cat --config rhg.cat=true -r 1 a
+  ho
   $ cd ..
