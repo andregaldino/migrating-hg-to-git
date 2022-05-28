@@ -10,17 +10,11 @@ import errno
 import gc
 import os
 import random
+import selectors
 import signal
 import socket
 import struct
 import traceback
-
-try:
-    import selectors
-
-    selectors.BaseSelector
-except ImportError:
-    from .thirdparty import selectors2 as selectors
 
 from .i18n import _
 from .pycompat import getattr
@@ -644,15 +638,7 @@ class unixforkingservice:
                 # waiting for recv() will receive ECONNRESET.
                 self._unlinksocket()
                 exiting = True
-            try:
-                events = selector.select(timeout=h.pollinterval)
-            except OSError as inst:
-                # selectors2 raises ETIMEDOUT if timeout exceeded while
-                # handling signal interrupt. That's probably wrong, but
-                # we can easily get around it.
-                if inst.errno != errno.ETIMEDOUT:
-                    raise
-                events = []
+            events = selector.select(timeout=h.pollinterval)
             if not events:
                 # only exit if we completed all queued requests
                 if exiting:

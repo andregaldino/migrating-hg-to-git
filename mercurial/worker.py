@@ -9,17 +9,11 @@
 import errno
 import os
 import pickle
+import selectors
 import signal
 import sys
 import threading
 import time
-
-try:
-    import selectors
-
-    selectors.BaseSelector
-except ImportError:
-    from .thirdparty import selectors2 as selectors
 
 from .i18n import _
 from . import (
@@ -304,7 +298,9 @@ def _posixworker(ui, func, staticargs, args, hasretval):
                         yield res
                 except EOFError:
                     selector.unregister(key.fileobj)
+                    # pytype: disable=attribute-error
                     key.fileobj.close()
+                    # pytype: enable=attribute-error
                     openpipes -= 1
                 except IOError as e:
                     if e.errno == errno.EINTR:
