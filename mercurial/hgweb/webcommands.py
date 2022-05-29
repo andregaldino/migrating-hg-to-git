@@ -228,7 +228,7 @@ def _search(web):
 
         def revgen():
             cl = web.repo.changelog
-            for i in pycompat.xrange(len(web.repo) - 1, 0, -100):
+            for i in range(len(web.repo) - 1, 0, -100):
                 l = []
                 for j in cl.revs(max(0, i - 99), i):
                     ctx = web.repo[j]

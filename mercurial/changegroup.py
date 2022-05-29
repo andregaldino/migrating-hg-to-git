@@ -420,7 +420,7 @@ class cg1unpacker:
                 cl = repo.changelog
                 ml = repo.manifestlog
                 # validate incoming csets have their manifests
-                for cset in pycompat.xrange(clstart, clend):
+                for cset in range(clstart, clend):
                     mfnode = cl.changelogrevision(cset).manifest
                     mfest = ml[mfnode].readdelta()
                     # store file nodes we must see
@@ -509,7 +509,7 @@ class cg1unpacker:
                     **pycompat.strkwargs(hookargs)
                 )
 
-            added = pycompat.xrange(clstart, clend)
+            added = range(clstart, clend)
             phaseall = None
             if srctype in (b'push', b'serve'):
                 # Old servers can not push the boundary themselves.
@@ -825,7 +825,7 @@ def _resolvenarrowrevisioninfo(
                 # somewhat unsurprised to find a case in the wild
                 # where this breaks down a bit. That said, I don't
                 # know if it would hurt anything.
-                for i in pycompat.xrange(rev, 0, -1):
+                for i in range(rev, 0, -1):
                     if store.linkrev(i) == clrev:
                         return i
                 # We failed to resolve a parent for this node, so
@@ -1956,7 +1956,7 @@ def _addchangegroupfiles(
         revisions += len(fl) - o
         if f in needfiles:
             needs = needfiles[f]
-            for new in pycompat.xrange(o, len(fl)):
+            for new in range(o, len(fl)):
                 n = fl.node(new)
                 if n in needs:
                     needs.remove(n)

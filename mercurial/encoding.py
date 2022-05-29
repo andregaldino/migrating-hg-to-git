@@ -401,7 +401,7 @@ def getcols(s, start, c):
     # type: (bytes, int, int) -> bytes
     """Use colwidth to find a c-column substring of s starting at byte
     index start"""
-    for x in pycompat.xrange(start + c, len(s)):
+    for x in range(start + c, len(s)):
         t = s[start:x]
         if colwidth(t) == c:
             return t

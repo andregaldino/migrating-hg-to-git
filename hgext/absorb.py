@@ -424,7 +424,7 @@ class filefixupstate:
                 newfixups.append((fixuprev, a1, a2, b1, b2))
         elif a2 - a1 == b2 - b1 or b1 == b2:
             # 1:1 line mapping, or chunk was deleted
-            for i in pycompat.xrange(a1, a2):
+            for i in range(a1, a2):
                 rev, linenum = annotated[i]
                 if rev > 1:
                     if b1 == b2:  # deletion, simply remove that single line
@@ -451,7 +451,7 @@ class filefixupstate:
         """
         llog = linelog.linelog()
         a, alines = b'', []
-        for i in pycompat.xrange(len(self.contents)):
+        for i in range(len(self.contents)):
             b, blines = self.contents[i], self.contentlines[i]
             llrev = i * 2 + 1
             chunks = self._alldiffchunks(a, b, alines, blines)
@@ -463,7 +463,7 @@ class filefixupstate:
     def _checkoutlinelog(self):
         """() -> [str]. check out file contents from linelog"""
         contents = []
-        for i in pycompat.xrange(len(self.contents)):
+        for i in range(len(self.contents)):
             rev = (i + 1) * 2
             self.linelog.annotate(rev)
             content = b''.join(map(self._getline, self.linelog.annotateresult))
@@ -605,9 +605,9 @@ class filefixupstate:
         a1, a2, b1, b2 = chunk
         aidxs, bidxs = [0] * (a2 - a1), [0] * (b2 - b1)
         for idx, fa1, fa2, fb1, fb2 in fixups:
-            for i in pycompat.xrange(fa1, fa2):
+            for i in range(fa1, fa2):
                 aidxs[i - a1] = (max(idx, 1) - 1) // 2
-            for i in pycompat.xrange(fb1, fb2):
+            for i in range(fb1, fb2):
                 bidxs[i - b1] = (max(idx, 1) - 1) // 2
 
         fm.startitem()
@@ -637,7 +637,7 @@ class filefixupstate:
             )
             fm.data(path=self.path, linetype=linetype)
 
-        for i in pycompat.xrange(a1, a2):
+        for i in range(a1, a2):
             writeline(
                 aidxs[i - a1],
                 b'-',
@@ -645,7 +645,7 @@ class filefixupstate:
                 b'deleted',
                 b'diff.deleted',
             )
-        for i in pycompat.xrange(b1, b2):
+        for i in range(b1, b2):
             writeline(
                 bidxs[i - b1],
                 b'+',

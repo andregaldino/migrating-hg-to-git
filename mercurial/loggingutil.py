@@ -11,7 +11,6 @@ import errno
 
 from . import (
     encoding,
-    pycompat,
 )
 
 from .utils import (
@@ -54,7 +53,7 @@ def openlogfile(ui, vfs, name, maxfiles=0, maxsize=0):
         else:
             if st.st_size >= maxsize:
                 path = vfs.join(name)
-                for i in pycompat.xrange(maxfiles - 1, 1, -1):
+                for i in range(maxfiles - 1, 1, -1):
                     rotate(
                         oldpath=b'%s.%d' % (path, i - 1),
                         newpath=b'%s.%d' % (path, i),

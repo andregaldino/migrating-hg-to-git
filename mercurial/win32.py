@@ -732,7 +732,7 @@ def unlink(f):
     # callers to recreate f immediately while having other readers do their
     # implicit zombie filename blocking on a temporary name.
 
-    for tries in pycompat.xrange(10):
+    for tries in range(10):
         temp = b'%s-%08x' % (f, random.randint(0, 0xFFFFFFFF))
         try:
             os.rename(f, temp)  # raises OSError EEXIST if temp exists

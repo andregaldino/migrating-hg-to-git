@@ -454,14 +454,14 @@ def readpath(stream):
 def readnodelist(stream):
     rawlen = readexactly(stream, constants.NODECOUNTSIZE)
     nodecount = struct.unpack(constants.NODECOUNTSTRUCT, rawlen)[0]
-    for i in pycompat.xrange(nodecount):
+    for i in range(nodecount):
         yield readexactly(stream, constants.NODESIZE)
 
 
 def readpathlist(stream):
     rawlen = readexactly(stream, constants.PATHCOUNTSIZE)
     pathcount = struct.unpack(constants.PATHCOUNTSTRUCT, rawlen)[0]
-    for i in pycompat.xrange(pathcount):
+    for i in range(pathcount):
         yield readpath(stream)
 
 

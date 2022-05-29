@@ -293,7 +293,7 @@ class linelog:
                 % (expected, numentries)
             )
         instructions = [_eof(0, 0)]
-        for offset in pycompat.xrange(1, numentries):
+        for offset in range(1, numentries):
             instructions.append(_decodeone(buf, offset * _llentry.size))
         return cls(instructions, maxrev=maxrev)
 
@@ -349,7 +349,7 @@ class linelog:
             tgt = oldproglen + (b2 - b1 + 1)
             # Jump to skip the insert if we're at an older revision.
             appendinst(_jl(rev, tgt))
-            for linenum in pycompat.xrange(b1, b2):
+            for linenum in range(b1, b2):
                 if _internal_blines is None:
                     bappend(lineinfo(rev, linenum, programlen()))
                     appendinst(_line(rev, linenum))
@@ -447,7 +447,7 @@ class linelog:
         # only take as many steps as there are instructions in the
         # program - if we don't find an EOF or our stop-line before
         # then, something is badly broken.
-        for step in pycompat.xrange(len(self._program)):
+        for step in range(len(self._program)):
             inst = self._program[pc]
             nextpc = pc + 1
             if isinstance(inst, _jump):

@@ -309,7 +309,7 @@ def _checkhook(ui, repo, node, headsonly):
     ensureenabled(ui)
     files = set()
     revs = set()
-    for rev in pycompat.xrange(repo[node].rev(), len(repo)):
+    for rev in range(repo[node].rev(), len(repo)):
         revs.add(rev)
         if headsonly:
             ctx = repo[rev]

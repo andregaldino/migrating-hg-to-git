@@ -864,9 +864,7 @@ class patchfile:
         for x, s in enumerate(self.lines):
             self.hash.setdefault(s, []).append(x)
 
-        for fuzzlen in pycompat.xrange(
-            self.ui.configint(b"patch", b"fuzz") + 1
-        ):
+        for fuzzlen in range(self.ui.configint(b"patch", b"fuzz") + 1):
             for toponly in [True, False]:
                 old, oldstart, new, newstart = h.fuzzit(fuzzlen, toponly)
                 oldstart = oldstart + self.offset + self.skew
@@ -1431,7 +1429,7 @@ class hunk:
         self.lena = int(aend) - self.starta
         if self.starta:
             self.lena += 1
-        for x in pycompat.xrange(self.lena):
+        for x in range(self.lena):
             l = lr.readline()
             if l.startswith(b'---'):
                 # lines addition, old block is empty
@@ -1466,7 +1464,7 @@ class hunk:
         if self.startb:
             self.lenb += 1
         hunki = 1
-        for x in pycompat.xrange(self.lenb):
+        for x in range(self.lenb):
             l = lr.readline()
             if l.startswith(br'\ '):
                 # XXX: the only way to hit this is with an invalid line range.
@@ -1547,14 +1545,14 @@ class hunk:
             top = 0
             bot = 0
             hlen = len(self.hunk)
-            for x in pycompat.xrange(hlen - 1):
+            for x in range(hlen - 1):
                 # the hunk starts with the @@ line, so use x+1
                 if self.hunk[x + 1].startswith(b' '):
                     top += 1
                 else:
                     break
             if not toponly:
-                for x in pycompat.xrange(hlen - 1):
+                for x in range(hlen - 1):
                     if self.hunk[hlen - bot - 1].startswith(b' '):
                         bot += 1
                     else:

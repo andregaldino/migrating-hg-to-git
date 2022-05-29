@@ -24,7 +24,6 @@ from . import (
     obsutil,
     pathutil,
     phases,
-    pycompat,
     requirements,
     scmutil,
     util,
@@ -91,7 +90,7 @@ def _collectfiles(repo, striprev):
     """find out the filelogs affected by the strip"""
     files = set()
 
-    for x in pycompat.xrange(striprev, len(repo)):
+    for x in range(striprev, len(repo)):
         files.update(repo[x].files())
 
     return sorted(files)

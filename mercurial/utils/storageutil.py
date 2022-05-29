@@ -19,7 +19,6 @@ from .. import (
     dagop,
     error,
     mdiff,
-    pycompat,
 )
 from ..interfaces import repository
 from ..revlogutils import sidedata as sidedatamod
@@ -181,7 +180,7 @@ def iterrevs(storelen, start=0, stop=None):
     else:
         stop = storelen
 
-    return pycompat.xrange(start, stop, step)
+    return range(start, stop, step)
 
 
 def fileidlookup(store, fileid, identifier):

@@ -93,7 +93,7 @@ class defaultformatter:
 
         # buffered output
         result = b''
-        for i in pycompat.xrange(len(annotatedresult)):
+        for i in range(len(annotatedresult)):
             for j, p in enumerate(pieces):
                 sep = self.funcmap[j][1]
                 padding = b' ' * (maxwidths[j] - len(p[i]))
@@ -148,7 +148,7 @@ class jsonformatter(defaultformatter):
 
         result = b''
         lasti = len(annotatedresult) - 1
-        for i in pycompat.xrange(len(annotatedresult)):
+        for i in range(len(annotatedresult)):
             result += b'\n {\n'
             for j, p in enumerate(pieces):
                 k, vs = p

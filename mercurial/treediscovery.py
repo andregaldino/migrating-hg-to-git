@@ -12,7 +12,6 @@ from .i18n import _
 from .node import short
 from . import (
     error,
-    pycompat,
 )
 
 
@@ -116,7 +115,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, audit=None):
             repo.ui.debug(
                 b"request %d: %s\n" % (reqcnt, b" ".join(map(short, r)))
             )
-            for p in pycompat.xrange(0, len(r), 10):
+            for p in range(0, len(r), 10):
                 with remote.commandexecutor() as e:
                     subset = r[p : p + 10]
                     if audit is not None:

@@ -32,7 +32,6 @@ from . import (
     patch,
     pathutil,
     phases,
-    pycompat,
     repoview,
     scmutil,
     sparse,
@@ -2431,7 +2430,7 @@ class overlayworkingctx(committablectx):
         # Test that each new directory to be created to write this path from p2
         # is not a file in p1.
         components = path.split(b'/')
-        for i in pycompat.xrange(len(components)):
+        for i in range(len(components)):
             component = b"/".join(components[0:i])
             if component in self:
                 fail(path, component)

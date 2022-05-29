@@ -267,7 +267,7 @@ class datapacktestsbase:
         revisions = []
         blobs = {}
         total = basepack.SMALLFANOUTCUTOFF + 1
-        for i in pycompat.xrange(total):
+        for i in range(total):
             filename = b"filename-%d" % i
             content = filename
             node = self.getHash(content)
@@ -357,7 +357,7 @@ class datapacktestsbase:
         ]
         for packsize in packsizes:
             revisions = []
-            for i in pycompat.xrange(packsize):
+            for i in range(packsize):
                 filename = b"filename-%d" % i
                 content = b"content-%d" % i
                 node = self.getHash(content)

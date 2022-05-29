@@ -7,7 +7,6 @@ from mercurial.node import (
 )
 from mercurial.i18n import _
 from mercurial import (
-    pycompat,
     util,
 )
 from . import (
@@ -232,7 +231,7 @@ class datapack(basepack.basepack):
 
         # Scan forward to find the first non-same entry, which is the upper
         # bound.
-        for i in pycompat.xrange(fanoutkey + 1, params.fanoutcount):
+        for i in range(fanoutkey + 1, params.fanoutcount):
             end = fanout[i] + params.indexstart
             if end != start:
                 break

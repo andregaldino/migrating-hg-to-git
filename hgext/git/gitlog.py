@@ -112,7 +112,7 @@ class changelog(baselog):
             return False
 
     def __iter__(self):
-        return iter(pycompat.xrange(len(self)))
+        return iter(range(len(self)))
 
     @property
     def filteredrevs(self):
@@ -186,7 +186,7 @@ class changelog(baselog):
 
     def shortest(self, node, minlength=1):
         nodehex = hex(node)
-        for attempt in pycompat.xrange(minlength, len(nodehex) + 1):
+        for attempt in range(minlength, len(nodehex) + 1):
             candidate = nodehex[:attempt]
             matches = int(
                 self._db.execute(

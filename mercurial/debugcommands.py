@@ -248,9 +248,7 @@ def debugbuilddag(
     if mergeable_file:
         linesperrev = 2
         # make a file with k lines per rev
-        initialmergedlines = [
-            b'%d' % i for i in pycompat.xrange(0, total * linesperrev)
-        ]
+        initialmergedlines = [b'%d' % i for i in range(0, total * linesperrev)]
         initialmergedlines.append(b"")
 
     tags = []
@@ -3193,7 +3191,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
         ts = 0
         heads = set()
 
-        for rev in pycompat.xrange(numrevs):
+        for rev in range(numrevs):
             dbase = r.deltaparent(rev)
             if dbase == -1:
                 dbase = rev
@@ -3291,7 +3289,7 @@ def debugrevlog(ui, repo, file_=None, **opts):
         l[2] += size
 
     numrevs = len(r)
-    for rev in pycompat.xrange(numrevs):
+    for rev in range(numrevs):
         p1, p2 = r.parentrevs(rev)
         delta = r.deltaparent(rev)
         if format > 0:

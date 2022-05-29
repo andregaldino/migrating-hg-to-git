@@ -140,7 +140,7 @@ def commondir(filelist):
             b = b[: len(a)]
         if a == b:
             return a
-        for i in pycompat.xrange(len(a)):
+        for i in range(len(a)):
             if a[i] != b[i]:
                 return a[:i]
         return a
@@ -311,7 +311,7 @@ def indent(text, prefix, firstline=b''):
     endswithnewline = text[-1:] == b'\n'
 
     def indenter():
-        for i in pycompat.xrange(num_lines):
+        for i in range(num_lines):
             l = lines[i]
             if l.strip():
                 yield prefix if i else firstline

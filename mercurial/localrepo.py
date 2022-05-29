@@ -1885,7 +1885,7 @@ class localrepository:
             # wdirrev isn't contiguous so the slice shouldn't include it
             return [
                 self[i]
-                for i in pycompat.xrange(*changeid.indices(len(self)))
+                for i in range(*changeid.indices(len(self)))
                 if i not in self.changelog.filteredrevs
             ]
 

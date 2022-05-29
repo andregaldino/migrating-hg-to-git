@@ -12,7 +12,6 @@ from .node import nullrev
 from . import (
     dagop,
     policy,
-    pycompat,
 )
 
 parsers = policy.importmod('parsers')
@@ -187,7 +186,7 @@ class incrementalmissingancestors:
             # no revs to consider
             return
 
-        for curr in pycompat.xrange(start, min(revs) - 1, -1):
+        for curr in range(start, min(revs) - 1, -1):
             if curr not in bases:
                 continue
             revs.discard(curr)
@@ -228,7 +227,7 @@ class incrementalmissingancestors:
         # exit.
 
         missing = []
-        for curr in pycompat.xrange(start, nullrev, -1):
+        for curr in range(start, nullrev, -1):
             if not revsvisit:
                 break
 

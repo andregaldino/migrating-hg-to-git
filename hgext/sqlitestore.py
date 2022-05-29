@@ -396,7 +396,7 @@ class sqlitefilestore:
         return len(self._revisions)
 
     def __iter__(self):
-        return iter(pycompat.xrange(len(self._revisions)))
+        return iter(range(len(self._revisions)))
 
     def hasnode(self, node):
         if node == sha1nodeconstants.nullid:

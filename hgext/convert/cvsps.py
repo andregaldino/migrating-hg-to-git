@@ -832,7 +832,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             # branchpoints such that it is the latest possible
             # commit without any intervening, unrelated commits.
 
-            for candidate in pycompat.xrange(i):
+            for candidate in range(i):
                 if c.branch not in changesets[candidate].branchpoints:
                     if p is not None:
                         break

@@ -318,7 +318,7 @@ class basepack(versionmixin):
         params = self.params
         rawfanout = self._index[FANOUTSTART : FANOUTSTART + params.fanoutsize]
         fanouttable = []
-        for i in pycompat.xrange(0, params.fanoutcount):
+        for i in range(0, params.fanoutcount):
             loc = i * 4
             fanoutentry = struct.unpack(b'!I', rawfanout[loc : loc + 4])[0]
             fanouttable.append(fanoutentry)

@@ -92,7 +92,7 @@ def runservice(
             runargs.append(b'--daemon-postexec=unlink:%s' % lockpath)
             # Don't pass --cwd to the child process, because we've already
             # changed directory.
-            for i in pycompat.xrange(1, len(runargs)):
+            for i in range(1, len(runargs)):
                 if runargs[i].startswith(b'--cwd='):
                     del runargs[i]
                     break

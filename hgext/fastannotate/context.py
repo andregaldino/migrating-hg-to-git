@@ -75,7 +75,7 @@ def _decorate(fctx):
     linecount = text.count(b'\n')
     if text and not text.endswith(b'\n'):
         linecount += 1
-    return ([(fctx, i) for i in pycompat.xrange(linecount)], text)
+    return ([(fctx, i) for i in range(linecount)], text)
 
 
 # extracted from mercurial.context.basefilectx.annotate. slightly modified
@@ -577,7 +577,7 @@ class _annotatecontext:
         result = [None] * len(annotateresult)
         # {(rev, linenum): [lineindex]}
         key2idxs = collections.defaultdict(list)
-        for i in pycompat.xrange(len(result)):
+        for i in range(len(result)):
             key2idxs[(revs[i], annotateresult[i][1])].append(i)
         while key2idxs:
             # find an unresolved line and its linelog rev to annotate

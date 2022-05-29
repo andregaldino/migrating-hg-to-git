@@ -7,7 +7,6 @@ from mercurial.node import (
 from mercurial.pycompat import getattr
 from mercurial import (
     mdiff,
-    pycompat,
     revlog,
 )
 from . import (
@@ -366,7 +365,7 @@ class manifestrevlogstore:
         rl = revlog.revlog(self._svfs, radix=b'00manifesttree')
         startlinkrev = self._repackstartlinkrev
         endlinkrev = self._repackendlinkrev
-        for rev in pycompat.xrange(len(rl) - 1, -1, -1):
+        for rev in range(len(rl) - 1, -1, -1):
             linkrev = rl.linkrev(rev)
             if linkrev < startlinkrev:
                 break
@@ -383,7 +382,7 @@ class manifestrevlogstore:
             treename = path[5 : -len(b'/00manifest')]
 
             rl = revlog.revlog(self._svfs, indexfile=path[:-2])
-            for rev in pycompat.xrange(len(rl) - 1, -1, -1):
+            for rev in range(len(rl) - 1, -1, -1):
                 linkrev = rl.linkrev(rev)
                 if linkrev < startlinkrev:
                     break

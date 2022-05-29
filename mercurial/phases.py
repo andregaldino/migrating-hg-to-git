@@ -255,14 +255,14 @@ def _sortedrange_insert(data, idx, rev, t):
         merge_after = r2[0] == rev + 1 and t2 == t
 
     if merge_before and merge_after:
-        data[idx - 1] = (pycompat.xrange(r1[0], r2[-1] + 1), t)
+        data[idx - 1] = (range(r1[0], r2[-1] + 1), t)
         data.pop(idx)
     elif merge_before:
-        data[idx - 1] = (pycompat.xrange(r1[0], rev + 1), t)
+        data[idx - 1] = (range(r1[0], rev + 1), t)
     elif merge_after:
-        data[idx] = (pycompat.xrange(rev, r2[-1] + 1), t)
+        data[idx] = (range(rev, r2[-1] + 1), t)
     else:
-        data.insert(idx, (pycompat.xrange(rev, rev + 1), t))
+        data.insert(idx, (range(rev, rev + 1), t))
 
 
 def _sortedrange_split(data, idx, rev, t):
@@ -274,16 +274,16 @@ def _sortedrange_split(data, idx, rev, t):
         data.pop(idx)
         _sortedrange_insert(data, idx, rev, t)
     elif r1[0] == rev:
-        data[idx] = (pycompat.xrange(rev + 1, r1[-1] + 1), t1)
+        data[idx] = (range(rev + 1, r1[-1] + 1), t1)
         _sortedrange_insert(data, idx, rev, t)
     elif r1[-1] == rev:
-        data[idx] = (pycompat.xrange(r1[0], rev), t1)
+        data[idx] = (range(r1[0], rev), t1)
         _sortedrange_insert(data, idx + 1, rev, t)
     else:
         data[idx : idx + 1] = [
-            (pycompat.xrange(r1[0], rev), t1),
-            (pycompat.xrange(rev, rev + 1), t),
-            (pycompat.xrange(rev + 1, r1[-1] + 1), t1),
+            (range(r1[0], rev), t1),
+            (range(rev, rev + 1), t),
+            (range(rev + 1, r1[-1] + 1), t1),
         ]
 
 
@@ -297,7 +297,7 @@ def _trackphasechange(data, rev, old, new):
 
     # If data is empty, create a one-revision range and done
     if not data:
-        data.insert(0, (pycompat.xrange(rev, rev + 1), (old, new)))
+        data.insert(0, (range(rev, rev + 1), (old, new)))
         return
 
     low = 0
@@ -333,14 +333,14 @@ def _trackphasechange(data, rev, old, new):
             low = mid + 1
 
     if low == len(data):
-        data.append((pycompat.xrange(rev, rev + 1), t))
+        data.append((range(rev, rev + 1), t))
         return
 
     r1, t1 = data[low]
     if r1[0] > rev:
-        data.insert(low, (pycompat.xrange(rev, rev + 1), t))
+        data.insert(low, (range(rev, rev + 1), t))
     else:
-        data.insert(low + 1, (pycompat.xrange(rev, rev + 1), t))
+        data.insert(low + 1, (range(rev, rev + 1), t))
 
 
 class phasecache:
@@ -629,7 +629,7 @@ class phasecache:
             affected = set(repo.revs(b'(%ln::) - (%ln::)', new, old))
 
             # find the phase of the affected revision
-            for phase in pycompat.xrange(targetphase, -1, -1):
+            for phase in range(targetphase, -1, -1):
                 if phase:
                     roots = oldroots.get(phase, [])
                     revs = set(repo.revs(b'%ln::%ld', roots, affected))

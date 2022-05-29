@@ -426,7 +426,7 @@ def consumev1(repo, fp, filecount, bytecount):
 
         with repo.transaction(b'clone'):
             with repo.svfs.backgroundclosing(repo.ui, expectedcount=filecount):
-                for i in pycompat.xrange(filecount):
+                for i in range(filecount):
                     # XXX doesn't support '\n' or '\r' in filenames
                     l = fp.readline()
                     try:

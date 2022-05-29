@@ -9,7 +9,6 @@ from mercurial import (
     lock as lockmod,
     mdiff,
     policy,
-    pycompat,
     scmutil,
     util,
     vfs,
@@ -347,7 +346,7 @@ def _computeincrementalpack(files, opts):
 
     # Group the packs by generation (i.e. by size)
     generations = []
-    for i in pycompat.xrange(len(limits)):
+    for i in range(len(limits)):
         generations.append([])
 
     sizes = {}

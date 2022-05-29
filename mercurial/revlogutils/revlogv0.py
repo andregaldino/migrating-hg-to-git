@@ -15,7 +15,6 @@ from ..i18n import _
 from .. import (
     error,
     node,
-    pycompat,
     revlogutils,
     util,
 )
@@ -77,7 +76,7 @@ class revlogoldindex(list):
     def __delitem__(self, i):
         if not isinstance(i, slice) or not i.stop == -1 or i.step is not None:
             raise ValueError(b"deleting slices only supports a:-1 with step 1")
-        for r in pycompat.xrange(i.start, len(self)):
+        for r in range(i.start, len(self)):
             del self._nodemap[self[r][7]]
         super(revlogoldindex, self).__delitem__(i)
 

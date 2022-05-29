@@ -228,7 +228,7 @@ def parsedag(desc):
             c, digs = nextrun(nextch(), pycompat.bytestr(string.digits))
             # pytype: enable=wrong-arg-types
             n = int(digs)
-            for i in pycompat.xrange(0, n):
+            for i in range(0, n):
                 yield b'n', (r, [p1])
                 p1 = r
                 r += 1

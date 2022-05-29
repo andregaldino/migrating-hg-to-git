@@ -15,7 +15,6 @@ from mercurial.node import hex
 from mercurial.pycompat import open
 from mercurial import (
     error as hgerror,
-    pycompat,
 )
 from . import error
 
@@ -165,13 +164,11 @@ class revmap:
         if self._lastmaxrev == -1:  # write the entire file
             with open(self.path, b'wb') as f:
                 f.write(self.HEADER)
-                for i in pycompat.xrange(1, len(self._rev2hsh)):
+                for i in range(1, len(self._rev2hsh)):
                     self._writerev(i, f)
         else:  # append incrementally
             with open(self.path, b'ab') as f:
-                for i in pycompat.xrange(
-                    self._lastmaxrev + 1, len(self._rev2hsh)
-                ):
+                for i in range(self._lastmaxrev + 1, len(self._rev2hsh)):
                     self._writerev(i, f)
         self._lastmaxrev = self.maxrev
 

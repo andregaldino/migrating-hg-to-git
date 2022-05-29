@@ -5,7 +5,6 @@ from mercurial.node import (
     sha1nodeconstants,
 )
 from mercurial import (
-    pycompat,
     util,
 )
 from mercurial.utils import hashutil
@@ -207,7 +206,7 @@ class historypack(basepack.basepack):
         start = fanout[fanoutkey] + params.indexstart
         indexend = self._indexend
 
-        for i in pycompat.xrange(fanoutkey + 1, params.fanoutcount):
+        for i in range(fanoutkey + 1, params.fanoutcount):
             end = fanout[i] + params.indexstart
             if end != start:
                 break
@@ -323,7 +322,7 @@ class historypack(basepack.basepack):
             )[0]
             offset += ENTRYCOUNTSIZE
 
-            for i in pycompat.xrange(revcount):
+            for i in range(revcount):
                 entry = struct.unpack(
                     PACKFORMAT, data[offset : offset + PACKENTRYLENGTH]
                 )

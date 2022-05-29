@@ -152,11 +152,11 @@ class abstractsmartset:
         # but start > stop is allowed, which should be an empty set.
         ys = []
         it = iter(self)
-        for x in pycompat.xrange(start):
+        for x in range(start):
             y = next(it, None)
             if y is None:
                 break
-        for x in pycompat.xrange(stop - start):
+        for x in range(stop - start):
             y = next(it, None)
             if y is None:
                 break
@@ -1030,13 +1030,13 @@ class _spanset(abstractsmartset):
             return self.fastdesc()
 
     def fastasc(self):
-        iterrange = pycompat.xrange(self._start, self._end)
+        iterrange = range(self._start, self._end)
         if self._hiddenrevs:
             return self._iterfilter(iterrange)
         return iter(iterrange)
 
     def fastdesc(self):
-        iterrange = pycompat.xrange(self._end - 1, self._start - 1, -1)
+        iterrange = range(self._end - 1, self._start - 1, -1)
         if self._hiddenrevs:
             return self._iterfilter(iterrange)
         return iter(iterrange)

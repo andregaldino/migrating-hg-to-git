@@ -1010,8 +1010,7 @@ def _rebaserestoredcommit(
             tr.close()
 
             nodestoremove = [
-                repo.changelog.node(rev)
-                for rev in pycompat.xrange(oldtiprev, len(repo))
+                repo.changelog.node(rev) for rev in range(oldtiprev, len(repo))
             ]
             shelvedstate.save(
                 repo,

@@ -75,7 +75,7 @@ _syminitletters = set(
         + pycompat.sysbytes(string.digits)
         + b'._@'
     )
-) | set(map(pycompat.bytechr, pycompat.xrange(128, 256)))
+) | set(map(pycompat.bytechr, range(128, 256)))
 
 # default set of valid characters for non-initial letters of symbols
 _symletters = _syminitletters | set(pycompat.iterbytestr(b'-/'))

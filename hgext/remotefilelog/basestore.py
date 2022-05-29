@@ -171,7 +171,7 @@ class basestore:
 
         # Scan the changelog until we've found every file name
         cl = self.repo.unfiltered().changelog
-        for rev in pycompat.xrange(len(cl) - 1, -1, -1):
+        for rev in range(len(cl) - 1, -1, -1):
             if not missingfilename:
                 break
             files = cl.readfiles(cl.node(rev))

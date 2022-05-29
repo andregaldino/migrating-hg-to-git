@@ -67,15 +67,15 @@ def difflinestates(a, b):
     sm = difflib.SequenceMatcher(None, a, b)
     for tag, alo, ahi, blo, bhi in sm.get_opcodes():
         if tag == 'insert':
-            for i in pycompat.xrange(blo, bhi):
+            for i in range(blo, bhi):
                 yield (b'+', b[i])
         elif tag == 'delete':
-            for i in pycompat.xrange(alo, ahi):
+            for i in range(alo, ahi):
                 yield (b'-', a[i])
         elif tag == 'replace':
-            for i in pycompat.xrange(alo, ahi):
+            for i in range(alo, ahi):
                 yield (b'-', a[i])
-            for i in pycompat.xrange(blo, bhi):
+            for i in range(blo, bhi):
                 yield (b'+', b[i])
 
 

@@ -21,7 +21,6 @@ from .i18n import _
 from . import (
     error,
     mdiff,
-    pycompat,
 )
 from .utils import stringutil
 
@@ -53,9 +52,7 @@ def compare_range(a, astart, aend, b, bstart, bend):
     """Compare a[astart:aend] == b[bstart:bend], without slicing."""
     if (aend - astart) != (bend - bstart):
         return False
-    for ia, ib in zip(
-        pycompat.xrange(astart, aend), pycompat.xrange(bstart, bend)
-    ):
+    for ia, ib in zip(range(astart, aend), range(bstart, bend)):
         if a[ia] != b[ib]:
             return False
     else:

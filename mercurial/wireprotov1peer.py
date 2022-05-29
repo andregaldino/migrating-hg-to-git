@@ -519,7 +519,7 @@ class wirepeer(repository.peer):
     def between(self, pairs):
         batch = 8  # avoid giant requests
         r = []
-        for i in pycompat.xrange(0, len(pairs), batch):
+        for i in range(0, len(pairs), batch):
             n = b" ".join(
                 [
                     wireprototypes.encodelist(p, b'-')

@@ -75,7 +75,7 @@ def _bin(bs):
 def _str(v, l):
     # type: (int, int) -> bytes
     bs = b""
-    for p in pycompat.xrange(l):
+    for p in range(l):
         bs = pycompat.bytechr(v & 255) + bs
         v >>= 8
     return bs
@@ -99,7 +99,7 @@ def _hweight(x):
     return c
 
 
-_htab = [_hweight(x) for x in pycompat.xrange(256)]
+_htab = [_hweight(x) for x in range(256)]
 
 
 def _hamming(a, b):
@@ -164,7 +164,7 @@ def ctxpvec(ctx):
     pvc = r._pveccache
     if ctx.rev() not in pvc:
         cl = r.changelog
-        for n in pycompat.xrange(ctx.rev() + 1):
+        for n in range(ctx.rev() + 1):
             if n not in pvc:
                 node = cl.node(n)
                 p1, p2 = cl.parentrevs(n)

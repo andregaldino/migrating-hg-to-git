@@ -800,7 +800,7 @@ def walkchangerevs(repo, revs, makefilematcher, prepare):
         stopiteration = False
         for windowsize in increasingwindows():
             nrevs = []
-            for i in pycompat.xrange(windowsize):
+            for i in range(windowsize):
                 rev = next(it, None)
                 if rev is None:
                     stopiteration = True

@@ -743,7 +743,7 @@ class revlog:
         return len(self.index)
 
     def __iter__(self):
-        return iter(pycompat.xrange(len(self)))
+        return iter(range(len(self)))
 
     def revs(self, start=0, stop=None):
         """iterate over all rev in this revlog (from start to stop)"""

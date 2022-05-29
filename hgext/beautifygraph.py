@@ -17,7 +17,6 @@ from mercurial import (
     encoding,
     extensions,
     graphmod,
-    pycompat,
     templatekw,
 )
 
@@ -53,7 +52,7 @@ def prettyedge(before, edge, after):
 def convertedges(line):
     line = b' %s ' % line
     pretty = []
-    for idx in pycompat.xrange(len(line) - 2):
+    for idx in range(len(line) - 2):
         pretty.append(
             prettyedge(
                 line[idx : idx + 1],

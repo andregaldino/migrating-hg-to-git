@@ -455,7 +455,7 @@ class histeditstate:
         rules = []
         rulelen = int(lines[index])
         index += 1
-        for i in pycompat.xrange(rulelen):
+        for i in range(rulelen):
             ruleaction = lines[index]
             index += 1
             rule = lines[index]
@@ -466,7 +466,7 @@ class histeditstate:
         replacements = []
         replacementlen = int(lines[index])
         index += 1
-        for i in pycompat.xrange(replacementlen):
+        for i in range(replacementlen):
             replacement = lines[index]
             original = bin(replacement[:40])
             succ = [
@@ -1574,7 +1574,7 @@ pgup/K: move patch up, pgdn/J: move patch down, c: commit, q: abort
 
         start = min(old_rule_pos, new_rule_pos)
         end = max(old_rule_pos, new_rule_pos)
-        for r in pycompat.xrange(start, end + 1):
+        for r in range(start, end + 1):
             rules[new_rule_pos].checkconflicts(rules[r])
             rules[old_rule_pos].checkconflicts(rules[r])
 
