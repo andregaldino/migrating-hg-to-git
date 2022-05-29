@@ -1525,10 +1525,13 @@ class revlog:
             return self._pcache[id]
 
         if len(id) <= 40:
+            # hex(node)[:...]
+            l = len(id) // 2 * 2  # grab an even number of digits
             try:
-                # hex(node)[:...]
-                l = len(id) // 2 * 2  # grab an even number of digits
                 prefix = bin(id[:l])
+            except TypeError:
+                pass
+            else:
                 nl = [e[7] for e in self.index if e[7].startswith(prefix)]
                 nl = [
                     n for n in nl if hex(n).startswith(id) and self.hasnode(n)
@@ -1545,8 +1548,6 @@ class revlog:
                 if maybewdir:
                     raise error.WdirUnsupported
                 return None
-            except TypeError:
-                pass
 
     def lookup(self, id):
         """locate a node based on:
