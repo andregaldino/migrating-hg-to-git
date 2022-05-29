@@ -1,16 +1,4 @@
 Test basic extension support
-  $ cat > unflush.py <<EOF
-  > import sys
-  > from mercurial import pycompat
-  > if pycompat.ispy3:
-  >     # no changes required
-  >     sys.exit(0)
-  > with open(sys.argv[1], 'rb') as f:
-  >     data = f.read()
-  > with open(sys.argv[1], 'wb') as f:
-  >     f.write(data.replace(b', flush=True', b''))
-  > EOF
-
   $ cat > foobar.py <<EOF
   > import os
   > from mercurial import commands, exthelper, registrar
@@ -189,7 +177,6 @@ Check that extensions are loaded in phases:
   > def custompredicate(repo, subset, x):
   >     return smartset.baseset([r for r in subset if r in {0}])
   > EOF
-  $ "$PYTHON" $TESTTMP/unflush.py foo.py
 
   $ cp foo.py bar.py
   $ echo 'foo = foo.py' >> $HGRCPATH
@@ -302,7 +289,6 @@ limit mark, regardless of importing module or not.)
   > def extsetup(ui):
   >     print('ambigabs.s=%s' % ambigabs.s, flush=True)
   > NO_CHECK_EOF
-  $ "$PYTHON" $TESTTMP/unflush.py loadabs.py
   $ (PYTHONPATH=${PYTHONPATH}${PATHSEP}${TESTTMP}/libroot; hg --config extensions.loadabs=loadabs.py root)
   ambigabs.s=libroot/ambig.py
   $TESTTMP/a
@@ -1871,7 +1857,6 @@ Prohibit the use of unicode strings as the default value of options
   > def ext(*args, **opts):
   >     print(opts[b'opt'], flush=True)
   > EOF
-  $ "$PYTHON" $TESTTMP/unflush.py $TESTTMP/test_unicode_default_value.py
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
