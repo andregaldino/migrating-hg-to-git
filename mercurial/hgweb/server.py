@@ -8,7 +8,6 @@
 
 
 import errno
-import importlib
 import os
 import socket
 import sys
@@ -404,26 +403,9 @@ def create_server(ui, app):
         cls = MercurialHTTPServer
 
     # ugly hack due to python issue5853 (for threaded use)
-    try:
-        import mimetypes
+    import mimetypes
 
-        mimetypes.init()
-    except UnicodeDecodeError:
-        # Python 2.x's mimetypes module attempts to decode strings
-        # from Windows' ANSI APIs as ascii (fail), then re-encode them
-        # as ascii (clown fail), because the default Python Unicode
-        # codec is hardcoded as ascii.
-
-        sys.argv  # unwrap demand-loader so that reload() works
-        # resurrect sys.setdefaultencoding()
-        try:
-            importlib.reload(sys)
-        except AttributeError:
-            reload(sys)
-        oldenc = sys.getdefaultencoding()
-        sys.setdefaultencoding(b"latin1")  # or any full 8-bit encoding
-        mimetypes.init()
-        sys.setdefaultencoding(oldenc)
+    mimetypes.init()
 
     address = ui.config(b'web', b'address')
     port = urlutil.getport(ui.config(b'web', b'port'))
