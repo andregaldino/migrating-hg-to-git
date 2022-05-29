@@ -198,7 +198,7 @@ def has_rhg():
 
 
 @check("pyoxidizer", "running with pyoxidizer build as 'hg'")
-def has_rhg():
+def has_pyoxidizer():
     return 'PYOXIDIZED_INSTALLED_AS_HG' in os.environ
 
 
@@ -408,7 +408,7 @@ def getgitversion():
 
 
 @check("pygit2", "pygit2 Python library")
-def has_git():
+def has_pygit2():
     try:
         import pygit2
 
@@ -750,7 +750,7 @@ def has_test_repo():
 
 
 @check("network-io", "whether tests are allowed to access 3rd party services")
-def has_test_repo():
+def has_network_io():
     t = os.environ.get("HGTESTS_ALLOW_NETIO")
     return t == "1"
 

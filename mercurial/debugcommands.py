@@ -2806,7 +2806,7 @@ def debugp1copies(ui, repo, **opts):
     [(b'r', b'rev', b'', _(b'revision to debug'), _(b'REV'))],
     _(b'[-r REV]'),
 )
-def debugp1copies(ui, repo, **opts):
+def debugp2copies(ui, repo, **opts):
     """dump copy information compared to p2"""
 
     opts = pycompat.byteskwargs(opts)
