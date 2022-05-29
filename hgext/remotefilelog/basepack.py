@@ -13,7 +13,6 @@ from mercurial.pycompat import (
 from mercurial.node import hex
 from mercurial import (
     policy,
-    pycompat,
     util,
     vfs as vfsmod,
 )
@@ -53,14 +52,6 @@ SMALLFANOUTCUTOFF = 2 ** 16 // 8
 # exception when data is moved to a new pack after the process has already
 # loaded the pack list.
 REFRESHRATE = 0.1
-
-if pycompat.isposix and not pycompat.ispy3:
-    # With glibc 2.7+ the 'e' flag uses O_CLOEXEC when opening.
-    # The 'e' flag will be ignored on older versions of glibc.
-    # Python 3 can't handle the 'e' flag.
-    PACKOPENMODE = b'rbe'
-else:
-    PACKOPENMODE = b'rb'
 
 
 class _cachebackedpacks:
@@ -343,12 +334,12 @@ class basepack(versionmixin):
             self._data.close()
 
         # TODO: use an opener/vfs to access these paths
-        with open(self.indexpath, PACKOPENMODE) as indexfp:
+        with open(self.indexpath, b'rb') as indexfp:
             # memory-map the file, size 0 means whole file
             self._index = mmap.mmap(
                 indexfp.fileno(), 0, access=mmap.ACCESS_READ
             )
-        with open(self.packpath, PACKOPENMODE) as datafp:
+        with open(self.packpath, b'rb') as datafp:
             self._data = mmap.mmap(datafp.fileno(), 0, access=mmap.ACCESS_READ)
 
         self._pagedin = 0
