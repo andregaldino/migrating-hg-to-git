@@ -1527,8 +1527,8 @@ class revlog:
         if len(id) <= 40:
             try:
                 # hex(node)[:...]
-                l = len(id) // 2  # grab an even number of digits
-                prefix = bin(id[: l * 2])
+                l = len(id) // 2 * 2  # grab an even number of digits
+                prefix = bin(id[:l])
                 nl = [e[7] for e in self.index if e[7].startswith(prefix)]
                 nl = [
                     n for n in nl if hex(n).startswith(id) and self.hasnode(n)
