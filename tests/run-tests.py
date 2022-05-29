@@ -1000,6 +1000,10 @@ def killdaemons(pidfile):
     return killmod.killdaemons(pidfile, tryhard=False, remove=True, logfn=vlog)
 
 
+# sysconfig is not thread-safe (https://github.com/python/cpython/issues/92452)
+sysconfiglock = threading.Lock()
+
+
 class Test(unittest.TestCase):
     """Encapsulates a single, runnable test.
 
@@ -1430,7 +1434,8 @@ class Test(unittest.TestCase):
             env["HGPORT%s" % offset] = '%s' % (self._startport + i)
 
         env = os.environ.copy()
-        env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
+        with sysconfiglock:
+            env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = _bytes2sys(self._testtmp)
         # the FORWARD_SLASH version is useful when running `sh` on non unix
