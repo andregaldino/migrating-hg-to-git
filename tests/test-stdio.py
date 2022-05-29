@@ -16,25 +16,6 @@ import unittest
 from mercurial import pycompat, util
 
 
-if pycompat.ispy3:
-
-    def set_noninheritable(fd):
-        # On Python 3, file descriptors are non-inheritable by default.
-        pass
-
-
-else:
-    if pycompat.iswindows:
-        # unused
-        set_noninheritable = None
-    else:
-        import fcntl
-
-        def set_noninheritable(fd):
-            old = fcntl.fcntl(fd, fcntl.F_GETFD)
-            fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
-
-
 TEST_BUFFERING_CHILD_SCRIPT = r'''
 import os
 
@@ -127,10 +108,6 @@ def _devnull():
 @contextlib.contextmanager
 def _pipes():
     rwpair = os.pipe()
-    # Pipes are already non-inheritable on Windows.
-    if not pycompat.iswindows:
-        set_noninheritable(rwpair[0])
-        set_noninheritable(rwpair[1])
     with _closing(rwpair):
         yield rwpair
 
@@ -143,8 +120,6 @@ def _ptys():
     import tty
 
     rwpair = pty.openpty()
-    set_noninheritable(rwpair[0])
-    set_noninheritable(rwpair[1])
     with _closing(rwpair):
         tty.setraw(rwpair[0])
         yield rwpair
