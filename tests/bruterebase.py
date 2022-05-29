@@ -14,11 +14,6 @@ from mercurial import (
 
 from hgext import rebase
 
-try:
-    xrange
-except NameError:
-    xrange = range
-
 cmdtable = {}
 command = registrar.command(cmdtable)
 
@@ -41,7 +36,7 @@ def debugbruterebase(ui, repo, source, dest):
                 result += b"'"
             return result
 
-        for i in xrange(1, 2 ** len(srevs)):
+        for i in range(1, 2 ** len(srevs)):
             subset = [rev for j, rev in enumerate(srevs) if i & (1 << j) != 0]
             spec = revsetlang.formatspec(b'%ld', subset)
             tr = repo.transaction(b'rebase')
@@ -58,7 +53,7 @@ def debugbruterebase(ui, repo, source, dest):
                     # short summary about new nodes
                     cl = repo.changelog
                     descs = []
-                    for rev in xrange(repolen, len(repo)):
+                    for rev in range(repolen, len(repo)):
                         desc = b'%s:' % getdesc(rev)
                         for prev in cl.parentrevs(rev):
                             if prev > -1:

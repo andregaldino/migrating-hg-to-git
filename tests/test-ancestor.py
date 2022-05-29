@@ -18,7 +18,6 @@ from mercurial import (
 
 if pycompat.ispy3:
     long = int
-    xrange = range
 
 
 def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
@@ -30,7 +29,7 @@ def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
     return value is a graph represented as an adjacency list.
     """
     graph = [None] * nodes
-    for i in xrange(nodes):
+    for i in range(nodes):
         if i == 0 or rng.random() < rootprob:
             graph[i] = [nullrev]
         elif i == 1:
@@ -53,7 +52,7 @@ def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
 
 def buildancestorsets(graph):
     ancs = [None] * len(graph)
-    for i in xrange(len(graph)):
+    for i in range(len(graph)):
         ancs[i] = {i}
         if graph[i] == [nullrev]:
             continue
@@ -114,11 +113,11 @@ def test_missingancestors(seed, rng):
         nerrs[0] += 1
         gerrs[0] += 1
 
-    for g in xrange(graphcount):
+    for g in range(graphcount):
         graph = buildgraph(rng)
         ancs = buildancestorsets(graph)
         gerrs = [0]
-        for _ in xrange(testcount):
+        for _ in range(testcount):
             # start from nullrev to include it as a possibility
             graphnodes = range(nullrev, len(graph))
             bases = samplerevs(graphnodes)
@@ -128,7 +127,7 @@ def test_missingancestors(seed, rng):
             # reference slow algorithm
             naiveinc = naiveincrementalmissingancestors(ancs, bases)
             seq = []
-            for _ in xrange(inccount):
+            for _ in range(inccount):
                 if rng.random() < 0.2:
                     newbases = samplerevs(graphnodes)
                     seq.append(('addbases', newbases))
@@ -215,7 +214,7 @@ def test_missingancestors_explicit():
     """
     for i, (bases, revs) in enumerate(
         (
-            ({1, 2, 3, 4, 7}, set(xrange(10))),
+            ({1, 2, 3, 4, 7}, set(range(10))),
             ({10}, set({11, 12, 13, 14})),
             ({7}, set({1, 2, 3, 4, 5})),
         )

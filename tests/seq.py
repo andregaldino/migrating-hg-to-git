@@ -19,9 +19,6 @@ try:
 except ImportError:
     pass
 
-if sys.version_info[0] >= 3:
-    xrange = range
-
 start = 1
 if len(sys.argv) > 2:
     start = int(sys.argv[1])
@@ -32,5 +29,5 @@ if len(sys.argv) > 3:
 
 stop = int(sys.argv[-1]) + 1
 
-for i in xrange(start, stop, step):
+for i in range(start, stop, step):
     print(i)

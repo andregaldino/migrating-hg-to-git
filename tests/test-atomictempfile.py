@@ -6,14 +6,10 @@ import tempfile
 import unittest
 
 from mercurial import (
-    pycompat,
     util,
 )
 
 atomictempfile = util.atomictempfile
-
-if pycompat.ispy3:
-    xrange = range
 
 
 class testatomictempfile(unittest.TestCase):
@@ -68,7 +64,7 @@ class testatomictempfile(unittest.TestCase):
 
         # try some times, because reproduction of ambiguity depends on
         # "filesystem time"
-        for i in xrange(5):
+        for i in range(5):
             atomicwrite(False)
             oldstat = os.stat(self._filename)
             if oldstat[stat.ST_CTIME] != oldstat[stat.ST_MTIME]:
@@ -79,7 +75,7 @@ class testatomictempfile(unittest.TestCase):
 
             # repeat atomic write with checkambig=True, to examine
             # whether st_mtime is advanced multiple times as expected
-            for j in xrange(repetition):
+            for j in range(repetition):
                 atomicwrite(True)
             newstat = os.stat(self._filename)
             if oldstat[stat.ST_CTIME] != newstat[stat.ST_CTIME]:

@@ -8,9 +8,6 @@ from mercurial import (
 
 from hgext.fastannotate import error, revmap
 
-if pycompat.ispy3:
-    xrange = range
-
 
 def genhsh(i):
     return pycompat.bytechr(i) + b'\0' * 19
@@ -33,7 +30,7 @@ def testbasicreadwrite():
 
     rm = revmap.revmap(path)
     ensure(rm.maxrev == 0)
-    for i in xrange(5):
+    for i in range(5):
         ensure(rm.rev2hsh(i) is None)
     ensure(rm.hsh2rev(b'\0' * 20) is None)
 
@@ -51,11 +48,11 @@ def testbasicreadwrite():
         b'a',
         b'a',
     ]
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i]) == i)
 
     ensure(rm.maxrev == 4)
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(rm.hsh2rev(genhsh(i)) == i)
         ensure(rm.rev2hsh(i) == genhsh(i))
 
@@ -63,13 +60,13 @@ def testbasicreadwrite():
     rm.flush()
     rm = revmap.revmap(path)
     ensure(rm.maxrev == 4)
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(rm.hsh2rev(genhsh(i)) == i)
         ensure(rm.rev2hsh(i) == genhsh(i))
         ensure(bool(rm.rev2flag(i) & revmap.sidebranchflag) == bool(i & 1))
 
     # append without calling save() explicitly
-    for i in xrange(5, 12):
+    for i in range(5, 12):
         ensure(
             rm.append(genhsh(i), sidebranch=(i & 1), path=paths[i], flush=True)
             == i
@@ -78,7 +75,7 @@ def testbasicreadwrite():
     # re-load and verify
     rm = revmap.revmap(path)
     ensure(rm.maxrev == 11)
-    for i in xrange(1, 12):
+    for i in range(1, 12):
         ensure(rm.hsh2rev(genhsh(i)) == i)
         ensure(rm.rev2hsh(i) == genhsh(i))
         ensure(rm.rev2path(i) == paths[i] or paths[i - 1])
@@ -148,7 +145,7 @@ def testcorruptformat():
 def testcopyfrom():
     path = gettemppath()
     rm = revmap.revmap(path)
-    for i in xrange(1, 10):
+    for i in range(1, 10):
         ensure(
             rm.append(genhsh(i), sidebranch=(i & 1), path=(b'%d' % (i // 3)))
             == i
@@ -185,21 +182,21 @@ def testcontains():
     path = gettemppath()
 
     rm = revmap.revmap(path)
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(rm.append(genhsh(i), sidebranch=(i & 1)) == i)
 
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(((genhsh(i), None) in rm) == ((i & 1) == 0))
         ensure((fakefctx(genhsh(i)) in rm) == ((i & 1) == 0))
-    for i in xrange(5, 10):
+    for i in range(5, 10):
         ensure(fakefctx(genhsh(i)) not in rm)
         ensure((genhsh(i), None) not in rm)
 
     # "contains" checks paths
     rm = revmap.revmap()
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(rm.append(genhsh(i), path=(b'%d' % (i // 2))) == i)
-    for i in xrange(1, 5):
+    for i in range(1, 5):
         ensure(fakefctx(genhsh(i), path=(b'%d' % (i // 2))) in rm)
         ensure(fakefctx(genhsh(i), path=b'a') not in rm)
 
@@ -209,7 +206,7 @@ def testlastnode():
     ensure(revmap.getlastnode(path) is None)
     rm = revmap.revmap(path)
     ensure(revmap.getlastnode(path) is None)
-    for i in xrange(1, 10):
+    for i in range(1, 10):
         hsh = genhsh(i)
         rm.append(hsh, path=(b'%d' % (i // 2)), flush=True)
         ensure(revmap.getlastnode(path) == hsh)

@@ -26,7 +26,6 @@ osenvironb = getattr(os, 'environb', os.environ)
 
 if sys.version_info > (3, 5, 0):
     PYTHON3 = True
-    xrange = range  # we use xrange in one place, and we'd rather not use range
 
     def _sys2bytes(p):
         return p.encode('utf-8')

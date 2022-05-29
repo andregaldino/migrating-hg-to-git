@@ -18,8 +18,6 @@
   > import os
   > import shutil
   > import sys
-  > if sys.version_info[0] > 2:
-  >     xrange = range
   > f = open('$TESTTMP/cachelog.log', 'w')
   > srccache = os.path.join('$TESTTMP', 'oldhgcache')
   > def log(message):
@@ -36,7 +34,7 @@
   >             count = int(sys.stdin.readline())
   >             log('client wants %r blobs\n' % count)
   >             wants = []
-  >             for _ in xrange(count):
+  >             for _ in range(count):
   >                 key = sys.stdin.readline()[:-1]
   >                 wants.append(key)
   >                 if '\0' in key:

@@ -59,14 +59,12 @@ A_DEEPER_MANIFEST = (
 HUGE_MANIFEST_ENTRIES = 200001
 
 izip = getattr(itertools, 'izip', zip)
-if 'xrange' not in globals():
-    xrange = range
 
 A_HUGE_MANIFEST = b''.join(
     sorted(
         b'file%d\0%s%s\n' % (i, h, f)
         for i, h, f in izip(
-            xrange(200001),
+            range(200001),
             itertools.cycle((HASH_1, HASH_2)),
             itertools.cycle((b'', b'x', b'l')),
         )

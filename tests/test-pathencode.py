@@ -19,11 +19,6 @@ from mercurial import (
     store,
 )
 
-try:
-    xrange
-except NameError:
-    xrange = range
-
 validchars = set(map(pycompat.bytechr, range(0, 256)))
 alphanum = range(ord('A'), ord('Z'))
 
@@ -32,8 +27,8 @@ for c in (b'\0', b'/'):
 
 winreserved = (
     b'aux con prn nul'.split()
-    + [b'com%d' % i for i in xrange(1, 10)]
-    + [b'lpt%d' % i for i in xrange(1, 10)]
+    + [b'com%d' % i for i in range(1, 10)]
+    + [b'lpt%d' % i for i in range(1, 10)]
 )
 
 
@@ -43,8 +38,8 @@ def casecombinations(names):
     combos = set()
 
     for r in names:
-        for i in xrange(len(r) + 1):
-            for c in itertools.combinations(xrange(len(r)), i):
+        for i in range(len(r) + 1):
+            for c in itertools.combinations(range(len(r)), i):
                 d = r
                 for j in c:
                     d = b''.join((d[:j], d[j : j + 1].upper(), d[j + 1 :]))
@@ -211,7 +206,7 @@ def makepath(rng, j, k):
 
     return (
         b'data/'
-        + b'/'.join(makepart(rng, k) for _ in xrange(j))
+        + b'/'.join(makepart(rng, k) for _ in range(j))
         + rng.choice([b'.d', b'.i'])
     )
 
@@ -222,7 +217,7 @@ def genpath(rng, count):
     mink, maxk = 1, 4096
 
     def steps():
-        for i in xrange(count):
+        for i in range(count):
             yield mink + int(round(math.sqrt((maxk - mink) * float(i) / count)))
 
     for k in steps():

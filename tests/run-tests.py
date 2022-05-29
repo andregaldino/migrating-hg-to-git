@@ -151,9 +151,6 @@ if pygmentspresent:
 origenviron = os.environ.copy()
 
 
-xrange = range  # we use xrange in one place, and we'd rather not use range
-
-
 def _sys2bytes(p):
     if p is None:
         return p
@@ -1422,7 +1419,7 @@ class Test(unittest.TestCase):
         env['HGTEST_TIMEOUT_DEFAULT'] = formated_timeout
         env['HGTEST_TIMEOUT'] = _bytes2sys(b"%d" % self._timeout)
         # This number should match portneeded in _getport
-        for port in xrange(3):
+        for port in range(3):
             # This list should be parallel to _portmap in _getreplacements
             defineport(port)
         env["HGRCPATH"] = _bytes2sys(os.path.join(self._threadtmp, b'.hgrc'))
@@ -2503,7 +2500,7 @@ class TestSuite(unittest.TestSuite):
 
                     if ignored:
                         continue
-            for _ in xrange(self._runs_per_test):
+            for _ in range(self._runs_per_test):
                 tests.append(get())
 
         runtests = list(tests)
@@ -2552,7 +2549,7 @@ class TestSuite(unittest.TestSuite):
                 with iolock:
                     sys.stdout.write(d + '  ')
                     sys.stdout.flush()
-                for x in xrange(10):
+                for x in range(10):
                     if channels:
                         time.sleep(0.1)
                 count += 1
@@ -3502,10 +3499,10 @@ class TestRunner:
         if port is None:
             portneeded = 3
             # above 100 tries we just give up and let test reports failure
-            for tries in xrange(100):
+            for tries in range(100):
                 allfree = True
                 port = self.options.port + self._portoffset
-                for idx in xrange(portneeded):
+                for idx in range(portneeded):
                     if not checkportisavailable(port + idx):
                         allfree = False
                         break
