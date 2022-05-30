@@ -68,6 +68,7 @@ comment associated with each format for details.
 
 """
 
+import binascii
 import errno
 import struct
 
@@ -244,7 +245,7 @@ def _fm0readmarkers(data, off, stop):
                     if len(p) != 20:
                         parents = None
                         break
-            except TypeError:
+            except binascii.Error:
                 # if content cannot be translated to nodeid drop the data.
                 parents = None
 

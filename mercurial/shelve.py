@@ -238,7 +238,7 @@ class shelvedstate:
             d[b'nodestoremove'] = [
                 bin(h) for h in d[b'nodestoremove'].split(b' ')
             ]
-        except (ValueError, TypeError, KeyError) as err:
+        except (ValueError, KeyError) as err:
             raise error.CorruptedState(stringutil.forcebytestr(err))
 
     @classmethod

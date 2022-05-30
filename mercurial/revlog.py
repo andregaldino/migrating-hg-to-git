@@ -1487,7 +1487,7 @@ class revlog:
                 node = bin(id)
                 self.rev(node)
                 return node
-            except (TypeError, error.LookupError):
+            except (binascii.Error, error.LookupError):
                 pass
 
     def _partialmatch(self, id):
@@ -1529,7 +1529,7 @@ class revlog:
             l = len(id) // 2 * 2  # grab an even number of digits
             try:
                 prefix = bin(id[:l])
-            except TypeError:
+            except binascii.Error:
                 pass
             else:
                 nl = [e[7] for e in self.index if e[7].startswith(prefix)]

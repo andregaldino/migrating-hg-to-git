@@ -2691,9 +2691,9 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             # local repository.
             n = bin(s)
             if len(n) != repo.nodeconstants.nodelen:
-                raise TypeError()
+                raise ValueError
             return n
-        except TypeError:
+        except ValueError:
             raise error.InputError(
                 b'changeset references must be full hexadecimal '
                 b'node identifiers'

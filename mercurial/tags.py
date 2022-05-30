@@ -11,6 +11,7 @@
 # tags too.
 
 
+import binascii
 import errno
 import io
 
@@ -303,7 +304,7 @@ def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
             name = recode(name)
         try:
             nodebin = bin(nodehex)
-        except TypeError:
+        except binascii.Error:
             dbg(b"node '%s' is not well formed" % nodehex)
             continue
 

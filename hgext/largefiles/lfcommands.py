@@ -8,6 +8,7 @@
 
 '''High-level command function for lfconvert, plus the cmdtable.'''
 
+import binascii
 import errno
 import os
 import shutil
@@ -384,7 +385,7 @@ def _converttags(ui, revmap, data):
             continue
         try:
             newid = bin(id)
-        except TypeError:
+        except binascii.Error:
             ui.warn(_(b'skipping incorrectly formatted id %s\n') % id)
             continue
         try:

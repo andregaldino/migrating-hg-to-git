@@ -101,8 +101,8 @@ class bmstore:
                                 if nrefs[-2] > refspec:
                                     # bookmarks weren't sorted before 4.5
                                     nrefs.sort()
-                    except (TypeError, ValueError):
-                        # TypeError:
+                    except ValueError:
+                        # binascii.Error (ValueError subclass):
                         # - bin(...)
                         # ValueError:
                         # - node in nm, for non-20-bytes entry

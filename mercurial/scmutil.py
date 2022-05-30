@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 
 
+import binascii
 import errno
 import glob
 import os
@@ -639,7 +640,7 @@ def revsymbol(repo, symbol):
                 return repo[rev]
             except error.FilteredLookupError:
                 raise
-            except (TypeError, LookupError):
+            except (binascii.Error, LookupError):
                 pass
 
         # look up bookmarks through the name interface

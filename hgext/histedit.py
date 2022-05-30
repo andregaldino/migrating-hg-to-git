@@ -199,6 +199,7 @@ except ImportError:
     fcntl = None
     termios = None
 
+import binascii
 import functools
 import os
 import pickle
@@ -504,7 +505,7 @@ class histeditaction:
         # Check for validation of rule ids and get the rulehash
         try:
             rev = bin(ruleid)
-        except TypeError:
+        except binascii.Error:
             try:
                 _ctx = scmutil.revsingle(state.repo, ruleid)
                 rulehash = _ctx.hex()

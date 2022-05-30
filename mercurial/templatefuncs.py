@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 
 
+import binascii
 import re
 
 from .i18n import _
@@ -769,7 +770,7 @@ def shortest(context, mapping, args):
     elif len(hexnode) == hexnodelen:
         try:
             node = bin(hexnode)
-        except TypeError:
+        except binascii.Error:
             return hexnode
     else:
         try:

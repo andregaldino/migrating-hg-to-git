@@ -386,14 +386,10 @@ Server sends an incomplete HTTP response body to batch request
   > -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
-TODO client spews a stack due to uncaught ValueError in batch.results()
-#if no-chg
-  $ hg clone http://localhost:$HGPORT/ clone 2> /dev/null
-  [1]
-#else
-  $ hg clone http://localhost:$HGPORT/ clone 2> /dev/null
+  $ hg clone http://localhost:$HGPORT/ clone
+  abort: unexpected response:
+  '96ee1d7354c4ad7372047672'
   [255]
-#endif
 
   $ killdaemons.py $DAEMON_PIDS
 

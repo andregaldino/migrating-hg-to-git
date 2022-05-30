@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 
 
+import binascii
 import re
 
 from .i18n import _
@@ -1728,7 +1729,7 @@ def _node(repo, n):
             rn = repo.changelog.rev(bin(n))
         except error.WdirUnsupported:
             rn = wdirrev
-        except (LookupError, TypeError):
+        except (binascii.Error, LookupError):
             rn = None
     else:
         try:
