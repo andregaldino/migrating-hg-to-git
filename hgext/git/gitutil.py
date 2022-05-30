@@ -44,8 +44,6 @@ def togitnode(n):
 def fromgitnode(n):
     """Opposite of togitnode."""
     assert len(n) == 40
-    if pycompat.ispy3:
-        return bin(n.encode('ascii'))
     return bin(n)
 
 
