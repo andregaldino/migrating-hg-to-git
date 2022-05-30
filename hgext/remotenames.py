@@ -25,6 +25,8 @@ remotenames.hoistedpeer
 """
 
 
+import collections.abc
+
 from mercurial.i18n import _
 
 from mercurial.node import bin
@@ -34,7 +36,6 @@ from mercurial import (
     extensions,
     logexchange,
     namespaces,
-    pycompat,
     registrar,
     revsetlang,
     smartset,
@@ -43,15 +44,6 @@ from mercurial import (
 )
 
 from mercurial.utils import stringutil
-
-if pycompat.ispy3:
-    import collections.abc
-
-    mutablemapping = collections.abc.MutableMapping
-else:
-    import collections
-
-    mutablemapping = collections.MutableMapping
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -81,7 +73,7 @@ configitem(
 )
 
 
-class lazyremotenamedict(mutablemapping):
+class lazyremotenamedict(collections.abc.MutableMapping):
     """
     Read-only dict-like Class to lazily resolve remotename entries
 
