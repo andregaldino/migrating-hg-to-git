@@ -534,8 +534,7 @@ WHERE filenode = ? AND filename = ?
                 ).fetchone()[0]
                 # This filelog is missing some data. Build the
                 # filelog, then recurse (which will always find data).
-                if pycompat.ispy3:
-                    commit = commit.decode('ascii')
+                commit = commit.decode('ascii')
                 index.fill_in_filelog(self.gitrepo, self._db, commit, gp, gn)
                 return self.parents(node)
             else:

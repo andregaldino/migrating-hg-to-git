@@ -465,7 +465,7 @@ class notifier:
             # create fresh mime message from scratch
             # (multipart templates must take care of this themselves)
             headers = msg.items()
-            payload = msg.get_payload(decode=pycompat.ispy3)
+            payload = msg.get_payload(decode=True)
             # for notification prefer readability over data precision
             msg = mail.mimeencode(self.ui, payload, self.charsets, self.test)
             # reinstate custom headers
@@ -524,7 +524,7 @@ class notifier:
                 )
         msg['To'] = ', '.join(sorted(subs))
 
-        msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
+        msgtext = msg.as_bytes()
         if self.test:
             self.ui.write(msgtext)
             if not msgtext.endswith(b'\n'):

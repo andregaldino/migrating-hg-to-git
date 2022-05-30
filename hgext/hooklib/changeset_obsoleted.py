@@ -114,7 +114,7 @@ def _report_commit(ui, repo, ctx):
         msg['From'] = mail.addressencode(ui, sender, n.charsets, n.test)
     msg['To'] = ', '.join(sorted(subs))
 
-    msgtext = msg.as_bytes() if pycompat.ispy3 else msg.as_string()
+    msgtext = msg.as_bytes()
     if ui.configbool(b'notify', b'test'):
         ui.write(msgtext)
         if not msgtext.endswith(b'\n'):

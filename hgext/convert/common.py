@@ -55,45 +55,25 @@ class _shlexpy3proxy:
 
 def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
     if data is None:
-        if pycompat.ispy3:
-            data = open(filepath, b'r', encoding='latin1')
-        else:
-            data = open(filepath, b'r')
+        data = open(filepath, b'r', encoding='latin1')
     else:
         if filepath is not None:
             raise error.ProgrammingError(
                 b'shlexer only accepts data or filepath, not both'
             )
-        if pycompat.ispy3:
-            data = data.decode('latin1')
+        data = data.decode('latin1')
     l = shlex.shlex(data, infile=filepath, posix=True)
     if whitespace is not None:
         l.whitespace_split = True
-        if pycompat.ispy3:
-            l.whitespace += whitespace.decode('latin1')
-        else:
-            l.whitespace += whitespace
+        l.whitespace += whitespace.decode('latin1')
     if wordchars is not None:
-        if pycompat.ispy3:
-            l.wordchars += wordchars.decode('latin1')
-        else:
-            l.wordchars += wordchars
-    if pycompat.ispy3:
-        return _shlexpy3proxy(l)
-    return l
-
-
-if pycompat.ispy3:
-    base64_encodebytes = base64.encodebytes
-    base64_decodebytes = base64.decodebytes
-else:
-    base64_encodebytes = base64.encodestring
-    base64_decodebytes = base64.decodestring
+        l.wordchars += wordchars.decode('latin1')
+    return _shlexpy3proxy(l)
 
 
 def encodeargs(args):
     def encodearg(s):
-        lines = base64_encodebytes(s)
+        lines = base64.encodebytes(s)
         lines = [l.splitlines()[0] for l in pycompat.iterbytestr(lines)]
         return b''.join(lines)
 
@@ -102,7 +82,7 @@ def encodeargs(args):
 
 
 def decodeargs(s):
-    s = base64_decodebytes(s)
+    s = base64.decodebytes(s)
     return pickle.loads(s)
 
 
