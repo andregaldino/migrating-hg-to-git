@@ -105,6 +105,7 @@ from .utils import (
 
 from .revlogutils import (
     constants as revlog_constants,
+    debug as revlog_debug,
     deltas as deltautil,
     nodemap,
     rewrite,
@@ -1874,35 +1875,15 @@ def debugindex(ui, repo, file_=None, **opts):
     opts = pycompat.byteskwargs(opts)
     store = cmdutil.openstorage(repo, b'debugindex', file_, opts)
 
-    if ui.debugflag:
-        shortfn = hex
-    else:
-        shortfn = short
-
-    idlen = 12
-    for i in store:
-        idlen = len(shortfn(store.node(i)))
-        break
-
     fm = ui.formatter(b'debugindex', opts)
-    fm.plain(
-        b'   rev linkrev %s %s p2\n'
-        % (b'nodeid'.ljust(idlen), b'p1'.ljust(idlen))
+
+    return revlog_debug.debug_index(
+        ui,
+        repo,
+        formatter=fm,
+        revlog=store,
+        full_node=ui.debugflag,
     )
-
-    for rev in store:
-        node = store.node(rev)
-        parents = store.parents(node)
-
-        fm.startitem()
-        fm.write(b'rev', b'%6d ', rev)
-        fm.write(b'linkrev', b'%7d ', store.linkrev(rev))
-        fm.write(b'node', b'%s ', shortfn(node))
-        fm.write(b'p1', b'%s ', shortfn(parents[0]))
-        fm.write(b'p2', b'%s', shortfn(parents[1]))
-        fm.plain(b'\n')
-
-    fm.end()
 
 
 @command(
