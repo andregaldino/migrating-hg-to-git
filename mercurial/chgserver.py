@@ -465,6 +465,7 @@ class chgcmdserver(commandserver.server):
                     os.dup2(nullfd, fp.fileno())
                     fp.flush()
                 os.dup2(fd, fp.fileno())
+                os.close(fd)
             except OSError as err:
                 # According to issue6330, running chg on heavy loaded systems
                 # can lead to EBUSY. [man dup2] indicates that, on Linux,
@@ -477,7 +478,6 @@ class chgcmdserver(commandserver.server):
                     stringutil.forcebytestr(err),
                     fn,
                 )
-            os.close(fd)
             setattr(self, cn, ch)
             setattr(ui, fn, fp)
         os.close(nullfd)
