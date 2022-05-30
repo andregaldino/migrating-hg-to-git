@@ -364,32 +364,6 @@ protomap = {
 }
 
 
-class NonUtf8PercentEncodedBytes(Exception):
-    pass
-
-
-# Subversion paths are Unicode. Since the percent-decoding is done on
-# UTF-8-encoded strings, percent-encoded bytes are interpreted as UTF-8.
-def url2pathname_like_subversion(unicodepath):
-    if pycompat.ispy3:
-        # On Python 3, we have to pass unicode to urlreq.url2pathname().
-        # Percent-decoded bytes get decoded using UTF-8 and the 'replace' error
-        # handler.
-        unicodepath = urlreq.url2pathname(unicodepath)
-        if u'\N{REPLACEMENT CHARACTER}' in unicodepath:
-            raise NonUtf8PercentEncodedBytes
-        else:
-            return unicodepath
-    else:
-        # If we passed unicode on Python 2, it would be converted using the
-        # latin-1 encoding. Therefore, we pass UTF-8-encoded bytes.
-        unicodepath = urlreq.url2pathname(unicodepath.encode('utf-8'))
-        try:
-            return unicodepath.decode('utf-8')
-        except UnicodeDecodeError:
-            raise NonUtf8PercentEncodedBytes
-
-
 def issvnurl(ui, url):
     try:
         proto, path = url.split(b'://', 1)
@@ -412,9 +386,15 @@ def issvnurl(ui, url):
                     % pycompat.sysbytes(fsencoding)
                 )
                 return False
-            try:
-                unicodepath = url2pathname_like_subversion(unicodepath)
-            except NonUtf8PercentEncodedBytes:
+
+            # Subversion paths are Unicode. Since it does percent-decoding on
+            # UTF-8-encoded strings, percent-encoded bytes are interpreted as
+            # UTF-8.
+            # On Python 3, we have to pass unicode to urlreq.url2pathname().
+            # Percent-decoded bytes get decoded using UTF-8 and the 'replace'
+            # error handler.
+            unicodepath = urlreq.url2pathname(unicodepath)
+            if u'\N{REPLACEMENT CHARACTER}' in unicodepath:
                 ui.warn(
                     _(
                         b'Subversion does not support non-UTF-8 '
@@ -422,6 +402,7 @@ def issvnurl(ui, url):
                     )
                 )
                 return False
+
             # Below, we approximate how Subversion checks the path. On Unix, we
             # should therefore convert the path to bytes using `fsencoding`
             # (like Subversion does). On Windows, the right thing would
