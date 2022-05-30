@@ -76,6 +76,7 @@ Show debug commands if there are no other candidates
   $ hg debugcomplete debug
   debug-delta-find
   debug-repair-issue6528
+  debug-revlog-index
   debugancestor
   debugantivirusrunning
   debugapplystreamclonebundle
@@ -104,7 +105,6 @@ Show debug commands if there are no other candidates
   debugfsinfo
   debuggetbundle
   debugignore
-  debugindex
   debugindexdot
   debugindexstats
   debuginstall
@@ -270,6 +270,7 @@ Show all commands + options
   copy: forget, after, at-rev, force, include, exclude, dry-run
   debug-delta-find: changelog, manifest, dir, template
   debug-repair-issue6528: to-report, from-report, paranoid, dry-run
+  debug-revlog-index: changelog, manifest, dir, template
   debugancestor: 
   debugantivirusrunning: 
   debugapplystreamclonebundle: 
@@ -297,7 +298,6 @@ Show all commands + options
   debugfsinfo: 
   debuggetbundle: head, common, type
   debugignore: 
-  debugindex: changelog, manifest, dir, template
   debugindexdot: changelog, manifest, dir
   debugindexstats: 
   debuginstall: template

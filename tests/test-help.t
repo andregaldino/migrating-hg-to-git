@@ -983,6 +983,8 @@ Test list of internal help commands
    debug-repair-issue6528
                  find affected revisions and repair them. See issue6528 for more
                  details.
+   debug-revlog-index
+                 dump index data for a revlog
    debugancestor
                  find the ancestor revision of two revisions in a given index
    debugantivirusrunning
@@ -1031,7 +1033,6 @@ Test list of internal help commands
                  retrieves a bundle from a repo
    debugignore   display the combined ignore pattern and information about
                  ignored files
-   debugindex    dump index data for a storage primitive
    debugindexdot
                  dump an index DAG as a graphviz dot file
    debugindexstats

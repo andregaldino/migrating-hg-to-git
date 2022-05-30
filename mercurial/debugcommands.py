@@ -1865,12 +1865,12 @@ def debugignore(ui, repo, *files, **opts):
 
 
 @command(
-    b'debugindex',
+    b'debug-revlog-index|debugindex',
     cmdutil.debugrevlogopts + cmdutil.formatteropts,
     _(b'-c|-m|FILE'),
 )
 def debugindex(ui, repo, file_=None, **opts):
-    """dump index data for a storage primitive"""
+    """dump index data for a revlog"""
     opts = pycompat.byteskwargs(opts)
     store = cmdutil.openstorage(repo, b'debugindex', file_, opts)
 
