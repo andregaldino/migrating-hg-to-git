@@ -70,6 +70,11 @@ def _rev(index, rev, entry, hexfn):
     return b"%d" % rev
 
 
+@debug_column(b"rank", size=6, verbose=True)
+def rank(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_RANK]
+
+
 @debug_column(b"linkrev", size=6)
 def _linkrev(index, rev, entry, hexfn):
     return b"%d" % entry[constants.ENTRY_LINK_REV]

@@ -41,16 +41,16 @@ Check data can be written/read from sidedata
    entry-0002 size 32
 
   $ hg debug-revlog-index --verbose -c
-     rev linkrev       nodeid p1-rev    p1-nodeid p2-rev    p2-nodeid            full-size delta-base flags comp-mode          data-offset chunk-size sd-comp-mode      sidedata-offset sd-chunk-size
-       0       0 7049e48789d7     -1 000000000000     -1 000000000000                   54          0     0         0                    0         54        plain                    0            90
-       1       1 2707720c6597      0 7049e48789d7     -1 000000000000                   54          1     0         0                   54         54        plain                   90            90
-       2       2 40f977031323      1 2707720c6597     -1 000000000000                   55          2     0         0                  108         55        plain                  180            90
+     rev   rank linkrev       nodeid p1-rev    p1-nodeid p2-rev    p2-nodeid            full-size delta-base flags comp-mode          data-offset chunk-size sd-comp-mode      sidedata-offset sd-chunk-size
+       0     -1       0 7049e48789d7     -1 000000000000     -1 000000000000                   54          0     0         0                    0         54        plain                    0            90
+       1     -1       1 2707720c6597      0 7049e48789d7     -1 000000000000                   54          1     0         0                   54         54        plain                   90            90
+       2     -1       2 40f977031323      1 2707720c6597     -1 000000000000                   55          2     0         0                  108         55        plain                  180            90
 
   $ hg debug-revlog-index --verbose -m
-     rev linkrev       nodeid p1-rev    p1-nodeid p2-rev    p2-nodeid            full-size delta-base flags comp-mode          data-offset chunk-size sd-comp-mode      sidedata-offset sd-chunk-size
-       0       0 b85d294330e3     -1 000000000000     -1 000000000000                   43          0     0         0                    0         43        plain                    0            90
-       1       1 1a0aec305c63      0 b85d294330e3     -1 000000000000                   86          0     0         0                   43         55        plain                   90            90
-       2       2 104258a4f75f      1 1a0aec305c63     -1 000000000000                   86          1     0         0                   98         55        plain                  180            90
+     rev   rank linkrev       nodeid p1-rev    p1-nodeid p2-rev    p2-nodeid            full-size delta-base flags comp-mode          data-offset chunk-size sd-comp-mode      sidedata-offset sd-chunk-size
+       0     -1       0 b85d294330e3     -1 000000000000     -1 000000000000                   43          0     0         0                    0         43        plain                    0            90
+       1     -1       1 1a0aec305c63      0 b85d294330e3     -1 000000000000                   86          0     0         0                   43         55        plain                   90            90
+       2     -1       2 104258a4f75f      1 1a0aec305c63     -1 000000000000                   86          1     0         0                   98         55        plain                  180            90
 
 Check upgrade behavior
 ======================
