@@ -109,6 +109,11 @@ def full_size(index, rev, entry, hexfn):
     return b"%d" % entry[constants.ENTRY_DATA_UNCOMPRESSED_LENGTH]
 
 
+@debug_column(b"delta-base", size=6, verbose=True)
+def delta_base(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_DELTA_BASE]
+
+
 def debug_index(
     ui,
     repo,
