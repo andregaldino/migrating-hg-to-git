@@ -7,7 +7,6 @@
 
 
 import difflib
-import errno
 
 from .i18n import _
 
@@ -158,9 +157,8 @@ class grepsearcher:
             fctx = ctx[fn]
             try:
                 return fctx.data()
-            except IOError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
         else:
             flog = self._getfile(fn)
             fnode = ctx.filenode(fn)

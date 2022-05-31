@@ -1,4 +1,3 @@
-import errno
 import os
 import shutil
 import stat
@@ -344,10 +343,7 @@ class basestore:
                 count += 1
                 try:
                     pathstat = os.stat(path)
-                except OSError as e:
-                    # errno.ENOENT = no such file or directory
-                    if e.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
                     msg = _(
                         b"warning: file %s was removed by another process\n"
                     )
@@ -362,10 +358,7 @@ class basestore:
                 else:
                     try:
                         shallowutil.unlinkfile(path)
-                    except OSError as e:
-                        # errno.ENOENT = no such file or directory
-                        if e.errno != errno.ENOENT:
-                            raise
+                    except FileNotFoundError:
                         msg = _(
                             b"warning: file %s was removed by another "
                             b"process\n"
@@ -388,10 +381,7 @@ class basestore:
                 atime, oldpath, oldpathstat = queue.get()
                 try:
                     shallowutil.unlinkfile(oldpath)
-                except OSError as e:
-                    # errno.ENOENT = no such file or directory
-                    if e.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
                     msg = _(
                         b"warning: file %s was removed by another process\n"
                     )

@@ -1,5 +1,4 @@
 import contextlib
-import errno
 import os
 
 from mercurial.node import sha1nodeconstants
@@ -318,9 +317,7 @@ class gitdirstate:
             # TODO construct the stat info from the status object?
             try:
                 s = os.stat(os.path.join(cwd, path))
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 continue
             r[path] = s
         return r

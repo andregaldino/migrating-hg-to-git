@@ -58,9 +58,8 @@ A set of extension and shell functions ensures this scheduling.
   >             def delete():
   >                 try:
   >                     os.unlink(watchpath)
-  >                 except OSError as exc:
-  >                     if exc.errno != errno.ENOENT:
-  >                         raise
+  >                 except FileNotFoundError:
+  >                     pass
   >             ui.atexit(delete)
   >     return orig(pushop)
   > 

@@ -69,7 +69,6 @@ comment associated with each format for details.
 """
 
 import binascii
-import errno
 import struct
 
 from .i18n import _
@@ -582,11 +581,10 @@ class obsstore:
         if not self._cached('_all'):
             try:
                 return self.svfs.stat(b'obsstore').st_size > 1
-            except OSError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 # just build an empty _all list if no obsstore exists, which
                 # avoids further stat() syscalls
+                pass
         return bool(self._all)
 
     __bool__ = __nonzero__

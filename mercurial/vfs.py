@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 import contextlib
-import errno
 import os
 import shutil
 import stat
@@ -74,18 +73,16 @@ class abstractvfs:
         '''gracefully return an empty string for missing files'''
         try:
             return self.read(path)
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         return b""
 
     def tryreadlines(self, path, mode=b'rb'):
         '''gracefully return an empty array for missing files'''
         try:
             return self.readlines(path, mode=mode)
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         return []
 
     @util.propertycache
@@ -476,9 +473,7 @@ class vfs(abstractvfs):
                             nlink = util.nlinks(f)
                             if nlink < 1:
                                 nlink = 2  # force mktempcopy (issue1922)
-                except (OSError, IOError) as e:
-                    if e.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
                     nlink = 0
                     if makeparentdirs:
                         util.makedirs(dirname, self.createmode, notindexed)

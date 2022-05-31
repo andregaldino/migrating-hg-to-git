@@ -166,9 +166,8 @@ class basepackstore:
                         )
                     else:
                         ids.add(id)
-        except OSError as ex:
-            if ex.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
     def _getavailablepackfilessorted(self):
         """Like `_getavailablepackfiles`, but also sorts the files by mtime,

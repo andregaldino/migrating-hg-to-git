@@ -311,10 +311,8 @@ class lock:
         """
         try:
             return self.vfs.readlock(self.f)
-        except (OSError, IOError) as why:
-            if why.errno == errno.ENOENT:
-                return None
-            raise
+        except FileNotFoundError:
+            return None
 
     def _lockshouldbebroken(self, locker):
         if locker is None:

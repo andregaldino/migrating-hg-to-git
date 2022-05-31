@@ -175,9 +175,7 @@ def copymode(src, dst, mode=None, enforcewritable=False):
     using umask."""
     try:
         st_mode = os.lstat(src).st_mode & 0o777
-    except OSError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         st_mode = mode
         if st_mode is None:
             st_mode = ~umask
@@ -226,19 +224,16 @@ def checkexec(path):
 
             try:
                 m = os.stat(checkisexec).st_mode
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 # checkisexec does not exist - fall through ...
+                pass
             else:
                 # checkisexec exists, check if it actually is exec
                 if m & EXECFLAGS != 0:
                     # ensure checkisexec exists, check it isn't exec
                     try:
                         m = os.stat(checknoexec).st_mode
-                    except OSError as e:
-                        if e.errno != errno.ENOENT:
-                            raise
+                    except FileNotFoundError:
                         open(checknoexec, b'w').close()  # might fail
                         m = os.stat(checknoexec).st_mode
                     if m & EXECFLAGS == 0:

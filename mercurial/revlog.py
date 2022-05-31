@@ -16,7 +16,6 @@ and O(changes) merge between branches.
 import binascii
 import collections
 import contextlib
-import errno
 import io
 import os
 import struct
@@ -486,9 +485,7 @@ class revlog:
                     return fp.read()
                 else:
                     return fp.read(size)
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return b''
 
     def _loadindex(self, docket=None):
@@ -701,9 +698,7 @@ class revlog:
             else:
                 f.seek(self._docket.index_end, os.SEEK_SET)
             return f
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return self.opener(
                 self._indexfile, mode=b"w+", checkambig=self._checkambig
             )
@@ -2116,9 +2111,7 @@ class revlog:
                             dfh.seek(0, os.SEEK_END)
                         else:
                             dfh.seek(self._docket.data_end, os.SEEK_SET)
-                    except IOError as inst:
-                        if inst.errno != errno.ENOENT:
-                            raise
+                    except FileNotFoundError:
                         dfh = self._datafp(b"w+")
                     transaction.add(self._datafile, dsize)
                 if self._sidedatafile is not None:
@@ -2127,9 +2120,7 @@ class revlog:
                     try:
                         sdfh = self.opener(self._sidedatafile, mode=b"r+")
                         dfh.seek(self._docket.sidedata_end, os.SEEK_SET)
-                    except IOError as inst:
-                        if inst.errno != errno.ENOENT:
-                            raise
+                    except FileNotFoundError:
                         sdfh = self.opener(self._sidedatafile, mode=b"w+")
                     transaction.add(
                         self._sidedatafile, self._docket.sidedata_end
@@ -2832,9 +2823,7 @@ class revlog:
                 f.seek(0, io.SEEK_END)
                 actual = f.tell()
             dd = actual - expected
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             dd = 0
 
         try:
@@ -2851,9 +2840,7 @@ class revlog:
                     databytes += max(0, self.length(r))
                 dd = 0
                 di = actual - len(self) * s - databytes
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             di = 0
 
         return (dd, di)

@@ -12,8 +12,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
-
 from .i18n import _
 from . import (
     error,
@@ -71,9 +69,8 @@ def _playback(
         else:
             try:
                 opener.unlink(f)
-            except (IOError, OSError) as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
 
     backupfiles = []
     for l, f, b, c in backupentries:
@@ -95,9 +92,8 @@ def _playback(
                 target = f or b
                 try:
                     vfs.unlink(target)
-                except (IOError, OSError) as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
         except (IOError, OSError, error.Abort):
             if not c:
                 raise

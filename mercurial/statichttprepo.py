@@ -181,9 +181,7 @@ class statichttprepository(
 
         try:
             requirements = set(self.vfs.read(b'requires').splitlines())
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             requirements = set()
 
             # check if it is a non-empty old-style repository
@@ -191,9 +189,7 @@ class statichttprepository(
                 fp = self.vfs(b"00changelog.i")
                 fp.read(1)
                 fp.close()
-            except IOError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 # we do not care about empty old-style repositories here
                 msg = _(b"'%s' does not appear to be an hg repository") % path
                 raise error.RepoError(msg)

@@ -1517,8 +1517,8 @@ class ui:
                 stderr=procutil.stderr,
                 env=procutil.tonativeenv(procutil.shellenviron(env)),
             )
-        except OSError as e:
-            if e.errno == errno.ENOENT and not shell:
+        except FileNotFoundError:
+            if not shell:
                 self.warn(
                     _(b"missing pager command '%s', skipping pager\n") % command
                 )

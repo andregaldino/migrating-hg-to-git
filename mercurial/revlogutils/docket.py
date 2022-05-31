@@ -16,7 +16,6 @@
 # * a data file, containing variable width data for these revisions,
 
 
-import errno
 import os
 import random
 import struct
@@ -51,9 +50,7 @@ if stable_docket_file:
         try:
             with open(stable_docket_file, mode='rb') as f:
                 seed = f.read().strip()
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             seed = b'04'  # chosen by a fair dice roll. garanteed to be random
         iter_seed = iter(seed)
         # some basic circular sum hashing on 64 bits

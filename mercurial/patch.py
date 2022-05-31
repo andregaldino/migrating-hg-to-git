@@ -10,7 +10,6 @@
 import collections
 import contextlib
 import copy
-import errno
 import os
 import re
 import shutil
@@ -503,14 +502,11 @@ class fsbackend(abstractbackend):
         isexec = False
         try:
             isexec = self.opener.lstat(fname).st_mode & 0o100 != 0
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         try:
             return (self.opener.read(fname), (False, isexec))
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return None, None
 
     def setfile(self, fname, data, mode, copysource):

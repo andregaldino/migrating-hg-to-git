@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import struct
 
 from .i18n import _
@@ -114,9 +113,8 @@ class bmstore:
                             _(b'malformed line in %s: %r\n')
                             % (bookmarkspath, pycompat.bytestr(line))
                         )
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         self._active = _readactive(repo, self)
 
     @property

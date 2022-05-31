@@ -15,7 +15,6 @@ https://mercurial-scm.org/wiki/RebaseExtension
 '''
 
 
-import errno
 import os
 
 from mercurial.i18n import _
@@ -1940,9 +1939,7 @@ def restorecollapsemsg(repo, isabort):
         f = repo.vfs(b"last-message.txt")
         collapsemsg = f.readline().strip()
         f.close()
-    except IOError as err:
-        if err.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         if isabort:
             # Oh well, just abort like normal
             collapsemsg = b''

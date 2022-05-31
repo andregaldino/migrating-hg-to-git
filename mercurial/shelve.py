@@ -22,7 +22,6 @@ shelve".
 """
 
 import collections
-import errno
 import itertools
 import stat
 
@@ -82,9 +81,7 @@ class ShelfDir:
         """return all shelves in repo as list of (time, name)"""
         try:
             names = self.vfs.listdir()
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return []
         info = []
         seen = set()
@@ -724,9 +721,7 @@ def _loadshelvedstate(ui, repo, opts):
         state = shelvedstate.load(repo)
         if opts.get(b'keep') is None:
             opts[b'keep'] = state.keep
-    except IOError as err:
-        if err.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         cmdutil.wrongtooltocontinue(repo, _(b'unshelve'))
     except error.CorruptedState as err:
         ui.debug(pycompat.bytestr(err) + b'\n')

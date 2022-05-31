@@ -63,7 +63,6 @@ in the strip extension.
 '''
 
 
-import errno
 import os
 import re
 import shutil
@@ -551,19 +550,15 @@ class queue:
         try:
             lines = self.opener.read(self.statuspath).splitlines()
             return list(parselines(lines))
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                return []
-            raise
+        except FileNotFoundError:
+            return []
 
     @util.propertycache
     def fullseries(self):
         try:
             return self.opener.read(self.seriespath).splitlines()
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                return []
-            raise
+        except FileNotFoundError:
+            return []
 
     @util.propertycache
     def series(self):
@@ -691,9 +686,7 @@ class queue:
             self.activeguards = []
             try:
                 guards = self.opener.read(self.guardspath).split()
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 guards = []
             for i, guard in enumerate(guards):
                 bad = self.checkguard(guard)
@@ -1140,9 +1133,8 @@ class queue:
             for p in patches:
                 try:
                     os.unlink(self.join(p))
-                except OSError as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
 
         qfinished = []
         if numrevs:

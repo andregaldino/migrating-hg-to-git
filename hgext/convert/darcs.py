@@ -5,7 +5,6 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import errno
 import os
 import re
 import shutil
@@ -230,10 +229,8 @@ class darcs_source(common.converter_source, common.commandline):
         try:
             data = util.readfile(path)
             mode = os.lstat(path).st_mode
-        except IOError as inst:
-            if inst.errno == errno.ENOENT:
-                return None, None
-            raise
+        except FileNotFoundError:
+            return None, None
         mode = (mode & 0o111) and b'x' or b''
         return data, mode
 

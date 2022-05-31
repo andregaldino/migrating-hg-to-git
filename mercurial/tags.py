@@ -12,7 +12,6 @@
 
 
 import binascii
-import errno
 import io
 
 from .node import (
@@ -242,9 +241,7 @@ def readlocaltags(ui, repo, alltags, tagtypes):
     '''Read local tags in repo. Update alltags and tagtypes.'''
     try:
         data = repo.vfs.read(b"localtags")
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         return
 
     # localtags is in the local encoding; re-encode to UTF-8 on
@@ -652,9 +649,7 @@ def _tag(
 
     try:
         fp = repo.wvfs(b'.hgtags', b'rb+')
-    except IOError as e:
-        if e.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         fp = repo.wvfs(b'.hgtags', b'ab')
     else:
         prevtags = fp.read()

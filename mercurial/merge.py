@@ -7,7 +7,6 @@
 
 
 import collections
-import errno
 import struct
 
 from .i18n import _
@@ -1306,10 +1305,8 @@ def calculateupdates(
 def _getcwd():
     try:
         return encoding.getcwd()
-    except OSError as err:
-        if err.errno == errno.ENOENT:
-            return None
-        raise
+    except FileNotFoundError:
+        return None
 
 
 def batchremove(repo, wctx, actions):

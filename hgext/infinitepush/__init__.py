@@ -90,7 +90,6 @@ delete this code at the end of 2020.
 
 import collections
 import contextlib
-import errno
 import functools
 import logging
 import os
@@ -1307,9 +1306,8 @@ def bundle2scratchbranch(op, part):
     finally:
         try:
             os.unlink(bundlefile)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
     return 1
 

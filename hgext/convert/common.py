@@ -7,7 +7,6 @@
 
 import base64
 import datetime
-import errno
 import os
 import pickle
 import re
@@ -528,9 +527,7 @@ class mapfile(dict):
             return
         try:
             fp = open(self.path, b'rb')
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return
         for i, line in enumerate(fp):
             line = line.splitlines()[0].rstrip()

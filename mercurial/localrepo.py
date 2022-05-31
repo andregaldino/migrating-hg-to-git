@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import functools
 import os
 import random
@@ -517,7 +516,7 @@ def _readrequires(vfs, allowmissing):
     """reads the require file present at root of this vfs
     and return a set of requirements
 
-    If allowmissing is True, we suppress ENOENT if raised"""
+    If allowmissing is True, we suppress FileNotFoundError if raised"""
     # requires file contains a newline-delimited list of
     # features/capabilities the opener (us) must have in order to use
     # the repository. This file was introduced in Mercurial 0.9.2,
@@ -525,8 +524,8 @@ def _readrequires(vfs, allowmissing):
     # a missing file translates to no requirements.
     try:
         requirements = set(vfs.read(b'requires').splitlines())
-    except IOError as e:
-        if not (allowmissing and e.errno == errno.ENOENT):
+    except FileNotFoundError:
+        if not allowmissing:
             raise
         requirements = set()
     return requirements
@@ -583,9 +582,8 @@ def makelocalrepository(baseui, path, intents=None):
     if not hgvfs.isdir():
         try:
             hgvfs.stat()
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         except ValueError as e:
             # Can be raised on Python 3.8 when path is invalid.
             raise error.Abort(
@@ -3503,9 +3501,8 @@ def aftertrans(files):
             vfs.tryunlink(dest)
             try:
                 vfs.rename(src, dest)
-            except OSError as exc:  # journal file does not yet exist
-                if exc.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:  # journal file does not yet exist
+                pass
 
     return a
 

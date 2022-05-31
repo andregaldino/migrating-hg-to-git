@@ -6,8 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
-
 from . import encoding
 
 
@@ -29,7 +27,6 @@ def trypending(root, vfs, filename, **kwargs):
     if mayhavepending(root):
         try:
             return (vfs(b'%s.pending' % filename, **kwargs), True)
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
     return (vfs(filename, **kwargs), False)

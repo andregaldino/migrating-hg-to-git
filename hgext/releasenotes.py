@@ -13,7 +13,6 @@ process simpler by automating it.
 
 
 import difflib
-import errno
 import re
 
 from mercurial.i18n import _
@@ -688,10 +687,7 @@ def releasenotes(ui, repo, file_=None, **opts):
     try:
         with open(file_, b'rb') as fh:
             notes = parsereleasenotesfile(sections, fh.read())
-    except IOError as e:
-        if e.errno != errno.ENOENT:
-            raise
-
+    except FileNotFoundError:
         notes = parsedreleasenotes()
 
     notes.merge(ui, incoming)

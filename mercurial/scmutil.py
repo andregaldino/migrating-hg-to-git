@@ -1619,9 +1619,8 @@ class filecachesubentry:
     def stat(path):
         try:
             return util.cachestat(path)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
 
 class filecacheentry:

@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import os
 import posixpath
 import re
@@ -63,9 +62,7 @@ def state(ctx, ui):
         if f in ctx:
             try:
                 data = ctx[f].data()
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
                 # handle missing subrepo spec files as removed
                 ui.warn(
                     _(b"warning: subrepo spec file \'%s\' not found\n")
@@ -102,9 +99,8 @@ def state(ctx, ui):
                         % (repo.pathto(b'.hgsubstate'), (i + 1))
                     )
                 rev[path] = revision
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
     def remap(src):
         # type: (bytes) -> bytes

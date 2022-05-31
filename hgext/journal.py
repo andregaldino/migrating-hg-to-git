@@ -13,7 +13,6 @@ bookmarks were previously located.
 
 
 import collections
-import errno
 import os
 import weakref
 
@@ -140,9 +139,7 @@ def _readsharedfeatures(repo):
     """A set of shared features for this repository"""
     try:
         return set(repo.vfs.read(b'shared').splitlines())
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         return set()
 
 

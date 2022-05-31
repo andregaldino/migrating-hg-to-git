@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import os
 import re
 import sys
@@ -6175,9 +6174,8 @@ def resolve(ui, repo, *pats, **opts):
                 a = repo.wjoin(f)
                 try:
                     util.copyfile(a, a + b".resolve")
-                except (IOError, OSError) as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
 
                 try:
                     # preresolve file
@@ -6194,9 +6192,8 @@ def resolve(ui, repo, *pats, **opts):
                     util.rename(
                         a + b".resolve", scmutil.backuppath(ui, repo, f)
                     )
-                except OSError as inst:
-                    if inst.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
 
         if hasconflictmarkers:
             ui.warn(

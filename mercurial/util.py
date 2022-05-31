@@ -2426,9 +2426,7 @@ class filestat:
     def frompath(cls, path):
         try:
             stat = os.stat(path)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             stat = None
         return cls(stat)
 
@@ -2612,12 +2610,11 @@ def unlinkpath(f, ignoremissing=False, rmdir=True):
 
 def tryunlink(f):
     # type: (bytes) -> None
-    """Attempt to remove a file, ignoring ENOENT errors."""
+    """Attempt to remove a file, ignoring FileNotFoundError."""
     try:
         unlink(f)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
 
 
 def makedirs(name, mode=None, notindexed=False):

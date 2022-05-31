@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import re
 import struct
 
@@ -83,11 +82,8 @@ def persisted_data(revlog):
                     data = b''
             else:
                 data = fd.read(data_length)
-    except (IOError, OSError) as e:
-        if e.errno == errno.ENOENT:
-            return None
-        else:
-            raise
+    except FileNotFoundError:
+        return None
     if len(data) < data_length:
         return None
     return docket, data

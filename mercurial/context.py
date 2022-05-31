@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import filecmp
 import os
 import stat
@@ -1737,9 +1736,7 @@ class workingctx(committablectx):
     def copy(self, source, dest):
         try:
             st = self._repo.wvfs.lstat(dest)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             self._repo.ui.warn(
                 _(b"%s does not exist!\n") % self._repo.dirstate.pathto(dest)
             )
@@ -2169,9 +2166,7 @@ class workingfilectx(committablefilectx):
         t, tz = self._changectx.date()
         try:
             return (self._repo.wvfs.lstat(self._path)[stat.ST_MTIME], tz)
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return (t, tz)
 
     def exists(self):

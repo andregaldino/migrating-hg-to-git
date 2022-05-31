@@ -137,9 +137,8 @@ class state:
     def invalidate(self):
         try:
             os.unlink(os.path.join(self._rootdir, b'.hg', b'fsmonitor.state'))
-        except OSError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         self._identity = util.filestat(None)
 
     def setlastclock(self, clock):

@@ -101,7 +101,6 @@ Note: old client behave as a publishing server with draft only content
 """
 
 
-import errno
 import struct
 
 from .i18n import _
@@ -202,9 +201,7 @@ def _readroots(repo, phasedefaults=None):
                 roots[int(phase)].add(bin(nh))
         finally:
             f.close()
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         if phasedefaults:
             for f in phasedefaults:
                 roots = f(repo, roots)

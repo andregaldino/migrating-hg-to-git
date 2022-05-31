@@ -66,7 +66,6 @@ The following ``share.`` config options influence this feature:
 '''
 
 
-import errno
 from mercurial.i18n import _
 from mercurial import (
     bookmarks,
@@ -177,9 +176,7 @@ def _hassharedbookmarks(repo):
         return False
     try:
         shared = repo.vfs.read(b'shared').splitlines()
-    except IOError as inst:
-        if inst.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
         return False
     return hg.sharedbookmarks in shared
 
@@ -199,9 +196,8 @@ def getbkfile(orig, repo):
                     # is up-to-date.
                     return fp
                 fp.close()
-            except IOError as inst:
-                if inst.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
 
             # otherwise, we should read bookmarks from srcrepo,
             # because .hg/bookmarks in srcrepo might be already

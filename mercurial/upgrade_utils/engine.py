@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import stat
 
 from ..i18n import _
@@ -646,11 +645,10 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
             util.copyfile(
                 srcrepo.vfs.join(b'dirstate'), backupvfs.join(b'dirstate')
             )
-        except (IOError, OSError) as e:
+        except FileNotFoundError:
             # The dirstate does not exist on an empty repo or a repo with no
             # revision checked out
-            if e.errno != errno.ENOENT:
-                raise
+            pass
 
     assert srcrepo.dirstate._use_dirstate_v2 == (old == b'v2')
     srcrepo.dirstate._map.preload()
@@ -659,11 +657,10 @@ def upgrade_dirstate(ui, srcrepo, upgrade_op, old, new):
     srcrepo.dirstate._dirty = True
     try:
         srcrepo.vfs.unlink(b'dirstate')
-    except (IOError, OSError) as e:
+    except FileNotFoundError:
         # The dirstate does not exist on an empty repo or a repo with no
         # revision checked out
-        if e.errno != errno.ENOENT:
-            raise
+        pass
 
     srcrepo.dirstate.write(None)
 

@@ -1,5 +1,4 @@
 import collections
-import errno
 import shutil
 import struct
 import weakref
@@ -629,9 +628,8 @@ class mergestate(_mergestate_base):
                 else:
                     records.append((RECORD_MERGED, l[:-1]))
             f.close()
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         return records
 
     def _readrecordsv2(self):
@@ -669,9 +667,8 @@ class mergestate(_mergestate_base):
                     rtype, record = record[0:1], record[1:]
                 records.append((rtype, record))
             f.close()
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         return records
 
     def commit(self):

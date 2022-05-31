@@ -4,8 +4,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
-
 from .i18n import _
 
 from . import (
@@ -95,9 +93,7 @@ class _dirstatemapcommon:
         try:
             with self._opendirstatefile() as fp:
                 return fp.read(size)
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             # File doesn't exist, so the current state is empty
             return b''
 

@@ -9,7 +9,6 @@
 '''High-level command function for lfconvert, plus the cmdtable.'''
 
 import binascii
-import errno
 import os
 import shutil
 
@@ -474,10 +473,8 @@ def cachelfiles(ui, repo, node, filelist=None):
     for lfile in lfiles:
         try:
             expectedhash = lfutil.readasstandin(ctx[lfutil.standin(lfile)])
-        except IOError as err:
-            if err.errno == errno.ENOENT:
-                continue  # node must be None and standin wasn't found in wctx
-            raise
+        except FileNotFoundError:
+            continue  # node must be None and standin wasn't found in wctx
         if not lfutil.findfile(repo, expectedhash):
             toget.append((lfile, expectedhash))
 

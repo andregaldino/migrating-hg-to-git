@@ -195,9 +195,7 @@ class dirstate:
     def _branch(self):
         try:
             return self._opener.read(b"branch").strip() or b"default"
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             return b"default"
 
     @property

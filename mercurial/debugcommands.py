@@ -2350,9 +2350,8 @@ def debuglocks(ui, repo, **opts):
                         )
                 ui.writenoi18n(b"%-6s %s (%ds)\n" % (name + b":", locker, age))
                 return 1
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
 
         ui.writenoi18n(b"%-6s free\n" % (name + b":"))
         return 0

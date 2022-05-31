@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import functools
 import os
 import re
@@ -788,9 +787,8 @@ class fncachestore(basicstore):
                 assert t is not None, f
                 t |= FILEFLAGS_FILELOG
                 yield t, f, self.getsize(ef)
-            except OSError as err:
-                if err.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
 
     def copylist(self):
         d = (
@@ -825,10 +823,7 @@ class fncachestore(basicstore):
         try:
             self.getsize(ef)
             return True
-        except OSError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            # nonexistent entry
+        except FileNotFoundError:
             return False
 
     def __contains__(self, path):

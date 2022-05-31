@@ -362,9 +362,7 @@ def parselistfiles(files, listtype, warn=True):
         try:
             path = os.path.expanduser(os.path.expandvars(filename))
             f = open(path, "rb")
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
             if warn:
                 print("warning: no such %s file: %s" % (listtype, filename))
             continue
@@ -390,9 +388,8 @@ def parsettestcases(path):
             for l in f:
                 if l.startswith(b'#testcases '):
                     cases.append(sorted(l[11:].split()))
-    except IOError as ex:
-        if ex.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
     return cases
 
 
@@ -1110,12 +1107,11 @@ class Test(unittest.TestCase):
         if os.path.exists(self.errpath):
             try:
                 os.remove(self.errpath)
-            except OSError as e:
-                # We might have raced another test to clean up a .err
-                # file, so ignore ENOENT when removing a previous .err
+            except FileNotFoundError:
+                # We might have raced another test to clean up a .err file,
+                # so ignore FileNotFoundError when removing a previous .err
                 # file.
-                if e.errno != errno.ENOENT:
-                    raise
+                pass
 
         if self._usechg:
             self._chgsockdir = os.path.join(
@@ -2622,9 +2618,8 @@ def loadtimes(outputdir):
                 times.append(
                     (m.group(1), [float(t) for t in m.group(2).split()])
                 )
-    except IOError as err:
-        if err.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
     return times
 
 
@@ -2979,9 +2974,7 @@ def sorttests(testdescs, previoustimes, shuffle=False):
             except KeyError:
                 try:
                     val = -os.stat(f).st_size
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
                     perf[f] = -1e9  # file does not exist, tell early
                     return -1e9
                 for kw, mul in slow.items():
@@ -3584,9 +3577,8 @@ class TestRunner:
                     if os.readlink(mypython) == sysexecutable:
                         continue
                     os.unlink(mypython)
-                except OSError as err:
-                    if err.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
                 if self._findprogram(pyexename) != sysexecutable:
                     try:
                         os.symlink(sysexecutable, mypython)
@@ -3714,9 +3706,8 @@ class TestRunner:
             if not self.options.verbose:
                 try:
                     os.remove(installerrs)
-                except OSError as e:
-                    if e.errno != errno.ENOENT:
-                        raise
+                except FileNotFoundError:
+                    pass
         else:
             with open(installerrs, 'rb') as f:
                 for line in f:
