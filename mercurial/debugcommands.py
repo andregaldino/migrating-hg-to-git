@@ -1877,11 +1877,13 @@ def debugindex(ui, repo, file_=None, **opts):
 
     fm = ui.formatter(b'debugindex', opts)
 
+    revlog = getattr(store, b'_revlog', store)
+
     return revlog_debug.debug_index(
         ui,
         repo,
         formatter=fm,
-        revlog=store,
+        revlog=revlog,
         full_node=ui.debugflag,
     )
 
