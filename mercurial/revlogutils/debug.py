@@ -22,12 +22,13 @@ NODE_SIZE = object()
 class _column_base:
     """constains the definition of a revlog column
 
-    name:       the column header,
-    value_func: the function called to get a value,
-    size:       the width of the column.
+    name:         the column header,
+    value_func:   the function called to get a value,
+    size:         the width of the column,
+    verbose_only: only include the column in verbose mode.
     """
 
-    def __init__(self, name, value_func, size=None):
+    def __init__(self, name, value_func, size=None, verbose=False):
         self.name = name
         self.value_func = value_func
         if size is not NODE_SIZE:
@@ -35,6 +36,7 @@ class _column_base:
                 size = 8  # arbitrary default
             size = max(len(name), size)
         self._size = size
+        self.verbose_only = verbose
 
     def get_size(self, node_size):
         if self._size is NODE_SIZE:
@@ -43,7 +45,7 @@ class _column_base:
             return self._size
 
 
-def debug_column(name, size=None):
+def debug_column(name, size=None, verbose=False):
     """decorated function is registered as a column
 
     name: the name of the column,
@@ -55,6 +57,7 @@ def debug_column(name, size=None):
             name=name,
             value_func=func,
             size=size,
+            verbose=verbose,
         )
         INDEX_ENTRY_DEBUG_COLUMN.append(entry)
         return entry
@@ -113,6 +116,8 @@ def debug_index(
 
     header_pieces = []
     for column in INDEX_ENTRY_DEBUG_COLUMN:
+        if column.verbose_only and not ui.verbose:
+            continue
         size = column.get_size(idlen)
         name = column.name
         header_pieces.append(name.rjust(size))
@@ -126,6 +131,8 @@ def debug_index(
         entry = index[rev]
         first = True
         for column in INDEX_ENTRY_DEBUG_COLUMN:
+            if column.verbose_only and not ui.verbose:
+                continue
             if not first:
                 fm.plain(b' ')
             first = False
