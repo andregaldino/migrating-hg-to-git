@@ -76,8 +76,7 @@ def _local(path):
         # invalid paths specially here.
         st = os.stat(path)
         isfile = stat.S_ISREG(st.st_mode)
-    # Python 2 raises TypeError, Python 3 ValueError.
-    except (TypeError, ValueError) as e:
+    except ValueError as e:
         raise error.Abort(
             _(b'invalid path %s: %s') % (path, stringutil.forcebytestr(e))
         )
