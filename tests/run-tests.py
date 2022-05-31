@@ -1099,9 +1099,8 @@ class Test(unittest.TestCase):
 
         try:
             os.mkdir(self._threadtmp)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
 
         name = self._tmpname
         self._testtmp = os.path.join(self._threadtmp, name)
@@ -3277,9 +3276,8 @@ class TestRunner:
             exceptionsdir = os.path.join(self._outputdir, b'exceptions')
             try:
                 os.makedirs(exceptionsdir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
 
             # Remove all existing exception reports.
             for f in os.listdir(exceptionsdir):
@@ -3593,10 +3591,9 @@ class TestRunner:
                     try:
                         os.symlink(sysexecutable, mypython)
                         self._createdfiles.append(mypython)
-                    except OSError as err:
+                    except FileExistsError:
                         # child processes may race, which is harmless
-                        if err.errno != errno.EEXIST:
-                            raise
+                        pass
         elif WINDOWS and not os.getenv('MSYSTEM'):
             raise AssertionError('cannot run test on Windows without MSYSTEM')
         else:
@@ -3706,9 +3703,8 @@ class TestRunner:
         def makedirs(p):
             try:
                 os.makedirs(p)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
 
         makedirs(self._pythondir)
         makedirs(self._bindir)
@@ -3757,9 +3753,8 @@ class TestRunner:
             covdir = os.path.join(self._installdir, b'..', b'coverage')
             try:
                 os.mkdir(covdir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
 
             osenvironb[b'COVERAGE_DIR'] = covdir
 

@@ -561,9 +561,8 @@ def dorecord(
             backupdir = repo.vfs.join(b'record-backups')
             try:
                 os.mkdir(backupdir)
-            except OSError as err:
-                if err.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
         try:
             # backup continues
             for f in tobackup:

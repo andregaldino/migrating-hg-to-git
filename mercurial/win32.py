@@ -735,11 +735,10 @@ def unlink(f):
     for tries in range(10):
         temp = b'%s-%08x' % (f, random.randint(0, 0xFFFFFFFF))
         try:
-            os.rename(f, temp)  # raises OSError EEXIST if temp exists
+            os.rename(f, temp)
             break
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
     else:
         raise IOError(errno.EEXIST, "No usable temporary filename found")
 

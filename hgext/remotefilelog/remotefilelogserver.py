@@ -5,7 +5,6 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-import errno
 import os
 import stat
 import time
@@ -255,9 +254,8 @@ def _loadfileblob(repo, cachepath, path, node):
             if not os.path.exists(dirname):
                 try:
                     os.makedirs(dirname)
-                except OSError as ex:
-                    if ex.errno != errno.EEXIST:
-                        raise
+                except FileExistsError:
+                    pass
 
             f = None
             try:

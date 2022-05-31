@@ -2151,8 +2151,8 @@ class queue:
             raise error.Abort(_(b"patch queue directory already exists"))
         try:
             os.mkdir(self.path)
-        except OSError as inst:
-            if inst.errno != errno.EEXIST or not create:
+        except FileExistsError:
+            if not create:
                 raise
         if create:
             return self.qrepo(create=True)

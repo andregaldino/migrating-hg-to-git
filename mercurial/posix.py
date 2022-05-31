@@ -329,11 +329,9 @@ def checklink(path):
                     except OSError:
                         unlink(name)
                 return True
-            except OSError as inst:
+            except FileExistsError:
                 # link creation might race, try again
-                if inst.errno == errno.EEXIST:
-                    continue
-                raise
+                continue
             finally:
                 if fd is not None:
                     fd.close()

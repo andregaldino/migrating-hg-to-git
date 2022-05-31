@@ -7,7 +7,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import os
 import posixpath
 import shutil
@@ -528,9 +527,8 @@ def clonewithshare(
     # lock class requires the directory to exist.
     try:
         util.makedir(pooldir, False)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    except FileExistsError:
+        pass
 
     poolvfs = vfsmod.vfs(pooldir)
     basename = os.path.basename(sharepath)
@@ -893,13 +891,9 @@ def clone(
                     create=True,
                     createopts=createopts,
                 )
-            except OSError as inst:
-                if inst.errno == errno.EEXIST:
-                    cleandir = None
-                    raise error.Abort(
-                        _(b"destination '%s' already exists") % dest
-                    )
-                raise
+            except FileExistsError:
+                cleandir = None
+                raise error.Abort(_(b"destination '%s' already exists") % dest)
 
             if revs:
                 if not srcpeer.capable(b'lookup'):

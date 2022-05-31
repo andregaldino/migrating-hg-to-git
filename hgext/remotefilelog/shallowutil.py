@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 import collections
-import errno
 import os
 import stat
 import struct
@@ -359,9 +358,8 @@ def writefile(path, content, readonly=False):
     if not os.path.exists(dirname):
         try:
             os.makedirs(dirname)
-        except OSError as ex:
-            if ex.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
 
     fd, temp = tempfile.mkstemp(prefix=b'.%s-' % filename, dir=dirname)
     os.close(fd)
@@ -519,9 +517,8 @@ def mkstickygroupdir(ui, path):
         for path in reversed(missingdirs):
             try:
                 os.mkdir(path)
-            except OSError as ex:
-                if ex.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
 
         for path in missingdirs:
             setstickygroupdir(path, gid, ui.warn)
