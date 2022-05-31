@@ -650,12 +650,7 @@ class unixforkingservice:
 
     def _acceptnewconnection(self, sock, selector):
         h = self._servicehandler
-        try:
-            conn, _addr = sock.accept()
-        except socket.error as inst:
-            if inst.args[0] == errno.EINTR:
-                return
-            raise
+        conn, _addr = sock.accept()
 
         # Future improvement: On Python 3.7, maybe gc.freeze() can be used
         # to prevent COW memory from being touched by GC.
@@ -688,12 +683,7 @@ class unixforkingservice:
 
     def _handlemainipc(self, sock, selector):
         """Process messages sent from a worker"""
-        try:
-            path = sock.recv(32768)  # large enough to receive path
-        except socket.error as inst:
-            if inst.args[0] == errno.EINTR:
-                return
-            raise
+        path = sock.recv(32768)  # large enough to receive path
         self._repoloader.load(path)
 
     def _sigchldhandler(self, signal, frame):
@@ -704,8 +694,6 @@ class unixforkingservice:
             try:
                 pid, _status = os.waitpid(-1, options)
             except OSError as inst:
-                if inst.errno == errno.EINTR:
-                    continue
                 if inst.errno != errno.ECHILD:
                     raise
                 # no child processes at all (reaped by other waitpid()?)

@@ -184,20 +184,15 @@ def _posixworker(ui, func, staticargs, args, hasretval):
     def waitforworkers(blocking=True):
         for pid in pids.copy():
             p = st = 0
-            while True:
-                try:
-                    p, st = os.waitpid(pid, (0 if blocking else os.WNOHANG))
-                    break
-                except OSError as e:
-                    if e.errno == errno.EINTR:
-                        continue
-                    elif e.errno == errno.ECHILD:
-                        # child would already be reaped, but pids yet been
-                        # updated (maybe interrupted just after waitpid)
-                        pids.discard(pid)
-                        break
-                    else:
-                        raise
+            try:
+                p, st = os.waitpid(pid, (0 if blocking else os.WNOHANG))
+            except OSError as e:
+                if e.errno == errno.ECHILD:
+                    # child would already be reaped, but pids yet been
+                    # updated (maybe interrupted just after waitpid)
+                    pids.discard(pid)
+                else:
+                    raise
             if not p:
                 # skip subsequent steps, because child process should
                 # be still running in this case
@@ -302,10 +297,6 @@ def _posixworker(ui, func, staticargs, args, hasretval):
                     key.fileobj.close()
                     # pytype: enable=attribute-error
                     openpipes -= 1
-                except IOError as e:
-                    if e.errno == errno.EINTR:
-                        continue
-                    raise
     except:  # re-raises
         killworkers()
         cleanup()
