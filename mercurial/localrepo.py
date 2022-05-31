@@ -523,12 +523,11 @@ def _readrequires(vfs, allowmissing):
     # which means very old repositories may not have one. We assume
     # a missing file translates to no requirements.
     try:
-        requirements = set(vfs.read(b'requires').splitlines())
+        return set(vfs.read(b'requires').splitlines())
     except FileNotFoundError:
         if not allowmissing:
             raise
-        requirements = set()
-    return requirements
+        return set()
 
 
 def makelocalrepository(baseui, path, intents=None):
