@@ -115,9 +115,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
     def do_write(self):
         try:
             self.do_hgweb()
-        except socket.error as inst:
-            if inst.errno != errno.EPIPE:
-                raise
+        except BrokenPipeError:
+            pass
 
     def do_POST(self):
         try:

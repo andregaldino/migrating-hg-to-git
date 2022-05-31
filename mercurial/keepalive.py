@@ -84,7 +84,6 @@ EXTRA ATTRIBUTES AND METHODS
 
 
 import collections
-import errno
 import hashlib
 import socket
 import sys
@@ -657,14 +656,14 @@ def safesend(self, str):
         else:
             self.sock.sendall(str)
             self.sentbytescount += len(str)
-    except socket.error as v:
-        reraise = True
-        if v.args[0] == errno.EPIPE:  # Broken pipe
-            if self._HTTPConnection__state == httplib._CS_REQ_SENT:
-                self._broken_pipe_resp = None
-                self._broken_pipe_resp = self.getresponse()
-                reraise = False
-            self.close()
+    except BrokenPipeError:
+        if self._HTTPConnection__state == httplib._CS_REQ_SENT:
+            self._broken_pipe_resp = None
+            self._broken_pipe_resp = self.getresponse()
+            reraise = False
+        else:
+            reraise = True
+        self.close()
         if reraise:
             raise
 

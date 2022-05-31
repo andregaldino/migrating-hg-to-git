@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import gc
 import os
 import random
@@ -494,9 +493,8 @@ def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
         # known exceptions are caught by dispatch.
         except error.Abort as inst:
             ui.error(_(b'abort: %s\n') % inst.message)
-        except IOError as inst:
-            if inst.errno != errno.EPIPE:
-                raise
+        except BrokenPipeError:
+            pass
         except KeyboardInterrupt:
             pass
         finally:
@@ -514,9 +512,8 @@ def _serverequest(ui, repo, conn, createcmdserver, prereposetups):
         fin.close()
         try:
             fout.close()  # implicit flush() may cause another EPIPE
-        except IOError as inst:
-            if inst.errno != errno.EPIPE:
-                raise
+        except BrokenPipeError:
+            pass
 
 
 class unixservicehandler:

@@ -290,9 +290,8 @@ def _rundispatch(req):
                 # maybe pager would quit without consuming all the output, and
                 # SIGPIPE was raised. we cannot print anything in this case.
                 pass
-            except IOError as inst:
-                if inst.errno != errno.EPIPE:
-                    raise
+            except BrokenPipeError:
+                pass
             ret = -1
         finally:
             duration = util.timer() - starttime
