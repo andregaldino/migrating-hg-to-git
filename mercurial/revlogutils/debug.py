@@ -80,6 +80,11 @@ def _nodeid(index, rev, entry, hexfn):
     return hexfn(entry[constants.ENTRY_NODE_ID])
 
 
+@debug_column(b"p1-rev", size=6, verbose=True)
+def _p1_rev(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_PARENT_1]
+
+
 @debug_column(b"p1-nodeid", size=NODE_SIZE)
 def _p1_node(index, rev, entry, hexfn):
     parent = entry[constants.ENTRY_PARENT_1]

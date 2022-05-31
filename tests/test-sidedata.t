@@ -41,16 +41,16 @@ Check data can be written/read from sidedata
    entry-0002 size 32
 
   $ hg debug-revlog-index --verbose -c
-     rev linkrev       nodeid    p1-nodeid    p2-nodeid
-       0       0 7049e48789d7 000000000000 000000000000
-       1       1 2707720c6597 7049e48789d7 000000000000
-       2       2 40f977031323 2707720c6597 000000000000
+     rev linkrev       nodeid p1-rev    p1-nodeid    p2-nodeid
+       0       0 7049e48789d7     -1 000000000000 000000000000
+       1       1 2707720c6597      0 7049e48789d7 000000000000
+       2       2 40f977031323      1 2707720c6597 000000000000
 
   $ hg debug-revlog-index --verbose -m
-     rev linkrev       nodeid    p1-nodeid    p2-nodeid
-       0       0 b85d294330e3 000000000000 000000000000
-       1       1 1a0aec305c63 b85d294330e3 000000000000
-       2       2 104258a4f75f 1a0aec305c63 000000000000
+     rev linkrev       nodeid p1-rev    p1-nodeid    p2-nodeid
+       0       0 b85d294330e3     -1 000000000000 000000000000
+       1       1 1a0aec305c63      0 b85d294330e3 000000000000
+       2       2 104258a4f75f      1 1a0aec305c63 000000000000
 
 Check upgrade behavior
 ======================
