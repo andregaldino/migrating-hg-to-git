@@ -151,6 +151,11 @@ def sidedata_compression_mode(index, rev, entry, hexfn):
         return b"%d" % compression
 
 
+@debug_column(b"sidedata-offset", size=20, verbose=True)
+def sidedata_offset(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_SIDEDATA_OFFSET]
+
+
 def debug_index(
     ui,
     repo,
