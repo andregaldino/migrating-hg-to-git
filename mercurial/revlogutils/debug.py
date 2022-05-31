@@ -126,6 +126,13 @@ def compression_mode(index, rev, entry, hexfn):
     return b"%d" % entry[constants.ENTRY_DATA_COMPRESSION_MODE]
 
 
+@debug_column(b"data-offset", size=20, verbose=True)
+def data_offset(index, rev, entry, hexfn):
+    field = entry[constants.ENTRY_DATA_OFFSET]
+    field >>= 16
+    return b"%d" % field
+
+
 def debug_index(
     ui,
     repo,
