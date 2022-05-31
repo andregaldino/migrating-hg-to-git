@@ -72,7 +72,7 @@ Merging:
 main: we should have a merge here:
 
   $ hg debugindex --changelog
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 cdca01651b96 000000000000 000000000000
        1       1 f6718a9cb7f3 cdca01651b96 000000000000
        2       2 bdd988058d16 cdca01651b96 000000000000
@@ -96,7 +96,7 @@ log should show foo and quux changed:
 foo: we should have a merge here:
 
   $ hg debugindex foo
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       1 2ffeddde1b65 b8e02f643373 000000000000
        2       2 33d1fb69067a b8e02f643373 000000000000
@@ -105,21 +105,21 @@ foo: we should have a merge here:
 bar: we should not have a merge here:
 
   $ hg debugindex bar
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       2 33d1fb69067a b8e02f643373 000000000000
 
 baz: we should not have a merge here:
 
   $ hg debugindex baz
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       1 2ffeddde1b65 b8e02f643373 000000000000
 
 quux: we should not have a merge here:
 
   $ hg debugindex quux
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       3 6128c0f33108 b8e02f643373 000000000000
 

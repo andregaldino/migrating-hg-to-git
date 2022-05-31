@@ -39,37 +39,37 @@ test stripping of filelogs where the linkrev doesn't always increase
   >     echo
   > done
   012
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       1 5d9299349fc0 000000000000 000000000000
        2       2 2661d26c6496 000000000000 000000000000
   
   021
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 b8e02f643373 000000000000 000000000000
        1       2 5d9299349fc0 000000000000 000000000000
        2       1 2661d26c6496 000000000000 000000000000
   
   102
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       1 b8e02f643373 000000000000 000000000000
        1       0 5d9299349fc0 000000000000 000000000000
        2       2 2661d26c6496 000000000000 000000000000
   
   120
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       1 b8e02f643373 000000000000 000000000000
        1       2 5d9299349fc0 000000000000 000000000000
        2       0 2661d26c6496 000000000000 000000000000
   
   201
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       2 b8e02f643373 000000000000 000000000000
        1       0 5d9299349fc0 000000000000 000000000000
        2       1 2661d26c6496 000000000000 000000000000
   
   210
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       2 b8e02f643373 000000000000 000000000000
        1       1 5d9299349fc0 000000000000 000000000000
        2       0 2661d26c6496 000000000000 000000000000
@@ -127,7 +127,7 @@ Do a similar test where the manifest revlog has unordered linkrevs
   $ hg clone -q -U -r 1 -r 2 -r 3 -r 4 orig crossed
   $ cd crossed
   $ hg debugindex --manifest
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       2 6bbc6fee55c2 000000000000 000000000000
        1       0 1c556153fe54 000000000000 000000000000
        2       1 1f76dba919fd 000000000000 000000000000
@@ -182,7 +182,7 @@ Now a similar test for a non-root manifest revlog
   $ hg --config experimental.treemanifest=True clone -q -U -r 1 -r 2 -r 3 -r 4 orig crossed
   $ cd crossed
   $ hg debugindex --dir dir
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       2 6bbc6fee55c2 000000000000 000000000000
        1       0 1c556153fe54 000000000000 000000000000
        2       1 1f76dba919fd 000000000000 000000000000

@@ -33,7 +33,7 @@ create full repo
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd narrow
   $ hg debugindex -c
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 9958b1af2add 000000000000 000000000000
        1       1 2db4ce2a3bfe 9958b1af2add 000000000000
        2       2 0980ee31a742 2db4ce2a3bfe 000000000000

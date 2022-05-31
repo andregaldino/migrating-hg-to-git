@@ -511,7 +511,7 @@ Merge:
   $ hg mv --force i d
   $ hg commit -m "f-2: rename i -> d"
   $ hg debugindex d | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
        0       * ae258f702dfe 000000000000 000000000000 (changeset !)
        1       * b004912a8510 000000000000 000000000000
@@ -567,7 +567,7 @@ Merge:
   $ hg mv --force x t
   $ hg commit -m "r-2: rename t -> x"
   $ hg debugindex t | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * d74efbf65309 000000000000 000000000000 (no-changeset !)
        1       * 02a930b9d7ad 000000000000 000000000000 (no-changeset !)
        0       * 5aed6a8dbff0 000000000000 000000000000 (changeset !)
@@ -934,7 +934,7 @@ Merge:
   2 files updated, 0 files merged, 2 files removed, 0 files unresolved
 #if no-changeset
   $ hg debugindex d | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * d8252ab2e760 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
        2       * 7b79e2fe0c89 000000000000 000000000000
@@ -945,7 +945,7 @@ Merge:
        7       * d55cb4e9ef57 000000000000 000000000000
 #else
   $ hg debugindex d | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * ae258f702dfe 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
        2       * 5cce88bf349f ae258f702dfe 000000000000
@@ -979,7 +979,7 @@ Merge:
   cea2d99c0fde64672ef61953786fdff34f16e230 644   d (changeset !)
 #if no-changeset
   $ hg debugindex d | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * d8252ab2e760 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
        2       * 7b79e2fe0c89 000000000000 000000000000
@@ -991,7 +991,7 @@ Merge:
        8       * 1c334238bd42 7b79e2fe0c89 000000000000
 #else
   $ hg debugindex d | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * ae258f702dfe 000000000000 000000000000
        1       * b004912a8510 000000000000 000000000000
        2       * 5cce88bf349f ae258f702dfe 000000000000
@@ -2402,7 +2402,7 @@ The bugs makes recorded copy is different depending of where we started the merg
   d8252ab2e760b0d4e5288fd44cbd15a0fa567e16 644   d (no-changeset !)
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   d (changeset !)
   $ hg debugindex d | head -n 4 | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * d8252ab2e760 000000000000 000000000000 (no-changeset !)
        0       * ae258f702dfe 000000000000 000000000000 (changeset !)
        1       * b004912a8510 000000000000 000000000000
@@ -2475,7 +2475,7 @@ Subcase: new copy information on both side
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   e8825b386367b29fec957283a80bb47b47483fe1 644   f
   $ hg debugindex f | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * b76eb76580df 000000000000 000000000000
        1       * e8825b386367 000000000000 000000000000
        2       * 2ff93c643948 b76eb76580df e8825b386367
@@ -2491,7 +2491,7 @@ Subcase: new copy information on both side
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg debugindex f | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * ae258f702dfe 000000000000 000000000000
        1       * d3613c1ec831 ae258f702dfe 000000000000
        2       * 05e03c868bbc ae258f702dfe 000000000000
@@ -3063,7 +3063,7 @@ Subcase: new copy information on both side with an actual merge happening
   $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
   c43c088b811fd27983c0a9aadf44f3343cd4cd7e 644   v
   $ hg debugindex v | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * 3f91841cd75c 000000000000 000000000000
        1       * c43c088b811f 000000000000 000000000000
        2       * 0946c662ef16 3f91841cd75c c43c088b811f
@@ -3078,7 +3078,7 @@ Subcase: new copy information on both side with an actual merge happening
   $ hg manifest --debug --rev 'desc("q-2")' | grep '644   v'
   a38b2fa170219750dac9bc7d19df831f213ba708 644   v
   $ hg debugindex v | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * 5aed6a8dbff0 000000000000 000000000000
        1       * a38b2fa17021 000000000000 000000000000
        2       * 65fde9f6e4d4 5aed6a8dbff0 a38b2fa17021
@@ -3361,7 +3361,7 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   e8825b386367b29fec957283a80bb47b47483fe1 644   f
   $ hg debugindex f | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * b76eb76580df 000000000000 000000000000
        1       * e8825b386367 000000000000 000000000000
        2       * 2ff93c643948 b76eb76580df e8825b386367
@@ -3377,7 +3377,7 @@ Subcase: merge has same initial content on both side, but merge introduced a cha
   $ hg manifest --debug --rev 'desc("e-2")' | grep '644   f'
   ae258f702dfeca05bf9b6a22a97a4b5645570f11 644   f
   $ hg debugindex f | "$PYTHON" ../no-linkrev
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       * ae258f702dfe 000000000000 000000000000
        1       * d3613c1ec831 ae258f702dfe 000000000000
        2       * 05e03c868bbc ae258f702dfe 000000000000

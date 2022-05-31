@@ -64,7 +64,7 @@
   summary:     test
   
   $ hg debugindex --changelog
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 5e0375449e74 000000000000 000000000000
        1       1 96155394af80 5e0375449e74 000000000000
        2       2 92cc4c306b19 5e0375449e74 000000000000
@@ -89,7 +89,7 @@ revision 4
   79d7492df40aa0fa093ec4209be78043c181f094 644   b
 
   $ hg debugindex a
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 2ed2a3912a0b 000000000000 000000000000
        1       1 79d7492df40a 2ed2a3912a0b 000000000000
 

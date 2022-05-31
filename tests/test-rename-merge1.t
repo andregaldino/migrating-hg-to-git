@@ -65,7 +65,7 @@
   $ hg ci -m "merge"
 
   $ hg debugindex b
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       1 57eacc201a7f 000000000000 000000000000
        1       3 4727ba907962 000000000000 57eacc201a7f
 

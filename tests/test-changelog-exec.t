@@ -51,7 +51,7 @@ this should not mention bar but should mention foo:
   
 
   $ hg debugindex bar
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       1 b004912a8510 000000000000 000000000000
 
   $ cd ..

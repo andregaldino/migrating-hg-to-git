@@ -45,19 +45,19 @@
        3 0000        8      3      2     -1 19b1fc555737
 
   $ hg debugindex adifferentfile
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       7 2565f3199a74 000000000000 000000000000
 
   $ hg debugindex anotherfile
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       8 2565f3199a74 000000000000 000000000000
 
   $ hg debugindex fred
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       6 12ab3bcc5ea4 000000000000 000000000000
 
   $ hg debugindex --manifest
-     rev linkrev       nodeid           p1           p2
+     rev linkrev       nodeid    p1-nodeid    p2-nodeid
        0       0 43eadb1d2d06 000000000000 000000000000
        1       1 8b89697eba2c 43eadb1d2d06 000000000000
        2       2 626a32663c2f 8b89697eba2c 000000000000
