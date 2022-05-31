@@ -121,6 +121,11 @@ def flags(index, rev, entry, hexfn):
     return b"%d" % field
 
 
+@debug_column(b"comp-mode", size=4, verbose=True)
+def compression_mode(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_DATA_COMPRESSION_MODE]
+
+
 def debug_index(
     ui,
     repo,
