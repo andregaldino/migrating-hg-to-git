@@ -2503,12 +2503,10 @@ class filestat:
         advanced = (old.stat[stat.ST_MTIME] + 1) & 0x7FFFFFFF
         try:
             os.utime(path, (advanced, advanced))
-        except OSError as inst:
-            if inst.errno == errno.EPERM:
-                # utime() on the file created by another user causes EPERM,
-                # if a process doesn't have appropriate privileges
-                return False
-            raise
+        except PermissionError:
+            # utime() on the file created by another user causes EPERM,
+            # if a process doesn't have appropriate privileges
+            return False
         return True
 
     def __ne__(self, other):
