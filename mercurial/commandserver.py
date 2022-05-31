@@ -693,9 +693,7 @@ class unixforkingservice:
         while self._workerpids:
             try:
                 pid, _status = os.waitpid(-1, options)
-            except OSError as inst:
-                if inst.errno != errno.ECHILD:
-                    raise
+            except ChildProcessError:
                 # no child processes at all (reaped by other waitpid()?)
                 self._workerpids.clear()
                 return

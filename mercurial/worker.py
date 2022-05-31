@@ -186,13 +186,10 @@ def _posixworker(ui, func, staticargs, args, hasretval):
             p = st = 0
             try:
                 p, st = os.waitpid(pid, (0 if blocking else os.WNOHANG))
-            except OSError as e:
-                if e.errno == errno.ECHILD:
-                    # child would already be reaped, but pids yet been
-                    # updated (maybe interrupted just after waitpid)
-                    pids.discard(pid)
-                else:
-                    raise
+            except ChildProcessError:
+                # child would already be reaped, but pids yet been
+                # updated (maybe interrupted just after waitpid)
+                pids.discard(pid)
             if not p:
                 # skip subsequent steps, because child process should
                 # be still running in this case
