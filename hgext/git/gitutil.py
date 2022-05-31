@@ -1,8 +1,6 @@
 """utilities to assist in working with pygit2"""
 
-from mercurial.node import bin, hex, sha1nodeconstants
-
-from mercurial import pycompat
+from mercurial.node import bin, sha1nodeconstants
 
 pygit2_module = None
 
@@ -38,7 +36,7 @@ def togitnode(n):
     pygit2 and sqlite both need nodes as strings, not bytes.
     """
     assert len(n) == 20
-    return pycompat.sysstr(hex(n))
+    return n.hex()
 
 
 def fromgitnode(n):

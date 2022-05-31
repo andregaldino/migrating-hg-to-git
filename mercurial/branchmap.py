@@ -159,7 +159,7 @@ class BranchMapCache:
 
 def _unknownnode(node):
     """raises ValueError when branchcache found a node which does not exists"""
-    raise ValueError('node %s does not exist' % pycompat.sysstr(hex(node)))
+    raise ValueError('node %s does not exist' % node.hex())
 
 
 def _branchcachedesc(repo):
