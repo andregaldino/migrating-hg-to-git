@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import os
 import pickle
 import selectors
@@ -177,9 +176,8 @@ def _posixworker(ui, func, staticargs, args, hasretval):
         for p in pids:
             try:
                 os.kill(p, signal.SIGTERM)
-            except OSError as err:
-                if err.errno != errno.ESRCH:
-                    raise
+            except ProcessLookupError:
+                pass
 
     def waitforworkers(blocking=True):
         for pid in pids.copy():
