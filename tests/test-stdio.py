@@ -211,22 +211,7 @@ class TestStdio(unittest.TestCase):
     def test_buffering_stdout_ptys_unbuffered(self):
         self._test_buffering('stdout', _ptys, UNBUFFERED, python_args=['-u'])
 
-    if not pycompat.ispy3 and not pycompat.iswindows:
-        # On Python 2 on non-Windows, we manually open stdout in line-buffered
-        # mode if connected to a TTY. We should check if Python was configured
-        # to use unbuffered stdout, but it's hard to do that.
-        test_buffering_stdout_ptys_unbuffered = unittest.expectedFailure(
-            test_buffering_stdout_ptys_unbuffered
-        )
-
     def _test_large_write(self, stream, rwpair_generator, python_args=[]):
-        if not pycompat.ispy3 and pycompat.isdarwin:
-            # Python 2 doesn't always retry on EINTR, but the libc might retry.
-            # So far, it was observed only on macOS that EINTR is raised at the
-            # Python level. As Python 2 support will be dropped soon-ish, we
-            # won't attempt to fix it.
-            raise unittest.SkipTest("raises EINTR on macOS")
-
         def check_output(stream_receiver, proc):
             if not pycompat.iswindows:
                 # On Unix, we can provoke a partial write() by interrupting it
@@ -243,16 +228,7 @@ class TestStdio(unittest.TestCase):
             )
 
         def post_child_check():
-            write_result_str = write_result_f.read()
-            if pycompat.ispy3:
-                # On Python 3, we test that the correct number of bytes is
-                # claimed to have been written.
-                expected_write_result_str = '1048576'
-            else:
-                # On Python 2, we only check that the large write does not
-                # crash.
-                expected_write_result_str = 'None'
-            self.assertEqual(write_result_str, expected_write_result_str)
+            self.assertEqual(write_result_f.read(), '1048576')
 
         with tempfile.NamedTemporaryFile('r') as write_result_f:
             self._test(
