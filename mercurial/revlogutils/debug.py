@@ -133,6 +133,11 @@ def data_offset(index, rev, entry, hexfn):
     return b"%d" % field
 
 
+@debug_column(b"chunk-size", size=10, verbose=True)
+def data_chunk_size(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_DATA_COMPRESSED_LENGTH]
+
+
 def debug_index(
     ui,
     repo,
