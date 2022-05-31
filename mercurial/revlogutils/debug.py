@@ -156,6 +156,11 @@ def sidedata_offset(index, rev, entry, hexfn):
     return b"%d" % entry[constants.ENTRY_SIDEDATA_OFFSET]
 
 
+@debug_column(b"sd-chunk-size", size=10, verbose=True)
+def sidedata_chunk_size(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_SIDEDATA_COMPRESSED_LENGTH]
+
+
 def debug_index(
     ui,
     repo,
