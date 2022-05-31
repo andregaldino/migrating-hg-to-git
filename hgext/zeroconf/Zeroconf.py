@@ -292,7 +292,7 @@ class DNSQuestion(DNSEntry):
     """A DNS question entry"""
 
     def __init__(self, name, type, clazz):
-        if pycompat.ispy3 and isinstance(name, str):
+        if isinstance(name, str):
             name = name.encode('ascii')
         if not name.endswith(b".local."):
             raise NonLocalNameException(name)
