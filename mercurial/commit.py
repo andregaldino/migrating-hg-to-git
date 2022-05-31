@@ -4,8 +4,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
-
 from .i18n import _
 from .node import (
     hex,
@@ -249,11 +247,6 @@ def _process_files(tr, ctx, ms, files, narrow_files=None, error=False):
                 m.setflag(f, fctx.flags())
         except OSError:
             repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
-            raise
-        except IOError as inst:
-            errcode = getattr(inst, 'errno', errno.ENOENT)
-            if error or errcode and errcode != errno.ENOENT:
-                repo.ui.warn(_(b"trouble committing %s!\n") % uipathfn(f))
             raise
 
     # update manifest
