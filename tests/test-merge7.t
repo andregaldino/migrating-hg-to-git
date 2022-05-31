@@ -105,7 +105,7 @@ pull and merge from test-a again
   three
 
   $ hg debugindex test.txt
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 01365c4cca56 000000000000 000000000000
        1       1 7b013192566a 01365c4cca56 000000000000
        2       2 8fe46a3eb557 01365c4cca56 000000000000

@@ -16,19 +16,19 @@
   adding foo/bar/f
   adding foo/f
   $ hg debugindex -m
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 14a5d056d75a 000000000000 000000000000
   $ hg debugindex --dir foo
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 e635c7857aef 000000000000 000000000000
   $ hg debugindex --dir foo/
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 e635c7857aef 000000000000 000000000000
   $ hg debugindex --dir foo/bar
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 e091d4224761 000000000000 000000000000
   $ hg debugindex --dir foo/bar/
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 e091d4224761 000000000000 000000000000
   $ hg debugdata -m 0
   foo\x00e635c7857aef92ac761ce5741a99da159abbbb24t (esc)

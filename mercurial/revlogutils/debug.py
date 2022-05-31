@@ -32,8 +32,8 @@ def debug_index(
     fm = formatter
 
     fm.plain(
-        b'   rev linkrev %s %s p2\n'
-        % (b'nodeid'.ljust(idlen), b'p1'.ljust(idlen))
+        b'   rev linkrev %s %s %s\n'
+        % (b'nodeid'.rjust(idlen), b'p1'.rjust(idlen), b'p2'.rjust(idlen))
     )
 
     for rev in revlog:

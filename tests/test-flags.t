@@ -145,13 +145,13 @@ the changelog should mention file a:
   -rwxr-x---
 
   $ hg debugindex a
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 b80de5d13875 000000000000 000000000000
   $ hg debugindex -R ../test2 a
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 b80de5d13875 000000000000 000000000000
   $ hg debugindex -R ../test1 a
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 b80de5d13875 000000000000 000000000000
        1       1 7fe919cc0336 b80de5d13875 000000000000
 

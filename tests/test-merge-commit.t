@@ -35,7 +35,7 @@ Test with the merge on 3 having the rename on the local parent
   $ hg ci -m '3: merge with local rename'
 
   $ hg debugindex bar
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       2 d35118874825 000000000000 000000000000
        1       3 5345f5ab8abd 000000000000 d35118874825
 
@@ -43,7 +43,7 @@ Test with the merge on 3 having the rename on the local parent
   bar renamed from foo:9e25c27b87571a1edee5ae4dddee5687746cc8e2
 
   $ hg debugindex foo
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 690b295714ae 000000000000 000000000000
        1       1 9e25c27b8757 690b295714ae 000000000000
 
@@ -87,7 +87,7 @@ This should use bar@rev2 as the ancestor:
   $ hg ci -m '5: merge'
 
   $ hg debugindex bar
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       2 d35118874825 000000000000 000000000000
        1       3 5345f5ab8abd 000000000000 d35118874825
        2       4 ff4b45017382 d35118874825 000000000000
@@ -122,7 +122,7 @@ on the remote parent:
   $ hg ci -m '3: merge with remote rename'
 
   $ hg debugindex bar
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       2 d35118874825 000000000000 000000000000
        1       3 5345f5ab8abd 000000000000 d35118874825
 
@@ -130,7 +130,7 @@ on the remote parent:
   bar renamed from foo:9e25c27b87571a1edee5ae4dddee5687746cc8e2
 
   $ hg debugindex foo
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       0 690b295714ae 000000000000 000000000000
        1       1 9e25c27b8757 690b295714ae 000000000000
 
@@ -174,7 +174,7 @@ This should use bar@rev2 as the ancestor:
   $ hg ci -m '5: merge'
 
   $ hg debugindex bar
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       2 d35118874825 000000000000 000000000000
        1       3 5345f5ab8abd 000000000000 d35118874825
        2       4 ff4b45017382 d35118874825 000000000000

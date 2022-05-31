@@ -121,13 +121,13 @@ even though there is no filelog entry.
 #if extra
 
   $ hg debugindex c
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       1 b789fdd96dc2 000000000000 000000000000
 
 #else
 
   $ hg debugindex c
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       1 37d9b5d994ea 000000000000 000000000000
 
 #endif
@@ -155,13 +155,13 @@ even though there is no filelog entry.
 #if extra
 
   $ hg debugindex c
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       1 b789fdd96dc2 000000000000 000000000000
 
 #else
 
   $ hg debugindex c
-     rev linkrev nodeid       p1           p2
+     rev linkrev       nodeid           p1           p2
        0       1 37d9b5d994ea 000000000000 000000000000
        1       3 029625640347 000000000000 000000000000
 
