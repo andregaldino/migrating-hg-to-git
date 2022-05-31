@@ -138,6 +138,19 @@ def data_chunk_size(index, rev, entry, hexfn):
     return b"%d" % entry[constants.ENTRY_DATA_COMPRESSED_LENGTH]
 
 
+@debug_column(b"sd-comp-mode", size=7, verbose=True)
+def sidedata_compression_mode(index, rev, entry, hexfn):
+    compression = entry[constants.ENTRY_SIDEDATA_COMPRESSION_MODE]
+    if compression == constants.COMP_MODE_PLAIN:
+        return b"plain"
+    elif compression == constants.COMP_MODE_DEFAULT:
+        return b"default"
+    elif compression == constants.COMP_MODE_INLINE:
+        return b"inline"
+    else:
+        return b"%d" % compression
+
+
 def debug_index(
     ui,
     repo,
