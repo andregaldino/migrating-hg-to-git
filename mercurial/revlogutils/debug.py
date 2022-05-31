@@ -104,6 +104,11 @@ def _p2_node(index, rev, entry, hexfn):
     return hexfn(p_entry[constants.ENTRY_NODE_ID])
 
 
+@debug_column(b"full-size", size=20, verbose=True)
+def full_size(index, rev, entry, hexfn):
+    return b"%d" % entry[constants.ENTRY_DATA_UNCOMPRESSED_LENGTH]
+
+
 def debug_index(
     ui,
     repo,
