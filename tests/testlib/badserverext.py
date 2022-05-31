@@ -49,7 +49,6 @@ import re
 import socket
 
 from mercurial import (
-    pycompat,
     registrar,
 )
 
@@ -335,17 +334,13 @@ class fileobjectproxy:
         object.__getattribute__(self, '_logfp').flush()
 
     def _close(self):
-        # Python 3 uses an io.BufferedIO instance. Python 2 uses some file
-        # object wrapper.
-        if pycompat.ispy3:
-            orig = object.__getattribute__(self, '_orig')
+        # We wrap an io.BufferedIO instance.
+        orig = object.__getattribute__(self, '_orig')
 
-            if hasattr(orig, 'raw'):
-                orig.raw._sock.shutdown(socket.SHUT_RDWR)
-            else:
-                self.close()
+        if hasattr(orig, 'raw'):
+            orig.raw._sock.shutdown(socket.SHUT_RDWR)
         else:
-            self._sock.shutdown(socket.SHUT_RDWR)
+            self.close()
 
     def read(self, size=-1):
         cond = object.__getattribute__(self, '_cond')
