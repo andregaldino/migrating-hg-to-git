@@ -6,7 +6,6 @@
 # GNU General Public License version 2 or any later version.
 
 
-import errno
 import re
 
 from .i18n import _
@@ -575,16 +574,14 @@ class matchctx:
                     return False
                 try:
                     return predfn(fctx)
-                except (IOError, OSError) as e:
-                    # open()-ing a directory fails with EACCES on Windows
-                    if e.errno in (
-                        errno.ENOENT,
-                        errno.EACCES,
-                        errno.ENOTDIR,
-                        errno.EISDIR,
-                    ):
-                        return False
-                    raise
+                # open()-ing a directory fails with PermissionError on Windows
+                except (
+                    FileNotFoundError,
+                    PermissionError,
+                    NotADirectoryError,
+                    IsADirectoryError,
+                ):
+                    return False
 
         else:
 

@@ -581,9 +581,7 @@ def statfiles(files):
             st = lstat(nf)
             if getkind(st.st_mode) not in _wantedkinds:
                 st = None
-        except OSError as err:
-            if err.errno not in (errno.ENOENT, errno.ENOTDIR):
-                raise
+        except (FileNotFoundError, NotADirectoryError):
             st = None
         yield st
 

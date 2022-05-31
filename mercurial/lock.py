@@ -38,9 +38,8 @@ def _getlockprefix():
     if pycompat.sysplatform.startswith(b'linux'):
         try:
             result += b'/%x' % os.stat(b'/proc/self/ns/pid').st_ino
-        except OSError as ex:
-            if ex.errno not in (errno.ENOENT, errno.EACCES, errno.ENOTDIR):
-                raise
+        except (FileNotFoundError, PermissionError, NotADirectoryError):
+            pass
     return result
 
 

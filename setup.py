@@ -95,7 +95,6 @@ else:
 ispypy = "PyPy" in sys.version
 
 import ctypes
-import errno
 import stat, subprocess, time
 import re
 import shutil
@@ -1422,15 +1421,12 @@ class RustExtension(Extension):
             )
         try:
             subprocess.check_call(cargocmd, env=env, cwd=self.rustsrcdir)
-        except OSError as exc:
-            if exc.errno == errno.ENOENT:
-                raise RustCompilationError("Cargo not found")
-            elif exc.errno == errno.EACCES:
-                raise RustCompilationError(
-                    "Cargo found, but permission to execute it is denied"
-                )
-            else:
-                raise
+        except FileNotFoundError:
+            raise RustCompilationError("Cargo not found")
+        except PermissionError:
+            raise RustCompilationError(
+                "Cargo found, but permission to execute it is denied"
+            )
         except subprocess.CalledProcessError:
             raise RustCompilationError(
                 "Cargo failed. Working directory: %r, "

@@ -8,7 +8,6 @@
 
 import collections
 import contextlib
-import errno
 import os
 import stat
 import uuid
@@ -1035,13 +1034,11 @@ class dirstate:
                 try:
                     with tracing.log('dirstate.walk.traverse listdir %s', nd):
                         entries = listdir(join(nd), stat=True, skip=skip)
-                except OSError as inst:
-                    if inst.errno in (errno.EACCES, errno.ENOENT):
-                        match.bad(
-                            self.pathto(nd), encoding.strtolocal(inst.strerror)
-                        )
-                        continue
-                    raise
+                except (PermissionError, FileNotFoundError) as inst:
+                    match.bad(
+                        self.pathto(nd), encoding.strtolocal(inst.strerror)
+                    )
+                    continue
                 for f, kind, st in entries:
                     # Some matchers may return files in the visitentries set,
                     # instead of 'this', if the matcher explicitly mentions them
