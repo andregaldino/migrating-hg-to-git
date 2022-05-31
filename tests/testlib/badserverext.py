@@ -335,12 +335,7 @@ class fileobjectproxy:
 
     def _close(self):
         # We wrap an io.BufferedIO instance.
-        orig = object.__getattribute__(self, '_orig')
-
-        if hasattr(orig, 'raw'):
-            orig.raw._sock.shutdown(socket.SHUT_RDWR)
-        else:
-            self.close()
+        self.raw._sock.shutdown(socket.SHUT_RDWR)
 
     def read(self, size=-1):
         cond = object.__getattribute__(self, '_cond')
