@@ -576,11 +576,7 @@ def statfiles(files):
                     for n, k, s in listdir(dir, True)
                     if getkind(s.st_mode) in _wantedkinds
                 }
-            except OSError as err:
-                # Python >= 2.5 returns ENOENT and adds winerror field
-                # EINVAL is raised if dir is not a directory.
-                if err.errno not in (errno.ENOENT, errno.EINVAL, errno.ENOTDIR):
-                    raise
+            except (FileNotFoundError, NotADirectoryError):
                 dmap = {}
             cache = dircache.setdefault(dir, dmap)
         yield cache.get(base, None)
