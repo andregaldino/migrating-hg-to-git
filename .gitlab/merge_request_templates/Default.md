@@ -1,8 +1,3 @@
----
-name: Official Review
-about: Submit a series for review
----
-
 /assign_reviewer @mercurial.review
 
 Welcome to the Mercurial Merge Request creation process:
