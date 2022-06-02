@@ -66,6 +66,9 @@ _pypy = '__pypy__' in sys.builtin_module_names
 if _pypy:
     # _ctypes.pointer is shadowed by "from ... import pointer" (PyPy 5)
     IGNORES.add('_ctypes.pointer')
+    # pure Python module on PyPy, must be loaded to raise ModuleNotFoundError
+    # on non-Windows platforms
+    IGNORES.add('msvcrt')
 
 demandimport.init(IGNORES)
 
