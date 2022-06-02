@@ -1,5 +1,20 @@
 '''This is the last release to support Python 2. Mercurial is Python 3 only starting with 6.2'''
 
+= Mercurial 6.1.3 =
+
+'''security: '''
+ * narrow_widen_acl: enforce narrowacl in narrow_widen (SEC) 6b10151b9621
+
+'''normal notes: '''
+ * censor: fix [hg update] away from a revision with censored files
+ * amend: stop losing copies when amending
+ * rhg: strengthen dirstate v2 writing in broken filesystems
+ * work around some broken DLL imports in Windows
+ * worker: adapt _blockingreader to work around a python3.8.[0-1] bug (issue6444)
+ * rhg: correctly handle the case where diffs are encoded relative to nullrev
+ * fix bugs and race-conditions in the Mercurial test runner
+ * chg: ignore already closed fds when cleaning up
+
 = Mercurial 6.1.2 =
 
  * Improve Windows test suite
