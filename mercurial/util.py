@@ -156,11 +156,6 @@ compengines = compression.compengines
 SERVERROLE = compression.SERVERROLE
 CLIENTROLE = compression.CLIENTROLE
 
-try:
-    recvfds = osutil.recvfds
-except AttributeError:
-    pass
-
 # Python compatibility
 
 _notset = object()

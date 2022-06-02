@@ -389,7 +389,17 @@ class chgcmdserver(commandserver.server):
         # tell client to sendmsg() with 1-byte payload, which makes it
         # distinctive from "attachio\n" command consumed by client.read()
         self.clientsock.sendall(struct.pack(b'>cI', b'I', 1))
-        clientfds = util.recvfds(self.clientsock.fileno())
+
+        data, ancdata, msg_flags, address = self.clientsock.recvmsg(1, 256)
+        assert len(ancdata) == 1
+        cmsg_level, cmsg_type, cmsg_data = ancdata[0]
+        assert cmsg_level == socket.SOL_SOCKET
+        assert cmsg_type == socket.SCM_RIGHTS
+        # memoryview.cast() was added in typeshed 61600d68772a, but pytype
+        # still complains
+        # pytype: disable=attribute-error
+        clientfds = memoryview(cmsg_data).cast('i').tolist()
+        # pytype: enable=attribute-error
         self.ui.log(b'chgserver', b'received fds: %r\n', clientfds)
 
         ui = self.ui
