@@ -142,7 +142,14 @@ def interesting_boundary(res):
 
     Ideally, we would make this configurable, but this is not a focus for now
 
-    return None or (round-trip, undecided-common, undecided-missing)
+    return None or (
+        round-trip,
+        undecided-common,
+        undecided-missing,
+        total-revs,
+        common-revs,
+        missing-revs,
+    )
     """
     roundtrips = res["total-roundtrips"]
     if roundtrips <= 1:
