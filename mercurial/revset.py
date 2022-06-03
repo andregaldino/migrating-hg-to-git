@@ -1338,10 +1338,12 @@ def followlines(repo, subset, x):
 
 @predicate(b'nodefromfile(path)')
 def nodefromfile(repo, subset, x):
-    """
-    An alias for ``::.`` (ancestors of the working directory's first parent).
-    If file pattern is specified, the histories of files matching given
-    pattern in the revision given by startrev are followed, including copies.
+    """Read a list of nodes from the file at `path`.
+
+    This applies `id(LINE)` to each line of the file.
+
+    This is useful when the amount of nodes you need to specify gets too large
+    for the command line.
     """
     path = getstring(x, _(b"nodefromfile require a file path"))
     listed_rev = set()
