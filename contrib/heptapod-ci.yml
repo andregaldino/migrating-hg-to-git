@@ -1,6 +1,5 @@
 stages:
   - tests
-  - phabricator
 
 image: registry.heptapod.net/mercurial/ci-images/mercurial-core:$HG_CI_IMAGE_TAG
 
@@ -44,24 +43,6 @@ rust-cargo-test:
         - make rust-tests
     variables:
         PYTHON: python3
-
-phabricator-refresh:
-    stage: phabricator
-    except:
-      refs:
-        - merge_requests
-      variables:
-        - $PHABRICATOR_TOKEN == "NO-PHAB"
-    variables:
-      DEFAULT_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)"
-      STABLE_COMMENT: ":white_check_mark: refresh by Heptapod after a successful CI run (:octopus: :green_heart:)\n⚠ This patch is intended for stable ⚠\n{image https://media.giphy.com/media/nYI8SmmChYXK0/source.gif}"
-    script:
-      - |
-        if [ `hg branch` == "stable" ]; then
-            ./contrib/phab-refresh-stack.sh --comment "$STABLE_COMMENT";
-        else
-            ./contrib/phab-refresh-stack.sh --comment "$DEFAULT_COMMENT";
-        fi
 
 test-c:
     <<: *runtests

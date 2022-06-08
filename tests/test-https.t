@@ -491,6 +491,13 @@ Test https with cert problems through proxy
   abort: error: *certificate verify failed* (glob)
   [100]
 
+Test when proxy can't connect to server
+
+  $ http_proxy=http://localhost:$HGPORT1/ hg -R copy-pull pull --insecure https://localhost:0/
+  pulling from https://localhost:0/
+  abort: error: Tunnel connection failed: 404 Connection refused
+  [100]
+
 
   $ killdaemons.py hg0.pid
 

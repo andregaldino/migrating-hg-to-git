@@ -12,7 +12,6 @@ import base64
 import socket
 
 from .i18n import _
-from .pycompat import getattr
 from . import (
     encoding,
     error,
@@ -198,15 +197,6 @@ class httpconnection(keepalive.HTTPConnection):
     # must be able to send big bundle as stream.
     send = _gen_sendfile(keepalive.HTTPConnection.send)
 
-    def getresponse(self):
-        proxyres = getattr(self, 'proxyres', None)
-        if proxyres:
-            if proxyres.will_close:
-                self.close()
-            self.proxyres = None
-            return proxyres
-        return keepalive.HTTPConnection.getresponse(self)
-
 
 # Large parts of this function have their origin from before Python 2.6
 # and could potentially be removed.
@@ -255,77 +245,15 @@ def _generic_proxytunnel(self):
             break
         # skip lines that are all whitespace
         list(iter(lambda: res.fp.readline().strip(), b''))
-    res.status = status
-    res.reason = reason.strip()
 
-    if res.status == 200:
+    if status == 200:
         # skip lines until we find a blank line
         list(iter(res.fp.readline, b'\r\n'))
-        return True
-
-    if version == b'HTTP/1.0':
-        res.version = 10
-    elif version.startswith(b'HTTP/1.'):
-        res.version = 11
-    elif version == b'HTTP/0.9':
-        res.version = 9
     else:
-        raise httplib.UnknownProtocol(version)
-
-    if res.version == 9:
-        res.length = None
-        res.chunked = 0
-        res.will_close = 1
-        res.msg = httplib.HTTPMessage(stringio())
-        return False
-
-    res.msg = httplib.HTTPMessage(res.fp)
-    res.msg.fp = None
-
-    # are we using the chunked-style of transfer encoding?
-    trenc = res.msg.getheader(b'transfer-encoding')
-    if trenc and trenc.lower() == b"chunked":
-        res.chunked = 1
-        res.chunk_left = None
-    else:
-        res.chunked = 0
-
-    # will the connection close at the end of the response?
-    res.will_close = res._check_close()
-
-    # do we have a Content-Length?
-    # NOTE: RFC 2616, section 4.4, #3 says we ignore this if
-    # transfer-encoding is "chunked"
-    length = res.msg.getheader(b'content-length')
-    if length and not res.chunked:
-        try:
-            res.length = int(length)
-        except ValueError:
-            res.length = None
-        else:
-            if res.length < 0:  # ignore nonsensical negative lengths
-                res.length = None
-    else:
-        res.length = None
-
-    # does the body have a fixed length? (of zero)
-    if (
-        status == httplib.NO_CONTENT
-        or status == httplib.NOT_MODIFIED
-        or 100 <= status < 200
-        or res._method == b'HEAD'  # 1xx codes
-    ):
-        res.length = 0
-
-    # if the connection remains open, and we aren't using chunked, and
-    # a content-length was not provided, then assume that the connection
-    # WILL close.
-    if not res.will_close and not res.chunked and res.length is None:
-        res.will_close = 1
-
-    self.proxyres = res
-
-    return False
+        self.close()
+        raise socket.error(
+            "Tunnel connection failed: %d %s" % (status, reason.strip())
+        )
 
 
 class httphandler(keepalive.HTTPHandler):

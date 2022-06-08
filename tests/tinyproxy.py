@@ -73,12 +73,8 @@ class ProxyHandler(httpserver.basehttprequesthandler):
         print("\t" "connect to %s:%d" % host_port)
         try:
             soc.connect(host_port)
-        except socket.error as arg:
-            try:
-                msg = arg[1]
-            except (IndexError, TypeError):
-                msg = arg
-            self.send_error(404, msg)
+        except socket.error as e:
+            self.send_error(404, e.strerror)
             return 0
         return 1
 

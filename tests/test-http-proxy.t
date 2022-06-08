@@ -104,6 +104,13 @@ do not use the proxy if it is in the no list
   new changesets 83180e7845de
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+proxy can't connect to server
+
+  $ http_proxy=http://localhost:$HGPORT1/ hg --config http_proxy.always=True clone http://localhost:$HGPORT2/ h
+  abort: HTTP Error 404: Connection refused
+  [100]
+
   $ cat proxy.log
   * - - [*] "GET http://localhost:$HGPORT/?cmd=capabilities HTTP/1.1" - - (glob)
   $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=batch HTTP/1.1" - - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
@@ -120,3 +127,5 @@ do not use the proxy if it is in the no list
   * - - [*] "GET http://localhost:$HGPORT/?cmd=capabilities HTTP/1.1" - - (glob)
   $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=batch HTTP/1.1" - - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT/?cmd=getbundle HTTP/1.1" - - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=83180e7845de420a1bb46896fd5fe05294f8d629&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  * - - [*] code 404, message Connection refused (glob)
+  $LOCALIP - - [$LOGDATE$] "GET http://localhost:$HGPORT2/?cmd=capabilities HTTP/1.1" 404 - (glob)
