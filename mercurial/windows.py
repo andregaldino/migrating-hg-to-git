@@ -8,7 +8,7 @@
 
 import errno
 import getpass
-import msvcrt
+import msvcrt  # pytype: disable=import-error
 import os
 import re
 import stat
