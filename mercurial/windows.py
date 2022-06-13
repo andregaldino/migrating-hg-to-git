@@ -680,7 +680,9 @@ def lookupreg(key, valname=None, scope=None):
             # pytype: disable=module-attr
             with winreg.OpenKey(s, encoding.strfromlocal(key)) as hkey:
                 # pytype: enable=module-attr
-                name = valname and encoding.strfromlocal(valname) or valname
+                name = None
+                if valname is not None:
+                    name = encoding.strfromlocal(valname)
                 # pytype: disable=module-attr
                 val = winreg.QueryValueEx(hkey, name)[0]
                 # pytype: enable=module-attr
