@@ -14,6 +14,7 @@ import re
 import stat
 import string
 import sys
+import winreg  # pytype: disable=import-error
 
 from .i18n import _
 from .pycompat import getattr
@@ -25,13 +26,6 @@ from . import (
     win32,
 )
 
-try:
-    import _winreg as winreg  # pytype: disable=import-error
-
-    winreg.CloseKey
-except ImportError:
-    # py2 only
-    import winreg  # pytype: disable=import-error
 
 osutil = policy.importmod('osutil')
 
