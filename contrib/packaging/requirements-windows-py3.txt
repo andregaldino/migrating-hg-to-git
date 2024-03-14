@@ -16,7 +16,7 @@ cached-property==1.5.2 \
     --hash=sha256:9fa5755838eecbb2d234c3aa390bd80fbd3ac6b6869109bfc1b499f7bd89a130 \
     --hash=sha256:df4f613cf7ad9a588cc381aaf4a512d26265ecebd5eb9e1ba12f1319eb85a6a0
     # via pygit2
-certifi==2021.5.30 \
+certifi==2023.7.22 \
     --hash=sha256:2bbf76fd432960138b3ef6dda3dde0544f27cbf8546c458e60baf371917ba9ee \
     --hash=sha256:50b1e4f8446b06f41be7dd6338db18e0990601dce795c2b1686458aa7e8fa7d8
     # via dulwich
@@ -195,7 +195,7 @@ pygit2==1.7.1 ; python_version >= "3" \
     --hash=sha256:eced3529bafcaaac015d08dfaa743b3cbad37fcd5b13ae9d280b8b7f716ec5ce \
     --hash=sha256:fec17e2da668e6bb192d777417aad9c7ca924a166d0a0b9a81a11e00362b1bc7
     # via -r contrib/packaging/requirements-windows.txt.in
-pygments==2.7.1 \
+pygments==2.15.0 \
     --hash=sha256:307543fe65c0947b126e83dd5a61bd8acbd84abec11f43caebaf5534cbc17998 \
     --hash=sha256:926c3f319eda178d1bd90851e4317e6d8cdb5e292a3386aac9bd75eca29cf9c7
     # via -r contrib/packaging/requirements-windows.txt.in
@@ -260,7 +260,7 @@ typing-extensions==3.10.0.0 \
     --hash=sha256:50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342 \
     --hash=sha256:779383f6086d90c99ae41cf0ff39aac8a7937a9283ce0a414e5dd782f4c94a84
     # via yarl
-urllib3==1.25.11 \
+urllib3==1.26.18 \
     --hash=sha256:8d7eaa5a82a1cac232164990f04874c594c9453ec55eef02eab885aa02fc17a2 \
     --hash=sha256:f5321fbe4bf3fefa0efd0bfe7fb14e90909eb62a48ccda331726b4319897dd5e
     # via dulwich
